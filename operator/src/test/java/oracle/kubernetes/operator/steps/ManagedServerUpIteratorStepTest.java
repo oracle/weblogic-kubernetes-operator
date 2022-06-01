@@ -31,13 +31,14 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ThreadFactoryTestBase;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.FakeWatchTuning;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -50,7 +51,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,14 +102,14 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   private final AtomicBoolean stopping = new AtomicBoolean(false);
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private final PodWatcher watcher = createWatcher(NS, stopping, INITIAL_RESOURCE_VERSION);
-  final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0, 5, 24);
+  final WatchTuning tuning = new FakeWatchTuning();
 
   @Nonnull
   private static String getManagedServerName(int n) {
     return MS_PREFIX + n;
   }
 
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
 
@@ -135,8 +136,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return dpi;
   }
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
             .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
             .withKind(KubernetesConstants.DOMAIN)
             .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))

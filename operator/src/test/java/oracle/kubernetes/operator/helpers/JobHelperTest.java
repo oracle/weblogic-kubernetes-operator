@@ -44,8 +44,9 @@ import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -54,8 +55,8 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
@@ -77,7 +78,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
-import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -96,6 +96,8 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createTolerat
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
@@ -152,8 +154,9 @@ class JobHelperTest extends DomainValidationTestBase {
         .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + CM_VOLUME_SUFFIX1;
   public static final int MODE_420 = 420;
   public static final int MODE_365 = 365;
+  public static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE = 180L;
   private Method getDomainSpec;
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
@@ -343,11 +346,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private V1JobSpec createJobSpec() {
-    Packet packet = new Packet();
-    packet
-          .getComponents()
-          .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
-    return JobHelper.createJobSpec(packet);
+    return JobHelper.createJobSpec(new Packet().with(domainPresenceInfo));
   }
 
   @Test
@@ -740,13 +739,15 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, Long.toString(
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE));
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getPodSpecActiveDeadlineSeconds(jobSpec),
-          is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+          is(INTROSPECTOR_JOB_ACTIVE_DEADLINE));
     assertThat(
-          jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+          jobSpec.getActiveDeadlineSeconds(), is(INTROSPECTOR_JOB_ACTIVE_DEADLINE));
   }
 
   private static Long getPodSpecActiveDeadlineSeconds(V1JobSpec jobSpec) {
@@ -759,10 +760,12 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, Long.toString(
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE));
     int failureCount = 2;
     long expectedActiveDeadlineSeconds =
-          TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
-                + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
+          INTROSPECTOR_JOB_ACTIVE_DEADLINE
+                + (failureCount * TuningParameters.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
 
     final DomainStatus status = new DomainStatus();
     for (int i = 0; i < failureCount; i++) {
@@ -1180,7 +1183,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenOperatorHasKubernetesPlatformConfigured_introspectorPodSpecHasKubernetesPlatformEnvVariable() {
-    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "Openshift");
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
@@ -1429,7 +1432,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
           .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);

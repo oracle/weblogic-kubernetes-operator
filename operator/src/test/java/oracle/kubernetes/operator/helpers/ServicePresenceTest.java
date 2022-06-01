@@ -22,12 +22,11 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,6 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static org.hamcrest.Matchers.equalTo;
@@ -70,7 +68,7 @@ class ServicePresenceTest {
 
     domains.put(NS, ImmutableMap.of(UID, info));
     disableMakeRightDomainProcessing();
-    Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID));
+    DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID));
     DomainConfiguratorFactory.forDomain(domain)
         .configureAdminServer()
         .configureAdminService()
@@ -83,7 +81,7 @@ class ServicePresenceTest {
     packet.put(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     packet.put(CLUSTER_NAME, CLUSTER);
     packet.put(SERVER_NAME, SERVER);
-    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    packet.with(info);
   }
 
   private void disableMakeRightDomainProcessing() {
@@ -92,9 +90,7 @@ class ServicePresenceTest {
 
   @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test

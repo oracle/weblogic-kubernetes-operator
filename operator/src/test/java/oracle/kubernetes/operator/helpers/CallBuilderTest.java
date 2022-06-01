@@ -23,6 +23,8 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
+import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -46,6 +48,9 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import jakarta.json.Json;
@@ -59,9 +64,9 @@ import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -102,6 +107,8 @@ class CallBuilderTest {
   private static final String SSRR_RESOURCE = "/apis/authorization.k8s.io/v1/selfsubjectrulesreviews";
   private static final String TR_RESOURCE = "/apis/authentication.k8s.io/v1/tokenreviews";
   private static final String CRD_RESOURCE = "/apis/apiextensions.k8s.io/v1/customresourcedefinitions";
+  private static final String VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE
+      = "/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations";
   private static final String NAMESPACE_RESOURCE = "/api/v1/namespaces";
 
   private static final ApiClient apiClient = new ApiClient();
@@ -172,7 +179,7 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void listDomains_returnsListAsJson() throws ApiException {
-    DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
+    DomainList list = new DomainList().withItems(Arrays.asList(new DomainResource(), new DomainResource()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
     assertThat(callBuilder.withFieldSelector("xxx").listDomain(NAMESPACE), equalTo(list));
@@ -181,14 +188,14 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void readDomain_returnsResource() throws InterruptedException {
-    Domain resource = new Domain().withMetadata(createMetadata());
+    DomainResource resource = new DomainResource().withMetadata(createMetadata());
     defineHttpGetResponse(DOMAIN_RESOURCE, UID, resource);
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().readDomainAsync(UID, NAMESPACE, responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(resource));
   }
@@ -197,9 +204,9 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomain_sendsNewDomain() throws ApiException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
 
@@ -210,9 +217,9 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomainStatus_sendsNewDomain() throws ApiException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
     callBuilder.replaceDomainStatus(UID, NAMESPACE, domain);
 
@@ -222,7 +229,7 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void replaceDomain_errorResponseCode_throws() {
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
@@ -231,7 +238,7 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void replaceDomain_conflictResponseCode_throws() {
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
@@ -241,15 +248,15 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomainAsync_returnsUpdatedDomain() throws InterruptedException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().replaceDomainAsync(UID, NAMESPACE, domain, responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
   }
@@ -258,15 +265,15 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomainStatusAsync_returnsUpdatedDomain() throws InterruptedException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().replaceDomainStatusAsync(UID, NAMESPACE, domain, responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
   }
@@ -275,11 +282,12 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void patchDomainAsync_returnsUpdatedDomain() throws InterruptedException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata()).withSpec(new DomainSpec().withReplicas(5));
+    DomainResource domain
+        = new DomainResource().withMetadata(createMetadata()).withSpec(new DomainSpec().withReplicas(5));
     defineHttpPatchResponse(
         DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(json));
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
@@ -287,7 +295,7 @@ class CallBuilderTest {
     testSupport.runSteps(new CallBuilder().patchDomainAsync(UID, NAMESPACE,
         new V1Patch(patchBuilder.build().toString()), responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
   }
@@ -295,14 +303,14 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void listDomainsAsync_returnsDomains() throws InterruptedException {
-    Domain domain1 = new Domain();
+    DomainResource domain1 = new DomainResource();
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
     domain1.setStatus(domainStatus1);
 
     domainStatus1.getConditions().add(new DomainCondition(PROGRESSING).withLastTransitionTime(null));
     domainStatus1.getConditions().add(new DomainCondition(AVAILABLE).withLastTransitionTime(null));
 
-    Domain domain2 = new Domain();
+    DomainResource domain2 = new DomainResource();
     DomainStatus domainStatus2 = new DomainStatus().withStartTime(null);
     domain2.setStatus(domainStatus2);
 
@@ -1027,12 +1035,138 @@ class CallBuilderTest {
     assertThat(received, equalTo(list));
   }
 
+  public static final String TEST_VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhooktest";
+
+  @Test
+  @ResourceLock(value = "server")
+  void listValidatingWebhookConfigurations_returnsList() throws InterruptedException {
+    V1ValidatingWebhookConfigurationList list = new V1ValidatingWebhookConfigurationList()
+        .items(Arrays.asList(new V1ValidatingWebhookConfiguration(), new V1ValidatingWebhookConfiguration()));
+    defineHttpGetResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, list)
+        .expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfigurationList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx")
+        .listValidatingWebhookConfigurationAsync(responseStep));
+
+    V1ValidatingWebhookConfigurationList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readValidatingWebhookConfiguration_returnsResource() throws InterruptedException {
+    V1ValidatingWebhookConfiguration resource =
+        new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME));
+    defineHttpGetResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .readValidatingWebhookConfigurationAsync(TEST_VALIDATING_WEBHOOK_NAME, responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createValidatingWebhookConfiguration_returnsNewResource() throws InterruptedException {
+    V1ValidatingWebhookConfiguration resource =
+        new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME));
+    defineHttpPostResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE,
+        resource, (json) -> fromJson(json, V1ValidatingWebhookConfiguration.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createValidatingWebhookConfigurationAsync(resource, responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceValodatingWebhookConfiguration_returnsUpdatedResource() throws InterruptedException {
+    V1ValidatingWebhookConfiguration validatingWebhookConfig
+        = new V1ValidatingWebhookConfiguration()
+        .metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook());
+    defineHttpPutResponse(
+        VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME,
+        validatingWebhookConfig, (json) -> fromJson(json, V1Secret.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .replaceValidatingWebhookConfigurationAsync(
+            validatingWebhookConfig.getMetadata().getName(), validatingWebhookConfig, responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(validatingWebhookConfig));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchValidatingWebhookConfigurationAsync_returnsUpdatedResource() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    V1ValidatingWebhookConfiguration resource
+        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
+            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
+    defineHttpPatchResponse(
+        VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME,
+        resource, (json) -> requestBody.set(json));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.replace("/webhooks/0/timeoutSeconds",  5);
+    testSupport.runSteps(new CallBuilder().patchValidatingWebhookConfigurationAsync(TEST_VALIDATING_WEBHOOK_NAME,
+        new V1Patch(patchBuilder.build().toString()), responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deleteValidatingWebhookConfiguration_returnsDeletedResource() throws InterruptedException {
+    V1Status response = new V1Status();
+    V1ValidatingWebhookConfiguration resource =
+        new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME));
+    defineHttpDeleteResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE,
+        TEST_VALIDATING_WEBHOOK_NAME, response, (Consumer<String>) null)
+        .expectingParameter("gracePeriodSeconds", "5");
+
+    KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withGracePeriodSeconds(5)
+        .deleteValidatingWebhookConfigurationAsync(resource.getMetadata().getName(),
+            new DeleteOptions(), responseStep));
+
+    V1Status received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(response));
+  }
+
   private Object fromJson(String json, Class<?> aaClass) {
     return new GsonBuilder().create().fromJson(json, aaClass);
   }
 
   private V1ObjectMeta createMetadata() {
     return new V1ObjectMeta().namespace(NAMESPACE).name(UID);
+  }
+
+  private V1ObjectMeta createNameOnlyMetadata(String name) {
+    return new V1ObjectMeta().name(name);
   }
 
   /** defines a get request for an list of items. */

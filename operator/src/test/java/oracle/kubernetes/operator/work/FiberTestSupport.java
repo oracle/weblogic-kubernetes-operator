@@ -20,13 +20,11 @@ import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_KEY;
 
 /**
@@ -46,9 +44,8 @@ public class FiberTestSupport {
   private final ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
   private final Engine engine = new Engine(schedule);
   private final MainDelegateStub mainDelegate = createStrictStub(MainDelegateStub.class);
-  private Packet packet = new Packet().with(mainDelegate);
 
-  private Fiber fiber = engine.createFiber();
+  private Packet packet = new Packet().with(mainDelegate);
 
   /** Creates a single-threaded FiberGate instance. */
   public FiberGate createFiberGate() {
@@ -140,7 +137,7 @@ public class FiberTestSupport {
   }
 
   public FiberTestSupport addDomainPresenceInfo(DomainPresenceInfo info) {
-    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    packet.with(info);
     return this;
   }
 
@@ -195,10 +192,7 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runSteps(Step step) {
-    fiber = engine.createFiber();
-    fiber.start(step, packet, completionCallback);
-
-    return packet;
+    return runSteps(packet, step);
   }
 
   /**
@@ -208,7 +202,7 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runSteps(Packet packet, Step step) {
-    fiber = engine.createFiber();
+    Fiber fiber = engine.createFiber();
     fiber.start(step, packet, completionCallback);
 
     return packet;
@@ -219,21 +213,8 @@ public class FiberTestSupport {
    *
    * @param nextStep the first step to run
    */
-  public Packet runSteps(StepFactoryWithProductVersion factory, Step nextStep) {
-    fiber = engine.createFiber();
-    fiber.start(factory.createStepList(null, nextStep), packet, completionCallback);
-    return packet;
-  }
-
-  /**
-   * Starts a unit-test fiber with the specified step.
-   *
-   * @param nextStep the first step to run
-   */
   public Packet runSteps(StepFactory factory, Step nextStep) {
-    fiber = engine.createFiber();
-    fiber.start(factory.createStepList(nextStep), packet, completionCallback);
-    return packet;
+    return runSteps(factory.createStepList(nextStep));
   }
 
   /**
@@ -263,10 +244,6 @@ public class FiberTestSupport {
     Step createStepList(Step next);
   }
 
-  public interface StepFactoryWithProductVersion {
-    Step createStepList(SemanticVersion productVersion, Step next);
-  }
-
   abstract static class ScheduledExecutorStub implements ScheduledExecutorService {
     /* current time in milliseconds. */
     private long currentTime = 0;
@@ -284,7 +261,9 @@ public class FiberTestSupport {
     public ScheduledFuture<?> schedule(
         @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
       scheduledItems.add(new ScheduledItem(currentTime + unit.toMillis(delay), command));
-      runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
       return createStub(ScheduledFuture.class);
     }
 
@@ -295,7 +274,9 @@ public class FiberTestSupport {
       scheduledItems.add(
           new PeriodicScheduledItem(
               currentTime + unit.toMillis(initialDelay), unit.toMillis(delay), command));
-      runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
       return createStub(ScheduledFuture.class);
     }
 
@@ -356,7 +337,7 @@ public class FiberTestSupport {
      * @param unit the unit associated with the time
      * @return true if such an item exists
      */
-    boolean containsItemAt(int time, TimeUnit unit) {
+    boolean containsItemAt(long time, TimeUnit unit) {
       for (ScheduledItem scheduledItem : scheduledItems) {
         if (scheduledItem.atTime == unit.toMillis(time)) {
           return true;

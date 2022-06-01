@@ -32,22 +32,22 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -56,9 +56,11 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  * including the scan and the Pods and Services for servers.
  */
 public class DomainPresenceInfo implements PacketComponent {
+
+  private static final String COMPONENT_KEY = "dpi";
   private final String namespace;
   private final String domainUid;
-  private final AtomicReference<Domain> domain;
+  private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
@@ -80,7 +82,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param domain Domain
    */
-  public DomainPresenceInfo(Domain domain) {
+  public DomainPresenceInfo(DomainResource domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.domainUid = domain.getDomainUid();
@@ -113,6 +115,10 @@ public class DomainPresenceInfo implements PacketComponent {
       }
     }
     return false;
+  }
+
+  public ThreadLoggingContext setThreadContext() {
+    return ThreadLoggingContext.setThreadContext().namespace(namespace).domainUid(domainUid);
   }
 
   /**
@@ -204,7 +210,7 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   public void addToPacket(Packet packet) {
-    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(this));
+    packet.getComponents().put(COMPONENT_KEY, Component.createFor(this));
   }
 
   public String getAdminServerName() {
@@ -508,8 +514,7 @@ public class DomainPresenceInfo implements PacketComponent {
     try {
       if (webLogicCredentialsSecretLastSet == null
           || webLogicCredentialsSecretLastSet.isAfter(
-              SystemClock.now().minusSeconds(
-                  TuningParameters.getInstance().getMainTuning().weblogicCredentialsSecretRereadIntervalSeconds))) {
+              SystemClock.now().minusSeconds(getWeblogicCredentialsSecretRereadIntervalSeconds()))) {
         return webLogicCredentialsSecret;
       }
     } finally {
@@ -519,6 +524,10 @@ public class DomainPresenceInfo implements PacketComponent {
     // time to clear
     setWebLogicCredentialsSecret(null);
     return null;
+  }
+
+  private int getWeblogicCredentialsSecretRereadIntervalSeconds() {
+    return TuningParameters.getInstance().getCredentialsSecretRereadIntervalSeconds();
   }
 
   /**
@@ -587,7 +596,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @return Domain
    */
-  public Domain getDomain() {
+  public DomainResource getDomain() {
     return domain.get();
   }
 
@@ -596,7 +605,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param domain Domain
    */
-  public void setDomain(Domain domain) {
+  public void setDomain(DomainResource domain) {
     this.domain.set(domain);
   }
 
@@ -672,7 +681,7 @@ public class DomainPresenceInfo implements PacketComponent {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
-    Domain d = getDomain();
+    DomainResource d = getDomain();
     if (d != null) {
       sb.append(
           String.format(

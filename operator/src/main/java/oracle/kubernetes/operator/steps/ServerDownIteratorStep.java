@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -14,19 +14,21 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class ServerDownIteratorStep extends Step {
-  private final Collection<DomainPresenceInfo.ServerShutdownInfo> serverShutdownInfos;
+  private final List<ServerShutdownInfo> serverShutdownInfos;
 
-  ServerDownIteratorStep(List<DomainPresenceInfo.ServerShutdownInfo> serverShutdownInfos, Step next) {
+  ServerDownIteratorStep(List<ServerShutdownInfo> serverShutdownInfos, Step next) {
     super(next);
     Collections.reverse(serverShutdownInfos);
     this.serverShutdownInfos = serverShutdownInfos;
@@ -38,35 +40,109 @@ public class ServerDownIteratorStep extends Step {
     return serverNames;
   }
 
-  Collection<DomainPresenceInfo.ServerShutdownInfo> getServerShutdownInfos() {
-    return serverShutdownInfos;
-  }
-
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    List<StepAndPacket> shutdownDetails =
-            getServerShutdownInfos().stream()
-                    .filter(ssi -> !isServerInCluster(ssi))
-                    .map(ssi -> createManagedServerDownDetails(packet, ssi)).collect(Collectors.toList());
-
-    getShutdownClusteredServersStepFactories(getServerShutdownInfos(), packet).values()
-            .forEach(factory -> shutdownDetails.addAll(factory.getServerShutdownStepAndPackets(info)));
-
-    Collection<StepAndPacket> shutdownWaiters =
-            getServerShutdownInfos().stream()
-                    .map(ssi -> createServerDownWaiters(packet, ssi)).collect(Collectors.toList());
-    shutdownDetails.addAll(shutdownWaiters);
-    return doNext((new ShutdownManagedServersStep(shutdownDetails, getNext())), packet);
-
+    return doNext(new IteratorContext(packet, serverShutdownInfos).createNextSteps(), packet);
   }
 
-  private StepAndPacket createServerDownWaiters(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    return new StepAndPacket(Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
-            .map(p -> p.waitForDelete(info.getServerPod(ssi.getServerName()),
-                    createDomainPresenceInfoUpdateStep(ssi.getServerName(), null))).orElse(null),
-            createPacketForServer(packet, ssi));
+  class IteratorContext {
+    private final Packet packet;
+    private final List<ServerShutdownInfo> serverShutdownInfos;
+    private final DomainPresenceInfo info;
+
+    public IteratorContext(Packet packet, List<ServerShutdownInfo> serverShutdownInfos) {
+      this.packet = packet;
+      this.serverShutdownInfos = Collections.unmodifiableList(serverShutdownInfos);
+      this.info = packet.getSpi(DomainPresenceInfo.class);
+    }
+
+    private Step createNextSteps() {
+      return Step.chain(createShutDownServersStep(), createWaitForServersDownStep(), getNext());
+    }
+
+    @Nonnull
+    private Step createShutDownServersStep() {
+      return new RunInParallelStep(createShutdownDetails());
+    }
+
+    @Nonnull
+    private List<StepAndPacket> createShutdownDetails() {
+      List<StepAndPacket> shutdownDetails =
+              this.serverShutdownInfos.stream()
+                      .filter(ssi -> !isServerInCluster(ssi))
+                      .map(ssi -> createManagedServerDownDetails(packet, ssi)).collect(Collectors.toList());
+
+      getShutdownClusteredServersStepFactories(serverShutdownInfos, packet).values()
+              .forEach(factory -> shutdownDetails.addAll(factory.getServerShutdownStepAndPackets(info)));
+      return shutdownDetails;
+    }
+
+    private boolean isServerInCluster(ServerShutdownInfo ssi) {
+      return ssi.getClusterName() != null;
+    }
+
+    private StepAndPacket createManagedServerDownDetails(Packet packet, ServerShutdownInfo ssi) {
+      if (ssi.isServiceOnly()) {
+        return new StepAndPacket(createServiceStep(ssi), createPacketForServer(packet, ssi));
+      } else {
+        return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
+      }
+    }
+
+    private Packet createPacketForServer(Packet packet, ServerShutdownInfo ssi) {
+      return ssi.createPacket(packet);
+    }
+
+    private Map<String, ShutdownClusteredServersStepFactory> getShutdownClusteredServersStepFactories(
+        Collection<ServerShutdownInfo> shutdownInfos, Packet packet) {
+
+      Map<String, ShutdownClusteredServersStepFactory> factories = new HashMap<>();
+      shutdownInfos.stream()
+              .filter(this::isServerInCluster)
+              .forEach(ssi ->
+                      factories.computeIfAbsent(ssi.getClusterName(),
+                          k -> new ShutdownClusteredServersStepFactory(getMaxConcurrentShutdown(ssi),
+                                  getReplicaCount(ssi)))
+                          .add(createManagedServerDownDetails(packet, ssi)));
+      return factories;
+    }
+
+    private int getMaxConcurrentShutdown(ServerShutdownInfo ssi) {
+      return info.getDomain().getMaxConcurrentShutdown(ssi.getClusterName());
+    }
+
+    private int getReplicaCount(ServerShutdownInfo ssi) {
+      return info.getDomain().getReplicaCount(ssi.getClusterName());
+    }
+
+    @Nonnull
+    private Step createWaitForServersDownStep() {
+      return new RunInParallelStep(createShutdownWaiters());
+    }
+
+    @Nonnull
+    private List<StepAndPacket> createShutdownWaiters() {
+      return serverShutdownInfos.stream().map(this::createServerDownWaiter).collect(Collectors.toList());
+    }
+
+    @Nonnull
+    private StepAndPacket createServerDownWaiter(ServerShutdownInfo ssi) {
+      return new StepAndPacket(createWaitSteps(ssi), createPacketForServer(packet, ssi));
+    }
+
+    @Nullable
+    private Step createWaitSteps(ServerShutdownInfo ssi) {
+      return Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
+          .map(p -> waitForDelete(ssi, p)).orElse(null);
+    }
+
+    private Step waitForDelete(ServerShutdownInfo ssi, PodAwaiterStepFactory p) {
+      return p.waitForDelete(info.getServerPod(ssi.getServerName()), clearPodPresence(ssi.getServerName()));
+    }
+
+    private Step clearPodPresence(String serverName) {
+      return new DomainPresenceInfoUpdateStep(serverName, null);
+    }
   }
 
   // pre-conditions: DomainPresenceInfo SPI
@@ -74,50 +150,9 @@ public class ServerDownIteratorStep extends Step {
   // "serverScan"
   // "clusterScan"
   // "envVars"
-  private static Step createServiceStep(DomainPresenceInfo.ServerShutdownInfo ssi) {
+  private static Step createServiceStep(ServerShutdownInfo ssi) {
     return ServiceHelper.createForServerStep(
             true, new ServerDownStep(ssi.getServerName(), true, null));
-  }
-
-  private boolean isServerInCluster(DomainPresenceInfo.ServerShutdownInfo ssi) {
-    return ssi.getClusterName() != null;
-  }
-
-  private int getMaxConcurrentShutdown(Domain domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    return domain.getMaxConcurrentShutdown(ssi.getClusterName());
-  }
-
-  private int getReplicaCount(Domain domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    return domain.getReplicaCount(ssi.getClusterName());
-  }
-
-  private StepAndPacket createManagedServerDownDetails(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    if (ssi.isServiceOnly()) {
-      return new StepAndPacket(createServiceStep(ssi),
-              createPacketForServer(packet, ssi));
-    } else {
-      return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
-    }
-  }
-
-  private Packet createPacketForServer(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    return ssi.createPacket(packet);
-  }
-
-  private Map<String, ShutdownClusteredServersStepFactory> getShutdownClusteredServersStepFactories(
-          Collection<DomainPresenceInfo.ServerShutdownInfo> shutdownInfos, Packet packet) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    Domain domain = info.getDomain();
-
-    Map<String, ShutdownClusteredServersStepFactory> factories = new HashMap<>();
-    shutdownInfos.stream()
-            .filter(this::isServerInCluster)
-            .forEach(ssi ->
-                    factories.computeIfAbsent(ssi.getClusterName(),
-                        k -> new ShutdownClusteredServersStepFactory(getMaxConcurrentShutdown(domain, ssi),
-                                getReplicaCount(domain, ssi)))
-                        .add(createManagedServerDownDetails(packet, ssi)));
-    return factories;
   }
 
   private static class ShutdownClusteredServersStepFactory {
@@ -146,11 +181,10 @@ public class ServerDownIteratorStep extends Step {
     }
   }
 
-  static class ShutdownManagedServersStep extends Step {
+  static class RunInParallelStep extends Step {
     final Collection<StepAndPacket> shutdownDetails;
 
-    ShutdownManagedServersStep(Collection<StepAndPacket> shutdownDetails, Step next) {
-      super(next);
+    RunInParallelStep(Collection<StepAndPacket> shutdownDetails) {
       this.shutdownDetails = shutdownDetails;
     }
 
@@ -187,10 +221,6 @@ public class ServerDownIteratorStep extends Step {
         return doForkJoin(this, packet, servers);
       }
     }
-  }
-
-  private Step createDomainPresenceInfoUpdateStep(String serverName, Step next) {
-    return new DomainPresenceInfoUpdateStep(serverName, next);
   }
 
 }

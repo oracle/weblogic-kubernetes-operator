@@ -27,7 +27,7 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyOCILoadBalancer;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -103,7 +103,7 @@ class ItOCILoadBalancer {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     createMiiDomainAndVerify(domainNamespace,domainUid,
@@ -154,7 +154,7 @@ class ItOCILoadBalancer {
       managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
 
-    // check that NGINX can access the sample apps from all managed servers in the domain
+    // check that LB can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sample-war/index.jsp",
             lbIp,

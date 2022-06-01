@@ -164,7 +164,7 @@ public enum DomainFailureReason {
   private static String getAdditionalMessageFromStatus(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getStatus)
+        .map(DomainResource::getStatus)
         .map(DomainStatus::getMessage)
         .orElse("");
   }

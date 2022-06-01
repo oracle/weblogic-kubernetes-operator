@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain;
 
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public class DomainConfiguratorFactory {
 
@@ -14,7 +14,7 @@ public class DomainConfiguratorFactory {
 
   private static final DomainConfigurator exemplar = new DomainCommonConfigurator();
 
-  public static DomainConfigurator forDomain(Domain domain) {
+  public static DomainConfigurator forDomain(DomainResource domain) {
     return exemplar.createFor(domain);
   }
 

@@ -29,7 +29,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.junit.jupiter.api.AfterEach;
@@ -127,7 +127,7 @@ class PodDisruptionBudgetHelperTest {
 
   private DomainPresenceInfo createPresenceInfo() {
     return new DomainPresenceInfo(
-            new Domain()
+            new DomainResource()
                     .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
                     .withKind(KubernetesConstants.DOMAIN)
                     .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
@@ -314,8 +314,8 @@ class PodDisruptionBudgetHelperTest {
     return UID + "-" + getTestCluster();
   }
 
-  private Domain getDomain() {
-    return (Domain) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
+  private DomainResource getDomain() {
+    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
   }
 
   @Test

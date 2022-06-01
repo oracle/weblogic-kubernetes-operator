@@ -56,11 +56,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -226,6 +225,7 @@ class ItIntrospectVersion {
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   @Tag("gate")
+  @Tag("crio")
   void testDomainIntrospectVersionNotRolling() {
     // get the pod creation time stamps
     Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
@@ -723,7 +723,7 @@ class ItIntrospectVersion {
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : OCIR_REGISTRY + "/" + OCIR_WEBLOGIC_IMAGE_NAME + ":" + imageTag;
+        : DOMAIN_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME + ":" + imageTag;
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
@@ -983,7 +983,8 @@ class ItIntrospectVersion {
     verifyPodsNotRolled(introDomainNamespace, pods);
   }
 
-  private static void createDomain() {
+  private static void createDomain() {    
+    String uniquePath = "/shared/" + introDomainNamespace + "/domains";
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
@@ -996,7 +997,7 @@ class ItIntrospectVersion {
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", uniquePath);
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", cluster1Name);
     p.setProperty("admin_server_name", adminServerName);
@@ -1008,7 +1009,7 @@ class ItIntrospectVersion {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2"); // maximum number of servers in cluster
     p.setProperty("managed_server_name_base", cluster1ManagedServerNameBase);
-    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("domain_logs", uniquePath + "/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(() ->
             p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -1031,7 +1032,7 @@ class ItIntrospectVersion {
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
@@ -1040,7 +1041,7 @@ class ItIntrospectVersion {
                 .namespace(introDomainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod

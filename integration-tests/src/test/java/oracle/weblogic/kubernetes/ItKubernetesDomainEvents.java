@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.UnaryOperator;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -43,7 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -71,7 +72,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPoli
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.ABORTED_ERROR;
@@ -220,6 +221,7 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   @Tag("gate")
+  @Tag("crio")
   void testK8SEventsSuccess() {
     try {
       OffsetDateTime timestamp = now();
@@ -319,7 +321,8 @@ class ItKubernetesDomainEvents {
     try {
       V1Patch patch;
       String patchStr;
-      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER");
+      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER",
+          spec -> spec.failureRetryLimitMinutes(2L));
       assertNotNull(domain, " Can't create domain resource");
 
       String originalDomainHome = domain.getSpec().getDomainHome();
@@ -378,18 +381,38 @@ class ItKubernetesDomainEvents {
   }
 
   /**
-   * Scale the cluster beyond maximum dynamic cluster size and verify the
+   * Scale the cluster beyond maximum dynamic cluster size and verify the patch operation failed.
+   */
+  @Test
+  void testDomainK8sEventsScalePastMaxWithoutChangingIntrospectVersion() {
+    OffsetDateTime timestamp = now();
+    logger.info("Scaling cluster using patching");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
+        + "]";
+
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Patching domain with a replica count that exceeds the cluster size did not fail as expected");
+  }
+
+  /**
+   * Scale the cluster beyond maximum dynamic cluster size and change the introspectVersion as well, verify the
    * Failed warning event is generated.
    */
   @Test
-  void testDomainK8sEventsScalePastMax() {
+  void testDomainK8sEventsScalePastMaxAndChangeIntrospectVersion() {
     OffsetDateTime timestamp = now();
     try {
       logger.info("Scaling cluster using patching");
       String patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}"
           + "]";
+
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -532,7 +555,7 @@ class ItKubernetesDomainEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
-    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome";
+    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome/" + domainUid;
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
     logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, newLogHome);
@@ -730,12 +753,19 @@ class ItKubernetesDomainEvents {
   // Create and start a WebLogic domain in PV
   private static Domain createDomain(String domainNamespace, String domainUid,
                                      String pvName, String pvcName, String serverStartupPolicy) {
+    return createDomain(domainNamespace, domainUid, pvName, pvcName, serverStartupPolicy, UnaryOperator.identity());
+  }
+
+  // Create and start a WebLogic domain in PV
+  private static Domain createDomain(String domainNamespace, String domainUid,
+                                     String pvName, String pvcName, String serverStartupPolicy,
+                                     UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
 
     String uniquePath = "/shared/" + domainNamespace + "/domains";
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -784,7 +814,7 @@ class ItKubernetesDomainEvents {
             .metadata(new V1ObjectMeta()
                     .name(domainUid)
                     .namespace(domainNamespace))
-            .spec(new DomainSpec()
+            .spec(domainSpecUnaryOperator.apply(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
                     .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
@@ -792,7 +822,7 @@ class ItKubernetesDomainEvents {
                     .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .imagePullSecrets(Arrays.asList(
                             new V1LocalObjectReference()
-                                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
+                                    .name(BASE_IMAGES_REPO_SECRET_NAME))) // secret for non-kind cluster
                     .webLogicCredentialsSecret(new V1SecretReference()
                             .name(wlSecretName)
                             .namespace(domainNamespace))
@@ -821,7 +851,7 @@ class ItKubernetesDomainEvents {
                     .addClustersItem(new Cluster() //cluster
                             .clusterName(cluster1Name)
                             .replicas(replicaCount)
-                            .serverStartState("RUNNING")));
+                            .serverStartState("RUNNING"))));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);

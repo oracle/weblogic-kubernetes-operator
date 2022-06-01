@@ -1,9 +1,8 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -14,11 +13,12 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
@@ -29,8 +29,6 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
-  private static final int DEFAULT_RECHECK_SECONDS = 5;
-  private static final int DEFAULT_RECHECK_COUNT = 60;
 
   static NextStepFactory nextStepFactory = WaitForReadyStep::createMakeDomainRightStep;
 
@@ -41,17 +39,11 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   static int getWatchBackstopRecheckDelaySeconds() {
-    return Optional.ofNullable(TuningParameters.getInstance())
-            .map(TuningParameters::getWatchTuning)
-            .map(t -> t.watchBackstopRecheckDelay)
-            .orElse(DEFAULT_RECHECK_SECONDS);
+    return TuningParameters.getInstance().getWatchTuning().getWatchBackstopRecheckDelay();
   }
 
   static int getWatchBackstopRecheckCount() {
-    return Optional.ofNullable(TuningParameters.getInstance())
-            .map(TuningParameters::getWatchTuning)
-            .map(t -> t.watchBackstopRecheckCount)
-            .orElse(DEFAULT_RECHECK_COUNT);
+    return TuningParameters.getInstance().getWatchTuning().getWatchBackstopRecheckCount();
   }
 
   final T initialResource;
@@ -263,7 +255,7 @@ abstract class WaitForReadyStep<T> extends Step {
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       if (makeRightDomainOperation != null) {
         makeRightDomainOperation.clear();
-        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain) callResponse.getResult()));
+        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((DomainResource) callResponse.getResult()));
         makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
       }
       callback.fiber.terminate(new Exception(WAIT_TIMEOUT_EXCEEDED), packet);

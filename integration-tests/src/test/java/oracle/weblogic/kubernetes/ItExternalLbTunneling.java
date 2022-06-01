@@ -24,10 +24,10 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -49,17 +49,15 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -71,7 +69,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
@@ -86,7 +84,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * The use case described in this class verifies that an external RMI client
@@ -108,13 +105,13 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @DisplayName("Test external RMI access through loadbalncer tunneling")
 @IntegrationTest
+@DisabledOnSlimImage
 class ItExternalLbTunneling {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static NginxParams nginxHelmParams = null;
   private static int replicaCount = 2;
   private static String clusterName = "cluster-1";
   private final String adminServerPodName = domainUid + "-admin-server";
@@ -159,7 +156,7 @@ class ItExternalLbTunneling {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -193,7 +190,7 @@ class ItExternalLbTunneling {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -208,7 +205,7 @@ class ItExternalLbTunneling {
       logger.info("Installing Traefik controller using helm");
       traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
     }
-    
+
     // Create SSL certificate and key using openSSL with SAN extension
     createCertKeyFiles(K8S_NODEPORT_HOST);
     // Create kubernates secret using genereated certificate and key
@@ -243,16 +240,14 @@ class ItExternalLbTunneling {
    * Queue using load balancer HTTP url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    * Verify RMI access to WLS through Traefik LoadBalancer.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
   void testExternalRmiAccessThruTraefik() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
@@ -282,7 +277,7 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to non-tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service = 
+    String service =
          TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpTunnelingPort =
@@ -292,7 +287,7 @@ class ItExternalLbTunneling {
     logger.info("HttpTunnelingPort for Traefik {0}", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtClient(httpTunnelingPort, 2, false);
     logger.info("External RMI tunneling works for Traefik");
   }
@@ -302,16 +297,14 @@ class ItExternalLbTunneling {
    * Queue using load balancer HTTPS url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each destination member gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    * Verify tls RMI access to WLS through Traefik LoadBalancer.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
   void testExternalRmiAccessThruTraefikHttpsTunneling() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -342,7 +335,7 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service = 
+    String service =
          TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpsTunnelingPort =
@@ -360,9 +353,6 @@ class ItExternalLbTunneling {
   @Test
   @DisplayName("Verify RMI access WLS through Route in OKD ")
   void testExternalRmiAccessThruRouteHttpTunneling() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-    logger.info("Installing Nginx controller using helm");
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -393,8 +383,6 @@ class ItExternalLbTunneling {
   @DisplayName("Verify tls RMI access WLS through Route in OKD ")
   void testExternalRmiAccessThruRouteHttpsTunneling() {
 
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-
     // Build the standalone JMS Client to send and receive messages
     buildClient();
 
@@ -404,7 +392,7 @@ class ItExternalLbTunneling {
              "Could not get the cluster custom channel port");
     logger.info("Found the administration service nodePort {0}", httpsTunnelingPort);
 
-    assertDoesNotThrow(() -> 
+    assertDoesNotThrow(() ->
                   setTlsEdgeTerminationForRoute(clusterServiceName, domainNamespace, tlsKeyFile, tlsCertFile));
     // In OKD cluster, we need to set the target port of the route to be the httpTunnelingport
     // By default, when a service is exposed as a route, the endpoint is set to the default port.
@@ -412,7 +400,7 @@ class ItExternalLbTunneling {
     String routeHost = clusterSvcRouteHost + ":443";
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtHttpsClient(routeHost, 0, 2, false);
     logger.info("External RMI https tunneling works for route");
   }
@@ -579,14 +567,7 @@ class ItExternalLbTunneling {
             .as("Test uninstallTraefik returns true")
             .withFailMessage("uninstallTraefik() did not return true")
             .isTrue();
-      }
-      // uninstall NGINX
-      if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-            .as("Test uninstallNginx returns true")
-            .withFailMessage("uninstallNginx() did not return true")
-            .isTrue();
-      }
+      }     
     }
   }
 

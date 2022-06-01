@@ -176,6 +176,12 @@ public class MessageKeys {
   public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
   public static final String POD_EVICTED = "WLSKO-0226";
   public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
+  public static final String VALIDATING_WEBHOOK_CONFIGURATION_CREATED = "WLSKO-0228";
+  public static final String CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKO-0229";
+  public static final String VALIDATION_FAILED = "WLSKO-0230";
+  public static final String VALIDATING_WEBHOOK_CONFIGURATION_REPLACED = "WLSKO-0231";
+  public static final String REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKO-0232";
+  public static final String READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKO-0233";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

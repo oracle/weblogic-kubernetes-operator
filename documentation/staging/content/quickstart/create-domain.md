@@ -295,7 +295,7 @@ weight: 7
 
     a. Open a browser to `http://localhost:30305/console`.
 
-    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers. See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}).
+    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}).
     {{% /notice %}}
 
 1.	To access the sample quick start application from the browser: 

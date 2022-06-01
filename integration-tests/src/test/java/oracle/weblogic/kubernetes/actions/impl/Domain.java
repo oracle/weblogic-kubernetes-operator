@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -386,6 +386,59 @@ public class Domain {
         .append("\"value\": ")
         .append(numOfServers)
         .append("}]");
+
+    logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
+        clusterName, domainUid, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace and change introspect version.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param introspectVersion new introspectVersion value
+   * @return true if patch domain custom resource succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace,
+                                                               String clusterName, int numOfServers,
+                                                               int introspectVersion)
+      throws ApiException {
+    LoggingFacade logger = getLogger();
+    // get the domain cluster list
+    oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
+
+    List<Cluster> clusters = new ArrayList<>();
+    if (domain.getSpec() != null) {
+      clusters = domain.getSpec().getClusters();
+    }
+
+    // get the index of the cluster with clusterName in the cluster list
+    int index = 0;
+    for (int i = 0; i < clusters.size(); i++) {
+      if (clusters.get(i).getClusterName().equals(clusterName)) {
+        index = i;
+        break;
+      }
+    }
+
+    // construct the patch string for scaling the cluster in the domain
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec/clusters/")
+        .append(index)
+        .append("/replicas\", ")
+        .append("\"value\": ")
+        .append(numOfServers)
+        .append("}, {\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"")
+        .append(introspectVersion)
+        .append("\"}]");
 
     logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
         clusterName, domainUid, patchStr.toString());

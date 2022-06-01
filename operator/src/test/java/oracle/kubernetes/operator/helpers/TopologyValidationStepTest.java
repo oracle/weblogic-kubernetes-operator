@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -26,9 +27,9 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -89,7 +90,7 @@ class TopologyValidationStepTest {
   private static final String CLUSTER1 = "cluster1";
   private static final String CLUSTER2 = "cluster2";
 
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -249,7 +250,7 @@ class TopologyValidationStepTest {
       return server;
     }
 
-    private DomainConfigurator configureDomain(Domain domain) {
+    private DomainConfigurator configureDomain(DomainResource domain) {
       return DomainConfiguratorFactory.forDomain(domain);
     }
   }
@@ -275,7 +276,7 @@ class TopologyValidationStepTest {
       return this;
     }
 
-    private DomainConfigurator configureDomain(Domain domain) {
+    private DomainConfigurator configureDomain(DomainResource domain) {
       return new DomainCommonConfigurator(domain);
     }
 

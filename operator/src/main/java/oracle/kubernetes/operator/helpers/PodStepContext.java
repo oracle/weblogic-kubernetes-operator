@@ -53,13 +53,14 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.PodTuning;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -67,7 +68,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -127,12 +128,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   PodStepContext(Step conflictStep, Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
     this.conflictStep = conflictStep;
+    this.packet = packet;
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapConstants.SECRETS_MD_5);
     miiDomainZipHash = (String)packet.get(IntrospectorConfigMapConstants.DOMAINZIP_HASH);
     domainRestartVersion = (String)packet.get(IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
-    this.packet = packet;
     exporterContext = createExporterContext();
   }
 
@@ -203,7 +204,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getDomainUid();
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return info.getDomain();
   }
 
@@ -620,7 +621,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   // Creates a pod model containing elements which are not patchable.
   private V1Pod createPodRecipe() {
-    return new V1Pod().metadata(createMetadata()).spec(createSpec(TuningParameters.getInstance()));
+    return new V1Pod().metadata(createMetadata()).spec(createSpec());
   }
 
   protected V1ObjectMeta createMetadata() {
@@ -659,10 +660,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
 
-  protected V1PodSpec createSpec(TuningParameters tuningParameters) {
-    V1PodSpec podSpec = createPodSpec(tuningParameters)
+  protected V1PodSpec createSpec() {
+    V1PodSpec podSpec = createPodSpec()
         .readinessGates(getReadinessGates())
-        .initContainers(getInitContainers(tuningParameters));
+        .initContainers(getInitContainers());
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
@@ -671,12 +672,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     return podSpec;
   }
 
-  private List<V1Container> getInitContainers(TuningParameters tuningParameters) {
+  private List<V1Container> getInitContainers() {
     List<V1Container> initContainers = new ArrayList<>();
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
-            .map(c -> c.env(createEnv(c, tuningParameters)).resources(createResources()))
+            .map(c -> c.env(createEnv(c)).resources(createResources()))
         .collect(Collectors.toList()));
     return initContainers;
   }
@@ -687,11 +688,11 @@ public abstract class PodStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
   }
 
-  private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+  private List<V1EnvVar> createEnv(V1Container c) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
-      getEnvironmentVariables(tuningParameters).forEach(envVar ->
+      getEnvironmentVariables().forEach(envVar ->
               addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
     }
     return initContainerEnvVars;
@@ -715,14 +716,15 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   @Override
-  protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
-    V1Container v1Container = super.createPrimaryContainer(tuningParameters)
+  protected V1Container createPrimaryContainer() {
+    final PodTuning podTuning = TuningParameters.getInstance().getPodTuning();
+    V1Container v1Container = super.createPrimaryContainer()
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
-            .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
+            .livenessProbe(createLivenessProbe(podTuning));
 
     if (!mockWls()) {
-      v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));
+      v1Container.readinessProbe(createReadinessProbe(podTuning));
     }
 
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
@@ -756,7 +758,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Volume> getFluentdVolumes() {
     List<V1Volume> volumes = new ArrayList<>();
     Optional.ofNullable(getDomain())
-            .map(Domain::getFluentdSpecification)
+            .map(DomainResource::getFluentdSpecification)
             .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
                     .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
     return volumes;
@@ -786,7 +788,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
    * @param vars a list to which new variables are to be added
    */
-  void addStartupEnvVars(List<V1EnvVar> vars, TuningParameters tuningParameters) {
+  void addStartupEnvVars(List<V1EnvVar> vars) {
     addEnvVar(vars, ServerEnvVars.DOMAIN_NAME, getDomainName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
@@ -814,7 +816,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxiliaryImageEnv(ais, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
-    Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
+    Optional.ofNullable(getKubernetesPlatform()).ifPresent(v ->
             addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }
 
@@ -859,7 +861,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new V1ExecAction().command(Arrays.asList(commandItems));
   }
 
-  private V1Probe createReadinessProbe(TuningParameters.PodTuning tuning) {
+  private V1Probe createReadinessProbe(PodTuning tuning) {
     V1Probe readinessProbe = new V1Probe();
     readinessProbe
         .initialDelaySeconds(getReadinessProbeInitialDelaySeconds(tuning))
@@ -916,32 +918,32 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getAction;
   }
 
-  private int getReadinessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
+  private int getReadinessProbePeriodSeconds(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getReadinessProbe().getPeriodSeconds())
-        .orElse(tuning.readinessProbePeriodSeconds);
+        .orElse(tuning.getReadinessProbePeriodSeconds());
   }
 
-  private int getReadinessProbeTimeoutSeconds(TuningParameters.PodTuning tuning) {
+  private int getReadinessProbeTimeoutSeconds(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getReadinessProbe().getTimeoutSeconds())
-        .orElse(tuning.readinessProbeTimeoutSeconds);
+        .orElse(tuning.getReadinessProbeTimeoutSeconds());
   }
 
-  private int getReadinessProbeInitialDelaySeconds(TuningParameters.PodTuning tuning) {
+  private int getReadinessProbeInitialDelaySeconds(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getReadinessProbe().getInitialDelaySeconds())
-        .orElse(tuning.readinessProbeInitialDelaySeconds);
+        .orElse(tuning.getReadinessProbeInitialDelaySeconds());
   }
 
-  private int getReadinessProbeSuccessThreshold(TuningParameters.PodTuning tuning) {
+  private int getReadinessProbeSuccessThreshold(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getReadinessProbe().getSuccessThreshold())
-            .orElse(tuning.readinessProbeSuccessThreshold);
+            .orElse(tuning.getReadinessProbeSuccessThreshold());
   }
 
-  private int getReadinessProbeFailureThreshold(TuningParameters.PodTuning tuning) {
+  private int getReadinessProbeFailureThreshold(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getReadinessProbe().getFailureThreshold())
-            .orElse(tuning.readinessProbeFailureThreshold);
+            .orElse(tuning.getReadinessProbeFailureThreshold());
   }
 
-  private V1Probe createLivenessProbe(TuningParameters.PodTuning tuning) {
+  private V1Probe createLivenessProbe(PodTuning tuning) {
     V1Probe livenessProbe = new V1Probe()
         .initialDelaySeconds(getLivenessProbeInitialDelaySeconds(tuning))
         .timeoutSeconds(getLivenessProbeTimeoutSeconds(tuning))
@@ -955,37 +957,33 @@ public abstract class PodStepContext extends BasePodStepContext {
     return livenessProbe.exec(execAction(LIVENESS_PROBE));
   }
 
-  private int getLivenessProbeInitialDelaySeconds(TuningParameters.PodTuning tuning) {
+  private int getLivenessProbeInitialDelaySeconds(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getInitialDelaySeconds())
-        .orElse(tuning.livenessProbeInitialDelaySeconds);
+        .orElse(tuning.getLivenessProbeInitialDelaySeconds());
   }
 
-  private int getLivenessProbeTimeoutSeconds(TuningParameters.PodTuning tuning) {
+  private int getLivenessProbeTimeoutSeconds(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getTimeoutSeconds())
-        .orElse(tuning.livenessProbeTimeoutSeconds);
+        .orElse(tuning.getLivenessProbeTimeoutSeconds());
   }
 
-  private int getLivenessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
+  private int getLivenessProbePeriodSeconds(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getPeriodSeconds())
-        .orElse(tuning.livenessProbePeriodSeconds);
+        .orElse(tuning.getLivenessProbePeriodSeconds());
   }
 
-  private int getLivenessProbeSuccessThreshold(TuningParameters.PodTuning tuning) {
+  private int getLivenessProbeSuccessThreshold(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getSuccessThreshold())
-            .orElse(tuning.livenessProbeSuccessThreshold);
+            .orElse(tuning.getLivenessProbeSuccessThreshold());
   }
 
-  private int getLivenessProbeFailureThreshold(TuningParameters.PodTuning tuning) {
+  private int getLivenessProbeFailureThreshold(PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getFailureThreshold())
-            .orElse(tuning.livenessProbeFailureThreshold);
+            .orElse(tuning.getLivenessProbeFailureThreshold());
   }
 
   private boolean mockWls() {
     return Boolean.getBoolean("mockWLS");
-  }
-
-  private String getKubernetesPlatform(TuningParameters tuningParameters) {
-    return tuningParameters.getKubernetesPlatform();
   }
 
   private abstract class BaseStep extends Step {
@@ -1222,8 +1220,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-      if (isLegacyAuxImageOperatorVersion(currentPod)) {
-        return canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod));
+      if ((isLegacyAuxImageOperatorVersion(currentPod))
+          && canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod))) {
+        return true;
       } else if (!isLegacyPod(currentPod)) {
         return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
       } else {

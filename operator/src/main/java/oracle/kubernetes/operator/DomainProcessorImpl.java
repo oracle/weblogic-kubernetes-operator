@@ -59,6 +59,7 @@ import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.MonitoringExporterSteps;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -66,8 +67,7 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
@@ -100,7 +100,10 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final String DELETED = "DELETED";
   private static final String ERROR = "ERROR";
 
+  /** A map that holds at most one FiberGate per namespace to run make-right steps. */
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
+
+  /** A map that holds at most one FiberGate per namespace to run status update steps. */
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
 
   // Map namespace to map of domainUID to Domain; tests may replace this value.
@@ -294,8 +297,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           JobHelper.createIntrospectionStartStep(null));
   }
 
-  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info, Step next) {
-    return ConfigMapHelper.createOrReplaceFluentdConfigMapStep(info, next);
+  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
+    return ConfigMapHelper.createOrReplaceFluentdConfigMapStep(info, null);
   }
 
   /**
@@ -582,7 +585,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    *
    * @param item An item received from a Watch response.
    */
-  public void dispatchDomainWatch(Watch.Response<Domain> item) {
+  public void dispatchDomainWatch(Watch.Response<DomainResource> item) {
     switch (item.type) {
       case ADDED:
         handleAddedDomain(item.object);
@@ -599,7 +602,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private void handleAddedDomain(Domain domain) {
+  private void handleAddedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
@@ -608,7 +611,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .execute();
   }
 
-  private void handleModifiedDomain(Domain domain) {
+  private void handleModifiedDomain(DomainResource domain) {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
@@ -616,7 +619,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .execute();
   }
 
-  private void handleDeletedDomain(Domain domain) {
+  private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
         .withEventData(EventItem.DOMAIN_DELETED, null)
@@ -637,7 +640,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
-    return new MakeRightDomainOperationImpl(liveInfo);
+    return new MakeRightDomainOperationImpl(delegate, liveInfo);
   }
 
   Step createPopulatePacketServerMapsStep() {
@@ -657,7 +660,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Map<String, String> serverState = new ConcurrentHashMap<>();
       DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
+          .map(DomainResource::getStatus)
           .map(DomainStatus::getServers)
           .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
       if (!serverState.isEmpty()) {
@@ -685,6 +688,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
+    private final DomainProcessorDelegate delegate;
     private DomainPresenceInfo liveInfo;
     private boolean explicitRecheck;
     private boolean deleting;
@@ -695,9 +699,11 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     /**
      * Create the operation.
+     * @param delegate a class which handles scheduling and other types of processing
      * @param liveInfo domain presence info read from Kubernetes
      */
-    MakeRightDomainOperationImpl(DomainPresenceInfo liveInfo) {
+    MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, DomainPresenceInfo liveInfo) {
+      this.delegate = delegate;
       this.liveInfo = liveInfo;
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
       if (!isNewDomain(cachedInfo)
@@ -708,7 +714,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
       return Optional.ofNullable(dpi.getDomain())
-          .map(Domain::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+          .map(DomainResource::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
     }
 
     private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
@@ -769,6 +775,16 @@ public class DomainProcessorImpl implements DomainProcessor {
     public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;
+    }
+
+    @Override
+    public boolean isDeleting() {
+      return deleting;
+    }
+
+    @Override
+    public boolean isWillInterrupt() {
+      return willInterrupt;
     }
 
     /**
@@ -847,7 +863,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean isDomainProcessingAborted(DomainPresenceInfo info) {
       return Optional.ofNullable(info)
               .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
+              .map(DomainResource::getStatus)
               .map(DomainStatus::isAborted)
               .orElse(false);
     }
@@ -859,7 +875,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean isFatalIntrospectorError() {
       String existingError = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
+          .map(DomainResource::getStatus)
           .map(DomainStatus::getMessage)
           .orElse(null);
       return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
@@ -876,34 +892,24 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void internalMakeRightDomainPresence() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, getDomainUid());
 
-      Packet packet = new Packet().with(delegate);
+      new DomainPlan(this, delegate, liveInfo).execute();
+    }
+
+    @NotNull
+    private Packet createPacket(DomainPresenceInfo info) {
+      Packet packet = new Packet().with(delegate).with(info);
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
       packet
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getKubernetesVersion(),
-                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-
-      new DomainPlan(delegate, getNamespace(), getDomainUid(), createDomainPlanSteps(packet), deleting, willInterrupt)
-            .execute();
+              Component.createFor(delegate.getKubernetesVersion(),
+                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(info.getNamespace()),
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(info.getNamespace())));
+      return packet;
     }
 
-    private StepAndPacket createDomainPlanSteps(Packet packet) {
-      return new StepAndPacket(
-          getEventStep(Step.chain(createPopulatePacketServerMapsStep(),  createSteps())), packet);
-    }
-
-    private Step getEventStep(Step next) {
-      return Optional.ofNullable(eventData).map(ed -> Step.chain(createEventStep(ed), next)).orElse(next);
-    }
-
-    private Step createEventStep(EventData eventData) {
-      return EventHelper.createEventStep(eventData);
-    }
-
-    private Domain getDomain() {
+    private DomainResource getDomain() {
       return liveInfo.getDomain();
     }
 
@@ -920,6 +926,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       final List<Step> result = new ArrayList<>();
 
       result.add(willThrow ? createThrowStep() : null);
+      result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
+      result.add(createPopulatePacketServerMapsStep());
       result.add(createStatusInitializationStep());
       if (deleting) {
         result.add(new StartPlanStep(liveInfo, createDomainDownPlan(liveInfo)));
@@ -933,14 +941,13 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step createDomainDownPlan(DomainPresenceInfo info) {
       String ns = info.getNamespace();
-      String domainUid = info.getDomainUid();
       return Step.chain(
           new DownHeadStep(info, ns),
-          new DeleteDomainStep(info, ns, domainUid),
+          new DeleteDomainStep(),
           new UnregisterStep(info));
     }
 
-    private Step createDomainValidationStep(@Nullable Domain domain) {
+    private Step createDomainValidationStep(@Nullable DomainResource domain) {
       return domain == null ? null : DomainValidationSteps.createDomainValidationSteps(getNamespace());
     }
 
@@ -968,7 +975,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Optional<Long> getGeneration(DomainPresenceInfo dpi) {
     return Optional.ofNullable(dpi)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getMetadata)
+        .map(DomainResource::getMetadata)
         .map(V1ObjectMeta::getGeneration);
   }
 
@@ -981,7 +988,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static String getIntrospectImage(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
+        .map(DomainResource::getSpec)
         .map(DomainSpec::getImage)
         .orElse(null);
   }
@@ -989,14 +996,14 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static String getRestartVersion(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getRestartVersion)
+        .map(DomainResource::getRestartVersion)
         .orElse(null);
   }
 
   private static String getIntrospectVersion(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
+        .map(DomainResource::getSpec)
         .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
   }
@@ -1014,32 +1021,30 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private class DomainPlan {
+
+    private final MakeRightDomainOperation operation;
     private final DomainProcessorDelegate delegate;
-    private final String ns;
-    private final String domainUid;
+    private final DomainPresenceInfo presenceInfo;
     private final FiberGate gate;
-    private final boolean isDeleting;
-    private final boolean isWillInterrupt;
+
     private final Step firstStep;
     private final Packet packet;
 
-    public DomainPlan(DomainProcessorDelegate delegate, String ns, String domainUid, StepAndPacket stepAndPacket,
-                      boolean isDeleting, boolean isWillInterrupt) {
+    public DomainPlan(
+        MakeRightDomainOperation operation, DomainProcessorDelegate delegate, DomainPresenceInfo presenceInfo) {
+      this.operation = operation;
       this.delegate = delegate;
-      this.ns = ns;
-      this.domainUid = domainUid;
-      this.firstStep = stepAndPacket.step;
-      this.packet = stepAndPacket.packet;
-      this.gate = getMakeRightFiberGate(delegate, ns);
-      this.isDeleting = isDeleting;
-      this.isWillInterrupt = isWillInterrupt;
+      this.presenceInfo = presenceInfo;
+      this.firstStep = operation.createSteps();
+      this.packet = ((MakeRightDomainOperationImpl) operation).createPacket(presenceInfo);
+      this.gate = getMakeRightFiberGate(delegate, presenceInfo.getNamespace());
     }
 
     private void execute() {
-      if (isWillInterrupt) {
-        gate.startFiber(domainUid, firstStep, packet, createCompletionCallback());
+      if (operation.isWillInterrupt()) {
+        gate.startFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
       } else {
-        gate.startFiberIfNoCurrentFiber(domainUid, firstStep, packet, createCompletionCallback());
+        gate.startFiberIfNoCurrentFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
       }
     }
 
@@ -1060,9 +1065,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
   
       private void runFailureSteps(Throwable throwable) {
-        gate.startFiberIfLastFiberMatches(
-            domainUid,
-            Fiber.getCurrentIfSet(),
+        gate.startNewFiberIfCurrentFiberMatches(
+            presenceInfo.getDomainUid(),
             getFailureSteps(throwable),
             packet,
             new FailureReportCompletionCallback());
@@ -1096,20 +1100,21 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private DomainPresenceInfo getExistingDomainPresenceInfo() {
-      return DomainProcessorImpl.getExistingDomainPresenceInfo(ns, domainUid);
+      return DomainProcessorImpl
+          .getExistingDomainPresenceInfo(presenceInfo.getNamespace(), presenceInfo.getDomainUid());
     }
 
     class MakeRightRetry {
-      private final DomainPresenceInfo domainPresenceInfo;
+      private final DomainPresenceInfo presenceInfo;
 
-      MakeRightRetry(DomainPresenceInfo domainPresenceInfo) {
-        this.domainPresenceInfo = domainPresenceInfo;
+      MakeRightRetry(DomainPresenceInfo presenceInfo) {
+        this.presenceInfo = presenceInfo;
       }
 
       void execute() {
-        try (ThreadLoggingContext ignored = setThreadContext().namespace(ns).domainUid(domainUid)) {
-          domainPresenceInfo.setPopulated(false);
-          createMakeRightOperation(domainPresenceInfo).withDeleting(isDeleting).withExplicitRecheck().execute();
+        try (ThreadLoggingContext ignored = presenceInfo.setThreadContext()) {
+          presenceInfo.setPopulated(false);
+          createMakeRightOperation(presenceInfo).withDeleting(operation.isDeleting()).withExplicitRecheck().execute();
         }
       }
     }
@@ -1123,7 +1128,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            createOrReplaceFluentdConfigMapStep(info, null),
+            createOrReplaceFluentdConfigMapStep(info),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
@@ -1278,17 +1283,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+      final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
+      final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
       final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-      final TuningParameters.MainTuning mainTuning = TuningParameters.getInstance().getMainTuning();
 
       registerStatusUpdater(
           info.getNamespace(),
           info.getDomainUid(),
           delegate.scheduleWithFixedDelay(
               () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
-                  .withTimeoutSeconds(mainTuning.statusUpdateTimeoutSeconds).updateStatus(),
-              mainTuning.initialShortDelay,
-              mainTuning.initialShortDelay,
+                  .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
+              initialShortDelay,
+              initialShortDelay,
               TimeUnit.SECONDS));
     }
   }

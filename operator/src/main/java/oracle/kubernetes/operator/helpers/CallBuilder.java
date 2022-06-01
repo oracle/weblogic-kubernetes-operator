@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Pair;
+import io.kubernetes.client.openapi.apis.AdmissionregistrationV1Api;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
@@ -48,13 +49,13 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import okhttp3.Call;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.builders.CallParamsImpl;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallFactory;
@@ -66,10 +67,12 @@ import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.CallBuilderTuning;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
@@ -104,16 +107,16 @@ public class CallBuilder {
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
   private final String pretty = null;
-  private final CallFactory<Domain> replaceDomain =
+  private final CallFactory<DomainResource> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceDomainAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body,
+                  (DomainResource) requestParams.body,
                   callback));
-  private final CallFactory<Domain> patchDomain =
+  private final CallFactory<DomainResource> patchDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
               patchDomainAsync(
@@ -122,14 +125,14 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
                   callback));
-  private final CallFactory<Domain> replaceDomainStatus =
+  private final CallFactory<DomainResource> replaceDomainStatus =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceDomainStatusAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body,
+                  (DomainResource) requestParams.body,
                   callback));
   private final CallFactory<V1CustomResourceDefinition> createCrd =
       (requestParams, usage, cont, callback) ->
@@ -268,6 +271,43 @@ public class CallBuilder {
                   (V1DeleteOptions) requestParams.body,
                   callback));
 
+  private final CallFactory<V1ValidatingWebhookConfigurationList> listValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(listValidatingWebhookConfigurationAsync(usage, cont, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> readValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(readValidatingWebhookConfigurationAsync(usage, requestParams.name, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> createValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createValidatingWebhookConfigurationAsync(
+                  usage, (V1ValidatingWebhookConfiguration)
+                      requestParams.body, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> patchValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchValidatingWebhookConfigurationAsync(
+                  usage,
+                  requestParams.name,
+                  (V1Patch) requestParams.body,
+                  callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> replaceValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceValidatingWebhookConfigurationAsync(
+                  usage,
+                  requestParams.name,
+                  (V1ValidatingWebhookConfiguration) requestParams.body,
+                  callback));
+  private final CallFactory<V1Status> deleteValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              deleteValidatingWebhookConfigurationAsync(
+                  usage,
+                  requestParams.name,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
+
   private RetryStrategy retryStrategy;
 
   private String fieldSelector;
@@ -306,7 +346,7 @@ public class CallBuilder {
   private final CallFactory<V1ConfigMapList> listConfigMaps =
       (requestParams, usage, cont, callback) ->
           wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<Domain> readDomain =
+  private final CallFactory<DomainResource> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1CustomResourceDefinition> readCrd =
@@ -327,6 +367,7 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
+
   private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;
@@ -369,6 +410,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
+
   private final SynchronousCallFactory<V1Pod> patchPodCall =
       (client, requestParams) ->
           new CoreV1Api(client)
@@ -394,21 +436,21 @@ public class CallBuilder {
                   resourceVersion,
                   timeoutSeconds,
                   watch);
-  private final SynchronousCallFactory<Domain> replaceDomainCall =
+  private final SynchronousCallFactory<DomainResource> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomain(
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
+                  (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<DomainResource> replaceDomainStatusCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomainStatus(
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> patchDomainCall =
+                  (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<DomainResource> patchDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .patchNamespacedDomain(
@@ -442,12 +484,12 @@ public class CallBuilder {
 
 
   public CallBuilder() {
-    this(getCallBuilderTuning(), ClientPool.getInstance());
+    this(ClientPool.getInstance());
   }
 
   private CallBuilder(CallBuilderTuning tuning, ClientPool helper) {
     if (tuning != null) {
-      tuning(tuning.callRequestLimit, tuning.callTimeoutSeconds, tuning.callMaxRetryCount);
+      configureTuning(tuning.getCallRequestLimit(), tuning.getCallTimeoutSeconds(), tuning.getCallMaxRetryCount());
     }
     this.helper = helper;
   }
@@ -524,7 +566,7 @@ public class CallBuilder {
     return this;
   }
 
-  private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
+  private void configureTuning(int limit, int timeoutSeconds, int maxRetryCount) {
     this.limit = limit;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
@@ -640,7 +682,7 @@ public class CallBuilder {
   }
 
   private Call readDomainAsync(
-      ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .getNamespacedDomainAsync(name, namespace, callback);
@@ -654,7 +696,7 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step readDomainAsync(String name, String namespace, ResponseStep<Domain> responseStep) {
+  public Step readDomainAsync(String name, String namespace, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
   }
@@ -668,7 +710,7 @@ public class CallBuilder {
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomain(String uid, String namespace, Domain body) throws ApiException {
+  public DomainResource replaceDomain(String uid, String namespace, DomainResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
@@ -682,13 +724,13 @@ public class CallBuilder {
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomainStatus(String uid, String namespace, Domain body) throws ApiException {
+  public DomainResource replaceDomainStatus(String uid, String namespace, DomainResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainStatusCall);
   }
 
   private Call replaceDomainAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, DomainResource body, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .replaceNamespacedDomainAsync(name, namespace, body, callback);
@@ -704,7 +746,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+      String name, String namespace, DomainResource body, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceDomain", namespace, name, body, name), replaceDomain);
   }
@@ -718,14 +760,14 @@ public class CallBuilder {
    * @return Updated domain
    * @throws ApiException APIException
    */
-  public Domain patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
+  public DomainResource patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
         new RequestParams("patchDomain", namespace, uid, patchBody, uid);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
   private Call patchDomainAsync(
-      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .patchNamespacedDomainAsync(name, namespace, patch, callback);
@@ -741,7 +783,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchDomainAsync(
-      String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
+      String name, String namespace, V1Patch patchBody, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("patchDomain", namespace, name, patchBody, name),
@@ -749,7 +791,7 @@ public class CallBuilder {
   }
 
   private Call replaceDomainStatusAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, DomainResource body, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .replaceNamespacedDomainStatusAsync(name, namespace, body, callback);
@@ -765,7 +807,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainStatusAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+      String name, String namespace, DomainResource body, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("replaceDomainStatus", namespace, name, body, name),
@@ -1724,7 +1766,7 @@ public class CallBuilder {
         deletePodDisruptionBudget);
   }
 
-  /* Secrets */
+  /* Events */
 
   private Call listEventAsync(
       ApiClient client, String namespace, String cont, ApiCallback<CoreV1EventList> callback)
@@ -1983,6 +2025,169 @@ public class CallBuilder {
     RequestParams requestParams
         = new RequestParams("createTokenReview", null, null, body, callParams);
     return executeSynchronousCall(requestParams, createTokenReviewCall);
+  }
+
+  /* ValidatingWebhookConfiguration */
+
+  private Call listValidatingWebhookConfigurationAsync(
+      ApiClient client, String cont, ApiCallback<V1ValidatingWebhookConfigurationList> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .listValidatingWebhookConfigurationAsync(
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing validating webhook configuration.
+   *
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listValidatingWebhookConfigurationAsync(ResponseStep<V1ValidatingWebhookConfigurationList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listValidatingWebhookConfiguration", null, null, null, callParams),
+        listValidatingWebhookConfiguration);
+  }
+
+  private Call readValidatingWebhookConfigurationAsync(
+      ApiClient client, String name, ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client).readValidatingWebhookConfigurationAsync(name, pretty, callback);
+  }
+
+  /**
+   * Asynchronous step for reading validating webhook configuration.
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readValidatingWebhookConfigurationAsync(
+      String name, ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("readValidatingWebhookConfiguration", null, name, null, ""),
+        readValidatingWebhookConfiguration);
+  }
+
+  private Call createValidatingWebhookConfigurationAsync(
+      ApiClient client, V1ValidatingWebhookConfiguration body,
+      ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .createValidatingWebhookConfigurationAsync(body, pretty, null, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating validating webhook configuration.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createValidatingWebhookConfigurationAsync(
+      V1ValidatingWebhookConfiguration body, ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createValidatingWebhookConfiguration", null, null, body, callParams),
+        createValidatingWebhookConfiguration);
+  }
+
+  private Call patchValidatingWebhookConfigurationAsync(
+      ApiClient client, String name, V1Patch patch,
+      ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .patchValidatingWebhookConfigurationAsync(name, patch, pretty, null, null, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for patching validating webhook configuration.
+   *
+   * @param name Name
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchValidatingWebhookConfigurationAsync(
+      String name, V1Patch patchBody,
+      ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("patchValidatingWebhookConfiguration", null, name, patchBody, callParams),
+        patchValidatingWebhookConfiguration);
+  }
+
+  /**
+   * Asynchronous step for replacing validating webhook configuration.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceValidatingWebhookConfigurationAsync(
+      String name, V1ValidatingWebhookConfiguration body, ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceValidatingWebhookConfiguration", null, name, body, (String) null),
+        replaceValidatingWebhookConfiguration);
+  }
+
+  private Call replaceValidatingWebhookConfigurationAsync(
+      ApiClient client,
+      String name,
+      V1ValidatingWebhookConfiguration body,
+      ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .replaceValidatingWebhookConfigurationAsync(name, body, pretty, dryRun, null, null, callback);
+  }
+
+  private Call deleteValidatingWebhookConfigurationAsync(
+      ApiClient client,
+      String name,
+      V1DeleteOptions deleteOptions,
+      ApiCallback<V1Status> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .deleteValidatingWebhookConfigurationAsync(
+            name,
+            pretty,
+            dryRun,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            deleteOptions,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for deleting validating webhook configuration.
+   *
+   * @param name Name
+   * @param deleteOptions Delete options
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteValidatingWebhookConfigurationAsync(
+      String name,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deleteValidatingWebhookConfiguration", null, name, deleteOptions, (String) null),
+        deleteValidatingWebhookConfiguration);
   }
 
   public Step readPodLogAsync(String name, String namespace, String domainUid, ResponseStep<String> responseStep) {

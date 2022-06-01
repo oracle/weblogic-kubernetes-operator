@@ -12,10 +12,9 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ModelInImageDomainType;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +44,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
   private static final String LONG_CONTAINER_PORT_NAME = "long-container-port-name";
 
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -161,7 +160,7 @@ class DomainValidationTest extends DomainValidationTestBase {
                 "modelHome must be outside the directory for the wdtInstallHome")));
   }
 
-  private DomainConfigurator configureDomainWithRuntimeEncryptionSecret(Domain domain) {
+  private DomainConfigurator configureDomainWithRuntimeEncryptionSecret(DomainResource domain) {
     return configureDomain(domain)
           .withRuntimeEncryptionSecret("mysecret");
   }
@@ -814,7 +813,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidExceedMaxAllowed_reportError() {
     String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -830,7 +829,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidExceedMaxAllowedWithCustomSuffix_reportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -847,7 +846,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -863,7 +862,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -872,7 +871,7 @@ class DomainValidationTest extends DomainValidationTestBase {
         .configureAdminService()
         .withChannel("default");
 
-    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
+    TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
     assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
   }
 
@@ -887,7 +886,7 @@ class DomainValidationTest extends DomainValidationTestBase {
             "spec.fluentdSpecification.elasticSearchCredentials")));
   }
 
-  private DomainConfigurator configureDomain(Domain domain) {
+  private DomainConfigurator configureDomain(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
 }

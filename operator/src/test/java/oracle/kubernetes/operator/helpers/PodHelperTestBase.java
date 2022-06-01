@@ -73,6 +73,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -88,7 +89,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -142,7 +143,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
-import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
@@ -160,12 +160,17 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_TIMEOUT;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
+import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
+import static oracle.kubernetes.operator.tuning.TuningParameters.LIVENESS_FAILURE_COUNT_THRESHOLD;
+import static oracle.kubernetes.operator.tuning.TuningParameters.LIVENESS_INITIAL_DELAY_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.LIVENESS_PERIOD_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.LIVENESS_SUCCESS_COUNT_THRESHOLD;
+import static oracle.kubernetes.operator.tuning.TuningParameters.LIVENESS_TIMEOUT_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.READINESS_FAILURE_COUNT_THRESHOLD;
+import static oracle.kubernetes.operator.tuning.TuningParameters.READINESS_INITIAL_DELAY_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.READINESS_PERIOD_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.READINESS_SUCCESS_COUNT_THRESHOLD;
+import static oracle.kubernetes.operator.tuning.TuningParameters.READINESS_TIMEOUT_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -201,6 +206,17 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   protected static final String DOMAIN_NAME = "domain1";
   protected static final String UID = "uid1";
   protected static final String KUBERNETES_UID = "12345";
+  // Pod tuning
+  private static final int LIVENESS_FAILURE_THRESHOLD = 1;
+  private static final int LIVENESS_SUCCESS_THRESHOLD = 1;
+  private static final int LIVENESS_TIMEOUT = 5;
+  private static final int LIVENESS_PERIOD = 6;
+  private static final int LIVENESS_INITIAL_DELAY = 4;
+  private static final int READINESS_FAILURE_THRESHOLD = 1;
+  private static final int READINESS_SUCCESS_THRESHOLD = 1;
+  private static final int READINESS_PERIOD = 3;
+  private static final int READINESS_TIMEOUT = 2;
+  private static final int READINESS_INITIAL_DELAY = 1;
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
@@ -225,7 +241,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   static final String DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH = "/auxiliary";
 
   final TerminalStep terminalStep = new TerminalStep();
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
@@ -253,7 +269,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return consoleHandlerMemento;
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
   }
 
@@ -359,6 +375,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
         new PassthroughPodAwaiterStepFactory());
+
+    definePodTuning();
   }
 
   private Memento setProductVersion(String productVersion) throws NoSuchFieldException {
@@ -377,6 +395,23 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     };
   }
 
+  void definePodTuning() {
+    defineTuningParameter(READINESS_INITIAL_DELAY_SECONDS, READINESS_INITIAL_DELAY);
+    defineTuningParameter(READINESS_TIMEOUT_SECONDS, READINESS_TIMEOUT);
+    defineTuningParameter(READINESS_PERIOD_SECONDS, READINESS_PERIOD);
+    defineTuningParameter(READINESS_SUCCESS_COUNT_THRESHOLD, READINESS_SUCCESS_THRESHOLD);
+    defineTuningParameter(READINESS_FAILURE_COUNT_THRESHOLD, READINESS_FAILURE_THRESHOLD);
+    defineTuningParameter(LIVENESS_INITIAL_DELAY_SECONDS, LIVENESS_INITIAL_DELAY);
+    defineTuningParameter(LIVENESS_TIMEOUT_SECONDS, LIVENESS_TIMEOUT);
+    defineTuningParameter(LIVENESS_PERIOD_SECONDS, LIVENESS_PERIOD);
+    defineTuningParameter(LIVENESS_SUCCESS_COUNT_THRESHOLD, LIVENESS_SUCCESS_THRESHOLD);
+    defineTuningParameter(LIVENESS_FAILURE_COUNT_THRESHOLD, LIVENESS_FAILURE_THRESHOLD);
+  }
+
+  private void defineTuningParameter(String name, int value) {
+    TuningParametersStub.setParameter(name, Integer.toString(value));
+  }
+
   @AfterEach
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
@@ -384,7 +419,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     testSupport.throwOnCompletionFailure();
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
   }
 
@@ -624,8 +659,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   abstract void setServerPort(int port);
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
         .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
         .withKind(DOMAIN)
         .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
@@ -696,6 +731,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.3 Mii pod with aux image.
   abstract String getReferenceMiiAuxImagePodYaml_3_3();
 
+  // Returns the YAML for a 3.4 Mii pod with converted aux image.
+  abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
+
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
     useProductionHash();
@@ -709,7 +747,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void afterUpgradingMiiDomainWithAuxImages_patchIt() {
+  void afterUpgradingMiiDomainWith3_3_AuxImages_patchIt() {
     configureDomain().withInitContainer(createInitContainer())
         .withRequestRequirement("memory", "768Mi")
         .withRequestRequirement("cpu", "250m")
@@ -740,6 +778,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             .name("aux-image-volume-auxiliaryimagevolume1"))
         .addVolumeMountsItem(new V1VolumeMount().mountPath("/weblogic-operator/scripts")
             .name("weblogic-scripts-cm-volume"));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWith3_4_ConvertedAuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   @Test
@@ -1704,7 +1761,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenOperatorHasKubernetesPlatformConfigured_createdPodSpecContainerHasKubernetesPlatformEnvVariable() {
-    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "Openshift");
     assertThat(getCreatedPodSpecContainer().getEnv(),
             hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
     );

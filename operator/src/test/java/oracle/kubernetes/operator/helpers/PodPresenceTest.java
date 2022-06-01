@@ -24,14 +24,14 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.builders.WatchEvent;
-import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.http.rest.ScanCacheStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
@@ -95,7 +94,7 @@ class PodPresenceTest {
 
     domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
     disableDomainProcessing();
-    Domain domain = DomainProcessorTestSetup.createTestDomain();
+    DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     testSupport.defineResources(domain);
     info.setDomain(domain);
@@ -110,8 +109,7 @@ class PodPresenceTest {
     packet.put(CLUSTER_NAME, CLUSTER);
     packet.put(SERVER_NAME, SERVER);
     packet.put(SERVER_SCAN, configSupport.createDomainConfig().getServerConfig(SERVER));
-    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
-    packet.with(processorDelegate);
+    packet.with(processorDelegate).with(info);
 
     numPodsDeleted = 0;
   }
@@ -432,7 +430,7 @@ class PodPresenceTest {
     V1Pod modifiedPod = withEvictedStatus(createServerPod());
     List<String> createdPodNames = new ArrayList<>();
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
-    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+    testSupport.doOnDelete(POD, this::recordPodDeletion);
 
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
@@ -466,7 +464,7 @@ class PodPresenceTest {
     V1Pod modifiedPod = withEvictedStatus(createServerPod());
     List<String> createdPodNames = new ArrayList<>();
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
-    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+    testSupport.doOnDelete(POD, this::recordPodDeletion);
 
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
@@ -483,7 +481,7 @@ class PodPresenceTest {
     V1Pod modifiedPod = withEvictedStatus(createAdminServerPod());
     List<String> createdPodNames = new ArrayList<>();
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
-    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+    testSupport.doOnDelete(POD, this::recordPodDeletion);
 
     packet.put(SERVER_NAME, ADMIN_SERVER_NAME);
     info.setServerPod(ADMIN_SERVER_NAME, currentPod);

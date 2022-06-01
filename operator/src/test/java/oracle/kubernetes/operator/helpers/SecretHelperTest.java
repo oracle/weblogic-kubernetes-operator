@@ -15,7 +15,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ class SecretHelperTest {
   private static final byte[] USERNAME_BYTES = USERNAME.getBytes();
   private static final byte[] PASSWORD_BYTES = PASSWORD.getBytes();
 
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();

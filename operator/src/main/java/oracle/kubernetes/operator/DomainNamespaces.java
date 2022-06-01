@@ -26,14 +26,14 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVersion;
 
@@ -50,7 +50,7 @@ public class DomainNamespaces {
 
   private final WatcherControl<V1ConfigMap, ConfigMapWatcher> configMapWatchers
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
-  private final WatcherControl<Domain, DomainWatcher> domainWatchers
+  private final WatcherControl<DomainResource, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
   private final WatcherControl<CoreV1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);

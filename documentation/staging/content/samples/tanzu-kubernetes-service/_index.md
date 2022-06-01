@@ -32,7 +32,7 @@ This sample assumes the following prerequisite environment setup:
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
 * [Helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
-See [Supported environments]({{< relref "userguide/platforms/environments" >}})
+See [Supported environments]({{< relref "/introduction/platforms/environments" >}})
 for general operator prerequisites
 and operator support limitations that are specific to Tanzu.
 
@@ -307,7 +307,7 @@ The model files:
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
         - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
 ##### Creating the image with WIT
 

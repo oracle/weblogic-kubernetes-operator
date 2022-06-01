@@ -29,11 +29,13 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
+import oracle.kubernetes.operator.http.rest.OperatorRestServer;
+import oracle.kubernetes.operator.http.rest.RestConfigImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.rest.OperatorRestServer;
-import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberGate;
@@ -67,8 +69,6 @@ public class OperatorMain extends BaseMain {
                     Component.createFor(
                             ScheduledExecutorService.class,
                             wrappedExecutorService,
-                            TuningParameters.class,
-                            TuningParameters.getInstance(),
                             ThreadFactory.class,
                             threadFactory));
   }
@@ -81,7 +81,7 @@ public class OperatorMain extends BaseMain {
   static class MainDelegateImpl extends CoreDelegateImpl implements MainDelegate, DomainProcessorDelegate {
 
     private static String getConfiguredServiceAccount() {
-      return TuningParameters.getInstance().get("serviceaccount");
+      return TuningParameters.getInstance().getServiceAccountName();
     }
 
     private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
@@ -180,7 +180,7 @@ public class OperatorMain extends BaseMain {
       operatorMain.waitForDeath();
 
       // stop the REST server
-      stopRestServer();
+      operatorMain.stopRestServer();
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
@@ -278,11 +278,11 @@ public class OperatorMain extends BaseMain {
   private void completeBegin() {
     try {
       // start the REST server
-      startRestServer();
+      startRestServer(container);
 
       // start periodic retry and recheck
-      int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
-      int stuckPodInterval = getStuckPodInterval();
+      int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
+      int stuckPodInterval = TuningParameters.getInstance().getStuckPodRecheckSeconds();
       mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
       mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
 
@@ -291,13 +291,6 @@ public class OperatorMain extends BaseMain {
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
-  }
-
-  private int getStuckPodInterval() {
-    return Optional.ofNullable(TuningParameters.getInstance())
-          .map(TuningParameters::getMainTuning)
-          .map(t -> t.stuckPodRecheckSeconds)
-          .orElse(DEFAULT_STUCK_POD_RECHECK_SECONDS);
   }
 
   NamespaceWatcher getNamespaceWatcher() {
@@ -317,7 +310,7 @@ public class OperatorMain extends BaseMain {
   }
 
   private Step createDomainRecheckSteps(OffsetDateTime now) {
-    int recheckInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+    int recheckInterval = TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
       mainDelegate.getDomainProcessor().reportSuspendedFibers();
@@ -411,12 +404,11 @@ public class OperatorMain extends BaseMain {
   }
 
   @Override
-  protected void startRestServer()
+  protected BaseRestServer createRestServer()
       throws Exception {
-    OperatorRestServer.create(
+    return OperatorRestServer.create(
         new RestConfigImpl(mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
                 new Certificates(mainDelegate)));
-    OperatorRestServer.getInstance().start(container);
   }
 
   // -----------------------------------------------------------------------------
@@ -425,11 +417,6 @@ public class OperatorMain extends BaseMain {
   // after watch events are received.
   //
   // -----------------------------------------------------------------------------
-
-  private static void stopRestServer() {
-    OperatorRestServer.getInstance().stop();
-    OperatorRestServer.destroy();
-  }
 
   @Override
   protected void logStartingLivenessMessage() {
