@@ -70,17 +70,13 @@ public class AdmissionChecker {
     if (!response.isAllowed()) {
       return response.status(new AdmissionResponseStatus().message(createMessage()));
     } else if (!warnings.isEmpty()) {
-      return response.warnings(createWarnings());
+      return response.warnings(warnings);
     }
     return response;
   }
 
   private String createMessage() {
     return perLine(messages);
-  }
-
-  private List<String> createWarnings() {
-    return Collections.singletonList(perLine(warnings));
   }
 
   /**
@@ -96,7 +92,7 @@ public class AdmissionChecker {
   }
 
   private boolean isUnchanged() {
-    return existingDomain == proposedDomain || isSpecUnchanged();
+    return isSpecUnchanged();
   }
 
   private boolean isSpecUnchanged() {
@@ -107,7 +103,7 @@ public class AdmissionChecker {
   }
 
   private boolean isProposedSpecUnchanged(@NotNull DomainSpec existingSpec) {
-    return existingSpec == proposedDomain.getSpec() || Objects.equals(existingSpec, proposedDomain.getSpec());
+    return Objects.equals(existingSpec, proposedDomain.getSpec());
   }
 
   private boolean shouldIntrospect() {
