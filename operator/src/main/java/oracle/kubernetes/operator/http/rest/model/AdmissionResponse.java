@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.http.rest.model;
 
+import java.util.List;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -28,6 +30,13 @@ public class AdmissionResponse {
   @SerializedName("allowed")
   @Expose
   protected boolean allowed;
+
+  /**
+   * Optional warning messages.
+   */
+  @SerializedName("warnings")
+  @Expose
+  protected List<String> warnings;
 
   /**
    * Optionally provide more information about what happened to the admission call. Mostly used when a webhook rejects
@@ -64,6 +73,19 @@ public class AdmissionResponse {
     return this;
   }
 
+  public List<String> getWarnings() {
+    return warnings;
+  }
+
+  public void setWarnings(List<String> warnings) {
+    this.warnings = warnings;
+  }
+
+  public AdmissionResponse warnings(List<String> warnings) {
+    this.warnings = warnings;
+    return this;
+  }
+
   public AdmissionResponseStatus getStatus() {
     return status;
   }
@@ -81,8 +103,9 @@ public class AdmissionResponse {
   public String toString() {
     return "AdmissionResponse{"
         + "uid='" + uid + '\''
-        + ", status='" + status + '\''
         + ", allowed='" + allowed + '\''
+        + ", warnings='" + warnings + '\''
+        + ", status='" + status + '\''
         + '}';
   }
 }
