@@ -52,7 +52,7 @@ The current support for Istio has these limitations:
 
 * The operator supports Istio versions 1.7 and higher,
   and has been tested with single and multicluster
-  Istio installations from 1.7.3 up to 1.11.x.
+  Istio installations from 1.7.3 up to 1.13.2.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
