@@ -53,4 +53,27 @@ class ClusterResourceTest {
 
     assertThat(resource.getClusterName(), equalTo("cluster-1"));
   }
+
+  @Test
+  void canReadDomainUidFromSpec() {
+    resource.spec(new Cluster().withDomainUid("domain1"));
+
+    assertThat(resource.getDomainUid(), equalTo("domain1"));
+  }
+
+  @Test
+  void canReadDomainUidFromMetadata() {
+    resource.setMetadata(new V1ObjectMeta().putLabelsItem("weblogic.domainUID",
+            "domain2"));
+
+    assertThat(resource.getDomainUid(), equalTo("domain2"));
+  }
+
+  @Test
+  void whenDomainUidInBothMetadataAndSpec_useNameFromSpec() {
+    resource.withMetadata(new V1ObjectMeta().putLabelsItem("weblogic.domainUID",
+            "domain1")).spec(new Cluster().withDomainUid("domain3"));
+
+    assertThat(resource.getDomainUid(), equalTo("domain3"));
+  }
 }

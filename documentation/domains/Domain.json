@@ -123,6 +123,27 @@
             "ADMIN"
           ]
         },
+        "replicas": {
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
+          "type": "number",
+          "minimum": 0
+        },
+        "domainUID": {
+          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
+          "type": "string"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "IF_NEEDED"
+          ]
+        },
+        "restartVersion": {
+          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
+          "type": "string"
+        },
         "serverService": {
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
@@ -131,11 +152,6 @@
           "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
           "type": "number",
           "minimum": 1
-        },
-        "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
-          "type": "number",
-          "minimum": 0
         },
         "clusterName": {
           "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
@@ -158,22 +174,10 @@
           "type": "number",
           "minimum": 0
         },
-        "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
-          "type": "string",
-          "enum": [
-            "NEVER",
-            "IF_NEEDED"
-          ]
-        },
         "maxConcurrentStartup": {
           "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
           "type": "number",
           "minimum": 0
-        },
-        "restartVersion": {
-          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
-          "type": "string"
         }
       },
       "required": [
