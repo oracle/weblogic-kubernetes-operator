@@ -661,7 +661,7 @@ public class Kubernetes {
                                           String namespace) throws ApiException {
     boolean status = false;
     V1Deployment deployment = getDeployment(deploymentName, label, namespace);
-    if (deployment != null) {
+    if (deployment != null && deployment.getStatus() != null && deployment.getStatus().getConditions() != null) {
       // get the deploymentCondition with the 'Available' type field
       V1DeploymentCondition v1DeploymentRunningCondition = deployment.getStatus().getConditions().stream()
           .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
