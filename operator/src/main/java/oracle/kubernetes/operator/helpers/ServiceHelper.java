@@ -421,7 +421,7 @@ public class ServiceHelper {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
+      return getDomain().isIstioEnabled() ? "http-metrics" : "metrics";
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {

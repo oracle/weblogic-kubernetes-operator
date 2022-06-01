@@ -1489,7 +1489,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
+      return getDomain().isIstioEnabled() ? "http-metrics" : "metrics";
     }
 
     private String createJavaOptions() {
