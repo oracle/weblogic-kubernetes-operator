@@ -71,8 +71,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -173,7 +173,7 @@ public class ItMiiDomainModelInPV {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -347,7 +347,7 @@ public class ItMiiDomainModelInPV {
 
   private static V1Pod setupWebLogicPod(String namespace) {
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(namespace);
+    createBaseRepoSecret(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
     V1PodSpec podSpec = new V1PodSpec()
@@ -440,8 +440,8 @@ public class ItMiiDomainModelInPV {
   public static void dockerLoginAndPushImage(String image) {
     logger = getLogger();
     // login to docker
-     logger.info("docker login into TEST_IMAGES_REPO {0} ", TEST_IMAGES_REPO);
-     testUntil(
+    logger.info("docker login into TEST_IMAGES_REPO {0} ", TEST_IMAGES_REPO);
+    testUntil(
           () -> dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD),
           logger,
           "docker login to be successful");

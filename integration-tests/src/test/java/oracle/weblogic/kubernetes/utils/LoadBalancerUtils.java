@@ -72,7 +72,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -328,7 +328,7 @@ public class LoadBalancerUtils {
     // this secret is used only for non-kind cluster
     if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
-      createOcirRepoSecret(apacheNamespace);
+      createTestRepoSecret(apacheNamespace);
     }
 
     // map with secret

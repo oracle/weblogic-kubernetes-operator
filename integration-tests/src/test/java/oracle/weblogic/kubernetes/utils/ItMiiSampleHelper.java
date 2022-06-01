@@ -36,8 +36,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_UR
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -147,7 +147,7 @@ public class ItMiiSampleHelper {
     logger.info("Setting up docker secrets");
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
             TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
 
@@ -161,7 +161,7 @@ public class ItMiiSampleHelper {
 
       // create ocr/ocir docker registry secret to pull the db images
       // this secret is used only for non-kind cluster
-      createSecretForBaseImages(dbNamespace);
+      createBaseRepoSecret(dbNamespace);
       logger.info("Docker registry secret {0} created successfully in namespace {1}",
               BASE_IMAGES_REPO_SECRET_NAME, dbNamespace);
     }

@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -445,7 +444,7 @@ public class ImageUtils {
    *
    * @param namespace namespace in which the secret will be created
    */
-  public static void createOcrRepoSecret(String namespace) {
+  public static void createBaseRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating image pull secret {0} in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, namespace);
     createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL, 
@@ -458,7 +457,7 @@ public class ImageUtils {
    *
    * @param namespace the namespace in which the secret will be created
    */
-  public static void createOcirRepoSecret(String namespace) {
+  public static void createTestRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
     createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
@@ -505,19 +504,6 @@ public class ImageUtils {
         String.format("createSecret failed for %s", secretName));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
         secretName, namespace));
-  }
-
-  /**
-   * Create a Docker registry secret in the specified namespace to pull base images.
-   *
-   * @param namespace the namespace in which the secret will be created
-   */
-  public static void createSecretForBaseImages(String namespace) {
-    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
-      createOcrRepoSecret(namespace);
-    } else {
-      createOcirRepoSecret(namespace);
-    }
   }
 
   /**

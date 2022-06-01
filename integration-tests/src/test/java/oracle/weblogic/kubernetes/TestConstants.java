@@ -55,6 +55,10 @@ public interface TestConstants {
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
   // TEST_IMAGES_REPO constants
+  // TEST_IMAGES_REPO represents the repository (a) which contains few external
+  // images such as nginx,elasticsearch,Oracle DB operator (b) all test domain 
+  // images to be pushed into it.
+  // Default for TEST_IMAGES_REPO is phx.ocir.io
   public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
   public static final String TEST_IMAGES_REPO = 
        getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
@@ -79,6 +83,9 @@ public interface TestConstants {
           ? getNonEmptySystemProperty("wko.it.test.images.repo") + "/weblogick8s/" : "");
 
   // BASE_IMAGES_REPO constants
+  // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
+  // and InfraStructure images are pulled
+  // Default for BASE_IMAGES_REPO is phx.ocir.io
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
   public static final String BASE_IMAGES_REPO = 
       getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);

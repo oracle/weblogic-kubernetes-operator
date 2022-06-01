@@ -90,7 +90,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
@@ -261,7 +261,7 @@ class ItTwoDomainsManagedByTwoOperators {
   private void createTwoDomainsOnPVUsingWlstAndVerify() {
     for (int i = 0; i < numberOfDomains; i++) {
       // this secret is used only for non-kind cluster
-      createSecretForBaseImages(domainNamespaces.get(i));
+      createBaseRepoSecret(domainNamespaces.get(i));
 
       t3ChannelPort = getNextFreePort();
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);

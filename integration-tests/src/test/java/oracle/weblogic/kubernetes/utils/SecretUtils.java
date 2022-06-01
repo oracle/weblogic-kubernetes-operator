@@ -33,8 +33,8 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -225,13 +225,13 @@ public class SecretUtils {
     List<String> secrets = new ArrayList<>();
     //create repo registry secret
     if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, namespace)) {
-      createOcirRepoSecret(namespace);
+      createTestRepoSecret(namespace);
     }
     secrets.add(TEST_IMAGES_REPO_SECRET_NAME);
     if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
       //create base images repo secret
       if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, namespace)) {
-        createOcrRepoSecret(namespace);
+        createBaseRepoSecret(namespace);
       }
       secrets.add(BASE_IMAGES_REPO_SECRET_NAME);
     }
