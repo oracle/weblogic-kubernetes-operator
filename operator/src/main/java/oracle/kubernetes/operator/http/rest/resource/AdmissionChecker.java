@@ -45,11 +45,11 @@ import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
 public class AdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
-  private DomainResource existingDomain;
-  private DomainResource proposedDomain;
-  private List<String> messages = new ArrayList<>();
-  private List<String> warnings = new ArrayList<>();
-  private String domainUid;
+  private final DomainResource existingDomain;
+  private final DomainResource proposedDomain;
+  private final List<String> messages = new ArrayList<>();
+  private final List<String> warnings = new ArrayList<>();
+  private final String domainUid;
 
   /** Construct a AdmissionChecker. */
   public AdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
@@ -64,20 +64,15 @@ public class AdmissionChecker {
    * @return a AdmissionResponse object
    */
   public AdmissionResponse validate() {
-    AdmissionResponse response = new AdmissionResponse();
-    if (existingDomain == null  || proposedDomain == null) {
-      return response.allowed(true);
-    }
-
     LOGGER.fine("Validating DomainResource " + proposedDomain + " against " + existingDomain);
 
-    boolean isAllowed = isProposedChangeAllowed();
-    if (!isAllowed) {
-      response.status(new AdmissionResponseStatus().message(createMessage()));
+    AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
+    if (!response.isAllowed()) {
+      return response.status(new AdmissionResponseStatus().message(createMessage()));
     } else if (!warnings.isEmpty()) {
-      response.warnings(createWarnings());
+      return response.warnings(createWarnings());
     }
-    return response.allowed(isAllowed);
+    return response;
   }
 
   private String createMessage() {
@@ -107,7 +102,7 @@ public class AdmissionChecker {
   private boolean isSpecUnchanged() {
     return Optional.of(existingDomain)
         .map(DomainResource::getSpec)
-        .map(s -> isProposedSpecUnchanged(s))
+        .map(this::isProposedSpecUnchanged)
         .orElse(false);
   }
 

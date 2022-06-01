@@ -23,7 +23,7 @@ import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.set
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class AdmissionCheckerTest {
+class AdmissionCheckerTest {
   private final DomainResource existingDomain = AdmissionWebhookTestSetUp.createDomain();
   private final DomainResource proposedDomain = AdmissionWebhookTestSetUp.createDomain();
   private final AdmissionChecker admissionChecker = new AdmissionChecker(existingDomain, proposedDomain);

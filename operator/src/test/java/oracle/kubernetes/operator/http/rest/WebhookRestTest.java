@@ -111,6 +111,8 @@ class WebhookRestTest extends RestTestBase {
     return restBackend;
   }
 
+  // test cases for conversion webhook
+
   @Test
   void whenConversionWebhookRequestSent_hasExpectedResponse() {
     String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
@@ -138,6 +140,8 @@ class WebhookRestTest extends RestTestBase {
             .post(createWebhookRequest(conversionReview));
   }
 
+  // test cases for validating webhook
+
   @Test
   void whenGoodValidatingWebhookRequestSent_hasExpectedResponse() {
     String responseString = sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_1));
@@ -159,8 +163,8 @@ class WebhookRestTest extends RestTestBase {
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
     AdmissionResponse expectedResponse = new AdmissionResponse();
-    expectedResponse.setUid(RESPONSE_UID);
-    expectedResponse.setAllowed(true);
+    expectedResponse.uid(RESPONSE_UID);
+    expectedResponse.allowed(true);
     AdmissionReview expectedReview = new AdmissionReview();
     expectedReview.setResponse(expectedResponse);
     expectedReview.setApiVersion(ADMISSION_REVIEW_API_VERSION);
@@ -331,7 +335,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenProposedObjectMissing_acceptIt() {
-    setOldObject();
+    setExistingDomain();
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
@@ -340,9 +344,39 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
-  void whenOldObjectMissing_acceptIt() {
-    setObject();
+  void whenExistingDomainMissing_acceptIt() {
+    setProposedDomain();
 
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenBothExistingAndProposedDomainMissing_acceptIt() {
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenExistingAndProposedDomainSameAndOneClusterReplicasChangedInvalid_acceptIt() {
+    existingDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    setExistingDomain(existingDomain);
+    setProposedDomain(existingDomain);
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenExistingAndProposedDomainEqualsAndOneClusterReplicasChangedInvalid_acceptIt() {
+    existingDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    setExistingAndProposedDomain();
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
@@ -353,16 +387,20 @@ class WebhookRestTest extends RestTestBase {
     admissionReview.getRequest().oldObject(existingDomain).object(proposedDomain);
   }
 
-  private void setObject() {
-    admissionReview.getRequest().setObject(proposedDomain);
+  private void setProposedDomain() {
+    setProposedDomain(proposedDomain);
   }
 
-  private void setOldObject() {
-    admissionReview.getRequest().setOldObject(existingDomain);
+  private void setProposedDomain(DomainResource domain) {
+    admissionReview.getRequest().setObject(domain);
   }
 
-  private void setNullOldObject() {
-    admissionReview.getRequest().setOldObject(null);
+  private void setExistingDomain() {
+    setExistingDomain(existingDomain);
+  }
+
+  private void setExistingDomain(DomainResource domain) {
+    admissionReview.getRequest().setOldObject(domain);
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
@@ -402,7 +440,7 @@ class WebhookRestTest extends RestTestBase {
 
   private boolean isAllowed(AdmissionReview admissionResponse) {
     return Optional.ofNullable(admissionResponse)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getAllowed).orElse(false);
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::isAllowed).orElse(false);
   }
 
   private String getWarnings(AdmissionReview admissionResponse) {

@@ -56,16 +56,8 @@ public class AdmissionResponse {
     return uid;
   }
 
-  public void setUid(String uid) {
-    this.uid = uid;
-  }
-
-  public boolean getAllowed() {
+  public boolean isAllowed() {
     return allowed;
-  }
-
-  public void setAllowed(boolean allowed) {
-    this.allowed = allowed;
   }
 
   public AdmissionResponse allowed(boolean allowed) {
@@ -77,10 +69,6 @@ public class AdmissionResponse {
     return warnings;
   }
 
-  public void setWarnings(List<String> warnings) {
-    this.warnings = warnings;
-  }
-
   public AdmissionResponse warnings(List<String> warnings) {
     this.warnings = warnings;
     return this;
@@ -88,10 +76,6 @@ public class AdmissionResponse {
 
   public AdmissionResponseStatus getStatus() {
     return status;
-  }
-
-  public void setStatus(AdmissionResponseStatus status) {
-    this.status = status;
   }
 
   public AdmissionResponse status(AdmissionResponseStatus status) {
