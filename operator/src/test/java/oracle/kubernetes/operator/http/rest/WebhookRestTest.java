@@ -273,7 +273,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceeds the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
     assertThat(getWarnings(responseReview).contains(
         "allowed because 'spec.introspectVersion' also changed"), equalTo(true));
   }
@@ -289,7 +289,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceeds the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
     assertThat(getWarnings(responseReview).contains(
         "allowed because 'spec.introspectVersion' also changed"), equalTo(true));
   }
@@ -305,7 +305,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceeds the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
     assertThat(getWarnings(responseReview).contains(
         "allowed because 'spec.image' also changed"), equalTo(true));
   }
@@ -323,7 +323,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceeds the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
     assertThat(getWarnings(responseReview).contains(
         "allowed because 'spec.configuration.model.auxiliaryImages' also changed"), equalTo(true));
   }

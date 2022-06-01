@@ -113,7 +113,7 @@ public class AdmissionChecker {
   private boolean isIntrospectVersionChanged() {
     boolean changed = !Objects.equals(existingDomain.getIntrospectVersion(), proposedDomain.getIntrospectVersion());
     if (changed) {
-      warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, domainUid, DOMAIN_INTROSPECT_VERSION));
+      warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, DOMAIN_INTROSPECT_VERSION));
     }
     return changed;
   }
@@ -140,7 +140,7 @@ public class AdmissionChecker {
           || noAuxiliaryImagesConfigured(proposedDomain)
           || areAuxiliaryImagesChanged();
       if (changed) {
-        warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, domainUid, AUXILIARY_IMAGES));
+        warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, AUXILIARY_IMAGES));
       }
       return changed;
     }
@@ -149,7 +149,7 @@ public class AdmissionChecker {
   private boolean isDomainImageChanged() {
     boolean imageChanged = !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
     if (imageChanged) {
-      warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, domainUid, DOMAIN_IMAGE));
+      warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, DOMAIN_IMAGE));
     }
     return imageChanged;
   }
