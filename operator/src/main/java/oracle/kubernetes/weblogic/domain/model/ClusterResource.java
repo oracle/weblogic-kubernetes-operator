@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
@@ -14,7 +13,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -78,91 +76,21 @@ public class ClusterResource implements KubernetesObject {
   @Description("The current status of the operation of the WebLogic cluster. Updated automatically by the operator.")
   private ClusterStatus status;
 
-  protected Cluster getConfiguration() {
-    Cluster configuration = new Cluster();
-    configuration.fillInFrom(this.getSpec());
-    configuration.setRestartVersion(this.getRestartVersion());
-    return configuration;
-  }
-
-  public String getClusterName() {
+  String getClusterName() {
     return Optional.ofNullable(spec.getClusterName()).orElse(metadata.getName());
   }
 
-  public void setClusterName(@Nonnull String clusterName) {
-    metadata.setName(clusterName);
-  }
-
-  public ClusterResource withClusterName(@Nonnull String clusterName) {
-    setClusterName(clusterName);
-    return this;
-  }
-
-  public String getNamespace() {
-    return metadata.getNamespace();
-  }
-
-  public Integer getReplicas() {
+  Integer getReplicas() {
     return spec.getReplicas();
   }
 
-  public void setReplicas(Integer replicas) {
+  void setReplicas(Integer replicas) {
     spec.setReplicas(replicas);
   }
 
-  public ClusterResource withReplicas(Integer replicas) {
-    setReplicas(replicas);
-    return this;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
-    spec.setAllowReplicasBelowMinDynClusterSize(value);
-  }
-
-  public Integer getMaxConcurrentStartup() {
-    return spec.getMaxConcurrentStartup();
-  }
-
-  public void setMaxConcurrentStartup(Integer value) {
-    spec.setMaxConcurrentStartup(value);
-  }
-
-  public Integer getMaxConcurrentShutdown() {
-    return spec.getMaxConcurrentShutdown();
-  }
-
-  public void setMaxConcurrentShutdown(Integer value) {
-    spec.setMaxConcurrentShutdown(value);
-  }
-
-  public ServerStartPolicy getServerStartPolicy() {
-    return spec.getServerStartPolicy();
-  }
-
-  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
-    spec.setServerStartPolicy(serverStartPolicy);
-  }
-
-  public ClusterResource withServerStartPolicy(ServerStartPolicy serverStartPolicy) {
-    setServerStartPolicy(serverStartPolicy);
-    return this;
-  }
-
-  public ClusterService getClusterService() {
-    return spec.getClusterService();
-  }
-
-  public void setClusterService(ClusterService clusterService) {
-    spec.setClusterService(clusterService);
-  }
-
-  public ClusterResource spec(Cluster spec) {
+  ClusterResource spec(Cluster spec) {
     this.spec = spec;
     return this;
-  }
-
-  public Map<String, String> getClusterAnnotations() {
-    return getClusterService().getAnnotations();
   }
 
   @Override
