@@ -14,6 +14,7 @@ weight: 7
       --from-literal=username=weblogic --from-literal=password=welcome1 \
       -n sample-domain1-ns
     ```
+    
 
 1. Create a domain runtime encryption secret using the following command:
 
@@ -23,15 +24,15 @@ weight: 7
        --from-literal=password=my_runtime_password
     ```
 
-    Note that the sample domain YAML file is preconfigured to use the secret name `sample-domain1-weblogic-credentials`. If you want to use secret name that is different from what is specified in the sample domain YAML file, then you will need to update the sample YAML file.
+    The above commands would create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` which is used in the sample domain YAML file. If you want to use different secret names, then update the sample doman YAML file accordingly.
 
 1. Use one of the two following options to create the domain.
-   - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following `kubectl apply` command. This command uses the pre-created WLS Domain YAML file from github.
+   - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following command to apply the sample domain resource.
 
        ```shell
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
        ```
-   - **Option 2**: If you created an auxiliary image by following the steps in the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then use the following steps to create the domain.
+   - **Option 2**: If you created an auxiliary image using optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then use the following steps to create the domain.
 
        1. Prepare the domain resource.
           1. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar. 
@@ -39,6 +40,7 @@ weight: 7
                 {{%expand "Click here to view the WLS Domain YAML file using auxiliary images." %}}
     # Copyright (c) 2022, Oracle and/or its affiliates.
     # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
     apiVersion: "weblogic.oracle/v9"
     kind: Domain
     metadata:
@@ -225,6 +227,9 @@ weight: 7
 
 
     {{%expand "Click here to view the ingress route YAML file." %}}
+    # Copyright (c) 2022, Oracle and/or its affiliates.
+    # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
     apiVersion: traefik.containo.us/v1alpha1
     kind: IngressRoute
     metadata:

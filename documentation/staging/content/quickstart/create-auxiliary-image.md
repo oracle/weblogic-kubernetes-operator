@@ -3,7 +3,7 @@ title = "Create auxiliary image (optional)"
 date = 2019-02-23T16:45:16-05:00
 weight = 6
 pre = "<b> </b>"
-description = "Auxiliary images are an alternative approach for supplying a domain's model files or other types of files."
+description = "Auxiliary images are used to supply WebLogic domain configuration using WDT model files and application archive files."
 +++
 
 #### Contents
@@ -71,7 +71,7 @@ The instructions in following sections will guide you, step-by-step, through the
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
-1. Get the WDT model, archives and properties files to be included in the auxiliary image and put them in your `/tmp/quickstart/models` directory.
+1. Download the sample WDT model, archives and properties files to be included in the auxiliary image and put them in your `/tmp/quickstart/models` directory.
 
    For example:
    ```
@@ -98,7 +98,7 @@ The instructions in following sections will guide you, step-by-step, through the
 #### Create the auxiliary image
 
 Follow these steps to create an auxiliary image containing
-Model In Image model files, application archives, and the WDT installation files:
+WDT model YAML files, application archives, and the WDT installation files:
 
 
 1. Use the `createAuxImage` option of the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) (WIT) to create the auxiliary image. Run the following command:
@@ -114,8 +114,6 @@ Model In Image model files, application archives, and the WDT installation files
      When you run this command, the Image Tool will create an auxiliary image with the specified model, variables, and archive files in the
      image's `/auxiliary/models` directory. It will also add the latest version of the WDT installation in its `/auxiliary/weblogic-deploy` directory.
      See [Create Auxiliary Image](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) for additional Image Tool options.
-     The operator auxiliary image feature looks for WDT model and WDT install files in these specific directories by default; if you change
-     the location of these directories, then change the corresponding domain resource auxiliary image [source locations attributes](#source-locations).
 
 1. If you have successfully created the image, then it should now be in your local machine's Docker repository. For example:
 
