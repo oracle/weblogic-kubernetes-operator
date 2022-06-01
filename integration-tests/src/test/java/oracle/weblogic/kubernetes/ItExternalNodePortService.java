@@ -45,9 +45,9 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -62,7 +62,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -76,8 +76,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The use case verifies external RMI client access to WebLogic cluster.
- * The external RMI client access resources (JMS/EJB) using the NodePort 
- * service instead of LoadBalancer tunneling using the approach as described 
+ * The external RMI client access resources (JMS/EJB) using the NodePort
+ * service instead of LoadBalancer tunneling using the approach as described
  * in following  WebLogic Kubernetes operator faq page
  * https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/
  * In a WebLogic domain, configure a custom channel for the T3 protocol that
@@ -85,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * correspond to the address and port remote clients will use to access the
  * WebLogic cluster resources. Configure a WebLogic dynamic cluster domain using
  * Model In Image. Add a cluster targeted JMS distributed destination.
- * Configure a NodePort Sevice that redirects HTTP traffic to custom channel. 
+ * Configure a NodePort Sevice that redirects HTTP traffic to custom channel.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -130,7 +130,7 @@ class ItExternalNodePortService {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -166,7 +166,7 @@ class ItExternalNodePortService {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -200,8 +200,8 @@ class ItExternalNodePortService {
    * Queue using Nodeport service http url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    */
   @Test
   @DisplayName("Verify RMI access to WLS through NodePort Service")
@@ -210,8 +210,8 @@ class ItExternalNodePortService {
     buildClient();
     buildClientOnPod();
 
-    // Prepare the Nodeport service yaml file from the template file by 
-    // replacing domain namespace, domain UID, cluster name and host name 
+    // Prepare the Nodeport service yaml file from the template file by
+    // replacing domain namespace, domain UID, cluster name and host name
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
@@ -243,12 +243,12 @@ class ItExternalNodePortService {
         "Could not get the Http TunnelingPort service node port");
     logger.info("HttpTunnelingPort for NodePort Service {0}", httpTunnelingPort);
 
-    // This test uses JMSclient which gets an InitialContext. For this, we need to specify the http port that 
+    // This test uses JMSclient which gets an InitialContext. For this, we need to specify the http port that
     // the client can access to get the Initial context.
     String hostAndPort = getHostAndPort(clusterSvcRouteHost + ":80", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtClient(hostAndPort, 2, false);
 
     logger.info("External RMI tunneling works for NodePortService");
