@@ -16,13 +16,29 @@ import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.jersey.server.ResourceConfig;
 
 public class MetricsServer extends BaseServer {
+  public static final int DEFAULT_METRICS_PORT = 8083;
 
   private final AtomicReference<HttpServer> metricsHttpServer = new AtomicReference<>();
+  private final int port;
+
+  public MetricsServer() {
+    this(DEFAULT_METRICS_PORT);
+  }
+
+  // for test
+  public MetricsServer(int port) {
+    this.port = port;
+  }
+
+  // for test
+  public HttpServer getMetricsHttpServer() {
+    return metricsHttpServer.get();
+  }
 
   @Override
   public void start(Container container) throws IOException {
     DefaultExports.initialize();
-    metricsHttpServer.set(createHttpServer(container, "http://0.0.0.0:8083"));
+    metricsHttpServer.set(createHttpServer(container, "http://0.0.0.0:" + port));
   }
 
   @Override
