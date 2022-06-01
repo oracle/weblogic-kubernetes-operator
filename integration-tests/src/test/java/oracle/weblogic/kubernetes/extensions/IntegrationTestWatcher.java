@@ -363,6 +363,9 @@ public class IntegrationTestWatcher implements
     }
     // collect the logs in default namespace
     LoggingUtil.collectLogs("default", resultDir.toString());
+
+    // collect the logs in ns-webhook namespace
+    LoggingUtil.collectLogs("ns-webhook", resultDir.toString());
   }
 
   /**
