@@ -23,7 +23,7 @@ import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -252,7 +252,7 @@ public class BuildApplication {
                 .addCommandItem("sleep")
                 .addArgsItem("600")))
             .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET)))) // the persistent volume claim used by the test
+                .name(BASE_IMAGES_REPO_SECRET_NAME)))) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");

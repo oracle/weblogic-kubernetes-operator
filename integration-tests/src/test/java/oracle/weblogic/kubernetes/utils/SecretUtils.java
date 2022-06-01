@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -26,11 +27,10 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -224,16 +224,16 @@ public class SecretUtils {
   public static String[] createSecretsForImageRepos(String namespace) {
     List<String> secrets = new ArrayList<>();
     //create repo registry secret
-    if (!secretExists(OCIR_SECRET_NAME, namespace)) {
+    if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, namespace)) {
       createOcirRepoSecret(namespace);
     }
-    secrets.add(OCIR_SECRET_NAME);
-    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+    secrets.add(TEST_IMAGES_REPO_SECRET_NAME);
+    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
       //create base images repo secret
-      if (!secretExists(OCR_SECRET_NAME, namespace)) {
+      if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, namespace)) {
         createOcrRepoSecret(namespace);
       }
-      secrets.add(OCR_SECRET_NAME);
+      secrets.add(BASE_IMAGES_REPO_SECRET_NAME);
     }
     return secrets.toArray(new String[secrets.size()]);
   }

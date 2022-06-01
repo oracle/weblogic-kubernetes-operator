@@ -22,7 +22,7 @@
         <wko.it.skip.cleanup>${env.SKIP_CLEANUP}</wko.it.skip.cleanup>
         <wko.it.domain.version>${env.DOMAIN_VERSION}</wko.it.domain.version>
         <wko.it.kind.repo>${env.KIND_REPO}</wko.it.kind.repo>
-        <wko.it.ocir.registry>${env.OCIR_REGISTRY}</wko.it.ocir.registry>
+        <wko.it.ocir.registry>${env.TEST_IMAGES_REPO_REGISTRY}</wko.it.ocir.registry>
         <wko.it.repo.registry>${env.REPO_REGISTRY}</wko.it.repo.registry>
         <wko.it.base.images.repo>${env.BASE_IMAGES_REPO}</wko.it.base.images.repo>
         <wko.it.weblogic.image.name>${env.WEBLOGIC_IMAGE_NAME}</wko.it.weblogic.image.name>
@@ -128,24 +128,32 @@
                             <skip>${skipITs}</skip>
                             <rules>
                                 <requireEnvironmentVariable>
-                                    <message>Set the OCIR_USERNAME environment variable to specify the OCIR username to use for pulling/pushing images.</message>
-                                    <variableName>OCIR_USERNAME</variableName>
+                                    <message>Set the TEST_IMAGES_REPO environment variable to specify the TEST_IMAGES_REPO username to use for pulling/pushing images.</message>
+                                    <variableName>TEST_IMAGES_REPO</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the OCIR_PASSWORD environment variable to specify the OCIR password to use for pulling/pushing images.</message>
-                                    <variableName>OCIR_PASSWORD</variableName>
+                                    <message>Set the TEST_IMAGES_REPO_USERNAME environment variable to specify the TEST_IMAGES_REPO username to use for pulling/pushing images.</message>
+                                    <variableName>TEST_IMAGES_REPO_USERNAME</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the OCIR_EMAIL environment variable to specify the OCIR user's email address to use for creating the image pull secret.</message>
-                                    <variableName>OCIR_EMAIL</variableName>
+                                    <message>Set the TEST_IMAGES_REPO_PASSWORD environment variable to specify the TEST_IMAGES_REPO password to use for pulling/pushing images.</message>
+                                    <variableName>TEST_IMAGES_REPO_PASSWORD</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the OCR_USERNAME environment variable to specify the OCR username to use for pulling images.</message>
-                                    <variableName>OCR_USERNAME</variableName>
+                                    <message>Set the TEST_IMAGES_REPO_EMAIL environment variable to specify the TEST_IMAGES_REPO user's email address to use for creating the image pull secret.</message>
+                                    <variableName>TEST_IMAGES_REPO_EMAIL</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the OCR_PASSWORD environment variable to specify the OCR password to use for pulling images.</message>
-                                    <variableName>OCR_PASSWORD</variableName>
+                                    <message>Set the BASE_IMAGES_REPO environment variable to specify the BASE_IMAGES_REPO username to use for pulling images.</message>
+                                    <variableName>BASE_IMAGES_REPO</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the BASE_IMAGES_REPO_USERNAME environment variable to specify the BASE_IMAGES_REPO username to use for pulling images.</message>
+                                    <variableName>BASE_IMAGES_REPO_USERNAME</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the BASE_IMAGES_REPO_PASSWORD environment variable to specify the BASE_IMAGES_REPO password to use for pulling images.</message>
+                                    <variableName>BASE_IMAGES_REPO_PASSWORD</variableName>
                                 </requireEnvironmentVariable>
                             </rules>
                         </configuration>

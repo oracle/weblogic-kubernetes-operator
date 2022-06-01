@@ -40,7 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -145,7 +145,7 @@ class ItMiiMultiModel {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
+    logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
     createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
@@ -390,7 +390,7 @@ class ItMiiMultiModel {
     logger.info("Create the domain resource {0} in namespace {1} with ConfigMap {2}",
         domainUid, domainNamespace, configMapName);
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
+            TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
 
     createDomainAndVerify(domain, domainNamespace);
 

@@ -147,6 +147,10 @@ pipeline {
                choices: ['phx.ocir.io', 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
+        string(name: 'TEST_IMAGES_REPO',
+               description: '',
+               defaultValue: 'phx.ocir.io'
+        )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
                defaultValue: 'weblogick8s/test-images/weblogic'
@@ -449,13 +453,13 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        OCR_USERNAME = credentials("${ocr_username_creds}")
-                        OCR_PASSWORD = credentials("${ocr_password_creds}")
-                        OCR_EMAIL = credentials("${ocr_username_creds}")
-                        OCIR_REGISTRY = credentials("${ocir_registry_creds}")
-                        OCIR_USERNAME = credentials("${ocir_username_creds}")
-                        OCIR_PASSWORD = credentials("${ocir_password_creds}")
-                        OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocr_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocr_password_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocr_username_creds}")
+                        TEST_IMAGES_REPO_REGISTRY = credentials("${ocir_registry_creds}")
+                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
                         sh '''
@@ -484,6 +488,7 @@ EOF
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.base.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -26,9 +26,9 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
@@ -122,7 +122,7 @@ public class ItMiiSampleHelper {
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
-    envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
+    envMap.put("IMAGE_PULL_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("OKD", "" +  OKD);
     envMap.put("DO_AI", String.valueOf(imageType == ImageType.AUX));
@@ -149,7 +149,7 @@ public class ItMiiSampleHelper {
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        OCIR_SECRET_NAME, domainNamespace);
+            TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
 
     if (domainType.equals(DomainType.JRF)) {
       // install db for FMW test cases
@@ -163,7 +163,7 @@ public class ItMiiSampleHelper {
       // this secret is used only for non-kind cluster
       createSecretForBaseImages(dbNamespace);
       logger.info("Docker registry secret {0} created successfully in namespace {1}",
-          BASE_IMAGES_REPO_SECRET, dbNamespace);
+              BASE_IMAGES_REPO_SECRET_NAME, dbNamespace);
     }
   }
 
@@ -274,7 +274,7 @@ public class ItMiiSampleHelper {
       envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
       envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
       envMap.put("DB_NAMESPACE", dbNamespace);
-      envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
+      envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
 
       // run JRF use cases irrespective of WLS use cases fail/pass

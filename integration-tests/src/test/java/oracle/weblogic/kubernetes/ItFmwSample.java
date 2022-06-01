@@ -27,7 +27,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -383,7 +383,7 @@ public class ItFmwSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "adminNodePort: 30701", "adminNodePort: " + adminNodePort);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+              "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
     });
@@ -430,7 +430,7 @@ public class ItFmwSample {
     String command = script
         + " -i " + dbBaseImageName
         + " -p " + dbPort
-        + " -s " + BASE_IMAGES_REPO_SECRET
+        + " -s " + BASE_IMAGES_REPO_SECRET_NAME
         + " -n " + dbNamespace;
     logger.info("Command for startOracleDb: {0}", command);
     assertTrue(() -> Command.withParams(
@@ -467,7 +467,7 @@ public class ItFmwSample {
     logger.info("Script for createRcuSchema: {0}", script);
     String command = script
         + " -i " + fmwBaseImageName
-        + " -p " + BASE_IMAGES_REPO_SECRET
+        + " -p " + BASE_IMAGES_REPO_SECRET_NAME
         + " -s " + rcuPrefix
         + " -d " + dbUrl
         + " -n " + dbNamespace

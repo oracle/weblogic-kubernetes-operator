@@ -18,10 +18,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -391,7 +391,7 @@ public class OperatorUtils {
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", OCIR_SECRET_NAME);
+    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
@@ -558,7 +558,7 @@ public class OperatorUtils {
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", OCIR_SECRET_NAME);
+    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
