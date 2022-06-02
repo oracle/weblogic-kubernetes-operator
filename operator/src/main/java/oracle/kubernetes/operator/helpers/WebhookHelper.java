@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -17,9 +18,9 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -32,9 +33,10 @@ import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CO
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
+import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 
 public class WebhookHelper {
@@ -84,11 +86,9 @@ public class WebhookHelper {
   static class ValidatingWebhookConfigurationContext {
     private final Step conflictStep;
     private final V1ValidatingWebhookConfiguration model;
-    private final Certificates certificates;
 
     ValidatingWebhookConfigurationContext(Step conflictStep, Certificates certificates) {
       this.conflictStep = conflictStep;
-      this.certificates = certificates;
       this.model = createModel(certificates);
     }
 
@@ -167,7 +167,8 @@ public class WebhookHelper {
       return new ReadResponseStep(next);
     }
 
-    private class ReadResponseStep extends DefaultResponseStep<V1ValidatingWebhookConfiguration> {
+    
+    private class ReadResponseStep extends WebhookConfigResponseStep {
       ReadResponseStep(Step next) {
         super(next);
       }
@@ -177,26 +178,39 @@ public class WebhookHelper {
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
         if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
-        } else if (shouldUpdate(existingWebhookConfig, model)) {
+        } else if (shouldUpdate(existingWebhookConfig)) {
           return doNext(replaceValidatingWebhookConfiguration(getNext(), existingWebhookConfig), packet);
         } else {
           return doNext(packet);
         }
       }
 
-      private boolean shouldUpdate(V1ValidatingWebhookConfiguration existingWebhookConfig,
-                                   V1ValidatingWebhookConfiguration model) {
-        return !getServiceNamespaceFromConfig(existingWebhookConfig).equals(getServiceNamespaceFromConfig(model));
+      private boolean shouldUpdate(V1ValidatingWebhookConfiguration existingWebhookConfig) {
+        return !getServiceNamespace(existingWebhookConfig).equals(getServiceNamespace(model))
+            || !Arrays.equals(getClientConfigCaBundle(existingWebhookConfig), getClientConfigCaBundle(model));
       }
 
-      private Object getServiceNamespaceFromConfig(V1ValidatingWebhookConfiguration webhookConfig) {
-        return getServiceNamespace(getFirstWebhook(webhookConfig));
-      }
-
-      private String getServiceNamespace(V1ValidatingWebhook webhook) {
-        return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
+      private Object getServiceNamespace(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.ofNullable(getFirstWebhook(webhookConfig)).map(V1ValidatingWebhook::getClientConfig)
             .map(AdmissionregistrationV1WebhookClientConfig::getService)
             .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");
+      }
+
+      private byte[] getClientConfigCaBundle(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.ofNullable(getFirstWebhook(webhookConfig)).map(V1ValidatingWebhook::getClientConfig)
+            .map(AdmissionregistrationV1WebhookClientConfig::getCaBundle)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.of(webhookConfig)
+            .map(V1ValidatingWebhookConfiguration::getWebhooks)
+            .map(this::getFirstWebhook)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
+        return l.isEmpty() ? null : l.get(0);
       }
 
       private Step createValidatingWebhookConfiguration(Step next) {
@@ -214,60 +228,29 @@ public class WebhookHelper {
       }
 
       private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
-        setServiceNamespace(existing);
-        setCaBundle(existing);
-        return existing;
+        model.setMetadata(existing.getMetadata());
+        return model;
       }
 
-      private void setServiceNamespace(V1ValidatingWebhookConfiguration existing) {
-        Optional.ofNullable(getServiceFromConfig(existing)).ifPresent(s -> s.namespace(getWebhookNamespace()));
-      }
-
-      private void setCaBundle(V1ValidatingWebhookConfiguration existing) {
-        Optional.ofNullable(getClientConfig(existing)).ifPresent(s -> s.caBundle(getCaBundle(certificates)));
-      }
-
-      private AdmissionregistrationV1ServiceReference getServiceFromConfig(
-          V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.ofNullable(getClientConfig(webhookConfig))
-            .map(AdmissionregistrationV1WebhookClientConfig::getService)
-            .orElse(null);
-      }
-
-      private AdmissionregistrationV1WebhookClientConfig getClientConfig(
-          V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.ofNullable(getFirstWebhook(webhookConfig))
-            .map(V1ValidatingWebhook::getClientConfig)
-            .orElse(null);
-      }
-
-      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.of(webhookConfig)
-            .map(V1ValidatingWebhookConfiguration::getWebhooks)
-            .map(this::getFirstWebhook)
-            .orElse(null);
-      }
-
-      private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
-        return l.isEmpty() ? null : l.get(0);
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+            ? onSuccess(packet, callResponse)
+            : super.onFailure(packet, callResponse);
       }
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet,
                                             CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return isNotAuthorizedOrForbidden(callResponse)
-            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+        LOGGER.info(MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
+            VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
+        return super.onFailureNoRetry(packet, callResponse);
       }
     }
 
-    private class CreateResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
+    private class CreateResponseStep extends WebhookConfigResponseStep {
       CreateResponseStep(Step next) {
         super(next);
-      }
-
-      @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return super.onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
@@ -281,8 +264,7 @@ public class WebhookHelper {
                                             CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
-        return isNotAuthorizedOrForbidden(callResponse)
-            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+        return super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -290,19 +272,47 @@ public class WebhookHelper {
       return new ReplaceResponseStep(next);
     }
 
-    private class ReplaceResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
+    private class ReplaceResponseStep extends WebhookConfigResponseStep {
       ReplaceResponseStep(Step next) {
         super(next);
       }
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return super.onFailure(getConflictStep(), packet, callResponse);
+        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
+          return super.onFailure(getConflictStep(), packet, callResponse);
+        } else {
+          return super.onFailure(packet, callResponse);
+        }
       }
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        LOGGER.info(MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED, getName(callResponse.getResult()));
         return doNext(packet);
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet,
+                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        LOGGER.info(MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
+            VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
+        return super.onFailureNoRetry(packet, callResponse);
+      }
+    }
+
+    private class WebhookConfigResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
+      WebhookConfigResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return super.onFailure(getConflictStep(), packet, callResponse);
+        }
       }
 
       @Override

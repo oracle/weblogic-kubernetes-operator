@@ -470,6 +470,26 @@
         <version>${jersey-version}</version>
       </dependency>
       <dependency>
+        <groupId>org.glassfish.grizzly</groupId>
+        <artifactId>grizzly-http-servlet</artifactId>
+        <version>${grizzly-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.servlet</groupId>
+        <artifactId>jakarta.servlet-api</artifactId>
+        <version>${jakarta-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_servlet_jakarta</artifactId>
+        <version>${prometheus-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_hotspot</artifactId>
+        <version>${prometheus-version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.yaml</groupId>
         <artifactId>snakeyaml</artifactId>
         <version>${snakeyaml-version}</version>
@@ -582,7 +602,7 @@
     <maven-dependency-plugin-version>3.3.0</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.3.0</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
-    <checkstyle-version>10.2</checkstyle-version>
+    <checkstyle-version>10.3</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.2.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -592,7 +612,7 @@
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.5.0</commons-cli-version>
-    <networknt-jsonschmema-validator-version>1.0.69</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.0.70</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.3</commons-exec-version>
     <commons-codec-version>1.15</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -600,7 +620,7 @@
     <jsonpath-version>2.7.0</jsonpath-version>
     <mojo-build-helper-version>3.3.0</mojo-build-helper-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <assertj.core.version>3.22.0</assertj.core.version>
+    <assertj.core.version>3.23.1</assertj.core.version>
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>15.0.0</client-java-version>
@@ -610,6 +630,9 @@
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>3.0.4</jersey-version>
+    <grizzly-version>3.0.1</grizzly-version>
+    <jakarta-version>5.0.0</jakarta-version>
+    <prometheus-version>0.15.0</prometheus-version>
     <jackson-version>2.13.3</jackson-version>
     <jackson-databind-version>2.13.3</jackson-databind-version>
     <snakeyaml-version>1.30</snakeyaml-version>
@@ -623,7 +646,7 @@
     <skip.dependency-check>false</skip.dependency-check>
     <jacoco.version>0.8.8</jacoco.version>
     <git-commit-id-plugin-version>4.9.10</git-commit-id-plugin-version>
-    <htmlunit-version>2.61.0</htmlunit-version>
+    <htmlunit-version>2.62.0</htmlunit-version>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
     <no-reports>false</no-reports>
   </properties>

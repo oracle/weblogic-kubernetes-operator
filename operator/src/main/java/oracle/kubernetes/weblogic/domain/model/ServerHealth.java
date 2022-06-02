@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -124,7 +124,7 @@ public class ServerHealth {
     return new HashCodeBuilder()
         .append(overallHealth)
         .append(activationTime)
-        .append(Domain.sortOrNull(subsystems))
+        .append(DomainResource.sortOrNull(subsystems))
         .toHashCode();
   }
 
@@ -140,7 +140,7 @@ public class ServerHealth {
     return new EqualsBuilder()
         .append(overallHealth, rhs.overallHealth)
         .append(activationTime, rhs.activationTime)
-        .append(Domain.sortOrNull(subsystems), Domain.sortOrNull(rhs.subsystems))
+        .append(DomainResource.sortOrNull(subsystems), DomainResource.sortOrNull(rhs.subsystems))
         .isEquals();
   }
 

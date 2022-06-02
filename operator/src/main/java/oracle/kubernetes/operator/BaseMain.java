@@ -9,7 +9,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
@@ -21,6 +28,9 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.http.BaseServer;
+import oracle.kubernetes.operator.http.metrics.MetricsServer;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -34,6 +44,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
+
+import static oracle.kubernetes.operator.http.metrics.MetricsServer.DEFAULT_METRICS_PORT;
 
 /** An abstract base main class for the operator and the webhook. */
 public abstract class BaseMain {
@@ -56,6 +68,9 @@ public abstract class BaseMain {
   static final File deploymentHome;
   static final File probesHome;
   final CoreDelegate delegate;
+
+  private final AtomicReference<BaseServer> restServer = new AtomicReference<>();
+  private final AtomicReference<BaseServer> metricsServer = new AtomicReference<>();
 
   static {
     try {
@@ -128,7 +143,41 @@ public abstract class BaseMain {
     }
   }
 
-  abstract void startRestServer() throws Exception;
+  void startRestServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    BaseRestServer value = createRestServer();
+    restServer.set(value);
+    value.start(container);
+  }
+
+  abstract BaseRestServer createRestServer();
+
+  void stopRestServer() {
+    Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
+  }
+
+  void startMetricsServer(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
+      NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    startMetricsServer(container, DEFAULT_METRICS_PORT);
+  }
+
+  // for test
+  void startMetricsServer(Container container, int port) throws UnrecoverableKeyException, CertificateException,
+      IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    BaseServer value = new MetricsServer(port);
+    metricsServer.set(value);
+    value.start(container);
+  }
+
+  // for test
+  BaseServer getMetricsServer() {
+    return metricsServer.get();
+  }
+
+  void stopMetricsServer() {
+    Optional.ofNullable(metricsServer.getAndSet(null)).ifPresent(BaseServer::stop);
+  }
 
   abstract Step createStartupSteps();
 

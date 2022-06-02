@@ -71,8 +71,8 @@ import oracle.kubernetes.operator.tuning.CallBuilderTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
@@ -107,16 +107,16 @@ public class CallBuilder {
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
   private final String pretty = null;
-  private final CallFactory<Domain> replaceDomain =
+  private final CallFactory<DomainResource> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceDomainAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body,
+                  (DomainResource) requestParams.body,
                   callback));
-  private final CallFactory<Domain> patchDomain =
+  private final CallFactory<DomainResource> patchDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
               patchDomainAsync(
@@ -125,14 +125,14 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
                   callback));
-  private final CallFactory<Domain> replaceDomainStatus =
+  private final CallFactory<DomainResource> replaceDomainStatus =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceDomainStatusAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body,
+                  (DomainResource) requestParams.body,
                   callback));
   private final CallFactory<V1CustomResourceDefinition> createCrd =
       (requestParams, usage, cont, callback) ->
@@ -346,7 +346,7 @@ public class CallBuilder {
   private final CallFactory<V1ConfigMapList> listConfigMaps =
       (requestParams, usage, cont, callback) ->
           wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<Domain> readDomain =
+  private final CallFactory<DomainResource> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1CustomResourceDefinition> readCrd =
@@ -436,21 +436,21 @@ public class CallBuilder {
                   resourceVersion,
                   timeoutSeconds,
                   watch);
-  private final SynchronousCallFactory<Domain> replaceDomainCall =
+  private final SynchronousCallFactory<DomainResource> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomain(
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
+                  (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<DomainResource> replaceDomainStatusCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomainStatus(
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> patchDomainCall =
+                  (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<DomainResource> patchDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .patchNamespacedDomain(
@@ -682,7 +682,7 @@ public class CallBuilder {
   }
 
   private Call readDomainAsync(
-      ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .getNamespacedDomainAsync(name, namespace, callback);
@@ -696,7 +696,7 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step readDomainAsync(String name, String namespace, ResponseStep<Domain> responseStep) {
+  public Step readDomainAsync(String name, String namespace, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
   }
@@ -710,7 +710,7 @@ public class CallBuilder {
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomain(String uid, String namespace, Domain body) throws ApiException {
+  public DomainResource replaceDomain(String uid, String namespace, DomainResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
@@ -724,13 +724,13 @@ public class CallBuilder {
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomainStatus(String uid, String namespace, Domain body) throws ApiException {
+  public DomainResource replaceDomainStatus(String uid, String namespace, DomainResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainStatusCall);
   }
 
   private Call replaceDomainAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, DomainResource body, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .replaceNamespacedDomainAsync(name, namespace, body, callback);
@@ -746,7 +746,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+      String name, String namespace, DomainResource body, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceDomain", namespace, name, body, name), replaceDomain);
   }
@@ -760,14 +760,14 @@ public class CallBuilder {
    * @return Updated domain
    * @throws ApiException APIException
    */
-  public Domain patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
+  public DomainResource patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
         new RequestParams("patchDomain", namespace, uid, patchBody, uid);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
   private Call patchDomainAsync(
-      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .patchNamespacedDomainAsync(name, namespace, patch, callback);
@@ -783,7 +783,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchDomainAsync(
-      String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
+      String name, String namespace, V1Patch patchBody, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("patchDomain", namespace, name, patchBody, name),
@@ -791,7 +791,7 @@ public class CallBuilder {
   }
 
   private Call replaceDomainStatusAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, DomainResource body, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .replaceNamespacedDomainStatusAsync(name, namespace, body, callback);
@@ -807,7 +807,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainStatusAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+      String name, String namespace, DomainResource body, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("replaceDomainStatus", namespace, name, body, name),

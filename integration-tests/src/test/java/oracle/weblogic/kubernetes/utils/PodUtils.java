@@ -36,6 +36,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitialized;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -96,16 +97,17 @@ public class PodUtils {
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    testUntil(
-        assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-          String.format("podReady failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace)),
-        logger,
-        "pod {0} to be ready in namespace {1}",
-        podName,
-        domainNamespace);
-  }
 
+    testUntil(
+            withLongRetryPolicy,
+            assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+                    String.format("podReady failed with ApiException for pod %s in namespace %s",
+                            podName, domainNamespace)),
+            logger,
+            "pod {0} to be ready in namespace {1}",
+            podName,
+            domainNamespace);
+  }
 
   /**
    * Check pod is ready.

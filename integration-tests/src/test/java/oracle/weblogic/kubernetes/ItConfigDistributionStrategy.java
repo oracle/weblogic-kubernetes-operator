@@ -60,7 +60,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -92,7 +92,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFro
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
@@ -185,7 +185,7 @@ class ItConfigDistributionStrategy {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
 
     //start two MySQL database instances
@@ -774,24 +774,50 @@ class ItConfigDistributionStrategy {
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName1;
     String dsOverrideTestUrl = baseUri + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:10"), "Did get getMaxCapacity:10");
-      assertTrue(response.body().contains("getInitialCapacity:4"), "Did get getInitialCapacity:4");
-      assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-      assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl1);
-    }
+    testUntil(
+        () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
+          if (configUpdated) {
+            if (!(response.body().contains("getMaxCapacity:10"))) {
+              logger.info("Did get getMaxCapacity:10");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:4"))) {
+              logger.info("Did get getInitialCapacity:4");
+              return false;
+            }
+            if (!(response.body().contains("Url:" + dsUrl2))) {
+              logger.info("Didn't get Url:" + dsUrl2);
+              return false;
+            }
+          } else {
+            if (!(response.body().contains("getMaxCapacity:15"))) {
+              logger.info("Did get getMaxCapacity:15");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:1"))) {
+              logger.info("Did get getInitialCapacity:1");
+              return false;
+            }
+            if (!(response.body().contains("Url:" + dsUrl1))) {
+              logger.info("Didn't get Url:" + dsUrl1);
+              return false;
+            }
+          }
+          return true;
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
     }
@@ -894,7 +920,7 @@ class ItConfigDistributionStrategy {
             .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
+                    .name(BASE_IMAGES_REPO_SECRET_NAME))) // this secret is used only in non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))

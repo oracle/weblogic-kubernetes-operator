@@ -23,8 +23,8 @@ import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
  * A class to handle coordinating the operator with the actual resources in Kubernetes. This reviews lists
@@ -127,7 +127,7 @@ class DomainResourcesValidation {
     list.getItems().forEach(this::addDomain);
   }
 
-  private void addDomain(Domain domain) {
+  private void addDomain(DomainResource domain) {
     getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 

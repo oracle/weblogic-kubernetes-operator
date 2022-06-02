@@ -11,7 +11,6 @@ weight: 6
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
   - [Oracle Cloud Native Environment](#oracle-cloud-native-environment)
-  - [Oracle Container Engine for Kubernetes](#oracle-container-engine-for-kubernetes)
   - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
   - [Microsoft Azure](#microsoft-azure)
   - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
@@ -73,7 +72,6 @@ Here are some important considerations for specific environments:
 
 - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
 - [Oracle Cloud Native Environment](#oracle-cloud-native-environment)
-- [Oracle Container Engine for Kubernetes](oracle-container-engine-for-kubernetes)
 - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
 - [Microsoft Azure](#microsoft-azure)
 - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
@@ -99,11 +97,6 @@ as described in the [Overview](#overview).
 WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Cloud Native Environment:
 - Operator v2.6.0 is certified on Oracle Cloud Native Environment 1.1 and v3.2.5 is certified on Oracle Cloud Native Environment 1.3.
 - Operator v3.2.5 provides certified support of Oracle Cloud Native Environment 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
-
-#### Oracle Container Engine for Kubernetes
-
-Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on Oracle Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and `domain_home`), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
-
 
 #### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
 
@@ -185,9 +178,7 @@ See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes
 
 OpenShift can be a cloud platform or can be deployed on premises.
 
-Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.
-
-Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
+Operator 3.4.0+ is certified for use on OpenShift Container Platform 4.10.4+, with Kubernetes 1.23+.
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.

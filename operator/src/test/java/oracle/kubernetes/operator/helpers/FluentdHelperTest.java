@@ -14,7 +14,7 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class FluentdHelperTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
-  private final Domain newDomain = DomainProcessorTestSetup.createTestDomain(2L);
+  private final DomainResource newDomain = DomainProcessorTestSetup.createTestDomain(2L);
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
 
 
@@ -78,7 +78,7 @@ class FluentdHelperTest {
     assertThat(configMap.getData().get(FLUENTD_CONFIG_DATA_NAME), startsWith("   <match fluent.**>"));
   }
 
-  private DomainConfigurator configureDomain(Domain domain) {
+  private DomainConfigurator configureDomain(DomainResource domain) {
     return DomainConfiguratorFactory.forDomain(domain);
   }
 

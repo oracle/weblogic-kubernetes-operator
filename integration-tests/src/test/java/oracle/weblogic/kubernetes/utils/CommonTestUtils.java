@@ -210,8 +210,9 @@ public class CommonTestUtils {
    */
   public static void checkServiceExists(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
+
     testUntil(
-        withStandardRetryPolicyIgnoringExceptions,
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
           String.format("serviceExists failed with ApiException for service %s in namespace %s",
             serviceName, namespace)),
