@@ -97,7 +97,7 @@ pipeline {
         )
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
-               defaultValue: '**/It*'
+               defaultValue: ''
         )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
