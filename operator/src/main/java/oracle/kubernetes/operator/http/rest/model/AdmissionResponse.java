@@ -22,21 +22,21 @@ public class AdmissionResponse {
    */
   @SerializedName("uid")
   @Expose
-  protected String uid;
+  private String uid;
 
   /**
    * Indicate if the corresponding admission request is allowed.
    */
   @SerializedName("allowed")
   @Expose
-  protected boolean allowed;
+  private boolean allowed;
 
   /**
    * Optional warning messages.
    */
   @SerializedName("warnings")
   @Expose
-  protected List<String> warnings;
+  private List<String> warnings;
 
   /**
    * Optionally provide more information about what happened to the admission call. Mostly used when a webhook rejects

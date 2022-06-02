@@ -71,6 +71,8 @@ class WebhookRestTest extends RestTestBase {
   private static final String WEBHOOK_HREF = "/webhook";
   private static final String VALIDATING_WEBHOOK_HREF = "/admission";
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
+  private static final String REJECT_MESSAGE_PATTERN = "Change request to domain resource '%s' cannot be honored"
+          + " because the replica count for cluster '%s' would exceed the cluster size '%s'.";
 
   private final AdmissionReview admissionReview = createAdmissionReview();
   private final DomainResource existingDomain = createDomain();
@@ -162,13 +164,9 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
-    AdmissionResponse expectedResponse = new AdmissionResponse();
-    expectedResponse.uid(RESPONSE_UID);
-    expectedResponse.allowed(true);
-    AdmissionReview expectedReview = new AdmissionReview();
-    expectedReview.setResponse(expectedResponse);
-    expectedReview.setApiVersion(ADMISSION_REVIEW_API_VERSION);
-    expectedReview.setKind(ADMISSION_REVIEW_KIND);
+    AdmissionResponse expectedResponse = new AdmissionResponse().uid(RESPONSE_UID).allowed(true);
+    AdmissionReview expectedReview = new AdmissionReview()
+        .response(expectedResponse).apiVersion(ADMISSION_REVIEW_API_VERSION).kind(ADMISSION_REVIEW_KIND);
 
     AdmissionReview responseReview
         = sendValidatingRequestAsAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
@@ -228,11 +226,6 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenLogHomeChangedAndFirstClusterReplicasChangedInvalid_rejectItWithExpectedMessage() {
-    String expectedMessage = String.format("Change request to domain resource '%s' cannot be honored because the"
-        + " effective replica count for cluster '%s' would exceed the cluster size '%s'.",
-        proposedDomain.getDomainUid(),
-        proposedDomain.getSpec().getClusters().get(0).getClusterName(),
-        ORIGINAL_REPLICAS);
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
     setExistingAndProposedDomain();
@@ -241,16 +234,18 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(false));
-    assertThat(getMessage(responseReview), equalTo(expectedMessage));
+    assertThat(getMessage(responseReview), equalTo(getRejectMessage(0)));
+  }
+
+  private String getRejectMessage(int i) {
+    return String.format(REJECT_MESSAGE_PATTERN,
+        proposedDomain.getDomainUid(),
+        proposedDomain.getSpec().getClusters().get(i).getClusterName(),
+        ORIGINAL_REPLICAS);
   }
 
   @Test
   void whenLogHomeChangedAndSecondClusterReplicasChangedInvalid_rejectItWithExpectedMessage() {
-    String expectedMessage = String.format("Change request to domain resource '%s' cannot be honored because the"
-            + " effective replica count for cluster '%s' would exceed the cluster size '%s'.",
-        proposedDomain.getDomainUid(),
-        proposedDomain.getSpec().getClusters().get(1).getClusterName(),
-        ORIGINAL_REPLICAS);
     proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
     setExistingAndProposedDomain();
@@ -259,7 +254,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(false));
-    assertThat(getMessage(responseReview), equalTo(expectedMessage));
+    assertThat(getMessage(responseReview), equalTo(getRejectMessage(1)));
   }
 
   @Test
