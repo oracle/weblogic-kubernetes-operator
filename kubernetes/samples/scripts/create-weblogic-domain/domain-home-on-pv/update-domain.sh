@@ -173,7 +173,7 @@ createDomainConfigmap() {
 
   # create the configmap and label it properly
   local cmName=${domainUID}-update-weblogic-sample-domain-job-cm
-  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
+  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run=client -o yaml | kubectl apply -f -
 
   echo Checking the configmap $cmName was created
   local num=`kubectl get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`
