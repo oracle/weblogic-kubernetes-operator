@@ -1,13 +1,16 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.utils;
+package oracle.kubernetes.operator.http.rest.resource;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import oracle.kubernetes.operator.http.rest.model.AdmissionResponse;
+import oracle.kubernetes.operator.http.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
@@ -17,13 +20,21 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_TRIGGER_CHANGED;
+import static oracle.kubernetes.operator.KubernetesConstants.AUXILIARY_IMAGES;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_INTROSPECT_VERSION;
 import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
 
 /**
- * ValidationUtil provides the utility methods to perform the validation of a proposed change to an existing
- * Domain or Cluster resource. It is used by the validating webhook.
+ * AdmissionChecker provides the validation functionality for the validating webhook. It takes an existing resource and
+ * a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
+ * what the problem is.
  *
- * <p>The current version supports validation of the following:
+ * <p>Currently it checks the following:
  * <ul>
  * <li>The proposed replicas settings at the domain level and/or cluster level can be honored by WebLogic domain config.
  * </li>
@@ -31,121 +42,178 @@ import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
  * </p>
  */
 
-public class ValidationUtils {
+public class AdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
-  private ValidationUtils() {
+  private final DomainResource existingDomain;
+  private final DomainResource proposedDomain;
+  private final List<String> messages = new ArrayList<>();
+  private final List<String> warnings = new ArrayList<>();
+  private final String domainUid;
+
+  /** Construct a AdmissionChecker. */
+  public AdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
+    this.existingDomain = existingDomain;
+    this.proposedDomain = proposedDomain;
+    this.domainUid = existingDomain.getDomainUid();
   }
 
   /**
-   * Validating a proposed domain resource against an existing domain resource. It returns true if the proposed changes
-   * in the proposed domain resource can be honored, otherwise, returns false.
+   * Validating a proposed DomainResource resource against an existing DomainResource resource.
    *
-   * @param existingDomain domain that needs to be validated against.
-   * @param proposedDomain domain that needs to be validated.
+   * @return a AdmissionResponse object
+   */
+  public AdmissionResponse validate() {
+    LOGGER.fine("Validating DomainResource " + proposedDomain + " against " + existingDomain);
+
+    AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
+    if (!response.isAllowed()) {
+      return response.status(new AdmissionResponseStatus().message(createMessage()));
+    } else if (!warnings.isEmpty()) {
+      return response.warnings(warnings);
+    }
+    return response;
+  }
+
+  private String createMessage() {
+    return perLine(messages);
+  }
+
+  /**
+   * Validating a proposed Domain resource against an existing DomainResource resource. It returns true if the
+   * proposed changes in the proposed DomainResource resource can be honored, otherwise, returns false.
+   *
    * @return true if valid, otherwise false
    */
-  public static boolean isProposedChangeAllowed(
-      @NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
-    LOGGER.fine("Validating domain " + proposedDomain + " against " + existingDomain);
-    return isUnchanged(existingDomain, proposedDomain)
+  public boolean isProposedChangeAllowed() {
+    return isUnchanged()
         || areAllClusterReplicaCountsValid(proposedDomain)
-        || shouldIntrospect(existingDomain, proposedDomain);
+        || shouldIntrospect();
   }
 
-  private static boolean isUnchanged(
-      @NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
-    return existingDomain == proposedDomain || isSpecUnchanged(existingDomain, proposedDomain);
+  private boolean isUnchanged() {
+    return isSpecUnchanged();
   }
 
-  private static boolean isSpecUnchanged(
-      @NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
+  private boolean isSpecUnchanged() {
     return Optional.of(existingDomain)
         .map(DomainResource::getSpec)
-        .map(s -> isProposedSpecUnchanged(s, proposedDomain))
+        .map(this::isProposedSpecUnchanged)
         .orElse(false);
   }
 
-  private static boolean isProposedSpecUnchanged(
-      @NotNull DomainSpec existingSpec, @NotNull DomainResource proposedDomain) {
-    return existingSpec == proposedDomain.getSpec() || Objects.equals(existingSpec, proposedDomain.getSpec());
+  private boolean isProposedSpecUnchanged(@NotNull DomainSpec existingSpec) {
+    return Objects.equals(existingSpec, proposedDomain.getSpec());
   }
 
-  private static boolean shouldIntrospect(
-      @NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
-    return !Objects.equals(existingDomain.getIntrospectVersion(), proposedDomain.getIntrospectVersion())
-        || imagesChanged(existingDomain, proposedDomain);
+  private boolean shouldIntrospect() {
+    return isIntrospectVersionChanged() || imagesChanged();
   }
 
-  private static boolean imagesChanged(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
+  private boolean isIntrospectVersionChanged() {
+    boolean changed = !Objects.equals(existingDomain.getIntrospectVersion(), proposedDomain.getIntrospectVersion());
+    if (changed) {
+      warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, DOMAIN_INTROSPECT_VERSION));
+    }
+    return changed;
+  }
+
+  private boolean imagesChanged() {
     if (!Objects.equals(existingDomain.getDomainHomeSourceType(), proposedDomain.getDomainHomeSourceType())) {
       return true;
     }
     switch (proposedDomain.getDomainHomeSourceType()) {
       case IMAGE:
-        return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
+        return isDomainImageChanged();
       case FROM_MODEL:
-        return areAuxiliaryImagesChanged(existingDomain, proposedDomain);
+        return areAuxiliaryImagesOrDomainImageChanged();
       default:
         return false;
     }
   }
 
-  private static boolean areAuxiliaryImagesChanged(
-      @NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
+  private boolean areAuxiliaryImagesOrDomainImageChanged() {
     if (noAuxiliaryImagesConfigured(existingDomain) && noAuxiliaryImagesConfigured(proposedDomain)) {
-      return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
+      return isDomainImageChanged();
     } else {
-      return noAuxiliaryImagesConfigured(existingDomain)
+      boolean changed =  noAuxiliaryImagesConfigured(existingDomain)
           || noAuxiliaryImagesConfigured(proposedDomain)
-          || !isEqualCollection(existingDomain.getAuxiliaryImages(), proposedDomain.getAuxiliaryImages());
+          || areAuxiliaryImagesChanged();
+      if (changed) {
+        warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, AUXILIARY_IMAGES));
+      }
+      return changed;
     }
   }
 
-  private static String getImage(@NotNull DomainResource existingDomain) {
+  private boolean isDomainImageChanged() {
+    boolean imageChanged = !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
+    if (imageChanged) {
+      warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, DOMAIN_IMAGE));
+    }
+    return imageChanged;
+  }
+
+  private boolean areAuxiliaryImagesChanged() {
+    return !isEqualCollection(existingDomain.getAuxiliaryImages(), proposedDomain.getAuxiliaryImages());
+  }
+
+  private String getImage(@NotNull DomainResource existingDomain) {
     return Optional.of(existingDomain).map(DomainResource::getSpec).map(DomainSpec::getImage).orElse(null);
   }
 
-  private static boolean noAuxiliaryImagesConfigured(@NotNull DomainResource domain) {
+  private boolean noAuxiliaryImagesConfigured(@NotNull DomainResource domain) {
     return domain.getAuxiliaryImages() == null;
   }
 
-  private static boolean areAllClusterReplicaCountsValid(@NotNull DomainResource domain) {
+  private boolean areAllClusterReplicaCountsValid(@NotNull DomainResource domain) {
     return getClusterStatusList(domain).stream().allMatch(c -> isClusterReplicaCountValid(domain, c));
   }
 
   @NotNull
-  private static List<ClusterStatus> getClusterStatusList(@NotNull DomainResource domain) {
+  private List<ClusterStatus> getClusterStatusList(@NotNull DomainResource domain) {
     return Optional.of(domain)
         .map(DomainResource::getStatus)
         .map(DomainStatus::getClusters)
         .orElse(Collections.emptyList());
   }
 
-  private static Boolean isClusterReplicaCountValid(@NotNull DomainResource domain, @NotNull ClusterStatus status) {
-    return getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
+  private Boolean isClusterReplicaCountValid(@NotNull DomainResource domain, @NotNull ClusterStatus status) {
+    boolean isValid =
+        getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
+    if (!isValid) {
+      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
+          domainUid, status.getClusterName(), getClusterSize(status)));
+      warnings.add(LOGGER.formatMessage(CLUSTER_REPLICAS_TOO_HIGH,
+          domainUid, status.getClusterName(), getClusterSize(status)));
+    }
+    return isValid;
   }
 
-  private static Cluster getCluster(@NotNull DomainResource domain, String clusterName) {
+  private Cluster getCluster(@NotNull DomainResource domain, String clusterName) {
     return Optional.of(domain).map(DomainResource::getSpec)
         .map(DomainSpec::getClusters)
         .orElse(Collections.emptyList())
         .stream().filter(c -> nameMatches(c, clusterName)).findAny().orElse(null);
   }
 
-  private static boolean nameMatches(Cluster cluster, String clusterName) {
+  private boolean nameMatches(Cluster cluster, String clusterName) {
     return Optional.ofNullable(cluster).map(Cluster::getClusterName).orElse("").equals(clusterName);
   }
 
-  private static int getClusterSize(ClusterStatus clusterStatus) {
+  private int getClusterSize(ClusterStatus clusterStatus) {
     return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas).orElse(0);
   }
 
-  private static int getProposedReplicaCount(@NotNull DomainResource domain, Cluster cluster) {
+  private int getProposedReplicaCount(@NotNull DomainResource domain, Cluster cluster) {
     return Optional.ofNullable(cluster).map(Cluster::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
-  private static int getDomainReplicaCount(@NotNull DomainResource domain) {
+  private int getDomainReplicaCount(@NotNull DomainResource domain) {
     return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getReplicas).orElse(0);
+  }
+
+  private String perLine(List<String> errors) {
+    return String.join(lineSeparator(), errors);
   }
 }

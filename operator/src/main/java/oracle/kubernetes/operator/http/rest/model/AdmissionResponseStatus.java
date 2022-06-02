@@ -31,10 +31,6 @@ public class AdmissionResponseStatus {
     return code;
   }
 
-  public void setCode(Integer code) {
-    this.code = code;
-  }
-
   public AdmissionResponseStatus code(Integer code) {
     this.code = code;
     return this;
@@ -42,10 +38,6 @@ public class AdmissionResponseStatus {
 
   public String getMessage() {
     return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
   }
 
   public AdmissionResponseStatus message(String message) {

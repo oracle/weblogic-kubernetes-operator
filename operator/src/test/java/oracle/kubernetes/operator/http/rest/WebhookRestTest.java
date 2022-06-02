@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -28,7 +29,9 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.lang.System.lineSeparator;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.Arrays.asList;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
@@ -37,11 +40,18 @@ import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KI
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.BAD_REPLICAS;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.createDomain;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.createAuxiliaryImage;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.createDomain;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.setAuxiliaryImages;
+import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.setFromModel;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
@@ -76,8 +86,6 @@ class WebhookRestTest extends RestTestBase {
     request.setKind(new HashMap<>());
     request.setResource(createResource());
     request.setSubResource(new HashMap<>());
-    request.setObject(null);
-    request.setOldObject(null);
     return request;
   }
 
@@ -102,6 +110,8 @@ class WebhookRestTest extends RestTestBase {
   private RestBackend getRestBackend() {
     return restBackend;
   }
+
+  // test cases for conversion webhook
 
   @Test
   void whenConversionWebhookRequestSent_hasExpectedResponse() {
@@ -130,6 +140,8 @@ class WebhookRestTest extends RestTestBase {
             .post(createWebhookRequest(conversionReview));
   }
 
+  // test cases for validating webhook
+
   @Test
   void whenGoodValidatingWebhookRequestSent_hasExpectedResponse() {
     String responseString = sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_1));
@@ -151,9 +163,8 @@ class WebhookRestTest extends RestTestBase {
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
     AdmissionResponse expectedResponse = new AdmissionResponse();
-    expectedResponse.setUid(RESPONSE_UID);
-    expectedResponse.setAllowed(true);
-    expectedResponse.setStatus(new AdmissionResponseStatus().code(HTTP_OK));
+    expectedResponse.uid(RESPONSE_UID);
+    expectedResponse.allowed(true);
     AdmissionReview expectedReview = new AdmissionReview();
     expectedReview.setResponse(expectedResponse);
     expectedReview.setApiVersion(ADMISSION_REVIEW_API_VERSION);
@@ -172,7 +183,7 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview
         = readAdmissionReview(sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_2)));
 
-    assertThat(getAllowed(responseReview), equalTo(false));
+    assertThat(isAllowed(responseReview), equalTo(false));
     assertThat(getResultMessage(responseReview), containsString(resultMessage));
   }
 
@@ -180,21 +191,18 @@ class WebhookRestTest extends RestTestBase {
   void whenGoodValidatingWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
-    assertThat(getAllowed(responseReview), equalTo(true));
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
     assertThat(getUid(responseReview), equalTo(RESPONSE_UID));
   }
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaWithoutRequest_hasExpectedResponse() {
-    AdmissionResponseStatus expectedStatus = new AdmissionResponseStatus();
-    expectedStatus.setCode(HTTP_OK);
-    expectedStatus.setMessage(null);
     admissionReview.request(null);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
-    assertThat(getResultStatus(responseReview).equals(expectedStatus), equalTo(true));
+    assertThat(isAllowed(responseReview), equalTo(true));
+    assertThat(getResultStatus(responseReview), equalTo(null));
   }
 
   @Test
@@ -205,7 +213,7 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getAllowed(responseReview), equalTo(true));
+    assertThat(isAllowed(responseReview), equalTo(true));
   }
 
   @Test
@@ -215,12 +223,16 @@ class WebhookRestTest extends RestTestBase {
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getAllowed(responseReview), equalTo(false));
+    assertThat(isAllowed(responseReview), equalTo(false));
   }
 
   @Test
-  void whenLogHomeChangedAndOneClusterReplicasChangedInvalid_rejectIt() {
+  void whenLogHomeChangedAndFirstClusterReplicasChangedInvalid_rejectItWithExpectedMessage() {
+    String expectedMessage = String.format("Change request to domain resource '%s' cannot be honored because the"
+        + " effective replica count for cluster '%s' would exceed the cluster size '%s'.",
+        proposedDomain.getDomainUid(),
+        proposedDomain.getSpec().getClusters().get(0).getClusterName(),
+        ORIGINAL_REPLICAS);
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
     setExistingAndProposedDomain();
@@ -228,11 +240,30 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getAllowed(responseReview), equalTo(false));
+    assertThat(isAllowed(responseReview), equalTo(false));
+    assertThat(getMessage(responseReview), equalTo(expectedMessage));
   }
 
   @Test
-  void whenIntrospectVersionChangedAndOneClusterReplicasChangedInvalid_acceptIt() {
+  void whenLogHomeChangedAndSecondClusterReplicasChangedInvalid_rejectItWithExpectedMessage() {
+    String expectedMessage = String.format("Change request to domain resource '%s' cannot be honored because the"
+            + " effective replica count for cluster '%s' would exceed the cluster size '%s'.",
+        proposedDomain.getDomainUid(),
+        proposedDomain.getSpec().getClusters().get(1).getClusterName(),
+        ORIGINAL_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(false));
+    assertThat(getMessage(responseReview), equalTo(expectedMessage));
+  }
+
+  @Test
+  void whenIntrospectVersionChangedAndFirstClusterReplicasChangedInvalid_acceptIt() {
     proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
@@ -241,43 +272,131 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getAllowed(responseReview), equalTo(true));
+    assertThat(isAllowed(responseReview), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains(
+        "allowed because 'spec.introspectVersion' also changed"), equalTo(true));
   }
+
+  @Test
+  void whenIntrospectVersionChangedAndSecondClusterReplicasChangedInvalid_acceptIt() {
+    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
+    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains(
+        "allowed because 'spec.introspectVersion' also changed"), equalTo(true));
+  }
+
+  @Test
+  void whenImageChangedAndOneClusterReplicasChangedInvalid_acceptItWithExpectedMessage() {
+    proposedDomain.getSpec().setImage(NEW_IMAGE_NAME);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains(
+        "allowed because 'spec.image' also changed"), equalTo(true));
+  }
+
+  @Test
+  void whenMIIAuxiliaryImageChangedAndOneClusterReplicasChangedInvalid_acceptItWithExpectedMessage() {
+    setFromModel(existingDomain);
+    setFromModel(proposedDomain);
+    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
+    assertThat(getWarnings(responseReview).contains(
+        "allowed because 'spec.configuration.model.auxiliaryImages' also changed"), equalTo(true));
+  }
+
 
   @Test
   void whenProposedObjectMissing_acceptIt() {
-    setOldObject();
+    setExistingDomain();
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getAllowed(responseReview), equalTo(true));
+    assertThat(isAllowed(responseReview), equalTo(true));
   }
 
   @Test
-  void whenOldObjectMissing_acceptIt() {
-    setObject();
+  void whenExistingDomainMissing_acceptIt() {
+    setProposedDomain();
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getAllowed(responseReview), equalTo(true));
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenBothExistingAndProposedDomainMissing_acceptIt() {
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenExistingAndProposedDomainSameAndOneClusterReplicasChangedInvalid_acceptIt() {
+    existingDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    setExistingDomain(existingDomain);
+    setProposedDomain(existingDomain);
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenExistingAndProposedDomainEqualsAndOneClusterReplicasChangedInvalid_acceptIt() {
+    existingDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    setExistingAndProposedDomain();
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(isAllowed(responseReview), equalTo(true));
   }
 
   private void setExistingAndProposedDomain() {
     admissionReview.getRequest().oldObject(existingDomain).object(proposedDomain);
   }
 
-  private void setObject() {
-    admissionReview.getRequest().setObject(proposedDomain);
+  private void setProposedDomain() {
+    setProposedDomain(proposedDomain);
   }
 
-  private void setOldObject() {
-    admissionReview.getRequest().setOldObject(existingDomain);
+  private void setProposedDomain(DomainResource domain) {
+    admissionReview.getRequest().setObject(domain);
   }
 
-  private void setNullOldObject() {
-    admissionReview.getRequest().setOldObject(null);
+  private void setExistingDomain() {
+    setExistingDomain(existingDomain);
+  }
+
+  private void setExistingDomain(DomainResource domain) {
+    admissionReview.getRequest().setOldObject(domain);
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
@@ -315,9 +434,23 @@ class WebhookRestTest extends RestTestBase {
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getUid).orElse("");
   }
 
-  private boolean getAllowed(AdmissionReview admissionResponse) {
+  private boolean isAllowed(AdmissionReview admissionResponse) {
     return Optional.ofNullable(admissionResponse)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getAllowed).orElse(false);
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::isAllowed).orElse(false);
+  }
+
+  private String getWarnings(AdmissionReview admissionResponse) {
+    return Optional.ofNullable(admissionResponse)
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getWarnings).map(this::perLine).orElse("");
+  }
+
+  private String perLine(List<String> messages) {
+    return String.join(lineSeparator(), messages);
+  }
+
+  private String getMessage(AdmissionReview admissionResponse) {
+    return Optional.ofNullable(admissionResponse).map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus)
+        .map(AdmissionResponseStatus::getMessage).orElse("");
   }
 
   private Response sendValidatingWebhookRequest(String admissionReview) {
