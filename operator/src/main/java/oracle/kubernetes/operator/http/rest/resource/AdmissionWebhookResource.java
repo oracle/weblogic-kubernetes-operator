@@ -15,13 +15,12 @@ import oracle.kubernetes.operator.http.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.http.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
-import static oracle.kubernetes.operator.utils.ValidationUtils.isProposedChangeAllowed;
 
 /**
  * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission
@@ -109,22 +108,18 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
-    return new AdmissionResponse()
-        .uid(getUid(request))
-        .allowed(isProposedChangesAllowed(request))
-        .status(new AdmissionResponseStatus().code(HTTP_OK));
-  }
-
-  private boolean isProposedChangesAllowed(AdmissionRequest request) {
-    if (request == null || request.getOldObject() == null  || request.getObject() == null) {
-      return true;
+    if (request == null || request.getOldObject() == null || request.getObject() == null) {
+      return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
 
+    return validate(request);
+  }
+
+  private AdmissionResponse validate(@NotNull AdmissionRequest request) {
     LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-
-    return isProposedChangeAllowed(request.getOldObject(), request.getObject());
+    return new AdmissionChecker(request.getOldObject(), request.getObject()).validate().uid(getUid(request));
   }
 
 }
