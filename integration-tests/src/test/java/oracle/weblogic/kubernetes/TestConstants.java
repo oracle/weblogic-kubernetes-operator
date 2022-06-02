@@ -36,8 +36,8 @@ public interface TestConstants {
   public static final String WLS_DOMAIN_TYPE = "WLS";
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
   public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
-  public static final String WEBLOGIC_IMAGE_TAGS =
-      getNonEmptySystemProperty("wko.it.weblogic.image_tags", DEFAULT_WLS_IMAGE_TAGS);
+  public static final String WEBLOGIC_IMAGE_TAG =
+      getNonEmptySystemProperty("wko.it.weblogic.image.tag", DEFAULT_WLS_IMAGE_TAGS);
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";

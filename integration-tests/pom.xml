@@ -22,8 +22,7 @@
         <wko.it.skip.cleanup>${env.SKIP_CLEANUP}</wko.it.skip.cleanup>
         <wko.it.domain.version>${env.DOMAIN_VERSION}</wko.it.domain.version>
         <wko.it.kind.repo>${env.KIND_REPO}</wko.it.kind.repo>
-        <wko.it.ocir.registry>${env.TEST_IMAGES_REPO_REGISTRY}</wko.it.ocir.registry>
-        <wko.it.repo.registry>${env.REPO_REGISTRY}</wko.it.repo.registry>
+        <wko.it.test.images.repo>${env.TEST_IMAGES_REPO}</wko.it.test.images.repo>
         <wko.it.base.images.repo>${env.BASE_IMAGES_REPO}</wko.it.base.images.repo>
         <wko.it.weblogic.image.name>${env.WEBLOGIC_IMAGE_NAME}</wko.it.weblogic.image.name>
         <wko.it.weblogic.image.tag>${env.WEBLOGIC_IMAGE_TAG}</wko.it.weblogic.image.tag>
@@ -65,7 +64,7 @@
         <wko.it.collect.logs.on.success>${env.COLLECT_LOGS_ON_SUCCESS}</wko.it.collect.logs.on.success>
         <wko.it.sleep.seconds.after.failure>${env.SLEEP_SECONDS_AFTER_FAILURE}</wko.it.sleep.seconds.after.failure>
         <wko.it.wit.java.home>${env.WIT_JAVA_HOME}</wko.it.wit.java.home>
-        <wko.it.weblogic.image_tags>${env.WEBLOGIC_IMAGE_TAGS}</wko.it.weblogic.image_tags>
+        <wko.it.weblogic.image.tag>${env.WEBLOGIC_IMAGE_TAG}</wko.it.weblogic.image.tag>
         <wko.it.k8s.nodeport.host1>${env.K8S_NODEPORT_HOST1}</wko.it.k8s.nodeport.host1>
         <wko.it.k8s.nodeport.host2>${env.K8S_NODEPORT_HOST2}</wko.it.k8s.nodeport.host2>
         <wko.it.opdemo>${env.opdemo}</wko.it.opdemo>
@@ -193,9 +192,8 @@
                                 <wko.it.skip.cleanup>${wko.it.skip.cleanup}</wko.it.skip.cleanup>
                                 <wko.it.domain.version>${wko.it.domain.version}</wko.it.domain.version>
                                 <wko.it.kind.repo>${wko.it.kind.repo}</wko.it.kind.repo>
-                                <wko.it.ocir.registry>${wko.it.ocir.registry}</wko.it.ocir.registry>
-                                <wko.it.repo.registry>${wko.it.repo.registry}</wko.it.repo.registry>
                                 <wko.it.base.images.repo>${wko.it.base.images.repo}</wko.it.base.images.repo>
+                                <wko.it.test.images.repo>${wko.it.test.images.repo}</wko.it.test.images.repo>
                                 <wko.it.weblogic.image.name>${wko.it.weblogic.image.name}</wko.it.weblogic.image.name>
                                 <wko.it.weblogic.image.tag>${wko.it.weblogic.image.tag}</wko.it.weblogic.image.tag>
                                 <wko.it.fmwinfra.image.name>${wko.it.fmwinfra.image.name}</wko.it.fmwinfra.image.name>
@@ -235,7 +233,7 @@
                                 <wko.it.collect.logs.on.success>${wko.it.collect.logs.on.success}</wko.it.collect.logs.on.success>
                                 <wko.it.sleep.seconds.after.failure>${wko.it.sleep.seconds.after.failure}</wko.it.sleep.seconds.after.failure>
                                 <wko.it.wit.java.home>${wko.it.wit.java.home}</wko.it.wit.java.home>
-                                <wko.it.weblogic.image_tags>${wko.it.weblogic.image_tags}</wko.it.weblogic.image_tags>
+                                <wko.it.weblogic.image.tag>${wko.it.weblogic.image.tag}</wko.it.weblogic.image.tag>
                                 <wko.it.k8s.nodeport.host1>${wko.it.k8s.nodeport.host1}</wko.it.k8s.nodeport.host1>
                                 <wko.it.k8s.nodeport.host2>${wko.it.k8s.nodeport.host2}</wko.it.k8s.nodeport.host2>
                                 <wko.it.opdemo>${wko.it.opdemo}</wko.it.opdemo>
