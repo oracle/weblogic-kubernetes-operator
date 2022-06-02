@@ -126,6 +126,7 @@ public class WeblogicApi extends CustomObjectsApi {
    * @return call
    * @throws ApiException on failure
    */
+  @SuppressWarnings("java:s107")
   public Call listNamespacedClusterAsync(
       String namespace,
       String pretty,
@@ -339,6 +340,13 @@ public class WeblogicApi extends CustomObjectsApi {
     public void onDownloadProgress(long l, long l1, boolean b) {
       clusterListApiCallback.onDownloadProgress(l, l1, b);
     }
+
+    private ClusterList toClusterList(Object o) {
+      if (o == null) {
+        return null;
+      }
+      return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterList.class);
+    }
   }
 
   private class DomainListApiCallbackWrapper implements ApiCallback<Object> {
@@ -379,13 +387,6 @@ public class WeblogicApi extends CustomObjectsApi {
       return null;
     }
     return getApiClient().getJSON().getGson().fromJson(convertToJson(o), DomainResource.class);
-  }
-
-  private ClusterList toClusterList(Object o) {
-    if (o == null) {
-      return null;
-    }
-    return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterList.class);
   }
 
   private DomainList toDomainList(Object o) {

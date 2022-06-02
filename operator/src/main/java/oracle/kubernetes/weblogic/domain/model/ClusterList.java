@@ -67,6 +67,7 @@ public class ClusterList implements KubernetesListObject {
    *
    * @return API version
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   public String getApiVersion() {
     return apiVersion;
   }
@@ -78,6 +79,7 @@ public class ClusterList implements KubernetesListObject {
    *
    * @param apiVersion API version
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   public void setApiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
   }
@@ -194,6 +196,7 @@ public class ClusterList implements KubernetesListObject {
     return this;
   }
 
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -204,6 +207,7 @@ public class ClusterList implements KubernetesListObject {
         .toString();
   }
 
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
@@ -214,6 +218,7 @@ public class ClusterList implements KubernetesListObject {
         .toHashCode();
   }
 
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
   public boolean equals(Object other) {
     if (other == this) {

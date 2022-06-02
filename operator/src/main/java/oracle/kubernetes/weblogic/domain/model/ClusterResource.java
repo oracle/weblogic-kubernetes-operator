@@ -19,8 +19,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-
 /**
  * An element representing a cluster in the domain configuration.
  *
@@ -262,23 +260,6 @@ public class ClusterResource implements KubernetesObject {
    */
   public String getDomainUid() {
     return Optional.ofNullable(spec.getDomainUid()).orElse(KubernetesUtils.getDomainUidLabel(metadata));
-  }
-
-  /**
-   * Sets the value of the domainUID label in the given Kubernetes resource metadata.
-   *
-   * @param name the uid
-   * @return value of the domainUID label
-   */
-  public ClusterResource withDomainUid(String name) {
-    Optional.ofNullable(metadata)
-        .map(V1ObjectMeta::getLabels)
-        .ifPresent(labels -> labels.put(DOMAINUID_LABEL, name));
-    return this;
-  }
-
-  String getRestartVersion() {
-    return spec.getRestartVersion();
   }
 
   @NotNull

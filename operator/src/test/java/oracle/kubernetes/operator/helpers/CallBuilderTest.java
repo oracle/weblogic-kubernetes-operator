@@ -64,6 +64,8 @@ import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -91,6 +93,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class CallBuilderTest {
   private static final String NAMESPACE = "testspace";
   private static final String UID = "uid";
+  private static final String CLUSTER_RESOURCE = String.format(
+          "/apis/weblogic.oracle/" + KubernetesConstants.CLUSTER_VERSION + "/namespaces/%s/clusters",
+          NAMESPACE);
   private static final String DOMAIN_RESOURCE = String.format(
       "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
       NAMESPACE);
@@ -298,6 +303,23 @@ class CallBuilderTest {
     DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listClusterAsync_returnsClusters() throws InterruptedException {
+    ClusterResource cluster1 = new ClusterResource();
+    ClusterResource cluster2 = new ClusterResource();
+
+    ClusterList list = new ClusterList().withItems(Arrays.asList(cluster1, cluster2));
+    defineHttpGetResponse(CLUSTER_RESOURCE, list);
+
+    KubernetesTestSupportTest.TestResponseStep<ClusterList> responseStep
+            = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().listClusterAsync(NAMESPACE, responseStep));
+
+    ClusterList received = responseStep.waitForAndGetCallResponse().getResult();
+    assertThat(received.getItems(), hasSize(2));
   }
 
   @Test
