@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodEvictedStatusInOperatorLogs;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -1285,5 +1286,32 @@ public class CommonTestUtils {
     }
     getLogger().info("Creating unique name {0}", cmName);
     return cmName;
+  }
+
+  /**
+   * check the pod evicted status exists inn Operator log.
+   *
+   * @param opNamespace in which the Operator pod is running
+   * @param podName name of the pod to check
+   * @param ephemeralStorage ephemeral storage number
+   */
+  public static void checkPodEvictedStatus(String opNamespace, String podName, String ephemeralStorage) {
+    final LoggingFacade logger = getLogger();
+
+    String regex = new StringBuffer()
+        .append(".*Pod\\s")
+        .append(podName)
+        .append("\\s*was\\s*evicted\\s*due\\s*to\\s*Pod\\s*ephemeral\\s*local\\s*storage")
+        .append("\\s*usage\\s*exceeds\\s*the\\s*total\\s*limit\\s*of\\s*containers\\s*")
+        .append(ephemeralStorage).toString();
+
+    logger.info("Wait for regex {0} for pod {1} existing in Operator log", regex, podName);
+    testUntil(
+        withStandardRetryPolicy,
+        checkPodEvictedStatusInOperatorLogs(opNamespace, regex),
+        logger,
+        "{0} is evicted and regex {1} found in Operator log",
+        podName,
+        regex);
   }
 }
