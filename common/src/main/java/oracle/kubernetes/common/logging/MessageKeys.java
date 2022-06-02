@@ -153,38 +153,20 @@ public class MessageKeys {
   public static final String SERVER_SHUTDOWN_REST_TIMEOUT = "WLSKO-0202";
   public static final String SERVER_SHUTDOWN_REST_THROWABLE = "WLSKO-0203";
   public static final String SERVER_SHUTDOWN_REST_RETRY = "WLSKO-0204";
-  public static final String CONVERSION_WEBHOOK_STARTED = "WLSKO-0205";
-  public static final String COULD_NOT_CREATE_WEBHOOK_LIVENESS_FILE = "WLSKO-0206";
-  public static final String NO_WEBHOOK_CERTIFICATE = "WLSKO-0207";
-  public static final String WEBHOOK_CONFIG_NAMESPACE = "WLSKO-0208";
-  public static final String WAIT_FOR_CRD_INSTALLATION = "WLSKO-0209";
-  public static final String WEBHOOK_SHUTTING_DOWN = "WLSKO-0210";
-  public static final String STARTING_WEBHOOK_LIVENESS_THREAD = "WLSKO-0211";
-  public static final String WEBHOOK_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0212";
-  public static final String INPUT_FILE_NON_EXISTENT = "WLSKO-0213";
-  public static final String OUTPUT_FILE_NON_EXISTENT = "WLSKO-0214";
-  public static final String OUTPUT_FILE_EXISTS = "WLSKO-0215";
-  public static final String PRINT_HELP = "WLSKO-0216";
-  public static final String OUTPUT_DIRECTORY = "WLSKO-0217";
-  public static final String OUTPUT_FILE_NAME = "WLSKO-0218";
-  public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0219";
-  public static final String DOMAIN_UPGRADE_SUCCESS = "WLSKO-0220";
-  public static final String DOMAIN_CONVERSION_FAILED = "WLSKO-0221";
-  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0222";
-  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0223";
+  public static final String INPUT_FILE_NON_EXISTENT = "WLSKO-0205";
+  public static final String OUTPUT_FILE_NON_EXISTENT = "WLSKO-0206";
+  public static final String OUTPUT_FILE_EXISTS = "WLSKO-0207";
+  public static final String PRINT_HELP = "WLSKO-0208";
+  public static final String OUTPUT_DIRECTORY = "WLSKO-0209";
+  public static final String OUTPUT_FILE_NAME = "WLSKO-0210";
+  public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0211";
+  public static final String DOMAIN_UPGRADE_SUCCESS = "WLSKO-0212";
+  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0213";
+  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0214";
   public static final String FLUENTD_CONFIGMAP_CREATED = "WLSKO-0224";
   public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
-  public static final String POD_EVICTED = "WLSKO-0226";
-  public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
-  public static final String VALIDATING_WEBHOOK_CONFIGURATION_CREATED = "WLSKO-0228";
-  public static final String CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKO-0229";
-  public static final String VALIDATION_FAILED = "WLSKO-0230";
-  public static final String VALIDATING_WEBHOOK_CONFIGURATION_REPLACED = "WLSKO-0231";
-  public static final String REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKO-0232";
-  public static final String READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKO-0233";
-  public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSKO-0234";
-  public static final String CLUSTER_REPLICAS_TOO_HIGH = "WLSKO-0235";
-  public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSKO-0236";
+  public static final String POD_EVICTED = "WLSKO-0215";
+  public static final String POD_EVICTED_NO_RESTART = "WLSKO-0216";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -256,6 +238,25 @@ public class MessageKeys {
   public static final String DOMAIN_INVALID_ERROR_EVENT_SUGGESTION = "WLSEO-0028";
   public static final String TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION = "WLSEO-0029";
   public static final String REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION = "WLSEO-0030";
+
+  // Webhook messages
+  public static final String CONVERSION_WEBHOOK_STARTED = "WLSWH-0001";
+  public static final String NO_WEBHOOK_CERTIFICATE = "WLSWH-0002";
+  public static final String WEBHOOK_CONFIG_NAMESPACE = "WLSWH-0003";
+  public static final String WAIT_FOR_CRD_INSTALLATION = "WLSWH-0004";
+  public static final String WEBHOOK_SHUTTING_DOWN = "WLSWH-0005";
+  public static final String STARTING_WEBHOOK_LIVENESS_THREAD = "WLSWH-0006";
+  public static final String WEBHOOK_IDENTITY_INITIALIZATION_FAILED = "WLSWH-0007";
+  public static final String DOMAIN_CONVERSION_FAILED = "WLSWH-0008";
+  public static final String VALIDATING_WEBHOOK_CONFIGURATION_CREATED = "WLSWH-0009";
+  public static final String CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0010";
+  public static final String VALIDATION_FAILED = "WLSWH-0011";
+  public static final String VALIDATING_WEBHOOK_CONFIGURATION_REPLACED = "WLSWH-0012";
+  public static final String REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0013";
+  public static final String READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0014";
+  public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0015";
+  public static final String CLUSTER_REPLICAS_TOO_HIGH = "WLSWH-0016";
+  public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSWH-0017";
 
   private MessageKeys() {
   }
