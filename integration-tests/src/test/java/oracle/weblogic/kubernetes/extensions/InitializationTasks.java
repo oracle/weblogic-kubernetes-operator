@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -168,7 +167,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         // docker login to BASE_IMAGES_REPO 
         logger.info("docker login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
         testUntil(withVeryLongRetryPolicy,
-                () -> dockerLogin(TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+                () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
                 "docker login to BASE_IMAGES_REPO to be successful");
         // The following code is for pulling WLS images if running tests in Kind cluster
@@ -242,7 +241,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         logger.info("docker login");
         testUntil(withVeryLongRetryPolicy,
-              () -> dockerLogin(TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+              () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
               "docker login to BASE_IMAGES_REPO to be successful");
 
@@ -394,7 +393,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         .append(scriptPath.toFile().getAbsolutePath())
         .append(" -u " + BASE_IMAGES_REPO_USERNAME)
         .append(" -p \"" + BASE_IMAGES_REPO_PASSWORD + "\"")
-        .append(" -e " + TestConstants.BASE_IMAGES_REPO);
+        .append(" -e " + BASE_IMAGES_REPO);
     ExecResult result = null;
     try {
       result = ExecCommand.exec(cmd.toString(), true);
