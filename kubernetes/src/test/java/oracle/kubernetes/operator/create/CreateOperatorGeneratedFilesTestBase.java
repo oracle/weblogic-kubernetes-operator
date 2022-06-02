@@ -206,7 +206,9 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         .metadata(
                             newObjectMeta()
                                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace())
-                                .putLabelsItem(APP_LABEL, "weblogic-operator"))
+                                .putLabelsItem(APP_LABEL, "weblogic-operator")
+                                .putAnnotationsItem("prometheus.io/port", "8083")
+                                .putAnnotationsItem("prometheus.io/scrape", "true"))
                         .spec(
                             newPodSpec()
                                 .serviceAccountName(getInputs().getServiceAccount())
@@ -324,8 +326,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
     V1ServiceSpec spec =
         newServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT).putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
-      spec.addPortsItem(
-          newServicePort()
+      spec.addPortsItem(newServicePort()
               .name("rest")
               .port(8081)
               .appProtocol("https")
@@ -370,7 +371,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
             newServiceSpec()
                 .type(V1ServiceSpec.TypeEnum.CLUSTERIP)
                 .putSelectorItem(APP_LABEL, "weblogic-operator")
-                .addPortsItem(newServicePort().name("rest").appProtocol("https").port(8082)));
+                .addPortsItem(newServicePort().name("rest").appProtocol("https").port(8082))
+                .addPortsItem(newServicePort().name("metrics").appProtocol("http").port(8083)));
   }
 
   @Test

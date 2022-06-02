@@ -26,42 +26,42 @@ public class AdmissionRequest {
    */
   @SerializedName("uid")
   @Expose
-  protected String uid;
+  private String uid;
 
   /**
    * Fully-qualified group/version/kind of the incoming object.
    */
   @SerializedName("kind")
   @Expose
-  protected Map<String, String> kind;
+  private Map<String, String> kind;
 
   /**
    * Fully-qualified group/version/kind of the resource being modified.
    */
   @SerializedName("resource")
   @Expose
-  protected Map<String, String> resource;
+  private Map<String, String> resource;
 
   /**
    * The subresource, if the request is to a subresource.
    */
   @SerializedName("subResource")
   @Expose
-  protected Map<String, String> subResource;
+  private Map<String, String> subResource;
 
   /**
    * The new object being admitted.
    */
   @SerializedName("object")
   @Expose
-  protected DomainResource object;
+  private DomainResource object;
 
   /**
    * The existing object.
    */
   @SerializedName("oldObject")
   @Expose
-  protected DomainResource oldObject;
+  private DomainResource oldObject;
 
   public String getUid() {
     return uid;
