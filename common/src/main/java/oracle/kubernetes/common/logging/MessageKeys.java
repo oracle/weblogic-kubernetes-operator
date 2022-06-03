@@ -153,20 +153,20 @@ public class MessageKeys {
   public static final String SERVER_SHUTDOWN_REST_TIMEOUT = "WLSKO-0202";
   public static final String SERVER_SHUTDOWN_REST_THROWABLE = "WLSKO-0203";
   public static final String SERVER_SHUTDOWN_REST_RETRY = "WLSKO-0204";
-  public static final String INPUT_FILE_NON_EXISTENT = "WLSKO-0205";
-  public static final String OUTPUT_FILE_NON_EXISTENT = "WLSKO-0206";
-  public static final String OUTPUT_FILE_EXISTS = "WLSKO-0207";
-  public static final String PRINT_HELP = "WLSKO-0208";
-  public static final String OUTPUT_DIRECTORY = "WLSKO-0209";
-  public static final String OUTPUT_FILE_NAME = "WLSKO-0210";
-  public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0211";
-  public static final String DOMAIN_UPGRADE_SUCCESS = "WLSKO-0212";
-  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0213";
-  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0214";
+  public static final String INPUT_FILE_NON_EXISTENT = "WLSKO-0213";
+  public static final String OUTPUT_FILE_NON_EXISTENT = "WLSKO-0214";
+  public static final String OUTPUT_FILE_EXISTS = "WLSKO-0215";
+  public static final String PRINT_HELP = "WLSKO-0216";
+  public static final String OUTPUT_DIRECTORY = "WLSKO-0217";
+  public static final String OUTPUT_FILE_NAME = "WLSKO-0218";
+  public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0219";
+  public static final String DOMAIN_UPGRADE_SUCCESS = "WLSKO-0220";
+  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0222";
+  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0223";
   public static final String FLUENTD_CONFIGMAP_CREATED = "WLSKO-0224";
   public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
-  public static final String POD_EVICTED = "WLSKO-0215";
-  public static final String POD_EVICTED_NO_RESTART = "WLSKO-0216";
+  public static final String POD_EVICTED = "WLSKO-0226";
+  public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
