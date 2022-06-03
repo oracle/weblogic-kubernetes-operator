@@ -13,8 +13,8 @@ import org.glassfish.jersey.server.ResourceConfig;
  * WebhookRestServer that runs domain custom resource conversion webhook's REST api.
  */
 public abstract class BaseRestServer extends BaseServer {
-  static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  final RestConfig config;
+  protected static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  protected final RestConfig config;
 
   /**
    * Base constructor for the RestServer and WebhookRestServer.
@@ -23,7 +23,7 @@ public abstract class BaseRestServer extends BaseServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  BaseRestServer(RestConfig config) {
+  protected BaseRestServer(RestConfig config) {
     this.config = config;
   }
 
@@ -33,7 +33,7 @@ public abstract class BaseRestServer extends BaseServer {
    * @param restConfig the operator or conversion webhook REST configuration
    * @return a resource configuration
    */
-  abstract ResourceConfig createResourceConfig(RestConfig restConfig);
+  protected abstract ResourceConfig createResourceConfig(RestConfig restConfig);
 
   /**
    * Defines a resource configuration by calling the abstract method with the config passed in the constructor.

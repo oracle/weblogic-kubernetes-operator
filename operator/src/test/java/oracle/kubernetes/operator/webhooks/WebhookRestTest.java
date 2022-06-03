@@ -21,7 +21,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestTestBase;
-import oracle.kubernetes.operator.http.rest.WebhookRestServer;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
 import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -55,6 +54,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.crea
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setFromModel;
+import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
@@ -106,7 +106,7 @@ class WebhookRestTest extends RestTestBase {
 
   @Override
   protected Application configure() {
-    return new WebhookRestServer(RestConfigStub.create(this::getRestBackend)).createResourceConfig();
+    return new WebhookRestServer(create(this::getRestBackend)).createResourceConfig();
   }
 
   // Note: the #configure method is called during class initialization, before the restBackend field
