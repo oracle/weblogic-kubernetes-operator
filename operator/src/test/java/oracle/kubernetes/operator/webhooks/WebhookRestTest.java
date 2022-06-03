@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest;
+package oracle.kubernetes.operator.webhooks;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -19,11 +19,14 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.http.rest.RestConfig;
+import oracle.kubernetes.operator.http.rest.RestTestBase;
+import oracle.kubernetes.operator.http.rest.WebhookRestServer;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
-import oracle.kubernetes.operator.http.rest.model.AdmissionRequest;
-import oracle.kubernetes.operator.http.rest.model.AdmissionResponse;
-import oracle.kubernetes.operator.http.rest.model.AdmissionResponseStatus;
-import oracle.kubernetes.operator.http.rest.model.AdmissionReview;
+import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
+import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
@@ -40,20 +43,20 @@ import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KI
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.BAD_REPLICAS;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.createAuxiliaryImage;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.createDomain;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.setAuxiliaryImages;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.setFromModel;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setFromModel;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;

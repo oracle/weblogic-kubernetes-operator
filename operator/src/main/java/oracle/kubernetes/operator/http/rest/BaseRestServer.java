@@ -35,7 +35,12 @@ public abstract class BaseRestServer extends BaseServer {
    */
   abstract ResourceConfig createResourceConfig(RestConfig restConfig);
 
-  protected ResourceConfig createResourceConfig() {
+  /**
+   * Defines a resource configuration by calling the abstract method with the config passed in the constructor.
+   *
+   * @return a resource configuration
+   */
+  public ResourceConfig createResourceConfig() {
     LOGGER.entering();
 
     ResourceConfig rc = createResourceConfig(config);

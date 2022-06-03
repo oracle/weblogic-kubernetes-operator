@@ -24,8 +24,8 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAI
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readConversionReview;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeConversionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
