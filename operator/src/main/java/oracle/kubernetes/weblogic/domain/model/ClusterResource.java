@@ -75,7 +75,7 @@ public class ClusterResource implements KubernetesObject {
   private ClusterStatus status;
 
   String getClusterName() {
-    return Optional.ofNullable(spec.getClusterName()).orElse(metadata.getName());
+    return Optional.ofNullable(spec.getClusterName()).orElse(getMetadata().getName());
   }
 
   Integer getReplicas() {
@@ -116,7 +116,6 @@ public class ClusterResource implements KubernetesObject {
     ClusterResource cluster = (ClusterResource) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
         .append(metadata, cluster.metadata)
         .append(apiVersion, cluster.apiVersion)
         .append(kind, cluster.kind)
@@ -159,19 +158,6 @@ public class ClusterResource implements KubernetesObject {
   }
 
   /**
-   * APIVersion defines the versioned schema of this representation of an object. Servers should
-   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
-   *
-   * @param apiVersion API version
-   * @return this
-   */
-  public ClusterResource withApiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-    return this;
-  }
-
-  /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
    * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
@@ -191,19 +177,6 @@ public class ClusterResource implements KubernetesObject {
    */
   public void setKind(String kind) {
     this.kind = kind;
-  }
-
-  /**
-   * Kind is a string value representing the REST resource this object represents. Servers may infer
-   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
-   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @param kind Kind
-   * @return this
-   */
-  public ClusterResource withKind(String kind) {
-    this.kind = kind;
-    return this;
   }
 
   /**

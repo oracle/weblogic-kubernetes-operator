@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -17,85 +16,17 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** ClusterList is a list of Clusters. */
-public class ClusterList implements KubernetesListObject {
-
-  /**
-   * APIVersion defines the versioned schema of this representation of an object. Servers should
-   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
-   */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
-  @SerializedName("apiVersion")
-  @Expose
-  private String apiVersion;
+public class ClusterList extends KubernetesListObjectImpl {
 
   /**
    * List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
    * Required.
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("items")
   @Expose
   @Valid
   @NotNull
   private List<ClusterResource> items = new ArrayList<>();
-
-  /**
-   * Kind is a string value representing the REST resource this object represents. Servers may infer
-   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
-   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.
-   */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
-  @SerializedName("kind")
-  @Expose
-  private String kind;
-
-  /**
-   * Standard list metadata. More info:
-   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.
-   */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
-  @SerializedName("metadata")
-  @Expose
-  @Valid
-  private V1ListMeta metadata;
-
-  /**
-   * APIVersion defines the versioned schema of this representation of an object. Servers should
-   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
-   *
-   * @return API version
-   */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
-  public String getApiVersion() {
-    return apiVersion;
-  }
-
-  /**
-   * APIVersion defines the versioned schema of this representation of an object. Servers should
-   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
-   *
-   * @param apiVersion API version
-   */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
-  public void setApiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-  }
-
-  /**
-   * APIVersion defines the versioned schema of this representation of an object. Servers should
-   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
-   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
-   *
-   * @param apiVersion API version
-   * @return this
-   */
-  public ClusterList withApiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-    return this;
-  }
 
   /**
    * List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
@@ -129,74 +60,6 @@ public class ClusterList implements KubernetesListObject {
     return this;
   }
 
-  /**
-   * Kind is a string value representing the REST resource this object represents. Servers may infer
-   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
-   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @return kind
-   */
-  public String getKind() {
-    return kind;
-  }
-
-  /**
-   * Kind is a string value representing the REST resource this object represents. Servers may infer
-   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
-   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @param kind kind
-   */
-  public void setKind(String kind) {
-    this.kind = kind;
-  }
-
-  /**
-   * Kind is a string value representing the REST resource this object represents. Servers may infer
-   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
-   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @param kind kind
-   * @return this
-   */
-  public ClusterList withKind(String kind) {
-    this.kind = kind;
-    return this;
-  }
-
-  /**
-   * Standard list metadata. More info:
-   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @return metadata
-   */
-  public V1ListMeta getMetadata() {
-    return metadata;
-  }
-
-  /**
-   * Standard list metadata. More info:
-   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @param metadata metadata
-   */
-  public void setMetadata(V1ListMeta metadata) {
-    this.metadata = metadata;
-  }
-
-  /**
-   * Standard list metadata. More info:
-   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @param metadata metadata
-   * @return this
-   */
-  public ClusterList withMetadata(V1ListMeta metadata) {
-    this.metadata = metadata;
-    return this;
-  }
-
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -207,7 +70,6 @@ public class ClusterList implements KubernetesListObject {
         .toString();
   }
 
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
@@ -218,7 +80,6 @@ public class ClusterList implements KubernetesListObject {
         .toHashCode();
   }
 
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
   public boolean equals(Object other) {
     if (other == this) {
@@ -236,4 +97,15 @@ public class ClusterList implements KubernetesListObject {
         .isEquals();
   }
 
+  /**
+   * Standard list metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @param metadata metadata
+   * @return this
+   */
+  public ClusterList withMetadata(V1ListMeta metadata) {
+    this.metadata = metadata;
+    return this;
+  }
 }

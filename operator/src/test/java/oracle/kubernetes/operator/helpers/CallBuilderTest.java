@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -78,11 +79,13 @@ import org.junit.jupiter.api.parallel.ResourceLock;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -311,7 +314,8 @@ class CallBuilderTest {
     ClusterResource cluster1 = new ClusterResource();
     ClusterResource cluster2 = new ClusterResource();
 
-    ClusterList list = new ClusterList().withItems(Arrays.asList(cluster1, cluster2));
+    ClusterList list = new ClusterList().withItems(Arrays.asList(cluster1, cluster2))
+            .withMetadata(new V1ListMeta()._continue(CONTINUE));
     defineHttpGetResponse(CLUSTER_RESOURCE, list);
 
     KubernetesTestSupportTest.TestResponseStep<ClusterList> responseStep
@@ -320,6 +324,9 @@ class CallBuilderTest {
 
     ClusterList received = responseStep.waitForAndGetCallResponse().getResult();
     assertThat(received.getItems(), hasSize(2));
+    assertThat(received, equalTo(list));
+    assertThat(received.getMetadata().getContinue(), equalTo(CONTINUE));
+    assertThat(received.getItems(), containsInAnyOrder(cluster1, cluster2));
   }
 
   @Test
