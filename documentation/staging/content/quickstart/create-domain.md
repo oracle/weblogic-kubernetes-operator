@@ -7,13 +7,15 @@ weight: 7
 
 1.  Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).
 
-1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `username` and `password` for the domain. For example, if the user-name is `weblogic` and password is `welcome1`, then run the following command:
+1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `user name` and `password` for the domain. For example, if the `user name` is `weblogic` and `password` is `welcome1`, then run the following command:
 
     ```shell
     $ kubectl create secret generic sample-domain1-weblogic-credentials \
       --from-literal=username=weblogic --from-literal=password=welcome1 \
       -n sample-domain1-ns
     ```
+
+   If you selected a different user name and password, then replace `weblogic` and `welcome1` with your user name and password.
     
 
 1. Create a domain runtime encryption secret using the following command:
@@ -24,7 +26,7 @@ weight: 7
        --from-literal=password=my_runtime_password
     ```
 
-    The above commands would create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` which is used in the sample domain YAML file. If you want to use different secret names, then update the sample doman YAML file accordingly.
+    The above commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then update the sample doman YAML file accordingly.
 
 1. Use one of the two following options to create the domain.
    - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following command to apply the sample domain resource.
@@ -32,6 +34,12 @@ weight: 7
        ```shell
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
        ```
+
+      You can download the WLS Domain YAML file using the below command to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar and make any changes before running the `kubectl apply` command.
+
+      ```shell
+      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml -o /tmp/quickstart/mii-aux-image-domain.yaml
+      ```
    - **Option 2**: If you created an auxiliary image using optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then use the following steps to create the domain.
 
        1. Prepare the domain resource.
@@ -189,14 +197,16 @@ weight: 7
         #secrets:
         #- sample-domain1-datasource-secret
                 {{% /expand %}}
-       2. Update the image field under `spec.configuration.model.auxiliaryImages` section to use the name and tag of the auxiliary image that you have created.
-          For example, if you created an auxiliary image with name `my-aux-image:v1`, then your updated `spec.configuration.model.auxiliaryImages` section will look like this.
+       2. If you chose a different name and tag for the auxiliary image you created, then update the image field under `spec.configuration.model.auxiliaryImages` section to use that name and tag.
+          For example, if you named the auxiliary image as `my-aux-image:v1`, then update the `spec.configuration.model.auxiliaryImages` section as shown below.
             ```
                    auxiliaryImages:
                    - image: "my-aux-image:v1"
             ```
 
-       3. Create the domain by applying the domain resource. Run the following command:
+       3. If you chose non-default values for any other fields such as `spec.image`, `spec.imagePullSecrets`, `spec.webLogicCredentialsSecret`, and `spec.configuration.model.runtimeEncryptionSecret`, then update those fields accordingly.
+
+       4. Create the domain by applying the domain resource. Run the following command:
 
           ```shell
           $ kubectl apply -f /tmp/quickstart/mii-aux-image-domain.yaml
@@ -266,38 +276,69 @@ weight: 7
 
 1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, you can send a request to the URL for the "quick start app", as shown in the example below, which will return an HTTP 200 status code.
 
-    ```shell
-    curl -i http://localhost:30305/quickstart/
-    ```
-    ```
-    HTTP/1.1 200 OK
-    Content-Length: 264
-    Content-Type: text/html; charset=UTF-8
-    Date: Tue, 24 May 2022 17:20:49 GMT
-    Set-Cookie: JSESSIONID=uY73FejgzFGdKmKvG0OOF_tN-0RiHjC28X_mWglMGXN3NqP8f_qR!-1753503593; path=/; HttpOnly
+    {{< tabs groupId="config" >}}
+    {{% tab name="Single Node Cluster" %}}
+        $ curl -i http://localhost:30305/quickstart/
     
-    
-    
-    <!DOCTYPE html>
-    <html>
-    <body>
-            <h1>Welcome to WebLogic on Kubernetes Quick Start</font></h1><br>
-    
-            <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server1<br><b>Server time:</b> 17:20:49<br><p>
-    </body>
-    </html>
-    ```
+        HTTP/1.1 200 OK
+        Content-Length: 264
+        Content-Type: text/html; charset=UTF-8
+        Date: Tue, 24 May 2022 17:20:49 GMT
+        Set-Cookie: JSESSIONID=uY73FejgzFGdKmKvG0OOF_tN-0RiHjC28X_mWglMGXN3NqP8f_qR!-1753503593; path=/; HttpOnly
+
+
+
+        <!DOCTYPE html>
+        <html>
+        <body>
+                <h1>Welcome to WebLogic on Kubernetes Quick Start</font></h1><br>
+
+                <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server1<br><b>Server time:</b> 17:20:49<br><p>
+        </body>
+        </html>
+    {{% /tab %}}
+    {{% tab name="OKE Cluster" %}}
+       $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
+
+       $ curl -i http://${LOADBALANCER_INGRESS_IP}/quickstart/
+
+       HTTP/1.1 200 OK
+       Via: 1.1 10.68.69.7 (McAfee Web Gateway 9.2.4.34298)
+       Date: Thu, 02 Jun 2022 00:22:51 GMT
+       Set-Cookie: JSESSIONID=WHMhyyg-7xmJ-4dvjo6JQuWY4fg94p5_rKmbNAdk2HWWUuKujtRU!182127355; path=/; HttpOnly
+       Content-Type: text/html; charset=UTF-8
+       Content-Length: 264
+       Proxy-Connection: Keep-Alive
+
+
+
+       <!DOCTYPE html>
+       <html>
+       <body>
+               <h1>Welcome to WebLogic on Kubernetes Quick Start</font></h1><br>
+
+               <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server2<br><b>Server time:</b> 00:22:51<br><p>
+       </body>
+       </html>
+    {{% /tab %}}
+    {{< /tabs >}}
+
+
     {{% notice note %}} Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
     {{% /notice %}}
-
-
 1.	To access the WebLogic Server Administration Console:
+    {{< tabs groupId="config" >}}
+    {{% tab name="Single Node Cluster" %}}
+      a. Open a browser to `http://localhost:30305/console`.
+    {{% /tab %}}
+    {{% tab name="OKE Cluster" %}}
+      a. Get the LoadBalancer Ingress IP address using the following command.
+         $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
 
-    a. Open a browser to `http://localhost:30305/console`.
+      b. Open a browser to `http://${LOADBALANCER_INGRESS_IP}/console`.
+    {{% /tab %}}
+    {{< /tabs >}}
+
 
     {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}).
     {{% /notice %}}
-
-1.	To access the sample quick start application from the browser: 
-
-    a. Open a browser to `http://localhost:30305/quickstart`.
