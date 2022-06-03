@@ -26,16 +26,16 @@ weight: 7
        --from-literal=password=my_runtime_password
     ```
 
-    The above commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then update the sample doman YAML file accordingly.
+    The above two commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then you will need to update the sample doman YAML file accordingly in the next step.
 
-1. Use one of the two following options to create the domain.
+1. Use one of the following two options to create the domain.
    - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following command to apply the sample domain resource.
 
        ```shell
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
        ```
 
-      You can download the WLS Domain YAML file using the below command to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar and make any changes before running the `kubectl apply` command.
+      You can download the WLS Domain YAML file using the following command to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar and make any changes before running the `kubectl apply` command.
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml -o /tmp/quickstart/mii-aux-image-domain.yaml
