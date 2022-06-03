@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.http.rest.model;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.KubernetesConstants;
 
 /**
  * AdmissionReview represents a request or a response object for an admission webhook call.
@@ -27,18 +28,16 @@ public class AdmissionReview {
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
    * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("apiVersion")
   @Expose
   @Description("The API version defines the versioned schema of this AdminssionReview. Required.")
-  private String apiVersion;
+  private String apiVersion = KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
    * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("kind")
   @Expose
   @Description("The type of the REST resource. Must be \"AdmissionReview\". Required.")

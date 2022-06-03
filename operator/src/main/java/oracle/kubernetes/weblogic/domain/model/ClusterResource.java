@@ -30,17 +30,15 @@ public class ClusterResource implements KubernetesObject {
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
    * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("apiVersion")
   @Description("The API version defines the versioned schema of this cluster.")
-  private String apiVersion = KubernetesConstants.CLUSTER_VERSION;
+  private String apiVersion = KubernetesConstants.API_VERSION_CLUSTER_WEBLOGIC_ORACLE;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
    * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("kind")
   @Description("The type of the REST resource. Must be \"Cluster\".")
   private String kind = KubernetesConstants.CLUSTER;
@@ -49,7 +47,6 @@ public class ClusterResource implements KubernetesObject {
    * Standard object's metadata. More info:
    * https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("metadata")
   @Description("The resource metadata. Must include the `name` and `namespace.")
   private V1ObjectMeta metadata = new V1ObjectMeta();

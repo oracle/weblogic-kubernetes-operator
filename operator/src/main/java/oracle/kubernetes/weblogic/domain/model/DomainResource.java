@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -78,22 +79,20 @@ public class DomainResource implements KubernetesObject {
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
    * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("apiVersion")
   @Expose
   @Description("The API version defines the versioned schema of this Domain. Required.")
-  private String apiVersion;
+  private String apiVersion = KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
    * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
    */
-  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("kind")
   @Expose
   @Description("The type of the REST resource. Must be \"Domain\". Required.")
-  private String kind;
+  private String kind = KubernetesConstants.DOMAIN;
 
   /**
    * Standard object's metadata. More info:

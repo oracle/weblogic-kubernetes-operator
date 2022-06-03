@@ -662,14 +662,11 @@ public class CallBuilder {
     return new WeblogicApi(client)
         .listNamespacedClusterAsync(
             namespace,
-            pretty,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
             timeoutSeconds,
-            watch,
             callback);
   }
 

@@ -114,34 +114,27 @@ public class WeblogicApi extends CustomObjectsApi {
    * Asynchronously list clusters.
    *
    * @param namespace       namespace
-   * @param pretty          pretty flag
    * @param cont            continuation
    * @param fieldSelector   field selector
    * @param labelSelector   label selector
    * @param limit           limit
-   * @param resourceVersion resource version
    * @param timeoutSeconds  timeout
-   * @param watch           watch
    * @param callback        callback
    * @return call
    * @throws ApiException on failure
    */
-  @SuppressWarnings("java:s107")
   public Call listNamespacedClusterAsync(
       String namespace,
-      String pretty,
       String cont,
       String fieldSelector,
       String labelSelector,
       Integer limit,
-      String resourceVersion,
       Integer timeoutSeconds,
-      Boolean watch,
       ApiCallback<ClusterList> callback)
       throws ApiException {
     return listNamespacedCustomObjectAsync(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
-        pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
-        timeoutSeconds, watch, wrapForClusterList(callback));
+        null, null, cont, fieldSelector, labelSelector, limit, "", null,
+        timeoutSeconds, null, wrapForClusterList(callback));
   }
 
   /**

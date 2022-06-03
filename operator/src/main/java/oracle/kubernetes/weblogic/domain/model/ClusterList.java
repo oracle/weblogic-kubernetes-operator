@@ -61,16 +61,6 @@ public class ClusterList extends KubernetesListObjectImpl {
   }
 
   @Override
-  public String toString() {
-    return new ToStringBuilder(this)
-        .append("apiVersion", apiVersion)
-        .append("items", items)
-        .append("kind", kind)
-        .append("metadata", metadata)
-        .toString();
-  }
-
-  @Override
   public int hashCode() {
     return new HashCodeBuilder()
         .append(metadata)
@@ -95,6 +85,16 @@ public class ClusterList extends KubernetesListObjectImpl {
         .append(items, rhs.items)
         .append(kind, rhs.kind)
         .isEquals();
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+            .append("apiVersion", apiVersion)
+            .append("items", items)
+            .append("kind", kind)
+            .append("metadata", metadata)
+            .toString();
   }
 
   /**

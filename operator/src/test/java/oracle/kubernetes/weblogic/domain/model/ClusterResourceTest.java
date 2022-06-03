@@ -15,7 +15,7 @@ class ClusterResourceTest {
 
   @Test
   void whenResourceInitialized_hasCorrectApiVersionAndKind() {
-    assertThat(resource.getApiVersion(), equalTo("v1"));
+    assertThat(resource.getApiVersion(), equalTo("weblogic.oracle/v1"));
     assertThat(resource.getKind(), equalTo("Cluster"));
   }
 
