@@ -18,6 +18,6 @@ You may need to adjust the instructions in this guide to suit your particular fl
 
 
 
-For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet]({{< relref "/managing-operators/k8s-setup.md" >}}.
+For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet]({{< relref "/managing-operators/k8s-setup.md" >}}).
 
 The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}}).
