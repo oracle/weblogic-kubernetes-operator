@@ -23,14 +23,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodEvictedStatus;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -87,8 +86,7 @@ class ItEvictedPodsCycling {
     domainNamespace = namespaces.get(1);
 
     // install and verify Operator
-    installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        false, 0, true, domainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
@@ -112,15 +110,15 @@ class ItEvictedPodsCycling {
     }
 
     // verify admin server and managed server pods are replaced and started again
-    checkServerPodsReady();
+    checkServerPodsAndServiceReady();
   }
 
   private static Domain createAndVerifyDomain() {
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
-    assertDoesNotThrow(() -> createOcirRepoSecret(domainNamespace),
-        String.format("createSecret failed for %s", OCIR_SECRET_NAME));
+    logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
+    assertDoesNotThrow(() -> createTestRepoSecret(domainNamespace),
+        String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -154,7 +152,7 @@ class ItEvictedPodsCycling {
         domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName,
-        new String[]{OCIR_SECRET_NAME},
+        new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName,
         replicaCount,
         clusterName);
@@ -167,33 +165,22 @@ class ItEvictedPodsCycling {
 
     createDomainAndVerify(domain, domainNamespace);
 
-    checkServerPodsReady();
+    checkServerPodsAndServiceReady();
 
     return domain;
   }
 
-  private static void checkServerPodsReady() {
+  private static void checkServerPodsAndServiceReady() {
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPodPrefix + i, domainNamespace);
-      checkPodReady(managedServerPodPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPodPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodPrefix + i, domainUid, domainNamespace);
     }
   }
 }
