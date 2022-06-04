@@ -1299,6 +1299,7 @@ public class CommonTestUtils {
   public static void checkPodEvictedStatus(String opNamespace, String podName, String ephemeralStorage) {
     final LoggingFacade logger = getLogger();
 
+    logger.info("check pod {0} evicted status", podName);
     String regex = new StringBuffer()
         .append(".*Pod\\s")
         .append(podName)

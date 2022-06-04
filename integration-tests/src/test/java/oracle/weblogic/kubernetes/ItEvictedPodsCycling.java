@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -30,6 +29,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.addServerPodResources;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -57,8 +57,8 @@ class ItEvictedPodsCycling {
   private static String opNamespace = null;
   private static String domainNamespace = null;
 
-  private static Map<String, Quantity> resourceRequest = new HashMap<>();
-  private static Map<String, Quantity> resourceLimit = new HashMap<>();
+  private static Map<String, String> resourceRequest = new HashMap<>();
+  private static Map<String, String> resourceLimit = new HashMap<>();
   private static final String ephemeralStorage = "5M";
 
   private static LoggingFacade logger = null;
@@ -89,8 +89,6 @@ class ItEvictedPodsCycling {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create a domain resource
-    logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
-        domainUid, domainNamespace);
     createAndVerifyDomain();
   }
 
@@ -101,6 +99,13 @@ class ItEvictedPodsCycling {
   @Test
   @DisplayName("Use Operator log to verify that WLS server pods were evicted and replaced")
   void testEvictedPodReplaced() {
+    resourceLimit.put("ephemeral-storage", ephemeralStorage);
+    resourceRequest.put("cpu", "250m");
+    resourceRequest.put("memory", "768Mi");
+
+    // patch domain with ephemeral-storage = 5m
+    addServerPodResources(domainUid, domainNamespace, resourceLimit, resourceRequest);
+
     // verify that admin server pod evicted status exists in Operator log
     checkPodEvictedStatus(opNamespace, adminServerPodName, ephemeralStorage);
 
@@ -109,7 +114,7 @@ class ItEvictedPodsCycling {
       checkPodEvictedStatus(opNamespace, managedServerPodPrefix + i, ephemeralStorage);
     }
 
-    // verify admin server and managed server pods are replaced and started again
+    // verify that evicted pods are replaced and started
     checkServerPodsAndServiceReady();
   }
 
@@ -140,10 +145,6 @@ class ItEvictedPodsCycling {
         "weblogicenc"),
         String.format("createSecret failed for %s", encryptionSecretName));
 
-    resourceRequest.put("cpu", new Quantity("250m"));
-    resourceRequest.put("memory", new Quantity("768Mi"));
-    resourceLimit.put("ephemeral-storage", new Quantity(ephemeralStorage));
-
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
@@ -160,8 +161,8 @@ class ItEvictedPodsCycling {
     domain.spec()
         .serverPod()
             .resources(new V1ResourceRequirements()
-                .requests(resourceRequest)
-                .limits(resourceLimit));
+                .requests(new HashMap<>())
+                .limits(new HashMap<>()));
 
     createDomainAndVerify(domain, domainNamespace);
 
