@@ -722,10 +722,11 @@ class ItIntrospectVersion {
     logger.info("TEST_WEBLOGIC_IMAGE {0}", TEST_WEBLOGIC_IMAGE);
     logger.info("DOMAIN_IMAGES_REPO {0}", DOMAIN_IMAGES_REPO);
     logger.info("WEBLOGIC_IMAGE_NAME {0}", WEBLOGIC_IMAGE_NAME);
+
     //change image name to imageUpdate
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null 
-         ?  KIND_REPO + ("/weblogick8s/test-images/weblogic:" + imageTag)
+         ?  KIND_REPO + ("weblogick8s/test-images/weblogic:" + imageTag)
          : (TEST_WEBLOGIC_IMAGE + ":" + imageTag);
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
