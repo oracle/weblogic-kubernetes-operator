@@ -59,7 +59,7 @@ class ItEvictedPodsCycling {
 
   private static Map<String, String> resourceRequest = new HashMap<>();
   private static Map<String, String> resourceLimit = new HashMap<>();
-  private static final String ephemeralStorage = "20M";
+  private static final String ephemeralStorage = "50M";
 
   private static LoggingFacade logger = null;
 
