@@ -67,6 +67,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -86,6 +87,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -316,6 +318,10 @@ class CallBuilderTest {
 
     ClusterList list = new ClusterList().withItems(Arrays.asList(cluster1, cluster2))
             .withMetadata(new V1ListMeta()._continue(CONTINUE));
+    list.setApiVersion(KubernetesConstants.API_VERSION_CLUSTER_WEBLOGIC_ORACLE);
+    final String clusterList = "ClusterList";
+    list.setKind(clusterList);
+
     defineHttpGetResponse(CLUSTER_RESOURCE, list);
 
     KubernetesTestSupportTest.TestResponseStep<ClusterList> responseStep
@@ -327,6 +333,42 @@ class CallBuilderTest {
     assertThat(received, equalTo(list));
     assertThat(received.getMetadata().getContinue(), equalTo(CONTINUE));
     assertThat(received.getItems(), containsInAnyOrder(cluster1, cluster2));
+    assertThat(received.hashCode(), equalTo(list.hashCode()));
+    assertThat(received.toString(), containsString("kind="
+            + KubernetesConstants.CLUSTER));
+    assertThat(received.getApiVersion(),
+            equalTo(KubernetesConstants.API_VERSION_CLUSTER_WEBLOGIC_ORACLE));
+    assertThat(received.getKind(), equalTo(clusterList));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listClusterAsync_returnsAndVerifyClusterResource() throws InterruptedException {
+    ClusterResource cluster1 = new ClusterResource();
+    ClusterStatus status = new ClusterStatus().withClusterName("cluster-1").withReplicas(2)
+            .withMaximumReplicas(8);
+    final String myKind = "MyKind";
+    final String apiVersion = "apiVersion";
+    cluster1.setStatus(status);
+    cluster1.setKind(myKind);
+    cluster1.setApiVersion(apiVersion);
+
+    ClusterList list = new ClusterList().withItems(Arrays.asList(cluster1));
+
+    defineHttpGetResponse(CLUSTER_RESOURCE, list);
+
+    KubernetesTestSupportTest.TestResponseStep<ClusterList> responseStep
+            = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().listClusterAsync(NAMESPACE, responseStep));
+
+    ClusterList result = responseStep.waitForAndGetCallResponse().getResult();
+    assertThat(result.getItems(), hasSize(1));
+    ClusterResource received = result.getItems().get(0);
+    assertThat(received.getKind(), equalTo(myKind));
+    assertThat(received.getApiVersion(), equalTo(apiVersion));
+    assertThat(received.toString(), containsString("apiVersion=apiVersion"));
+    assertThat(received.hashCode(), equalTo(cluster1.hashCode()));
+    assertThat(received.getStatus(), equalTo(status));
   }
 
   @Test
