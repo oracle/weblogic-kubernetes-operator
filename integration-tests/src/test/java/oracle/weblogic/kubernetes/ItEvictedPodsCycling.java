@@ -37,11 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Use Operator log to test WLS server pods were evicted due to Pod ephemeral local
- * storage usage exceeds the total limit of containers 5M and replaced.
+ * storage usage exceeds the total limit of containers 50M and replaced.
  * 1. Install and start Operators
- * 2. Create and start the WebLogic domain with configuration of resource limit "ephemeral-storage=5M"
+ * 2. Create and start the WebLogic domain with configuration of resource limit "ephemeral-storage=50M"
  * 3. Verify that WLS server pods were evicted due to Pod ephemeral local
- *    storage usage exceeds the total limit of containers 5M and replaced.
+ *    storage usage exceeds the total limit of containers 50M and replaced.
  */
 @DisplayName("Test WLS server pods were evicted due to Pod ephemeral storage usage exceeds the total limit")
 @IntegrationTest
@@ -65,7 +65,7 @@ class ItEvictedPodsCycling {
 
   /**
    * Install Operator.
-   * Config resource limit and set ephemeral-storage=5M
+   * Config resource limit and set ephemeral-storage=50M
    * Create domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -93,8 +93,9 @@ class ItEvictedPodsCycling {
   }
 
   /**
-   * Use Operator log to verify that WLS server pods were evicted due to Pod ephemeral local
-   * storage usage exceeds the total limit of containers 5M and replaced.
+   * Set domain resources limits tp 50M and then use Operator log to verify
+   * that WLS server pods were evicted due to Pod ephemeral local
+   * storage usage exceeds the total limit of containers 50M and replaced. 
    */
   @Test
   @DisplayName("Use Operator log to verify that WLS server pods were evicted and replaced")
@@ -103,17 +104,11 @@ class ItEvictedPodsCycling {
     resourceRequest.put("cpu", "250m");
     resourceRequest.put("memory", "768Mi");
 
-    // patch domain with ephemeral-storage = 5m
+    // patch domain with ephemeral-storage = 50M
     addServerPodResources(domainUid, domainNamespace, resourceLimit, resourceRequest);
 
     // verify that admin server pod evicted status exists in Operator log
     checkPodEvictedStatus(opNamespace, adminServerPodName, ephemeralStorage);
-
-    /*
-    // verify that managed server pod evicted status exists in Operator log
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodEvictedStatus(opNamespace, managedServerPodPrefix + i, ephemeralStorage);
-    }*/
 
     // verify that evicted pods are replaced and started
     checkServerPodsAndServiceReady();
