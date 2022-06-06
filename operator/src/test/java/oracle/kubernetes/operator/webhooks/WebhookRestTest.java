@@ -462,9 +462,9 @@ class WebhookRestTest extends RestTestBase {
 
   private String getAsString(InputStream inputStream) {
     return new BufferedReader(
-            new InputStreamReader(inputStream, StandardCharsets.UTF_8))
-            .lines()
-            .collect(Collectors.joining("\n"));
+        new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+        .lines()
+        .collect(Collectors.joining("\n"));
   }
 
   private Entity<String> createWebhookRequest(String jsonStr) {
@@ -499,5 +499,9 @@ class WebhookRestTest extends RestTestBase {
     public int getWebhookHttpsPort() {
       return 8084;
     }
+  }
+
+  public static InputStream inputStreamFromClasspath(String path) {
+    return WebhookRestTest.class.getResourceAsStream(path);
   }
 }
