@@ -103,17 +103,6 @@ public interface TestConstants {
   public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
 
-  public static final String BASE_WEBLOGIC_IMAGE =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
-  public static final String TEST_WEBLOGIC_IMAGE =
-      TEST_IMAGES_REPO + "/weblogick8s/test-images/weblogic";
-
-  public static final String BASE_WEBLOGIC_IMAGE_NAME = BASE_WEBLOGIC_IMAGE + ":" + WEBLOGIC_IMAGE_TAG;
-  public static final String TEST_WEBLOGIC_IMAGE_NAME = TEST_WEBLOGIC_IMAGE + ":" + WEBLOGIC_IMAGE_TAG;
-
-
-
-
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
   public static final String FMWINFRA_IMAGE_NAME =
