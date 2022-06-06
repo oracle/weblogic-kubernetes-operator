@@ -53,13 +53,12 @@ pipeline {
 
     parameters {
         choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are oke-parallel (the default), integration-tests, oke-cert, and oke-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
+                        'oke-parallel',
                         'oke-cert',
                         'oke-sequential',
-                        'oke-parallel',
-                        'integration-tests',
-                        'toolkits-srg'
+                        'integration-tests'
                 ]
         )
         string(name: 'IT_TEST',
