@@ -420,6 +420,12 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
+                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                         DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
                         DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
@@ -494,6 +500,10 @@ EOF
                             export DOMAIN_IMAGES_REPO=${DOMAIN_IMAGES_REPO}
                             export BASE_IMAGES_REPO=${BASE_IMAGES_REPO}
                             export OKE_CLUSTER="true"
+                            export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
+                            export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
+                            export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
+
 
                             if [ ! -z "${http_proxy}" ]; then
                                 export http_proxy
