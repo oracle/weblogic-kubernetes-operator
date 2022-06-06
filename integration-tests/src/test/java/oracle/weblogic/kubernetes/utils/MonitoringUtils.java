@@ -81,7 +81,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -115,7 +114,8 @@ public class MonitoringUtils {
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
     String monitoringExporterRelease = MONITORING_EXPORTER_WEBAPP_VERSION;
-    String monitoringExporterWebAppScriptVersion = monitoringExporterRelease.substring(0, monitoringExporterRelease.length() - 2);
+    String monitoringExporterWebAppScriptVersion = monitoringExporterRelease.substring(0,
+        monitoringExporterRelease.length() - 2);
     String curlDownloadCmd = String.format("cd %s && "
             + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
         applicationDir,
