@@ -163,6 +163,11 @@ class AdminPodHelperTest extends PodHelperTestBase {
     return ReferenceObjects.ADMIN_MII_CONVERTED_AUX_IMAGE_POD_3_4;
   }
 
+  @Override
+  String getReferenceIstioMonitoringExporterTcpProtocol() {
+    return ReferenceObjects.ADMIN_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL;
+  }
+
   String getDomainValidationFailedKey() {
     return DOMAIN_VALIDATION_FAILED;
   }

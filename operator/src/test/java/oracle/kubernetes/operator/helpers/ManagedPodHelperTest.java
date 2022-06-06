@@ -1358,6 +1358,11 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  String getReferenceIstioMonitoringExporterTcpProtocol() {
+    return ReferenceObjects.MANAGED_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL;
+  }
+
+  @Override
   protected void verifyPodReplaced() {
     assertThat(computePodsToRoll(), not(anEmptyMap()));
   }

@@ -576,6 +576,16 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void afterUpgradeIstioMonitoringExporterPod_dontReplacePod() {
+    useProductionHash();
+    defineExporterConfiguration().withIstio();
+
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    verifyPodNotReplaced();
+  }
+
+  @Test
   void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
     defineExporterConfiguration().withIstio();
 
@@ -733,6 +743,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
+
+  abstract String getReferenceIstioMonitoringExporterTcpProtocol();
 
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
