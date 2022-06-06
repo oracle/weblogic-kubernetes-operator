@@ -374,7 +374,6 @@
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
-                  **/ItIntrospectVersion,
                   **/ItFmwDomainInPVUsingWLST,
                   **/ItFmwDomainInPVUsingWDT,
                   **/ItStickySession,
@@ -409,6 +408,8 @@
                     **/ItOperatorWlsUpgrade,
                     **/ItFmwDynamicDomainInPV,
                     **/ItFmwDomainInPVUsingWDT,
+                    **/ItLiftAndShiftFromOnPremDomain,
+                    **/ItIntrospectVersion,
                     **/ItMiiSampleFmwMain
                 </includes-failsafe>
             </properties>
@@ -423,7 +424,6 @@
                     **/ItServiceStartPolicyDynamicCluster,
                     **/ItServerStartPolicyConfigCluster,
                     **/ItMiiUpdateDomainConfig,
-                    **/ItIntrospectVersion,
                     **/ItFmwDomainInPVUsingWLST,
                     **/ItFmwDomainInPVUsingWDT,
                     **/ItStickySession,
@@ -446,7 +446,6 @@
                     **/ItMiiAuxiliaryImage,
                     **/ItMiiCustomSslStore,
                     **/ItMiiMultiModel,
-                    **/ItLiftAndShiftFromOnPremDomain,
                     **/ItLivenessProbeCustomization,
                     **/ItLogHomeFlatStructure,
                     **/ItSystemResOverrides,
