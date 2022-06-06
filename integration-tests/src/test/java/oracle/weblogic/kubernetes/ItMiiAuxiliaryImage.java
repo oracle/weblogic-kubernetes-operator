@@ -38,8 +38,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
@@ -79,7 +77,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.patchDomainWithAuxiliaryImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
@@ -385,7 +383,7 @@ class ItMiiAuxiliaryImage {
     String imageTag = getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : OCIR_REGISTRY + "/" + OCIR_WEBLOGIC_IMAGE_NAME + ":" + imageTag;
+        : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
@@ -1096,7 +1094,7 @@ class ItMiiAuxiliaryImage {
    * One auxiliary image (image1) contains the domain configuration and
    * another auxiliary image (image2) with WDT only,
    * update WDT version by patching with another auxiliary image (image3)
-   * and verify the domain is running.
+   * and verify the WDT version is updated to the one bundled with image3
    */
   @Test
   @DisplayName("Test to update WDT version using  auxiliary images")
@@ -1110,7 +1108,7 @@ class ItMiiAuxiliaryImage {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(wdtDomainNamespace);
+    createTestRepoSecret(wdtDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -1139,6 +1137,7 @@ class ItMiiAuxiliaryImage {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage9Tag, witParams);
 
     // create second auxiliary image with older wdt installation files only
+    logger.info("Create Auxiliary image with older wdt installation {0}", WDT_TEST_VERSION);
     witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
@@ -1147,6 +1146,8 @@ class ItMiiAuxiliaryImage {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage10Tag, witParams);
 
     // create third auxiliary image with newest wdt installation files only
+    logger.info("Create AUX IMAGE with latest wdt installation");
+    logger.info("Create Auxiliary image with latest wdt installation");
     witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
@@ -1192,6 +1193,7 @@ class ItMiiAuxiliaryImage {
       String wdtVersion = checkWDTVersion(wdtDomainNamespace,
           adminServerPodName, "/aux",
           this.getClass().getSimpleName());
+      logger.info("(before patch) Returned WDT Version {0}", wdtVersion);
       assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image does not match the expected");
     }, "Can't retrieve wdt version file or version does match the expected");
@@ -1200,10 +1202,11 @@ class ItMiiAuxiliaryImage {
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10,
         miiAuxiliaryImage11, domainUid, wdtDomainNamespace);
 
-    //check that WDT version is changed
+    //check that WDT version is updated to latest 
     assertDoesNotThrow(() -> {
       String wdtVersion = checkWDTVersion(wdtDomainNamespace, adminServerPodName,
           "/aux", this.getClass().getSimpleName());
+      logger.info("(after patch) Returned WDT Version {0}", wdtVersion);
       assertNotEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION,wdtVersion,
           " Used WDT in the auxiliary image was not updated");
     }, "Can't retrieve wdt version file "

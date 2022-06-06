@@ -44,7 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -69,7 +69,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUserna
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteDb;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -355,7 +355,7 @@ class ItOperatorFmwUpgrade {
 
     // create pull secrets for domainNamespace when running in non-kind
     // Kubernetes cluster this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create FMW domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -418,7 +418,7 @@ class ItOperatorFmwUpgrade {
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))

@@ -259,7 +259,6 @@ You need to set up the domain configuration for the WebLogic domain.
    Checking to see if the secret domain1-weblogic-credentials exists in namespace default
    Checking if the persistent volume claim wls-azurefile in NameSpace default exists
    The persistent volume claim wls-azurefile already exists in NameSpace default
-   Wwls 07:15:52.866794   53745 helpers.go:535] --dry-run is deprecated and can be replaced with --dry-run=client.
    configmap/domain1-create-weblogic-sample-domain-job-cm created
    Checking the configmap domain1-create-weblogic-sample-domain-job-cm was created
    configmap/domain1-create-weblogic-sample-domain-job-cm labeled

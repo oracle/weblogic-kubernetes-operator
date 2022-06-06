@@ -42,7 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
@@ -54,7 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
@@ -165,7 +165,7 @@ class ItIstioManagedCoherence {
    * Associate them with a Coherence cluster
    * Deploy the EAR file to cluster-1 that has no storage enabled
    * Deploy the GAR file to cluster-2 that has storage enabled
-   * Verify that data can be added and stored in the cache 
+   * Verify that data can be added and stored in the cache
    * and can also be retrieved from cache.
    */
   @Test
@@ -190,9 +190,9 @@ class ItIstioManagedCoherence {
     Path targetHttpFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-    
+
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     int istioIngressPort = getIstioHttpIngressPort();
@@ -376,7 +376,7 @@ class ItIstioManagedCoherence {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainInImageNamespace);
-    createOcirRepoSecret(domainInImageNamespace);
+    createTestRepoSecret(domainInImageNamespace);
     return domImage;
   }
 
@@ -450,7 +450,7 @@ class ItIstioManagedCoherence {
             .domainHomeSourceType("Image")
             .image(domImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainInImageNamespace))

@@ -100,7 +100,7 @@ EOF
 kubectlDryRunCreate() {
 local moredry=""
 if [ "$DRY_RUN" = "yaml" ]; then
-  local moredry="--dry-run -o yaml"
+  local moredry="--dry-run=client -o yaml"
 fi
 cat << EOF
 dryrun:kubectl -n $NAMESPACE create secret generic \\

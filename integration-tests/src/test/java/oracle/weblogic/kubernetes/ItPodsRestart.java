@@ -44,8 +44,8 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_R
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -59,7 +59,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
@@ -520,6 +520,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Restart pods using restartVersion flag")
   @Tag("gate")
+  @Tag("crio")
   void testRestartVersion() {
     // get the original domain resource before update
     DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
@@ -563,6 +564,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Check restart of pods after image change")
   @Tag("gate")
+  @Tag("crio")
   void testRestartWithImageChange() {
 
     String tag = getDateAndTimeStamp();
@@ -631,7 +633,7 @@ class ItPodsRestart {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -654,8 +656,8 @@ class ItPodsRestart {
             .limits(new HashMap<>())
             .requests(new HashMap<>()));
 
-    if (!OKD) { 
-      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext() 
+    if (!OKD) {
+      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
                  .runAsUser(0L);
       srvrPod.podSecurityContext(podSecCtxt);
     }
@@ -672,7 +674,7 @@ class ItPodsRestart {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))

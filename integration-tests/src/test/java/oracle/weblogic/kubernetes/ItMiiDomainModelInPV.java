@@ -41,17 +41,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -73,7 +72,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -240,6 +239,7 @@ public class ItMiiDomainModelInPV {
   @MethodSource("paramProvider")
   @DisplayName("Create MII domain with model and application file from PV and custon wdtModelHome")
   @Tag("gate")
+  @Tag("crio")
   void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
 
     String domainUid = params.getKey();
@@ -342,7 +342,7 @@ public class ItMiiDomainModelInPV {
 
   private static V1Pod setupWebLogicPod(String namespace) {
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(namespace);
+    createBaseRepoSecret(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
     V1PodSpec podSpec = new V1PodSpec()
@@ -358,7 +358,7 @@ public class ItMiiDomainModelInPV {
                             .name(pvName) // mount the persistent volume to /shared inside the pod
                             .mountPath(modelMountPath)))))
             .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET)))
+                .name(BASE_IMAGES_REPO_SECRET_NAME)))
             // the persistent volume claim used by the test
             .volumes(Arrays.asList(
                 new V1Volume()
@@ -435,13 +435,10 @@ public class ItMiiDomainModelInPV {
   public static void dockerLoginAndPushImage(String image) {
     logger = getLogger();
     // login to docker
-    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      testUntil(
-          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+    logger.info("docker login");
+    testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
           "docker login to be successful");
-    }
 
     // push the image to repo
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {

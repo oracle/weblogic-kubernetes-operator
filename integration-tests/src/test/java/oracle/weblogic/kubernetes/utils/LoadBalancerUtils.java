@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -46,12 +47,8 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
@@ -81,8 +78,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -173,8 +169,8 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
-    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
-        OCIR_REGISTRY, OCIR_SECRET_NAME, nginxNamespace);
+    createTestRepoSecret(nginxNamespace);
+
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
@@ -191,7 +187,7 @@ public class LoadBalancerUtils {
     NginxParams nginxParams = new NginxParams()
         .helmParams(nginxHelmParams);    
     // set secret to pull images from private registry
-    nginxParams.imageRepoSecret(OCIR_SECRET_NAME);
+    nginxParams.imageRepoSecret(TEST_IMAGES_REPO_SECRET_NAME);
     if (nodeportshttp != 0 && nodeportshttps != 0) {
       nginxParams
           .nodePortsHttp(nodeportshttp)
@@ -330,14 +326,14 @@ public class LoadBalancerUtils {
 
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
     // this secret is used only for non-kind cluster
-    if (!secretExists(OCIR_SECRET_NAME, apacheNamespace)) {
+    if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
-      createOcirRepoSecret(apacheNamespace);
+      createTestRepoSecret(apacheNamespace);
     }
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", OCIR_SECRET_NAME);
+    secretNameMap.put("name", BASE_IMAGES_REPO_SECRET_NAME);
 
     // Helm install parameters
     HelmParams apacheHelmParams = new HelmParams()
@@ -841,7 +837,7 @@ public class LoadBalancerUtils {
     return (() -> {
       String nginxImage = GCR_NGINX_IMAGE_NAME + ":" + "v0.35.0";
       LoggingFacade logger = getLogger();
-      logger.info("pulling image {0} from OCIR, tag it as image {1} ",
+      logger.info("pulling image {0} from BASE_IMAGES_REPO, tag it as image {1} ",
           localImage, nginxImage);
       return dockerPull(localImage) && dockerTag(localImage, nginxImage);
     });
