@@ -582,7 +582,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
 
-    verifyPodNotReplaced();
+    // Surprisingly, verifyPodPatched() is the correct assertion -- because the logic to adjust the recipe and
+    // generate hashes for pre-existing pods works correctly, the existing pod will not be replaced; however,
+    // it will be patched to update the weblogic.operatorVersion label and the annotation with the hash.
+    verifyPodPatched();
   }
 
   @Test

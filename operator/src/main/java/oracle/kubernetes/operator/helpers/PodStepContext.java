@@ -109,7 +109,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
-  public static final int LEGACY_AUXILIARY_IMAGE_OPERATOR_MAJOR_VERSION = 3;
   private static String productVersion;
   protected final ExporterContext exporterContext;
 
@@ -475,9 +474,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract Step createCycleEndStep(Step next);
 
-  private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
+  private boolean isRecentOperatorMajorVersion3(String operatorVersion) {
     try {
-      return new SemanticVersion(operatorVersion).getMajor() == LEGACY_AUXILIARY_IMAGE_OPERATOR_MAJOR_VERSION;
+      SemanticVersion version = new SemanticVersion(operatorVersion);
+      return version.getMajor() == 3 && version.getMinor() >= 2;
     } catch (Exception e) {
       return false;
     }
@@ -1131,9 +1131,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       return !hasLabel(currentPod, OPERATOR_VERSION);
     }
 
-    private boolean isLegacyAuxImageOperatorVersion(V1Pod currentPod) {
+    private boolean isPodFromRecentOperatorMajorVersion3(V1Pod currentPod) {
       return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
-          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isLegacyAuxImageOperatorVersion).orElse(false);
+          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isRecentOperatorMajorVersion3).orElse(false);
     }
 
     private boolean isLegacyMiiPod(V1Pod currentPod) {
@@ -1164,7 +1164,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
     }
 
-    private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
+    private boolean canAdjustLegacyHashToMatch(V1Pod currentPod, String requiredHash) {
+      // Legacy pods could be created by operator version 3.0 or 3.1
       return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom30))
           || requiredHash.equals(adjustedHash(currentPod, PodStepContext.this::addLegacyPrometheusAnnotationsFrom31));
     }
@@ -1179,13 +1180,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private void adjustContainer(List<V1Container> convertedContainers, V1Container container, boolean initContainer) {
       String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
-      List<V1EnvVar> env = container.getEnv();
       List<V1EnvVar> newEnv = new ArrayList<>();
-      env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
-          .map(V1EnvVar::getValue).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, "")).orElse(null))));
+      Optional.of(container.getEnv())
+          .ifPresent(env -> env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
+          .map(V1EnvVar::getValue).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, ""))
+              .orElse(null)))));
 
       List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
-      container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
+      Optional.ofNullable(container.getVolumeMounts())
+          .ifPresent(vms -> vms.forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i)));
       if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)) {
         container.resources(null);
       }
@@ -1200,7 +1203,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
       V1PodSpec podSpec = pod.getSpec();
       List<V1Container> convertedInitContainers = new ArrayList<>();
-      podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i, true));
+      Optional.ofNullable(podSpec.getInitContainers())
+          .ifPresent(initContainers -> initContainers.forEach(
+              i -> adjustContainer(convertedInitContainers, i, true)));
       podSpec.initContainers(convertedInitContainers);
 
       List<V1Container> convertedContainers = new ArrayList<>();
@@ -1208,26 +1213,30 @@ public abstract class PodStepContext extends BasePodStepContext {
       podSpec.containers(convertedContainers);
 
       List<V1Volume> convertedVolumes = new ArrayList<>();
-      podSpec.getVolumes().forEach(i -> adjustVolumeName(convertedVolumes, i));
+      Optional.ofNullable(podSpec.getVolumes())
+          .ifPresent(volumes -> volumes.forEach(i -> adjustVolumeName(convertedVolumes, i)));
       podSpec.volumes(convertedVolumes);
       pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
     }
 
-    private boolean canAdjustAuxImagesToMatchHash(String requiredHash) {
-      V1Pod recipe = createPodRecipe();
-      convertAuxImagesInitContainerVolumeAndMounts(recipe);
-      return requiredHash.equals(AnnotationHelper.createHash(recipe));
+    private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod pod) {
+      V1PodSpec podSpec = pod.getSpec();
+      podSpec.getContainers().stream().filter(c -> "monitoring-exporter".equals(c.getName()))
+          .findFirst().flatMap(c -> c.getPorts().stream().filter(p -> "http-metrics".equals(p.getName()))
+              .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
+    }
+
+    private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
+      return requiredHash.equals(adjustedHash(currentPod, this::restoreMetricsExporterSidecarPortTcpMetrics))
+          || requiredHash.equals(adjustedHash(currentPod, this::convertAuxImagesInitContainerVolumeAndMounts));
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-      if ((isLegacyAuxImageOperatorVersion(currentPod))
-          && canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod))) {
-        return true;
-      } else if (!isLegacyPod(currentPod)) {
-        return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-      } else {
-        return canAdjustHashToMatch(currentPod, AnnotationHelper.getHash(currentPod));
-      }
+      return (isLegacyPod(currentPod)
+              && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
+          || (isPodFromRecentOperatorMajorVersion3(currentPod)
+              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
+          || AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
     }
 
     private boolean canUseCurrentPod(V1Pod currentPod) {
