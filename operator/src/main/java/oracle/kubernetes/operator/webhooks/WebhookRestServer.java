@@ -20,7 +20,7 @@ import oracle.kubernetes.operator.http.rest.ExceptionMapper;
 import oracle.kubernetes.operator.http.rest.RequestDebugLoggingFilter;
 import oracle.kubernetes.operator.http.rest.ResponseDebugLoggingFilter;
 import oracle.kubernetes.operator.http.rest.RestConfig;
-import oracle.kubernetes.operator.http.rest.resource.AdmissionWebhookResource;
+import oracle.kubernetes.operator.webhooks.resource.AdmissionWebhookResource;
 import oracle.kubernetes.operator.webhooks.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
