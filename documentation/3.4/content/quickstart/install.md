@@ -45,13 +45,18 @@ $ helm install traefik-operator traefik/traefik \
     $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
     ```
 
-3.  Use `helm` to install and start the operator from the directory you just cloned:	 
+3.  Access the operator Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`. 
+    Each version of the Helm chart defaults to using an operator image from the matching version.
+
+    ```
+    $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
+    ```
+
+    Install the operator using this format: `helm install <helm-release-name> <helm-chart-repo-name>/weblogic-operator` ...
 
     ```shell
-    $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
+    $ helm install sample-weblogic-operator weblogic-operator/weblogic-operator \
       --namespace sample-weblogic-operator-ns \
-      --set image=ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}} \
-      --set serviceAccount=sample-weblogic-operator-sa \
       --set "enableClusterRoleBinding=true" \
       --set "domainNamespaceSelectionStrategy=LabelSelector" \
       --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
