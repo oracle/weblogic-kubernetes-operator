@@ -98,7 +98,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   #   (we use an ancient form of sed append to stay compatible with old bash on mac)
   kubectl -n $DOMAIN_NAMESPACE \
     create configmap $CONFIGMAP_NAME $FILENAMES \
-    --dry-run -o yaml \
+    --dry-run=client -o yaml \
   \
   | sed -e '/ name:/a\
   labels:' \
