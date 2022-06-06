@@ -56,7 +56,9 @@ $ helm install traefik-operator traefik/traefik \
 
     ```shell
     $ helm install sample-weblogic-operator weblogic-operator/weblogic-operator \
+      --version 3.4.0 \
       --namespace sample-weblogic-operator-ns \
+      --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.4.0 \
       --set "enableClusterRoleBinding=true" \
       --set "domainNamespaceSelectionStrategy=LabelSelector" \
       --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
