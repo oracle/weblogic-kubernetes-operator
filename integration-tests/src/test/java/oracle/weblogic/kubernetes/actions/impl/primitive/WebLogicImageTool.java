@@ -109,17 +109,13 @@ public class WebLogicImageTool {
 
   private String buildWitCommand() {
     LoggingFacade logger = getLogger();
-    String ownerShip = " --chown oracle:root";
-    if (OKE_CLUSTER) {
-      ownerShip = " --chown oracle:oracle";
-    }
     String command =
         IMAGE_TOOL
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
         + " --wdtDomainType " + params.domainType()
-        + ownerShip;
+        + " --chown oracle:root";
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
