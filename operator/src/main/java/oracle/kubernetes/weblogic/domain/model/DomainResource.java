@@ -1255,9 +1255,6 @@ public class DomainResource implements KubernetesObject {
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
       verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WEBLOGIC_CREDENTIALS);
-      for (V1LocalObjectReference reference : getImagePullSecrets()) {
-        verifySecretExists(resourceLookup, reference.getName(), SecretType.IMAGE_PULL);
-      }
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.CONFIG_OVERRIDE);
       }
