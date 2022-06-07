@@ -77,9 +77,8 @@ The quick start guide also allows you to use a ready-made, off-the-shelf auxilia
 
    For example:
    ```
-   $ rm -rf /tmp/quickstart
-   $ mkdir -p /tmp/quickstart/models
-   $ mkdir -p /tmp/quickstart/archive/wlsdeploy/applications/WEB-INF
+   $ rm -rf /tmp/quickstart/models
+   $ mkdir -p /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF
    ```
    The `rm -rf` command is included in case there's an
    old version of the model or archive ZIP file from a
@@ -95,15 +94,15 @@ The quick start guide also allows you to use a ready-made, off-the-shelf auxilia
    ```
 
    ```
-   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/index.jsp -o /tmp/quickstart/archive/wlsdeploy/applications/index.jsp
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/index.jsp -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/index.jsp
    ```
 
    ```
-   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/WEB-INF/web.xml -o /tmp/quickstart/archive/wlsdeploy/applications/WEB-INF/web.xml
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/WEB-INF/web.xml -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF/web.xml
    ```
 
    ```
-   $ jar cvf /tmp/quickstart/archive.zip -C /tmp/quickstart/archive/ wlsdeploy
+   $ jar cvf /tmp/quickstart/models/archive.zip -C /tmp/quickstart/models/archive/ wlsdeploy
    ```
 
 #### Create the auxiliary image
@@ -119,7 +118,7 @@ WDT model YAML files, application archives, and the WDT installation files:
        --tag quick-start-aux-image:v1 \
        --wdtModel /tmp/quickstart/models/model.yaml \
        --wdtVariables /tmp/quickstart/models/variables.properties \
-       --wdtArchive /tmp/quickstart/archive/archive.zip
+       --wdtArchive /tmp/quickstart/models/archive.zip
      ```
 
      When you run this command, the Image Tool will create an auxiliary image with the specified model, variables, and archive files in the
@@ -148,7 +147,7 @@ WDT model YAML files, application archives, and the WDT installation files:
 
    $ docker run -it --rm quick-start-aux-image:v1 ls -l /auxiliary/models
      total 16
-     -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
+     -rw-rw-r--    1 oracle   root          1663 Jun  1 21:52 archive.zip
      -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
      -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
 

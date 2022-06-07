@@ -37,6 +37,6 @@ topology:
 appDeployments:
     Application:
         quickstart:
-            SourcePath: wlsdeploy/applications/quickstart.war
+            SourcePath: wlsdeploy/applications/quickstart
             ModuleType: war
             Target: cluster-1

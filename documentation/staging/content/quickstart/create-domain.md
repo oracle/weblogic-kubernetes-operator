@@ -32,13 +32,13 @@ weight: 7
    - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following command to apply the sample domain resource. 
 
        ```shell
-       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
+       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml
        ```
 
       You can download the WLS Domain YAML file using the following command to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar and make any changes before running the `kubectl apply` command.
 
       ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml -o /tmp/quickstart/mii-aux-image-domain.yaml
+      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml -o /tmp/quickstart/quick-start-domain-resource.yaml
       ```
    - **Option 2**: If you created an auxiliary image using optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then use the following steps to create the domain.
 
@@ -71,7 +71,7 @@ weight: 7
           #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
           #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
           auxiliaryImages:
-          - image: "mii-aux-image:v1"
+          - image: "quick-start-aux-image:v1"
             #imagePullPolicy: IfNotPresent
             #sourceWDTInstallHome: /auxiliary/weblogic-deploy
             #sourceModelHome: /auxiliary/models
@@ -283,7 +283,7 @@ weight: 7
           port: 8001
     {{% /expand %}}
     ```shell
-    $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
+    $ kubectl apply -f /tmp/quickstart/quick-start-ingress-route.yaml \
       --namespace sample-domain1-ns 
     ```
 
