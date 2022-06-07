@@ -416,7 +416,6 @@ public class ServiceHelper {
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          // HERE
           addServicePortIfNeeded(ports, getMetricsPortName(), "http", specification.getRestPort());
         }
       });
