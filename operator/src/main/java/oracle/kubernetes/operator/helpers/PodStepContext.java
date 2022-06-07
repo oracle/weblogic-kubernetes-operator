@@ -1222,7 +1222,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod pod) {
       V1PodSpec podSpec = pod.getSpec();
       podSpec.getContainers().stream().filter(c -> "monitoring-exporter".equals(c.getName()))
-          .findFirst().flatMap(c -> c.getPorts().stream().filter(p -> "http-metrics".equals(p.getName()))
+          .findFirst().flatMap(c -> c.getPorts().stream().filter(p -> "metrics".equals(p.getName()))
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
@@ -1498,7 +1498,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "http-metrics" : "metrics";
+      return "metrics";
     }
 
     private String createJavaOptions() {
