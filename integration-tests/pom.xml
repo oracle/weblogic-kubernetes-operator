@@ -419,6 +419,10 @@
                     **/ItFmwDomainInPVUsingWDT,
                     **/ItLiftAndShiftFromOnPremDomain,
                     **/ItIntrospectVersion,
+                    **/ItFmwBigCMMiiDomain,
+                    **/ItFmwDiiSample,
+                    **/ItFmwSample,
+                    **/ItMultiDomainModelsWithLoadBalancer,
                     **/ItMiiSampleFmwMain
                 </includes-failsafe>
             </properties>
@@ -466,19 +470,15 @@
                     **/ItDiagnosticsCompleteAvailableCondition,
                     **/ItIstioCoherenceTests,
                     **/ItIstioMiiDomain,
-                    **/ItExternalNodePortService,
                     **/ItDBOperator,
                     **/ItIstioGatewaySessionMigration,
-                    **/ItFmwBigCMMiiDomain,
                     **/ItElasticLogging,
                     **/ItRemoteConsole,
                     **/ItKubernetesNameSpaceWatchingEvents,
                     **/ItFmwDiiSample,
                     **/ItIstioSessionMigration,
-                    **/ItMultiDomainModelsWithLoadBalancer,
                     **/ItFmwSample,
-                    **/ItIstioDomainInPV,
-                    **/ItFmwMiiDomain
+                    **/ItIstioDomainInPV
                 </includes-failsafe>
             </properties>
         </profile>
