@@ -475,9 +475,7 @@
                     **/ItElasticLogging,
                     **/ItRemoteConsole,
                     **/ItKubernetesNameSpaceWatchingEvents,
-                    **/ItFmwDiiSample,
                     **/ItIstioSessionMigration,
-                    **/ItFmwSample,
                     **/ItIstioDomainInPV
                 </includes-failsafe>
             </properties>
