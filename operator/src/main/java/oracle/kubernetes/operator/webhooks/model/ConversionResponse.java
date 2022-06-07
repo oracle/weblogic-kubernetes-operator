@@ -31,7 +31,7 @@ public class ConversionResponse {
     return this;
   }
 
-  public java.lang.Object getConvertedObjects() {
+  public List<Object> getConvertedObjects() {
     return convertedObjects;
   }
 

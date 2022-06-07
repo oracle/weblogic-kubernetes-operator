@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,10 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
+import oracle.kubernetes.operator.webhooks.model.ConversionRequest;
+import oracle.kubernetes.operator.webhooks.model.ConversionResponse;
+import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
+import oracle.kubernetes.operator.webhooks.model.Result;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
@@ -56,8 +61,9 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setA
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setFromModel;
 import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
-import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -77,9 +83,11 @@ class WebhookRestTest extends RestTestBase {
   private static final String REJECT_MESSAGE_PATTERN = "Change request to domain resource '%s' cannot be honored"
           + " because the replica count for cluster '%s' would exceed the cluster size '%s'.";
 
+
   private final AdmissionReview admissionReview = createAdmissionReview();
   private final DomainResource existingDomain = createDomain();
   private final DomainResource proposedDomain = createDomain();
+  private final ConversionReviewModel conversionReview = createConversionReview();
 
   private AdmissionReview createAdmissionReview() {
     return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createAdmissionRequest());
@@ -102,6 +110,18 @@ class WebhookRestTest extends RestTestBase {
     return resource;
   }
 
+  private ConversionReviewModel createConversionReview() {
+    ConversionReviewModel review = new ConversionReviewModel().apiVersion(V1).kind("ConversionReview");
+    review.setRequest(createConversionRequest());
+    return review;
+  }
+
+  private ConversionRequest createConversionRequest() {
+    ConversionRequest request = new ConversionRequest();
+    request.setUid(RESPONSE_UID);
+    return request;
+  }
+
   final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
 
   @Override
@@ -121,17 +141,32 @@ class WebhookRestTest extends RestTestBase {
   @Test
   void whenConversionWebhookRequestSent_hasExpectedResponse() {
     String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
-    Response response = sendConversionWebhookRequest(conversionReview);
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    String responseString = sendConversionWebhookRequestAsString(conversionReview);
 
     assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
   }
 
   @Test
+  void whenConversionWebhookRequestSent_hasExpectedResponseResult() {
+    Result result = new Result().message("").status("Success");
+    String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
+
+    String responseString = sendConversionWebhookRequestAsString(conversionReview);
+    ConversionReviewModel responseReview = readConversionReview(responseString);
+    Result responseResult = getResult(responseReview);
+
+    assertThat(responseResult, equalTo(result));
+    assertThat(responseResult.getStatus(), equalTo("Success"));
+  }
+
+  private Result getResult(ConversionReviewModel responseReview) {
+    return responseReview.getResponse().getResult();
+  }
+
+  @Test
   void whenConversionWebhookHasAnException_responseHasFailedStatusAndFailedEventGenerated() {
     String conversionReview = "some_unexpected_string";
-    Response response = sendConversionWebhookRequest(conversionReview);
-    String responseString = getAsString((ByteArrayInputStream) response.getEntity());
+    String responseString = sendConversionWebhookRequestAsString(conversionReview);
 
     assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
 
@@ -140,9 +175,53 @@ class WebhookRestTest extends RestTestBase {
             CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
+  @Test
+  void whenConversionWebhookHasAnException_responseHasMessageWithException() {
+    String conversionReview = "some_unexpected_string";
+    String responseString = sendConversionWebhookRequestAsString(conversionReview);
+
+    ConversionReviewModel responseReview = readConversionReview(responseString);
+    Result responseResult = getResult(responseReview);
+    assertThat(responseResult.getMessage(), containsString("Exception"));
+  }
+
+  private String sendConversionWebhookRequestAsString(String conversionReview) {
+    Response response = sendConversionWebhookRequest(conversionReview);
+    return getAsString((ByteArrayInputStream) response.getEntity());
+  }
+
   private Response sendConversionWebhookRequest(String conversionReview) {
     return createRequest(WEBHOOK_HREF)
             .post(createWebhookRequest(conversionReview));
+  }
+
+  private ConversionReviewModel sendConversionWebhookRequestAsReview(ConversionReviewModel conversionReview) {
+    return readConversionReview(sendConversionWebhookRequestAsString(writeConversionReview(conversionReview)));
+  }
+
+  @Test
+  void whenGoodConversionWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
+    ConversionReviewModel responseReview = sendConversionWebhookRequestAsReview(conversionReview);
+
+    assertThat(getStatus(responseReview), equalTo("Success"));
+    assertThat(getConversionUid(responseReview), equalTo(RESPONSE_UID));
+    assertThat(getConvertedObject(responseReview).size(),is(0));
+  }
+
+  private String getConversionUid(ConversionReviewModel conversionReview) {
+    return Optional.ofNullable(conversionReview)
+        .map(ConversionReviewModel::getResponse).map(ConversionResponse::getUid).orElse("");
+  }
+
+  private String getStatus(ConversionReviewModel conversionReview) {
+    return Optional.ofNullable(conversionReview)
+        .map(ConversionReviewModel::getResponse).map(ConversionResponse::getResult).map(Result::getStatus).orElse("");
+  }
+
+  private List<Object> getConvertedObject(ConversionReviewModel conversionReview) {
+    return Optional.ofNullable(conversionReview)
+        .map(ConversionReviewModel::getResponse)
+        .map(ConversionResponse::getConvertedObjects).orElse(Collections.emptyList());
   }
 
   // test cases for validating webhook
@@ -193,7 +272,7 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getUid(responseReview), equalTo(RESPONSE_UID));
+    assertThat(getAdmissionUid(responseReview), equalTo(RESPONSE_UID));
   }
 
   @Test
@@ -427,7 +506,7 @@ class WebhookRestTest extends RestTestBase {
         .orElse(HTTP_OK);
   }
 
-  private String getUid(AdmissionReview admissionReview) {
+  private String getAdmissionUid(AdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getUid).orElse("");
   }
