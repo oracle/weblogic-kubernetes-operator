@@ -75,3 +75,5 @@ for the operator and one for the conversion webhook.
     ```shell
     $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
     ```
+
+6. If the operator's pod is not up and running, then see [troubleshooting]({{< relref "/managing-operators/troubleshooting.md" >}}) section for more details.

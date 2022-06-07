@@ -28,8 +28,8 @@ weight: 7
 
     The above two commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then you will need to update the sample doman YAML file accordingly in the next step.
 
-1. Use one of the following two options to create the domain.
-   - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following command to apply the sample domain resource.
+1. Use one of the following two options to create the domain using a [domain resource](http://100.111.142.133:39999/weblogic-kubernetes-operator/managing-domains/domain-resource/). A domain resource can be used to configure the operation of your WebLogic Server domain. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain. For more details about domain resource, see [Domain resource](http://100.111.142.133:39999/weblogic-kubernetes-operator/managing-domains/domain-resource/).
+   - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following command to apply the sample domain resource. 
 
        ```shell
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
@@ -43,7 +43,7 @@ weight: 7
    - **Option 2**: If you created an auxiliary image using optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then use the following steps to create the domain.
 
        1. Prepare the domain resource.
-          1. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar. 
+          1. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/quick-start-domain-resource.yaml` or similar. 
 
                 {{%expand "Click here to view the WLS Domain YAML file using auxiliary images." %}}
     # Copyright (c) 2022, Oracle and/or its affiliates.
@@ -212,28 +212,42 @@ weight: 7
           $ kubectl apply -f /tmp/quickstart/mii-aux-image-domain.yaml
           ```
 
+   {{% notice warning %}}
+   The quick-start guide uses GA image of the WebLogic server version 12.2.1.4. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+   {{% /notice %}}
 
 1.	Confirm that the operator started the servers for the domain:
 
-    a. Use `kubectl` to show that the Domain was created:
+    a. Use `kubectl` to show that the Domain was created and it's status:
 
     ```shell
     $ kubectl describe domain sample-domain1 -n sample-domain1-ns
     ```
 
-    b. After a short time, you will see the Administration Server and Managed Servers running.
+    b. Get the domain status using the following command. If you don't have `jq` executable installed, then run the second command below to get the domain status.
+    ```shell
+    $ kubectl get domain sample-domain1 -n sample-domain1-ns -o json | jq .status
+    ```
+    OR
+    ```shell
+    $ kubectl get domain sample-domain1 -n sample-domain1-ns -o jsonpath='{.status}'
+    ```
+    
+    c. After a short time, you will see the Administration Server and Managed Servers running.
 
     ```shell
     $ kubectl get pods -n sample-domain1-ns
     ```
 
-    c. You should also see all the Kubernetes Services for the domain.
+    d. You should also see all the Kubernetes Services for the domain.
 
     ```shell
     $ kubectl get services -n sample-domain1-ns
     ```
 
-1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
+1.	See [Domain debugging]({{< relref "/managing-domains/debugging.md" >}}) if the operator didn't start the servers for the domain.
+
+1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/quick-start-ingress-route.yaml` or similar:
 
 
     {{%expand "Click here to view the ingress route YAML file." %}}
@@ -272,6 +286,13 @@ weight: 7
     $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
       --namespace sample-domain1-ns 
     ```
+
+      Alternatively, you can download the ingress route YAML file using the following command to a file called `/tmp/quickstart/quick-start-ingress-route.yaml` or similar and make any changes before running the `kubectl apply` command.
+
+      ```shell
+      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-ingress-route.yaml -o /tmp/quickstart/quick-start-ingress-route.yaml
+      ```
+
 
 
 1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, you can send a request to the URL for the "quick start app", as shown in the example below, which will return an HTTP 200 status code.

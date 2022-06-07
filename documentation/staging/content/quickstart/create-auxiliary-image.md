@@ -107,7 +107,7 @@ WDT model YAML files, application archives, and the WDT installation files:
 
      ```shell
      $ /tmp/quickstart/tools/imagetool/bin/imagetool.sh createAuxImage \
-       --tag mii-aux-image:v1 \
+       --tag quick-start-aux-image:v1 \
        --wdtModel /tmp/quickstart/models/model.yaml \
        --wdtVariables /tmp/quickstart/models/variables.properties \
        --wdtArchive /tmp/quickstart/models/archive.zip
@@ -120,9 +120,9 @@ WDT model YAML files, application archives, and the WDT installation files:
 1. If you have successfully created the image, then it should now be in your local machine's Docker repository. For example:
 
     ```
-    $ docker images mii-aux-image:v1
-    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-    model-in-image      WLS-AI-v1           eac9030a1f41        1 minute ago        4.04MB
+    $ docker images quick-start-aux-image:v1
+    REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
+    quick-start-aux-image      v1                  eac9030a1f41        1 minute ago        4.04MB
     ```
 
 
@@ -132,18 +132,18 @@ WDT model YAML files, application archives, and the WDT installation files:
    image to verify this:
 
    ```shell
-   $ docker run -it --rm mii-aux-image:v1 ls -l /auxiliary
+   $ docker run -it --rm quick-start-aux-image:v1 ls -l /auxiliary
      total 8
      drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
      drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
 
-   $ docker run -it --rm mii-aux-image:v1 ls -l /auxiliary/models
+   $ docker run -it --rm quick-start-aux-image:v1 ls -l /auxiliary/models
      total 16
      -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
      -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
      -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
 
-   $ docker run -it --rm mii-aux-image:v1 ls -l /auxiliary/weblogic-deploy
+   $ docker run -it --rm quick-start-aux-image:v1 ls -l /auxiliary/weblogic-deploy
      total 28
      -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
      -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt
