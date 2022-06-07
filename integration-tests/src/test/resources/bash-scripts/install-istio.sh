@@ -27,16 +27,19 @@ istiodir=${workdir}/istio-${version}
 echo "Installing Istio version [${version}] in location [${istiodir}]"
 
 kubectl delete namespace istio-system --ignore-not-found
-# istio installation will create the namespace 'istio-system' 
-# kubectl create namespace istio-system
+# create the namespace 'istio-system' 
+kubectl create namespace istio-system
 
-( cd $workdir;  
-  curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${version} TARGET_ARCH=x86_64 sh -
+( cd $workdir;
+  curl -Lo "istio.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/istio%2Fistio-${version}-linux-amd64.tar.gz";
+  tar zxf istio.tar.gz
 )
+
+( kubectl create secret generic docker-istio-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=$HOME/.docker/config.json -n istio-system )
 
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set profile=demo --set hub=gcr.io/istio-release --set meshConfig.enablePrometheusMerge=false -y
+  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-istio-secret --set meshConfig.enablePrometheusMerge=false -y
   bin/istioctl verify-install
   bin/istioctl version
 )
