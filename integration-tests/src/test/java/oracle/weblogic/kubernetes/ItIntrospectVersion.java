@@ -723,7 +723,7 @@ class ItIntrospectVersion {
     logger.info("DOMAIN_IMAGES_REPO {0}", DOMAIN_IMAGES_REPO);
     logger.info("WEBLOGIC_IMAGE_NAME {0}", WEBLOGIC_IMAGE_NAME);
 
-    String kindWlsImage = KIND_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT;
+    String kindWlsImage = KIND_REPO + WEBLOGIC_IMAGE_NAME_DEFAULT;
     String testWlsImage = TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT; 
     //change image name to imageUpdate
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
