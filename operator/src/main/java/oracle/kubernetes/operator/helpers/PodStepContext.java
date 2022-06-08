@@ -109,6 +109,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+
   private static String productVersion;
   protected final ExporterContext exporterContext;
 
@@ -1494,11 +1495,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
-                .name(getMetricsPortName()).protocol(V1ContainerPort.ProtocolEnum.TCP).containerPort(getPort()));
-    }
-
-    private String getMetricsPortName() {
-      return "metrics";
+                .name("metrics").protocol(V1ContainerPort.ProtocolEnum.TCP).containerPort(getPort()));
     }
 
     private String createJavaOptions() {

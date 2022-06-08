@@ -416,13 +416,9 @@ public class ServiceHelper {
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, getMetricsPortName(), "http", specification.getRestPort());
+          addServicePortIfNeeded(ports, "metrics", "http", specification.getRestPort());
         }
       });
-    }
-
-    private String getMetricsPortName() {
-      return "metrics";
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
