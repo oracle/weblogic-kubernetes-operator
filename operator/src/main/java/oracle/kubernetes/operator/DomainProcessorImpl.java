@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -648,21 +649,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
-    final MakeRightDomainOperationImpl operation = new MakeRightDomainOperationImpl(delegate, liveInfo);
-
-    if (isFirstDomainNewer(liveInfo, getExistingDomainPresenceInfo(liveInfo))) {
-      operation.interrupt();
-    }
-
-    return operation;
-  }
-
-  private boolean isFirstDomainNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    return KubernetesUtils.isFirstNewer(getDomainMeta(liveInfo), getDomainMeta(cachedInfo));
-  }
-
-  private V1ObjectMeta getDomainMeta(DomainPresenceInfo info) {
-    return Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(DomainResource::getMetadata).orElse(null);
+    return new MakeRightDomainOperationImpl(delegate, liveInfo);
   }
 
   public static class PopulatePacketServerMapsStep extends Step {
@@ -731,6 +718,26 @@ public class DomainProcessorImpl implements DomainProcessor {
     MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, DomainPresenceInfo liveInfo) {
       this.delegate = delegate;
       this.liveInfo = liveInfo;
+      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+      if (!isNewDomain(cachedInfo)
+          && isAfter(getCreationTimestamp(liveInfo), getCreationTimestamp(cachedInfo))) {
+        willInterrupt = true;
+      }
+    }
+
+    private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
+      return Optional.ofNullable(dpi.getDomain())
+          .map(DomainResource::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+    }
+
+    private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
+      if (two == null) {
+        return true;
+      }
+      if (one == null) {
+        return false;
+      }
+      return one.isAfter(two);
     }
 
     @Override
@@ -868,6 +875,10 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private DomainResource getDomain() {
       return liveInfo.getDomain();
+    }
+
+    private String getDomainUid() {
+      return liveInfo.getDomainUid();
     }
 
     private String getNamespace() {
@@ -1319,7 +1330,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
         getStatusFiberGate(getNamespace())
               .startFiberIfNoCurrentFiber(getDomainUid(), strategy, createPacket(), new CompletionCallbackImpl());
-      } catch (Throwable t) {
+      } catch (Exception t) {
         try (ThreadLoggingContext ignored
                    = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
           LOGGER.severe(MessageKeys.EXCEPTION, t);
