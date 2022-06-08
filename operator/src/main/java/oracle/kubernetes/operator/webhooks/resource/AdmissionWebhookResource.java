@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.resource;
+package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.Optional;
 
@@ -9,17 +9,19 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
-import oracle.kubernetes.operator.http.rest.model.AdmissionRequest;
-import oracle.kubernetes.operator.http.rest.model.AdmissionResponse;
-import oracle.kubernetes.operator.http.rest.model.AdmissionResponseStatus;
-import oracle.kubernetes.operator.http.rest.model.AdmissionReview;
+import oracle.kubernetes.operator.http.rest.resource.BaseResource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
+import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 
 /**
  * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission
@@ -59,15 +61,34 @@ public class AdmissionWebhookResource extends BaseResource {
       admissionResponse = createAdmissionResponse(admissionRequest);
     } catch (Exception e) {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
-      admissionResponse = new AdmissionResponse()
-          .uid(getUid(admissionRequest))
-          .status(new AdmissionResponseStatus().message("Exception: " + e));
+      admissionResponse = createResponseWithException(admissionRequest, e);
     }
 
-    return writeAdmissionReview(new AdmissionReview()
-        .apiVersion(Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null))
-        .kind(Optional.ofNullable(admissionReview).map(AdmissionReview::getKind).orElse(null))
-        .response(admissionResponse));
+    return writeAdmissionReview(createResponseAdmissionReview(admissionReview, admissionResponse));
+  }
+
+  private AdmissionResponse createResponseWithException(AdmissionRequest admissionRequest, Exception e) {
+    return new AdmissionResponse()
+        .uid(getUid(admissionRequest))
+        .status(new AdmissionResponseStatus().message("Exception: " + e));
+  }
+
+  private AdmissionReview createResponseAdmissionReview(AdmissionReview admissionReview,
+                                                        AdmissionResponse admissionResponse) {
+    return new AdmissionReview()
+        .apiVersion(getRequestApiVersion(admissionReview))
+        .kind(getRequestKind(admissionReview))
+        .response(admissionResponse);
+  }
+
+  @Nullable
+  private String getRequestKind(AdmissionReview admissionReview) {
+    return Optional.ofNullable(admissionReview).map(AdmissionReview::getKind).orElse(null);
+  }
+
+  @Nullable
+  private String getRequestApiVersion(AdmissionReview admissionReview) {
+    return Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null);
   }
 
   private AdmissionRequest getAdmissionRequest(AdmissionReview admissionReview) {
@@ -88,22 +109,18 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
-    return new AdmissionResponse()
-        .uid(getUid(request))
-        .allowed(validate(request))
-        .status(new AdmissionResponseStatus().code(HTTP_OK));
-  }
-
-  private boolean validate(AdmissionRequest request) {
-    if (request == null) {
-      return true;
+    if (request == null || request.getOldObject() == null || request.getObject() == null) {
+      return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
 
+    return validate(request);
+  }
+
+  private AdmissionResponse validate(@NotNull AdmissionRequest request) {
     LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-
-    // TODO add implementation of the validation in the next PR
-    return true;
+    return new AdmissionChecker(request.getOldObject(), request.getObject()).validate().uid(getUid(request));
   }
+
 }

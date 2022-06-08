@@ -16,10 +16,9 @@
     # object is the new object being admitted.
     # It is null for DELETE operations.
     "object": {
-      "apiVersion": "weblogic.oracle/v8",
+      "apiVersion": "weblogic.oracle/v9",
       "kind": "Domain",
       "metadata": {
-        "annotations": "",
         "name": "sample-domain1",
         "namespace": "sample-domain1-ns",
         "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
@@ -53,14 +52,13 @@
               }
           ]
       } 
-    }
+    },
     # oldObject is the existing object.
     # It is null for CREATE and CONNECT operations.
     "oldObject": {
-        "apiVersion": "weblogic.oracle/v8",
+        "apiVersion": "weblogic.oracle/v9",
         "kind": "Domain",
         "metadata": {
-          "annotations": "",
           "name": "sample-domain1",
           "namespace": "sample-domain1-ns",
           "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
@@ -82,7 +80,7 @@
           "imagePullPolicy": "IfNotPresent",
           "includeServerOutInPodLog": true,
           "introspectVersion": "1",
-          "replicas": 1,
+          "replicas": 2,
           "restartVersion": "1"
         },
         "status": {

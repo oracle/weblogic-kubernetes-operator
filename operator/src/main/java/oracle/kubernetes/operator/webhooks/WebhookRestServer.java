@@ -1,12 +1,27 @@
 // Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest;
+package oracle.kubernetes.operator.webhooks;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
-import oracle.kubernetes.operator.http.rest.resource.AdmissionWebhookResource;
-import oracle.kubernetes.operator.http.rest.resource.ConversionWebhookResource;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
+import oracle.kubernetes.operator.http.rest.ErrorFilter;
+import oracle.kubernetes.operator.http.rest.ExceptionMapper;
+import oracle.kubernetes.operator.http.rest.RequestDebugLoggingFilter;
+import oracle.kubernetes.operator.http.rest.ResponseDebugLoggingFilter;
+import oracle.kubernetes.operator.http.rest.RestConfig;
+import oracle.kubernetes.operator.webhooks.resource.AdmissionWebhookResource;
+import oracle.kubernetes.operator.webhooks.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -24,7 +39,7 @@ import org.glassfish.jersey.server.ResourceConfig;
  */
 public class WebhookRestServer extends BaseRestServer {
   private final String baseWebhookHttpsUri;
-  private HttpServer webhookHttpsServer;
+  private final AtomicReference<HttpServer> webhookHttpsServer = new AtomicReference<>();
 
   /**
    * Constructs the conversion webhook REST server.
@@ -33,7 +48,7 @@ public class WebhookRestServer extends BaseRestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  WebhookRestServer(RestConfig config) {
+  public WebhookRestServer(RestConfig config) {
     super(config);
     LOGGER.entering();
     baseWebhookHttpsUri = "https://" + config.getHost() + ":" + config.getWebhookHttpsPort();
@@ -63,7 +78,7 @@ public class WebhookRestServer extends BaseRestServer {
    * @return a resource configuration
    */
   @Override
-  ResourceConfig createResourceConfig(RestConfig restConfig) {
+  protected ResourceConfig createResourceConfig(RestConfig restConfig) {
     return new ResourceConfig()
         .register(JacksonFeature.class)
         .register(ErrorFilter.class)
@@ -87,19 +102,27 @@ public class WebhookRestServer extends BaseRestServer {
    * Starts conversion webhook's REST api.
    *
    * @param container Container
-   * @throws Exception if the REST api could not be started.
-   *     When an exception is thrown, then none of the ports will be leftrunning,
+   * @throws IOException if the REST api could not be started.
+   *     When an exception is thrown, then none of the ports will be left running,
    *     however it is still OK to call stop (which will be a no-op).
+   * @throws UnrecoverableKeyException Unrecoverable key
+   * @throws CertificateException Bad certificate
+   * @throws NoSuchAlgorithmException No such algorithm
+   * @throws KeyStoreException Bad keystore
+   * @throws InvalidKeySpecException Invalid key
+   * @throws KeyManagementException Key management failed
    */
   @Override
-  public void start(Container container) throws Exception {
+  public void start(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     boolean fullyStarted = false;
     try {
-      webhookHttpsServer = createWebhookHttpsServer(container);
+      webhookHttpsServer.set(createWebhookHttpsServer(container));
       LOGGER.info(
               "Started the webhook ssl REST server on "
-                      + getWebhookHttpsUri()); // TBD .fine ?
+                      + getWebhookHttpsUri());
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {
@@ -119,15 +142,13 @@ public class WebhookRestServer extends BaseRestServer {
    */
   public void stop() {
     LOGGER.entering();
-    if (webhookHttpsServer != null) {
-      webhookHttpsServer.shutdownNow();
-      webhookHttpsServer = null;
-      LOGGER.fine("Stopped the webhook ssl REST server");
-    }
+    Optional.ofNullable(webhookHttpsServer.getAndSet(null)).ifPresent(HttpServer::shutdownNow);
     LOGGER.exiting();
   }
 
-  private HttpServer createWebhookHttpsServer(Container container) throws Exception {
+  private HttpServer createWebhookHttpsServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
             createHttpsServer(

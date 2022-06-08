@@ -80,6 +80,8 @@ import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -330,6 +332,25 @@ public class TestActions {
   public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
       throws ApiException {
     return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+  }
+
+  /**
+   * Scale the cluster of the domain and change introspect version in the specified namespace by
+   * patching the domain resource.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
+   * @param clusterName cluster in the domain to be scaled
+   * @param numOfServers number of servers to be scaled to
+   * @param introspectVersion new introspectVersion value
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace, String clusterName,
+                                                               int numOfServers, int introspectVersion)
+      throws ApiException {
+    return Domain.scaleClusterAndChangeIntrospectVersion(domainUid, namespace, clusterName, numOfServers,
+        introspectVersion);
   }
 
   /**
@@ -866,6 +887,13 @@ public class TestActions {
     String cmNamespace = configMap.getMetadata().getNamespace();
     if (doesCMExist(cmName, cmNamespace)) {
       deleteConfigMap(cmName, cmNamespace);
+      // wait until the cm is deleted
+      testUntil(withLongRetryPolicy,
+          () -> !doesCMExist(cmName, cmNamespace),
+          getLogger(),
+          "configmap {0} in namespace {1} is deleted",
+          cmName,
+          cmNamespace);
     }
 
     return ConfigMap.create(configMap);

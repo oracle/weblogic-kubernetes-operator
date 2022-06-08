@@ -98,4 +98,8 @@ public interface KubernetesConstants {
 
   String ADMISSION_REVIEW_API_VERSION = "admission.k8s.io/v1";
   String ADMISSION_REVIEW_KIND = "AdmissionReview";
+
+  String DOMAIN_IMAGE = "spec.image";
+  String DOMAIN_INTROSPECT_VERSION = "spec.introspectVersion";
+  String AUXILIARY_IMAGES = "spec.configuration.model.auxiliaryImages";
 }
