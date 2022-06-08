@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.webhooks.model;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -51,23 +49,5 @@ public class AdmissionResponseStatus {
             + "code='" + code + '\''
             + ", message='" + message + '\''
             + '}';
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    AdmissionResponseStatus status = (AdmissionResponseStatus) o;
-    return Objects.equals(code, status.code)
-        && Objects.equals(message, status.message);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(code, message);
   }
 }
