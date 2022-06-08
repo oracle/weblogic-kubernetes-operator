@@ -504,6 +504,7 @@ EOF
                             export DOMAIN_IMAGES_REPO=${DOMAIN_IMAGES_REPO}
                             export BASE_IMAGES_REPO=${BASE_IMAGES_REPO}
                             export OKE_CLUSTER="true"
+                            export OKD="false"
                             export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
                             export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
                             export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
