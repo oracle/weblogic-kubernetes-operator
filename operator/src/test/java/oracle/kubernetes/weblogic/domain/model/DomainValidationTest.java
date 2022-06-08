@@ -587,15 +587,6 @@ class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenImagePullSecretSpecifiedButDoesNotExist_reportError() {
-    configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("no-such-secret"));
-
-    assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("ImagePull", "no-such-secret", "not found", NS)));
-
-  }
-
-  @Test
   void whenImagePullSecretExists_dontReportError() {
     resourceLookup.defineResource("a-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
