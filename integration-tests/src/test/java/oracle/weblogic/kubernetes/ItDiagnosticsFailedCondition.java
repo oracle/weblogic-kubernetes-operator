@@ -627,7 +627,7 @@ class ItDiagnosticsFailedCondition {
       String patchStr
           = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"NEVER\"}]";
 
-      logger.info("Shutting down cluster using patch string: {1}", patchStr);
+      logger.info("Shutting down cluster using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
@@ -650,7 +650,7 @@ class ItDiagnosticsFailedCondition {
       patchStr
           = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
 
-      logger.info("Starting cluster using patch string: {1}", patchStr);
+      logger.info("Starting cluster using patch string: {0}", patchStr);
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");

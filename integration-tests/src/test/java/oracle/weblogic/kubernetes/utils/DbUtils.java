@@ -151,6 +151,8 @@ public class DbUtils {
   public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace,
       int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
+    
+    String dbPodNamePrefix = "oracledb";
 
     if (OKD) {
       addSccToDBSvcAccount("default", dbNamespace);
@@ -226,7 +228,7 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
                             .image(dbBaseImageName)
                             .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
-                            .name("oracledb")
+                            .name(dbPodNamePrefix)
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
                                 .containerPort(dbListenerPort)
@@ -263,7 +265,7 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
-    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
+    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
@@ -458,18 +460,17 @@ public class DbUtils {
    * @return pod name of database
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodNameOfDb(String dbNamespace) throws ApiException {
+  public static String getPodNameOfDb(String dbNamespace, String podPrefix) throws ApiException {
 
-    V1PodList  pod = null;
+    V1PodList pod = null;
     pod = Kubernetes.listPods(dbNamespace, null);
 
     String podName = null;
 
     //There is only one pod in the given DB namespace
-    if (pod != null) {
+    if (pod != null && pod.getItems().get(0).getMetadata().getName().startsWith(podPrefix)) {
       podName = pod.getItems().get(0).getMetadata().getName();
     }
-
     return podName;
   }
 
