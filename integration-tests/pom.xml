@@ -400,7 +400,6 @@
                     **/ItMiiSampleWlsAux,
                     **/ItMiiServiceMigration,
                     **/ItMiiDomain,
-                    **/ItLiftAndShiftFromOnPremDomain,
                     **/ItLivenessProbeCustomization
                </includes-failsafe>
             </properties>
@@ -417,12 +416,15 @@
                     **/ItOperatorWlsUpgrade,
                     **/ItFmwDynamicDomainInPV,
                     **/ItFmwDomainInPVUsingWDT,
-                    **/ItLiftAndShiftFromOnPremDomain,
                     **/ItIntrospectVersion,
-                    **/ItFmwDiiSample,
-                    **/ItFmwSample,
                     **/ItMultiDomainModelsWithLoadBalancer,
-                    **/ItMiiSampleFmwMain
+                    **/ItIstioDBOperator,
+                    **/ItDBOperator,
+                    **/ItMiiDynamicUpdatePart1,
+                    **/ItMiiDynamicUpdatePart2,
+                    **/ItMiiDynamicUpdatePart3,
+                    **/ItInitContainers,
+                    **/ItMiiCustomSslStore
                 </includes-failsafe>
             </properties>
         </profile>
@@ -443,25 +445,19 @@
                     **/ItIstioTwoDomainsInImage,
                     **/ItPodsRestart,
                     **/ItUsabilityOperatorHelmChart,
-                    **/ItInitContainers,
                     **/ItOperatorRestart,
                     **/ItPodsShutdownOption,
                     **/ItOCILoadBalancer,
                     **/ItManageNameSpace,
                     **/ItMiiDomainModelInPV,
-                    **/ItMiiDynamicUpdatePart1,
-                    **/ItMiiDynamicUpdatePart2,
-                    **/ItMiiDynamicUpdatePart3,
                     **/ItMiiSampleFmwAux,
                     **/ItMiiCreateAuxImageWithImageTool,
                     **/ItMiiDomain,
                     **/ItMiiAuxiliaryImage,
-                    **/ItMiiCustomSslStore,
                     **/ItMiiMultiModel,
                     **/ItLivenessProbeCustomization,
                     **/ItLogHomeFlatStructure,
                     **/ItSystemResOverrides,
-                    **/ItIstioDBOperator,
                     **/ItManagedCoherence,
                     **/ItFmwDynamicClusterMiiDomain,
                     **/ItIstioProductionSecureMode,
@@ -469,7 +465,6 @@
                     **/ItDiagnosticsCompleteAvailableCondition,
                     **/ItIstioCoherenceTests,
                     **/ItIstioMiiDomain,
-                    **/ItDBOperator,
                     **/ItIstioGatewaySessionMigration,
                     **/ItElasticLogging,
                     **/ItRemoteConsole,
