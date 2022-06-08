@@ -461,15 +461,16 @@ public class DbUtils {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static String getPodNameOfDb(String dbNamespace, String podPrefix) throws ApiException {
-
-    V1PodList pod = null;
-    pod = Kubernetes.listPods(dbNamespace, null);
-
     String podName = null;
-
-    //There is only one pod in the given DB namespace
-    if (pod != null && pod.getItems().get(0).getMetadata().getName().startsWith(podPrefix)) {
-      podName = pod.getItems().get(0).getMetadata().getName();
+    V1PodList pods = null;
+    pods = Kubernetes.listPods(dbNamespace, null);    
+    if (pods.getItems().size() != 0) {
+      for (V1Pod pod : pods.getItems()) {
+        if (pod != null && pod.getMetadata().getName().startsWith(podPrefix)) {
+          podName = pod.getMetadata().getName();
+          break;
+        }
+      }
     }
     return podName;
   }
