@@ -23,10 +23,6 @@ public class Result {
     return metadata;
   }
 
-  public void setMetadata(V1ObjectMeta metadata) {
-    this.metadata = metadata;
-  }
-
   public Result metadata(V1ObjectMeta metadata) {
     this.metadata = metadata;
     return this;
@@ -36,10 +32,6 @@ public class Result {
     return status;
   }
 
-  public void setStatus(String status) {
-    this.status = status;
-  }
-
   public Result status(String status) {
     this.status = status;
     return this;
@@ -47,10 +39,6 @@ public class Result {
 
   public String getMessage() {
     return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
   }
 
   public Result message(String message) {
