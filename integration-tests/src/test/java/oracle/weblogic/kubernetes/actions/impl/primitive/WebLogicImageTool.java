@@ -10,6 +10,8 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
@@ -150,13 +152,22 @@ public class WebLogicImageTool {
 
   private String buildWitCommand() {
     LoggingFacade logger = getLogger();
+    String ownership = " --chown oracle:root";
+    if (OKE_CLUSTER) {
+      if (params.baseImageName().equals(FMWINFRA_IMAGE_NAME)) {
+        if (!inspectImage().contains("root")) {
+          ownership = " --chown oracle:oracle";
+        }
+      }
+
+    }
     String command =
         IMAGE_TOOL
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
         + " --wdtDomainType " + params.domainType()
-        + " --chown oracle:root";
+        + ownership;
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
