@@ -747,6 +747,19 @@ public class TestActions {
   }
 
   /**
+   * Create an image using WDT models using WebLogic Image Tool.
+   *
+   * @param params - the parameters for inspecting a model-in-image Docker image
+   * @return output if the operation succeeds
+   */
+  public static String inspectImage(WitParams params) {
+    return
+            WebLogicImageTool
+                    .withParams(params)
+                    .inspectImage();
+  }
+
+  /**
    * Create an auxiliary image using WebLogic Image Tool.
    *
    * @param params - the parameters for creating a model-in-image Docker image

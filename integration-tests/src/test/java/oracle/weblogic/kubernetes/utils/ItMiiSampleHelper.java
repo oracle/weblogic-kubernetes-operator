@@ -33,8 +33,11 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.inspectImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -285,6 +288,17 @@ public class ItMiiSampleHelper {
       envMap.put("DB_IMAGE_PULL_SECRET", TestConstants.BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
 
+      String output = inspectImage(
+              defaultWitParams()
+                      .modelImageName(jrfBaseImageName)
+                      .modelImageTag(FMWINFRA_IMAGE_TAG)
+                      .wdtVersion(WDT_VERSION)
+                      .env(envMap)
+                      .redirect(true));
+      assertNotNull(output, String.format("Can't inspect image %s:%s",jrfBaseImageName, FMWINFRA_IMAGE_TAG));
+      String ownership = output.substring(output.indexOf("oracleHomeGroup"),
+              (output.indexOf("oracleInstalledProducts") - 1));
+      logger.info("Image ownership is {0} ", ownership);
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
       execTestScriptAndAssertSuccess(domainType, "-db,-rcu", "DB/RCU creation failed");

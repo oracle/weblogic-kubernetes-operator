@@ -85,6 +85,48 @@ public class WebLogicImageTool {
         .execute();
   }
 
+  /**
+   * Create an image using the params using WIT inspect command.
+   * @return true if the command succeeds
+   */
+  public String inspectImage() {
+    String output = null;
+    // download WIT if it is not in the expected location
+    if (!downloadWit()) {
+      return output;
+    }
+
+    // download WDT if it is not in the expected location
+    if (!downloadWdt()) {
+      return output;
+    }
+
+    // delete the old cache entry for the WDT installer
+    if (!deleteEntry()) {
+      return output;
+    }
+
+    // add the WDT installer that we just downloaded into WIT cache entry
+    if (!addInstaller()) {
+      return output;
+    }
+    ExecResult result = Command.withParams(
+            defaultCommandParams()
+                    .command(buildInspectWitCommand())
+                    .env(params.env())
+                    .redirect(params.redirect()))
+            .executeAndReturnResult();
+    // check exitValue to determine if the command execution has failed.
+
+    if (result.exitValue() != 0) {
+      getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+    } else {
+      getLogger().info("The command execution succeeded with result: {0}.", result);
+      output = result.stdout();
+    }
+    return output;
+  }
+
   private boolean downloadWit() {
     // install WIT if needed
     return Installer.withParams(
@@ -155,6 +197,19 @@ public class WebLogicImageTool {
     }
 
     logger.info("Build image with command: {0} and domainType: {1}", command,  params.domainType());
+    return command;
+  }
+
+  private String buildInspectWitCommand() {
+    LoggingFacade logger = getLogger();
+    String command =
+            IMAGE_TOOL
+                    + " inspect "
+                    + " -i " + params.modelImageName() + ":" + params.modelImageTag();
+
+    logger.info("Inspect image {0} with command: {1}",
+            params.modelImageName() + ":" + params.modelImageTag(),
+            command);
     return command;
   }
 
