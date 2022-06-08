@@ -78,7 +78,7 @@ public class OperatorRestServer extends BaseRestServer {
    * @return a resource configuration
    */
   @Override
-  ResourceConfig createResourceConfig(RestConfig restConfig) {
+  protected ResourceConfig createResourceConfig(RestConfig restConfig) {
     ResourceConfig rc =
         new ResourceConfig()
             .register(JacksonFeature.class)

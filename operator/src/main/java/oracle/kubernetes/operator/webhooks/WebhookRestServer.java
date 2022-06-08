@@ -1,7 +1,7 @@
 // Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest;
+package oracle.kubernetes.operator.webhooks;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -14,8 +14,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import oracle.kubernetes.operator.http.rest.resource.AdmissionWebhookResource;
-import oracle.kubernetes.operator.http.rest.resource.ConversionWebhookResource;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
+import oracle.kubernetes.operator.http.rest.ErrorFilter;
+import oracle.kubernetes.operator.http.rest.ExceptionMapper;
+import oracle.kubernetes.operator.http.rest.RequestDebugLoggingFilter;
+import oracle.kubernetes.operator.http.rest.ResponseDebugLoggingFilter;
+import oracle.kubernetes.operator.http.rest.RestConfig;
+import oracle.kubernetes.operator.webhooks.resource.AdmissionWebhookResource;
+import oracle.kubernetes.operator.webhooks.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -42,7 +48,7 @@ public class WebhookRestServer extends BaseRestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  WebhookRestServer(RestConfig config) {
+  public WebhookRestServer(RestConfig config) {
     super(config);
     LOGGER.entering();
     baseWebhookHttpsUri = "https://" + config.getHost() + ":" + config.getWebhookHttpsPort();
@@ -72,7 +78,7 @@ public class WebhookRestServer extends BaseRestServer {
    * @return a resource configuration
    */
   @Override
-  ResourceConfig createResourceConfig(RestConfig restConfig) {
+  protected ResourceConfig createResourceConfig(RestConfig restConfig) {
     return new ResourceConfig()
         .register(JacksonFeature.class)
         .register(ErrorFilter.class)
