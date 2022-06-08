@@ -274,15 +274,11 @@ public class MonitoringExporterSteps {
     }
 
     private boolean isExporterPort(V1ServicePort servicePort) {
-      return getMetricsPortName().equals(servicePort.getName());
+      return "metrics".equals(servicePort.getName());
     }
 
     DomainResource getDomain() {
       return info.getDomain();
-    }
-
-    private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
     }
 
     private HttpRequest createConfigurationQueryRequest() {
