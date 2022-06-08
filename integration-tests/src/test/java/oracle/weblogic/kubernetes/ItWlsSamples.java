@@ -83,7 +83,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
-@Tag("samples-gate")
 class ItWlsSamples {
 
   public static final String SERVER_LIFECYCLE = "Server";
@@ -158,6 +157,7 @@ class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
+  @Tag("samples-gate")
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
@@ -219,6 +219,7 @@ class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in pv")
+  @Tag("samples-gate")
   void testSampleDomainInPv(String model) {
 
     String domainName = model.split(":")[1];
@@ -268,6 +269,7 @@ class ItWlsSamples {
   @Order(3)
   @Test
   @DisplayName("Test server lifecycle samples scripts")
+  @Tag("samples-gate")
   void testServerLifecycleScripts() {
 
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
@@ -292,6 +294,7 @@ class ItWlsSamples {
   @Order(4)
   @Test
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
+  @Tag("samples-gate")
   void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
     String keepReplicaCountConstantParameter = "-k";
@@ -318,6 +321,7 @@ class ItWlsSamples {
   @Order(5)
   @Test
   @DisplayName("Test cluster lifecycle scripts")
+  @Tag("samples-gate")
   void testClusterLifecycleScripts() {
 
     // Verify all clustered server pods are shut down after stopCluster script execution
@@ -339,6 +343,7 @@ class ItWlsSamples {
   @Order(6)
   @Test
   @DisplayName("Test domain lifecycle scripts")
+  @Tag("samples-gate")
   void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
@@ -363,6 +368,7 @@ class ItWlsSamples {
   @Order(0)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
+  @Tag("samples-gate")
   void testTraefikIngressController() {
     setupSample();
     Path scriptBase = get(tempSamplePath.toString(), "charts/util");
