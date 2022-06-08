@@ -5,9 +5,11 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -17,13 +19,23 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -34,7 +46,21 @@ class DomainPresenceInfoTest {
   private static final List<ServerStartupInfo> STARTUP_INFOS = Arrays.stream(MANAGED_SERVER_NAMES)
         .map(DomainPresenceInfoTest::toServerStartupInfo)
         .collect(Collectors.toList());
-  private final DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");
+  private static final String NAMESPACE = "ns";
+  private static final String DOMAIN_UID = "domain";
+  private final DomainPresenceInfo info = new DomainPresenceInfo(NAMESPACE, DOMAIN_UID);
+
+  @NotNull
+  private static DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
+    return new DomainPresenceInfo(domain);
+  }
+
+  static DomainResource createDomain(String ns, String domainUid) {
+    return new DomainResource()
+            .withMetadata(new V1ObjectMeta().namespace(ns))
+            .withSpec(
+                    new DomainSpec().withDomainUid(domainUid));
+  }
 
   private static ServerStartupInfo toServerStartupInfo(String serverName) {
     return new ServerStartupInfo(
@@ -179,6 +205,132 @@ class DomainPresenceInfoTest {
     assertThat(info.getNumScheduledServers("cluster1"), equalTo(2L));
     assertThat(info.getNumScheduledServers("cluster2"), equalTo(2L));
     assertThat(info.getNumScheduledServers(null), equalTo(1L));
+  }
+
+  @Test
+  void whenNoneDefined_getClusterResourceReturnsNull() {
+    assertThat(info.getClusterResource("cluster-1"), nullValue());
+  }
+
+  @Test
+  void afterAddingClusterResource_verifyClusterResourceIsNotNull() {
+    final String clusterName = "cluster-1";
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    assertThat(info.getClusterResource(clusterName), notNullValue());
+    assertThat(info.getClusterResource(clusterName).getDomainUid(), equalTo(DOMAIN_UID));
+  }
+
+  @Test
+  void afterRemoveClusterResource_verifyClusterResourceIsNull() {
+    final String clusterName = "cluster-1";
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    ClusterResource clusterResource = info.removeClusterResource(clusterName);
+    assertThat(clusterResource, notNullValue());
+    assertThat(info.getClusterResource(clusterName), nullValue());
+  }
+
+  private void createAndAddClusterResourceToDomainInfo(
+          DomainPresenceInfo dpi, String clusterName, String domainUid) {
+    dpi.addClusterResource(createClusterResource(clusterName, domainUid));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_removeReturnsNull() {
+    final String clusterName = "cluster-1";
+    ClusterResource clusterResource = info.removeClusterResource(clusterName);
+    assertThat(clusterResource, nullValue());
+  }
+
+  private ClusterResource createClusterResource(String clusterName, String domain1) {
+    return new ClusterResource()
+            .spec(createClusterSpec(clusterName, domain1));
+  }
+
+  private Cluster createClusterSpec(String clusterName, String domain1) {
+    Cluster clusterSpec = new Cluster().withClusterName(clusterName).withDomainUid(domain1)
+            .withReplicas(5);
+    return clusterSpec;
+  }
+
+  @Test
+  void adminServerSpecHasStandardValues() {
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    ServerSpec spec = info.getAdminServerSpec();
+
+    verifyStandardFields(spec);
+  }
+
+  @Test
+  void whenClusterResourceDefined_butServerNotDefined_getDefaultServerSpec() {
+    final String clusterName = "cluster-1";
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    ServerSpec spec = info.getServer("aServer", clusterName);
+
+    verifyStandardFields(spec);
+  }
+
+  @Test
+  void whenClusterResourceDefined_getClusterRestartVersionFromServerSpec() {
+    final String clusterName = "cluster-1";
+    final String serverName = "managed-server1";
+    final String MY_RESTART_VERSION = "MyRestartVersion";
+
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    ClusterResource clusterResource = createClusterResource(clusterName, DOMAIN_UID);
+    Cluster cluster = createClusterSpec(clusterName, DOMAIN_UID);
+    cluster.setRestartVersion(MY_RESTART_VERSION);
+    clusterResource.spec(cluster);
+    info.addClusterResource(clusterResource);
+
+    ServerSpec spec = info.getServer(serverName, clusterName);
+
+    verifyStandardFields(spec);
+    assertThat(spec.getClusterRestartVersion(), equalTo(MY_RESTART_VERSION));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_getDefaultClusterSpec() {
+    final String clusterName = "cluster-1";
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+
+    ClusterSpec clusterSpec = info.getCluster(clusterName);
+    assertThat(clusterSpec.getClusterLabels(), anEmptyMap());
+  }
+
+  @Test
+  void whenClusterResourceDefined_getClusterSpec() {
+    final String clusterName = "cluster-1";
+    final String labelKey = "Hello";
+    final String labelValue = "World";
+
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    ClusterResource clusterResource = createClusterResource(clusterName, DOMAIN_UID);
+    Cluster cluster = createClusterSpec(clusterName, DOMAIN_UID);
+    cluster.getClusterLabels().put(labelKey, labelValue);
+    clusterResource.spec(cluster);
+    info.addClusterResource(clusterResource);
+
+    ClusterSpec clusterSpec = info.getCluster(clusterName);
+    Map<String,String> labels = clusterSpec.getClusterLabels();
+    assertThat(labels, aMapWithSize(1));
+    assertThat(labels.get(labelKey), equalTo(labelValue));
+  }
+
+  // Confirms the value of fields that are constant across the domain
+  private void verifyStandardFields(ServerSpec spec) {
+    assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
+    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullSecrets(), empty());
   }
 
   private void addScheduledServer(String serverName, String clusterName) {

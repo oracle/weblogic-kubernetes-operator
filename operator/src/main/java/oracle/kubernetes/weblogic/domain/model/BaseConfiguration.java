@@ -370,7 +370,7 @@ public abstract class BaseConfiguration {
     return restartVersion;
   }
 
-  void setRestartVersion(String restartVersion) {
+  public void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
   }
 

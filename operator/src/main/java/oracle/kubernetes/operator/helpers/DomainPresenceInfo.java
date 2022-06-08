@@ -41,7 +41,15 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommonImpl;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.ManagedServerSpecCommonImpl;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -67,7 +75,8 @@ public class DomainPresenceInfo implements PacketComponent {
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ClusterResource> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1Service> clusterServices = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
@@ -437,15 +446,15 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   void removeClusterService(String clusterName) {
-    clusters.remove(clusterName);
+    clusterServices.remove(clusterName);
   }
 
   public V1Service getClusterService(String clusterName) {
-    return clusters.get(clusterName);
+    return clusterServices.get(clusterName);
   }
 
   void setClusterService(String clusterName, V1Service service) {
-    clusters.put(clusterName, service);
+    clusterServices.put(clusterName, service);
   }
 
   void setPodDisruptionBudget(String clusterName, V1PodDisruptionBudget pdb) {
@@ -494,12 +503,12 @@ public class DomainPresenceInfo implements PacketComponent {
       return;
     }
 
-    clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
+    clusterServices.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
 
   boolean deleteClusterServiceFromEvent(String clusterName, V1Service event) {
     return removeIfPresentAnd(
-        clusters,
+            clusterServices,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
@@ -747,6 +756,49 @@ public class DomainPresenceInfo implements PacketComponent {
     this.serversToRoll = serversToRoll;
   }
 
+  public ClusterResource getClusterResource(String clusterName) {
+    return clusters.get(clusterName);
+  }
+
+  /**
+   * Add a ClusterResource resource.
+   * @param clusterResource ClusterResource object.
+   */
+  public void addClusterResource(ClusterResource clusterResource) {
+    Optional.ofNullable(clusterResource)
+            .map(c -> c.getSpec())
+            .map(s -> s.getClusterName())
+            .map(name -> clusters.put(name, clusterResource));
+  }
+
+  public ClusterResource removeClusterResource(String clusterName) {
+    return Optional.ofNullable(clusterName)
+            .map(name -> clusters.remove(name)).orElse(null);
+  }
+
+  public ServerSpec getAdminServerSpec() {
+    return getEffectiveConfigurationFactory().getAdminServerSpec();
+  }
+
+  /**
+   * Returns the specification applicable to a particular server/cluster combination.
+   *
+   * @param serverName  the name of the server
+   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the server
+   */
+  public ServerSpec getServer(String serverName, String clusterName) {
+    return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
+  }
+
+  public ClusterSpec getCluster(String clusterName) {
+    return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
+  }
+
+  private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
+    return new CommonEffectiveConfigurationFactory();
+  }
+
   /** Details about a specific managed server. */
   public static class ServerInfo {
     public final WlsServerConfig serverConfig;
@@ -890,6 +942,116 @@ public class DomainPresenceInfo implements PacketComponent {
 
     public boolean isServiceOnly() {
       return  isServiceOnly;
+    }
+  }
+
+  class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
+    @Override
+    public AdminServerSpec getAdminServerSpec() {
+      return Optional.ofNullable(getDomain()).map(d -> d.getAdminServerSpec()).orElse(null);
+    }
+
+    @Override
+    public ServerSpec getServerSpec(String serverName, String clusterName) {
+      ClusterResource clusterResource = getClusterResource(clusterName);
+      Cluster clusterSpec = clusterResource != null ? clusterResource.getSpec() : null;
+      return getServerSpec(getDomain().getSpec().getManagedServer(serverName),
+              clusterSpec,
+              getClusterLimit(clusterName));
+    }
+
+    private ServerSpec getServerSpec(ManagedServer server, Cluster clusterSpec, Integer clusterLimit) {
+      return new ManagedServerSpecCommonImpl(
+              getDomain().getSpec(),
+              server,
+              clusterSpec,
+              clusterLimit);
+    }
+
+    private boolean hasMaxUnavailable(Cluster cluster) {
+      return false;
+    }
+
+    private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
+      return false;
+    }
+
+    private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
+      return false;
+    }
+
+    private boolean hasMaxConcurrentStartup(Cluster cluster) {
+      return false;
+    }
+
+    private int getMaxConcurrentShutdownFor(Cluster cluster) {
+      return -1;
+    }
+
+    private int getMaxConcurrentStartupFor(Cluster cluster) {
+      return -1;
+    }
+
+    private int getMaxUnavailableFor(Cluster cluster) {
+      return -1;
+    }
+
+    private int getReplicaCountFor(Cluster cluster) {
+      return -1;
+    }
+
+    @Override
+    public ClusterSpec getClusterSpec(String clusterName) {
+      return new ClusterSpecCommonImpl(getDomain().getSpec(),
+              getClusterResourceSpec(clusterName));
+    }
+
+    private Cluster getClusterResourceSpec(String clusterName) {
+      return Optional.ofNullable(getClusterResource(clusterName)).map(c -> c.getSpec())
+              .orElse(null);
+    }
+
+    private Integer getClusterLimit(String clusterName) {
+      return -1;
+    }
+
+    @Override
+    public boolean isShuttingDown() {
+      return false;
+    }
+
+    @Override
+    public int getReplicaCount(String clusterName) {
+      return -1;
+    }
+
+    @Override
+    public void setReplicaCount(String clusterName, int replicaCount) {
+    }
+
+    @Override
+    public int getMaxUnavailable(String clusterName) {
+      return -1;
+    }
+
+    @Override
+    public List<String> getAdminServerChannelNames() {
+      return null;
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+      return false;
+    }
+
+    @Override
+    public int getMaxConcurrentStartup(String clusterName) {
+      return -1;
+    }
+
+    @Override
+    public int getMaxConcurrentShutdown(String clusterName) {
+      return -1;
     }
   }
 }

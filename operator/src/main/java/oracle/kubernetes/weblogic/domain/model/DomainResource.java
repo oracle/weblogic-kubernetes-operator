@@ -272,7 +272,7 @@ public class DomainResource implements KubernetesObject {
     return spec.getIntrospectVersion();
   }
 
-  private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
+  public EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
     return spec.getEffectiveConfigurationFactory(apiVersion);
   }
 

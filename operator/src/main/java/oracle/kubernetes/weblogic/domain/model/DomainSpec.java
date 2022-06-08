@@ -1088,7 +1088,12 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
-  ManagedServer getManagedServer(String serverName) {
+  /**
+   * Find Managed Server.
+   * @param serverName name of managed server.
+   * @return ManagedServer object or null, if not defined.
+   */
+  public ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {
       for (ManagedServer s : managedServers) {
         if (serverName.equals(s.getServerName())) {
