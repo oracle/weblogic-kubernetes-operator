@@ -26,7 +26,6 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
@@ -1255,9 +1254,6 @@ public class DomainResource implements KubernetesObject {
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
       verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WEBLOGIC_CREDENTIALS);
-      for (V1LocalObjectReference reference : getImagePullSecrets()) {
-        verifySecretExists(resourceLookup, reference.getName(), SecretType.IMAGE_PULL);
-      }
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.CONFIG_OVERRIDE);
       }
@@ -1284,10 +1280,6 @@ public class DomainResource implements KubernetesObject {
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
 
-    }
-
-    private List<V1LocalObjectReference> getImagePullSecrets() {
-      return spec.getImagePullSecrets();
     }
 
     @SuppressWarnings("SameParameterValue")
