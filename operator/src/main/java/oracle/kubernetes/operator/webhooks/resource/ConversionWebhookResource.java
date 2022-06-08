@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.resource;
+package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,19 +13,20 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.helpers.EventHelper;
-import oracle.kubernetes.operator.http.rest.model.ConversionRequest;
-import oracle.kubernetes.operator.http.rest.model.ConversionResponse;
-import oracle.kubernetes.operator.http.rest.model.ConversionReviewModel;
-import oracle.kubernetes.operator.http.rest.model.Result;
+import oracle.kubernetes.operator.http.rest.resource.BaseResource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.webhooks.model.ConversionRequest;
+import oracle.kubernetes.operator.webhooks.model.ConversionResponse;
+import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
+import oracle.kubernetes.operator.webhooks.model.Result;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readConversionReview;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeConversionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
