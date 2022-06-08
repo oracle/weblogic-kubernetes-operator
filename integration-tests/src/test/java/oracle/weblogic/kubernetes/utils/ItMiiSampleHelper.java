@@ -297,8 +297,8 @@ public class ItMiiSampleHelper {
                       .redirect(true));
       assertNotNull(output, String.format("Can't inspect image %s:%s",jrfBaseImageName, FMWINFRA_IMAGE_TAG));
       String ownership = output.substring(output.indexOf("oracleHomeGroup"),
-              (output.indexOf("oracleInstalledProducts") - 1));
-      logger.info("Image ownership is {0} ", ownership);
+              (output.indexOf("oracleInstalledProducts") - 2));
+      logger.info("Image {0}:{1} ownership is {2} ", jrfBaseImageName, FMWINFRA_IMAGE_TAG, ownership);
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
       execTestScriptAndAssertSuccess(domainType, "-db,-rcu", "DB/RCU creation failed");
