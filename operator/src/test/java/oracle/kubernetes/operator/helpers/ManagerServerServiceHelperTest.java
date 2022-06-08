@@ -65,7 +65,7 @@ class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
     V1Service service = createService();
 
-    assertThat(service, containsPort("metrics", DEFAULT_EXPORTER_SIDECAR_PORT));
+    assertThat(service, containsPort("metrics", "http", DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 
   @Test
@@ -74,7 +74,7 @@ class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
     V1Service service = createService();
 
-    assertThat(service, containsPort("metrics", 300));
+    assertThat(service, containsPort("metrics", "http", 300));
   }
 
   @Test
@@ -83,6 +83,6 @@ class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
     V1Service service = createService();
 
-    assertThat(service, containsPort("tcp-metrics", DEFAULT_EXPORTER_SIDECAR_PORT));
+    assertThat(service, containsPort("metrics", "http", DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 }

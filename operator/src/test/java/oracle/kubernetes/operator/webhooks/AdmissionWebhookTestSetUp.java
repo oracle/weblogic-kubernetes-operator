@@ -1,10 +1,11 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.webhooks;
 
 import java.util.List;
 
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
@@ -19,7 +20,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
  * AdmissionWebhookTestSetup creates the necessary Domain resources that can be used in admission webhook
  * related test cases such as WebhookRestTest and ValidationUtilsTest.
  */
-public class AdmissionWebhookTestSetUp {
+class AdmissionWebhookTestSetUp {
   private static final String CLUSTER_NAME_1 = "C1";
   private static final String CLUSTER_NAME_2 = "C2";
   public static final String ORIGINAL_IMAGE_NAME = "abcd";
@@ -63,12 +64,15 @@ public class AdmissionWebhookTestSetUp {
     return new ClusterStatus().withClusterName(clusterName).withMaximumReplicas(ORIGINAL_REPLICAS);
   }
 
-  static AuxiliaryImage createAuxiliaryImage(String imageName) {
+  public static AuxiliaryImage createAuxiliaryImage(String imageName) {
     return new AuxiliaryImage().image(imageName);
   }
 
-  static void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
+  public static void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
     domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
   }
 
+  static void setFromModel(DomainResource domain) {
+    domain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+  }
 }

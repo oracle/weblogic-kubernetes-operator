@@ -20,9 +20,9 @@ spec:
   replicas: 1
   template:
     metadata:
-      {{- with .annotations }}
       annotations:
-      {{- end }}
+        prometheus.io/port: '8083'
+        prometheus.io/scrape: 'true'
       {{- range $key, $value := .annotations }}
         {{ $key }}: {{ $value | quote }}
       {{- end }}
@@ -208,9 +208,9 @@ spec:
       replicas: 1
       template:
         metadata:
-          {{- with .annotations }}
           annotations:
-          {{- end }}
+            prometheus.io/port: '8083'
+            prometheus.io/scrape: 'true'
           {{- range $key, $value := .annotations }}
             {{ $key }}: {{ $value | quote }}
           {{- end }}

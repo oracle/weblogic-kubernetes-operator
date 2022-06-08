@@ -15,11 +15,11 @@ import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestConfigImpl;
-import oracle.kubernetes.operator.http.rest.WebhookRestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.webhooks.WebhookRestServer;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -81,8 +81,8 @@ public class WebhookMain extends BaseMain {
       // now we just wait until the pod is terminated
       main.waitForDeath();
 
-      // stop the webhook REST server
       main.stopRestServer();
+      main.stopMetricsServer();
     } finally {
       LOGGER.info(MessageKeys.WEBHOOK_SHUTTING_DOWN);
     }
@@ -117,7 +117,7 @@ public class WebhookMain extends BaseMain {
 
   void completeBegin() {
     try {
-      // start the conversion webhook REST server
+      startMetricsServer(container);
       startRestServer(container);
 
       // start periodic recheck of CRD
@@ -171,8 +171,7 @@ public class WebhookMain extends BaseMain {
   }
 
   @Override
-  protected BaseRestServer createRestServer()
-          throws Exception {
+  protected BaseRestServer createRestServer() {
     return WebhookRestServer.create(restConfig);
   }
 
