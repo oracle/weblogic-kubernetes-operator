@@ -419,7 +419,6 @@
                     **/ItFmwDomainInPVUsingWDT,
                     **/ItLiftAndShiftFromOnPremDomain,
                     **/ItIntrospectVersion,
-                    **/ItFmwBigCMMiiDomain,
                     **/ItFmwDiiSample,
                     **/ItFmwSample,
                     **/ItMultiDomainModelsWithLoadBalancer,

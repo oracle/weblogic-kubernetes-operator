@@ -73,12 +73,11 @@ class ItFmwDomainInPVUsingWDT {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
-  private static final String DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
-
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
 
   private static final String domainUid = "fmw-domainonpv-wdt";
+  private static final String DOMAINHOMEPREFIX = "/shared/" + domainUid + "/domains/";
   private static final String clusterName = "cluster-1";
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
