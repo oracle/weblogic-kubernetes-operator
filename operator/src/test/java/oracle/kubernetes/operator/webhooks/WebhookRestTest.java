@@ -155,12 +155,10 @@ class WebhookRestTest extends RestTestBase {
     ConversionReviewModel responseReview = readConversionReview(responseString);
     Result responseResult = getResult(responseReview);
 
-    assertThat(responseResult, equalTo(result));
+    assertThat(responseResult.equals(result), is(true));
+    assertThat(responseResult.toString(), equalTo(result.toString()));
+    assertThat(responseResult.hashCode(), equalTo(result.hashCode()));
     assertThat(responseResult.getStatus(), equalTo("Success"));
-  }
-
-  private Result getResult(ConversionReviewModel responseReview) {
-    return responseReview.getResponse().getResult();
   }
 
   @Test
@@ -200,6 +198,20 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
+  void whenConversionWebhookRequestSent_hasExpectedResponseInJava() {
+    ConversionReviewModel expectedReview = readConversionReview(getAsString(CONVERSION_REVIEW_RESPONSE));
+    ConversionReviewModel conversionReview = readConversionReview(getAsString(CONVERSION_REVIEW_REQUEST));
+    ConversionReviewModel responseReview  = sendConversionWebhookRequestAsReview(conversionReview);
+
+    assertThat(responseReview.getResponse().equals(expectedReview.getResponse()), is(true));
+    assertThat(responseReview.getResponse().toString(), equalTo(expectedReview.getResponse().toString()));
+    assertThat(responseReview.getResponse().hashCode(), equalTo(expectedReview.getResponse().hashCode()));
+    assertThat(responseReview.toString(), equalTo(expectedReview.toString()));
+    assertThat(responseReview.hashCode(), equalTo(expectedReview.hashCode()));
+    assertThat(responseReview.equals(expectedReview), is(true));
+  }
+
+  @Test
   void whenGoodConversionWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
     ConversionReviewModel responseReview = sendConversionWebhookRequestAsReview(conversionReview);
 
@@ -216,6 +228,11 @@ class WebhookRestTest extends RestTestBase {
   private String getStatus(ConversionReviewModel conversionReview) {
     return Optional.ofNullable(conversionReview)
         .map(ConversionReviewModel::getResponse).map(ConversionResponse::getResult).map(Result::getStatus).orElse("");
+  }
+
+  private Result getResult(ConversionReviewModel conversionReview) {
+    return Optional.ofNullable(conversionReview)
+        .map(ConversionReviewModel::getResponse).map(ConversionResponse::getResult).orElse(null);
   }
 
   private List<Object> getConvertedObject(ConversionReviewModel conversionReview) {
