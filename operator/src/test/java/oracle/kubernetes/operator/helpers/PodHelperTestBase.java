@@ -576,10 +576,23 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void afterUpgradeIstioMonitoringExporterPod_dontReplacePod() {
+    useProductionHash();
+    defineExporterConfiguration().withIstio();
+
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    // Surprisingly, verifyPodPatched() is the correct assertion -- because the logic to adjust the recipe and
+    // generate hashes for pre-existing pods works correctly, the existing pod will not be replaced; however,
+    // it will be patched to update the weblogic.operatorVersion label and the annotation with the hash.
+    verifyPodPatched();
+  }
+
+  @Test
   void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
     defineExporterConfiguration().withIstio();
 
-    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
@@ -733,6 +746,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
+
+  abstract String getReferenceIstioMonitoringExporterTcpProtocol();
 
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
