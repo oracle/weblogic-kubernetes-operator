@@ -89,10 +89,10 @@ If you created an auxiliary image by following the steps in the optional
 then use following commands to delete the generated image and directories for tools and models.
 
 1.  When no longer needed, delete the generated image by using the `docker rmi` command.
-    Use the following command to delete an image tagged with `mii-aux-image:v1`:
+    Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
 
     ```shell
-    $ docker rmi mii-aux-image:v1
+    $ docker rmi quick-start-aux-image:v1
     ```
 
 1.  When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
@@ -110,8 +110,8 @@ then use following commands to delete the generated image and directories for to
 If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional 
 [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section,
 then delete the downloaded image by using the `docker rmi` command.
-1.  Use the following command to delete an image tagged with `mii-aux-image:v1`:
+1.  Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
 
     ```shell
-    $ docker rmi ghcr.io/oracle/mii-aux-image:v1
+    $ docker rmi ghcr.io/oracle/quick-start-aux-image:v1
     ```

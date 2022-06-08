@@ -35,7 +35,7 @@ weight: 7
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml
        ```
 
-      You can download the WLS Domain YAML file using the following command to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar and make any changes before running the `kubectl apply` command.
+      You can download the WLS Domain YAML file using the following command to a file called `/tmp/quickstart/quick-start-domain-resource.yaml` or similar and make any changes before running the `kubectl apply` command.
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml -o /tmp/quickstart/quick-start-domain-resource.yaml
@@ -209,7 +209,7 @@ weight: 7
        4. Create the domain by applying the domain resource. Run the following command:
 
           ```shell
-          $ kubectl apply -f /tmp/quickstart/mii-aux-image-domain.yaml
+          $ kubectl apply -f /tmp/quickstart/quick-start-domain-resource.yaml
           ```
 
    {{% notice warning %}}
