@@ -159,7 +159,6 @@ public class WebLogicImageTool {
           ownership = " --chown oracle:oracle";
         }
       }
-
     }
     String command =
         IMAGE_TOOL
