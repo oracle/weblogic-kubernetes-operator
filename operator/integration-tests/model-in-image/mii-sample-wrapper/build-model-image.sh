@@ -81,7 +81,7 @@ TARGET="Default"
 echo  "@@ Info: OKD=${OKD}"
 echo  "@@ Info: TARGET=${TARGET}"
 
-if [[ ${OKD} ]]; then
+if [[ ${OKD} == "true" ]]; then
   TARGET="OpenShift"
 fi
   
