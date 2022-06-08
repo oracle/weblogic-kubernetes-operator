@@ -65,6 +65,9 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @Description("The generation observed by the WebLogic operator.")
+  private Long observedGeneration;
+
   @SuppressWarnings("unused")
   @Description(
       "Non-zero if the introspector job fails for any reason. "
@@ -121,6 +124,7 @@ public class DomainStatus {
   public DomainStatus(DomainStatus that) {
     message = that.message;
     reason = that.reason;
+    observedGeneration = that.observedGeneration;
     conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
     servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
     clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
@@ -333,6 +337,19 @@ public class DomainStatus {
    */
   public DomainStatus withReason(String reason) {
     this.reason = reason;
+    return this;
+  }
+
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+  }
+
+  public DomainStatus withObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
     return this;
   }
 
@@ -601,6 +618,7 @@ public class DomainStatus {
         .append("conditions", conditions)
         .append("message", message)
         .append("reason", reason)
+        .append("observedGeneration", observedGeneration)
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
@@ -614,6 +632,7 @@ public class DomainStatus {
   public int hashCode() {
     return new HashCodeBuilder()
         .append(reason)
+        .append(observedGeneration)
         .append(startTime)
         .append(initialFailureTime)
         .append(lastFailureTime)
@@ -636,6 +655,7 @@ public class DomainStatus {
     DomainStatus rhs = ((DomainStatus) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
+        .append(observedGeneration, rhs.observedGeneration)
         .append(startTime, rhs.startTime)
         .append(initialFailureTime, rhs.initialFailureTime)
         .append(lastFailureTime, rhs.lastFailureTime)

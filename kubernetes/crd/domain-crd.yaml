@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 4424293c3c408cb5c457be82ec8e36d1d2c0b2b1b4eb85dce435435af3ed121f
+    weblogic.sha256: 4a73426bada91382ddd427735cfc706c76ea419802ec37e920052817500cb508
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -12708,6 +12708,9 @@ spec:
                 description: A human readable message indicating details about why
                   the domain is in this condition.
                 type: string
+              observedGeneration:
+                description: The generation observed by the WebLogic operator.
+                type: number
               clusters:
                 description: Status of WebLogic clusters in this domain.
                 items:
