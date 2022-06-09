@@ -66,7 +66,7 @@ echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
 echo @@ Info: MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD}
 echo @@ Info: OKD=${OKD}
-echo @@ Info: CHOWN_ROOT=${CHOWN_ROOT:-"--chown oracle:root"}
+echo @@ Info: CHOWN_ROOT=${CHOWN_ROOT:="--chown oracle:root"}
 
 IMGTOOL=$WORKDIR/model-images/imagetool/bin/imagetool.sh
 
