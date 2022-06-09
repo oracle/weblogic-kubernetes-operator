@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -139,6 +138,10 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
+  }
+
+  private static DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
+    return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
   static void cleanupNamespace(String namespace) {
@@ -645,7 +648,21 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
-    return new MakeRightDomainOperationImpl(delegate, liveInfo);
+    final MakeRightDomainOperationImpl operation = new MakeRightDomainOperationImpl(delegate, liveInfo);
+
+    if (isFirstDomainNewer(liveInfo, getExistingDomainPresenceInfo(liveInfo))) {
+      operation.interrupt();
+    }
+
+    return operation;
+  }
+
+  private boolean isFirstDomainNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    return KubernetesUtils.isFirstNewer(getDomainMeta(liveInfo), getDomainMeta(cachedInfo));
+  }
+
+  private V1ObjectMeta getDomainMeta(DomainPresenceInfo info) {
+    return Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(DomainResource::getMetadata).orElse(null);
   }
 
   Step createPopulatePacketServerMapsStep() {
@@ -725,26 +742,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, DomainPresenceInfo liveInfo) {
       this.delegate = delegate;
       this.liveInfo = liveInfo;
-      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-      if (!isNewDomain(cachedInfo)
-          && isAfter(getCreationTimestamp(liveInfo), getCreationTimestamp(cachedInfo))) {
-        willInterrupt = true;
-      }
-    }
-
-    private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
-      return Optional.ofNullable(dpi.getDomain())
-          .map(DomainResource::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
-    }
-
-    private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
-      if (two == null) {
-        return true;
-      }
-      if (one == null) {
-        return false;
-      }
-      return one.isAfter(two);
     }
 
     /**
