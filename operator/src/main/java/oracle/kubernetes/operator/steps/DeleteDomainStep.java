@@ -3,9 +3,9 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -21,49 +21,47 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
 
 public class DeleteDomainStep extends Step {
-  private final DomainPresenceInfo info;
-  private final String namespace;
-  private final String domainUid;
 
-  /**
-   * Construct delete domain step.
-   * @param info domain presence
-   * @param namespace namespace
-   * @param domainUid domain UID
-   */
-  public DeleteDomainStep(DomainPresenceInfo info, String namespace, String domainUid) {
-    super(null);
-    this.info = info;
-    this.namespace = namespace;
-    this.domainUid = domainUid;
-  }
 
   @Override
   public NextAction apply(Packet packet) {
-    Step serverDownStep =
-        Step.chain(
-            deletePods(),
-            deleteServices(),
-            deletePodDisruptionBudgets(),
-            ConfigMapHelper.deleteIntrospectorConfigMapStep(domainUid, namespace, getNext()));
-    if (info != null) {
-      List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
-      info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
-              .forEach(s -> ssi.add(new DomainPresenceInfo.ServerShutdownInfo(s, null)));
-      serverDownStep =
-          new ServerDownIteratorStep(
-              ssi,
-              serverDownStep);
-    }
-
-    return doNext(serverDownStep, packet);
+    return doNext(DomainPresenceInfo.fromPacket(packet).map(this::createNextSteps).orElseThrow(), packet);
   }
 
-  private Step deleteServices() {
+  @Nonnull
+  private ServerDownIteratorStep createNextSteps(DomainPresenceInfo info) {
+    return new ServerDownIteratorStep(getShutdownInfos(info), createDomainDownStep(info));
+  }
+
+  private Step createDomainDownStep(DomainPresenceInfo info) {
+    return Step.chain(
+        deletePods(info),
+        deleteServices(info),
+        deletePodDisruptionBudgets(info),
+        deleteIntrospectorConfigMap(info));
+  }
+
+  @Nonnull
+  private Step deleteIntrospectorConfigMap(DomainPresenceInfo info) {
+    return ConfigMapHelper.deleteIntrospectorConfigMapStep(info.getDomainUid(), info.getNamespace(), getNext());
+  }
+
+  private List<DomainPresenceInfo.ServerShutdownInfo> getShutdownInfos(DomainPresenceInfo info) {
+    return info.getServerPods()
+        .map(PodHelper::getPodServerName)
+        .map(this::createShutdownInfo)
+        .collect(Collectors.toList());
+  }
+
+  private DomainPresenceInfo.ServerShutdownInfo createShutdownInfo(String serverName) {
+    return new DomainPresenceInfo.ServerShutdownInfo(serverName, null);
+  }
+
+  private Step deleteServices(DomainPresenceInfo info) {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
+        .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector())
         .listServiceAsync(
-            namespace,
+            info.getNamespace(),
             new ActionResponseStep<>() {
               public Step createSuccessStep(V1ServiceList result, Step next) {
                 return new DeleteServiceListStep(result.getItems(), next);
@@ -71,22 +69,22 @@ public class DeleteDomainStep extends Step {
             });
   }
 
-  private Step deletePodDisruptionBudgets() {
+  private Step deletePodDisruptionBudgets(DomainPresenceInfo info) {
     return new CallBuilder()
-            .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
-            .listPodDisruptionBudgetAsync(
-                    namespace,
-                    new ActionResponseStep<>() {
-                    public Step createSuccessStep(V1PodDisruptionBudgetList result, Step next) {
-                      return new DeletePodDisruptionBudgetListStep(result.getItems(), next);
-                    }
-                  });
+        .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector())
+        .listPodDisruptionBudgetAsync(
+            info.getNamespace(),
+            new ActionResponseStep<>() {
+              public Step createSuccessStep(V1PodDisruptionBudgetList result, Step next) {
+                return new DeletePodDisruptionBudgetListStep(result.getItems(), next);
+              }
+            });
   }
 
-  private Step deletePods() {
+  private Step deletePods(DomainPresenceInfo info) {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
-        .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
+        .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector())
+        .deleteCollectionPodAsync(info.getNamespace(), new DefaultResponseStep<>(null));
   }
 
 }

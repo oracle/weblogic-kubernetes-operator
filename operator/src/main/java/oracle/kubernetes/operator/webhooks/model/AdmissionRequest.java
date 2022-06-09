@@ -1,12 +1,13 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.model;
+package oracle.kubernetes.operator.webhooks.model;
 
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
  * AdmissionRequest represents a Kubernetes admission request sent by the Kubernetes ApiServer upon invoking an
@@ -25,42 +26,42 @@ public class AdmissionRequest {
    */
   @SerializedName("uid")
   @Expose
-  protected String uid;
+  private String uid;
 
   /**
    * Fully-qualified group/version/kind of the incoming object.
    */
   @SerializedName("kind")
   @Expose
-  protected Map<String, String> kind;
+  private Map<String, String> kind;
 
   /**
    * Fully-qualified group/version/kind of the resource being modified.
    */
   @SerializedName("resource")
   @Expose
-  protected Map<String, String> resource;
+  private Map<String, String> resource;
 
   /**
    * The subresource, if the request is to a subresource.
    */
   @SerializedName("subResource")
   @Expose
-  protected Map<String, String> subResource;
+  private Map<String, String> subResource;
 
   /**
    * The new object being admitted.
    */
   @SerializedName("object")
   @Expose
-  protected Object object;
+  private DomainResource object;
 
   /**
    * The existing object.
    */
   @SerializedName("oldObject")
   @Expose
-  protected Object oldObject;
+  private DomainResource oldObject;
 
   public String getUid() {
     return uid;
@@ -94,20 +95,30 @@ public class AdmissionRequest {
     this.subResource = subResource;
   }
 
-  public Object getObject() {
+  public DomainResource getObject() {
     return object;
   }
 
-  public void setObject(Object object) {
+  public void setObject(DomainResource object) {
     this.object = object;
   }
 
-  public Object getOldObject() {
+  public AdmissionRequest object(DomainResource object) {
+    setObject(object);
+    return this;
+  }
+
+  public DomainResource getOldObject() {
     return oldObject;
   }
 
-  public void setOldObject(Object oldObject) {
+  public void setOldObject(DomainResource oldObject) {
     this.oldObject = oldObject;
+  }
+
+  public AdmissionRequest oldObject(DomainResource oldObject) {
+    setOldObject(oldObject);
+    return this;
   }
 
   @Override
