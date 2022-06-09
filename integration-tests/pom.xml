@@ -424,6 +424,8 @@
                     **/ItMiiDynamicUpdatePart2,
                     **/ItMiiDynamicUpdatePart3,
                     **/ItInitContainers,
+                    **/ItFmwDiiSample,
+                    **/ItMiiSampleFmwMain,
                     **/ItMiiCustomSslStore
                 </includes-failsafe>
             </properties>
