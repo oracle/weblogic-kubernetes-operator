@@ -52,7 +52,7 @@ $ helm install traefik-operator traefik/traefik \
     $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
     ```
 
-    Install the operator using this format: `helm install <helm-release-name> <helm-chart-repo-name>/weblogic-operator` ...
+    Install the operator using this format: `helm install <helm-release-name> <helm-chart-repo-name>/weblogic-operator ...`
 
     ```shell
     $ helm install sample-weblogic-operator weblogic-operator/weblogic-operator \
