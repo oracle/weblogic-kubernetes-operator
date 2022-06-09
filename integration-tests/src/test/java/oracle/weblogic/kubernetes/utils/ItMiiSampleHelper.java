@@ -34,11 +34,9 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.inspectImage;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool.defaultWitParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -289,14 +287,8 @@ public class ItMiiSampleHelper {
       envMap.put("DB_IMAGE_PULL_SECRET", TestConstants.BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
       if (OKE_CLUSTER) {
-        String output = inspectImage(
-                defaultWitParams()
-                        .modelImageName(jrfBaseImageName)
-                        .modelImageTag(FMWINFRA_IMAGE_TAG)
-                        .wdtVersion(WDT_VERSION)
-                        .env(envMap)
-                        .redirect(true));
-        assertNotNull(output, String.format("Can't inspect image %s:%s",jrfBaseImageName, FMWINFRA_IMAGE_TAG));
+        String output = inspectImage(jrfBaseImageName, FMWINFRA_IMAGE_TAG);
+        assertNotNull(output, String.format("Can't inspect image %s:%s", jrfBaseImageName, FMWINFRA_IMAGE_TAG));
         if (!output.contains("root")) {
           envMap.put("CHOWN_ROOT","--chown oracle:oracle");
         }

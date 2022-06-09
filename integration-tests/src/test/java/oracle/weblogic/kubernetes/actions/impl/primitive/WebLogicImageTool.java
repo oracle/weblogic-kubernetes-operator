@@ -88,10 +88,10 @@ public class WebLogicImageTool {
   }
 
   /**
-   * Create an image using the params using WIT inspect command.
-   * @return true if the command succeeds
+   * Inspect an image using the params using WIT inspect command.
+   * @return output if the command succeeds
    */
-  public String inspectImage() {
+  public String inspectImage(String imageName, String imageTag) {
     String output = null;
     // download WIT if it is not in the expected location
     if (!downloadWit()) {
@@ -114,8 +114,8 @@ public class WebLogicImageTool {
     }
     ExecResult result = Command.withParams(
             defaultCommandParams()
-                    .command(buildInspectWitCommand())
-                    .env(params.env())
+                    .command(buildInspectWitCommand(imageName,
+                            imageTag))
                     .redirect(params.redirect()))
             .executeAndReturnResult();
     // check exitValue to determine if the command execution has failed.
@@ -155,7 +155,9 @@ public class WebLogicImageTool {
     String ownership = " --chown oracle:root";
     if (OKE_CLUSTER) {
       if (params.baseImageName().equals(FMWINFRA_IMAGE_NAME)) {
-        if (!inspectImage().contains("root")) {
+        String output = inspectImage(params.baseImageName(), params.baseImageTag());
+        logger.info("Inspect image result ");
+        if (output != null && !output.contains("root")) {
           ownership = " --chown oracle:oracle";
         }
       }
@@ -210,15 +212,15 @@ public class WebLogicImageTool {
     return command;
   }
 
-  private String buildInspectWitCommand() {
+  private String buildInspectWitCommand(String imageName, String imageTag) {
     LoggingFacade logger = getLogger();
     String command =
             IMAGE_TOOL
                     + " inspect "
-                    + " -i " + params.modelImageName() + ":" + params.modelImageTag();
+                    + " -i " + imageName + ":" + imageTag;
 
     logger.info("Inspect image {0} with command: {1}",
-            params.modelImageName() + ":" + params.modelImageTag(),
+            imageName + ":" + imageTag,
             command);
     return command;
   }

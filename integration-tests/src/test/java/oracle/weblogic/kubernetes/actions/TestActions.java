@@ -76,6 +76,7 @@ import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
@@ -747,16 +748,19 @@ public class TestActions {
   }
 
   /**
-   * Create an image using WDT models using WebLogic Image Tool.
+   * Inspect base image using WDT models using WebLogic Image Tool.
    *
-   * @param params - the parameters for inspecting a model-in-image Docker image
+   * @param imageName - image name
+   * @param imageTag - image tag
    * @return output if the operation succeeds
    */
-  public static String inspectImage(WitParams params) {
-    return
-            WebLogicImageTool
+  public static String inspectImage(String imageName, String imageTag) {
+    WitParams params = defaultWitParams()
+            .wdtVersion(WDT_VERSION)
+            .redirect(true);
+    return WebLogicImageTool
                     .withParams(params)
-                    .inspectImage();
+                    .inspectImage(imageName, imageTag);
   }
 
   /**
