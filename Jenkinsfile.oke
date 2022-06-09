@@ -182,6 +182,7 @@ pipeline {
                 stage('GitHub Checkout') {
                     steps {
                         sh "sudo rm -rf ${WORKSPACE}/*"
+                        sh "sudo rm -rf ${WORKSPACE}/.mvn"
                         checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
                                   doGenerateSubmoduleConfigurations: false,
                                   extensions: [], submoduleCfg: [],
