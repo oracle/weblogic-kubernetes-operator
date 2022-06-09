@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -19,6 +19,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.jetbrains.annotations.NotNull;
 
 @Mojo(
     name = "generate",
@@ -82,8 +83,13 @@ public class JsonSchemaMojo extends AbstractMojo {
     Map<String, Object> generatedSchema = main.generateSchema(rootClass, getSchemaFile());
     if (generateMarkdown) {
       getLog().info(" -- generating markdown for " + rootClass + ".");
-      main.generateMarkdown("Domain", getMarkdownFile(), generatedSchema);
+      main.generateMarkdown(getRootName(), getMarkdownFile(), generatedSchema);
     }
+  }
+
+  @NotNull
+  String getRootName() {
+    return new File(getOutputFile()).getName().split("\\.")[0];
   }
 
   private void addExternalSchemas() throws MojoExecutionException {
