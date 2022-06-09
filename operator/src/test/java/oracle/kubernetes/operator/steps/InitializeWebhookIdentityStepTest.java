@@ -52,7 +52,7 @@ class InitializeWebhookIdentityStepTest {
       new WebhookMain.CheckFailureAndCreateEventStep());
 
   public static final String NS = "namespace";
-  private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
+  private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})

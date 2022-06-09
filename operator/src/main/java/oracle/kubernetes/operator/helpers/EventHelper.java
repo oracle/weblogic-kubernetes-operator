@@ -667,12 +667,7 @@ public class EventHelper {
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
-        return new V1ObjectReference()
-            .name(getWebhookPodName())
-            .namespace(getWebhookNamespace())
-            .kind(KubernetesConstants.POD)
-            .uid(getWebhookPodUID())
-            .apiVersion("v1");
+        return createInvolvedObjectForWebhook();
       }
     },
     WEBHOOK_STARTUP_FAILED {
@@ -703,12 +698,7 @@ public class EventHelper {
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
-        return new V1ObjectReference()
-            .name(getWebhookPodName())
-            .namespace(getWebhookNamespace())
-            .kind(KubernetesConstants.POD)
-            .uid(getWebhookPodUID())
-            .apiVersion("v1");
+        return createInvolvedObjectForWebhook();
       }
     };
 
@@ -843,6 +833,15 @@ public class EventHelper {
     public abstract String getPattern();
 
     public abstract String getReason();
+  }
+
+  private static V1ObjectReference createInvolvedObjectForWebhook() {
+    return new V1ObjectReference()
+        .name(getWebhookPodName())
+        .namespace(getWebhookNamespace())
+        .kind(KubernetesConstants.POD)
+        .uid(getWebhookPodUID())
+        .apiVersion("v1");
   }
 
   public static class EventData {

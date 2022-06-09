@@ -394,7 +394,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
+  void whenValidatingWebhookCreatedAfterFailure504_logStartupFailedMessage() {
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());

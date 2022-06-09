@@ -107,8 +107,8 @@ public class WebhookMain extends BaseMain {
     return nextStepFactory.createInitializationStep(conversionWebhookMainDelegate,
         Step.chain(
             createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(), certs),
-            WebhookHelper.createValidatingWebhookConfigurationStep(certs),
-            new CheckFailureAndCreateEventStep()));
+            new CheckFailureAndCreateEventStep(),
+            WebhookHelper.createValidatingWebhookConfigurationStep(certs)));
   }
 
   private static Step createInitializeWebhookIdentityStep(WebhookMainDelegate delegate, Step next) {
