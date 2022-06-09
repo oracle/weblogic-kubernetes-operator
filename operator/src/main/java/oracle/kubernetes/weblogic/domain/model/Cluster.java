@@ -226,11 +226,11 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     return clusterService.getSessionAffinity();
   }
 
-  Integer getMaxUnavailable() {
+  public Integer getMaxUnavailable() {
     return maxUnavailable;
   }
 
-  void setMaxUnavailable(Integer maxUnavailable) {
+  public void setMaxUnavailable(Integer maxUnavailable) {
     this.maxUnavailable = maxUnavailable;
   }
 

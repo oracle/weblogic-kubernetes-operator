@@ -37,6 +37,7 @@ public interface KubernetesConstants {
   boolean DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE = true;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP = 0;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN = 1;
+  int DEFAULT_MAX_UNAVAILABLE = 1;
 
   String WLS_CONTAINER_NAME = "weblogic-server";
 

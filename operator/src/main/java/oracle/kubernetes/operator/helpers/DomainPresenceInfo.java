@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminServerSpecCommonImpl;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
@@ -56,6 +57,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -795,6 +797,49 @@ public class DomainPresenceInfo implements PacketComponent {
     return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
   }
 
+  /**
+   * Returns the number of replicas to start for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getReplicaCount(String clusterName) {
+    return getEffectiveConfigurationFactory().getReplicaCount(clusterName);
+  }
+
+  public int getMaxUnavailable(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
+  }
+
+  public boolean isShuttingDown() {
+    return getEffectiveConfigurationFactory().isShuttingDown();
+  }
+
+  public void setReplicaCount(String clusterName, int replicaCount) {
+    getEffectiveConfigurationFactory().setReplicaCount(clusterName, replicaCount);
+  }
+
+  /**
+   * Return the names of the exported admin NAPs.
+   *
+   * @return a list of names; may be empty
+   */
+  List<String> getAdminServerChannelNames() {
+    return getEffectiveConfigurationFactory().getAdminServerChannelNames();
+  }
+
+  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
+  }
+
+  public int getMaxConcurrentStartup(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
+  }
+
+  public int getMaxConcurrentShutdown(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
+
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
     return new CommonEffectiveConfigurationFactory();
   }
@@ -948,13 +993,14 @@ public class DomainPresenceInfo implements PacketComponent {
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public AdminServerSpec getAdminServerSpec() {
-      return Optional.ofNullable(getDomain()).map(d -> d.getAdminServerSpec()).orElse(null);
+      return new AdminServerSpecCommonImpl(
+          getDomain().getSpec(), getDomain().getSpec().getAdminServer());
     }
 
     @Override
     public ServerSpec getServerSpec(String serverName, String clusterName) {
-      ClusterResource clusterResource = getClusterResource(clusterName);
-      Cluster clusterSpec = clusterResource != null ? clusterResource.getSpec() : null;
+      Cluster clusterSpec = Optional.ofNullable(getClusterResource(clusterName))
+              .map(c -> c.getSpec()).orElse(null);
       return getServerSpec(getDomain().getSpec().getManagedServer(serverName),
               clusterSpec,
               getClusterLimit(clusterName));
@@ -969,35 +1015,57 @@ public class DomainPresenceInfo implements PacketComponent {
     }
 
     private boolean hasMaxUnavailable(Cluster cluster) {
-      return false;
+      return cluster != null && cluster.getMaxUnavailable() != null;
     }
 
     private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
-      return false;
+      return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
     }
 
     private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
-      return false;
+      return hasAllowReplicasBelowMinDynClusterSize(cluster)
+              ? cluster.isAllowReplicasBelowMinDynClusterSize()
+              : getDomain().getSpec().isAllowReplicasBelowMinDynClusterSize();
     }
 
     private boolean hasMaxConcurrentStartup(Cluster cluster) {
-      return false;
+      return cluster != null && cluster.getMaxConcurrentStartup() != null;
+    }
+
+    private boolean hasMaxConcurrentShutdown(Cluster cluster) {
+      return cluster != null && cluster.getMaxConcurrentShutdown() != null;
     }
 
     private int getMaxConcurrentShutdownFor(Cluster cluster) {
-      return -1;
+      return hasMaxConcurrentShutdown(cluster)
+              ? cluster.getMaxConcurrentShutdown()
+              : getDomain().getSpec().getMaxClusterConcurrentShutdown();
     }
 
     private int getMaxConcurrentStartupFor(Cluster cluster) {
-      return -1;
+      return hasMaxConcurrentStartup(cluster)
+              ? cluster.getMaxConcurrentStartup()
+              : getDomain().getSpec().getMaxClusterConcurrentStartup();
     }
 
-    private int getMaxUnavailableFor(Cluster cluster) {
-      return -1;
-    }
-
+    /**
+     * Get replica count for a specific cluster.
+     *
+     * @param cluster Cluster specification.
+     * @return replica count.
+     */
     private int getReplicaCountFor(Cluster cluster) {
-      return -1;
+      return hasReplicaCount(cluster)
+          ? cluster.getReplicas()
+          : getReplicaCountFromDomain();
+    }
+
+    private int getReplicaCountFromDomain() {
+      return Optional.ofNullable(getDomain().getSpec().getReplicas()).orElse(0);
+    }
+
+    private boolean hasReplicaCount(Cluster clusterspec) {
+      return clusterspec != null && clusterspec.getReplicas() != null;
     }
 
     @Override
@@ -1012,46 +1080,65 @@ public class DomainPresenceInfo implements PacketComponent {
     }
 
     private Integer getClusterLimit(String clusterName) {
-      return -1;
+      return clusterName == null ? null : getReplicaCount(clusterName);
     }
 
     @Override
     public boolean isShuttingDown() {
-      return false;
+      return getAdminServerSpec().isShuttingDown();
     }
 
     @Override
     public int getReplicaCount(String clusterName) {
-      return -1;
+      return Optional.ofNullable(getClusterResource(clusterName))
+              .map(c -> getReplicaCountFor(c.getSpec()))
+              .orElse(getReplicaCountFromDomain());
     }
 
     @Override
     public void setReplicaCount(String clusterName, int replicaCount) {
+      Optional.ofNullable(getClusterResource(clusterName))
+              .ifPresentOrElse(c -> c.getSpec().setReplicas(replicaCount),
+                      () -> getDomain().getSpec().setReplicas(replicaCount));
     }
 
     @Override
     public int getMaxUnavailable(String clusterName) {
-      return -1;
+      return Optional.ofNullable(getClusterResource(clusterName))
+              .map(c -> getMaxUnavailableFor(c.getSpec()))
+              .orElse(1);
+    }
+
+    private int getMaxUnavailableFor(Cluster cluster) {
+      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : DEFAULT_MAX_UNAVAILABLE;
     }
 
     @Override
     public List<String> getAdminServerChannelNames() {
-      return null;
+      return Optional.ofNullable(getDomain().getSpec().getAdminServer())
+              .map(adminServer -> getDomain().getSpec().getAdminServer().getChannelNames())
+              .orElse(List.of());
     }
 
     @Override
     public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
-      return false;
+      return Optional.ofNullable(getClusterResource(clusterName))
+              .map(c -> isAllowReplicasBelowDynClusterSizeFor(c.getSpec()))
+              .orElse(getDomain().getSpec().isAllowReplicasBelowMinDynClusterSize());
     }
 
     @Override
     public int getMaxConcurrentStartup(String clusterName) {
-      return -1;
+      return Optional.ofNullable(getClusterResource(clusterName))
+              .map(c -> getMaxConcurrentStartupFor(c.getSpec()))
+              .orElse(getDomain().getSpec().getMaxClusterConcurrentStartup());
     }
 
     @Override
     public int getMaxConcurrentShutdown(String clusterName) {
-      return -1;
+      return Optional.ofNullable(getClusterResource(clusterName))
+              .map(c -> getMaxConcurrentShutdownFor(c.getSpec()))
+              .orElse(getDomain().getSpec().getMaxClusterConcurrentShutdown());
     }
   }
 }

@@ -38,6 +38,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_UNAVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -427,7 +428,11 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  AdminServer getOrCreateAdminServer() {
+  /**
+   * Get or create AdminServer model object.
+   * @return AdminServer model object.
+   */
+  public AdminServer getOrCreateAdminServer() {
     if (adminServer != null) {
       return adminServer;
     }
@@ -1104,7 +1109,12 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  Cluster getCluster(String clusterName) {
+  /**
+   * Get Cluster model object.
+   * @param clusterName name of Cluster.
+   * @return Cluster model object or null, if not defined.
+   */
+  public Cluster getCluster(String clusterName) {
     if (clusterName != null) {
       for (Cluster c : clusters) {
         if (clusterName.equals(c.getClusterName())) {
@@ -1208,7 +1218,7 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     private int getMaxUnavailableFor(Cluster cluster) {
-      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : DEFAULT_MAX_UNAVAILABLE;
     }
 
     private int getReplicaCountFor(Cluster cluster) {

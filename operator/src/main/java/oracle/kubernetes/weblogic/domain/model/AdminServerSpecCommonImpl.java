@@ -10,7 +10,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class AdminServerSpecCommonImpl extends ServerSpecCommonImpl implements AdminServerSpec {
   private final AdminServer adminServer;
 
-  AdminServerSpecCommonImpl(DomainSpec spec, AdminServer server) {
+  public AdminServerSpecCommonImpl(DomainSpec spec, AdminServer server) {
     super(spec, server, null, null);
     adminServer = server;
   }

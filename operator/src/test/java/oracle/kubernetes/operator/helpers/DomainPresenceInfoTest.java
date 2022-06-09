@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
@@ -31,11 +32,13 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -251,9 +254,7 @@ class DomainPresenceInfoTest {
   }
 
   private Cluster createClusterSpec(String clusterName, String domain1) {
-    Cluster clusterSpec = new Cluster().withClusterName(clusterName).withDomainUid(domain1)
-            .withReplicas(5);
-    return clusterSpec;
+    return new Cluster().withClusterName(clusterName).withDomainUid(domain1);
   }
 
   @Test
@@ -266,7 +267,7 @@ class DomainPresenceInfoTest {
   }
 
   @Test
-  void whenClusterResourceDefined_butServerNotDefined_getDefaultServerSpec() {
+  void whenClusterResourceDefined_butServerNotDefined_getEffectiveServerSpec() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
     final DomainPresenceInfo info = createDomainPresenceInfo(domain);
@@ -284,11 +285,8 @@ class DomainPresenceInfoTest {
 
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
     final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    ClusterResource clusterResource = createClusterResource(clusterName, DOMAIN_UID);
-    Cluster cluster = createClusterSpec(clusterName, DOMAIN_UID);
-    cluster.setRestartVersion(MY_RESTART_VERSION);
-    clusterResource.spec(cluster);
-    info.addClusterResource(clusterResource);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    info.getClusterResource(clusterName).getSpec().setRestartVersion(MY_RESTART_VERSION);
 
     ServerSpec spec = info.getServer(serverName, clusterName);
 
@@ -297,7 +295,7 @@ class DomainPresenceInfoTest {
   }
 
   @Test
-  void whenClusterResourceNotDefined_getDefaultClusterSpec() {
+  void whenClusterResourceNotDefined_getEffectiveDefaultClusterSpec() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
     final DomainPresenceInfo info = createDomainPresenceInfo(domain);
@@ -307,24 +305,151 @@ class DomainPresenceInfoTest {
   }
 
   @Test
-  void whenClusterResourceDefined_getClusterSpec() {
+  void whenClusterResourceDefined_getEffectiveClusterSpec() {
     final String clusterName = "cluster-1";
     final String labelKey = "Hello";
     final String labelValue = "World";
 
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
     final DomainPresenceInfo info = createDomainPresenceInfo(domain);
-    ClusterResource clusterResource = createClusterResource(clusterName, DOMAIN_UID);
-    Cluster cluster = createClusterSpec(clusterName, DOMAIN_UID);
-    cluster.getClusterLabels().put(labelKey, labelValue);
-    clusterResource.spec(cluster);
-    info.addClusterResource(clusterResource);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    info.getClusterResource(clusterName).getSpec().getClusterLabels().put(labelKey, labelValue);
 
     ClusterSpec clusterSpec = info.getCluster(clusterName);
     Map<String,String> labels = clusterSpec.getClusterLabels();
     assertThat(labels, aMapWithSize(1));
     assertThat(labels.get(labelKey), equalTo(labelValue));
   }
+
+  @Test
+  void whenClusterResourceDefined_getEffectiveReplicaCountFromClusterResource() {
+    final String clusterName = "cluster-1";
+
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    info.setReplicaCount(clusterName, 5);
+
+    assertThat(info.getReplicaCount(clusterName), equalTo(5));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_getEffectiveReplicaCountFromDomain() {
+    final String clusterName = "cluster-1";
+
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    domain.getSpec().setReplicas(3);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+
+    assertThat(info.getReplicaCount(clusterName), equalTo(3));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_getDefaultMaxUnvailable() {
+    final String clusterName = "cluster-1";
+
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+
+    assertThat(info.getMaxUnavailable(clusterName), equalTo(1));
+  }
+
+  @Test
+  void whenAdminServerStartPolicy_isNever_verifyIsShuttingDown() {
+    final String clusterName = "cluster-1";
+
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    domain.getSpec().getOrCreateAdminServer().setServerStartPolicy(ServerStartPolicy.NEVER);
+
+    assertThat(info.isShuttingDown(), is(true));
+  }
+
+  @Test
+  void getAdminServerChannelNames() {
+    final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    final DomainPresenceInfo info = createDomainPresenceInfo(domain);
+    domain.getSpec().getOrCreateAdminServer().createAdminService()
+            .withChannel("Channel-A")
+            .withChannel("Channel-B");
+
+    assertThat(info.getAdminServerChannelNames(), containsInAnyOrder("Channel-A", "Channel-B"));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_verifyDefaultIsAllowReplicasBelowMinDynClusterSize() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize(clusterName), is(true));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_verifyIsAllowReplicasBelowMinDynClusterSizeFromDomainSpec() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    info.getDomain().getSpec().setAllowReplicasBelowMinDynClusterSize(false);
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize(clusterName), is(false));
+  }
+
+  @Test
+  void whenClusterResourceDefined_verifyIsAllowReplicasBelowMinDynClusterSize() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    info.getClusterResource(clusterName).getSpec().setAllowReplicasBelowMinDynClusterSize(false);
+
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize(clusterName), is(false));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_getDefaultMaxConcurrentStartup() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    assertThat(info.getMaxConcurrentStartup(clusterName), equalTo(0));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_verifyGetMaxConcurrentStartupFromDomainSpec() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    info.getDomain().getSpec().setMaxClusterConcurrentStartup(5);
+    assertThat(info.getMaxConcurrentStartup(clusterName), equalTo(5));
+  }
+
+  @Test
+  void whenClusterResourceDefined_verifyGetMaxConcurrentStartup() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    info.getClusterResource(clusterName).getSpec().setMaxConcurrentStartup(3);
+    assertThat(info.getMaxConcurrentStartup(clusterName), equalTo(3));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_getDefaultMaxConcurrentShutdown() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    assertThat(info.getMaxConcurrentShutdown(clusterName), equalTo(1));
+  }
+
+  @Test
+  void whenClusterResourceNotDefined_verifyGetMaxConcurrentShutdownFromDomainSpec() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    info.getDomain().getSpec().setMaxClusterConcurrentShutdown(7);
+    assertThat(info.getMaxConcurrentShutdown(clusterName), equalTo(7));
+  }
+
+  @Test
+  void whenClusterResourceDefined_verifyGetMaxConcurrentShutdown() {
+    final String clusterName = "cluster-1";
+    final DomainPresenceInfo info = createDomainPresenceInfo(createDomain(NAMESPACE,DOMAIN_UID));
+    createAndAddClusterResourceToDomainInfo(info, clusterName, DOMAIN_UID);
+    info.getClusterResource(clusterName).getSpec().setMaxConcurrentShutdown(2);
+    assertThat(info.getMaxConcurrentShutdown(clusterName), equalTo(2));
+  }
+
 
   // Confirms the value of fields that are constant across the domain
   private void verifyStandardFields(ServerSpec spec) {
