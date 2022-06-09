@@ -50,7 +50,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESP
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -65,7 +64,9 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
@@ -673,6 +674,42 @@ public class EventHelper {
             .uid(getWebhookPodUID())
             .apiVersion("v1");
       }
+    },
+    WEBHOOK_STARTUP_FAILED {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return WEBHOOK_STARTUP_FAILED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return MessageKeys.WEBHOOK_STARTUP_FAILED;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByWebhookLabel(metadata);
+      }
+
+      @Override
+      public String getMessage(EventData eventData) {
+        return getMessageFromFailedWebhookFailedEventData(eventData);
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return new V1ObjectReference()
+            .name(getWebhookPodName())
+            .namespace(getWebhookNamespace())
+            .kind(KubernetesConstants.POD)
+            .uid(getWebhookPodUID())
+            .apiVersion("v1");
+      }
     };
 
     private static String getMessageFromEventData(EventData eventData) {
@@ -690,6 +727,12 @@ public class EventHelper {
 
     private static String getMessageFromFailedConversionEventData(EventData eventData) {
       return LOGGER.formatMessage(eventData.eventItem.getPattern(),
+          Optional.ofNullable(eventData.message).orElse(""),
+          getAdditionalMessage(eventData));
+    }
+
+    private static String getMessageFromFailedWebhookFailedEventData(EventData eventData) {
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(), eventData.getResourceName(),
           Optional.ofNullable(eventData.message).orElse(""),
           getAdditionalMessage(eventData));
     }
@@ -916,7 +959,7 @@ public class EventHelper {
 
   private static CoreV1Event createConversionWebhookEventModel(EventItem eventItem, EventData eventData) {
     return new CoreV1Event()
-                .reportingComponent(CONVERSION_WEBHOOK_COMPONENT)
+                .reportingComponent(OPERATOR_WEBHOOK_COMPONENT)
                 .reportingInstance(getWebhookPodName())
                 .firstTimestamp(eventItem.getCurrentTimestamp())
                 .lastTimestamp(eventItem.getCurrentTimestamp())
