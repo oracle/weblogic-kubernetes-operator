@@ -301,7 +301,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
     return Step.chain(
           ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
-          new IntrospectionRequestStep(info),
+          new IntrospectionRequestStep(),
           JobHelper.createIntrospectionStartStep(null));
   }
 
@@ -310,23 +310,26 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   /**
-   * Compares the domain introspection version to current introspection state label and request introspection
+   * Compares the domain introspection version to current introspection state label and requests introspection
    * if they don't match.
    */
   private static class IntrospectionRequestStep extends Step {
 
-    private final String requestedIntrospectVersion;
-
-    public IntrospectionRequestStep(DomainPresenceInfo info) {
-      this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
-    }
-
     @Override
     public NextAction apply(Packet packet) {
+      final String requestedIntrospectVersion = getRequestedIntrospectVersion(packet);
       if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
-        packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
+        packet.put(DOMAIN_INTROSPECT_REQUESTED, requestedIntrospectVersion);
       }
       return doNext(packet);
+    }
+
+    @Nonnull
+    private String getRequestedIntrospectVersion(Packet packet) {
+      return DomainPresenceInfo.fromPacket(packet)
+          .map(DomainPresenceInfo::getDomain)
+          .map(DomainResource::getIntrospectVersion)
+          .orElse("0");
     }
   }
 
@@ -705,6 +708,14 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   }
 
+  private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
+    return cachedInfo == null || cachedInfo.getDomain() == null;
+  }
+
+  private void logNotStartingDomain(String domainUid) {
+    LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUid);
+  }
+
   /**
    * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
    */
@@ -987,6 +998,45 @@ public class DomainProcessorImpl implements DomainProcessor {
         throw new NullPointerException("Force unit test to handle NPE");
       }
     }
+  }
+
+  private boolean shouldContinue(MakeRightDomainOperation operation) {
+    DomainPresenceInfo info = operation.getPresenceInfo();
+    DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(info);
+
+    if (isNewDomain(cachedInfo)) {
+      return true;
+    } else if (isDomainProcessingAborted(info) && !isImgRestartIntrospectVerChanged(info, cachedInfo)) {
+      return false;
+    } else if (isFatalIntrospectorError(info)) {
+      LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
+      return false;
+    } else if (!info.isPopulated() && isCachedInfoNewer(info, cachedInfo)) {
+      LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
+      return false;  // we have already cached this
+    } else if (operation.isExplicitRecheck() || isGenerationChanged(info, cachedInfo)) {
+      LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + operation.isExplicitRecheck());
+      return true;
+    }
+    cachedInfo.setDomain(info.getDomain());
+    return false;
+  }
+
+  private boolean isDomainProcessingAborted(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
+            .map(DomainPresenceInfo::getDomain)
+            .map(DomainResource::getStatus)
+            .map(DomainStatus::isAborted)
+            .orElse(false);
+  }
+
+  private boolean isFatalIntrospectorError(DomainPresenceInfo liveInfo) {
+    String existingError = Optional.ofNullable(liveInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(DomainResource::getStatus)
+        .map(DomainStatus::getMessage)
+        .orElse(null);
+    return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
   }
 
   private static boolean isGenerationChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
