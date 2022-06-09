@@ -46,7 +46,7 @@ kubectl create namespace istio-system
 }
 
 # MAIN
-version=${1:-1.11.1}
+version=${1:-1.13.2}
 workdir=${2:-`pwd`}
 
 if [ ! -d ${workdir} ]; then 

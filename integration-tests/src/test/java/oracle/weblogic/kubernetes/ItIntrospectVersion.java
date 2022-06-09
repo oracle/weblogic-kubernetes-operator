@@ -62,7 +62,9 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -719,12 +721,16 @@ class ItIntrospectVersion {
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
+    logger.info("DOMAIN_IMAGES_REPO {0}", DOMAIN_IMAGES_REPO);
+    logger.info("WEBLOGIC_IMAGE_NAME {0}", WEBLOGIC_IMAGE_NAME);
 
+    String kindWlsImage = KIND_REPO + WEBLOGIC_IMAGE_NAME_DEFAULT;
+    String testWlsImage = TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT; 
     //change image name to imageUpdate
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
-    String imageUpdate = KIND_REPO != null ? KIND_REPO
-        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : DOMAIN_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME + ":" + imageTag;
+    String imageUpdate = KIND_REPO != null 
+         ? (kindWlsImage + ":" + imageTag)
+         : (testWlsImage + ":" + imageTag);
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 

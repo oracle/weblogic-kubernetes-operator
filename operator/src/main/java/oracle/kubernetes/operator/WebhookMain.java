@@ -7,6 +7,7 @@ import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import io.kubernetes.client.common.KubernetesListObject;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -15,19 +16,19 @@ import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestConfigImpl;
-import oracle.kubernetes.operator.http.rest.WebhookRestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.webhooks.WebhookRestServer;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.helpers.CrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
@@ -106,7 +107,8 @@ public class WebhookMain extends BaseMain {
     Certificates certs = new Certificates(delegate);
     return nextStepFactory.createInitializationStep(conversionWebhookMainDelegate,
         Step.chain(
-            createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(), certs),
+            createDomainCrdStep(delegate.getProductVersion(), certs),
+            createClusterCrdStep(delegate.getProductVersion()),
             new CheckFailureAndCreateEventStep(),
             WebhookHelper.createValidatingWebhookConfigurationStep(certs)));
   }
@@ -140,28 +142,38 @@ public class WebhookMain extends BaseMain {
   }
 
   Step createCRDRecheckSteps() {
-    return Step.chain(createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
-            new Certificates(delegate)), createCRDPresenceCheck());
+    return Step.chain(
+        createDomainCrdStep(delegate.getProductVersion(), new Certificates(delegate)),
+        createClusterCrdStep(delegate.getProductVersion()),
+        createDomainCRDPresenceCheck(),
+        createClusterCRDPresenceCheck());
   }
 
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
-  private Step createCRDPresenceCheck() {
-    return new CallBuilder().listDomainAsync(getWebhookNamespace(), new CrdPresenceResponseStep());
+  private Step createDomainCRDPresenceCheck() {
+    return new CallBuilder().listDomainAsync(getWebhookNamespace(), new CrdPresenceResponseStep<>());
+  }
+
+  // Returns a step that verifies the presence of an installed cluster CRD. It does this by attempting to list the
+  // domains in the operator's namespace. That should succeed (although usually returning an empty list)
+  // if the CRD is present.
+  private Step createClusterCRDPresenceCheck() {
+    return new CallBuilder().listClusterAsync(getWebhookNamespace(), new CrdPresenceResponseStep<>());
   }
 
   // on failure, aborts the processing.
-  private class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
+  private class  CrdPresenceResponseStep<L extends KubernetesListObject> extends DefaultResponseStep<L> {
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
       warnedOfCrdAbsence = false;
       return super.onSuccess(packet, callResponse);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
+    public NextAction onFailure(Packet packet, CallResponse<L> callResponse) {
       if (!warnedOfCrdAbsence) {
         LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
         warnedOfCrdAbsence = true;

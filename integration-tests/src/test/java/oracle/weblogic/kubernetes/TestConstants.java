@@ -33,9 +33,9 @@ public interface TestConstants {
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
-  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
+  public static final String DEFAULT_WEBLOGIC_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
   public static final String WEBLOGIC_IMAGE_TAGS =
-      getNonEmptySystemProperty("wko.it.weblogic.image_tags", DEFAULT_WLS_IMAGE_TAGS);
+      getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -51,9 +51,6 @@ public interface TestConstants {
 
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
-
-  public static final String REPO_DUMMY_VALUE = "dummy";
-
 
   // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
   // and InfraStructure images are pulled
