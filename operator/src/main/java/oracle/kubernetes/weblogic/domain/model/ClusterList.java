@@ -15,71 +15,49 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-/** DomainList is a list of Domains. */
-public class DomainList extends KubernetesListObjectImpl {
+/** ClusterList is a list of Clusters. */
+public class ClusterList extends KubernetesListObjectImpl {
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
    * Required.
    */
   @SerializedName("items")
   @Expose
   @Valid
   @NotNull
-  private List<DomainResource> items = new ArrayList<>();
+  private List<ClusterResource> items = new ArrayList<>();
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
    * Required.
    *
    * @return items
    */
-  public List<DomainResource> getItems() {
+  public List<ClusterResource> getItems() {
     return items;
   }
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
    * Required.
    *
    * @param items items
    */
-  public void setItems(List<DomainResource> items) {
+  public void setItems(List<ClusterResource> items) {
     this.items = items;
   }
 
   /**
-   * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
+   * List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
    * Required.
    *
    * @param items items
    * @return this
    */
-  public DomainList withItems(List<DomainResource> items) {
+  public ClusterList withItems(List<ClusterResource> items) {
     this.items = items;
     return this;
-  }
-
-  /**
-   * Standard list metadata. More info:
-   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-   *
-   * @param metadata metadata
-   * @return this
-   */
-  public DomainList withMetadata(V1ListMeta metadata) {
-    this.metadata = metadata;
-    return this;
-  }
-
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this)
-        .append("apiVersion", apiVersion)
-        .append("items", items)
-        .append("kind", kind)
-        .append("metadata", metadata)
-        .toString();
   }
 
   @Override
@@ -97,10 +75,10 @@ public class DomainList extends KubernetesListObjectImpl {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof DomainList)) {
+    if (!(other instanceof ClusterList)) {
       return false;
     }
-    DomainList rhs = ((DomainList) other);
+    ClusterList rhs = ((ClusterList) other);
     return new EqualsBuilder()
         .append(metadata, rhs.metadata)
         .append(apiVersion, rhs.apiVersion)
@@ -109,4 +87,25 @@ public class DomainList extends KubernetesListObjectImpl {
         .isEquals();
   }
 
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+            .append("apiVersion", apiVersion)
+            .append("items", items)
+            .append("kind", kind)
+            .append("metadata", metadata)
+            .toString();
+  }
+
+  /**
+   * Standard list metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @param metadata metadata
+   * @return this
+   */
+  public ClusterList withMetadata(V1ListMeta metadata) {
+    this.metadata = metadata;
+    return this;
+  }
 }

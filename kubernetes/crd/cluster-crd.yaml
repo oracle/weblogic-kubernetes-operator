@@ -1,0 +1,3060 @@
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    weblogic.sha256: 88ab9ec08739c28055088c2bb956bb84909019a2b95b4b4fd4741c53ba293bbb
+  name: clusters.weblogic.oracle
+spec:
+  group: weblogic.oracle
+  names:
+    kind: Cluster
+    plural: clusters
+    shortNames:
+    - clu
+    singular: cluster
+  preserveUnknownFields: false
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              serverStartState:
+                description: The WebLogic runtime state in which the server is to
+                  be started. Use ADMIN if the server should start in the admin state.
+                  Defaults to RUNNING.
+                enum:
+                - RUNNING
+                - ADMIN
+                type: string
+              replicas:
+                description: The number of cluster member Managed Server instances
+                  to start for this WebLogic cluster. The operator will sort cluster
+                  member Managed Server names from the WebLogic domain configuration
+                  by normalizing any numbers in the Managed Server name and then sorting
+                  alphabetically. This is done so that server names such as "managed-server10"
+                  come after "managed-server9". The operator will then start Managed
+                  Server instances from the sorted list, up to the `replicas` count,
+                  unless specific Managed Servers are specified as starting in their
+                  entry under the `managedServers` field. In that case, the specified
+                  Managed Server instances will be started and then additional cluster
+                  members will be started, up to the `replicas` count, by finding
+                  further cluster members in the sorted list that are not already
+                  started. If cluster members are started because of their related
+                  entries under `managedServers`, then this cluster may have more
+                  cluster members running than its `replicas` count. Defaults to `spec.replicas`,
+                  which defaults 0.
+                minimum: 0.0
+                type: number
+              domainUID:
+                description: Domain unique identifier. This domainUID is used to identify
+                  the Domain to which this Cluster is associated with.
+                type: string
+              serverStartPolicy:
+                description: 'The strategy for deciding whether to start a WebLogic
+                  Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
+                  to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                enum:
+                - NEVER
+                - IF_NEEDED
+                type: string
+              restartVersion:
+                description: 'Changes to this field cause the operator to restart
+                  WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
+                type: string
+              serverService:
+                description: Customization affecting the generation of ClusterIP Services
+                  for WebLogic Server instances.
+                properties:
+                  precreateService:
+                    description: If true, the operator will create ClusterIP Services
+                      even for WebLogic Server instances without running Pods.
+                    type: boolean
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: The annotations to be added to generated resources.
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: The labels to be added to generated resources. The
+                      label names must not start with "weblogic.".
+                    type: object
+                type: object
+              maxUnavailable:
+                description: The maximum number of cluster members that can be temporarily
+                  unavailable. Defaults to 1.
+                minimum: 1.0
+                type: number
+              clusterName:
+                description: The name of the cluster. This value must match the name
+                  of a WebLogic cluster already defined in the WebLogic domain configuration.
+                  Required.
+                type: string
+              allowReplicasBelowMinDynClusterSize:
+                description: Specifies whether the number of running cluster members
+                  is allowed to drop below the minimum dynamic cluster size configured
+                  in the WebLogic domain configuration. Otherwise, the operator will
+                  ensure that the number of running cluster members is not less than
+                  the minimum dynamic cluster setting. This setting applies to dynamic
+                  clusters only. Defaults to true.
+                type: boolean
+              serverPod:
+                description: Customization affecting the generation of Pods for WebLogic
+                  Server instances.
+                properties:
+                  nodeName:
+                    description: NodeName is a request to schedule this Pod onto a
+                      specific Node. If it is non-empty, the scheduler simply schedules
+                      this pod onto that node, assuming that it fits the resource
+                      requirements. See `kubectl explain pods.spec.nodeName`.
+                    type: string
+                  readinessGates:
+                    description: 'If specified, all readiness gates will be evaluated
+                      for Pod readiness. A Pod is ready when all its containers are
+                      ready AND all conditions specified in the readiness gates have
+                      a status equal to "True". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.'
+                    items:
+                      type: object
+                      properties:
+                        conditionType:
+                          type: string
+                          enum:
+                          - ContainersReady
+                          - Initialized
+                          - PodScheduled
+                          - Ready
+                      required:
+                      - conditionType
+                    type: array
+                  serviceAccountName:
+                    description: Name of the ServiceAccount to be used to run this
+                      Pod. If it is not set, default ServiceAccount will be used.
+                      The ServiceAccount has to exist at the time the Pod is created.
+                      See `kubectl explain pods.spec.serviceAccountName`.
+                    type: string
+                  podSecurityContext:
+                    description: Pod-level security attributes. See `kubectl explain
+                      pods.spec.securityContext`.
+                    properties:
+                      runAsUser:
+                        type: number
+                      seLinuxOptions:
+                        properties:
+                          role:
+                            type: string
+                          level:
+                            type: string
+                          type:
+                            type: string
+                          user:
+                            type: string
+                        type: object
+                      fsGroup:
+                        type: number
+                      seccompProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            enum:
+                            - Localhost
+                            - RuntimeDefault
+                            - Unconfined
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      windowsOptions:
+                        properties:
+                          gmsaCredentialSpec:
+                            type: string
+                          runAsUserName:
+                            type: string
+                          hostProcess:
+                            type: boolean
+                          gmsaCredentialSpecName:
+                            type: string
+                        type: object
+                      fsGroupChangePolicy:
+                        type: string
+                      supplementalGroups:
+                        items:
+                          type: number
+                        type: array
+                      runAsGroup:
+                        type: number
+                      runAsNonRoot:
+                        type: boolean
+                      sysctls:
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                          required:
+                          - name
+                          - value
+                        type: array
+                    type: object
+                  priorityClassName:
+                    description: If specified, indicates the Pod's priority. "system-node-critical"
+                      and "system-cluster-critical" are two special keywords which
+                      indicate the highest priorities with the former being the highest
+                      priority. Any other name must be defined by creating a PriorityClass
+                      object with that name. If not specified, the pod priority will
+                      be the default or zero, if there is no default. See `kubectl
+                      explain pods.spec.priorityClassName`.
+                    type: string
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: The annotations to be added to generated resources.
+                    type: object
+                  hostAliases:
+                    description: HostAliases is an optional list of hosts and IPs
+                      that will be injected into the pod's hosts file if specified.
+                      This is only valid for non-hostNetwork pods.
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                        hostnames:
+                          type: array
+                          items:
+                            type: string
+                    type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: Selector which must match a Node's labels for the
+                      Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.
+                    type: object
+                  volumeMounts:
+                    description: Additional volume mounts for the container running
+                      a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
+                    items:
+                      type: object
+                      properties:
+                        mountPath:
+                          type: string
+                        mountPropagation:
+                          type: string
+                        name:
+                          type: string
+                        readOnly:
+                          type: boolean
+                        subPath:
+                          type: string
+                        subPathExpr:
+                          type: string
+                      required:
+                      - mountPath
+                      - name
+                    type: array
+                  runtimeClassName:
+                    description: 'RuntimeClassName refers to a RuntimeClass object
+                      in the node.k8s.io group, which should be used to run this Pod.
+                      If no RuntimeClass resource matches the named class, the Pod
+                      will not be run. If unset or empty, the "legacy" RuntimeClass
+                      will be used, which is an implicit class with an empty definition
+                      that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                      This is an alpha feature and may change in the future. See `kubectl
+                      explain pods.spec.runtimeClassName`.'
+                    type: string
+                  tolerations:
+                    description: If specified, the Pod's tolerations. See `kubectl
+                      explain pods.spec.tolerations`.
+                    items:
+                      type: object
+                      properties:
+                        effect:
+                          type: string
+                          enum:
+                          - NoExecute
+                          - NoSchedule
+                          - PreferNoSchedule
+                        tolerationSeconds:
+                          type: number
+                        value:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                          enum:
+                          - Equal
+                          - Exists
+                    type: array
+                  readinessProbe:
+                    description: Settings for the readiness probe associated with
+                      a WebLogic Server instance.
+                    properties:
+                      failureThreshold:
+                        description: Number of times the check is performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe, the Pod will
+                          be marked Unready. Defaults to 1.
+                        minimum: 1.0
+                        type: number
+                      periodSeconds:
+                        description: The number of seconds between checks.
+                        type: number
+                      timeoutSeconds:
+                        description: The number of seconds with no response that indicates
+                          a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
+                        type: number
+                      initialDelaySeconds:
+                        description: The number of seconds before the first check
+                          is performed.
+                        type: number
+                    type: object
+                  containerSecurityContext:
+                    description: Container-level security attributes. Will override
+                      any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
+                    properties:
+                      privileged:
+                        type: boolean
+                      runAsUser:
+                        type: number
+                      capabilities:
+                        properties:
+                          add:
+                            items:
+                              type: string
+                            type: array
+                          drop:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      seLinuxOptions:
+                        properties:
+                          role:
+                            type: string
+                          level:
+                            type: string
+                          type:
+                            type: string
+                          user:
+                            type: string
+                        type: object
+                      seccompProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            enum:
+                            - Localhost
+                            - RuntimeDefault
+                            - Unconfined
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      windowsOptions:
+                        properties:
+                          gmsaCredentialSpec:
+                            type: string
+                          runAsUserName:
+                            type: string
+                          hostProcess:
+                            type: boolean
+                          gmsaCredentialSpecName:
+                            type: string
+                        type: object
+                      procMount:
+                        type: string
+                      allowPrivilegeEscalation:
+                        type: boolean
+                      runAsGroup:
+                        type: number
+                      runAsNonRoot:
+                        type: boolean
+                      readOnlyRootFilesystem:
+                        type: boolean
+                    type: object
+                  schedulerName:
+                    description: If specified, the Pod will be dispatched by the specified
+                      scheduler. If not specified, the Pod will be dispatched by the
+                      default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                    type: string
+                  maxReadyWaitTimeSeconds:
+                    description: The maximum time in seconds that the operator waits
+                      for a WebLogic Server pod to reach the ready state before it
+                      considers the pod failed. Defaults to 1800 seconds.
+                    type: number
+                  livenessProbe:
+                    description: Settings for the liveness probe associated with a
+                      WebLogic Server instance.
+                    properties:
+                      failureThreshold:
+                        description: Number of times the check is performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe, the Pod will
+                          be marked Unready. Defaults to 1.
+                        minimum: 1.0
+                        type: number
+                      periodSeconds:
+                        description: The number of seconds between checks.
+                        type: number
+                      timeoutSeconds:
+                        description: The number of seconds with no response that indicates
+                          a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
+                        type: number
+                      initialDelaySeconds:
+                        description: The number of seconds before the first check
+                          is performed.
+                        type: number
+                    type: object
+                  volumes:
+                    description: Additional volumes to be created in the server Pod.
+                      See `kubectl explain pods.spec.volumes`.
+                    items:
+                      type: object
+                      properties:
+                        quobyte:
+                          type: object
+                          properties:
+                            volume:
+                              type: string
+                            registry:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            user:
+                              type: string
+                            tenant:
+                              type: string
+                            group:
+                              type: string
+                          required:
+                          - registry
+                          - volume
+                        azureFile:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            shareName:
+                              type: string
+                          required:
+                          - secretName
+                          - shareName
+                        flexVolume:
+                          type: object
+                          properties:
+                            driver:
+                              type: string
+                            options:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                          required:
+                          - driver
+                        ephemeral:
+                          type: object
+                          properties:
+                            volumeClaimTemplate:
+                              type: object
+                              properties:
+                                metadata:
+                                  type: object
+                                  properties:
+                                    generation:
+                                      type: number
+                                    finalizers:
+                                      type: array
+                                      items:
+                                        type: string
+                                    resourceVersion:
+                                      type: string
+                                    annotations:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    generateName:
+                                      type: string
+                                    deletionTimestamp:
+                                      format: date-time
+                                      type: string
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                    ownerReferences:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          uid:
+                                            type: string
+                                          controller:
+                                            type: boolean
+                                          apiVersion:
+                                            type: string
+                                          kind:
+                                            type: string
+                                          name:
+                                            type: string
+                                          blockOwnerDeletion:
+                                            type: boolean
+                                        required:
+                                        - apiVersion
+                                        - kind
+                                        - name
+                                        - uid
+                                    selfLink:
+                                      type: string
+                                    deletionGracePeriodSeconds:
+                                      type: number
+                                    uid:
+                                      type: string
+                                    managedFields:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          apiVersion:
+                                            type: string
+                                          fieldsV1:
+                                            type: object
+                                          manager:
+                                            type: string
+                                          subresource:
+                                            type: string
+                                          time:
+                                            format: date-time
+                                            type: string
+                                          operation:
+                                            type: string
+                                          fieldsType:
+                                            type: string
+                                    clusterName:
+                                      type: string
+                                    creationTimestamp:
+                                      format: date-time
+                                      type: string
+                                    name:
+                                      type: string
+                                    namespace:
+                                      type: string
+                                spec:
+                                  type: object
+                                  properties:
+                                    storageClassName:
+                                      type: string
+                                    dataSourceRef:
+                                      type: object
+                                      properties:
+                                        apiGroup:
+                                          type: string
+                                        kind:
+                                          type: string
+                                        name:
+                                          type: string
+                                      required:
+                                      - kind
+                                      - name
+                                    volumeName:
+                                      type: string
+                                    resources:
+                                      type: object
+                                      properties:
+                                        requests:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                        limits:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    selector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    accessModes:
+                                      type: array
+                                      items:
+                                        type: string
+                                    dataSource:
+                                      type: object
+                                      properties:
+                                        apiGroup:
+                                          type: string
+                                        kind:
+                                          type: string
+                                        name:
+                                          type: string
+                                      required:
+                                      - kind
+                                      - name
+                                    volumeMode:
+                                      type: string
+                              required:
+                              - spec
+                        secret:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            defaultMode:
+                              type: number
+                            optional:
+                              type: boolean
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mode:
+                                    type: number
+                                  path:
+                                    type: string
+                                  key:
+                                    type: string
+                                required:
+                                - key
+                                - path
+                        projected:
+                          type: object
+                          properties:
+                            sources:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  downwardAPI:
+                                    type: object
+                                    properties:
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            mode:
+                                              type: number
+                                            path:
+                                              type: string
+                                            resourceFieldRef:
+                                              type: object
+                                              properties:
+                                                divisor:
+                                                  type: object
+                                                  properties:
+                                                    number:
+                                                      type: number
+                                                    format:
+                                                      type: string
+                                                      enum:
+                                                      - DECIMAL_EXPONENT
+                                                      - DECIMAL_SI
+                                                      - BINARY_SI
+                                                resource:
+                                                  type: string
+                                                containerName:
+                                                  type: string
+                                              required:
+                                              - resource
+                                            fieldRef:
+                                              type: object
+                                              properties:
+                                                apiVersion:
+                                                  type: string
+                                                fieldPath:
+                                                  type: string
+                                              required:
+                                              - fieldPath
+                                          required:
+                                          - path
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            mode:
+                                              type: number
+                                            path:
+                                              type: string
+                                            key:
+                                              type: string
+                                          required:
+                                          - key
+                                          - path
+                                  secret:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            mode:
+                                              type: number
+                                            path:
+                                              type: string
+                                            key:
+                                              type: string
+                                          required:
+                                          - key
+                                          - path
+                                  serviceAccountToken:
+                                    type: object
+                                    properties:
+                                      path:
+                                        type: string
+                                      audience:
+                                        type: string
+                                      expirationSeconds:
+                                        type: number
+                                    required:
+                                    - path
+                            defaultMode:
+                              type: number
+                        cephfs:
+                          type: object
+                          properties:
+                            path:
+                              type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            secretFile:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            user:
+                              type: string
+                            monitors:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - monitors
+                        scaleIO:
+                          type: object
+                          properties:
+                            system:
+                              type: string
+                            protectionDomain:
+                              type: string
+                            sslEnabled:
+                              type: boolean
+                            storageMode:
+                              type: string
+                            volumeName:
+                              type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                            storagePool:
+                              type: string
+                            gateway:
+                              type: string
+                          required:
+                          - gateway
+                          - secretRef
+                          - system
+                        emptyDir:
+                          type: object
+                          properties:
+                            sizeLimit:
+                              type: object
+                              properties:
+                                number:
+                                  type: number
+                                format:
+                                  type: string
+                                  enum:
+                                  - DECIMAL_EXPONENT
+                                  - DECIMAL_SI
+                                  - BINARY_SI
+                            medium:
+                              type: string
+                        glusterfs:
+                          type: object
+                          properties:
+                            path:
+                              type: string
+                            endpoints:
+                              type: string
+                            readOnly:
+                              type: boolean
+                          required:
+                          - endpoints
+                          - path
+                        gcePersistentDisk:
+                          type: object
+                          properties:
+                            partition:
+                              type: number
+                            readOnly:
+                              type: boolean
+                            pdName:
+                              type: string
+                            fsType:
+                              type: string
+                          required:
+                          - pdName
+                        photonPersistentDisk:
+                          type: object
+                          properties:
+                            pdID:
+                              type: string
+                            fsType:
+                              type: string
+                          required:
+                          - pdID
+                        azureDisk:
+                          type: object
+                          properties:
+                            diskName:
+                              type: string
+                            kind:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            cachingMode:
+                              type: string
+                            diskURI:
+                              type: string
+                            fsType:
+                              type: string
+                          required:
+                          - diskName
+                          - diskURI
+                        cinder:
+                          type: object
+                          properties:
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            volumeID:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                          required:
+                          - volumeID
+                        downwardAPI:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: number
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mode:
+                                    type: number
+                                  path:
+                                    type: string
+                                  resourceFieldRef:
+                                    type: object
+                                    properties:
+                                      divisor:
+                                        type: object
+                                        properties:
+                                          number:
+                                            type: number
+                                          format:
+                                            type: string
+                                            enum:
+                                            - DECIMAL_EXPONENT
+                                            - DECIMAL_SI
+                                            - BINARY_SI
+                                      resource:
+                                        type: string
+                                      containerName:
+                                        type: string
+                                    required:
+                                    - resource
+                                  fieldRef:
+                                    type: object
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                    - fieldPath
+                                required:
+                                - path
+                        awsElasticBlockStore:
+                          type: object
+                          properties:
+                            partition:
+                              type: number
+                            volumeID:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                          required:
+                          - volumeID
+                        flocker:
+                          type: object
+                          properties:
+                            datasetName:
+                              type: string
+                            datasetUUID:
+                              type: string
+                        iscsi:
+                          type: object
+                          properties:
+                            chapAuthSession:
+                              type: boolean
+                            iscsiInterface:
+                              type: string
+                            lun:
+                              type: number
+                            chapAuthDiscovery:
+                              type: boolean
+                            iqn:
+                              type: string
+                            portals:
+                              type: array
+                              items:
+                                type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            initiatorName:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                            targetPortal:
+                              type: string
+                          required:
+                          - iqn
+                          - lun
+                          - targetPortal
+                        rbd:
+                          type: object
+                          properties:
+                            image:
+                              type: string
+                            pool:
+                              type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                            keyring:
+                              type: string
+                            user:
+                              type: string
+                            monitors:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - image
+                          - monitors
+                        configMap:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: number
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mode:
+                                    type: number
+                                  path:
+                                    type: string
+                                  key:
+                                    type: string
+                                required:
+                                - key
+                                - path
+                        storageos:
+                          type: object
+                          properties:
+                            volumeNamespace:
+                              type: string
+                            volumeName:
+                              type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                        csi:
+                          type: object
+                          properties:
+                            driver:
+                              type: string
+                            nodePublishSecretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                            volumeAttributes:
+                              additionalProperties:
+                                type: string
+                              type: object
+                          required:
+                          - driver
+                        name:
+                          type: string
+                        nfs:
+                          type: object
+                          properties:
+                            path:
+                              type: string
+                            server:
+                              type: string
+                            readOnly:
+                              type: boolean
+                          required:
+                          - path
+                          - server
+                        persistentVolumeClaim:
+                          type: object
+                          properties:
+                            claimName:
+                              type: string
+                            readOnly:
+                              type: boolean
+                          required:
+                          - claimName
+                        gitRepo:
+                          type: object
+                          properties:
+                            repository:
+                              type: string
+                            directory:
+                              type: string
+                            revision:
+                              type: string
+                          required:
+                          - repository
+                        portworxVolume:
+                          type: object
+                          properties:
+                            volumeID:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            fsType:
+                              type: string
+                          required:
+                          - volumeID
+                        vsphereVolume:
+                          type: object
+                          properties:
+                            storagePolicyName:
+                              type: string
+                            storagePolicyID:
+                              type: string
+                            volumePath:
+                              type: string
+                            fsType:
+                              type: string
+                          required:
+                          - volumePath
+                        fc:
+                          type: object
+                          properties:
+                            lun:
+                              type: number
+                            targetWWNs:
+                              type: array
+                              items:
+                                type: string
+                            readOnly:
+                              type: boolean
+                            wwids:
+                              type: array
+                              items:
+                                type: string
+                            fsType:
+                              type: string
+                        hostPath:
+                          type: object
+                          properties:
+                            path:
+                              type: string
+                            type:
+                              type: string
+                          required:
+                          - path
+                      required:
+                      - name
+                    type: array
+                  resources:
+                    description: Memory and CPU minimum requirements and limits for
+                      the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
+                    properties:
+                      requests:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      limits:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  env:
+                    description: 'A list of environment variables to set in the container
+                      running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
+                      See `kubectl explain pods.spec.containers.env`.'
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                        valueFrom:
+                          type: object
+                          properties:
+                            secretKeyRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                                key:
+                                  type: string
+                              required:
+                              - key
+                            resourceFieldRef:
+                              type: object
+                              properties:
+                                divisor:
+                                  type: object
+                                  properties:
+                                    number:
+                                      type: number
+                                    format:
+                                      type: string
+                                      enum:
+                                      - DECIMAL_EXPONENT
+                                      - DECIMAL_SI
+                                      - BINARY_SI
+                                resource:
+                                  type: string
+                                containerName:
+                                  type: string
+                              required:
+                              - resource
+                            configMapKeyRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                                key:
+                                  type: string
+                              required:
+                              - key
+                            fieldRef:
+                              type: object
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldPath:
+                                  type: string
+                              required:
+                              - fieldPath
+                      required:
+                      - name
+                    type: array
+                  restartPolicy:
+                    description: 'Restart policy for all containers within the Pod.
+                      One of Always, OnFailure, Never. Default to Always. More info:
+                      https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
+                      See `kubectl explain pods.spec.restartPolicy`.'
+                    enum:
+                    - Always
+                    - Never
+                    - OnFailure
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: The labels to be added to generated resources. The
+                      label names must not start with "weblogic.".
+                    type: object
+                  containers:
+                    description: Additional containers to be included in the server
+                      Pod. See `kubectl explain pods.spec.containers`.
+                    items:
+                      type: object
+                      properties:
+                        volumeDevices:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              devicePath:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - devicePath
+                            - name
+                        image:
+                          type: string
+                        imagePullPolicy:
+                          type: string
+                          enum:
+                          - Always
+                          - IfNotPresent
+                          - Never
+                        livenessProbe:
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: number
+                            failureThreshold:
+                              type: number
+                            periodSeconds:
+                              type: number
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: number
+                            successThreshold:
+                              type: number
+                            initialDelaySeconds:
+                              type: number
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
+                        stdin:
+                          type: boolean
+                        terminationMessagePolicy:
+                          type: string
+                          enum:
+                          - FallbackToLogsOnError
+                          - File
+                        terminationMessagePath:
+                          type: string
+                        workingDir:
+                          type: string
+                        resources:
+                          type: object
+                          properties:
+                            requests:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            limits:
+                              additionalProperties:
+                                type: string
+                              type: object
+                        securityContext:
+                          type: object
+                          properties:
+                            privileged:
+                              type: boolean
+                            runAsUser:
+                              type: number
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                role:
+                                  type: string
+                                level:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
+                              required:
+                              - type
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                                hostProcess:
+                                  type: boolean
+                                gmsaCredentialSpecName:
+                                  type: string
+                            procMount:
+                              type: string
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            runAsGroup:
+                              type: number
+                            runAsNonRoot:
+                              type: boolean
+                            readOnlyRootFilesystem:
+                              type: boolean
+                        startupProbe:
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: number
+                            failureThreshold:
+                              type: number
+                            periodSeconds:
+                              type: number
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: number
+                            successThreshold:
+                              type: number
+                            initialDelaySeconds:
+                              type: number
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                type: object
+                                properties:
+                                  secretKeyRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      key:
+                                        type: string
+                                    required:
+                                    - key
+                                  resourceFieldRef:
+                                    type: object
+                                    properties:
+                                      divisor:
+                                        type: object
+                                        properties:
+                                          number:
+                                            type: number
+                                          format:
+                                            type: string
+                                            enum:
+                                            - DECIMAL_EXPONENT
+                                            - DECIMAL_SI
+                                            - BINARY_SI
+                                      resource:
+                                        type: string
+                                      containerName:
+                                        type: string
+                                    required:
+                                    - resource
+                                  configMapKeyRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      key:
+                                        type: string
+                                    required:
+                                    - key
+                                  fieldRef:
+                                    type: object
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                    - fieldPath
+                            required:
+                            - name
+                        ports:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              protocol:
+                                type: string
+                                enum:
+                                - SCTP
+                                - TCP
+                                - UDP
+                              hostIP:
+                                type: string
+                              name:
+                                type: string
+                              containerPort:
+                                type: number
+                              hostPort:
+                                type: number
+                            required:
+                            - containerPort
+                        command:
+                          type: array
+                          items:
+                            type: string
+                        volumeMounts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                            required:
+                            - mountPath
+                            - name
+                        args:
+                          type: array
+                          items:
+                            type: string
+                        lifecycle:
+                          type: object
+                          properties:
+                            postStart:
+                              type: object
+                              properties:
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                            preStop:
+                              type: object
+                              properties:
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                        name:
+                          type: string
+                        tty:
+                          type: boolean
+                        readinessProbe:
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: number
+                            failureThreshold:
+                              type: number
+                            periodSeconds:
+                              type: number
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: number
+                            successThreshold:
+                              type: number
+                            initialDelaySeconds:
+                              type: number
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
+                        stdinOnce:
+                          type: boolean
+                        envFrom:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              configMapRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                              prefix:
+                                type: string
+                              secretRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                      required:
+                      - name
+                    type: array
+                  initContainers:
+                    description: Initialization containers to be included in the server
+                      Pod. See `kubectl explain pods.spec.initContainers`.
+                    items:
+                      type: object
+                      properties:
+                        volumeDevices:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              devicePath:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - devicePath
+                            - name
+                        image:
+                          type: string
+                        imagePullPolicy:
+                          type: string
+                          enum:
+                          - Always
+                          - IfNotPresent
+                          - Never
+                        livenessProbe:
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: number
+                            failureThreshold:
+                              type: number
+                            periodSeconds:
+                              type: number
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: number
+                            successThreshold:
+                              type: number
+                            initialDelaySeconds:
+                              type: number
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
+                        stdin:
+                          type: boolean
+                        terminationMessagePolicy:
+                          type: string
+                          enum:
+                          - FallbackToLogsOnError
+                          - File
+                        terminationMessagePath:
+                          type: string
+                        workingDir:
+                          type: string
+                        resources:
+                          type: object
+                          properties:
+                            requests:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            limits:
+                              additionalProperties:
+                                type: string
+                              type: object
+                        securityContext:
+                          type: object
+                          properties:
+                            privileged:
+                              type: boolean
+                            runAsUser:
+                              type: number
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                role:
+                                  type: string
+                                level:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
+                              required:
+                              - type
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                                hostProcess:
+                                  type: boolean
+                                gmsaCredentialSpecName:
+                                  type: string
+                            procMount:
+                              type: string
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            runAsGroup:
+                              type: number
+                            runAsNonRoot:
+                              type: boolean
+                            readOnlyRootFilesystem:
+                              type: boolean
+                        startupProbe:
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: number
+                            failureThreshold:
+                              type: number
+                            periodSeconds:
+                              type: number
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: number
+                            successThreshold:
+                              type: number
+                            initialDelaySeconds:
+                              type: number
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                type: object
+                                properties:
+                                  secretKeyRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      key:
+                                        type: string
+                                    required:
+                                    - key
+                                  resourceFieldRef:
+                                    type: object
+                                    properties:
+                                      divisor:
+                                        type: object
+                                        properties:
+                                          number:
+                                            type: number
+                                          format:
+                                            type: string
+                                            enum:
+                                            - DECIMAL_EXPONENT
+                                            - DECIMAL_SI
+                                            - BINARY_SI
+                                      resource:
+                                        type: string
+                                      containerName:
+                                        type: string
+                                    required:
+                                    - resource
+                                  configMapKeyRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                      key:
+                                        type: string
+                                    required:
+                                    - key
+                                  fieldRef:
+                                    type: object
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                    - fieldPath
+                            required:
+                            - name
+                        ports:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              protocol:
+                                type: string
+                                enum:
+                                - SCTP
+                                - TCP
+                                - UDP
+                              hostIP:
+                                type: string
+                              name:
+                                type: string
+                              containerPort:
+                                type: number
+                              hostPort:
+                                type: number
+                            required:
+                            - containerPort
+                        command:
+                          type: array
+                          items:
+                            type: string
+                        volumeMounts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                            required:
+                            - mountPath
+                            - name
+                        args:
+                          type: array
+                          items:
+                            type: string
+                        lifecycle:
+                          type: object
+                          properties:
+                            postStart:
+                              type: object
+                              properties:
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                            preStop:
+                              type: object
+                              properties:
+                                tcpSocket:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                  required:
+                                  - port
+                                exec:
+                                  type: object
+                                  properties:
+                                    command:
+                                      type: array
+                                      items:
+                                        type: string
+                                httpGet:
+                                  type: object
+                                  properties:
+                                    path:
+                                      type: string
+                                    scheme:
+                                      type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
+                                    port:
+                                      type: object
+                                      properties:
+                                        intValue:
+                                          type: number
+                                        isInt:
+                                          type: boolean
+                                        strValue:
+                                          type: string
+                                      required:
+                                      - isInt
+                                    host:
+                                      type: string
+                                    httpHeaders:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          name:
+                                            type: string
+                                          value:
+                                            type: string
+                                        required:
+                                        - name
+                                        - value
+                                  required:
+                                  - port
+                        name:
+                          type: string
+                        tty:
+                          type: boolean
+                        readinessProbe:
+                          type: object
+                          properties:
+                            terminationGracePeriodSeconds:
+                              type: number
+                            failureThreshold:
+                              type: number
+                            periodSeconds:
+                              type: number
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                              required:
+                              - port
+                            timeoutSeconds:
+                              type: number
+                            successThreshold:
+                              type: number
+                            initialDelaySeconds:
+                              type: number
+                            exec:
+                              type: object
+                              properties:
+                                command:
+                                  type: array
+                                  items:
+                                    type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
+                            httpGet:
+                              type: object
+                              properties:
+                                path:
+                                  type: string
+                                scheme:
+                                  type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
+                                port:
+                                  type: object
+                                  properties:
+                                    intValue:
+                                      type: number
+                                    isInt:
+                                      type: boolean
+                                    strValue:
+                                      type: string
+                                  required:
+                                  - isInt
+                                host:
+                                  type: string
+                                httpHeaders:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      value:
+                                        type: string
+                                    required:
+                                    - name
+                                    - value
+                              required:
+                              - port
+                        stdinOnce:
+                          type: boolean
+                        envFrom:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              configMapRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                              prefix:
+                                type: string
+                              secretRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                      required:
+                      - name
+                    type: array
+                  shutdown:
+                    description: Configures how the operator should shut down the
+                      server instance.
+                    properties:
+                      ignoreSessions:
+                        description: For graceful shutdown only, indicates to ignore
+                          pending HTTP sessions during in-flight work handling. Defaults
+                          to false.
+                        type: boolean
+                      shutdownType:
+                        description: Specifies how the operator will shut down server
+                          instances. Defaults to graceful shutdown.
+                        enum:
+                        - Graceful
+                        - Forced
+                        type: string
+                      timeoutSeconds:
+                        description: For graceful shutdown only, number of seconds
+                          to wait before aborting in-flight work and shutting down
+                          the server. Defaults to 30 seconds.
+                        type: number
+                      waitForAllSessions:
+                        description: For graceful shutdown only, set to true to wait
+                          for all HTTP sessions during in-flight work handling; false
+                          to wait for non-persisted HTTP sessions only. Defaults to
+                          false.
+                        type: boolean
+                    type: object
+                  affinity:
+                    description: If specified, the Pod's scheduling constraints. See
+                      `kubectl explain pods.spec.affinity`
+                    properties:
+                      nodeAffinity:
+                        properties:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            properties:
+                              nodeSelectorTerms:
+                                items:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
+                                        required:
+                                        - key
+                                        - operator
+                                    matchFields:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
+                                        required:
+                                        - key
+                                        - operator
+                                type: array
+                            required:
+                            - nodeSelectorTerms
+                            type: object
+                          preferredDuringSchedulingIgnoredDuringExecution:
+                            items:
+                              type: object
+                              properties:
+                                preference:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
+                                        required:
+                                        - key
+                                        - operator
+                                    matchFields:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
+                                        required:
+                                        - key
+                                        - operator
+                                weight:
+                                  type: number
+                              required:
+                              - preference
+                              - weight
+                            type: array
+                        type: object
+                      podAffinity:
+                        properties:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                        required:
+                                        - key
+                                        - operator
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                        required:
+                                        - key
+                                        - operator
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                topologyKey:
+                                  type: string
+                                namespaces:
+                                  type: array
+                                  items:
+                                    type: string
+                              required:
+                              - topologyKey
+                            type: array
+                          preferredDuringSchedulingIgnoredDuringExecution:
+                            items:
+                              type: object
+                              properties:
+                                podAffinityTerm:
+                                  type: object
+                                  properties:
+                                    labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    namespaceSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    topologyKey:
+                                      type: string
+                                    namespaces:
+                                      type: array
+                                      items:
+                                        type: string
+                                  required:
+                                  - topologyKey
+                                weight:
+                                  type: number
+                              required:
+                              - podAffinityTerm
+                              - weight
+                            type: array
+                        type: object
+                      podAntiAffinity:
+                        properties:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            items:
+                              type: object
+                              properties:
+                                labelSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                        required:
+                                        - key
+                                        - operator
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                        required:
+                                        - key
+                                        - operator
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                topologyKey:
+                                  type: string
+                                namespaces:
+                                  type: array
+                                  items:
+                                    type: string
+                              required:
+                              - topologyKey
+                            type: array
+                          preferredDuringSchedulingIgnoredDuringExecution:
+                            items:
+                              type: object
+                              properties:
+                                podAffinityTerm:
+                                  type: object
+                                  properties:
+                                    labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    namespaceSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    topologyKey:
+                                      type: string
+                                    namespaces:
+                                      type: array
+                                      items:
+                                        type: string
+                                  required:
+                                  - topologyKey
+                                weight:
+                                  type: number
+                              required:
+                              - podAffinityTerm
+                              - weight
+                            type: array
+                        type: object
+                    type: object
+                type: object
+              clusterService:
+                description: Customization affecting Kubernetes Service generated
+                  for this WebLogic cluster.
+                properties:
+                  sessionAffinity:
+                    description: 'Supports "ClientIP" and "None". Used to maintain
+                      session affinity. Enable client IP based session affinity. Must
+                      be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies'
+                    enum:
+                    - ClientIP
+                    - None
+                    type: string
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: The annotations to be added to generated resources.
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: The labels to be added to generated resources. The
+                      label names must not start with "weblogic.".
+                    type: object
+                type: object
+              maxConcurrentShutdown:
+                description: The maximum number of WebLogic Server instances that
+                  will shut down in parallel for this cluster when it is being partially
+                  shut down by lowering its replica count. A value of 0 means there
+                  is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which
+                  defaults to 1.
+                minimum: 0.0
+                type: number
+              maxConcurrentStartup:
+                description: The maximum number of Managed Servers instances that
+                  the operator will start in parallel for this cluster in response
+                  to a change in the `replicas` count. If more Managed Server instances
+                  must be started, the operator will wait until a Managed Server Pod
+                  is in the `Ready` state before starting the next Managed Server
+                  instance. A value of 0 means all Managed Server instances will start
+                  in parallel. Defaults to 0.
+                minimum: 0.0
+                type: number
+            type: object
+          status:
+            properties:
+              minimumReplicas:
+                description: The minimum number of cluster members.
+                minimum: 0.0
+                type: number
+              maximumReplicas:
+                description: The maximum number of cluster members.
+                minimum: 0.0
+                type: number
+              replicas:
+                description: The number of currently running cluster members.
+                minimum: 0.0
+                type: number
+              clusterName:
+                description: WebLogic cluster name.
+                type: string
+              readyReplicas:
+                description: The number of ready cluster members.
+                minimum: 0.0
+                type: number
+              replicasGoal:
+                description: The requested number of cluster members. Cluster members
+                  will be started by the operator if this value is larger than zero.
+                minimum: 0.0
+                type: number
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      scale:
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+      status: {}
