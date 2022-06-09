@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.resource;
+package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.Optional;
 
@@ -9,18 +9,19 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
-import oracle.kubernetes.operator.http.rest.model.AdmissionRequest;
-import oracle.kubernetes.operator.http.rest.model.AdmissionResponse;
-import oracle.kubernetes.operator.http.rest.model.AdmissionResponseStatus;
-import oracle.kubernetes.operator.http.rest.model.AdmissionReview;
+import oracle.kubernetes.operator.http.rest.resource.BaseResource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
+import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 
 /**
  * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission

@@ -1,31 +1,32 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest;
+package oracle.kubernetes.operator.webhooks;
 
 import java.util.Collections;
 
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.http.rest.resource.AdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.BAD_REPLICAS;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.createAuxiliaryImage;
-import static oracle.kubernetes.operator.http.rest.AdmissionWebhookTestSetUp.setAuxiliaryImages;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class AdmissionCheckerTest {
-  private final DomainResource existingDomain = AdmissionWebhookTestSetUp.createDomain();
-  private final DomainResource proposedDomain = AdmissionWebhookTestSetUp.createDomain();
+  private final DomainResource existingDomain = createDomain();
+  private final DomainResource proposedDomain = createDomain();
   private final AdmissionChecker admissionChecker = new AdmissionChecker(existingDomain, proposedDomain);
 
   @Test

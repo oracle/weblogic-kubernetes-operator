@@ -846,16 +846,16 @@ class ServerPod extends KubernetesResource {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(
-            DomainResource.sortOrNull(env, ENV_VAR_COMPARATOR),
-            DomainResource.sortOrNull(that.env, ENV_VAR_COMPARATOR))
+            DomainResource.sortList(env, ENV_VAR_COMPARATOR),
+            DomainResource.sortList(that.env, ENV_VAR_COMPARATOR))
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
         .append(
-            DomainResource.sortOrNull(volumes, VOLUME_COMPARATOR),
-            DomainResource.sortOrNull(that.volumes, VOLUME_COMPARATOR))
+            DomainResource.sortList(volumes, VOLUME_COMPARATOR),
+            DomainResource.sortList(that.volumes, VOLUME_COMPARATOR))
         .append(
-            DomainResource.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR),
-            DomainResource.sortOrNull(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
+            DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR),
+            DomainResource.sortList(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector, that.nodeSelector)
         .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
@@ -880,11 +880,11 @@ class ServerPod extends KubernetesResource {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
-        .append(DomainResource.sortOrNull(env, ENV_VAR_COMPARATOR))
+        .append(DomainResource.sortList(env, ENV_VAR_COMPARATOR))
         .append(livenessProbe)
         .append(readinessProbe)
-        .append(DomainResource.sortOrNull(volumes, VOLUME_COMPARATOR))
-        .append(DomainResource.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR))
+        .append(DomainResource.sortList(volumes, VOLUME_COMPARATOR))
+        .append(DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)
         .append(resources)
         .append(podSecurityContext)

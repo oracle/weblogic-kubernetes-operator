@@ -324,12 +324,13 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
+    void addServicePortIfNeeded(
+        List<V1ServicePort> ports, String portName, String protocol, String appProtocol, Integer port) {
       if (port == null) {
         return;
       }
 
-      addServicePortIfNeeded(ports, createServicePort(portName, port));
+      addServicePortIfNeeded(ports, createServicePort(portName, appProtocol, port));
       if (isSipProtocol(protocol)) {
         addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
       }
@@ -408,20 +409,16 @@ public class ServiceHelper {
         addNapServicePort(ports, networkAccessPoint);
       }
       if (!isIstioEnabled()) {
-        addServicePortIfNeeded(ports, "default", serverConfig.getListenPort());
-        addServicePortIfNeeded(ports, "default-secure", serverConfig.getSslListenPort());
-        addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
+        addServicePortIfNeeded(ports, "default", null, serverConfig.getListenPort());
+        addServicePortIfNeeded(ports, "default-secure", null, serverConfig.getSslListenPort());
+        addServicePortIfNeeded(ports, "default-admin", null, serverConfig.getAdminPort());
       }
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, getMetricsPortName(), specification.getRestPort());
+          addServicePortIfNeeded(ports, "metrics", "http", specification.getRestPort());
         }
       });
-    }
-
-    private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -429,14 +426,15 @@ public class ServiceHelper {
     }
 
     void addNapServicePort(List<V1ServicePort> ports, NetworkAccessPoint nap) {
-      addServicePortIfNeeded(ports, nap.getName(), nap.getProtocol(), nap.getListenPort());
+      addServicePortIfNeeded(ports, nap.getName(), nap.getProtocol(), null, nap.getListenPort());
     }
 
-    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, Integer port) {
-      addServicePortIfNeeded(ports, portName, null, port);
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String appProtocol, Integer port) {
+      addServicePortIfNeeded(ports, portName, null, appProtocol, port);
     }
 
-    abstract void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port);
+    abstract void addServicePortIfNeeded(
+        List<V1ServicePort> ports, String portName, String protocol, String appProtocol, Integer port);
 
     protected void addServicePortIfNeeded(List<V1ServicePort> ports, V1ServicePort port) {
       if (isNoDuplicatedName(ports, port) && isNoDuplicatedProtocolAndPort(ports, port)) {
@@ -463,9 +461,14 @@ public class ServiceHelper {
     }
 
     V1ServicePort createServicePort(String portName, Integer port) {
+      return createServicePort(portName, null, port);
+    }
+
+    V1ServicePort createServicePort(String portName, String appProtocol, Integer port) {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
+          .appProtocol(appProtocol)
           .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 
@@ -788,9 +791,10 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
+    void addServicePortIfNeeded(
+        List<V1ServicePort> ports, String portName, String protocol, String appProtocol, Integer port) {
       if (port != null) {
-        addServicePortIfNeeded(ports, createServicePort(portName, port));
+        addServicePortIfNeeded(ports, createServicePort(portName, appProtocol, port));
       }
       if (isSipProtocol(protocol)) {
         V1ServicePort udpPort = createSipUdpServicePort(portName, port);
@@ -965,7 +969,8 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
+    void addServicePortIfNeeded(
+        List<V1ServicePort> ports, String channelName, String protocol, String appProtocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
 
       if (channel == null && isIstioEnabled() && channelName != null) {
@@ -981,7 +986,7 @@ public class ServiceHelper {
       }
 
       addServicePortIfNeeded(ports,
-          createServicePort(channelName, internalPort)
+          createServicePort(channelName, appProtocol, internalPort)
             .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 

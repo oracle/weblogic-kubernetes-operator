@@ -1,928 +1,7 @@
-<!-- HTML for static distribution bundle build -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Swagger UI</title>
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Source+Code+Pro:300,600|Titillium+Web:400,600,700" rel="stylesheet">
-  <link rel="stylesheet" type="text/css" href="./swagger-ui.css" >
-  <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
-  <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
-  <style>
-    html
-    {
-      box-sizing: border-box;
-      overflow: -moz-scrollbars-vertical;
-      overflow-y: scroll;
-    }
-    *,
-    *:before,
-    *:after
-    {
-      box-sizing: inherit;
-    }
-
-    body {
-      margin:0;
-      background: #fafafa;
-    }
-  </style>
-</head>
-
-<body>
-
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0">
-  <defs>
-    <symbol viewBox="0 0 20 20" id="unlocked">
-          <path d="M15.8 8H14V5.6C14 2.703 12.665 1 10 1 7.334 1 6 2.703 6 5.6V6h2v-.801C8 3.754 8.797 3 10 3c1.203 0 2 .754 2 2.199V8H4c-.553 0-1 .646-1 1.199V17c0 .549.428 1.139.951 1.307l1.197.387C5.672 18.861 6.55 19 7.1 19h5.8c.549 0 1.428-.139 1.951-.307l1.196-.387c.524-.167.953-.757.953-1.306V9.199C17 8.646 16.352 8 15.8 8z"></path>
-    </symbol>
-
-    <symbol viewBox="0 0 20 20" id="locked">
-      <path d="M15.8 8H14V5.6C14 2.703 12.665 1 10 1 7.334 1 6 2.703 6 5.6V8H4c-.553 0-1 .646-1 1.199V17c0 .549.428 1.139.951 1.307l1.197.387C5.672 18.861 6.55 19 7.1 19h5.8c.549 0 1.428-.139 1.951-.307l1.196-.387c.524-.167.953-.757.953-1.306V9.199C17 8.646 16.352 8 15.8 8zM12 8H8V5.199C8 3.754 8.797 3 10 3c1.203 0 2 .754 2 2.199V8z"/>
-    </symbol>
-
-    <symbol viewBox="0 0 20 20" id="close">
-      <path d="M14.348 14.849c-.469.469-1.229.469-1.697 0L10 11.819l-2.651 3.029c-.469.469-1.229.469-1.697 0-.469-.469-.469-1.229 0-1.697l2.758-3.15-2.759-3.152c-.469-.469-.469-1.228 0-1.697.469-.469 1.228-.469 1.697 0L10 8.183l2.651-3.031c.469-.469 1.228-.469 1.697 0 .469.469.469 1.229 0 1.697l-2.758 3.152 2.758 3.15c.469.469.469 1.229 0 1.698z"/>
-    </symbol>
-
-    <symbol viewBox="0 0 20 20" id="large-arrow">
-      <path d="M13.25 10L6.109 2.58c-.268-.27-.268-.707 0-.979.268-.27.701-.27.969 0l7.83 7.908c.268.271.268.709 0 .979l-7.83 7.908c-.268.271-.701.27-.969 0-.268-.269-.268-.707 0-.979L13.25 10z"/>
-    </symbol>
-
-    <symbol viewBox="0 0 20 20" id="large-arrow-down">
-      <path d="M17.418 6.109c.272-.268.709-.268.979 0s.271.701 0 .969l-7.908 7.83c-.27.268-.707.268-.979 0l-7.908-7.83c-.27-.268-.27-.701 0-.969.271-.268.709-.268.979 0L10 13.25l7.418-7.141z"/>
-    </symbol>
-
-
-    <symbol viewBox="0 0 24 24" id="jump-to">
-      <path d="M19 7v4H5.83l3.58-3.59L8 6l-6 6 6 6 1.41-1.41L5.83 13H21V7z"/>
-    </symbol>
-
-    <symbol viewBox="0 0 24 24" id="expand">
-      <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
-    </symbol>
-
-  </defs>
-</svg>
-
-<div id="swagger-ui"></div>
-
-<script src="./swagger-ui-bundle.js"> </script>
-<script src="./swagger-ui-standalone-preset.js"> </script>
-<script>
-window.onload = function() {
-
-
-  const ui = SwaggerUIBundle({
-    // Do not remove the comment on the following line - it is used during the build to
-    // find the right place to insert the swagger JSON object
-    // SWAGGER_INSERT_START
-  spec: {
-  "security": [
-    {
-      "BearerToken": []
-    }
-  ],
-  "paths": {
-    "/apis/weblogic.oracle/v9/namespaces/{namespace}/domains": {
-      "get": {
-        "description": "list or watch objects of kind Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf",
-          "application/json;stream\u003dwatch",
-          "application/vnd.kubernetes.protobuf;stream\u003dwatch"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "listCoreV1NamespacedDomain",
-        "parameters": [
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
-            "name": "continue",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
-            "name": "fieldSelector",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
-            "name": "labelSelector",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "integer",
-            "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history. When specified for list: - if unset, then the result is returned from remote storage based on quorum-read flag; - if it\u0027s 0, then we simply return what we currently have in cache, no guarantee; - if set to non zero, then the result is at least as fresh as given rv.",
-            "name": "resourceVersion",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "integer",
-            "description": "Timeout for the list/watch call. This limits the duration of the call, regardless of any activity or inactivity.",
-            "name": "timeoutSeconds",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "boolean",
-            "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
-            "name": "watch",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/DomainList"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "list",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "post": {
-        "description": "create a Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "createCoreV1NamespacedDomain",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
-            "name": "dryRun",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "201": {
-            "description": "Created",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "202": {
-            "description": "Accepted",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "post",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "delete": {
-        "description": "delete collection of Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "deleteCoreV1CollectionNamespacedDomain",
-        "parameters": [
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
-            "name": "continue",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
-            "name": "fieldSelector",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
-            "name": "labelSelector",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "integer",
-            "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history. When specified for list: - if unset, then the result is returned from remote storage based on quorum-read flag; - if it\u0027s 0, then we simply return what we currently have in cache, no guarantee; - if set to non zero, then the result is at least as fresh as given rv.",
-            "name": "resourceVersion",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "integer",
-            "description": "Timeout for the list/watch call. This limits the duration of the call, regardless of any activity or inactivity.",
-            "name": "timeoutSeconds",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "boolean",
-            "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
-            "name": "watch",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/V1Status"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "deletecollection",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "parameters": [
-        {
-          "uniqueItems": true,
-          "type": "boolean",
-          "description": "If true, partially initialized resources are included in the response.",
-          "name": "includeUninitialized",
-          "in": "query"
-        },
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "object name and auth scope, such as for teams and projects",
-          "name": "namespace",
-          "in": "path",
-          "required": true
-        },
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "If \u0027true\u0027, then the output is pretty printed.",
-          "name": "pretty",
-          "in": "query"
-        }
-      ]
-    },
-    "/apis/weblogic.oracle/v9/namespaces/{namespace}/domains/{name}": {
-      "get": {
-        "description": "read the specified Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "readCoreV1NamespacedDomain",
-        "parameters": [
-          {
-            "uniqueItems": true,
-            "type": "boolean",
-            "description": "Should the export be exact.  Exact export maintains cluster-specific fields like \u0027Namespace\u0027.",
-            "name": "exact",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "boolean",
-            "description": "Should this value be exported.  Export strips fields that a user can not specify.",
-            "name": "export",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "get",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "put": {
-        "description": "replace the specified Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "replaceCoreV1NamespacedDomain",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
-            "name": "dryRun",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "201": {
-            "description": "Created",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "put",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "delete": {
-        "description": "delete a Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "deleteCoreV1NamespacedDomain",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/V1DeleteOptions"
-            }
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
-            "name": "dryRun",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "integer",
-            "description": "The duration in seconds before the object should be deleted. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period for the specified type will be used. Defaults to a per object value if not specified. zero means delete immediately.",
-            "name": "gracePeriodSeconds",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "boolean",
-            "description": "Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false, the \"orphan\" finalizer will be added to/removed from the object\u0027s finalizers list. Either this field or PropagationPolicy may be set, but not both.",
-            "name": "orphanDependents",
-            "in": "query"
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy. Acceptable values are: \u0027Orphan\u0027 - orphan the dependents; \u0027Background\u0027 - allow the garbage collector to delete the dependents in the background; \u0027Foreground\u0027 - a cascading policy that deletes all dependents in the foreground.",
-            "name": "propagationPolicy",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/V1Status"
-            }
-          },
-          "202": {
-            "description": "Accepted",
-            "schema": {
-              "$ref": "#/definitions/V1Status"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "delete",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "patch": {
-        "description": "partially update the specified Domain",
-        "consumes": [
-          "application/json-patch+json",
-          "application/merge-patch+json",
-          "application/strategic-merge-patch+json"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "patchCoreV1NamespacedDomain",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/V1Patch"
-            }
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
-            "name": "dryRun",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "patch",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "parameters": [
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "name of the Domain",
-          "name": "name",
-          "in": "path",
-          "required": true
-        },
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "object name and auth scope, such as for teams and projects",
-          "name": "namespace",
-          "in": "path",
-          "required": true
-        },
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "If \u0027true\u0027, then the output is pretty printed.",
-          "name": "pretty",
-          "in": "query"
-        }
-      ]
-    },
-    "/apis/weblogic.oracle/v9/namespaces/{namespace}/domains/{name}/status": {
-      "get": {
-        "description": "read status of the specified Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "readCoreV1NamespacedDomainStatus",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "get",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "put": {
-        "description": "replace status of the specified Domain",
-        "consumes": [
-          "*/*"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "replaceCoreV1NamespacedDomainStatus",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
-            "name": "dryRun",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "201": {
-            "description": "Created",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "put",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "patch": {
-        "description": "partially update status of the specified Domain",
-        "consumes": [
-          "application/json-patch+json",
-          "application/merge-patch+json",
-          "application/strategic-merge-patch+json"
-        ],
-        "produces": [
-          "application/json",
-          "application/yaml",
-          "application/vnd.kubernetes.protobuf"
-        ],
-        "schemes": [
-          "https"
-        ],
-        "tags": [
-          "weblogic_v2"
-        ],
-        "operationId": "patchCoreV1NamespacedDomainStatus",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/V1Patch"
-            }
-          },
-          {
-            "uniqueItems": true,
-            "type": "string",
-            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
-            "name": "dryRun",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/Domain"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "x-kubernetes-action": "patch",
-        "x-kubernetes-group-version-kind": {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      },
-      "parameters": [
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "name of the Domain",
-          "name": "name",
-          "in": "path",
-          "required": true
-        },
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "object name and auth scope, such as for teams and projects",
-          "name": "namespace",
-          "in": "path",
-          "required": true
-        },
-        {
-          "uniqueItems": true,
-          "type": "string",
-          "description": "If \u0027true\u0027, then the output is pretty printed.",
-          "name": "pretty",
-          "in": "query"
-        }
-      ]
-    }
-  },
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
   "definitions": {
-    "DomainList": {
-      "description": "DomainList is a list of Domains.",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
-          "type": "string"
-        },
-        "items": {
-          "description": "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Domain"
-          }
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "description": "Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "$ref": "#/definitions/V1ListMeta"
-        }
-      },
-      "x-kubernetes-group-version-kind": [
-        {
-          "group": "weblogic.oracle",
-          "kind": "DomainList",
-          "version": "v2"
-        }
-      ]
-    },
-    "Domain": {
-      "description": "Oracle WebLogic Domain",
-      "x-kubernetes-group-version-kind": [
-        {
-          "group": "weblogic.oracle",
-          "kind": "Domain",
-          "version": "v2"
-        }
-      ],
-      "required": [
-        "metadata",
-        "spec"
-      ],
-      "properties": {
-        "metadata": {
-          "description": "The resource metadata. Must include the `name` and `namespace`. Required.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
-        },
-        "apiVersion": {
-          "description": "The API version defines the versioned schema of this Domain. Required.",
-          "type": "string"
-        },
-        "kind": {
-          "description": "The type of the REST resource. Must be \"Domain\". Required.",
-          "type": "string"
-        },
-        "spec": {
-          "description": "The specification of the operation of the WebLogic domain. Required.",
-          "$ref": "#/definitions/DomainSpec"
-        },
-        "status": {
-          "description": "The current status of the operation of the WebLogic domain. Updated automatically by the operator.",
-          "$ref": "#/definitions/DomainStatus"
-        }
-      }
-    },
-    "V1Patch": {
-      "id": "V1Patch",
-      "description": "Patch is provided to give a concrete name and type to the Kubernetes PATCH request body.",
-      "properties": {}
-    },
-    "V1DeleteOptions": {
-      "id": "V1DeleteOptions",
-      "description": "DeleteOptions may be provided when deleting an API object.",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds"
-        },
-        "apiVersion": {
-          "type": "string",
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources"
-        },
-        "gracePeriodSeconds": {
-          "type": "integer",
-          "format": "int64",
-          "description": "The duration in seconds before the object should be deleted. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period for the specified type will be used. Defaults to a per object value if not specified. zero means delete immediately."
-        },
-        "preconditions": {
-          "$ref": "#/definitions/V1Preconditions",
-          "description": "Must be fulfilled before a deletion is carried out. If not possible, a 409 Conflict status will be returned."
-        },
-        "orphanDependents": {
-          "type": "boolean",
-          "description": "Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false, the \"orphan\" finalizer will be added to/removed from the object\u0027s finalizers list. Either this field or PropagationPolicy may be set, but not both."
-        },
-        "propagationPolicy": {
-          "$ref": "#/definitions/V1DeletionPropagation",
-          "description": "Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy. Acceptable values are: \u0027Orphan\u0027 - orphan the dependents; \u0027Background\u0027 - allow the garbage collector to delete the dependents in the background; \u0027Foreground\u0027 - a cascading policy that deletes all dependents in the foreground."
-        },
-        "dryRun": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed"
-        }
-      }
-    },
-    "V1Preconditions": {
-      "id": "V1Preconditions",
-      "description": "Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.",
-      "properties": {
-        "uid": {
-          "$ref": "#/definitions/UID",
-          "description": "Specifies the target UID."
-        }
-      }
-    },
-    "UID": {
-      "id": "UID",
-      "properties": {}
-    },
-    "V1DeletionPropagation": {
-      "id": "V1DeletionPropagation",
-      "properties": {}
-    },
     "AdminServer": {
       "type": "object",
       "properties": {
@@ -1047,7 +126,7 @@ window.onload = function() {
         "replicas": {
           "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "domainUID": {
           "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
@@ -1072,7 +151,7 @@ window.onload = function() {
         "maxUnavailable": {
           "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
           "type": "number",
-          "minimum": 1.0
+          "minimum": 1
         },
         "clusterName": {
           "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
@@ -1093,12 +172,12 @@ window.onload = function() {
         "maxConcurrentShutdown": {
           "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "maxConcurrentStartup": {
           "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     },
@@ -1135,17 +214,17 @@ window.onload = function() {
         "minimumReplicas": {
           "description": "The minimum number of cluster members.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "maximumReplicas": {
           "description": "The maximum number of cluster members.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "replicas": {
           "description": "The number of currently running cluster members.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "clusterName": {
           "description": "WebLogic cluster name.",
@@ -1154,12 +233,12 @@ window.onload = function() {
         "readyReplicas": {
           "description": "The number of ready cluster members.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "replicasGoal": {
           "description": "The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     },
@@ -1330,7 +409,7 @@ window.onload = function() {
         "failureRetryIntervalSeconds": {
           "description": "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "logHome": {
           "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.See also `domains.spec.logHomeLayout`.",
@@ -1339,7 +418,7 @@ window.onload = function() {
         "failureRetryLimitMinutes": {
           "description": "The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "includeServerOutInPodLog": {
           "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
@@ -1376,17 +455,17 @@ window.onload = function() {
         "maxClusterConcurrentStartup": {
           "description": "The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "replicas": {
           "description": "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "maxClusterConcurrentShutdown": {
           "description": "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster\u0027s `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
@@ -1453,12 +532,12 @@ window.onload = function() {
           "deprecated": "true",
           "description": "Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter \u0027domainPresenceFailureRetryMaxCount\u0027 (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "replicas": {
           "description": "The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case.",
           "type": "number",
-          "minimum": 0.0
+          "minimum": 0
         },
         "failedIntrospectionUid": {
           "description": "Unique ID of the last failed introspection job.",
@@ -1732,7 +811,7 @@ window.onload = function() {
         "failureThreshold": {
           "description": "Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1.",
           "type": "number",
-          "minimum": 1.0
+          "minimum": 1
         },
         "periodSeconds": {
           "description": "The number of seconds between checks.",
@@ -1745,7 +824,7 @@ window.onload = function() {
         "successThreshold": {
           "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe.",
           "type": "number",
-          "minimum": 1.0
+          "minimum": 1
         },
         "initialDelaySeconds": {
           "description": "The number of seconds before the first check is performed.",
@@ -2066,38 +1145,29 @@ window.onload = function() {
       }
     }
   },
-  "securityDefinitions": {
-    "BearerToken": {
-      "description": "Bearer Token authentication",
-      "type": "apiKey",
-      "name": "authorization",
-      "in": "header"
+  "properties": {
+    "metadata": {
+      "description": "The resource metadata. Must include the `name` and `namespace.",
+      "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+    },
+    "apiVersion": {
+      "description": "The API version defines the versioned schema of this cluster.",
+      "type": "string"
+    },
+    "kind": {
+      "description": "The type of the REST resource. Must be \"Cluster\".",
+      "type": "string"
+    },
+    "spec": {
+      "description": "The specification of the operation of the WebLogic cluster. Required.",
+      "$ref": "#/definitions/Cluster"
+    },
+    "status": {
+      "description": "The current status of the operation of the WebLogic cluster. Updated automatically by the operator.",
+      "$ref": "#/definitions/ClusterStatus"
     }
   },
-  "swagger": "2.0",
-  "info": {
-    "title": "WebLogic Kubernetes Operator",
-    "version": "v2"
-  }
-},
-    // SWAGGER_INSERT_END
-    // Do not remove the comment on the previous line - it is used during the build to
-    // find the right place to insert the swagger JSON object
-    dom_id: '#swagger-ui',
-    deepLinking: true,
-    presets: [
-      SwaggerUIBundle.presets.apis,
-      SwaggerUIStandalonePreset
-    ],
-    plugins: [
-      SwaggerUIBundle.plugins.DownloadUrl
-    ],
-    layout: "StandaloneLayout"
-  })
-
-  window.ui = ui
+  "required": [
+    "spec"
+  ]
 }
-</script>
-</body>
-
-</html>

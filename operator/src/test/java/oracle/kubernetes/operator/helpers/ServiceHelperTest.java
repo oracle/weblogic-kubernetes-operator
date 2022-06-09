@@ -765,6 +765,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private final String expectedName;
     private final V1ServicePort.ProtocolEnum expectedProtocol;
+    private final String expectedAppProtocol;
     private final Integer expectedValue;
 
     private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
@@ -773,8 +774,18 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
                         Integer expectedValue) {
+      this(expectedName, expectedProtocol, null, expectedValue);
+    }
+
+    private PortMatcher(@Nonnull String expectedName, String expectedAppProtocol, Integer expectedValue) {
+      this(expectedName, V1ServicePort.ProtocolEnum.TCP, expectedAppProtocol, expectedValue);
+    }
+
+    private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
+                        String expectedAppProtocol, Integer expectedValue) {
       this.expectedName = expectedName;
       this.expectedProtocol = expectedProtocol;
+      this.expectedAppProtocol = expectedAppProtocol;
       this.expectedValue = expectedValue;
     }
 
@@ -787,6 +798,11 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       return new PortMatcher(expectedName, expectedProtocol, expectedValue);
     }
 
+    static PortMatcher containsPort(@Nonnull String expectedName,
+                                    @Nonnull String expectedAppProtocol, Integer expectedValue) {
+      return new PortMatcher(expectedName, expectedAppProtocol, expectedValue);
+    }
+
     @Override
     protected boolean matchesSafely(V1Service item, Description mismatchDescription) {
       V1ServicePort matchingPort = getPortWithName(item);
@@ -797,7 +813,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
       } else {
-        if (matchesSelectedProtocol(matchingPort) && matchesSelectedPort(matchingPort)) {
+        if (matchesSelectedProtocol(matchingPort)
+            && matchesSelectedPort(matchingPort)
+            && matchesSelectedAppProtocol(matchingPort)) {
           return true;
         }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
@@ -811,6 +829,10 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     private boolean matchesSelectedPort(V1ServicePort matchingPort) {
       return Objects.equals(expectedValue, matchingPort.getPort());
+    }
+
+    private boolean matchesSelectedAppProtocol(V1ServicePort matchingPort) {
+      return Objects.equals(expectedAppProtocol, matchingPort.getAppProtocol());
     }
 
     private V1ServicePort getPortWithName(V1Service item) {
