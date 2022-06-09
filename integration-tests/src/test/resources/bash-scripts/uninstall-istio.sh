@@ -5,7 +5,7 @@
 # Description:
 #
 #  This script uninstall a given version of istio using Helm v3.x
-#  Default istio version is 1.11.1
+#  Default istio version is 1.13.2
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 
@@ -30,7 +30,7 @@ rm -rf ${istiodir}
 }
 
 # MAIN
-version=${1:-1.11.1}
+version=${1:-1.13.2}
 workdir=${2:-`pwd`}
 
 istiodir=${workdir}/istio-${version}
