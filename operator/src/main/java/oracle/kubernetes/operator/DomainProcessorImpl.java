@@ -730,7 +730,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public DomainPresenceInfo getPresenceInfo() {
-      return null;
+      return liveInfo;
     }
 
     private final DomainProcessorDelegate delegate;
@@ -917,26 +917,21 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void internalMakeRightDomainPresence() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, getDomainUid());
 
-      new DomainPlan(this, delegate, liveInfo).execute();
+      new DomainPlan(this, delegate).execute();
     }
 
     @NotNull
     @Override
     public Packet createPacket() {
-      return null;
-    }
-
-    @NotNull
-    private Packet createPacket(DomainPresenceInfo info) {
-      Packet packet = new Packet().with(delegate).with(info);
+      Packet packet = new Packet().with(delegate).with(liveInfo);
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
       packet
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(delegate.getKubernetesVersion(),
-                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(info.getNamespace()),
-                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(info.getNamespace())));
+                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
       return packet;
     }
 
@@ -1100,14 +1095,13 @@ public class DomainProcessorImpl implements DomainProcessor {
     private final Step firstStep;
     private final Packet packet;
 
-    public DomainPlan(
-        MakeRightDomainOperation operation, DomainProcessorDelegate delegate, DomainPresenceInfo presenceInfo) {
+    public DomainPlan(MakeRightDomainOperation operation, DomainProcessorDelegate delegate) {
       this.operation = operation;
       this.delegate = delegate;
-      this.presenceInfo = presenceInfo;
+      this.presenceInfo = operation.getPresenceInfo();
       this.firstStep = operation.createSteps();
-      this.packet = ((MakeRightDomainOperationImpl) operation).createPacket(presenceInfo);
-      this.gate = getMakeRightFiberGate(delegate, presenceInfo.getNamespace());
+      this.packet = operation.createPacket();
+      this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
     }
 
     private void execute() {
@@ -1351,22 +1345,22 @@ public class DomainProcessorImpl implements DomainProcessor {
       scheduleDomainStatusUpdating(info);
       return doNext(packet);
     }
+  }
 
-    private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-      final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
-      final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
-      final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
+  private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+    final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
+    final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
+    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
-      registerStatusUpdater(
-          info.getNamespace(),
-          info.getDomainUid(),
-          delegate.scheduleWithFixedDelay(
-              () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
-                  .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
-              initialShortDelay,
-              initialShortDelay,
-              TimeUnit.SECONDS));
-    }
+    registerStatusUpdater(
+        info.getNamespace(),
+        info.getDomainUid(),
+        delegate.scheduleWithFixedDelay(
+            () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
+                .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
+            initialShortDelay,
+            initialShortDelay,
+            TimeUnit.SECONDS));
   }
 
   private static class DownHeadStep extends Step {
