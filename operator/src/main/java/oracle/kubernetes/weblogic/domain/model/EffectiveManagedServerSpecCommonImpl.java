@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-public class ManagedServerSpecCommonImpl extends ServerSpecCommonImpl {
+public class EffectiveManagedServerSpecCommonImpl extends EffectiveServerSpecCommonImpl {
   /**
    * Constructs an object to return the effective configuration for a managed server.
    *
@@ -13,7 +13,7 @@ public class ManagedServerSpecCommonImpl extends ServerSpecCommonImpl {
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
    */
-  public ManagedServerSpecCommonImpl(
+  public EffectiveManagedServerSpecCommonImpl(
       DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
     super(spec, server, cluster, clusterLimit);
   }

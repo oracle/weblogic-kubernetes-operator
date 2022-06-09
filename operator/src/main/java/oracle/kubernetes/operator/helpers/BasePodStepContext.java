@@ -30,7 +30,7 @@ import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
@@ -56,7 +56,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .orElse(target);
   }
 
-  abstract ServerSpec getServerSpec();
+  abstract EffectiveServerSpec getServerSpec();
 
   String getPrimaryContainerMountPath() {
     return info.getDomain().getAuxiliaryImageVolumeMountPath();

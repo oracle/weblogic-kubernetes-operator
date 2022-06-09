@@ -35,12 +35,12 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveAdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -255,7 +255,7 @@ public class ServiceHelper {
       return metadata;
     }
 
-    private ServerSpec getServerSpec() {
+    private EffectiveServerSpec getServerSpec() {
       return getDomain().getServer(getServerName(), getClusterName());
     }
 
@@ -851,7 +851,7 @@ public class ServiceHelper {
       return CLUSTER_SERVICE_REPLACED;
     }
 
-    ClusterSpec getClusterSpec() {
+    EffectiveClusterSpec getClusterSpec() {
       return getDomain().getCluster(clusterName);
     }
 
@@ -996,7 +996,7 @@ public class ServiceHelper {
 
     private Optional<AdminService> getNullableAdminService() {
       return Optional.ofNullable(getDomain().getAdminServerSpec())
-          .map(AdminServerSpec::getAdminService);
+          .map(EffectiveAdminServerSpec::getAdminService);
     }
   }
 }

@@ -10,10 +10,10 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 
-public class ClusterSpecCommonImpl extends ClusterSpec {
+public class EffectiveClusterSpecCommonImpl extends EffectiveClusterSpec {
   private final Cluster cluster;
 
-  public ClusterSpecCommonImpl(DomainSpec spec, Cluster cluster) {
+  public EffectiveClusterSpecCommonImpl(DomainSpec spec, Cluster cluster) {
     this.cluster = getBaseConfiguration(cluster);
     this.cluster.fillInFrom(spec);
   }

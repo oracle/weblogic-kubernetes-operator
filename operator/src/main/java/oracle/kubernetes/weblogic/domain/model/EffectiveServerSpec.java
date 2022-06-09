@@ -21,7 +21,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 
-public interface ServerSpec {
+public interface EffectiveServerSpec {
   String getImage();
 
   V1Container.ImagePullPolicyEnum getImagePullPolicy();

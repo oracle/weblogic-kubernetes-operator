@@ -24,11 +24,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Represents the effective configuration for a server, as seen by the operator runtime. */
 @SuppressWarnings("WeakerAccess")
-public abstract class ServerSpecBase implements ServerSpec {
+public abstract class EffectiveServerSpecBase implements EffectiveServerSpec {
 
   protected final DomainSpec domainSpec;
 
-  protected ServerSpecBase(DomainSpec domainSpec) {
+  protected EffectiveServerSpecBase(DomainSpec domainSpec) {
     this.domainSpec = domainSpec;
   }
 
@@ -146,11 +146,11 @@ public abstract class ServerSpecBase implements ServerSpec {
       return false;
     }
 
-    if (!(o instanceof ServerSpecBase)) {
+    if (!(o instanceof EffectiveServerSpecBase)) {
       return false;
     }
 
-    ServerSpecBase that = (ServerSpecBase) o;
+    EffectiveServerSpecBase that = (EffectiveServerSpecBase) o;
 
     return new EqualsBuilder().append(domainSpec, that.domainSpec).isEquals();
   }

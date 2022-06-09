@@ -1156,13 +1156,13 @@ public class DomainSpec extends BaseConfiguration {
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
-    public AdminServerSpec getAdminServerSpec() {
-      return new AdminServerSpecCommonImpl(DomainSpec.this, adminServer);
+    public EffectiveAdminServerSpec getAdminServerSpec() {
+      return new EffectiveAdminServerSpecCommonImpl(DomainSpec.this, adminServer);
     }
 
     @Override
-    public ServerSpec getServerSpec(String serverName, String clusterName) {
-      return new ManagedServerSpecCommonImpl(
+    public EffectiveServerSpec getServerSpec(String serverName, String clusterName) {
+      return new EffectiveManagedServerSpecCommonImpl(
           DomainSpec.this,
           getManagedServer(serverName),
           getCluster(clusterName),
@@ -1213,8 +1213,8 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public ClusterSpec getClusterSpec(String clusterName) {
-      return new ClusterSpecCommonImpl(DomainSpec.this, getCluster(clusterName));
+    public EffectiveClusterSpec getClusterSpec(String clusterName) {
+      return new EffectiveClusterSpecCommonImpl(DomainSpec.this, getCluster(clusterName));
     }
 
     private Integer getClusterLimit(String clusterName) {

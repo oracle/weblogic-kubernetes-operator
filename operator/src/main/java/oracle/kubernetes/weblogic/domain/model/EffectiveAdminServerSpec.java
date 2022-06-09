@@ -4,7 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 /** Represents the effective configuration for an admin server, as seen by the operator runtime. */
-public interface AdminServerSpec extends ServerSpec {
+public interface EffectiveAdminServerSpec extends EffectiveServerSpec {
 
   /**
    * Returns the admin service configuration for the admin server, which controls the external

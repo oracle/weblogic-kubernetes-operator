@@ -12,7 +12,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 
-public abstract class ClusterSpec {
+public abstract class EffectiveClusterSpec {
 
   /**
    * Returns the labels applied to the cluster service.

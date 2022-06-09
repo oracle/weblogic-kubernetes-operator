@@ -29,7 +29,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
-public abstract class ServerSpecCommonImpl extends ServerSpecBase {
+public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecBase {
   private final Server server;
   private final Cluster cluster;
   private final Integer clusterLimit;
@@ -43,7 +43,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
    */
-  ServerSpecCommonImpl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
+  EffectiveServerSpecCommonImpl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
@@ -276,11 +276,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
       return true;
     }
 
-    if (!(o instanceof ServerSpecCommonImpl)) {
+    if (!(o instanceof EffectiveServerSpecCommonImpl)) {
       return false;
     }
 
-    ServerSpecCommonImpl that = (ServerSpecCommonImpl) o;
+    EffectiveServerSpecCommonImpl that = (EffectiveServerSpecCommonImpl) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))

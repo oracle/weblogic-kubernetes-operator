@@ -46,10 +46,10 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -131,7 +131,7 @@ public class JobStepContext extends BasePodStepContext {
     return info.getDomain();
   }
 
-  ServerSpec getServerSpec() {
+  EffectiveServerSpec getServerSpec() {
     return getDomain().getAdminServerSpec();
   }
 

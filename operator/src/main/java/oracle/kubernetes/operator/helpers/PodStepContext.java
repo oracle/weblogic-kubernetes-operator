@@ -69,10 +69,10 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -598,12 +598,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private Shutdown getShutdownSpec() {
-    return Optional.ofNullable(getServerSpec()).map(ServerSpec::getShutdown).orElse(new Shutdown());
+    return Optional.ofNullable(getServerSpec()).map(EffectiveServerSpec::getShutdown).orElse(new Shutdown());
   }
 
   private void updateEnvForStartupMode(List<V1EnvVar> env) {
     Optional.ofNullable(getServerSpec())
-          .map(ServerSpec::getDesiredState)
+          .map(EffectiveServerSpec::getDesiredState)
           .filter(this::isNotRunning)
           .ifPresent(s -> addDefaultEnvVarIfMissing(env, "STARTUP_MODE", s));
     Optional.ofNullable(getDomain().getLivenessProbeCustomScript())

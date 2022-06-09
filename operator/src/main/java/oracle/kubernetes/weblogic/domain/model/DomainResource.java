@@ -259,7 +259,7 @@ public class DomainResource implements KubernetesObject {
     return metadata.getNamespace();
   }
 
-  public AdminServerSpec getAdminServerSpec() {
+  public EffectiveAdminServerSpec getAdminServerSpec() {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
@@ -302,7 +302,7 @@ public class DomainResource implements KubernetesObject {
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the server
    */
-  public ServerSpec getServer(String serverName, String clusterName) {
+  public EffectiveServerSpec getServer(String serverName, String clusterName) {
     return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
   }
 
@@ -312,7 +312,7 @@ public class DomainResource implements KubernetesObject {
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the cluster
    */
-  public ClusterSpec getCluster(String clusterName) {
+  public EffectiveClusterSpec getCluster(String clusterName) {
     return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
   }
 
@@ -771,7 +771,7 @@ public class DomainResource implements KubernetesObject {
    */
   public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
     return Optional.ofNullable(getServer(serverName, clusterName))
-        .map(ServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
+        .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
   }
 
   public String getWdtConfigMap() {

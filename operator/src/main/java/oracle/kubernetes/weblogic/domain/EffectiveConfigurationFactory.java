@@ -5,9 +5,9 @@ package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
 
-import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveAdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
 
 /**
  * The interface for the class used by the domain model to return effective configurations to the
@@ -15,11 +15,11 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
  */
 public interface EffectiveConfigurationFactory {
 
-  AdminServerSpec getAdminServerSpec();
+  EffectiveAdminServerSpec getAdminServerSpec();
 
-  ServerSpec getServerSpec(String serverName, String clusterName);
+  EffectiveServerSpec getServerSpec(String serverName, String clusterName);
 
-  ClusterSpec getClusterSpec(String clusterName);
+  EffectiveClusterSpec getClusterSpec(String clusterName);
 
   int getReplicaCount(String clusterName);
 

@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
@@ -365,7 +365,7 @@ public class PodHelper {
     }
 
     @Override
-    ServerSpec getServerSpec() {
+    EffectiveServerSpec getServerSpec() {
       return getDomain().getAdminServerSpec();
     }
 
@@ -487,7 +487,7 @@ public class PodHelper {
     }
 
     @Override
-    ServerSpec getServerSpec() {
+    EffectiveServerSpec getServerSpec() {
       return getDomain().getServer(getServerName(), getClusterName());
     }
 
@@ -688,8 +688,8 @@ public class PodHelper {
           clusterName = labels.get(CLUSTERNAME_LABEL);
         }
 
-        ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
-        if (serverSpec != null) {
+        EffectiveServerSpec effectiveServerSpec = info.getDomain().getServer(serverName, clusterName);
+        if (effectiveServerSpec != null) {
           // We add a 10 second fudge factor here to account for the fact that WLST takes
           // ~6 seconds to start, so along with any other delay in connecting and issuing
           // the shutdown, the actual server instance has the full configured timeout to
@@ -697,7 +697,7 @@ public class PodHelper {
           // We will remove this fudge factor when the operator connects via REST to shutdown
           // the server instance.
           gracePeriodSeconds =
-              serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
+              effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
         }
 
         String name = oldPod.getMetadata().getName();
