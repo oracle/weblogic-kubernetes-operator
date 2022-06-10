@@ -92,11 +92,6 @@ import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadC
 
 public class DomainProcessorImpl implements DomainProcessor {
 
-  @Override
-  public void runMakeRight(MakeRightDomainOperation operation) {
-
-  }
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String ADDED = "ADDED";
@@ -309,6 +304,23 @@ public class DomainProcessorImpl implements DomainProcessor {
     return ConfigMapHelper.createOrReplaceFluentdConfigMapStep();
   }
 
+  @Override
+  public void runMakeRight(MakeRightDomainOperation operation) {
+    final DomainPresenceInfo presenceInfo = operation.getPresenceInfo();
+    try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(presenceInfo)) {
+      if (!this.delegate.isNamespaceRunning(presenceInfo.getNamespace())) {
+        return;
+      }
+
+      if (shouldContinue(operation)) {
+        new DomainPlan(operation, this.delegate).execute();
+        scheduleDomainStatusUpdating(presenceInfo);
+      } else {
+        logNotStartingDomain(presenceInfo.getDomainUid());
+      }
+    }
+  }
+
   /**
    * Compares the domain introspection version to current introspection state label and request introspection
    * if they don't match.
@@ -327,6 +339,14 @@ public class DomainProcessorImpl implements DomainProcessor {
         packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
       }
       return doNext(packet);
+    }
+
+    @Nonnull
+    private String getRequestedIntrospectVersion(Packet packet) {
+      return DomainPresenceInfo.fromPacket(packet)
+          .map(DomainPresenceInfo::getDomain)
+          .map(DomainResource::getIntrospectVersion)
+          .orElse("0");
     }
   }
 
@@ -719,11 +739,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
-    public MakeRightDomainOperation createRetry(DomainPresenceInfo info) {
-      return null;
-    }
-
-    @Override
     public boolean isExplicitRecheck() {
       return false;
     }
@@ -750,6 +765,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, DomainPresenceInfo liveInfo) {
       this.delegate = delegate;
       this.liveInfo = liveInfo;
+    }
+
+    @Override
+    public MakeRightDomainOperation createRetry(DomainPresenceInfo presenceInfo) {
+      presenceInfo.setPopulated(false);
+      return new MakeRightDomainOperationImpl(delegate, presenceInfo).withDeleting(deleting).withExplicitRecheck();
     }
 
     /**
