@@ -60,6 +60,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `introspectJobFailureCount` | number | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
 | `lastFailureTime` | DateTime | RFC 3339 date and time at which a currently failing domain last experienced a Severe failure. |
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
+| `observedGeneration` | number | The generation observed by the WebLogic operator. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | `replicas` | number | The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case. |
 | `servers` | Array of [Server Status](#server-status) | Status of WebLogic Servers in this domain. |

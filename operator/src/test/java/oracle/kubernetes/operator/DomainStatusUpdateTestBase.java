@@ -163,6 +163,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
+    // Observed generation is only updated during a make-right status update
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), nullValue());
     assertThat(
         getServerStatus(getRecordedDomain(), "server1"),
         equalTo(
