@@ -11,60 +11,60 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 
 public class EffectiveClusterSpecCommonImpl extends EffectiveClusterSpec {
-  private final Cluster cluster;
+  private final ClusterSpec clusterSpec;
 
-  public EffectiveClusterSpecCommonImpl(DomainSpec spec, Cluster cluster) {
-    this.cluster = getBaseConfiguration(cluster);
-    this.cluster.fillInFrom(spec);
+  public EffectiveClusterSpecCommonImpl(DomainSpec spec, ClusterSpec clusterSpec) {
+    this.clusterSpec = getBaseConfiguration(clusterSpec);
+    this.clusterSpec.fillInFrom(spec);
   }
 
-  private Cluster getBaseConfiguration(Cluster cluster) {
-    return cluster != null ? cluster.getConfiguration() : new Cluster();
+  private ClusterSpec getBaseConfiguration(ClusterSpec clusterSpec) {
+    return clusterSpec != null ? clusterSpec.getConfiguration() : new ClusterSpec();
   }
 
   @Override
   public Map<String, String> getClusterLabels() {
-    return cluster.getClusterLabels();
+    return clusterSpec.getClusterLabels();
   }
 
   @Override
   public Map<String, String> getClusterAnnotations() {
-    return cluster.getClusterAnnotations();
+    return clusterSpec.getClusterAnnotations();
   }
 
   @Override
   public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
-    return cluster.getClusterSessionAffinity();
+    return clusterSpec.getClusterSessionAffinity();
   }
 
   @Override
   public List<V1Container> getInitContainers() {
-    return cluster.getInitContainers();
+    return clusterSpec.getInitContainers();
   }
 
   @Override
   public List<V1Container> getContainers() {
-    return cluster.getContainers();
+    return clusterSpec.getContainers();
   }
 
   @Override
   public Shutdown getShutdown() {
-    return cluster.getShutdown();
+    return clusterSpec.getShutdown();
   }
 
   @Override
   public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
-    return cluster.getRestartPolicy();
+    return clusterSpec.getRestartPolicy();
   }
 
   @Override
   public String getRuntimeClassName() {
-    return cluster.getRuntimeClassName();
+    return clusterSpec.getRuntimeClassName();
   }
 
   @Override
   public String getSchedulerName() {
-    return cluster.getSchedulerName();
+    return clusterSpec.getSchedulerName();
   }
 
 }

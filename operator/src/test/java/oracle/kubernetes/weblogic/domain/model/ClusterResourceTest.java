@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 class ClusterResourceTest {
 
-  private final ClusterResource resource = new ClusterResource().spec(new Cluster());
+  private final ClusterResource resource = new ClusterResource().spec(new ClusterSpec());
 
   @Test
   void whenResourceInitialized_hasCorrectApiVersionAndKind() {
@@ -21,7 +21,7 @@ class ClusterResourceTest {
 
   @Test
   void canReadReplicaCount() {
-    resource.spec(new Cluster().withReplicas(2));
+    resource.spec(new ClusterSpec().withReplicas(2));
 
     assertThat(resource.getReplicas(), equalTo(2));
   }
@@ -35,7 +35,7 @@ class ClusterResourceTest {
 
   @Test
   void canReadClusterNameFromSpec() {
-    resource.spec(new Cluster().withClusterName("cluster-1"));
+    resource.spec(new ClusterSpec().withClusterName("cluster-1"));
 
     assertThat(resource.getClusterName(), equalTo("cluster-1"));
   }
@@ -49,14 +49,14 @@ class ClusterResourceTest {
 
   @Test
   void whenNameInBothMetadataAndSpec_useNameFromSpec() {
-    resource.withMetadata(new V1ObjectMeta().name("cluster-2")).spec(new Cluster().withClusterName("cluster-1"));
+    resource.withMetadata(new V1ObjectMeta().name("cluster-2")).spec(new ClusterSpec().withClusterName("cluster-1"));
 
     assertThat(resource.getClusterName(), equalTo("cluster-1"));
   }
 
   @Test
   void canReadDomainUidFromSpec() {
-    resource.spec(new Cluster().withDomainUid("domain1"));
+    resource.spec(new ClusterSpec().withDomainUid("domain1"));
 
     assertThat(resource.getDomainUid(), equalTo("domain1"));
   }
@@ -72,7 +72,7 @@ class ClusterResourceTest {
   @Test
   void whenDomainUidInBothMetadataAndSpec_useNameFromSpec() {
     resource.withMetadata(new V1ObjectMeta().putLabelsItem("weblogic.domainUID",
-            "domain1")).spec(new Cluster().withDomainUid("domain3"));
+            "domain1")).spec(new ClusterSpec().withDomainUid("domain3"));
 
     assertThat(resource.getDomainUid(), equalTo("domain3"));
   }

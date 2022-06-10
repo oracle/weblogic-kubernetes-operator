@@ -985,7 +985,7 @@ public class DomainResource implements KubernetesObject {
           .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
-          .map(Cluster::getClusterName)
+          .map(ClusterSpec::getClusterName)
           .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
     }

@@ -31,7 +31,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 /** The effective configuration for a server configured by the version 2 domain model. */
 public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecBase {
   private final Server server;
-  private final Cluster cluster;
+  private final ClusterSpec clusterSpec;
   private final Integer clusterLimit;
 
   /**
@@ -39,17 +39,17 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
    *
    * @param spec Domain spec
    * @param server the server whose configuration is to be returned
-   * @param cluster the cluster to which the server belongs
+   * @param clusterSpec the cluster to which the server belongs
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
    */
-  EffectiveServerSpecCommonImpl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
+  EffectiveServerSpecCommonImpl(DomainSpec spec, Server server, ClusterSpec clusterSpec, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
-    this.server.fillInFrom(cluster);
+    this.server.fillInFrom(clusterSpec);
     this.server.fillInFrom(spec);
-    this.cluster = cluster;
+    this.clusterSpec = clusterSpec;
   }
 
   private Server getBaseConfiguration(Server server) {
@@ -247,7 +247,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
 
   @Override
   public String getClusterRestartVersion() {
-    return cluster != null ? cluster.getRestartVersion() : null;
+    return clusterSpec != null ? clusterSpec.getRestartVersion() : null;
   }
 
   @Override
@@ -266,7 +266,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
         .appendSuper(super.toString())
         .append("server", server)
         .append("clusterLimit", clusterLimit)
-        .append("cluster", cluster)
+        .append("cluster", clusterSpec)
         .toString();
   }
 
@@ -286,7 +286,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
         .appendSuper(super.equals(o))
         .append(server, that.server)
         .append(clusterLimit, that.clusterLimit)
-        .append(cluster, that.cluster)
+        .append(clusterSpec, that.clusterSpec)
         .isEquals();
   }
 
@@ -296,7 +296,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
         .appendSuper(super.hashCode())
         .append(server)
         .append(clusterLimit)
-        .append(cluster)
+        .append(clusterSpec)
         .toHashCode();
   }
 }

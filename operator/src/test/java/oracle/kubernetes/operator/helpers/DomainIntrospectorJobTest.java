@@ -63,7 +63,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -252,7 +252,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
             .withConfiguration(new Configuration()
                 .withOverridesConfigMap(OVERRIDES_CM).withSecrets(List.of(OVERRIDE_SECRET_1, OVERRIDE_SECRET_2)))
-            .withCluster(new Cluster()
+            .withCluster(new ClusterSpec()
                 .withClusterName("cluster-1").withReplicas(1).withServerStartPolicy(ServerStartPolicy.IF_NEEDED))
             .withImage(LATEST_IMAGE)
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
@@ -1478,10 +1478,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
-  private Cluster getCluster(String clusterName) {
+  private ClusterSpec getCluster(String clusterName) {
     return domain.getSpec().getClusters().stream()
           .filter(c -> clusterName.equals(c.getClusterName()))
-          .findFirst().orElse(new Cluster());
+          .findFirst().orElse(new ClusterSpec());
   }
 
   private String getDomainHome() {

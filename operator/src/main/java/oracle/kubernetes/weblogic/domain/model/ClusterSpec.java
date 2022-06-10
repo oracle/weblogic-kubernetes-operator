@@ -23,7 +23,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @since 2.0
  */
-public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
+public class ClusterSpec extends BaseConfiguration implements Comparable<ClusterSpec> {
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
       + "in the WebLogic domain configuration. Required.")
@@ -104,8 +104,8 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 0)
   private Integer maxConcurrentShutdown;
 
-  protected Cluster getConfiguration() {
-    Cluster configuration = new Cluster();
+  protected ClusterSpec getConfiguration() {
+    ClusterSpec configuration = new ClusterSpec();
     configuration.fillInFrom(this);
     configuration.setRestartVersion(this.getRestartVersion());
     return configuration;
@@ -119,7 +119,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.clusterName = clusterName;
   }
 
-  public Cluster withClusterName(@Nonnull String clusterName) {
+  public ClusterSpec withClusterName(@Nonnull String clusterName) {
     setClusterName(clusterName);
     return this;
   }
@@ -128,7 +128,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     return domainUid;
   }
 
-  public Cluster withDomainUid(String domainUid) {
+  public ClusterSpec withDomainUid(String domainUid) {
     this.domainUid = domainUid;
     return this;
   }
@@ -141,7 +141,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.replicas = replicas;
   }
 
-  public Cluster withReplicas(Integer replicas) {
+  public ClusterSpec withReplicas(Integer replicas) {
     setReplicas(replicas);
     return this;
   }
@@ -188,7 +188,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  public Cluster withServerStartPolicy(ServerStartPolicy serverStartPolicy) {
+  public ClusterSpec withServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     setServerStartPolicy(serverStartPolicy);
     return this;
   }
@@ -201,7 +201,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.clusterService = clusterService;
   }
 
-  public Cluster withClusterService(ClusterService clusterService) {
+  public ClusterSpec withClusterService(ClusterService clusterService) {
     this.setClusterService(clusterService);
     return this;
   }
@@ -234,7 +234,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.maxUnavailable = maxUnavailable;
   }
 
-  void fillInFrom(Cluster other) {
+  void fillInFrom(ClusterSpec other) {
     if (other == null) {
       return;
     }
@@ -268,19 +268,19 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       return false;
     }
 
-    Cluster cluster = (Cluster) o;
+    ClusterSpec clusterSpec = (ClusterSpec) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
-        .append(clusterName, cluster.clusterName)
-        .append(domainUid, cluster.domainUid)
-        .append(replicas, cluster.replicas)
-        .append(serverStartPolicy, cluster.serverStartPolicy)
-        .append(clusterService, cluster.clusterService)
-        .append(maxUnavailable, cluster.maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
-        .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
-        .append(maxConcurrentShutdown, cluster.maxConcurrentShutdown)
+        .append(clusterName, clusterSpec.clusterName)
+        .append(domainUid, clusterSpec.domainUid)
+        .append(replicas, clusterSpec.replicas)
+        .append(serverStartPolicy, clusterSpec.serverStartPolicy)
+        .append(clusterService, clusterSpec.clusterService)
+        .append(maxUnavailable, clusterSpec.maxUnavailable)
+        .append(allowReplicasBelowMinDynClusterSize, clusterSpec.allowReplicasBelowMinDynClusterSize)
+        .append(maxConcurrentStartup, clusterSpec.maxConcurrentStartup)
+        .append(maxConcurrentShutdown, clusterSpec.maxConcurrentShutdown)
         .isEquals();
   }
 
@@ -301,7 +301,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   }
 
   @Override
-  public int compareTo(@Nonnull Cluster o) {
+  public int compareTo(@Nonnull ClusterSpec o) {
     return clusterName.compareTo(o.clusterName);
   }
 }

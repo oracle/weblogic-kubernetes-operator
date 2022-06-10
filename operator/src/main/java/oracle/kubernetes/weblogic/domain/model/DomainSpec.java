@@ -414,16 +414,16 @@ public class DomainSpec extends BaseConfiguration {
       + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
       + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
       + "WebLogic domain configuration.")
-  protected final List<Cluster> clusters = new ArrayList<>();
+  protected final List<ClusterSpec> clusters = new ArrayList<>();
 
   /**
    * Adds a Cluster to the DomainSpec.
    *
-   * @param cluster The cluster to be added to this DomainSpec
+   * @param clusterSpec The cluster to be added to this DomainSpec
    * @return this object
    */
-  public DomainSpec withCluster(Cluster cluster) {
-    clusters.add(cluster);
+  public DomainSpec withCluster(ClusterSpec clusterSpec) {
+    clusters.add(clusterSpec);
     return this;
   }
 
@@ -1099,9 +1099,9 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  Cluster getCluster(String clusterName) {
+  ClusterSpec getCluster(String clusterName) {
     if (clusterName != null) {
-      for (Cluster c : clusters) {
+      for (ClusterSpec c : clusters) {
         if (clusterName.equals(c.getClusterName())) {
           return c;
         }
@@ -1134,7 +1134,7 @@ public class DomainSpec extends BaseConfiguration {
     return managedServers;
   }
 
-  public List<Cluster> getClusters() {
+  public List<ClusterSpec> getClusters() {
     return clusters;
   }
 
@@ -1169,46 +1169,46 @@ public class DomainSpec extends BaseConfiguration {
           getClusterLimit(clusterName));
     }
 
-    private boolean hasReplicaCount(Cluster cluster) {
-      return cluster != null && cluster.getReplicas() != null;
+    private boolean hasReplicaCount(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.getReplicas() != null;
     }
 
-    private boolean hasMaxUnavailable(Cluster cluster) {
-      return cluster != null && cluster.getMaxUnavailable() != null;
+    private boolean hasMaxUnavailable(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.getMaxUnavailable() != null;
     }
 
-    private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
-      return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
+    private boolean hasAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.isAllowReplicasBelowMinDynClusterSize() != null;
     }
 
-    private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
-      return hasAllowReplicasBelowMinDynClusterSize(cluster)
-          ? cluster.isAllowReplicasBelowMinDynClusterSize()
+    private boolean isAllowReplicasBelowDynClusterSizeFor(ClusterSpec clusterSpec) {
+      return hasAllowReplicasBelowMinDynClusterSize(clusterSpec)
+          ? clusterSpec.isAllowReplicasBelowMinDynClusterSize()
           : DomainSpec.this.isAllowReplicasBelowMinDynClusterSize();
     }
 
-    private boolean hasMaxConcurrentStartup(Cluster cluster) {
-      return cluster != null && cluster.getMaxConcurrentStartup() != null;
+    private boolean hasMaxConcurrentStartup(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.getMaxConcurrentStartup() != null;
     }
 
-    private int getMaxConcurrentShutdownFor(Cluster cluster) {
-      return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
+    private int getMaxConcurrentShutdownFor(ClusterSpec clusterSpec) {
+      return Optional.ofNullable(clusterSpec).map(ClusterSpec::getMaxConcurrentShutdown)
           .orElse(getMaxClusterConcurrentShutdown());
     }
 
-    private int getMaxConcurrentStartupFor(Cluster cluster) {
-      return hasMaxConcurrentStartup(cluster)
-          ? cluster.getMaxConcurrentStartup()
+    private int getMaxConcurrentStartupFor(ClusterSpec clusterSpec) {
+      return hasMaxConcurrentStartup(clusterSpec)
+          ? clusterSpec.getMaxConcurrentStartup()
           : getMaxClusterConcurrentStartup();
     }
 
-    private int getMaxUnavailableFor(Cluster cluster) {
-      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+    private int getMaxUnavailableFor(ClusterSpec clusterSpec) {
+      return hasMaxUnavailable(clusterSpec) ? clusterSpec.getMaxUnavailable() : 1;
     }
 
-    private int getReplicaCountFor(Cluster cluster) {
-      return hasReplicaCount(cluster)
-          ? cluster.getReplicas()
+    private int getReplicaCountFor(ClusterSpec clusterSpec) {
+      return hasReplicaCount(clusterSpec)
+          ? clusterSpec.getReplicas()
           : Optional.ofNullable(replicas).orElse(0);
     }
 
@@ -1261,19 +1261,19 @@ public class DomainSpec extends BaseConfiguration {
       return getMaxConcurrentShutdownFor(getCluster(clusterName));
     }
 
-    private Cluster getOrCreateCluster(String clusterName) {
-      Cluster cluster = getCluster(clusterName);
-      if (cluster != null) {
-        return cluster;
+    private ClusterSpec getOrCreateCluster(String clusterName) {
+      ClusterSpec clusterSpec = getCluster(clusterName);
+      if (clusterSpec != null) {
+        return clusterSpec;
       }
 
       return createClusterWithName(clusterName);
     }
 
-    private Cluster createClusterWithName(String clusterName) {
-      Cluster cluster = new Cluster().withClusterName(clusterName);
-      clusters.add(cluster);
-      return cluster;
+    private ClusterSpec createClusterWithName(String clusterName) {
+      ClusterSpec clusterSpec = new ClusterSpec().withClusterName(clusterName);
+      clusters.add(clusterSpec);
+      return clusterSpec;
     }
   }
 }

@@ -9,13 +9,13 @@ public class EffectiveManagedServerSpecCommonImpl extends EffectiveServerSpecCom
    *
    * @param spec the domain specification
    * @param server the server whose configuration is to be returned
-   * @param cluster the cluster that this managed server belongs to
+   * @param clusterSpec the cluster that this managed server belongs to
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
    */
   public EffectiveManagedServerSpecCommonImpl(
-      DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
-    super(spec, server, cluster, clusterLimit);
+          DomainSpec spec, Server server, ClusterSpec clusterSpec, Integer clusterLimit) {
+    super(spec, server, clusterSpec, clusterLimit);
   }
 
   @Override
