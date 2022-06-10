@@ -1042,7 +1042,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobInProgressAndINullIntrospectVersionUnchanged_doNotCreateNewJob() {
+  void whenJobInProgressAndNullIntrospectVersionUnchanged_doNotCreateNewJob() {
     ignoreIntrospectorFailureLogs();
     ignoreJobCreatedAndDeletedLogs();
 
