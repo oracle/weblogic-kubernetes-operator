@@ -59,7 +59,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
-import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
@@ -68,9 +67,10 @@ import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CO
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_STARTED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
@@ -209,12 +209,12 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenConversionWebhookCreated_logStartupMessage() {
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CONVERSION_WEBHOOK_STARTED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WEBHOOK_STARTED);
 
     WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords,
-               containsInfo(CONVERSION_WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
+        containsInfo(WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
   }
 
   @Test
@@ -234,9 +234,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
     WebhookMain.createMain(buildProperties).completeBegin();
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 WEBHOOK_START_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   private void simulateMissingCRD(String resourceType) {
@@ -425,7 +425,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
+  void whenValidatingWebhookCreatedAfterFailure504_logStartupFailedMessage() {
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());

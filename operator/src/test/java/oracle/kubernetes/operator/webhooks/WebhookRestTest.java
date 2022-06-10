@@ -168,7 +168,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 CONVERSION_WEBHOOK_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
             CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
