@@ -2,7 +2,7 @@
 title: "Clean up"
 date: 2019-02-22T15:44:42-05:00
 draft: false
-weight: 5
+weight: 4
 ---
 
 
@@ -81,35 +81,4 @@ weight: 5
 
     ```shell
     $ kubectl delete namespace traefik
-    ```
-
-#### Delete the generated image and directories for tools and models.
-If you created an auxiliary image by following the steps in the optional
-[create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section,
-then use following commands to delete the generated image and directories for tools and models.
-
-1.  When no longer needed, delete the generated image by using the `docker rmi` command.
-    Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
-
-    ```shell
-    $ docker rmi quick-start-aux-image:v1
-    ```
-
-1.  When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
-
-    ```shell
-    $ rm -rf /tmp/quickstart/tools/
-    ```
-
-1.  When no longer needed, delete the directory where the WDT model file, archive, and variable files are copied.
-
-    ```shell
-    $ rm -rf /tmp/quickstart/models/
-    ```
-
-If you decided to use the supplied auxiliary image,
-then delete the downloaded image by using the `docker rmi` command. Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
-
-    ```shell
-    $ docker rmi ghcr.io/oracle/quick-start-aux-image:v1
     ```

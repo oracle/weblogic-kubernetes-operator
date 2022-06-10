@@ -24,12 +24,11 @@ weight: 2
         --set "kubernetes.namespaces={traefik,sample-domain1-ns}"
     ```
 
-  {{% notice note %}}
-  If you have reached this point while following the "Model in Image" sample, please
-  stop here and return to the [sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}).
-  {{% /notice %}}
+    {{% notice note %}} If you have reached this point while following the "Model in Image" sample, please
+    stop here and return to the [sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}).
+    {{% /notice %}}
 
-3. Accept the license agreement for WebLogic Server images.
+1. Accept the license agreement for WebLogic Server images.
 
     a. In a browser, go to the [Oracle Container Registry](https://container-registry.oracle.com/) (OCR) and
     log in using the Oracle Single Sign-On (SSO) authentication service. If you do not already have SSO credentials,
@@ -41,7 +40,7 @@ weight: 2
 
     d. Then, read and accept the license agreement.
 
-4. Create a `docker-registry` secret to enable pulling the example image from the registry.
+1. Create a `docker-registry` secret to enable pulling the example image from the registry.
 
    ```shell
    $ kubectl create secret docker-registry weblogic-repo-credentials \

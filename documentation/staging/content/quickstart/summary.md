@@ -1,36 +1,39 @@
 ---
-title: "Create an auxiliary image (optional)"
+title: "Under the covers"
 date: 2019-02-22T15:44:42-05:00
-draft: true
-weight: 3
+draft: false
+weight: 5
 ---
 
-#### Contents
-* [Introduction](#introduction)
-* [Prerequisites](#prerequisites)
-* [Create the auxiliary image](#create-the-auxiliary-image)
+- The Quick Start guide first installs the WebLogic Kubernetes operator, then creates a domain using the _Model in Image_ domain home source type.
 
-#### Introduction
-The quick start guide creates the domain using Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). The WebLogic domain configuration is specified using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate [auxiliary image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). The WDT model YAML file compactly defines a WebLogic domain and is a convenient and straightforward alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. In addition, the WDT model supports including application archives in a ZIP file which is also supplied using the auxiliary image.
+  - For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+  - To learn more about Model in Image domains, see the detailed [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user guide.
+  - Also, review a detailed Model in Image sample [here]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
 
-The instructions in the following sections will guide you, step-by-step, through the process of creating an auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). These let you understand and customize the auxiliary image creation steps.
+- The WebLogic domain configuration is specified using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate _auxiliary image_.
 
-The quick start guide also allows you to use a ready-made, off-the-shelf auxiliary image to get the domain up and running quickly. In that case, you can skip this section and revisit it at a later time to learn the auxiliary image creation process.
+  - The auxiliary image contains a WebLogic domain and WebLogic application defined by using WDT model YAML and application archive files.
+  - To learn more about auxiliary images, see the [user guide]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+  - If you want to step through the auxiliary image creation process, follow the instructions in the [Advanced do-it-yourself](#advanced-do-it-yourself) section.
 
+- The operator detects the domain resource and deploys the domain's WebLogic Administration Server and WebLogic Managed Server pods.
+
+
+### Advanced do-it-yourself
+
+The following instructions guide you, step-by-step, through the process of creating an auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
+These steps help you understand and customize auxiliary image creation.
 
 #### Prerequisites
-1. The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
+1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 
 1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to a new directory; for example, use directory `/tmp/quickstart/tools`. Both WDT and WIT are required to create your Model in Image auxiliary images.
 
    For example:
    ```
-   $ rm -rf /tmp/quickstart/tools
    $ mkdir -p /tmp/quickstart/tools
    ```
-   The `rm -rf` command is included in case there's an
-   old version of the tool from a
-   previous run of this quickstart tutorial.
 
    ```shell
    $ cd /tmp/quickstart/tools
@@ -66,9 +69,9 @@ The quick start guide also allows you to use a ready-made, off-the-shelf auxilia
    has a version of WDT in its `--type wdt --version latest` location, then the
    `cache addInstaller` command would fail.
    For more information about the WIT cache, see the
-   [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
+   [cache](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/) documentation.
 
-   These steps will install WIT to the `/tmp/quickstart/tools/imagetool` directory,
+   These steps install WIT to the `/tmp/quickstart/tools/imagetool` directory,
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
@@ -76,13 +79,8 @@ The quick start guide also allows you to use a ready-made, off-the-shelf auxilia
 
    For example:
    ```
-   $ rm -rf /tmp/quickstart/models
    $ mkdir -p /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF
    ```
-   The `rm -rf` command is included in case there's an
-   old version of the model or archive ZIP file from a
-   previous run of this sample.
-
 
    ```
    $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/model.yaml -o /tmp/quickstart/models/model.yaml
@@ -133,7 +131,7 @@ WDT model YAML files, application archives, and the WDT installation files:
     ```
 
 
-1. After the image is created, it should have the WDT executables in
+1. After the image is created, it will have the WDT executables in
    `/auxiliary/weblogic-deploy`, and WDT model, property, and archive
    files in `/auxiliary/models`. You can run `ls` in the Docker
    image to verify this:
