@@ -685,10 +685,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(DomainResource::getMetadata).orElse(null);
   }
 
-  Step createPopulatePacketServerMapsStep() {
-    return new PopulatePacketServerMapsStep();
-  }
-
   public static class PopulatePacketServerMapsStep extends Step {
 
     @Override
@@ -737,16 +733,6 @@ public class DomainProcessorImpl implements DomainProcessor {
    * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
    */
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
-
-    @Override
-    public boolean isExplicitRecheck() {
-      return false;
-    }
-
-    @Override
-    public DomainPresenceInfo getPresenceInfo() {
-      return liveInfo;
-    }
 
     private final DomainProcessorDelegate delegate;
     private DomainPresenceInfo liveInfo;
@@ -833,6 +819,11 @@ public class DomainProcessorImpl implements DomainProcessor {
       return willInterrupt;
     }
 
+    @Override
+    public boolean isExplicitRecheck() {
+      return explicitRecheck;
+    }
+
     /**
      * Modifies the factory to indicate that it should throw.
      * For unit testing only.
@@ -862,6 +853,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public void setInspectionRun() {
       inspectionRun = true;
+    }
+
+    @Override
+    public DomainPresenceInfo getPresenceInfo() {
+      return liveInfo;
     }
 
     @Override
@@ -974,7 +970,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       result.add(willThrow ? createThrowStep() : null);
       result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
-      result.add(createPopulatePacketServerMapsStep());
+      result.add(new PopulatePacketServerMapsStep());
       result.add(createStatusInitializationStep());
       if (deleting) {
         result.add(new StartPlanStep(liveInfo, createDomainDownPlan(liveInfo)));
