@@ -9,24 +9,24 @@ weight: 5
 
   - For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
   - To learn more about Model in Image domains, see the detailed [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user guide.
-  - Also, review a detailed Model in Image sample [here]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+  - Also recommended, review a detailed Model in Image sample [here]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
 
 - The WebLogic domain configuration is specified using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate _auxiliary image_.
 
   - The auxiliary image contains a WebLogic domain and WebLogic application defined by using WDT model YAML and application archive files.
   - To learn more about auxiliary images, see the [user guide]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-  - If you want to step through the auxiliary image creation process, follow the instructions in the [Advanced do-it-yourself](#advanced-do-it-yourself) section.
+  - If you want to step through the auxiliary image creation process, follow the instructions in the Advanced [do-it-yourself](#advanced-do-it-yourself) section.
 
 - The operator detects the domain resource and deploys the domain's WebLogic Administration Server and WebLogic Managed Server pods.
 
 
 ### Advanced do-it-yourself
 
-The following instructions guide you, step-by-step, through the process of creating an auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
+The following instructions guide you, step-by-step, through the process of creating the Quick Start auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
 These steps help you understand and customize auxiliary image creation.
 
 #### Prerequisites
-1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
+1. The `JAVA_HOME` environment variable must be set and must reference a valid [JDK](https://www.oracle.com/java/technologies/downloads/) 8 or 11 installation.
 
 1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to a new directory; for example, use directory `/tmp/quickstart/tools`. Both WDT and WIT are required to create your Model in Image auxiliary images.
 
@@ -104,7 +104,7 @@ These steps help you understand and customize auxiliary image creation.
 
 #### Create the auxiliary image
 
-Follow these steps to create an auxiliary image containing
+Follow these steps to create the auxiliary image containing
 WDT model YAML files, application archives, and the WDT installation files:
 
 
