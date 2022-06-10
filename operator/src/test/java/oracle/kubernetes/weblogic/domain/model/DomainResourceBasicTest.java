@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 

@@ -5,9 +5,9 @@ package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
 
-import oracle.kubernetes.weblogic.domain.model.EffectiveAdminServerSpec;
-import oracle.kubernetes.weblogic.domain.model.EffectiveClusterSpec;
-import oracle.kubernetes.weblogic.domain.model.EffectiveServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 
 /**
  * The interface for the class used by the domain model to return effective configurations to the
