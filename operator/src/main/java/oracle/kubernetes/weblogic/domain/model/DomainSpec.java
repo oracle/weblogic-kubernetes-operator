@@ -247,8 +247,8 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description(
       "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
-          + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
-          + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
+      + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
+      + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
   )
   @Range(minimum = 0)
   @Default(intDefault = 0)
@@ -256,9 +256,9 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description(
       "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
-          + "is being partially shut down by lowering its replica count. You can override this default on a "
-          + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
-          + "there is no limit. Defaults to 1."
+      + "is being partially shut down by lowering its replica count. You can override this default on a "
+      + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
+      + "there is no limit. Defaults to 1."
   )
   @Range(minimum = 0)
   @Default(intDefault = 1)
@@ -280,13 +280,12 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is present in the container image"
-          + " specified by the `image` field. PersistentVolume indicates that the domain home file system is located"
-          + " on a persistent volume. FromModel indicates that the domain home file system will be created"
-          + " and managed by the operator based on a WDT domain model."
-          + " Defaults to Image.")
-  @Default(strDefault = "Image")
+      "Domain home file system source type: Legal values: `Image`, `PersistentVolume`, `FromModel`."
+      + " `Image` indicates that the domain home file system is present in the container image"
+      + " specified by the `image` field. `PersistentVolume` indicates that the domain home file system is located"
+      + " on a persistent volume. `FromModel` indicates that the domain home file system will be created"
+      + " and managed by the operator based on a WDT domain model."
+      + " Defaults to `Image`, unless `configuration.model` is set, in which case the default is `FromModel`.")
   private DomainSourceType domainHomeSourceType;
 
   /**
@@ -297,10 +296,10 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. "
       + "Repeating introspection is required for the operator to recognize changes to the domain configuration, "
-      + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, "
-      + "or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs "
+      + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or "
+      + "to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs "
       + "automatically, without requiring change to this field, when servers are first started or restarted after a "
-      + "full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running "
+      + "full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running "
       + "server must be restarted because of changes to any of the fields listed here: "
       + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3ecc1d2ceff19d1c07027268133ec7bc2d5417e671270826ec53bc8bd753e2b0
+    weblogic.sha256: fbd54fc1481f20bd510baacc17f7d165129fc31e3d8aed9a0951f418851930b1
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -546,14 +546,15 @@ spec:
                 - BY_SERVERS
                 type: string
               domainHomeSourceType:
-                default: Image
-                description: 'Domain home file system source type: Legal values: Image,
-                  PersistentVolume, FromModel. Image indicates that the domain home
-                  file system is present in the container image specified by the `image`
-                  field. PersistentVolume indicates that the domain home file system
-                  is located on a persistent volume. FromModel indicates that the
-                  domain home file system will be created and managed by the operator
-                  based on a WDT domain model. Defaults to Image.'
+                description: 'Domain home file system source type: Legal values: `Image`,
+                  `PersistentVolume`, `FromModel`. `Image` indicates that the domain
+                  home file system is present in the container image specified by
+                  the `image` field. `PersistentVolume` indicates that the domain
+                  home file system is located on a persistent volume. `FromModel`
+                  indicates that the domain home file system will be created and managed
+                  by the operator based on a WDT domain model. Defaults to `Image`,
+                  unless `configuration.model` is set, in which case the default is
+                  `FromModel`.'
                 enum:
                 - Image
                 - PersistentVolume
@@ -6742,10 +6743,10 @@ spec:
                   is required for the operator to recognize changes to the domain
                   configuration, such as adding a new WebLogic cluster or Managed
                   Server instance, to regenerate configuration overrides, or to regenerate
-                  the WebLogic domain home when the `domainHomeSourceType` is FromModel.
+                  the WebLogic domain home when the `domainHomeSourceType` is `FromModel`.
                   Introspection occurs automatically, without requiring change to
                   this field, when servers are first started or restarted after a
-                  full domain shut down. For the FromModel `domainHomeSourceType`,
+                  full domain shut down. For the `FromModel` `domainHomeSourceType`,
                   introspection also occurs when a running server must be restarted
                   because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
                   See also `domains.spec.configuration.overrideDistributionStrategy`.'
