@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -30,6 +31,7 @@ public class Configuration {
   @Description("The introspector job timeout value in seconds. If this field is specified, "
           + "then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. "
           + "Defaults to 120 seconds.")
+  @Default(intDefault = 120)
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
@@ -41,6 +43,7 @@ public class Configuration {
       + "configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause "
       + "servers to restart when there are updated configuration overrides available. See also "
       + "`domains.spec.introspectVersion`. Defaults to DYNAMIC.")
+  @Default(strDefault = "DYNAMIC")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Description("The Istio service mesh integration settings.")

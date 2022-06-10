@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1Container;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -38,6 +39,7 @@ public class AuxiliaryImage {
           + "the default location, then the source directory is ignored. When specifying multiple auxiliary images, "
           + "ensure that only one of the images supplies a WDT install home; if more than one WDT install home is "
           + "provided, then the domain deployment will fail.")
+  @Default(strDefault = "/auxiliary/weblogic-deploy")
   private String sourceWDTInstallHome;
 
   @Description("The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will "
@@ -45,6 +47,7 @@ public class AuxiliaryImage {
           + "Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default "
           + "location, then the source directory is ignored. If specifying multiple auxiliary images with model files "
           + "in their respective `sourceModelHome` directories, then model files are merged.")
+  @Default(strDefault = "/auxiliary/models")
   private String sourceModelHome;
 
   public String getImage() {

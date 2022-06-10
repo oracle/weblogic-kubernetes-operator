@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
@@ -65,11 +66,13 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
+  @Default(strDefault = "IF_NEEDED")
   private ServerStartPolicy serverStartPolicy;
 
   @Description(
       "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
   @Range(minimum = 1)
+  @Default(intDefault = 1)
   private Integer maxUnavailable;
 
   @Description("Customization affecting Kubernetes Service generated for this WebLogic cluster.")
@@ -83,6 +86,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
       + "Defaults to true."
   )
+  @Default(boolDefault = true)
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
@@ -93,6 +97,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
   )
   @Range(minimum = 0)
+  @Default(intDefault = 0)
   private Integer maxConcurrentStartup;
 
   @Description(

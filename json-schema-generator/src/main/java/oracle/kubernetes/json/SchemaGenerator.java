@@ -37,8 +37,11 @@ public class SchemaGenerator {
 
   private static final String EXTERNAL_CLASS = "external";
 
+  private static final List<Class<?>> FLOATING_NUMBERS =
+      Arrays.asList(float.class, double.class);
+
   private static final List<Class<?>> PRIMITIVE_NUMBERS =
-      Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class);
+      Arrays.asList(byte.class, short.class, int.class, long.class);
 
   private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
@@ -47,6 +50,7 @@ public class SchemaGenerator {
   private static final String ARRAY = "array";
   private static final String STRING = "string";
   private static final String NUMBER = "number";
+  private static final String INTEGER = "integer";
   private static final String BOOLEAN = "boolean";
 
   // A map of classes to their $ref values
@@ -246,6 +250,7 @@ public class SchemaGenerator {
     if (isDeprecated(field)) {
       result.put("deprecated", "true");
     }
+    addDefault(result, field);
     if (isString(field.getType())) {
       addStringRestrictions(result, field);
     } else if (isNumeric(field.getType())) {
@@ -257,6 +262,10 @@ public class SchemaGenerator {
     return result;
   }
 
+  private boolean isBoolean(Class<?> type) {
+    return type.equals(Boolean.class) || type.equals(Boolean.TYPE);
+  }
+
   private boolean isString(Class<?> type) {
     return type.equals(String.class);
   }
@@ -266,7 +275,15 @@ public class SchemaGenerator {
   }
 
   private boolean isNumeric(Class<?> type) {
-    return Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type);
+    return isFloatingNumeric(type) || isScalarNumeric(type);
+  }
+
+  private boolean isFloatingNumeric(Class<?> type) {
+    return Double.class.isAssignableFrom(type) || Float.class.isAssignableFrom(type) || FLOATING_NUMBERS.contains(type);
+  }
+
+  private boolean isScalarNumeric(Class<?> type) {
+    return !isFloatingNumeric(type) && (Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type));
   }
 
   private boolean isMap(Class<?> type) {
@@ -344,15 +361,30 @@ public class SchemaGenerator {
 
   private void addRange(Map<String, Object> result, Field field) {
     Range annotation = field.getAnnotation(Range.class);
-    if (annotation == null) {
-      return;
+    if (annotation != null) {
+      if (annotation.minimum() > Integer.MIN_VALUE) {
+        result.put("minimum", annotation.minimum());
+      }
+      if (annotation.maximum() < Integer.MAX_VALUE) {
+        result.put("maximum", annotation.maximum());
+      }
     }
+  }
 
-    if (annotation.minimum() > Integer.MIN_VALUE) {
-      result.put("minimum", annotation.minimum());
-    }
-    if (annotation.maximum() < Integer.MAX_VALUE) {
-      result.put("maximum", annotation.maximum());
+  private void addDefault(Map<String, Object> result, Field field) {
+    Default annotation = field.getAnnotation(Default.class);
+    if (annotation != null) {
+      Object value = null;
+      if (isBoolean(field.getType())) {
+        value = annotation.boolDefault();
+      } else if (isNumeric(field.getType())) {
+        value = annotation.intDefault();
+      } else if (isString(field.getType()) || field.getType().isEnum()) {
+        value = annotation.strDefault();
+      }
+      if (value != null) {
+        result.put("default", value);
+      }
     }
   }
 
@@ -496,9 +528,11 @@ public class SchemaGenerator {
 
     @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
-      if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) {
+      if (isBoolean(type)) {
         result.put(TYPE, BOOLEAN);
-      } else if (isNumeric(type)) {
+      } else if (isScalarNumeric(type)) {
+        result.put(TYPE, INTEGER);
+      } else if (isFloatingNumeric(type)) {
         result.put(TYPE, NUMBER);
       } else if (isString(type)) {
         result.put(TYPE, STRING);

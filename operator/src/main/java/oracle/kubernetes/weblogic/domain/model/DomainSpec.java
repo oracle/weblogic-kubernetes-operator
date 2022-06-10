@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
@@ -84,6 +85,7 @@ public class DomainSpec extends BaseConfiguration {
       + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
+  @Default(strDefault = "IF_NEEDED")
   private ServerStartPolicy serverStartPolicy;
 
   /**
@@ -118,10 +120,11 @@ public class DomainSpec extends BaseConfiguration {
    * */
   @Description(
       "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. "
-        + "`FLAT` - all files directly in the `logHome` root directory. "
-        + "`BY_SERVERS` (default) - domain log files and `introspector.out` are at the `logHome` root level, "
+        + "`FLAT` specifies that all files are kept directly in the `logHome` root directory. "
+        + "`BY_SERVERS` specifies that domain log files and `introspector.out` are at the `logHome` root level, "
         + "all other files are organized under the respective server name logs directory  "
-        + "`logHome/servers/<server name>/logs`.")
+        + "`logHome/servers/<server name>/logs`. Defaults to `BY_SERVERS`.")
+  @Default(strDefault = "BY_SERVERS")
   private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
 
 
@@ -133,7 +136,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "Specifies whether the log home folder is enabled. "
           + "Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.")
-  private Boolean logHomeEnabled; // Boolean object, null if unspecified
+  private Boolean logHomeEnabled;
 
   /**
    * An optional, in-pod location for data storage of default and custom file stores. If dataHome is
@@ -149,6 +152,7 @@ public class DomainSpec extends BaseConfiguration {
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("Specifies whether the server .out file will be included in the Pod's log. "
       + "Defaults to true.")
+  @Default(boolDefault = true)
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
@@ -156,6 +160,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Specifies whether the server HTTP access log files will be written to the same "
       + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
       + "the directory configured in the WebLogic domain configuration. Defaults to true.")
+  @Default(boolDefault = true)
   private Boolean httpAccessLogInLogHome;
 
   /**
@@ -230,12 +235,14 @@ public class DomainSpec extends BaseConfiguration {
       + "because of their entries under `managedServers`, then a cluster may have more cluster members "
       + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
+  @Default(intDefault = 0)
   private Integer replicas;
 
   @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
       + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
       + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
   )
+  @Default(boolDefault = true)
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
@@ -244,6 +251,7 @@ public class DomainSpec extends BaseConfiguration {
           + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
   )
   @Range(minimum = 0)
+  @Default(intDefault = 0)
   private Integer maxClusterConcurrentStartup;
 
   @Description(
@@ -253,14 +261,17 @@ public class DomainSpec extends BaseConfiguration {
           + "there is no limit. Defaults to 1."
   )
   @Range(minimum = 0)
+  @Default(intDefault = 1)
   private Integer maxClusterConcurrentShutdown;
 
   @Description("The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.")
   @Range(minimum = 0)
+  @Default(intDefault = 120)
   private Long failureRetryIntervalSeconds;
 
   @Description("The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.")
   @Range(minimum = 0)
+  @Default(intDefault = 1440)
   private Long failureRetryLimitMinutes;
 
   /**
@@ -275,6 +286,7 @@ public class DomainSpec extends BaseConfiguration {
           + " on a persistent volume. FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
           + " Defaults to Image.")
+  @Default(strDefault = "Image")
   private DomainSourceType domainHomeSourceType;
 
   /**

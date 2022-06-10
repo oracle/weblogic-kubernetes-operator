@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
@@ -50,6 +51,7 @@ public abstract class BaseConfiguration {
   @Description(
       "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
           + "in the admin state. Defaults to RUNNING.")
+  @Default(strDefault = "RUNNING")
   private ServerStartState serverStartState;
 
   /**

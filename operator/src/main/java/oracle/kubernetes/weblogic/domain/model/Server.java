@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -24,6 +25,7 @@ public class Server extends BaseConfiguration {
       + "Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
+  @Default(strDefault = "IF_NEEDED")
   private ServerStartPolicy serverStartPolicy;
 
   protected Server getConfiguration() {
