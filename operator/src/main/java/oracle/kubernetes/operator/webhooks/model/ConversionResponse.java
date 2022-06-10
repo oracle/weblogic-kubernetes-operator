@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.model;
+package oracle.kubernetes.operator.webhooks.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,21 +22,13 @@ public class ConversionResponse {
     return uid;
   }
 
-  public void setUid(String uid) {
-    this.uid = uid;
-  }
-
   public ConversionResponse uid(String uid) {
     this.uid = uid;
     return this;
   }
 
-  public java.lang.Object getConvertedObjects() {
+  public List<Object> getConvertedObjects() {
     return convertedObjects;
-  }
-
-  public void setConvertedObjects(List<Object> convertedObjects) {
-    this.convertedObjects = convertedObjects;
   }
 
   public ConversionResponse convertedObjects(List<Object> convertedObjects) {
@@ -48,9 +40,6 @@ public class ConversionResponse {
     return result;
   }
 
-  public void setResult(Result result) {
-    this.result = result;
-  }
 
   public ConversionResponse result(Result result) {
     this.result = result;

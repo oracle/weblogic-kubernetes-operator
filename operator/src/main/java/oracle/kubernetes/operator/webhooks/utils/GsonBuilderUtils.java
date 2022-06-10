@@ -1,15 +1,15 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.utils;
+package oracle.kubernetes.operator.webhooks.utils;
 
 import java.time.OffsetDateTime;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
-import oracle.kubernetes.operator.http.rest.model.AdmissionReview;
-import oracle.kubernetes.operator.http.rest.model.ConversionReviewModel;
+import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
+import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
 
 public class GsonBuilderUtils {
 

@@ -26,11 +26,11 @@ import org.junit.jupiter.api.BeforeEach;
 import static oracle.kubernetes.operator.http.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 
 @SuppressWarnings("SameParameterValue")
-class RestTestBase extends JerseyTest {
+public class RestTestBase extends JerseyTest {
   private static final String ACCESS_TOKEN = "dummy token";
 
   private final List<Memento> mementos = new ArrayList<>();
-  final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   boolean includeRequestedByHeader = true;
   String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
 
@@ -48,7 +48,7 @@ class RestTestBase extends JerseyTest {
     mementos.forEach(Memento::revert);
   }
 
-  Invocation.Builder createRequest(String href) {
+  protected Invocation.Builder createRequest(String href) {
     Invocation.Builder request = target(href).request();
     if (authorizationHeader != null) {
       request.header(HttpHeaders.AUTHORIZATION, authorizationHeader);

@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest;
+package oracle.kubernetes.operator.webhooks;
 
 import java.util.List;
 
@@ -64,11 +64,11 @@ class AdmissionWebhookTestSetUp {
     return new ClusterStatus().withClusterName(clusterName).withMaximumReplicas(ORIGINAL_REPLICAS);
   }
 
-  static AuxiliaryImage createAuxiliaryImage(String imageName) {
+  public static AuxiliaryImage createAuxiliaryImage(String imageName) {
     return new AuxiliaryImage().image(imageName);
   }
 
-  static void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
+  public static void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
     domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
   }
 

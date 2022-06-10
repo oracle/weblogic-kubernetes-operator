@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ServerStartState;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
@@ -468,5 +469,11 @@ class DomainResourceBasicTest extends DomainTestBase {
         domain.getServer("server3", "cluster2").getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-verbose")))
             .and(hasItem(envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "))));
+  }
+
+  @Test
+  void whenDomainResourceInitialized_hasCorrectApiVersionAndKind() {
+    MatcherAssert.assertThat(domain.getApiVersion(), equalTo("weblogic.oracle/v9"));
+    MatcherAssert.assertThat(domain.getKind(), equalTo("Domain"));
   }
 }

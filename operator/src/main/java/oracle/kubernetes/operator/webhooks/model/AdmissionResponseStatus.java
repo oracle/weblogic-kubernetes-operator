@@ -1,9 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.model;
-
-import java.util.Objects;
+package oracle.kubernetes.operator.webhooks.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -51,23 +49,5 @@ public class AdmissionResponseStatus {
             + "code='" + code + '\''
             + ", message='" + message + '\''
             + '}';
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    AdmissionResponseStatus status = (AdmissionResponseStatus) o;
-    return Objects.equals(code, status.code)
-        && Objects.equals(message, status.message);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(code, message);
   }
 }

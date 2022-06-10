@@ -1,11 +1,12 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.http.rest.model;
+package oracle.kubernetes.operator.webhooks.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.KubernetesConstants;
 
 /**
  * AdmissionReview represents a request or a response object for an admission webhook call.
@@ -30,7 +31,7 @@ public class AdmissionReview {
   @SerializedName("apiVersion")
   @Expose
   @Description("The API version defines the versioned schema of this AdminssionReview. Required.")
-  private String apiVersion;
+  private String apiVersion = KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
