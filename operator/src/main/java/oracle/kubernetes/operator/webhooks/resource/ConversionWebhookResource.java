@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
 import oracle.kubernetes.operator.webhooks.model.Result;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
@@ -82,7 +82,7 @@ public class ConversionWebhookResource extends BaseResource {
 
   private void generateFailedEvent(Exception exception, String conversionRequest) {
     EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, exception.getMessage())
-        .resourceName(CONVERSION_WEBHOOK_COMPONENT).additionalMessage(conversionRequest);
+        .resourceName(OPERATOR_WEBHOOK_COMPONENT).additionalMessage(conversionRequest);
     createConversionWebhookEvent(eventData);
   }
 

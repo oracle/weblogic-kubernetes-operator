@@ -27,10 +27,10 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.WEBHOOK_STARTUP_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -51,7 +51,7 @@ public class WebhookMain extends BaseMain {
     }
 
     private void logStartup() {
-      LOGGER.info(MessageKeys.CONVERSION_WEBHOOK_STARTED, buildVersion,
+      LOGGER.info(MessageKeys.WEBHOOK_STARTED, buildVersion,
               deploymentImpl, deploymentBuildTime);
       LOGGER.info(MessageKeys.WEBHOOK_CONFIG_NAMESPACE, getWebhookNamespace());
     }
@@ -130,8 +130,8 @@ public class WebhookMain extends BaseMain {
 
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-      EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, e.getMessage())
-          .resourceName(CONVERSION_WEBHOOK_COMPONENT);
+      EventHelper.EventData eventData = new EventHelper.EventData(WEBHOOK_STARTUP_FAILED, e.getMessage())
+          .resourceName(OPERATOR_WEBHOOK_COMPONENT);
       createConversionWebhookEvent(eventData);
 
     }
@@ -202,7 +202,8 @@ public class WebhookMain extends BaseMain {
     public NextAction apply(Packet packet) {
       Exception failure = packet.getSpi(Exception.class);
       if (failure != null) {
-        return doNext(createEventStep(new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, failure.getMessage())
+        return doNext(createEventStep(new EventHelper.EventData(WEBHOOK_STARTUP_FAILED, failure.getMessage())
+            .resourceName(OPERATOR_WEBHOOK_COMPONENT)
             .namespace(getWebhookNamespace())), packet);
       }
       return doNext(getNext(), packet);

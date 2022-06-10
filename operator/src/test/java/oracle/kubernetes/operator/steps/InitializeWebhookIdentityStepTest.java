@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.DEFAULT_NAMESPACE;
@@ -52,7 +52,7 @@ class InitializeWebhookIdentityStepTest {
       new WebhookMain.CheckFailureAndCreateEventStep());
 
   public static final String NS = "namespace";
-  private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
+  private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
@@ -95,9 +95,10 @@ class InitializeWebhookIdentityStepTest {
     inMemoryFileSystem.defineFile("/deployment/secrets/webhookKey", "xyz");
 
     testSupport.runSteps(initializeWebhookIdentityStep);
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+
+    MatcherAssert.assertThat("Found 1 WEBHOOK_STARTUP_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -111,9 +112,9 @@ class InitializeWebhookIdentityStepTest {
 
     testSupport.runSteps(initializeWebhookIdentityStep);
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 WEBHOOK_STARTUP_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -144,9 +145,10 @@ class InitializeWebhookIdentityStepTest {
     inMemoryFileSystem.defineFile("/deployment/secrets/webhookKey", "xyz");
 
     testSupport.runSteps(initializeWebhookIdentityStep);
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+
+    MatcherAssert.assertThat("Found 1 WEBHOOK_STARTUP_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   @Test
