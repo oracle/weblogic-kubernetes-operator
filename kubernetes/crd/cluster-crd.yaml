@@ -10,6 +10,10 @@ metadata:
 spec:
   group: weblogic.oracle
   names:
+    categories:
+    - all
+    - oracle
+    - weblogic
     kind: Cluster
     plural: clusters
     shortNames:

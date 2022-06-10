@@ -403,7 +403,12 @@ public class CrdHelper {
           .plural(getPluralName())
           .singular(getSingularName())
           .kind(getKind())
-          .shortNames(getShortNames());
+          .shortNames(getShortNames())
+          .categories(getCategories());
+    }
+
+    private List<String> getCategories() {
+      return List.of("all", "oracle", "weblogic");
     }
 
     V1CustomResourceValidation createSchemaValidation() {
