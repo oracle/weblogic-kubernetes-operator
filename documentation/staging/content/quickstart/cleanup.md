@@ -2,7 +2,7 @@
 title: "Clean up"
 date: 2019-02-22T15:44:42-05:00
 draft: false
-weight: 8
+weight: 5
 ---
 
 
@@ -15,7 +15,7 @@ weight: 8
     $ kubectl delete ingressroute console -n sample-domain1-ns
     ```
 
-1.	Use `kubectl` to delete the domain: 
+1.	Use `kubectl` to delete the domain:
 
     ```shell
     $ kubectl delete domain sample-domain1 -n sample-domain1-ns
@@ -30,7 +30,7 @@ weight: 8
     $ kubectl get domains -n sample-domain1-ns
     ```
 
-1.	Remove the Kubernetes secret associated with the domain, using the following command:
+1.	Remove the Kubernetes Secrets associated with the domain:
 
     ```shell
     $ kubectl -n sample-domain1-ns delete secret sample-domain1-weblogic-credentials
@@ -101,16 +101,14 @@ then use following commands to delete the generated image and directories for to
     $ rm -rf /tmp/quickstart/tools/
     ```
 
-1.  When no longer needed, delete the directory where WDT model file, archive and variable files are copied.
+1.  When no longer needed, delete the directory where the WDT model file, archive, and variable files are copied.
 
     ```shell
     $ rm -rf /tmp/quickstart/models/
     ```
 
-If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional 
-[create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section,
-then delete the downloaded image by using the `docker rmi` command.
-1.  Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
+If you decided to use the supplied auxiliary image,
+then delete the downloaded image by using the `docker rmi` command. Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
 
     ```shell
     $ docker rmi ghcr.io/oracle/quick-start-aux-image:v1

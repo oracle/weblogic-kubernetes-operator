@@ -1,10 +1,9 @@
-+++
-title = "Create auxiliary image (optional)"
-date = 2019-02-23T16:45:16-05:00
-weight = 6
-pre = "<b> </b>"
-description = "Auxiliary images are used to supply WebLogic domain configuration using WDT model files and application archive files."
-+++
+---
+title: "Create an auxiliary image (optional)"
+date: 2019-02-22T15:44:42-05:00
+draft: false
+weight: 3
+---
 
 #### Contents
 * [Introduction](#introduction)
@@ -12,9 +11,9 @@ description = "Auxiliary images are used to supply WebLogic domain configuration
 * [Create the auxiliary image](#create-the-auxiliary-image)
 
 #### Introduction
-The quick start guide creates the domain using Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). The WebLogic domain configuration is specified using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate [auxiliary image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). The WDT model YAML file compactly defines a WebLogic domain and is a convenient and straightforward alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. In addition, the WDT model supports including application archives in a ZIP file which is also supplied using the auxiliary image. 
+The quick start guide creates the domain using Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). The WebLogic domain configuration is specified using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate [auxiliary image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). The WDT model YAML file compactly defines a WebLogic domain and is a convenient and straightforward alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. In addition, the WDT model supports including application archives in a ZIP file which is also supplied using the auxiliary image.
 
-The instructions in the following sections will guide you, step-by-step, through the process of creating an auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). These let you understand and customize the auxiliary image creation steps. 
+The instructions in the following sections will guide you, step-by-step, through the process of creating an auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). These let you understand and customize the auxiliary image creation steps.
 
 The quick start guide also allows you to use a ready-made, off-the-shelf auxiliary image to get the domain up and running quickly. In that case, you can skip this section and revisit it at a later time to learn the auxiliary image creation process.
 
