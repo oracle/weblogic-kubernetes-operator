@@ -134,6 +134,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR
 import static oracle.kubernetes.operator.KubernetesConstants.POD;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.ENVVARS;
@@ -2450,6 +2451,30 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                 )
         );
     return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
+  }
+
+  public static V1Affinity createDefaultAntiAffinity() {
+    return createDefaultAntiAffinity("test-cluster");
+  }
+
+  public static V1Affinity createDefaultAntiAffinity(String clusterName) {
+    V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
+        .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
+            new V1WeightedPodAffinityTerm()
+                .weight(100)
+                .podAffinityTerm(
+                    new V1PodAffinityTerm()
+                        .labelSelector(
+                            new V1LabelSelector()
+                                .addMatchExpressionsItem(
+                                    new V1LabelSelectorRequirement().key(CLUSTERNAME_LABEL).operator("In")
+                                        .addValuesItem(clusterName)
+                                )
+                        )
+                        .topologyKey("kubernetes.io/hostname")
+                )
+        );
+    return new V1Affinity().podAntiAffinity(podAntiAffinity);
   }
 
   static V1Toleration createToleration(String key, V1Toleration.OperatorEnum operator, String value,

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -12,6 +13,10 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
+import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
+import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -20,12 +25,14 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
@@ -50,6 +57,46 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
     this.server.fillInFrom(cluster);
     this.server.fillInFrom(spec);
     this.cluster = cluster;
+
+    if (cluster != null && cluster.getAffinity() == null) {
+      addDefaultAntiAffinityPolicy();
+    }
+  }
+
+  void addDefaultAntiAffinityPolicy() {
+    List<V1WeightedPodAffinityTerm> existingAffinityTerms =
+        Optional.ofNullable(this.server.getAffinity())
+        .map(a -> a.getPodAntiAffinity())
+        .map(aa -> aa.getPreferredDuringSchedulingIgnoredDuringExecution()).orElse(new ArrayList<>());
+    List<V1WeightedPodAffinityTerm> newAffinityTerms = new ArrayList<>();
+    if (existingAffinityTerms.isEmpty()) {
+      addDefaultAntiAffinityPolicy(newAffinityTerms);
+    } else if (!existingAffinityTerms.contains(getPodAntiAffinityTerm())) {
+      newAffinityTerms.addAll(existingAffinityTerms);
+      addDefaultAntiAffinityPolicy(newAffinityTerms);
+    }
+  }
+
+  private void addDefaultAntiAffinityPolicy(List<V1WeightedPodAffinityTerm> newAffinityTerms) {
+    newAffinityTerms.add(getPodAntiAffinityTerm());
+    this.server.setAffinity(Optional.ofNullable(this.server.getAffinity()).orElse(new V1Affinity())
+        .podAntiAffinity(new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(newAffinityTerms)));
+  }
+
+  private V1WeightedPodAffinityTerm getPodAntiAffinityTerm() {
+    return new V1WeightedPodAffinityTerm()
+        .weight(100)
+        .podAffinityTerm(
+            new V1PodAffinityTerm()
+                .labelSelector(
+                    new V1LabelSelector()
+                        .addMatchExpressionsItem(
+                            new V1LabelSelectorRequirement().key(CLUSTERNAME_LABEL).operator("In")
+                                .addValuesItem("$(CLUSTER_NAME)")
+                        )
+                )
+                .topologyKey("kubernetes.io/hostname")
+        );
   }
 
   private Server getBaseConfiguration(Server server) {

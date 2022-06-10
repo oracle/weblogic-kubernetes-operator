@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
@@ -1227,9 +1228,21 @@ public abstract class PodStepContext extends BasePodStepContext {
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
+    private boolean canAdjustHashForDefaultAffinityPolicy(V1Pod currentPod) {
+      V1Pod recipe = createPodRecipe();
+      V1Affinity affinity = currentPod.getSpec().getAffinity();
+      if (affinity == null) {
+        recipe.getSpec().affinity(null);
+      } else if (affinity.getPodAntiAffinity() == null) {
+        recipe.getSpec().getAffinity().podAntiAffinity(null);
+      }
+      return AnnotationHelper.getHash(currentPod).equals(AnnotationHelper.createHash(recipe));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       return requiredHash.equals(adjustedHash(currentPod, this::restoreMetricsExporterSidecarPortTcpMetrics))
-          || requiredHash.equals(adjustedHash(currentPod, this::convertAuxImagesInitContainerVolumeAndMounts));
+          || requiredHash.equals(adjustedHash(currentPod, this::convertAuxImagesInitContainerVolumeAndMounts))
+          || canAdjustHashForDefaultAffinityPolicy(currentPod);
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
