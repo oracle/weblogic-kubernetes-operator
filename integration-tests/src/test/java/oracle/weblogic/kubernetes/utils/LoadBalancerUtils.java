@@ -44,7 +44,11 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
@@ -72,6 +76,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -167,6 +172,8 @@ public class LoadBalancerUtils {
                                                   String chartVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
+    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
+        OCIR_REGISTRY, OCIR_SECRET_NAME, nginxNamespace);    
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
@@ -181,7 +188,10 @@ public class LoadBalancerUtils {
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
         .helmParams(nginxHelmParams);
-
+    
+    // set secret to pull images from private registry
+    nginxParams.imageRepoSecret(OCIR_SECRET_NAME);
+    
     if (nodeportshttp != 0 && nodeportshttps != 0) {
       nginxParams
           .nodePortsHttp(nodeportshttp)
