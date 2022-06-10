@@ -86,7 +86,7 @@ public abstract class EffectiveServerSpecBase implements EffectiveServerSpec {
 
   @Override
   public List<V1PodReadinessGate> getReadinessGates() {
-    return null;
+    return List.of();
   }
 
   @Override
@@ -111,12 +111,12 @@ public abstract class EffectiveServerSpecBase implements EffectiveServerSpec {
 
   @Override
   public List<V1Toleration> getTolerations() {
-    return null;
+    return List.of();
   }
 
   @Override
   public List<V1HostAlias> getHostAliases() {
-    return null;
+    return List.of();
   }
 
   @Override

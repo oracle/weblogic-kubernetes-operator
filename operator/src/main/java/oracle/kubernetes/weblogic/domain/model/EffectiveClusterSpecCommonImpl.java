@@ -9,9 +9,9 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpecBase;
 
-public class EffectiveClusterSpecCommonImpl extends EffectiveClusterSpec {
+public class EffectiveClusterSpecCommonImpl extends EffectiveClusterSpecBase {
   private final ClusterSpec clusterSpec;
 
   public EffectiveClusterSpecCommonImpl(DomainSpec spec, ClusterSpec clusterSpec) {

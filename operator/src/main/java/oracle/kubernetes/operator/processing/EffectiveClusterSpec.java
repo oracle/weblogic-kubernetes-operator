@@ -1,70 +1,57 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.processing;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
-public abstract class EffectiveClusterSpec {
-
+public interface EffectiveClusterSpec {
   /**
    * Returns the labels applied to the cluster service.
    *
    * @return a map of labels
    */
-  @Nonnull
-  public abstract Map<String, String> getClusterLabels();
+  Map<String, String> getClusterLabels();
 
   /**
    * Returns the annotations applied to the cluster service.
    *
    * @return a map of annotations
    */
-  @Nonnull
-  public abstract Map<String, String> getClusterAnnotations();
+  Map<String, String> getClusterAnnotations();
 
-  public abstract V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity();
+  V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity();
 
   /**
    * Returns the list of initContainers.
    *
    * @return a list of containers
    */
-  @Nonnull
-  public List<V1Container> getInitContainers() {
-    return Collections.emptyList();
-  }
+  List<V1Container> getInitContainers();
 
   /**
    * Returns the list of additional containers.
    *
    * @return a list of containers
    */
-  @Nonnull
-  public List<V1Container> getContainers() {
-    return Collections.emptyList();
-  }
+  List<V1Container> getContainers();
 
   /**
    * Returns the shutdown configuration.
    *
    * @return shutdown configuration
    */
-  @Nonnull
-  public abstract Shutdown getShutdown();
+  Shutdown getShutdown();
 
-  public abstract V1PodSpec.RestartPolicyEnum getRestartPolicy();
+  V1PodSpec.RestartPolicyEnum getRestartPolicy();
 
-  public abstract String getRuntimeClassName();
+  String getRuntimeClassName();
 
-  public abstract String getSchedulerName();
-
+  String getSchedulerName();
 }
