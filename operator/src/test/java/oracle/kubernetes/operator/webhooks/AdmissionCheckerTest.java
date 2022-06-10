@@ -1,73 +1,75 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.webhooks;
 
 import java.util.Collections;
 
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.utils.ValidationUtils;
+import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.BAD_REPLICAS;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.createAuxiliaryImage;
-import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.setAuxiliaryImages;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class ValidationUtilsTest {
-  private final DomainResource existingDomain = AdmissionWebhookTestSetUp.createDomain();
-  private final DomainResource proposedDomain = AdmissionWebhookTestSetUp.createDomain();
+class AdmissionCheckerTest {
+  private final DomainResource existingDomain = createDomain();
+  private final DomainResource proposedDomain = createDomain();
+  private final AdmissionChecker admissionChecker = new AdmissionChecker(existingDomain, proposedDomain);
 
   @Test
   void whenSameObject_returnTrue() {
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, existingDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenNothingChanged_returnTrue() {
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenNoSpec_returnTrue() {
     existingDomain.withSpec(null);
     proposedDomain.withSpec(null);
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenSpecRemoved_returnTrue() {
     proposedDomain.withSpec(null);
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenSpecAdded_returnTrue() {
     existingDomain.withSpec(null);
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenDomainReplicasChangedAloneValid_returnTrue() {
     proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenDomainReplicasChangedAloneAndInvalid_returnFalse() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -75,7 +77,7 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -83,7 +85,7 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -91,21 +93,21 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome("/home/dir");
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
   void whenOneClusterReplicasChangedAloneAndValid_returnTrue() {
     proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenOneClusterReplicasChangedAloneAndInvalid_returnFalse() {
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -113,14 +115,14 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
   void whenImageChangedAndOneClusterReplicasInvalid_returnTrue() {
     proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -128,7 +130,7 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -136,7 +138,7 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().getClusters().get(0).withReplicas(1);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -145,7 +147,7 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
     proposedDomain.getSpec().getClusters().get(1).withReplicas(GOOD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -154,14 +156,14 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
     proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeChanged_returnTrue() {
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -169,7 +171,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -178,7 +180,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -187,7 +189,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -197,7 +199,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -207,7 +209,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -216,7 +218,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -227,7 +229,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -238,7 +240,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -250,7 +252,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -262,7 +264,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
@@ -274,7 +276,7 @@ class ValidationUtilsTest {
     existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -283,6 +285,6 @@ class ValidationUtilsTest {
     proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
     setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
 
-    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
+    assertThat(admissionChecker.isProposedChangeAllowed(), equalTo(true));
   }
 }
