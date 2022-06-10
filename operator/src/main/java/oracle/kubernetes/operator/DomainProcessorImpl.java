@@ -1345,22 +1345,22 @@ public class DomainProcessorImpl implements DomainProcessor {
       scheduleDomainStatusUpdating(info);
       return doNext(packet);
     }
+  }
 
-    private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-      final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
-      final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
-      final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
+  private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+    final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
+    final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
+    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
-      registerStatusUpdater(
-          info.getNamespace(),
-          info.getDomainUid(),
-          delegate.scheduleWithFixedDelay(
-              () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
-                  .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
-              initialShortDelay,
-              initialShortDelay,
-              TimeUnit.SECONDS));
-    }
+    registerStatusUpdater(
+        info.getNamespace(),
+        info.getDomainUid(),
+        delegate.scheduleWithFixedDelay(
+            () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
+                .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
+            initialShortDelay,
+            initialShortDelay,
+            TimeUnit.SECONDS));
   }
 
   private static class DownHeadStep extends Step {
