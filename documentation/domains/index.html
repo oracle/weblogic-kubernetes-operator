@@ -998,7 +998,6 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "sourceWDTInstallHome": {
-          "default": "/auxiliary/weblogic-deploy",
           "description": "The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail.",
           "type": "string"
         },
@@ -1016,7 +1015,6 @@ window.onload = function() {
           ]
         },
         "sourceModelHome": {
-          "default": "/auxiliary/models",
           "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
           "type": "string"
         }

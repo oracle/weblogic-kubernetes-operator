@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: b6db3b3e9822f7012d6d98685621ac54bb4e9d2776188b2470d5bac17195c9d8
+    weblogic.sha256: 21dfb104e2a2abdc7df8457763825cce350daaf38dee97819d8d1052bce655fb
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -144,7 +144,6 @@ spec:
                           type: object
                           properties:
                             sourceWDTInstallHome:
-                              default: /auxiliary/weblogic-deploy
                               description: The source location of the WebLogic Deploy
                                 Tooling installation within the auxiliary image that
                                 will be made available in the `/aux/weblogic-deploy`
@@ -173,7 +172,6 @@ spec:
                               - IfNotPresent
                               - Never
                             sourceModelHome:
-                              default: /auxiliary/models
                               description: The source location of the WebLogic Deploy
                                 Tooling model home within the auxiliary image that
                                 will be made available in the `/aux/models` directory
