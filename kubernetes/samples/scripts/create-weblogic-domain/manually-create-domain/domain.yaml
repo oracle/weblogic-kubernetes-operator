@@ -27,7 +27,7 @@ spec:
   image: "my-domain1-image:1.0"
 
   # imagePullPolicy defaults to "Always" if image version is :latest
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: IfNotPresent
 
   # If credentials are needed to pull the image, uncomment this section and identify which
   # Secret contains the credentials for pulling an image:

@@ -8,7 +8,7 @@ metadata:
 spec:
   domainHomeSourceType: FromModel
   image: "BASE_IMAGE"
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: IfNotPresent
   webLogicCredentialsSecret: 
     name: weblogic-credentials
   imagePullSecrets:

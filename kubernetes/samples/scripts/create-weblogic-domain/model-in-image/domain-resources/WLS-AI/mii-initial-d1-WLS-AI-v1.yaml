@@ -23,7 +23,7 @@ spec:
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: IfNotPresent
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:

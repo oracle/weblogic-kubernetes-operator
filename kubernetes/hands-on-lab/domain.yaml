@@ -28,7 +28,7 @@ spec:
   image: "iad.ocir.io/weblogick8s/weblogic-operator-tutorial-store:1.0"
 
   # imagePullPolicy defaults to "Always" if image version is :latest
-  imagePullPolicy: "Always"
+  imagePullPolicy: Always
 
   # If credentials are needed to pull the image, uncomment this section and identify which
   # Secret contains the credentials for pulling an image:

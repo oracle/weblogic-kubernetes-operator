@@ -22,7 +22,7 @@ spec:
   image: "%WEBLOGIC_IMAGE%"
 
   # imagePullPolicy defaults to "Always" if image version is :latest
-  imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
+  imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
 
   # Identify which Secret contains the credentials for pulling an image
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
