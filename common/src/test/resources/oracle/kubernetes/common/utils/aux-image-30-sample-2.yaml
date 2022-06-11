@@ -142,7 +142,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: WLS
       modelHome: "/auxiliary/models"
       wdtInstallHome: "/auxiliary/weblogic-deploy"
 

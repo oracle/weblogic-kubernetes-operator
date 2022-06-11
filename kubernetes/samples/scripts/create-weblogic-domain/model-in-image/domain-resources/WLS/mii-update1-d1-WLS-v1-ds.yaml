@@ -127,7 +127,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: WLS
 
       # Optional configmap for additional models and variable files
       configMap: sample-domain1-wdt-config-map

@@ -62,7 +62,7 @@ spec:
   configuration:
     introspectorJobActiveDeadlineSeconds: 600
     model:
-      domainType: "WLS"
+      domainType: WLS
       modelHome: "/auxiliary/models"
       wdtInstallHome: "/auxiliary/weblogic-deploy"
       runtimeEncryptionSecret: encryptionsecret

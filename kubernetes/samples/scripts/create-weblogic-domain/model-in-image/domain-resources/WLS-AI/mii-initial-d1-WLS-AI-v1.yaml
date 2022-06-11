@@ -127,7 +127,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: WLS
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
       # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
