@@ -85,7 +85,7 @@ public class SchemaConversionUtils {
     convertDomainHomeInImageToDomainHomeSourceType(domain);
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
-    constantsToCamelCase(domain);
+    constantsToCamelCase(spec);
     domain.put("apiVersion", targetAPIVersion);
     LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -198,11 +198,17 @@ public class SchemaConversionUtils {
     }
   }
 
-  private void constantsToCamelCase(Map<String, Object> domain) {
-    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
-    if (domainSpec != null) {
-      domainSpec.computeIfPresent("serverStartPolicy", this::serverStartPolicyCamelCase);
-    }
+  private void constantsToCamelCase(Map<String, Object> spec) {
+    convertServerStartPolicy(spec);
+    Optional.ofNullable(getAdminServer(spec)).ifPresent(this::convertServerStartPolicy);
+    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+            convertServerStartPolicy((Map<String, Object>) cluster)));
+    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
+            convertServerStartPolicy((Map<String, Object>) managedServer)));
+  }
+
+  private void convertServerStartPolicy(Map<String, Object> spec) {
+    spec.computeIfPresent("serverStartPolicy", this::serverStartPolicyCamelCase);
   }
 
   private static final Map<String, String> serverStartPolicyMap = Map.of(
