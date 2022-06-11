@@ -8,7 +8,7 @@
 # $1 - Domain resource in json format
 # $2 - Name of cluster
 # $3 - Return value for cluster level server start policy.
-#      Legal return values are "NEVER" or "IF_NEEDED" or "".
+#      Legal return values are "Never" or "IfNeeded" or "".
 #
 getClusterPolicy() {
   local domainJson=$1
@@ -29,18 +29,18 @@ getClusterPolicy() {
 # Function to get server start policy at domain level
 # $1 - Domain resource in json format
 # $2 - Return value containing domain level server start policy.
-#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ADMIN_ONLY".
+#      Legal return values are "Never" or "IfNeeded" or "AdminOnly".
 #
 getDomainPolicy() {
   local domainJson=$1
   local __domainPolicy=$2
   local effectivePolicy=""
 
-  eval $__domainPolicy="IF_NEEDED"
+  eval $__domainPolicy="IfNeeded"
   domainPolicyCommand=".spec.serverStartPolicy"
   effectivePolicy=$(echo ${domainJson} | jq "${domainPolicyCommand}")
   if [[ "${effectivePolicy}" == "null" || "${effectivePolicy}" == "" ]]; then
-    effectivePolicy="IF_NEEDED"
+    effectivePolicy="IfNeeded"
   fi
   eval $__domainPolicy=${effectivePolicy}
 }
@@ -51,7 +51,7 @@ getDomainPolicy() {
 # $2 - Name of server
 # $3 - Name of cluster
 # $4 - Return value containing effective server start policy
-#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ALWAYS".
+#      Legal return values are "Never" or "IfNeeded" or "Always".
 #
 getEffectivePolicy() {
   local domainJson=$1
@@ -75,7 +75,7 @@ getEffectivePolicy() {
 # Function to get effective start policy of admin server
 # $1 - Domain resource in json format
 # $2 - Return value containing effective server start policy
-#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ALWAYS".
+#      Legal return values are "Never" or "IfNeeded" or "Always".
 #
 getEffectiveAdminPolicy() {
   local domainJson=$1
@@ -85,7 +85,7 @@ getEffectiveAdminPolicy() {
 
   __adminStartPolicy=$(echo ${domainJson} | jq -cr '(.spec.adminServer.serverStartPolicy)')
   getDomainPolicy "${domainJson}" __domainStartPolicy
-  if [[ "${__adminStartPolicy}" == "null" || "${__domainStartPolicy}" == "NEVER" ]]; then
+  if [[ "${__adminStartPolicy}" == "null" || "${__domainStartPolicy}" == "Never" ]]; then
     __adminStartPolicy="${__domainStartPolicy}"
   fi
   eval $__effectivePolicy="'${__adminStartPolicy}'"
@@ -96,7 +96,7 @@ getEffectiveAdminPolicy() {
 # $1 - Domain resource in json format
 # $2 - Name of server
 # $3 - Return value containing current server start policy
-#      Legal retrun values are "NEVER" or "IF_NEEDED", "ALWAYS" or "".
+#      Legal return values are "Never" or "IfNeeded", "Always" or "".
 #
 getServerPolicy() {
   local domainJson=$1
@@ -293,7 +293,7 @@ unsetServerStartPolicy() {
 # Function to create patch json to update cluster server start policy
 # $1 - Domain resource in json format
 # $2 - Name of cluster whose policy will be patched
-# $3 - policy value of "IF_NEEDED" or "NEVER"
+# $3 - policy value of "IfNeeded" or "Never"
 # $4 - Return value containing patch json string
 #
 createPatchJsonToUpdateClusterPolicy() {
@@ -364,7 +364,7 @@ createPatchJsonToUpdateReplicas() {
 
 #
 # Function to create patch json to update domain server start policy
-# $1 - policy value of "IF_NEEDED" or "NEVER"
+# $1 - policy value of "IfNeeded" or "Never"
 # $2 - Return value containing patch json string
 #
 createPatchJsonToUpdateDomainPolicy() {
@@ -412,14 +412,14 @@ getSortedListOfServers() {
       sortedServers+=(${localServerName})
     done
   fi
-  # Create arrays of ALWAYS policy servers and other servers
+  # Create arrays of Always policy servers and other servers
   for localServerName in ${sortedServers[@]:-}; do
     getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
     # Update policy when server name matches current server and unsetting
     if [[ "${withPolicy}" == "UNSET" && "${serverName}" == "${localServerName}" ]]; then
       policy=UNSET
     fi
-    if [ "${policy}" == "ALWAYS" ]; then
+    if [ "${policy}" == "Always" ]; then
       sortedByAlwaysServers+=(${localServerName})
     else
       otherServers+=(${localServerName})
@@ -676,9 +676,9 @@ shouldStart() {
   local replicaCount=$3 
   local __result=$4
 
-  if [ "$policy" == "ALWAYS" ]; then
+  if [ "$policy" == "Always" ]; then
     eval $__result=true
-  elif [ "$policy" == "NEVER" ]; then
+  elif [ "$policy" == "Never" ]; then
     eval $__result=false
   elif [ "${currentReplicas}" -lt "${replicaCount}" ]; then
     eval $__result=true

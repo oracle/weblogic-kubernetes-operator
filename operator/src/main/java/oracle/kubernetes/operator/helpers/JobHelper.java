@@ -133,8 +133,8 @@ public class JobHelper {
       return domainShouldStart() || willStartACluster() || willStartAServer();
     }
 
-    // If Domain level Server Start Policy = ALWAYS, IF_NEEDED or ADMIN_ONLY we most likely will start a server pod.
-    // NOTE: that will not be the case if every cluster and server is marked as NEVER.
+    // If Domain level Server Start Policy = Always, IfNeeded or AdminOnly we most likely will start a server pod.
+    // NOTE: that will not be the case if every cluster and server is marked as Never.
     private boolean domainShouldStart() {
       return shouldStart(getDomainSpec().getServerStartPolicy());
     }

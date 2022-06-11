@@ -138,7 +138,7 @@ Elements related to security:
 
 Elements related to domain [startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}):
 
-* `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED.
+* `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded.
 * `serverStartState`: The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.
 * `restartVersion`: Changes to this field cause the [operator to restart]({{< relref "/managing-domains/domain-lifecycle/startup#restarting-servers" >}}) WebLogic Server instances.
 * `replicas`: The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field.
@@ -323,7 +323,7 @@ spec:
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: "IF_NEEDED"
+  serverStartPolicy: "IfNeeded"
   serverPod:
     env:
     - name: JAVA_OPTIONS

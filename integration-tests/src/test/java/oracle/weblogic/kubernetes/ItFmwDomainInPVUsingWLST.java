@@ -243,7 +243,7 @@ class ItFmwDomainInPVUsingWLST {
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

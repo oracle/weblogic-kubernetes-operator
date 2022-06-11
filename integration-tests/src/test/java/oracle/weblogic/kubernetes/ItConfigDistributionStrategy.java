@@ -928,7 +928,7 @@ class ItConfigDistributionStrategy {
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -999,7 +999,7 @@ class ItConfigDistributionStrategy {
         domainNamespace);
   }
 
-  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
+  //restart pods by manipulating the serverStartPolicy to Never and IfNeeded
   private void restartDomain() {
     logger.info("Restarting domain {0}", domainNamespace);
     shutdownDomain(domainUid, domainNamespace);

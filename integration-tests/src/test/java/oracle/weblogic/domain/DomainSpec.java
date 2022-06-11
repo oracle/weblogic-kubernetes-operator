@@ -36,7 +36,7 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+          + "Legal values are AdminOnly, Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty(

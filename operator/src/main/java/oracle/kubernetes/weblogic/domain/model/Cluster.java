@@ -56,17 +56,17 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   /**
    * Tells the operator whether the customer wants the server to be running. For clustered servers -
-   * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
+   * the operator will start it if the policy is Always or the policy is IfNeeded and the server
    * needs to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
   @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "Legal values are Never, or IfNeeded. Defaults to IfNeeded. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  @Default(strDefault = "IF_NEEDED")
+  @Default(strDefault = "IfNeeded")
   private ServerStartPolicy serverStartPolicy;
 
   @Description(

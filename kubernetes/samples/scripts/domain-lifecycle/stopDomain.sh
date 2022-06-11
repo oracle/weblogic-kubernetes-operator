@@ -12,7 +12,7 @@ usage() {
   cat << EOF
 
   This script stops a deployed WebLogic domain by patching
-  'spec.serverStartPolicy' attribute of domain resource to 'NEVER'.
+  'spec.serverStartPolicy' attribute of domain resource to 'Never'.
   This change will cause the operator to initiate shutdown of the
   domain's WebLogic server instance pods if the pods are running.
  
@@ -81,15 +81,15 @@ fi
 
 getDomainPolicy "${domainJson}" serverStartPolicy
 
-if [ "${serverStartPolicy}" == 'NEVER' ]; then 
-  printInfo "No changes needed, exiting. The domain '${domainUid}' is already stopped or stopping. The value of 'spec.serverStartPolicy' attribute on the domain resource is 'NEVER'."
+if [ "${serverStartPolicy}" == 'Never' ]; then
+  printInfo "No changes needed, exiting. The domain '${domainUid}' is already stopped or stopping. The value of 'spec.serverStartPolicy' attribute on the domain resource is 'Never'."
   exit 0
 fi
 
-printInfo "Patching domain '${domainUid}' in namespace '${domainNamespace}' from serverStartPolicy='${serverStartPolicy}' to 'NEVER'."
+printInfo "Patching domain '${domainUid}' in namespace '${domainNamespace}' from serverStartPolicy='${serverStartPolicy}' to 'Never'."
 
-createPatchJsonToUpdateDomainPolicy "NEVER" patchJson
+createPatchJsonToUpdateDomainPolicy "Never" patchJson
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'NEVER' start policy!"
+printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'Never' start policy!"

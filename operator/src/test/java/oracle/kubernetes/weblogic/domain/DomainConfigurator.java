@@ -308,7 +308,7 @@ public abstract class DomainConfigurator {
   public abstract void withDefaultLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold);
 
   /**
-   * Sets the default server start policy ("ALWAYS", "NEVER" or "IF_NEEDED") for the domain.
+   * Sets the default server start policy ("Always", "Never" or "IFNeeded") for the domain.
    *
    * @param startPolicy the new default policy
    * @return this object

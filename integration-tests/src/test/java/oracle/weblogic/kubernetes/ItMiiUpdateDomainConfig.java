@@ -836,7 +836,7 @@ class ItMiiUpdateDomainConfig {
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
                     .logHome("/shared/logs")
-                    .serverStartPolicy("IF_NEEDED")
+                    .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")

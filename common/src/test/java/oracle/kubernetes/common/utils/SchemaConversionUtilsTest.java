@@ -256,4 +256,11 @@ class SchemaConversionUtilsTest {
     getMapAtPath(v8Domain, "spec.configuration").put("secrets", secrets);
   }
 
+  @Test
+  void testV8DomainWithSeverStartPolicy_changeToCamelCase() {
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasJsonPath("$.spec.serverStartPolicy", equalTo("IfNeeded")));
+  }
+
 }

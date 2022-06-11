@@ -250,7 +250,7 @@ class ItKubernetesDomainEvents {
         = "[{\"op\": \"add\",\"path\": \""
         + "/spec/managedServers/-\", \"value\": "
         + "{\"serverName\" : \"nonexisting-ms\", "
-        + "\"serverStartPolicy\": \"IF_NEEDED\","
+        + "\"serverStartPolicy\": \"IfNeeded\","
         + "\"serverStartState\": \"RUNNING\"}"
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
@@ -311,7 +311,7 @@ class ItKubernetesDomainEvents {
   /**
    * Test the following domain events are logged when domain resource goes through introspector failure.
    * Patch the domain resource to shutdown servers.
-   * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IF_NEEDED.
+   * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IfNeeded.
    * Verifies Failed event with Aborted failure reason is logged.
    * Cleanup by patching the domain resource to a valid location and introspectVersion to bring up all servers again.
    */
@@ -321,7 +321,7 @@ class ItKubernetesDomainEvents {
     try {
       V1Patch patch;
       String patchStr;
-      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER",
+      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "Never",
           spec -> spec.failureRetryLimitMinutes(2L));
       assertNotNull(domain, " Can't create domain resource");
 
@@ -343,7 +343,7 @@ class ItKubernetesDomainEvents {
               + " Changed and Failed events are logged");
       patchStr = "[{\"op\": \"replace\", "
               + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
@@ -736,7 +736,7 @@ class ItKubernetesDomainEvents {
   private  static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
 
     assertDoesNotThrow(() -> createDomain(domainNamespace, domainUid, pvName, pvcName,
-            "IF_NEEDED"),
+            "IfNeeded"),
             "Failed to create domain custom resource");
 
     // verify the admin server service created

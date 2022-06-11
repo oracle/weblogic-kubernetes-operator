@@ -949,13 +949,13 @@ window.onload = function() {
           "type": "boolean"
         },
         "serverStartPolicy": {
-          "default": "IF_NEEDED",
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "ALWAYS",
-            "NEVER",
-            "IF_NEEDED"
+            "Always",
+            "Never",
+            "IfNeeded"
           ]
         },
         "adminService": {
@@ -1058,12 +1058,12 @@ window.onload = function() {
           "type": "string"
         },
         "serverStartPolicy": {
-          "default": "IF_NEEDED",
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "NEVER",
-            "IF_NEEDED"
+            "Never",
+            "IfNeeded"
           ]
         },
         "restartVersion": {
@@ -1409,13 +1409,13 @@ window.onload = function() {
           "minimum": 0.0
         },
         "serverStartPolicy": {
-          "default": "IF_NEEDED",
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IFNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "NEVER",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "Never",
+            "IfNeeded",
+            "AdminOnly"
           ]
         },
         "livenessProbeCustomScript": {
@@ -1617,13 +1617,13 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
-          "default": "IF_NEEDED",
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "ALWAYS",
-            "NEVER",
-            "IF_NEEDED"
+            "Always",
+            "Never",
+            "IfNeeded"
           ]
         },
         "restartVersion": {

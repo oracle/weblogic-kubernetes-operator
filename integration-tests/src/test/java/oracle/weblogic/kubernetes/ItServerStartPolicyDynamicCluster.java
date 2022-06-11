@@ -185,21 +185,21 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-   * Verify ALWAYS serverStartPolicy (dynamic cluster) overrides replica count.
+   * Verify Always serverStartPolicy (dynamic cluster) overrides replica count.
    * The dynamic cluster has a second managed server(managed-server2)
-   * with serverStartPolicy set to IF_NEEDED. Initially, the server will not
+   * with serverStartPolicy set to IfNeeded. Initially, the server will not
    * come up since the replica count for the cluster is set to 1.
-   * Update the ServerStartPolicy for managed-server2 to ALWAYS
+   * Update the ServerStartPolicy for managed-server2 to Always
    * by patching the resource definition with
-   *  spec/managedServers/2/serverStartPolicy set to ALWAYS.
+   *  spec/managedServers/2/serverStartPolicy set to Always.
    * Make sure that managed server managed-server2 is up and running
    * Stop the managed server by patching the resource definition
-   *   with spec/managedServers/2/serverStartPolicy set to IF_NEEDED.
+   *   with spec/managedServers/2/serverStartPolicy set to IfNeeded.
    * Make sure the specified managed server is stopped as per replica count.
    */
   @Order(2)
   @Test
-  @DisplayName("Start/stop dynamic cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
+  @DisplayName("Start/stop dynamic cluster managed server by updating serverStartPolicy to Always/IfNeeded")
   void testDynamicClusterStartServerAlways() {
     String serverName = "managed-server2";
     String serverPodName = domainUid + "-" + serverName;
@@ -208,17 +208,17 @@ class ItServerStartPolicyDynamicCluster {
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/managedServers/2/serverStartPolicy", "ALWAYS"),
-        "Failed to patch dynamic managedServers's serverStartPolicy to ALWAYS");
-    logger.info("Dynamic managed server is patched to set the serverStartPolicy to ALWAYS");
+        "/spec/managedServers/2/serverStartPolicy", "Always"),
+        "Failed to patch dynamic managedServers's serverStartPolicy to Always");
+    logger.info("Dynamic managed server is patched to set the serverStartPolicy to Always");
     checkPodReadyAndServiceExists(serverPodName,
         domainUid, domainNamespace);
     logger.info("Second managed server in dynamic cluster is RUNNING");
 
-    // Stop the server by changing the serverStartPolicy to IF_NEEDED
+    // Stop the server by changing the serverStartPolicy to IfNeeded
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/managedServers/2/serverStartPolicy", "IF_NEEDED"),
-        "Failed to patch dynamic managedServers's serverStartPolicy to IF_NEEDED");
+        "/spec/managedServers/2/serverStartPolicy", "IfNeeded"),
+        "Failed to patch dynamic managedServers's serverStartPolicy to IfNeeded");
     logger.info("Domain resource patched to shutdown the second managed server in dynamic cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -227,7 +227,7 @@ class ItServerStartPolicyDynamicCluster {
 
   /**
    * Add the first managed server (managed-server1) in a dynamic
-   * cluster with serverStartPolicy IF_NEEDED.
+   * cluster with serverStartPolicy IfNeeded.
    * Initially, the server will come up since the replica count is set to 1.
    * (a) Shutdown config-cluster-server1 using the sample script stopServer.sh
    *     with keep_replica_constant option set to true
@@ -334,8 +334,8 @@ class ItServerStartPolicyDynamicCluster {
 
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-          "/spec/adminServer/serverStartPolicy", "NEVER"),
-          "Failed to patch adminServer's serverStartPolicy to NEVER");
+          "/spec/adminServer/serverStartPolicy", "Never"),
+          "Failed to patch adminServer's serverStartPolicy to Never");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
@@ -365,8 +365,8 @@ class ItServerStartPolicyDynamicCluster {
 
       // (re)Start Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-          "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+          "/spec/adminServer/serverStartPolicy", "IfNeeded"),
+          "Failed to patch adminServer's serverStartPolicy to IfNeeded");
       checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(10, MINUTES).await(),
@@ -380,8 +380,8 @@ class ItServerStartPolicyDynamicCluster {
     } finally {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-          "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+          "/spec/adminServer/serverStartPolicy", "IfNeeded"),
+          "Failed to patch adminServer's serverStartPolicy to IfNeeded");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)

@@ -135,8 +135,8 @@ public abstract class BaseConfiguration {
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
+   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
    * to be started to get to the cluster's replica count..
    *
    * @since 2.0

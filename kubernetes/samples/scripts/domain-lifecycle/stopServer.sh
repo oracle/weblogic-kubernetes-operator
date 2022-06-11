@@ -5,30 +5,30 @@
 
 # This script stops a WebLogic managed server in a domain. 
 # Internal code notes :-
-# - If server start policy is NEVER or policy is IF_NEEDED and the server is not 
+# - If server start policy is Never or policy is IfNeeded and the server is not
 #   selected to start based on the replica count, it means that server is already 
 #   stopped or is in the process of stopping. In this case, script exits without 
 #   making any changes.
 #
 # - If server is part of a cluster and keep_replica_constant option is false (the default)
-#   and the effective start policy of the server is IF_NEEDED and decreasing replica count 
+#   and the effective start policy of the server is IfNeeded and decreasing replica count
 #   will naturally stop the server, the script decreases the replica count. 
 #
 # - If server is part of a cluster and keep_replica_constant option is false (the default)
 #   and unsetting policy and decreasing the replica count will stop the server, script 
 #   unsets the policy and decreases replica count. For e.g. if replica count is 2 and 
-#   start policy of server2 is ALWAYS, unsetting policy and decreasing replica count will 
+#   start policy of server2 is Always, unsetting policy and decreasing replica count will
 #   stop server2.
 #
 # - If option to keep replica count constant ('-k') is selected and unsetting start policy
 #   will naturally stop the server, script will unset the policy. For e.g. if replica count
-#   is 1 and start policy  of server2 is ALWAYS, unsetting policy will stop server2.
+#   is 1 and start policy  of server2 is Always, unsetting policy will stop server2.
 #
-# - If above conditions are not true, it implies that server policy is IF_NEEDED and server 
-#   is selected to start. In this case, script sets start policy to NEVER. For e.g. replica 
+# - If above conditions are not true, it implies that server policy is IfNeeded and server
+#   is selected to start. In this case, script sets start policy to Never. For e.g. replica
 #   count is 2 and server1 needs to be stopped. The script also decrements the replica count 
 #   by default. If option to keep replica count constant ('-k') is selected, it only sets the 
-#   start policy to NEVER.
+#   start policy to Never.
 # 
 
 script="${BASH_SOURCE[0]}"
@@ -82,7 +82,7 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 keepReplicaConstant=false
 verboseMode=false
-serverStartPolicy=NEVER
+serverStartPolicy=Never
 serverStarted=""
 effectivePolicy=""
 managedServerPolicy=""
@@ -151,8 +151,8 @@ fi
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
-    if [ "${effectivePolicy}" == "NEVER" ]; then
-      printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'NEVER'."
+    if [ "${effectivePolicy}" == "Never" ]; then
+      printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'Never'."
       exit 0
     fi
 fi
@@ -160,14 +160,14 @@ fi
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
-  if [[ "${effectivePolicy}" == "NEVER" || "${effectivePolicy}" == "ADMIN_ONLY" || "${serverStarted}" != "true" ]]; then
+  if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
     printInfo "No changes needed, exiting. Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
     exit 0
   fi
 else
   # Server is an independent managed server. 
-  if [ "${effectivePolicy}" == "NEVER" ] || [[ "${effectivePolicy}" == "ADMIN_ONLY" && "${isAdminServer}" != 'true' ]]; then
-    printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'NEVER' or 'ADMIN_ONLY'."
+  if [ "${effectivePolicy}" == "Never" ] || [[ "${effectivePolicy}" == "AdminOnly" && "${isAdminServer}" != 'true' ]]; then
+    printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'Never' or 'AdminOnly'."
     exit 0
   fi
 fi
@@ -183,14 +183,14 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" == 'false' ]]; then
   fi
 fi
 
-# Create server start policy patch with NEVER value
+# Create server start policy patch with Never value
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" neverStartPolicyPatch
 getServerPolicy "${domainJson}" "${serverName}" managedServerPolicy
 if [ -n "${managedServerPolicy}" ]; then
   effectivePolicy=${managedServerPolicy}
 fi
-if [[ -n "${clusterName}" && "${effectivePolicy}" == "ALWAYS" ]]; then
-  # Server is part of a cluster and start policy is ALWAYS. 
+if [[ -n "${clusterName}" && "${effectivePolicy}" == "Always" ]]; then
+  # Server is part of a cluster and start policy is Always.
   withReplicas="CONSTANT"
   withPolicy="UNSET"
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenAlwaysPolicyReset
@@ -212,34 +212,34 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
     printInfo "Updating replica count for cluster ${clusterName} to ${replicaCount}."
     createPatchJsonToUpdateReplica "${replicaPatch}" patchJson
-  elif [[ ${managedServerPolicy} == "ALWAYS" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
+  elif [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
      and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
   else
-    # Patch server start policy to NEVER and decrement replica count
-    printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'NEVER' \
+    # Patch server start policy to Never and decrement replica count
+    printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Never' \
       and decrementing replica count for cluster '${clusterName}' to ${replicaCount}."
     createPatchJsonToUpdateReplicaAndPolicy "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Server is part of a cluster and replica count needs to stay constant
-  if [[ ${managedServerPolicy} == "ALWAYS" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
+  if [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server start policy is AlWAYS and server shuts down by unsetting the policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
     createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   else
-    # Patch server start policy to NEVER
-    printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
+    # Patch server start policy to Never
+    printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'Never'."
     createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
   fi
 elif [ "${isAdminServer}" == 'true' ]; then
-  printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
+  printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'Never'."
   createPatchJsonToUpdateAdminPolicy "${domainJson}" "${serverStartPolicy}" patchJson
 else
-  # Server is an independent managed server, patch server start policy to NEVER
-  printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
+  # Server is an independent managed server, patch server start policy to Never
+  printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'Never'."
   createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
 fi
 

@@ -85,6 +85,7 @@ public class SchemaConversionUtils {
     convertDomainHomeInImageToDomainHomeSourceType(domain);
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
+    constantsToCamelCase(domain);
     domain.put("apiVersion", targetAPIVersion);
     LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -195,6 +196,23 @@ public class SchemaConversionUtils {
         configuration.putIfAbsent("secrets", existing);
       }
     }
+  }
+
+  private void constantsToCamelCase(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
+    if (domainSpec != null) {
+      domainSpec.computeIfPresent("serverStartPolicy", this::serverStartPolicyCamelCase);
+    }
+  }
+
+  private static final Map<String, String> serverStartPolicyMap = Map.of(
+      "ALWAYS", "Always", "NEVER", "Never", "IF_NEEDED", "IfNeeded", "ADMIN_ONLY", "AdminOnly");
+
+  private Object serverStartPolicyCamelCase(String key, Object value) {
+    if (value instanceof String) {
+      return serverStartPolicyMap.get((String) value);
+    }
+    return value;
   }
 
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {

@@ -406,7 +406,7 @@ class ItElasticLoggingFluentd {
                 .name(adminSecretName)
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .withFluentdConfiguration(fluentdSpecification)
             .serverPod(new ServerPod()
                 .volumes(Arrays.asList(

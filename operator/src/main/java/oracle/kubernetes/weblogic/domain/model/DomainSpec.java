@@ -74,18 +74,18 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
+   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
    * to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
   @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "Legal values are AdminOnly, Never, or IFNeeded. Defaults to IfNeeded. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  @Default(strDefault = "IF_NEEDED")
+  @Default(strDefault = "IfNeeded")
   private ServerStartPolicy serverStartPolicy;
 
   /**

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 48ad0b01ffaae726548454f4f44bc6a2b33bd413cf4389e54b619d21f024273b
+    weblogic.sha256: c33d6897ea1b6036ce0df9f2237acc5c6b1014087d25162b14fff49c77320acb
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -61,13 +61,13 @@ spec:
                   the Domain to which this Cluster is associated with.
                 type: string
               serverStartPolicy:
-                default: IF_NEEDED
+                default: IfNeeded
                 description: 'The strategy for deciding whether to start a WebLogic
-                  Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
-                  to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                  Server instance. Legal values are Never, or IfNeeded. Defaults to
+                  IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                 enum:
-                - NEVER
-                - IF_NEEDED
+                - Never
+                - IfNeeded
                 type: string
               restartVersion:
                 description: 'Changes to this field cause the operator to restart

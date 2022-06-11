@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 21dfb104e2a2abdc7df8457763825cce350daaf38dee97819d8d1052bce655fb
+    weblogic.sha256: 432a3c90de20fd0a6ff56ff52a2dd26e40af9c08103d0ecc4eff41f7740f799e
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3516,14 +3516,14 @@ spec:
                       when using the 'kubectl port-forward' pattern. Defaults to true.
                     type: boolean
                   serverStartPolicy:
-                    default: IF_NEEDED
+                    default: IfNeeded
                     description: 'The strategy for deciding whether to start a WebLogic
-                      Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
-                      Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                      Server instance. Legal values are Always, Never, or IfNeeded.
+                      Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                     enum:
-                    - ALWAYS
-                    - NEVER
-                    - IF_NEEDED
+                    - Always
+                    - Never
+                    - IfNeeded
                     type: string
                   adminService:
                     description: Customization affecting the generation of a NodePort
@@ -3653,14 +3653,14 @@ spec:
                         with.
                       type: string
                     serverStartPolicy:
-                      default: IF_NEEDED
+                      default: IfNeeded
                       description: 'The strategy for deciding whether to start a WebLogic
-                        Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
-                        to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                        Server instance. Legal values are Never, or IfNeeded. Defaults
+                        to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                       type: string
                       enum:
-                      - NEVER
-                      - IF_NEEDED
+                      - Never
+                      - IfNeeded
                     restartVersion:
                       description: 'Changes to this field cause the operator to restart
                         WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
@@ -6715,14 +6715,14 @@ spec:
                 minimum: 0
                 type: integer
               serverStartPolicy:
-                default: IF_NEEDED
+                default: IfNeeded
                 description: 'The strategy for deciding whether to start a WebLogic
-                  Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
-                  Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                  Server instance. Legal values are AdminOnly, Never, or IFNeeded.
+                  Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                 enum:
-                - NEVER
-                - IF_NEEDED
-                - ADMIN_ONLY
+                - Never
+                - IfNeeded
+                - AdminOnly
                 type: string
               livenessProbeCustomScript:
                 description: Full path of an optional liveness probe custom script
@@ -12605,15 +12605,15 @@ spec:
                                     - podAffinityTerm
                                     - weight
                     serverStartPolicy:
-                      default: IF_NEEDED
+                      default: IfNeeded
                       description: 'The strategy for deciding whether to start a WebLogic
-                        Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
-                        Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                        Server instance. Legal values are Always, Never, or IfNeeded.
+                        Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                       type: string
                       enum:
-                      - ALWAYS
-                      - NEVER
-                      - IF_NEEDED
+                      - Always
+                      - Never
+                      - IfNeeded
                     restartVersion:
                       description: 'Changes to this field cause the operator to restart
                         WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
