@@ -129,7 +129,7 @@ Sometimes you need to completely shut down the domain (for example, take it out 
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "Never"
+    serverStartPolicy: Never
     ...
 ```
 
@@ -140,7 +140,7 @@ Sometimes you want to start the Administration Server only, that is, take the Ma
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "AdminOnly"
+    serverStartPolicy: AdminOnly
     ...
 ```
 
@@ -153,7 +153,7 @@ To shut down a cluster (for example, take it out of service), add it to the Doma
   spec:
     clusters:
     - clusterName: "cluster1"
-      serverStartPolicy: "Never"
+      serverStartPolicy: Never
     ...
 ```
 
@@ -166,7 +166,7 @@ To shut down a specific standalone server, add it to the Domain and set its `ser
   spec:
     managedServers:
     - serverName: "server1"
-      serverStartPolicy: "Never"
+      serverStartPolicy: Never
     ...
 ```
 {{% notice note %}}
@@ -192,7 +192,7 @@ This is done by adding the server to the Domain and setting its `serverStartPoli
   spec:
     managedServers:
     - serverName: "cluster1_server1"
-      serverStartPolicy: "Always"
+      serverStartPolicy: Always
     ...
 ```
 
@@ -428,7 +428,7 @@ To manually initiate a full domain restart:
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "Never"
+    serverStartPolicy: Never
     ...
 ```
 
@@ -442,7 +442,7 @@ have to specify the `serverStartPolicy` as the default value is `IfNeeded`.
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "IfNeeded"
+    serverStartPolicy: IfNeeded
     ...
 ```
 

@@ -263,7 +263,7 @@ spec:
   # - "Never" will not start any server in the domain
   # - "AdminOnly" will start up only the administration server (no managed servers will be started)
   # - "IfNeeded" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
-  serverStartPolicy: "IfNeeded"
+  serverStartPolicy: IfNeeded
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:

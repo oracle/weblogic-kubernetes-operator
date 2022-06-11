@@ -15,7 +15,7 @@ spec:
   - name: base-images-repo-secret
   - name: test-images-repo-secret
   includeServerOutInPodLog: true
-  serverStartPolicy: "IF_NEEDED"
+  serverStartPolicy: IF_NEEDED
   auxiliaryImageVolumes:
   - name: auxiliaryImageVolume
     mountPath: "/auxiliary"

@@ -323,7 +323,7 @@ spec:
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: "IfNeeded"
+  serverStartPolicy: IfNeeded
   serverPod:
     env:
     - name: JAVA_OPTIONS

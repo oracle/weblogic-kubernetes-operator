@@ -494,7 +494,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # - "Never" will not start any server in the domain
       # - "AdminOnly" will start up only the administration server (no managed servers will be started)
       # - "IfNeeded" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-      serverStartPolicy: "IfNeeded"
+      serverStartPolicy: IfNeeded
 
       # Settings for all server pods in the domain including the introspector job pod
       serverPod:
