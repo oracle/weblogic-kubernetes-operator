@@ -241,7 +241,7 @@ validateServerStartPolicy() {
       ;;
       "Always")
       ;;
-      "IFNeeded")
+      "IfNeeded")
       ;;
       "AdminOnly")
       ;;

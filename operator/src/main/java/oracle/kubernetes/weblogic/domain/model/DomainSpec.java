@@ -82,7 +82,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
   @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are AdminOnly, Never, or IFNeeded. Defaults to IfNeeded. "
+      + "Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   @Default(strDefault = "IfNeeded")

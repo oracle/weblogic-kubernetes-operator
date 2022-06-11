@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 432a3c90de20fd0a6ff56ff52a2dd26e40af9c08103d0ecc4eff41f7740f799e
+    weblogic.sha256: 8871408d40d428f1c152671b761c6ed8472c01471934a77675d5e4931a74b339
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -6717,7 +6717,7 @@ spec:
               serverStartPolicy:
                 default: IfNeeded
                 description: 'The strategy for deciding whether to start a WebLogic
-                  Server instance. Legal values are AdminOnly, Never, or IFNeeded.
+                  Server instance. Legal values are AdminOnly, Never, or IfNeeded.
                   Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                 enum:
                 - Never

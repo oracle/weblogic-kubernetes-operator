@@ -43,7 +43,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of ClusterIP Services for WebLogic Server instances. |
-| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IFNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
+| `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING. |
 | `webLogicCredentialsSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields. |
 
