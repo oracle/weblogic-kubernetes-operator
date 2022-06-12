@@ -39,7 +39,7 @@ WebLogic Server log files are placed in a subdirectory `<domain.spec.domainHome>
 
 When `logHomeEnabled` is `true`,
 WebLogic Server log files are placed in a subdirectory `<domain.spec.logHome>/servers/<server name>/logs`
-by default, or alternatively placed in subdirectory `<domain.spec.logHome>` when `logHomeLayout` is set to `FLAT`.
+by default, or alternatively placed in subdirectory `<domain.spec.logHome>` when `logHomeLayout` is set to `Flat`.
 
 For example, here is the default layout of the log files under the `logHome` root:
 

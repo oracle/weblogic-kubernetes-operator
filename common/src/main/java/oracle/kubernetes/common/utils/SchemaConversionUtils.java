@@ -174,13 +174,16 @@ public class SchemaConversionUtils {
     }
   }
 
+  private Map<String, Object> getOrCreateConfiguration(Map<String, Object> domainSpec) {
+    return (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+  }
+
   private void moveConfigOverrides(Map<String, Object> domain) {
     Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
     if (domainSpec != null) {
       Object existing = domainSpec.remove("configOverrides");
       if (existing != null) {
-        Map<String, Object> configuration =
-            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        Map<String, Object> configuration = getOrCreateConfiguration(domainSpec);
         configuration.putIfAbsent("overridesConfigMap", existing);
       }
     }
@@ -191,8 +194,7 @@ public class SchemaConversionUtils {
     if (domainSpec != null) {
       Object existing = domainSpec.remove("configOverrideSecrets");
       if (existing != null) {
-        Map<String, Object> configuration =
-            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        Map<String, Object> configuration = getOrCreateConfiguration(domainSpec);
         configuration.putIfAbsent("secrets", existing);
       }
     }
@@ -207,6 +209,8 @@ public class SchemaConversionUtils {
             convertServerStartPolicy((Map<String, Object>) managedServer)));
 
     Optional.ofNullable(getConfiguration(spec)).ifPresent(this::convertOverrideDistributionStrategy);
+
+    convertLogHomeLayout(spec);
   }
 
   private void convertServerStartPolicy(Map<String, Object> spec) {
@@ -233,6 +237,20 @@ public class SchemaConversionUtils {
   private Object overrideDistributionStrategyCamelCase(String key, Object value) {
     if (value instanceof String) {
       return overrideDistributionStrategyMap.get(value);
+    }
+    return value;
+  }
+
+  private void convertLogHomeLayout(Map<String, Object> configuration) {
+    configuration.computeIfPresent("logHomeLayout", this::logHomeLayoutCamelCase);
+  }
+
+  private static final Map<String, String> logHomeLayoutMap = Map.of(
+          "FLAT", "Flat", "BY_SERVERS", "ByServers");
+
+  private Object logHomeLayoutCamelCase(String key, Object value) {
+    if (value instanceof String) {
+      return logHomeLayoutMap.get(value);
     }
     return value;
   }

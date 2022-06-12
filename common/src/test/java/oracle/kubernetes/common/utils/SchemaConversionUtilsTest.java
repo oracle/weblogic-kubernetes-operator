@@ -326,4 +326,14 @@ class SchemaConversionUtilsTest {
     assertThat(converter.getDomain(),
             hasJsonPath("$.spec.configuration.overrideDistributionStrategy", equalTo("OnRestart")));
   }
+
+  @Test
+  void testV8DomainWithLogHomeLayout_changeToCamelCase() {
+    getMapAtPath(v8Domain, "spec").put("logHomeLayout", "BY_SERVERS");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
+  }
 }

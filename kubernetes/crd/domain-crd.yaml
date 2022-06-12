@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: cd0cf91efcd51e169bcb1e54dfa7efea1eb5e5051d38aed30a6b15b91f040630
+    weblogic.sha256: e6aea5431922398f328870e441512ec371d5f8b7e7f5a5a34fb81e38568df5d7
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -535,17 +535,17 @@ spec:
                   if `domainHomeSourceType` is FromModel.
                 type: string
               logHomeLayout:
-                default: BY_SERVERS
+                default: ByServers
                 description: Control how log files under `logHome` are organized when
-                  logHome is set and `logHomeEnabled` is true. `FLAT` specifies that
-                  all files are kept directly in the `logHome` root directory. `BY_SERVERS`
+                  logHome is set and `logHomeEnabled` is true. `Flat` specifies that
+                  all files are kept directly in the `logHome` root directory. `ByServers`
                   specifies that domain log files and `introspector.out` are at the
                   `logHome` root level, all other files are organized under the respective
                   server name logs directory  `logHome/servers/<server name>/logs`.
-                  Defaults to `BY_SERVERS`.
+                  Defaults to `ByServers`.
                 enum:
-                - FLAT
-                - BY_SERVERS
+                - Flat
+                - ByServers
                 type: string
               domainHomeSourceType:
                 description: 'Domain home file system source type: Legal values: `Image`,

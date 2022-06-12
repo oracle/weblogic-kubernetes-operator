@@ -303,7 +303,7 @@ class ItLogHomeFlatStructure {
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
                     .logHome("/shared/logs")
-                    .logHomeLayout("FLAT")
+                    .logHomeLayout("Flat")
                     .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()

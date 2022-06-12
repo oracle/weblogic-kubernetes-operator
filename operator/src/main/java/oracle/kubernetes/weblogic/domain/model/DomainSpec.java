@@ -115,16 +115,16 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The log files layout under `logHome`.
-   *   FLAT - all files is in one directory
-   *   BY_SERVERS - log files are organized under loghome/servers/server name/logs.
+   *   Flat - all files is in one directory
+   *   ByServers - log files are organized under loghome/servers/server name/logs.
    * */
   @Description(
       "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. "
-        + "`FLAT` specifies that all files are kept directly in the `logHome` root directory. "
-        + "`BY_SERVERS` specifies that domain log files and `introspector.out` are at the `logHome` root level, "
+        + "`Flat` specifies that all files are kept directly in the `logHome` root directory. "
+        + "`ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, "
         + "all other files are organized under the respective server name logs directory  "
-        + "`logHome/servers/<server name>/logs`. Defaults to `BY_SERVERS`.")
-  @Default(strDefault = "BY_SERVERS")
+        + "`logHome/servers/<server name>/logs`. Defaults to `ByServers`.")
+  @Default(strDefault = "ByServers")
   private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
 
 
