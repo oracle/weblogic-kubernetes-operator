@@ -822,17 +822,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
-        if (!delegate.isNamespaceRunning(getNamespace())) {
-          return;
-        }
-
-        if (shouldContinue()) {
-          internalMakeRightDomainPresence();
-        } else {
-          logNotStartingDomain();
-        }
-      }
+      DomainProcessorImpl.this.runMakeRight(this);
     }
 
     @Override
