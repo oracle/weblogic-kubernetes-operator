@@ -1102,7 +1102,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private class DomainPlan {
+  private static class DomainPlan {
 
     private final MakeRightDomainOperation operation;
     private final DomainProcessorDelegate delegate;
@@ -1122,6 +1122,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void execute() {
+      LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, operation.getPresenceInfo().getDomainUid());
+
       if (operation.isWillInterrupt()) {
         gate.startFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
       } else {
@@ -1175,7 +1177,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
       if (delegate.mayRetry(domainPresenceInfo)) {
-        MakeRightRetry retry = new MakeRightRetry(domainPresenceInfo);
+        final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
         gate.getExecutor().schedule(retry::execute, getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
       }
     }
@@ -1185,20 +1187,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .getExistingDomainPresenceInfo(presenceInfo.getNamespace(), presenceInfo.getDomainUid());
     }
 
-    class MakeRightRetry {
-      private final DomainPresenceInfo presenceInfo;
-
-      MakeRightRetry(DomainPresenceInfo presenceInfo) {
-        this.presenceInfo = presenceInfo;
-      }
-
-      void execute() {
-        try (ThreadLoggingContext ignored = presenceInfo.setThreadContext()) {
-          presenceInfo.setPopulated(false);
-          createMakeRightOperation(presenceInfo).withDeleting(operation.isDeleting()).withExplicitRecheck().execute();
-        }
-      }
-    }
   }
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
@@ -1217,13 +1205,13 @@ public class DomainProcessorImpl implements DomainProcessor {
             managedServerStrategy);
 
     return Step.chain(
-          createDomainUpInitialStep(info),
+          createDomainUpInitialStep(),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
 
-  private Step createDomainUpInitialStep(DomainPresenceInfo info) {
-    return new UpHeadStep(info);
+  private Step createDomainUpInitialStep() {
+    return new UpHeadStep();
   }
 
   private static class UnregisterStep extends Step {
@@ -1331,20 +1319,10 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static class UpHeadStep extends Step {
-    private final DomainPresenceInfo info;
-
-    UpHeadStep(DomainPresenceInfo info) {
-      this(info, null);
-    }
-
-    UpHeadStep(DomainPresenceInfo info, Step next) {
-      super(next);
-      this.info = info;
-    }
 
     @Override
     public NextAction apply(Packet packet) {
-      info.setDeleting(false);
+      DomainPresenceInfo.fromPacket(packet).ifPresent(dpi -> dpi.setDeleting(false));
       return doNext(packet);
     }
   }
