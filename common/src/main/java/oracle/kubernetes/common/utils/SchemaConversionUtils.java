@@ -205,6 +205,8 @@ public class SchemaConversionUtils {
             convertServerStartPolicy((Map<String, Object>) cluster)));
     Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
             convertServerStartPolicy((Map<String, Object>) managedServer)));
+
+    Optional.ofNullable(getConfiguration(spec)).ifPresent(this::convertOverrideDistributionStrategy);
   }
 
   private void convertServerStartPolicy(Map<String, Object> spec) {
@@ -221,8 +223,26 @@ public class SchemaConversionUtils {
     return value;
   }
 
+  private void convertOverrideDistributionStrategy(Map<String, Object> configuration) {
+    configuration.computeIfPresent("overrideDistributionStrategy", this::overrideDistributionStrategyCamelCase);
+  }
+
+  private static final Map<String, String> overrideDistributionStrategyMap = Map.of(
+          "DYNAMIC", "Dynamic", "ON_RESTART", "OnRestart");
+
+  private Object overrideDistributionStrategyCamelCase(String key, Object value) {
+    if (value instanceof String) {
+      return overrideDistributionStrategyMap.get(value);
+    }
+    return value;
+  }
+
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
     return (List<Object>) spec.get("auxiliaryImageVolumes");
+  }
+
+  private Map<String, Object> getConfiguration(Map<String, Object> spec) {
+    return (Map<String, Object>) spec.get("configuration");
   }
 
   private Map<String, Object> getAdminServer(Map<String, Object> spec) {

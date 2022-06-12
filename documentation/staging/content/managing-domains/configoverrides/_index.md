@@ -499,9 +499,9 @@ __Debugging steps:__
 * If WebLogic Server instance Pods are already running when introspection is repeated and this new introspection generates different configuration overrides then:
   * After the operator updates the ConfigMap, Kubernetes modifies the mounted files in running containers to match the new contents of the ConfigMap.
   * The rate of this periodic sync of ConfigMap data by `kubelet` is configurable, but defaults to 10 seconds.
-  * If `overridesDistributionStrategy` is DYNAMIC, then the `livenessProbe.sh` script, which is already periodically invoked by Kubernetes, will perform the same actions as `startServer.sh` to update the files in `optconfig`.
+  * If `overridesDistributionStrategy` is `Dynamic`, then the `livenessProbe.sh` script, which is already periodically invoked by Kubernetes, will perform the same actions as `startServer.sh` to update the files in `optconfig`.
   * WebLogic Server instances monitor the files in `optconfig` and dynamically update the active configuration based on the current contents of the configuration overrides files.
-  * Otherwise, if the `overridesDistributionStrategy` is ON_RESTART, then the updated files at the ConfigMap's mount point are not copied to `optconfig` while the WebLogic Server instance is running and, therefore, don't affect the active configuration.
+  * Otherwise, if the `overridesDistributionStrategy` is `OnRestart`, then the updated files at the ConfigMap's mount point are not copied to `optconfig` while the WebLogic Server instance is running and, therefore, don't affect the active configuration.
 
 {{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source `passwordEncrypted` attribute is dynamic while the `Url` attribute is non-dynamic.
 {{% /notice %}}

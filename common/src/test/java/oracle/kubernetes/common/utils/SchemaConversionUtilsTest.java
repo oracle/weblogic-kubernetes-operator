@@ -316,4 +316,14 @@ class SchemaConversionUtilsTest {
     assertThat(converter.getDomain(),
             hasJsonPath("$.spec.adminServer.serverStartPolicy", equalTo("IfNeeded")));
   }
+
+  @Test
+  void testV8DomainWithOverrideDistributionStrategy_changeToCamelCase() {
+    getMapAtPath(v8Domain, "spec.configuration").put("overrideDistributionStrategy", "ON_RESTART");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.configuration.overrideDistributionStrategy", equalTo("OnRestart")));
+  }
 }

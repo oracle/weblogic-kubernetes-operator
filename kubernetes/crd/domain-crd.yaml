@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 8871408d40d428f1c152671b761c6ed8472c01471934a77675d5e4931a74b339
+    weblogic.sha256: cd0cf91efcd51e169bcb1e54dfa7efea1eb5e5051d38aed30a6b15b91f040630
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -77,22 +77,22 @@ spec:
                 description: Models and overrides affecting the WebLogic domain configuration.
                 properties:
                   overrideDistributionStrategy:
-                    default: DYNAMIC
+                    default: Dynamic
                     description: Determines how updated configuration overrides are
                       distributed to already running WebLogic Server instances following
                       introspection when the `domainHomeSourceType` is PersistentVolume
                       or Image. Configuration overrides are generated during introspection
                       from Secrets, the `overridesConfigMap` field, and WebLogic domain
-                      topology. Legal values are DYNAMIC, which means that the operator
+                      topology. Legal values are `Dynamic`, which means that the operator
                       will distribute updated configuration overrides dynamically
-                      to running servers, and ON_RESTART, which means that servers
+                      to running servers, and `OnRestart`, which means that servers
                       will use updated configuration overrides only after the server's
-                      next restart. The selection of ON_RESTART will not cause servers
+                      next restart. The selection of `OnRestart` will not cause servers
                       to restart when there are updated configuration overrides available.
-                      See also `domains.spec.introspectVersion`. Defaults to DYNAMIC.
+                      See also `domains.spec.introspectVersion`. Defaults to `Dynamic`.
                     enum:
-                    - DYNAMIC
-                    - ON_RESTART
+                    - Dynamic
+                    - OnRestart
                     type: string
                   opss:
                     description: Settings for OPSS security.

@@ -358,7 +358,7 @@ class ItSystemResOverrides {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC"))
+                .overrideDistributionStrategy("Dynamic"))
             .domainUid(domainUid)
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
