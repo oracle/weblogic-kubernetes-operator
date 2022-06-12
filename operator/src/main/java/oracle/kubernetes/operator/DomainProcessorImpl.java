@@ -295,19 +295,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public void runMakeRight(MakeRightDomainOperation operation) {
-    final DomainPresenceInfo presenceInfo = operation.getPresenceInfo();
-    try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(presenceInfo)) {
-      if (!this.delegate.isNamespaceRunning(presenceInfo.getNamespace())) {
-        return;
-      }
-
-      if (shouldContinue(operation)) {
-        new DomainPlan(operation, this.delegate).execute();
-        scheduleDomainStatusUpdating(presenceInfo);
-      } else {
-        logNotStartingDomain(presenceInfo.getDomainUid());
-      }
-    }
   }
 
   /**
@@ -822,7 +809,18 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      DomainProcessorImpl.this.runMakeRight(this);
+      MakeRightDomainOperation operation = this;
+      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(operation.getPresenceInfo())) {
+        if (!delegate.isNamespaceRunning(operation.getPresenceInfo().getNamespace())) {
+          return;
+        }
+
+        if (shouldContinue()) {
+          internalMakeRightDomainPresence();
+        } else {
+          logNotStartingDomain();
+        }
+      }
     }
 
     @Override
@@ -857,11 +855,13 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean shouldContinue() {
-      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+      MakeRightDomainOperation operation = this;
+      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(
+          operation.getPresenceInfo().getNamespace(), operation.getPresenceInfo().getDomainUid());
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (isDomainProcessingAborted(liveInfo) && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
+      } else if (isDomainProcessingAborted(liveInfo) && versionsUnchanged(liveInfo, cachedInfo)) {
         return false;
       } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
@@ -877,14 +877,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private boolean isDomainProcessingAborted(DomainPresenceInfo info) {
-      return Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(DomainResource::getStatus)
-              .map(DomainStatus::isAborted)
-              .orElse(false);
-    }
-
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
       return explicitRecheck || isGenerationChanged(liveInfo, cachedInfo);
     }
@@ -896,10 +888,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(DomainStatus::getMessage)
           .orElse(null);
       return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
-    }
-
-    private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
-      return cachedInfo == null || cachedInfo.getDomain() == null;
     }
 
     private void logNotStartingDomain() {
@@ -984,28 +972,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private boolean shouldContinue(MakeRightDomainOperation operation) {
-    DomainPresenceInfo info = operation.getPresenceInfo();
-    DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(info);
-
-    if (isNewDomain(cachedInfo)) {
-      return true;
-    } else if (isDomainProcessingAborted(info) && !isImgRestartIntrospectVerChanged(info, cachedInfo)) {
-      return false;
-    } else if (isFatalIntrospectorError(info)) {
-      LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
-      return false;
-    } else if (!info.isPopulated() && isCachedInfoNewer(info, cachedInfo)) {
-      LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
-      return false;  // we have already cached this
-    } else if (operation.isExplicitRecheck() || isGenerationChanged(info, cachedInfo)) {
-      LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + operation.isExplicitRecheck());
-      return true;
-    }
-    cachedInfo.setDomain(info.getDomain());
-    return false;
-  }
-
   private boolean isDomainProcessingAborted(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
             .map(DomainPresenceInfo::getDomain)
@@ -1036,10 +1002,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         .map(V1ObjectMeta::getGeneration);
   }
 
-  private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
-        || !Objects.equals(getRestartVersion(liveInfo), getRestartVersion(cachedInfo))
-        || !Objects.equals(getIntrospectImage(liveInfo), getIntrospectImage(cachedInfo));
+  private static boolean versionsUnchanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
+        && Objects.equals(getRestartVersion(liveInfo), getRestartVersion(cachedInfo))
+        && Objects.equals(getIntrospectImage(liveInfo), getIntrospectImage(cachedInfo));
   }
 
   private static String getIntrospectImage(DomainPresenceInfo info) {
