@@ -216,7 +216,7 @@ public class SchemaConversionUtils {
 
   private Object serverStartPolicyCamelCase(String key, Object value) {
     if (value instanceof String) {
-      return serverStartPolicyMap.get((String) value);
+      return serverStartPolicyMap.get(value);
     }
     return value;
   }
