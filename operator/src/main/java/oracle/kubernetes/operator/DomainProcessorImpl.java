@@ -293,17 +293,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
-  private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
-    return Step.chain(
-          ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
-          new IntrospectionRequestStep(info),
-          JobHelper.createIntrospectionStartStep(null));
-  }
-
-  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
-    return ConfigMapHelper.createOrReplaceFluentdConfigMapStep();
-  }
-
   @Override
   public void runMakeRight(MakeRightDomainOperation operation) {
     final DomainPresenceInfo presenceInfo = operation.getPresenceInfo();
@@ -366,10 +355,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static Step bringManagedServersUp() {
     return new ManagedServersUpStep(null);
-  }
-
-  private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
-    return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
   }
 
   /**
@@ -937,8 +922,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       new DomainPlan(this, delegate).execute();
     }
 
-    @NotNull
     @Override
+    @Nonnull
     public Packet createPacket() {
       Packet packet = new Packet().with(delegate).with(liveInfo);
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
@@ -1121,6 +1106,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
     }
 
+    private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
+      return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
+    }
+
     private void execute() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, operation.getPresenceInfo().getDomainUid());
 
@@ -1164,7 +1153,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
     }
 
-    class FailureReportCompletionCallback extends ThrowableCallback {
+    static class FailureReportCompletionCallback extends ThrowableCallback {
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
         logThrowable(throwable);
@@ -1197,7 +1186,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            createOrReplaceFluentdConfigMapStep(info),
+            ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
@@ -1208,6 +1197,13 @@ public class DomainProcessorImpl implements DomainProcessor {
           createDomainUpInitialStep(),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
+  }
+
+  private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
+    return Step.chain(
+          ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
+          new IntrospectionRequestStep(info),
+          JobHelper.createIntrospectionStartStep(null));
   }
 
   private Step createDomainUpInitialStep() {
