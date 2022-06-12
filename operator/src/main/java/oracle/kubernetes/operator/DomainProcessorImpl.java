@@ -856,32 +856,29 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean shouldContinue() {
       MakeRightDomainOperation operation = this;
-      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(
-          operation.getPresenceInfo().getNamespace(), operation.getPresenceInfo().getDomainUid());
+      DomainPresenceInfo info = operation.getPresenceInfo();
+      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid());
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (isDomainProcessingAborted(liveInfo) && versionsUnchanged(liveInfo, cachedInfo)) {
+      } else if (isDomainProcessingAborted(info) && versionsUnchanged(info, cachedInfo)) {
         return false;
-      } else if (isFatalIntrospectorError()) {
-        LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
+      } else if (isFatalIntrospectorError(info)) {
         return false;
-      } else if (!liveInfo.isPopulated() && isCachedInfoNewer(liveInfo, cachedInfo)) {
-        LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
+      } else if (!info.isPopulated() && isCachedInfoNewer(info, cachedInfo)) {
         return false;  // we have already cached this
-      } else if (shouldRecheck(cachedInfo)) {
-        LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
+      } else if (shouldRecheck(operation, cachedInfo)) {
         return true;
       }
-      cachedInfo.setDomain(getDomain());
+      cachedInfo.setDomain(info.getDomain());
       return false;
     }
 
-    private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
-      return explicitRecheck || isGenerationChanged(liveInfo, cachedInfo);
+    private boolean shouldRecheck(MakeRightDomainOperation operation, DomainPresenceInfo cachedInfo) {
+      return operation.isExplicitRecheck() || isGenerationChanged(operation.getPresenceInfo(), cachedInfo);
     }
 
-    private boolean isFatalIntrospectorError() {
+    private boolean isFatalIntrospectorError(DomainPresenceInfo liveInfo) {
       String existingError = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(DomainResource::getStatus)
