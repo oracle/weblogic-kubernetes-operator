@@ -336,10 +336,32 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainChangedSpecAndProcessingAbortedButRestartVersionChanged_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withRestartVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
   void whenDomainChangedSpecAndProcessingAbortedButInspectionVersionChanged_runUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
     domainConfigurator.withIntrospectVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpecAndProcessingAbortedButImageChanged_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withDefaultImage("abcd:123");
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 

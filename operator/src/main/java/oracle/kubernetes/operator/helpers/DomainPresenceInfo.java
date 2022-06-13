@@ -42,12 +42,15 @@ import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -115,6 +118,77 @@ public class DomainPresenceInfo implements PacketComponent {
       }
     }
     return false;
+  }
+
+
+  /**
+   * Returns true if the state of the current domain presence info, when compared with the cached info for the same
+   * domain, indicates that the make-right should not be run. The user has a number of options to resume processing
+   * the domain.
+   * @param cachedInfo the version of the domain presence info previously processed.
+   */
+  public boolean isDomainProcessingHalted(DomainPresenceInfo cachedInfo) {
+    return isFatalIntrospectorError()
+        || (isDomainProcessingAborted() && versionsUnchanged(cachedInfo))
+        || !isPopulated() && !isNewerThan(cachedInfo);
+  }
+
+  private boolean isFatalIntrospectorError() {
+    final String existingError = Optional.ofNullable(getDomain())
+        .map(DomainResource::getStatus)
+        .map(DomainStatus::getMessage)
+        .orElse(null);
+    return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
+  }
+
+  private boolean isDomainProcessingAborted() {
+    return Optional.ofNullable(getDomain())
+            .map(DomainResource::getStatus)
+            .map(DomainStatus::isAborted)
+            .orElse(false);
+  }
+
+  private boolean versionsUnchanged(DomainPresenceInfo cachedInfo) {
+    return hasSameIntrospectVersion(cachedInfo)
+        && hasSameRestartVersion(cachedInfo)
+        && hasSameIntrospectImage(cachedInfo);
+  }
+
+  private boolean isNewerThan(DomainPresenceInfo cachedInfo) {
+    return getDomain() == null
+        || !KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), getDomain().getMetadata());
+  }
+
+  private boolean hasSameIntrospectVersion(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectVersion(), cachedInfo.getIntrospectVersion());
+  }
+
+  private String getIntrospectVersion() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+  }
+
+  private boolean hasSameRestartVersion(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getRestartVersion(), cachedInfo.getRestartVersion());
+  }
+
+  private String getRestartVersion() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getRestartVersion)
+        .orElse(null);
+  }
+
+  private boolean hasSameIntrospectImage(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectImage(), cachedInfo.getIntrospectImage());
+  }
+
+  private String getIntrospectImage() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
   }
 
   public ThreadLoggingContext setThreadContext() {

@@ -25,7 +25,7 @@ public interface MakeRightDomainOperation {
    */
   MakeRightDomainOperation forDeletion();
 
-  MakeRightDomainOperation createRetry(DomainPresenceInfo info);
+  MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo info);
 
   MakeRightDomainOperation withExplicitRecheck();
 
@@ -51,9 +51,10 @@ public interface MakeRightDomainOperation {
 
   void setInspectionRun();
 
+  @Nonnull
   DomainPresenceInfo getPresenceInfo();
 
-  void setLiveInfo(DomainPresenceInfo info);
+  void setLiveInfo(@Nonnull DomainPresenceInfo info);
 
   void clear();
 

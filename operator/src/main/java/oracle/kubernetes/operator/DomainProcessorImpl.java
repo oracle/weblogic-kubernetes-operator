@@ -67,7 +67,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -80,7 +79,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitial
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
@@ -707,6 +705,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     private final DomainProcessorDelegate delegate;
+    @Nonnull
     private DomainPresenceInfo liveInfo;
     private boolean explicitRecheck;
     private boolean deleting;
@@ -720,13 +719,13 @@ public class DomainProcessorImpl implements DomainProcessor {
      * @param delegate a class which handles scheduling and other types of processing
      * @param liveInfo domain presence info read from Kubernetes
      */
-    MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, DomainPresenceInfo liveInfo) {
+    MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, @NotNull DomainPresenceInfo liveInfo) {
       this.delegate = delegate;
       this.liveInfo = liveInfo;
     }
 
     @Override
-    public MakeRightDomainOperation createRetry(DomainPresenceInfo presenceInfo) {
+    public MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo presenceInfo) {
       presenceInfo.setPopulated(false);
       return new MakeRightDomainOperationImpl(delegate, presenceInfo).withDeleting(deleting).withExplicitRecheck();
     }
@@ -829,18 +828,17 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     @Override
-    public DomainPresenceInfo getPresenceInfo() {
+    public @Nonnull DomainPresenceInfo getPresenceInfo() {
       return liveInfo;
     }
 
     @Override
-    public void setLiveInfo(DomainPresenceInfo info) {
+    public void setLiveInfo(@Nonnull DomainPresenceInfo info) {
       this.liveInfo = info;
     }
 
     @Override
     public void clear() {
-      this.liveInfo = null;
       this.eventData = null;
       this.explicitRecheck = false;
       this.deleting = false;
@@ -857,16 +855,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean shouldContinue() {
       MakeRightDomainOperation operation = this;
       DomainPresenceInfo info = operation.getPresenceInfo();
-      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid());
+      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(info);
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (isDomainProcessingAborted(info) && versionsUnchanged(info, cachedInfo)) {
+      } else if (info.isDomainProcessingHalted(cachedInfo)) {
         return false;
-      } else if (isFatalIntrospectorError(info)) {
-        return false;
-      } else if (!info.isPopulated() && isCachedInfoNewer(info, cachedInfo)) {
-        return false;  // we have already cached this
       } else if (shouldRecheck(operation, cachedInfo)) {
         return true;
       }
@@ -876,15 +870,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean shouldRecheck(MakeRightDomainOperation operation, DomainPresenceInfo cachedInfo) {
       return operation.isExplicitRecheck() || isGenerationChanged(operation.getPresenceInfo(), cachedInfo);
-    }
-
-    private boolean isFatalIntrospectorError(DomainPresenceInfo liveInfo) {
-      String existingError = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(DomainResource::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
-      return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
     }
 
     private void logNotStartingDomain() {
@@ -969,23 +954,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private boolean isDomainProcessingAborted(DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-            .map(DomainPresenceInfo::getDomain)
-            .map(DomainResource::getStatus)
-            .map(DomainStatus::isAborted)
-            .orElse(false);
-  }
-
-  private boolean isFatalIntrospectorError(DomainPresenceInfo liveInfo) {
-    String existingError = Optional.ofNullable(liveInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(DomainResource::getStatus)
-        .map(DomainStatus::getMessage)
-        .orElse(null);
-    return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
-  }
-
   private static boolean isGenerationChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return getGeneration(liveInfo)
         .map(gen -> (gen.compareTo(getGeneration(cachedInfo).orElse(0L)) > 0))
@@ -997,40 +965,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         .map(DomainPresenceInfo::getDomain)
         .map(DomainResource::getMetadata)
         .map(V1ObjectMeta::getGeneration);
-  }
-
-  private static boolean versionsUnchanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    return Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
-        && Objects.equals(getRestartVersion(liveInfo), getRestartVersion(cachedInfo))
-        && Objects.equals(getIntrospectImage(liveInfo), getIntrospectImage(cachedInfo));
-  }
-
-  private static String getIntrospectImage(DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-        .map(DomainPresenceInfo::getDomain)
-        .map(DomainResource::getSpec)
-        .map(DomainSpec::getImage)
-        .orElse(null);
-  }
-
-  private static String getRestartVersion(DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-        .map(DomainPresenceInfo::getDomain)
-        .map(DomainResource::getRestartVersion)
-        .orElse(null);
-  }
-
-  private static String getIntrospectVersion(DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-        .map(DomainPresenceInfo::getDomain)
-        .map(DomainResource::getSpec)
-        .map(DomainSpec::getIntrospectVersion)
-        .orElse(null);
-  }
-
-  private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    return liveInfo.getDomain() != null
-        && KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), liveInfo.getDomain().getMetadata());
   }
 
   abstract static class ThrowableCallback implements CompletionCallback {
