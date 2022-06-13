@@ -1291,7 +1291,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenDomainHasAffinityWithVariablesAndClusterHasNoAffinity_createManagedPodWithSubstitutions() {
+  void whenDomainHasAffinityAndClusterHasNoAffinity_createManagedPodsWithMergedDomainLevelAndDefaultAffinityPolicies() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .withAffinity(

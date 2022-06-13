@@ -58,9 +58,13 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
     this.server.fillInFrom(spec);
     this.cluster = cluster;
 
-    if (cluster != null && cluster.getAffinity() == null) {
+    if (isClusteredServerWithtoutAffinityPolicy(cluster)) {
       addDefaultAntiAffinityPolicy();
     }
+  }
+
+  private boolean isClusteredServerWithtoutAffinityPolicy(Cluster cluster) {
+    return cluster != null && cluster.getAffinity() == null;
   }
 
   void addDefaultAntiAffinityPolicy() {
