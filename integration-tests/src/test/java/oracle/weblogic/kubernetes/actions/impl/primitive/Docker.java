@@ -25,6 +25,8 @@ public class Docker {
    * @return true if successful
    */
   public static boolean login(String registryName, String username, String password) {
+    getLogger().info("Debug: docker login registryName: {0}, username: {1}, password; {2}",
+        registryName, username, password);
     String cmdToExecute = String.format("docker login %s -u %s -p \"%s\"",
         registryName, username, password);
     return new Command()
