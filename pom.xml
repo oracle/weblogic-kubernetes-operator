@@ -434,6 +434,11 @@
         <version>${kotlin-stdlib-version}</version>
       </dependency>
       <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>${okhttp-version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-junit</artifactId>
         <version>${hamcrest-junit-version}</version>
@@ -620,6 +625,7 @@
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>14.0.1</client-java-version>
     <kotlin-stdlib-version>1.7.0</kotlin-stdlib-version>
+    <okhttp-version>4.9.3</okhttp-version>
     <junit.jupiter.version>5.8.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>

@@ -340,6 +340,11 @@
       <artifactId>kotlin-stdlib-common</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+    </dependency>
+
     <!-- test dependencies -->
     <dependency>
       <groupId>com.appscode.voyager</groupId>
