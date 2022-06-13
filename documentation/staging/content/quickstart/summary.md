@@ -103,7 +103,7 @@ These steps help you understand and customize auxiliary image creation. Then you
    $ jar cvf /tmp/quickstart/models/archive.zip -C /tmp/quickstart/models/archive/ wlsdeploy
    ```
 
-#### Create the auxiliary image
+#### Create the auxiliary image.
 
 Follow these steps to create the auxiliary image containing
 WDT model YAML files, application archives, and the WDT installation files:
@@ -162,7 +162,7 @@ WDT model YAML files, application archives, and the WDT installation files:
 
 1. Copy the image to all the nodes in your cluster or put it in a container registry that your cluster can access.
 
-#### Create the domain
+#### Create the domain.
 
 If you followed the previous steps to create an auxiliary image, then use these steps to create the domain.
 
@@ -323,7 +323,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
      #secrets:
      #- sample-domain1-datasource-secret
      ```
-     
+
     {{% /expand %}}
 
     b. If you chose a different name and tag for the auxiliary image you created, then update the image field under the `spec.configuration.model.auxiliaryImages`
@@ -341,3 +341,24 @@ If you followed the previous steps to create an auxiliary image, then use these 
       ```shell
        $ kubectl apply -f /tmp/quickstart/quick-start-domain-resource.yaml
       ```
+#### Delete the generated image and directories for tools and models.
+
+Use following commands to delete the generated image and directories for tools and models.
+
+1. Delete the generated image by using the `docker rmi` command. Use the following command to delete an image tagged with `quick-start-aux-image:v1`:
+
+   ```shell
+   $ docker rmi quick-start-aux-image:v1
+   ```
+
+1. Delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
+
+   ```shell
+   $ rm -rf /tmp/quickstart/tools/
+   ```
+
+1. Delete the directory where the WDT model file, archive, and variable files are copied.
+
+   ```shell
+   $ rm -rf /tmp/quickstart/models/
+   ```
