@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
@@ -42,7 +43,6 @@ import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -751,7 +751,7 @@ public class DomainPresenceInfo implements PacketComponent {
   public static class ServerInfo {
     public final WlsServerConfig serverConfig;
     protected final String clusterName;
-    protected final ServerSpec serverSpec;
+    protected final EffectiveServerSpec effectiveServerSpec;
     protected final boolean isServiceOnly;
 
     /**
@@ -759,17 +759,17 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
+     * @param effectiveServerSpec the server startup configuration
      * @param isServiceOnly true, if only the server service should be created
      */
     public ServerInfo(
         @Nonnull WlsServerConfig serverConfig,
         @Nullable String clusterName,
-        ServerSpec serverSpec,
+        EffectiveServerSpec effectiveServerSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
-      this.serverSpec = serverSpec;
+      this.effectiveServerSpec = effectiveServerSpec;
       this.isServiceOnly = isServiceOnly;
     }
 
@@ -786,7 +786,7 @@ public class DomainPresenceInfo implements PacketComponent {
     }
 
     public List<V1EnvVar> getEnvironment() {
-      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
+      return effectiveServerSpec == null ? Collections.emptyList() : effectiveServerSpec.getEnvironmentVariables();
     }
 
     /**
@@ -809,7 +809,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new ToStringBuilder(this)
           .append("serverConfig", serverConfig)
           .append("clusterName", clusterName)
-          .append("serverSpec", serverSpec)
+          .append("serverSpec", effectiveServerSpec)
           .append("isServiceOnly", isServiceOnly)
           .toString();
     }
@@ -829,7 +829,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new EqualsBuilder()
           .append(serverConfig, that.serverConfig)
           .append(clusterName, that.clusterName)
-          .append(serverSpec, that.serverSpec)
+          .append(effectiveServerSpec, that.effectiveServerSpec)
           .append(isServiceOnly, that.isServiceOnly)
           .isEquals();
     }
@@ -839,7 +839,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new HashCodeBuilder(17, 37)
           .append(serverConfig)
           .append(clusterName)
-          .append(serverSpec)
+          .append(effectiveServerSpec)
           .append(isServiceOnly)
           .toHashCode();
     }
@@ -854,11 +854,11 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
+     * @param effectiveServerSpec the server startup configuration
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
-      super(serverConfig, clusterName, serverSpec, false);
+        WlsServerConfig serverConfig, String clusterName, EffectiveServerSpec effectiveServerSpec) {
+      super(serverConfig, clusterName, effectiveServerSpec, false);
     }
   }
 
@@ -879,13 +879,13 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec Server specifications
+     * @param effectiveServerSpec Server specifications
      * @param isServiceOnly If service needs to be preserved
      */
     public ServerShutdownInfo(
             WlsServerConfig serverConfig, String clusterName,
-            ServerSpec serverSpec, boolean isServiceOnly) {
-      super(serverConfig, clusterName, serverSpec, isServiceOnly);
+            EffectiveServerSpec effectiveServerSpec, boolean isServiceOnly) {
+      super(serverConfig, clusterName, effectiveServerSpec, isServiceOnly);
     }
 
     public boolean isServiceOnly() {

@@ -7,7 +7,7 @@ import java.util.List;
 
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -50,8 +50,8 @@ class AdmissionWebhookTestSetUp {
     return domain;
   }
 
-  private static Cluster createCluster(String clusterName) {
-    return new Cluster().withClusterName(clusterName);
+  private static ClusterSpec createCluster(String clusterName) {
+    return new ClusterSpec().withClusterName(clusterName);
   }
 
   private static DomainStatus createDomainStatus() {
