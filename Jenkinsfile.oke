@@ -58,6 +58,7 @@ pipeline {
                         'oke-parallel',
                         'oke-cert',
                         'oke-sequential',
+                        'oke-unstable',
                         'integration-tests'
                 ]
         )

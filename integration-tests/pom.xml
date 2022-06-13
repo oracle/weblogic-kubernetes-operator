@@ -429,6 +429,40 @@
             </properties>
         </profile>
         <profile>
+            <id>oke-unstable</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItCoherenceTests,
+                    **/ItConfigDistributionStrategy,
+                    **/ItCrossDomainTransaction,
+                    **/ItElasticLoggingFluentd,
+                    **/ItEvictedPodsCycling,
+                    **/ItExternalLbTunneling,
+                    **/ItExternalNodePortService,
+                    **/ItFmwBigCMMiiDomain,
+                    **/ItFmwDiiSample,
+                    **/ItFmwMiiDomain,
+                    **/ItFmwSample,
+                    **/ItIstioManagedCoherence,
+                    **/ItIstioProductionSecureMode,
+                    **/ItKubernetesDomainEvents,
+                    **/ItIstioCrossDomainTransaction,
+                    **/ItLBTwoDomains*,
+                    **/ItLiftAndShiftFromOnPremDomain,
+                    **/ItMiiCustomSslStore,
+                    **/ItMiiSampleWlsMain,
+                    **/ItWlsSamples,
+                    **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItProductionSecureMode,
+                    **/ItPodTemplates,
+                    **/ItMultiDomainModelsWithLoadBalancer,
+                    **/ItMiiSampleWlsAux,
+                    **/ItDiagnosticsFailedCondition
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>oke-parallel</id>
             <properties>
                 <skipITs>false</skipITs>
