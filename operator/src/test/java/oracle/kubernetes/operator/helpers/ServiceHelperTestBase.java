@@ -10,8 +10,8 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ClusterService;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +41,7 @@ public class ServiceHelperTestBase {
 
   private DomainSpec createDomainSpec() {
     return new DomainSpec().withDomainUid(UID)
-        .withCluster(new Cluster().withClusterName(TEST_CLUSTER)
+        .withCluster(new ClusterSpec().withClusterName(TEST_CLUSTER)
             .withClusterService(new ClusterService().withSessionAffinity(V1ServiceSpec.SessionAffinityEnum.CLIENTIP)));
   }
 }

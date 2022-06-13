@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -32,7 +33,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodServerName;
@@ -192,7 +192,7 @@ public class ManagedServersUpStep extends Step {
      * @return True if we should pre-create server service for the given managed server, false
      *         otherwise.
      */
-    boolean shouldPrecreateServerService(ServerSpec server) {
+    boolean shouldPrecreateServerService(EffectiveServerSpec server) {
       if (Boolean.TRUE.equals(server.isPrecreateServerService())) {
         // skip pre-create if admin server and managed server are both shutting down
         return ! (domain.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
@@ -207,7 +207,7 @@ public class ManagedServersUpStep extends Step {
       }
 
       String clusterName = getClusterName(clusterConfig);
-      ServerSpec server = domain.getServer(serverName, clusterName);
+      EffectiveServerSpec server = domain.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
         addServerToStart(serverConfig, clusterName, server);
@@ -219,7 +219,8 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addServerToStart(@Nonnull WlsServerConfig serverConfig, String clusterName, ServerSpec server) {
+    private void addServerToStart(@Nonnull WlsServerConfig serverConfig, String clusterName,
+                                  EffectiveServerSpec server) {
       servers.add(serverConfig.getName());
       if (shouldPrecreateServerService(server)) {
         preCreateServers.add(serverConfig.getName());
@@ -337,7 +338,7 @@ public class ManagedServersUpStep extends Step {
         return;
       }
       String clusterName = getClusterName(wlsClusterConfig);
-      ServerSpec server = domain.getServer(serverName, clusterName);
+      EffectiveServerSpec server = domain.getServer(serverName, clusterName);
       if (server.alwaysStart()) {
         addServerToStart(wlsServerConfig, clusterName, server);
       } else {

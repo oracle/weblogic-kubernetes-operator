@@ -3,14 +3,16 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class AdminServerSpecCommonImpl extends ServerSpecCommonImpl implements AdminServerSpec {
+public class EffectiveAdminServerSpecCommonImpl extends EffectiveServerSpecCommonImpl
+        implements EffectiveAdminServerSpec {
   private final AdminServer adminServer;
 
-  AdminServerSpecCommonImpl(DomainSpec spec, AdminServer server) {
+  EffectiveAdminServerSpecCommonImpl(DomainSpec spec, AdminServer server) {
     super(spec, server, null, null);
     adminServer = server;
   }
@@ -34,11 +36,11 @@ public class AdminServerSpecCommonImpl extends ServerSpecCommonImpl implements A
       return true;
     }
 
-    if (!(o instanceof AdminServerSpecCommonImpl)) {
+    if (!(o instanceof EffectiveAdminServerSpecCommonImpl)) {
       return false;
     }
 
-    AdminServerSpecCommonImpl that = (AdminServerSpecCommonImpl) o;
+    EffectiveAdminServerSpecCommonImpl that = (EffectiveAdminServerSpecCommonImpl) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
