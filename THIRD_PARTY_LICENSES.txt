@@ -3,16 +3,16 @@ oracle.kubernetes:operator-parent:3.4.1
 Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 Copyright (c) 2017, 2021 Oracle and/or its affiliates.
 Copyright (c) 2021 Oracle and/or its affiliates.
-Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 Copyright (c) 2021, Oracle and/or its affiliates.
+Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 Copyright (c) 2022, Oracle and/or its affiliates.
 Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 Copyright (c) 2018, 2022, Oracle and/or its affiliates.
-Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 
 -------- License
 Copyright (c) 2017, 2021, Oracle and/or its affiliates.
@@ -56,9 +56,9 @@ SOFTWARE.
 -------- Dependency
 com.ethlo.time:itu:1.5.1
 -------- Copyrights
-Copyright (C) 2017 - 2019 Morten Haraldsen (ethlo)
 Copyright (C) 2017 Morten Haraldsen (ethlo)
 Copyright (C) 2017 - 2022 Morten Haraldsen (ethlo)
+Copyright (C) 2017 - 2019 Morten Haraldsen (ethlo)
 Copyright (C) 2017 - 2018 Morten Haraldsen (ethlo)
 
 -------- Dependency
@@ -67,7 +67,7 @@ com.fasterxml.jackson.core:jackson-annotations:2.13.0
   (no copyright notices found)
 
 -------- Dependency
-com.fasterxml.jackson.core:jackson-core:2.13.2
+com.fasterxml.jackson.core:jackson-core:2.13.3
 -------- Copyrights
 Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 -------- Notices
@@ -91,7 +91,7 @@ from the source code management (SCM) system project uses.
 
 
 -------- Dependency
-com.fasterxml.jackson.core:jackson-databind:2.13.2.2
+com.fasterxml.jackson.core:jackson-databind:2.13.3
 -------- Copyrights
   (no copyright notices found)
 -------- Notices
@@ -115,7 +115,7 @@ from the source code management (SCM) system project uses.
 
 
 -------- Dependency
-com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3
 -------- Copyrights
   (no copyright notices found)
 -------- Notices
@@ -156,15 +156,15 @@ com.google.code.gson:gson:2.8.9
 -------- Copyrights
 Copyright (C) 2008 Google Inc.
 Copyright (C) 2009 Google Inc.
-Copyright (C) 2010 Google Inc.
 Copyright (C) 2021 Google Inc.
+Copyright (C) 2010 Google Inc.
 Copyright (C) 2011 Google Inc.
 Copyright (C) 2014 Google Inc.
 Copyright (C) 2018 The Gson authors
 Copyright (C) 2017 The Gson authors
-Copyright (C) 2020 Google Inc.
 Copyright (C) 2010 The Android Open Source Project
 Copyright (C) 2012 Google Inc.
+Copyright (C) 2020 Google Inc.
 
 -------- Dependency
 com.google.protobuf:protobuf-java:3.19.2
@@ -183,7 +183,7 @@ com.squareup.okhttp3:logging-interceptor:4.9.1
   (no copyright notices found)
 
 -------- Dependency
-com.squareup.okhttp3:okhttp:4.9.1
+com.squareup.okhttp3:okhttp:4.9.3
 -------- Copyrights
   (no copyright notices found)
 
@@ -332,11 +332,11 @@ Copyright 2016 SmartBear Software
 -------- Dependency
 jakarta.annotation:jakarta.annotation-api:2.0.0
 -------- Copyrights
-Copyright (c) 2005, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2005, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2009, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 -------- Notices
 # Notices for Jakarta Annotations
 
@@ -431,11 +431,11 @@ jakarta.json:jakarta.json-api:2.0.0
 -------- Copyrights
 Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2016, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notices for Jakarta JSON Processing
 
@@ -521,15 +521,15 @@ jakarta.ws.rs:jakarta.ws.rs-api:3.0.0
 Copyright
 Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2006 Google Inc.
 Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
@@ -603,13 +603,13 @@ jakarta.xml.bind:jakarta.xml.bind-api:3.0.1
 -------- Copyrights
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2003, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2006, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2005, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2004, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2003, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2004, 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notices for Jakarta XML Binding
 
@@ -685,9 +685,9 @@ permitted.
 -------- Dependency
 javax.annotation:javax.annotation-api:1.2
 -------- Copyrights
-Copyright (c) 2005-2013 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2009-2010 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2005-2011 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2009-2010 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2005-2013 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2009-2012 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 1989, 1991 Free Software Foundation, Inc. 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
@@ -896,19 +896,19 @@ Copyright (C) 2007 the original author or authors.
 org.codehaus.plexus:plexus-utils:3.3.0
 -------- Copyrights
 Copyright (c) 2001-2003, ThoughtWorks, Inc.
-Copyright (c) 2006, Javolution (http://javolution.org)
 Copyright (c) 2002 Extreme! Lab, Indiana University. All rights reserved.
-Copyright 2007 The Codehaus Foundation.
-Copyright (c) 2002-2003 The Apache Software Foundation.  All rights
+Copyright (c) 2006, Javolution (http://javolution.org)
+Copyright (c) 2000-2002 The Apache Software Foundation.  All rights
 Copyright The Codehaus Foundation.
-Copyright (c) 2001 The Apache Software Foundation.  All rights
+Copyright 2007 The Codehaus Foundation.
+Copyright 2011 The Codehaus Foundation.
+Copyright (c) 2002-2003 The Apache Software Foundation.  All rights
+Copyright (c) 2000-2003 The Apache Software Foundation.  All rights
 Copyright (c) 2001-2003 The Apache Software Foundation.  All rights
+Copyright (c) 2001 The Apache Software Foundation.  All rights
 Copyright (c) 2003, ThoughtWorks, Inc.
 Copyright 2003-2004 The Apache Software Foundation.
 CruiseControl, a Continuous Integration Toolkit Copyright (c) 2001-2003, ThoughtWorks, Inc. 651 W
-Copyright (c) 2000-2002 The Apache Software Foundation.  All rights
-Copyright 2011 The Codehaus Foundation.
-Copyright (c) 2000-2003 The Apache Software Foundation.  All rights
 Copyright 2004 Sun Microsystems, Inc.
 Copyright (c) 2002 The Apache Software Foundation.  All rights
 Copyright (c) 2003 Extreme! Lab, Indiana University. All rights reserved.
@@ -945,38 +945,38 @@ Copyright (c) 2010, 2015 Sonatype, Inc.
 -------- Dependency
 org.glassfish.grizzly:grizzly-framework:3.0.0
 -------- Copyrights
-Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2008, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Services Ltd.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2009, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2008, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2018 Payara Services Ld.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 2004 The Apache Software Foundation
 Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2020 Oracle and/or its affiliates and others.
-Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 
 -------- Dependency
 org.glassfish.grizzly:grizzly-http-server:3.0.0
 -------- Copyrights
 Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2008, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright 1994-2004 The Apache Software Foundation
-Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 1997, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 2004 The Apache Software Foundation
-Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright 1994-2004 The Apache Software Foundation
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2009, 2020 Oracle and/or its affiliates. All rights reserved.
@@ -987,10 +987,10 @@ org.glassfish.grizzly:grizzly-http:3.0.0
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2010, 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 2004 The Apache Software Foundation
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2008, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
@@ -1066,12 +1066,12 @@ Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2020 Payara Services Ltd.
-Copyright (c) 2007, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2007, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2019 Payara Services and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
@@ -1138,13 +1138,13 @@ org.glassfish.hk2:hk2-locator:3.0.1
 Copyright
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2020 Payara Services ltd.
 Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2020 Payara Services ltd.
 Copyright (c) 2020 Payara Services Ltd.
 Copyright (c) 2019 Payara Service Ltd. and/or its affiliates.
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notices for Eclipse GlassFish
@@ -1209,12 +1209,12 @@ org.glassfish.hk2:hk2-utils:3.0.1
 -------- Copyrights
 Copyright
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2007, 2018 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notices for Eclipse GlassFish
@@ -1431,24 +1431,24 @@ Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2018 Payara Foundation and/or its affiliates.
 Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
-Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2018 Payara Foundation and/or its affiliates.
+Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2021 Oracle and/or its affiliates. All rights reserved.
@@ -1592,48 +1592,48 @@ Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Ins
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2021 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2007, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 2007 The Guava Authors
 Copyright (C) 2010 The Guava Authors
 Copyright (C) 2012 The Guava Authors
 Copyright (C) 2011 The Guava Authors
-Copyright (C) 2008 The Guava Authors
-Copyright (C) 2013 The Guava Authors
 Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 2013 The Guava Authors
+Copyright (C) 2008 The Guava Authors
 Copyright (C) 2006 The Guava Authors
 Copyright (C) 2014 The Guava Authors
 Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates.
 Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2022 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2009, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2016, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2022 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
@@ -1702,33 +1702,33 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2000-2011 INRIA, France Telecom
 Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2021 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2018 Payara Foundation and/or its affiliates.
 Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2018 Payara Foundation and/or its affiliates.
 Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2022 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010, 2013 Coda Hale and Yammer, Inc.
 Copyright 2015, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
@@ -1794,12 +1794,12 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -1931,11 +1931,11 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -2068,12 +2068,12 @@ Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
 Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2020, 2022 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey Json Jackson module 
@@ -2251,11 +2251,10 @@ W3.org documents
 -------- Dependency
 org.glassfish:jsonp-jaxrs:2.0.0
 -------- Copyrights
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 -------- Notices
-
 # Notices for Jakarta JSON Processing
 
 This content is produced and maintained by the Jakarta JSON Processing project.
@@ -2337,22 +2336,22 @@ System.out.println("Copyright (C) 1999-2019 Shigeru Chiba."
 Copyright (C) 2004 Bill Burke. All Rights Reserved.
 
 -------- Dependency
-org.jetbrains.kotlin:kotlin-stdlib-common:1.6.10
+org.jetbrains.kotlin:kotlin-stdlib-common:1.7.0
 -------- Copyrights
   (no copyright notices found)
 
 -------- Dependency
-org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.10
+org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.0
 -------- Copyrights
   (no copyright notices found)
 
 -------- Dependency
-org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.10
+org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.0
 -------- Copyrights
   (no copyright notices found)
 
 -------- Dependency
-org.jetbrains.kotlin:kotlin-stdlib:1.6.10
+org.jetbrains.kotlin:kotlin-stdlib:1.7.0
 -------- Copyrights
 Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
 Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
@@ -2362,9 +2361,9 @@ Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributor
 org.jetbrains:annotations:13.0
 -------- Copyrights
 Copyright 2006 Sascha Weinreuter
+Copyright 2000-2013 JetBrains s.r.o.
 Copyright 2000-2012 JetBrains s.r.o.
 Copyright 2000-2009 JetBrains s.r.o.
-Copyright 2000-2013 JetBrains s.r.o.
 
 -------- Dependency
 org.slf4j:slf4j-api:1.7.26
@@ -2398,16 +2397,16 @@ Copyright (c) 2008 Google Inc.
 -------- Dependencies Summary
 com.ethlo.time:itu:1.5.1
 com.fasterxml.jackson.core:jackson-annotations:2.13.0
-com.fasterxml.jackson.core:jackson-core:2.13.2
-com.fasterxml.jackson.core:jackson-databind:2.13.2.2
-com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2
+com.fasterxml.jackson.core:jackson-core:2.13.3
+com.fasterxml.jackson.core:jackson-databind:2.13.3
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3
 com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations:2.13.0
 com.google.code.findbugs:jsr305:3.0.2
 com.google.code.gson:gson:2.8.9
 com.google.protobuf:protobuf-java:3.19.2
 com.networknt:json-schema-validator:1.0.68
 com.squareup.okhttp3:logging-interceptor:4.9.1
-com.squareup.okhttp3:okhttp:4.9.1
+com.squareup.okhttp3:okhttp:4.9.3
 com.squareup.okio:okio:2.8.0
 com.sun.activation:jakarta.activation:2.0.1
 commons-codec:commons-codec:1.15
@@ -2467,10 +2466,10 @@ org.glassfish.jersey.media:jersey-media-json-jackson:3.0.4
 org.glassfish.jersey.media:jersey-media-json-processing:3.0.4
 org.glassfish:jsonp-jaxrs:2.0.0
 org.javassist:javassist:3.25.0-GA
-org.jetbrains.kotlin:kotlin-stdlib-common:1.6.10
-org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.10
-org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.10
-org.jetbrains.kotlin:kotlin-stdlib:1.6.10
+org.jetbrains.kotlin:kotlin-stdlib-common:1.7.0
+org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.0
+org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.0
+org.jetbrains.kotlin:kotlin-stdlib:1.7.0
 org.jetbrains:annotations:13.0
 org.slf4j:slf4j-api:1.7.26
 org.slf4j:slf4j-api:1.7.32
