@@ -2453,10 +2453,16 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
   }
 
+  /**
+  * Creates default anti-affinity for test cluster.
+   */
   public static V1Affinity createDefaultAntiAffinity() {
     return createDefaultAntiAffinity("test-cluster");
   }
 
+  /**
+   * Creates default anti-affinity for test cluster.
+   */
   public static V1Affinity createDefaultAntiAffinity(String clusterName) {
     V1PodAntiAffinity podAntiAffinity = new V1PodAntiAffinity()
         .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
