@@ -291,8 +291,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
-  @Override
-  public void runMakeRight(MakeRightDomainOperation operation) {
+  public void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
+    executor.accept(getExistingDomainPresenceInfo(presenceInfo));
   }
 
   /**
@@ -809,10 +809,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public void execute() {
       runMakeRight(this::doExecute, getPresenceInfo());
-    }
-
-    private void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
-      executor.accept(getExistingDomainPresenceInfo(presenceInfo));
     }
 
     private void doExecute(DomainPresenceInfo cachedInfo) {
