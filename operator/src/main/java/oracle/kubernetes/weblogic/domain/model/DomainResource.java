@@ -41,6 +41,9 @@ import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -259,7 +262,7 @@ public class DomainResource implements KubernetesObject {
     return metadata.getNamespace();
   }
 
-  public AdminServerSpec getAdminServerSpec() {
+  public EffectiveAdminServerSpec getAdminServerSpec() {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
@@ -302,7 +305,7 @@ public class DomainResource implements KubernetesObject {
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the server
    */
-  public ServerSpec getServer(String serverName, String clusterName) {
+  public EffectiveServerSpec getServer(String serverName, String clusterName) {
     return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
   }
 
@@ -312,7 +315,7 @@ public class DomainResource implements KubernetesObject {
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the cluster
    */
-  public ClusterSpec getCluster(String clusterName) {
+  public EffectiveClusterSpec getCluster(String clusterName) {
     return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
   }
 
@@ -771,7 +774,7 @@ public class DomainResource implements KubernetesObject {
    */
   public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
     return Optional.ofNullable(getServer(serverName, clusterName))
-        .map(ServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
+        .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
   }
 
   public String getWdtConfigMap() {
@@ -985,7 +988,7 @@ public class DomainResource implements KubernetesObject {
           .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
-          .map(Cluster::getClusterName)
+          .map(ClusterSpec::getClusterName)
           .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
     }

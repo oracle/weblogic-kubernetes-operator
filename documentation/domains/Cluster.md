@@ -5,10 +5,10 @@
 | `apiVersion` | string | The API version defines the versioned schema of this cluster. |
 | `kind` | string | The type of the REST resource. Must be "Cluster". |
 | `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | The resource metadata. Must include the `name` and `namespace. |
-| `spec` | [Cluster](#cluster) | The specification of the operation of the WebLogic cluster. Required. |
+| `spec` | [Cluster Spec](#cluster-spec) | The specification of the operation of the WebLogic cluster. Required. |
 | `status` | [Cluster Status](#cluster-status) | The current status of the operation of the WebLogic cluster. Updated automatically by the operator. |
 
-### Cluster
+### Cluster Spec
 
 | Name | Type | Description |
 | --- | --- | --- |
