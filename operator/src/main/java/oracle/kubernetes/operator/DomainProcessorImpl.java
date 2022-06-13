@@ -292,8 +292,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   @Override
-  public void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
-    executor.accept(getExistingDomainPresenceInfo(presenceInfo));
+  public void runMakeRight(MakeRightDomainOperation operation) {
   }
 
   /**
@@ -809,7 +808,11 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      DomainProcessorImpl.this.runMakeRight(this::doExecute, getPresenceInfo());
+      runMakeRight(this::doExecute, getPresenceInfo());
+    }
+
+    private void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
+      executor.accept(getExistingDomainPresenceInfo(presenceInfo));
     }
 
     private void doExecute(DomainPresenceInfo cachedInfo) {

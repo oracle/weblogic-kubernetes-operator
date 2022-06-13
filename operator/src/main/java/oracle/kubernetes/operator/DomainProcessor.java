@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator;
 
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -65,7 +64,7 @@ public interface DomainProcessor {
    */
   void dispatchEventWatch(Watch.Response<CoreV1Event> item);
 
-  void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo);
+  void runMakeRight(MakeRightDomainOperation operation);
 
   /**
    * If the logging level is high enough, reports on any fibers which may currently be suspended.
