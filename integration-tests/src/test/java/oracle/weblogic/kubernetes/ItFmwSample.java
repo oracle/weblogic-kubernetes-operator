@@ -387,7 +387,8 @@ public class ItFmwSample {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHome: /shared/domains", "domainHome: /shared/" + domainNamespace + "/domains");
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + domainUid + "/domains");
     });
   }
 
