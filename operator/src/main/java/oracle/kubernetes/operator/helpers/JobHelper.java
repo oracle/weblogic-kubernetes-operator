@@ -47,7 +47,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Server;
@@ -150,8 +150,9 @@ public class JobHelper {
     }
 
     // Returns true if the specified cluster is configured to start.
-    private boolean shouldStart(Cluster cluster) {
-      return (shouldStart(cluster.getServerStartPolicy())) && getDomain().getReplicaCount(cluster.getClusterName()) > 0;
+    private boolean shouldStart(ClusterSpec clusterSpec) {
+      return (shouldStart(clusterSpec.getServerStartPolicy()))
+              && getDomain().getReplicaCount(clusterSpec.getClusterName()) > 0;
     }
 
     // Returns true if the specified server start policy will allow starting a server.
@@ -246,7 +247,9 @@ public class JobHelper {
       }
 
       private boolean isInProgressJobOutdated(V1Job job) {
-        return hasNotCompleted(job) && hasAnyImageChanged(job);
+        return Optional.ofNullable(job)
+            .map(j -> hasNotCompleted(j) && (hasAnyImageChanged(j) || hasIntrospectVersionChanged(j)))
+            .orElse(false);
       }
 
       private boolean hasNotCompleted(V1Job job) {
@@ -263,6 +266,11 @@ public class JobHelper {
 
       private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
         return ! getSortedJobModelPodSpecAuxiliaryImages().equals(getSortedAuxiliaryImagesFromJob(job));
+      }
+
+      private boolean hasIntrospectVersionChanged(@Nonnull V1Job job) {
+        return !Objects.equals(getIntrospectVersionLabelFromJob(job),
+            getIntrospectVersionLabelFromJob(getJobModel()));
       }
 
       String getImageFromJob(V1Job job) {
@@ -309,6 +317,15 @@ public class JobHelper {
         return Optional.ofNullable(getJobModelPodSpec())
             .map(this::getAuxiliaryImagesFromPodSpec)
             .orElse(Stream.empty());
+      }
+
+      @Nullable
+      String getIntrospectVersionLabelFromJob(V1Job job) {
+        return Optional.ofNullable(job)
+            .map(V1Job::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+            .orElse(null);
       }
 
       private boolean isKnownFailedJob(V1Job job) {

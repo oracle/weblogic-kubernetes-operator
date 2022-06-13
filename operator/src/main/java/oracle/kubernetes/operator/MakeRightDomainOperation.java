@@ -72,6 +72,10 @@ public interface MakeRightDomainOperation {
     return domainRequiresIntrospectionInCurrentMakeRight(packet) && !wasInspectionRun(packet);
   }
 
+  static boolean isMakeRight(Packet packet) {
+    return fromPacket(packet).isPresent();
+  }
+
   /**
    * Returns true if the packet contains info about a domain that requires introspection in a sequences of steps
    * before server pods are created or modified.

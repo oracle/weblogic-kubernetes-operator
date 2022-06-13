@@ -389,12 +389,14 @@ public class DomainStatusUpdater {
   static class DomainStatusUpdaterContext {
     @Nonnull
     private final DomainPresenceInfo info;
+    private final boolean isMakeRight;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
     }
 
@@ -459,12 +461,19 @@ public class DomainStatusUpdater {
         LOGGER.finer("status change: " + createPatchString());
       }
       DomainResource oldDomain = getDomain();
+
+      DomainStatus status = getNewStatus();
+      if (isMakeRight) {
+        // Only set observedGeneration during a make-right, but not during a background status update
+        status.setObservedGeneration(oldDomain.getMetadata().getGeneration());
+      }
+
       DomainResource newDomain = new DomainResource()
           .withKind(KubernetesConstants.DOMAIN)
           .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
-          .withStatus(getNewStatus());
+          .withStatus(status);
 
       return new CallBuilder().replaceDomainStatusAsync(
           getDomainName(),

@@ -398,6 +398,7 @@ class DomainProcessorTest {
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+    assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
@@ -411,6 +412,7 @@ class DomainProcessorTest {
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
     assertThat(updatedDomain, hasCondition(COMPLETED).withStatus("False"));
+    assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test

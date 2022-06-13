@@ -99,7 +99,7 @@
             <configuration>
               <includeScope>runtime</includeScope>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <excludeGroupIds>io.prometheus,com.google.protobuf</excludeGroupIds>
+              <excludeGroupIds>com.google.protobuf</excludeGroupIds>
               <excludeArtifactIds>kotlin-stdlib-jdk7,kotlin-stdlib-jdk8</excludeArtifactIds>
             </configuration>
           </execution>
@@ -143,7 +143,7 @@
         <version>${project.version}</version>
         <executions>
           <execution>
-            <id>generate-schema</id>
+            <id>generate-domain-schema</id>
             <phase>process-classes</phase>
             <goals>
               <goal>generate</goal>
@@ -151,6 +151,19 @@
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.model.DomainResource</rootClass>
               <outputFile>oracle/kubernetes/weblogic/domain/model/Domain.json</outputFile>
+              <kubernetesVersion>1.13.5</kubernetesVersion>
+              <generateMarkdown>true</generateMarkdown>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-cluster-schema</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <rootClass>oracle.kubernetes.weblogic.domain.model.ClusterResource</rootClass>
+              <outputFile>oracle/kubernetes/weblogic/domain/model/Cluster.json</outputFile>
               <kubernetesVersion>1.13.5</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>
@@ -223,6 +236,7 @@
                 <classpath/>
                 <argument>oracle.kubernetes.operator.helpers.CrdHelper</argument>
                 <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
+                <argument>${project.basedir}/../kubernetes/crd/cluster-crd.yaml</argument>
               </arguments>
             </configuration>
           </execution>
@@ -306,6 +320,22 @@
     <dependency>
       <groupId>org.glassfish.jersey.inject</groupId>
       <artifactId>jersey-hk2</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.grizzly</groupId>
+      <artifactId>grizzly-http-servlet</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_servlet_jakarta</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_hotspot</artifactId>
     </dependency>
 
     <dependency>

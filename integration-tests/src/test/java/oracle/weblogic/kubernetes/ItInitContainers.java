@@ -39,10 +39,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
@@ -50,7 +51,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -94,6 +95,7 @@ class ItInitContainers {
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
   private static LoggingFacade logger = null;
+
 
   /**
    * Get namespaces for operator, domains.
@@ -153,7 +155,7 @@ class ItInitContainers {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -171,9 +173,9 @@ class ItInitContainers {
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
    * WebLogic server pods don't go through initialization and ready state.
-   * The following introspect version usecase was added based on issue 
-   * reported by OFSS team. With initContainer configured, the WebLogic server 
-   * pod should not roll with modified introspect version without any update to 
+   * The following introspect version usecase was added based on issue
+   * reported by OFSS team. With initContainer configured, the WebLogic server
+   * pod should not roll with modified introspect version without any update to
    * domain resource.
    * Update the introspect version with out any change to domain resource
    * Make sure no WebLogic server pod get rolled.
@@ -213,7 +215,7 @@ class ItInitContainers {
     patchDomainResourceWithNewIntrospectVersion(domain1Uid,domain1Namespace);
     //verify the pods are not restarted in any introspectVersion update
     verifyPodsNotRolled(domain1Namespace, pods);
-   
+
   }
 
   private boolean checkPodLogContainMsg(String podName, String podNamespace, String domainUid, String msg) {
@@ -267,6 +269,7 @@ class ItInitContainers {
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
   @Tag("gate")
+  @Tag("crio")
   void testClusterInitContainer() {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
@@ -334,7 +337,7 @@ class ItInitContainers {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -365,7 +368,7 @@ class ItInitContainers {
         domain.getSpec().getServerPod().addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from Domain\"")
             .name("init-container")
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG).addEnvItem(new V1EnvVar()
                                     .name("DOMAIN_NAME")
                                     .value("xyz")));
@@ -376,7 +379,7 @@ class ItInitContainers {
             .addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from AdminServer\"")
             .name("init-container")
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
         setPodAntiAffinity(domain);
         break;
@@ -392,7 +395,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("init-container")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
         break;
       case "managedServers":
@@ -402,7 +405,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from managed-server1\"")
                     .name("init-container")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG))));
         setPodAntiAffinity(domain);
         break;

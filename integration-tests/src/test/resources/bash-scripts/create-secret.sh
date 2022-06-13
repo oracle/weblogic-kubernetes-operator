@@ -119,7 +119,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   \
   create secret generic \
   $SECRET_NAME $LITERALS $FILENAMES \
-  --dry-run -o yaml \
+  --dry-run=client -o yaml \
   \
   | sed -e '/ name:/a\
   labels:' \

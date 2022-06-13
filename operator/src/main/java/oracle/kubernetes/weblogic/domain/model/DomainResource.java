@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -26,7 +27,6 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
@@ -34,12 +34,16 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -80,7 +84,7 @@ public class DomainResource implements KubernetesObject {
   @SerializedName("apiVersion")
   @Expose
   @Description("The API version defines the versioned schema of this Domain. Required.")
-  private String apiVersion;
+  private String apiVersion = KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -90,12 +94,13 @@ public class DomainResource implements KubernetesObject {
   @SerializedName("kind")
   @Expose
   @Description("The type of the REST resource. Must be \"Domain\". Required.")
-  private String kind;
+  private String kind = KubernetesConstants.DOMAIN;
 
   /**
    * Standard object's metadata. More info:
    * https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("metadata")
   @Expose
   @Valid
@@ -124,18 +129,18 @@ public class DomainResource implements KubernetesObject {
   private DomainStatus status;
 
   @SuppressWarnings({"rawtypes"})
-  static List sortOrNull(List list) {
-    return sortOrNull(list, null);
+  static List sortList(List list) {
+    return sortList(list, null);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  static List sortOrNull(List list, Comparator c) {
+  static List sortList(List list, Comparator c) {
     if (list != null) {
       Object[] a = list.toArray(new Object[0]);
       Arrays.sort(a, c);
       return Arrays.asList(a);
     }
-    return null;
+    return Arrays.asList();
   }
 
   /**
@@ -257,7 +262,7 @@ public class DomainResource implements KubernetesObject {
     return metadata.getNamespace();
   }
 
-  public AdminServerSpec getAdminServerSpec() {
+  public EffectiveAdminServerSpec getAdminServerSpec() {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
@@ -300,7 +305,7 @@ public class DomainResource implements KubernetesObject {
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the server
    */
-  public ServerSpec getServer(String serverName, String clusterName) {
+  public EffectiveServerSpec getServer(String serverName, String clusterName) {
     return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
   }
 
@@ -310,7 +315,7 @@ public class DomainResource implements KubernetesObject {
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the cluster
    */
-  public ClusterSpec getCluster(String clusterName) {
+  public EffectiveClusterSpec getCluster(String clusterName) {
     return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
   }
 
@@ -769,7 +774,7 @@ public class DomainResource implements KubernetesObject {
    */
   public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
     return Optional.ofNullable(getServer(serverName, clusterName))
-        .map(ServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
+        .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
   }
 
   public String getWdtConfigMap() {
@@ -916,9 +921,10 @@ public class DomainResource implements KubernetesObject {
   }
 
   class Validator {
-    public static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
-    public static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
-    public static final String MS_SPEC_PREFIX = "spec.managedServers";
+    static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
+    static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
+    static final String MS_SPEC_PREFIX = "spec.managedServers";
+    static final String SERVER_POD_CONTAINERS = "].serverPod.containers";
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
@@ -982,7 +988,7 @@ public class DomainResource implements KubernetesObject {
           .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
-          .map(Cluster::getClusterName)
+          .map(ClusterSpec::getClusterName)
           .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
     }
@@ -1104,11 +1110,11 @@ public class DomainResource implements KubernetesObject {
       getSpec().getClusters().forEach(cluster ->
               cluster.getContainers().forEach(container ->
                       isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
-                              + "].serverPod.containers")));
+                              + SERVER_POD_CONTAINERS)));
       getSpec().getManagedServers().forEach(managedServer ->
               managedServer.getContainers().forEach(container ->
                       isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
-                              + "].serverPod.containers")));
+                              + SERVER_POD_CONTAINERS)));
     }
 
     private void isContainerNameReserved(V1Container container, String prefix) {
@@ -1123,11 +1129,11 @@ public class DomainResource implements KubernetesObject {
       getSpec().getClusters().forEach(cluster ->
               cluster.getContainers().forEach(container ->
                       areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
-                              + "].serverPod.containers")));
+                              + SERVER_POD_CONTAINERS)));
       getSpec().getManagedServers().forEach(managedServer ->
               managedServer.getContainers().forEach(container ->
                       areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
-                              + "].serverPod.containers")));
+                              + SERVER_POD_CONTAINERS)));
     }
 
     private void areContainerPortNamesValid(V1Container container, String prefix) {
@@ -1136,7 +1142,7 @@ public class DomainResource implements KubernetesObject {
     }
 
     private void checkPortNameLength(V1ContainerPort port, String name, String prefix) {
-      if (port.getName().length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+      if (Objects.requireNonNull(port.getName()).length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
         failures.add(DomainValidationMessages.exceedMaxContainerPortName(
                 getDomainUid(),
                 prefix + "." + name,
@@ -1255,9 +1261,6 @@ public class DomainResource implements KubernetesObject {
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
       verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WEBLOGIC_CREDENTIALS);
-      for (V1LocalObjectReference reference : getImagePullSecrets()) {
-        verifySecretExists(resourceLookup, reference.getName(), SecretType.IMAGE_PULL);
-      }
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.CONFIG_OVERRIDE);
       }
@@ -1284,10 +1287,6 @@ public class DomainResource implements KubernetesObject {
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
 
-    }
-
-    private List<V1LocalObjectReference> getImagePullSecrets() {
-      return spec.getImagePullSecrets();
     }
 
     @SuppressWarnings("SameParameterValue")

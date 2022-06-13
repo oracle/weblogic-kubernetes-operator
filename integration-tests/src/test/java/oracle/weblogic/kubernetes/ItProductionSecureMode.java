@@ -41,8 +41,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -65,7 +65,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardPr
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -85,12 +85,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The test verifies the enablement of ProductionSecureMode in WebLogic Operator
  * environment. Make sure all the servers in the domain comes up and WebLogic
- * console is accessible thru default-admin NodePort service 
- * In order to enable ProductionSecureMode in WebLogic Operator environment 
+ * console is accessible thru default-admin NodePort service
+ * In order to enable ProductionSecureMode in WebLogic Operator environment
  * (a) add channel called `default-admin` to domain resource
  * (b) JAVA_OPTIONS to -Dweblogic.security.SSL.ignoreHostnameVerification=true
  * (c) add ServerStartMode: secure to domainInfo section of model file
- *     Alternativley add SecurityConfiguration/SecureMode to topology section 
+ *     Alternativley add SecurityConfiguration/SecureMode to topology section
  * (d) add a SSL Configuration to the server template
  */
 
@@ -134,26 +134,26 @@ class ItProductionSecureMode {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, 
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, 
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
             "weblogicenc", "weblogicenc");
 
     pathToEnableSSLYaml = Paths.get(WORK_DIR + "/enablessl.yaml");
     String yamlString = "topology:\n"
-        + "  SecurityConfiguration: \n" 
+        + "  SecurityConfiguration: \n"
         + "    SecureMode: \n"
         + "         SecureModeEnabled: true \n"
-        + "  ServerTemplate: \n" 
+        + "  ServerTemplate: \n"
         + "    \"cluster-1-template\": \n"
         + "       ListenPort: '7001' \n"
         + "       SSL: \n"
@@ -165,7 +165,7 @@ class ItProductionSecureMode {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName);
 
     // wait for the domain to exist
@@ -200,7 +200,7 @@ class ItProductionSecureMode {
    * Create a domain resource with a channel with the name `default-admin`.
    * Verify a NodePort service is available thru default-admin channel.
    * Verify WebLogic console is accessible through the `default-admin` service.
-   * Verify no NodePort service is available thru default channel since 
+   * Verify no NodePort service is available thru default channel since
    * clear text default port (7001) is disabled.
    * Check the `default-secure` and `default-admin` port on cluster service.
    * Make sure kubectl port-forward works thru Administration port(9002)
@@ -213,21 +213,21 @@ class ItProductionSecureMode {
     int defaultAdminPort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
     assertNotEquals(-1, defaultAdminPort,
-          "Could not get the default-admin external service node port");    
+          "Could not get the default-admin external service node port");
     logger.info("Found the administration service nodePort {0}", defaultAdminPort);
 
     // Here the SSL port is explicitly set to 7002 (on-prem default) in
-    // in ServerTemplate section on topology file. Here the generated 
-    // config.xml has no SSL port assigned, but the default-secure service 
-    // must be active with port 7002 
+    // in ServerTemplate section on topology file. Here the generated
+    // config.xml has no SSL port assigned, but the default-secure service
+    // must be active with port 7002
     int defaultClusterSecurePort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, 
+        -> getServicePort(domainNamespace,
               domainUid + "-cluster-cluster-1", "default-secure"),
               "Getting Default Secure Cluster Service port failed");
     assertEquals(7002, defaultClusterSecurePort, "Default Secure Cluster port is not set to 7002");
 
     int defaultAdminSecurePort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, 
+        -> getServicePort(domainNamespace,
               domainUid + "-cluster-cluster-1", "default-admin"),
               "Getting Default Admin Cluster Service port failed");
     assertEquals(9002, defaultAdminSecurePort, "Default Admin Cluster port is not set to 9002");
@@ -250,16 +250,16 @@ class ItProductionSecureMode {
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
       logger.info("WebLogic console is accessible thru default-admin service");
- 
+
       String localhost = "localhost";
-      String forwardPort = 
-           startPortForwardProcess(localhost, domainNamespace, 
+      String forwardPort =
+           startPortForwardProcess(localhost, domainNamespace,
            domainUid, 9002);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded admin-port is {0}", forwardPort);
       curlCmd = "curl -sk --show-error --noproxy '*' "
           + " https://" + localhost + ":" + forwardPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} " 
+          + "/console/login/LoginForm.jsp --write-out %{http_code} "
           + " -o /dev/null";
       logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -267,14 +267,14 @@ class ItProductionSecureMode {
 
       // When port-forwarding is happening on admin-port, port-forwarding will
       // not work for SSL port i.e. 7002
-      forwardPort = 
-           startPortForwardProcess(localhost, domainNamespace, 
+      forwardPort =
+           startPortForwardProcess(localhost, domainNamespace,
            domainUid, 7002);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded ssl port is {0}", forwardPort);
       curlCmd = "curl -sk --show-error --noproxy '*' "
           + " https://" + localhost + ":" + forwardPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} " 
+          + "/console/login/LoginForm.jsp --write-out %{http_code} "
           + " -o /dev/null";
       logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
       assertFalse(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -283,7 +283,7 @@ class ItProductionSecureMode {
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-  
+
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertEquals(-1, nodePort,
@@ -352,7 +352,7 @@ class ItProductionSecureMode {
 
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName) {
     // create the domain CR
     Domain domain = new Domain()

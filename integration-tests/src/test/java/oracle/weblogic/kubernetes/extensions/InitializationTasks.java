@@ -40,6 +40,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
@@ -52,16 +54,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -169,27 +164,15 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
-        // docker login to OCR or OCIR if OCR_USERNAME and OCR_PASSWORD is provided in env var
-        if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-          if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            testUntil(
-                withVeryLongRetryPolicy,
-                () -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD),
+        // docker login to BASE_IMAGES_REPO 
+        logger.info("docker login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
+        testUntil(withVeryLongRetryPolicy,
+                () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
-                "docker login to OCR to be successful");
-          }
-        } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
-          if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            testUntil(
-                withVeryLongRetryPolicy,
-                () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
-                logger,
-                "docker login to OCIR to be successful");
-          }
-        }
+                "docker login to BASE_IMAGES_REPO to be successful");
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
-          // The kind clusters can't pull images from OCR using the image pull secret.
+          // The kind clusters can't pull images from BASE_IMAGES_REPO using the image pull secret.
           // It may be a containerd bug. We are going to workaround this issue.
           // The workaround will be to:
           //   1. docker login
@@ -206,9 +189,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           for (String image : images) {
             testUntil(
                 withVeryLongRetryPolicy,
-                pullImageFromOcrOrOcirAndPushToKind(image),
+                pullImageFromBaseRepoAndPushToKind(image),
                 logger,
-                "pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
+                "pullImageFromBaseRepoAndPushToKind for image {0} to be successful",
                 image);
           }
         }
@@ -256,16 +239,13 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
 
-        if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          logger.info("docker login");
-          testUntil(
-              withVeryLongRetryPolicy,
-              () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+        logger.info("docker login");
+        testUntil(withVeryLongRetryPolicy,
+              () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
-              "docker login to OCIR to be successful");
-        }
+              "docker login to BASE_IMAGES_REPO to be successful");
 
-        // push the images to repo
+        // push the images to test images repository
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
 
           List<String> images = new ArrayList<>();
@@ -286,7 +266,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 withVeryLongRetryPolicy,
                 () -> dockerPush(image),
                 logger,
-                "docker push to OCIR/kind for image {0} to be successful",
+                "docker push to TEST_IMAGES_REPO/kind for image {0} to be successful",
                 image);
           }
 
@@ -328,7 +308,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
     // check initialization is already done and is not successful
     assertTrue(started.get() && isInitializationSuccessful,
-        "Initialization(pull images from OCR or login/push to OCIR) failed, "
+        "Initialization(login/push to BASE_IMAGES_REPO) failed, "
             + "check the actual error or stack trace in the first test that failed in the test suite");
 
   }
@@ -380,11 +360,11 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       }
     }
 
-    // delete images from OCIR, if necessary
+    // delete images from TEST_IMAGES_REPO, if necessary
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
-        logger.info("Deleting these images from OCIR");
+        logger.info("Deleting these images from REPO_REGISTRY");
         logger.info(String.join(", ", pushedImages));
         for (String image : pushedImages.stream().distinct().collect(Collectors.toList())) {
           deleteImageOcir(token, image);
@@ -411,9 +391,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     StringBuilder cmd = new StringBuilder()
         .append(scriptPath.toFile().getAbsolutePath())
-        .append(" -u " + OCIR_USERNAME)
-        .append(" -p \"" + OCIR_PASSWORD + "\"")
-        .append(" -e " + OCIR_REGISTRY);
+        .append(" -u " + BASE_IMAGES_REPO_USERNAME)
+        .append(" -p \"" + BASE_IMAGES_REPO_PASSWORD + "\"")
+        .append(" -e " + BASE_IMAGES_REPO);
     ExecResult result = null;
     try {
       result = ExecCommand.exec(cmd.toString(), true);
@@ -591,7 +571,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     });
   }
 
-  private Callable<Boolean> pullImageFromOcrOrOcirAndPushToKind(String image) {
+  private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);

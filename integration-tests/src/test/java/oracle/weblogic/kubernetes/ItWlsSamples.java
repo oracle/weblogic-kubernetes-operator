@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -32,14 +33,14 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -60,8 +61,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -82,7 +83,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
-@Tag("samples-gate")
 class ItWlsSamples {
 
   public static final String SERVER_LIFECYCLE = "Server";
@@ -101,7 +101,7 @@ class ItWlsSamples {
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
-      SKIP_BUILD_IMAGES_IF_EXISTS ? OCIR_WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
+      SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String managedServerNameBase = "managed-server";
@@ -143,7 +143,7 @@ class ItWlsSamples {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -157,6 +157,7 @@ class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
+  @Tag("samples-gate")
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
@@ -176,7 +177,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
@@ -218,6 +219,7 @@ class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in pv")
+  @Tag("samples-gate")
   void testSampleDomainInPv(String model) {
 
     String domainName = model.split(":")[1];
@@ -249,7 +251,7 @@ class ItWlsSamples {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
+              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
@@ -267,6 +269,7 @@ class ItWlsSamples {
   @Order(3)
   @Test
   @DisplayName("Test server lifecycle samples scripts")
+  @Tag("samples-gate")
   void testServerLifecycleScripts() {
 
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
@@ -291,6 +294,7 @@ class ItWlsSamples {
   @Order(4)
   @Test
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
+  @Tag("samples-gate")
   void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
     String keepReplicaCountConstantParameter = "-k";
@@ -317,6 +321,7 @@ class ItWlsSamples {
   @Order(5)
   @Test
   @DisplayName("Test cluster lifecycle scripts")
+  @Tag("samples-gate")
   void testClusterLifecycleScripts() {
 
     // Verify all clustered server pods are shut down after stopCluster script execution
@@ -338,6 +343,7 @@ class ItWlsSamples {
   @Order(6)
   @Test
   @DisplayName("Test domain lifecycle scripts")
+  @Tag("samples-gate")
   void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
@@ -362,6 +368,7 @@ class ItWlsSamples {
   @Order(0)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
+  @Tag("samples-gate")
   void testTraefikIngressController() {
     setupSample();
     Path scriptBase = get(tempSamplePath.toString(), "charts/util");
@@ -545,7 +552,7 @@ class ItWlsSamples {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+              "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
       if (KIND_REPO == null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
             "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
@@ -578,14 +585,22 @@ class ItWlsSamples {
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
       logger.info("Create docker registry secret in namespace {0}", domainNamespace);
-      createOcirRepoSecret(domainNamespace);
+      createTestRepoSecret(domainNamespace);
     }
+
+    // wait until domain.yaml file exits
+    String domainYamlFileString = get(sampleBase.toString(), "weblogic-domains/"
+        + domainName + "/domain.yaml").toString();
+    File domainYamlFile = new File(domainYamlFileString);
+    testUntil(() -> domainYamlFile.exists(),
+        logger,
+        "domain yaml file {0} exists",
+        domainYamlFileString);
 
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
-            + get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+    params.command("kubectl apply -f " + domainYamlFileString);
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -641,6 +656,15 @@ class ItWlsSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
+    // wait until domain.yaml file exits
+    String domainYamlFileString = get(sampleBase.toString(), "weblogic-domains/"
+        + domainName + "/domain.yaml").toString();
+    File domainYamlFile = new File(domainYamlFileString);
+    testUntil(() -> domainYamlFile.exists(),
+        logger,
+        "domain yaml file {0} exists",
+        domainYamlFileString);
+
     // For the domain created by WLST, we have to apply domain.yaml created by update-domain.sh
     // before initiating introspection of the domain to start the second cluster that was just added
     // otherwise the newly added Cluster 'cluster-2' is not added to the domain1.
@@ -648,11 +672,7 @@ class ItWlsSamples {
       // run kubectl to update the domain
       logger.info("Run kubectl to create the domain");
       params = new CommandParams().defaults();
-      params.command("kubectl apply -f "
-          + get(sampleBase.toString(), "weblogic-domains/"
-          + domainName
-          + "/domain.yaml").toString());
-
+      params.command("kubectl apply -f " + domainYamlFileString);
       result = Command.withParams(params).execute();
       assertTrue(result, "Failed to create domain custom resource");
     }

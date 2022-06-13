@@ -24,15 +24,19 @@ import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.impl.Pod.isPodEvictedStatusLoggedInOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitialized;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -93,16 +97,17 @@ public class PodUtils {
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    testUntil(
-        assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-          String.format("podReady failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace)),
-        logger,
-        "pod {0} to be ready in namespace {1}",
-        podName,
-        domainNamespace);
-  }
 
+    testUntil(
+            withLongRetryPolicy,
+            assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+                    String.format("podReady failed with ApiException for pod %s in namespace %s",
+                            podName, domainNamespace)),
+            logger,
+            "pod {0} to be ready in namespace {1}",
+            podName,
+            domainNamespace);
+  }
 
   /**
    * Check pod is ready.
@@ -389,5 +394,26 @@ public class PodUtils {
     }
 
     return introspectorLog.contains(errormsg);
+  }
+
+  /**
+   * Check if pod Evicted status is logged in Operator log.
+   *
+   * @param opNamespace in which the pod is running
+   * @param regex the regular expression to which this string is to be matched
+   * @return true if pod Evicted status is logged in Operator log, otherwise false
+   */
+  public static Callable<Boolean> checkPodEvictedStatusInOperatorLogs(String opNamespace, String regex) {
+    return () -> {
+      String operatorPodName =
+          assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+          "Can't get operator's pod name");
+
+      String operatorLog =
+          assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace, OPERATOR_RELEASE_NAME),
+          "Can't get operator log");
+
+      return isPodEvictedStatusLoggedInOperator(operatorLog, regex);
+    };
   }
 }

@@ -41,7 +41,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -73,11 +73,9 @@ class ItFmwDomainInPVUsingWDT {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
-  private static final String DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
-
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
-
+  private static String DOMAINHOMEPREFIX = null;
   private static final String domainUid = "fmw-domainonpv-wdt";
   private static final String clusterName = "cluster-1";
   private static final String adminServerName = "admin-server";
@@ -120,6 +118,7 @@ class ItFmwDomainInPVUsingWDT {
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace = namespaces.get(2);
 
+    DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
     // start DB and create RCU schema
     logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
@@ -134,7 +133,7 @@ class ItFmwDomainInPVUsingWDT {
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
   }
 
   /**
