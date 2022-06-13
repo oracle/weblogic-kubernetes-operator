@@ -29,6 +29,12 @@ public class Shutdown {
           + " Not required. Defaults to false.")
   private Boolean ignoreSessions;
 
+  @ApiModelProperty(
+      "For graceful shutdown only, set to true to wait for all HTTP sessions"
+          + " during in-flight work handling; false to wait for non-persisted HTTP sessions only."
+          + " Defaults to false.")
+  private Boolean waitForAllSessions;
+
   public Shutdown shutdownType(String shutdownType) {
     this.shutdownType = shutdownType;
     return this;
@@ -80,12 +86,30 @@ public class Shutdown {
     this.ignoreSessions = ignoreSessions;
   }
 
+  public Shutdown waitForAllSessions(Boolean waitForAllSessions) {
+    this.waitForAllSessions = waitForAllSessions;
+    return this;
+  }
+
+  public Boolean waitForAllSessions() {
+    return waitForAllSessions;
+  }
+
+  public Boolean getWaitForAllSessions() {
+    return waitForAllSessions;
+  }
+
+  public void setWaitForAllSessions(Boolean waitForAllSessions) {
+    this.waitForAllSessions = waitForAllSessions;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("shutdownType", shutdownType)
         .append("timeoutSeconds", timeoutSeconds)
         .append("ignoreSessions", ignoreSessions)
+        .append("waitForAllSessions", waitForAllSessions)
         .toString();
   }
 
@@ -103,6 +127,7 @@ public class Shutdown {
         .append(shutdownType, rhs.shutdownType)
         .append(timeoutSeconds, rhs.timeoutSeconds)
         .append(ignoreSessions, rhs.ignoreSessions)
+        .append(waitForAllSessions, rhs.waitForAllSessions)
         .isEquals();
   }
 
@@ -112,6 +137,7 @@ public class Shutdown {
         .append(shutdownType)
         .append(timeoutSeconds)
         .append(ignoreSessions)
+        .append(waitForAllSessions)
         .toHashCode();
   }
 }
