@@ -120,6 +120,22 @@ public class DomainPresenceInfo implements PacketComponent {
     return false;
   }
 
+  /**
+   * Returns true if the domain in this presence info has a later generation than the passed-in cached info.
+   * @param cachedInfo another presence info against which to compare this one.
+   */
+  public boolean isGenerationChanged(DomainPresenceInfo cachedInfo) {
+    return getGeneration()
+        .map(gen -> (gen.compareTo(cachedInfo.getGeneration().orElse(0L)) > 0))
+        .orElse(true);
+  }
+
+  private Optional<Long> getGeneration() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getMetadata)
+        .map(V1ObjectMeta::getGeneration);
+  }
+
 
   /**
    * Returns true if the state of the current domain presence info, when compared with the cached info for the same

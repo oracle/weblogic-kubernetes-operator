@@ -292,7 +292,8 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   @Override
-  public void runMakeRight(MakeRightDomainOperation operation) {
+  public void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
+    executor.accept(getExistingDomainPresenceInfo(presenceInfo));
   }
 
   /**
@@ -808,13 +809,16 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      MakeRightDomainOperation operation = this;
-      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(operation.getPresenceInfo())) {
-        if (!delegate.isNamespaceRunning(operation.getPresenceInfo().getNamespace())) {
+      DomainProcessorImpl.this.runMakeRight(this::doExecute, getPresenceInfo());
+    }
+
+    private void doExecute(DomainPresenceInfo cachedInfo) {
+      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
+        if (!delegate.isNamespaceRunning(liveInfo.getNamespace())) {
           return;
         }
 
-        if (shouldContinue()) {
+        if (shouldContinue(cachedInfo)) {
           internalMakeRightDomainPresence();
         } else {
           logNotStartingDomain();
@@ -852,24 +856,20 @@ public class DomainProcessorImpl implements DomainProcessor {
       return inspectionRun;
     }
 
-    private boolean shouldContinue() {
-      MakeRightDomainOperation operation = this;
-      DomainPresenceInfo info = operation.getPresenceInfo();
-      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(info);
-
+    private boolean shouldContinue(DomainPresenceInfo cachedInfo) {
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (info.isDomainProcessingHalted(cachedInfo)) {
+      } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
         return false;
-      } else if (shouldRecheck(operation, cachedInfo)) {
+      } else if (shouldRecheck(cachedInfo)) {
         return true;
       }
-      cachedInfo.setDomain(info.getDomain());
+      cachedInfo.setDomain(liveInfo.getDomain());
       return false;
     }
 
-    private boolean shouldRecheck(MakeRightDomainOperation operation, DomainPresenceInfo cachedInfo) {
-      return operation.isExplicitRecheck() || isGenerationChanged(operation.getPresenceInfo(), cachedInfo);
+    private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
+      return isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo);
     }
 
     private void logNotStartingDomain() {
@@ -952,19 +952,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         throw new NullPointerException("Force unit test to handle NPE");
       }
     }
-  }
-
-  private static boolean isGenerationChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    return getGeneration(liveInfo)
-        .map(gen -> (gen.compareTo(getGeneration(cachedInfo).orElse(0L)) > 0))
-        .orElse(true);
-  }
-
-  private static Optional<Long> getGeneration(DomainPresenceInfo dpi) {
-    return Optional.ofNullable(dpi)
-        .map(DomainPresenceInfo::getDomain)
-        .map(DomainResource::getMetadata)
-        .map(V1ObjectMeta::getGeneration);
   }
 
   abstract static class ThrowableCallback implements CompletionCallback {
