@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -30,6 +29,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -140,7 +140,7 @@ class ItMiiCreateAuxImageWithImageTool {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -223,7 +223,7 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(modelList)
         .wdtVersion(WDT_TEST_VERSION);
 
-    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ",
@@ -296,7 +296,7 @@ class ItMiiCreateAuxImageWithImageTool {
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList);
 
-    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -321,7 +321,7 @@ class ItMiiCreateAuxImageWithImageTool {
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
 
