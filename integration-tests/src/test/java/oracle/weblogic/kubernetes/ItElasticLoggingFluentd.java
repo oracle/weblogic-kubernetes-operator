@@ -376,11 +376,11 @@ class ItElasticLoggingFluentd {
     final String volumeName = "weblogic-domain-storage-volume";
     final String logHomeRootPath = "/scratch";
     // create the domain CR
-    String imagePoolPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
+    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
     fluentdSpecification.setImage(FLUENTD_IMAGE);
     fluentdSpecification.setWatchIntrospectorLogs(true);
-    fluentdSpecification.setImagePullPolicy(imagePoolPolicy);
+    fluentdSpecification.setImagePullPolicy(imagePullPolicy);
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
     fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
         .name(volumeName)

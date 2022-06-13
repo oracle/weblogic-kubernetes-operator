@@ -1423,7 +1423,7 @@ public class CommonMiiTestUtils {
           String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
           managedServerPodName, domainNamespace)));
     }
-    String imagePoolPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
+    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
     // create patch string
     StringBuffer patchStr = new StringBuffer("[")
         .append("{\"op\":  \"" + addOrReplace + "\",")
@@ -1434,7 +1434,7 @@ public class CommonMiiTestUtils {
         .append("\"value\":  {\"image\": \"")
         .append(auxiliaryImageName)
         .append("\", ")
-        .append("\"imagePullPolicy\": \"" + imagePoolPolicy + "\" ")
+        .append("\"imagePullPolicy\": \"" + imagePullPolicy + "\" ")
         .append("\"}}]");
 
     logger.info("Patch domain with auxiliary image patch string: " + patchStr);

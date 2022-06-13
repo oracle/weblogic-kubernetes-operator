@@ -75,9 +75,8 @@ class ItFmwDomainInPVUsingWDT {
 
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
-
+  private static String DOMAINHOMEPREFIX = null;
   private static final String domainUid = "fmw-domainonpv-wdt";
-  private static final String DOMAINHOMEPREFIX = "/shared/" + domainUid + "/domains/";
   private static final String clusterName = "cluster-1";
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
@@ -119,6 +118,7 @@ class ItFmwDomainInPVUsingWDT {
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace = namespaces.get(2);
 
+    DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
     // start DB and create RCU schema
     logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,

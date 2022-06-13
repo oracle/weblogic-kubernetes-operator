@@ -89,7 +89,7 @@ public class WebLogicImageTool {
 
   /**
    * Inspect an image using the params using WIT inspect command.
-   * @return output if the command succeeds
+   * @return inspection output string if the command succeeds otherwise null
    */
   public String inspectImage(String imageName, String imageTag) {
     String output = null;
