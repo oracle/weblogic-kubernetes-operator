@@ -36,6 +36,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -361,7 +362,7 @@ public class LoggingUtil {
                 new V1Container()
                     .name("pv-container")
                     .image("ghcr.io/oracle/oraclelinux:7")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod
