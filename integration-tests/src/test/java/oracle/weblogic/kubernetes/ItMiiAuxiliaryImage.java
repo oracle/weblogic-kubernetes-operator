@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -33,6 +32,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -613,7 +613,7 @@ class ItMiiAuxiliaryImage {
     // add the sourceWDTInstallHome and sourceModelHome for both aux images.
     for (String cmImageName : images) {
       AuxiliaryImage auxImage = new AuxiliaryImage()
-          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
       auxImage.sourceWDTInstallHome(auxiliaryImagePathCustom + "/weblogic-deploy")
           .sourceModelHome(auxiliaryImagePathCustom + "/models");
       domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
@@ -1379,7 +1379,7 @@ class ItMiiAuxiliaryImage {
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
       AuxiliaryImage auxImage = new AuxiliaryImage()
-          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
         auxImage.sourceWDTInstallHome(sourceWDTInstallHome + "/weblogic-deploy")

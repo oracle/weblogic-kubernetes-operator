@@ -17,7 +17,6 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -41,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
@@ -346,7 +346,7 @@ public class LoadBalancerUtils {
         .helmParams(apacheHelmParams)
         .imagePullSecrets(secretNameMap)
         .image(image)
-        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
         .domainUID(domainUid);
 
     if (httpNodePort >= 0 && httpsNodePort >= 0) {
