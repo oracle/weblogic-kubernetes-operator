@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: eb697282e8cf67ddf56fa6cc35cf7deb6c572ab1df40e4a4598eaedc1b57c7c3
+    weblogic.sha256: 4fa4363bfe6aece81d9eb5a313b913d462662412af573a5a54f3049e76c6f481
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -6688,6 +6688,7 @@ spec:
                   full domain shut down. For the FromModel `domainHomeSourceType`,
                   introspection also occurs when a running server must be restarted
                   because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
+                  The introspectVersion value must be a valid label value in Kubernetes.
                   See also `domains.spec.configuration.overrideDistributionStrategy`.'
                 type: string
               dataHome:
@@ -12711,6 +12712,9 @@ spec:
                 description: A human readable message indicating details about why
                   the domain is in this condition.
                 type: string
+              observedGeneration:
+                description: The generation observed by the WebLogic operator.
+                type: number
               clusters:
                 description: Status of WebLogic clusters in this domain.
                 items:

@@ -112,7 +112,34 @@
         "channelName"
       ]
     },
-    "Cluster": {
+    "ClusterService": {
+      "type": "object",
+      "properties": {
+        "sessionAffinity": {
+          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
+          "type": "string",
+          "enum": [
+            "ClientIP",
+            "None"
+          ]
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "ClusterSpec": {
       "type": "object",
       "properties": {
         "serverStartState": {
@@ -178,33 +205,6 @@
           "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
           "type": "number",
           "minimum": 0
-        }
-      }
-    },
-    "ClusterService": {
-      "type": "object",
-      "properties": {
-        "sessionAffinity": {
-          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
-          "type": "string",
-          "enum": [
-            "ClientIP",
-            "None"
-          ]
-        },
-        "annotations": {
-          "description": "The annotations to be added to generated resources.",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
         }
       }
     },
@@ -428,7 +428,7 @@
           "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Cluster"
+            "$ref": "#/definitions/ClusterSpec"
           }
         },
         "serverStartState": {
@@ -485,7 +485,7 @@
           "type": "string"
         },
         "introspectVersion": {
-          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. See also `domains.spec.configuration.overrideDistributionStrategy`.",
+          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`.",
           "type": "string"
         },
         "dataHome": {
@@ -565,6 +565,10 @@
         "message": {
           "description": "A human readable message indicating details about why the domain is in this condition.",
           "type": "string"
+        },
+        "observedGeneration": {
+          "description": "The generation observed by the WebLogic operator.",
+          "type": "number"
         },
         "clusters": {
           "description": "Status of WebLogic clusters in this domain.",

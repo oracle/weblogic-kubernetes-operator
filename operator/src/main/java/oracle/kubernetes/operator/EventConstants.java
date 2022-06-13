@@ -12,7 +12,8 @@ public interface EventConstants {
   String DOMAIN_AVAILABLE_EVENT = "Available";
   String DOMAIN_COMPLETED_EVENT = "Completed";
   String DOMAIN_FAILED_EVENT = "Failed";
-  String CONVERSION_WEBHOOK_FAILED_EVENT = "ConversionWebhookFailed";
+  String WEBHOOK_STARTUP_FAILED_EVENT = "WebhookStartupFailed";
+  String CONVERSION_WEBHOOK_FAILED_EVENT = "DomainConversionFailed";
   String DOMAIN_ROLL_COMPLETED_EVENT = "RollCompleted";
   String DOMAIN_ROLL_STARTING_EVENT = "RollStarting";
   String POD_CYCLE_STARTING_EVENT = "PodCycleStarting";
@@ -22,7 +23,7 @@ public interface EventConstants {
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
-  String CONVERSION_WEBHOOK_COMPONENT = "weblogic.conversion.webhook";
+  String OPERATOR_WEBHOOK_COMPONENT = "weblogic.operator.webhook";
 
   String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";
   String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";

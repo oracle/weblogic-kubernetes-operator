@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.processing.EffectiveServerSpecBase;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -29,9 +30,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
-public abstract class ServerSpecCommonImpl extends ServerSpecBase {
+public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecBase {
   private final Server server;
-  private final Cluster cluster;
+  private final ClusterSpec clusterSpec;
   private final Integer clusterLimit;
 
   /**
@@ -39,17 +40,17 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
    *
    * @param spec Domain spec
    * @param server the server whose configuration is to be returned
-   * @param cluster the cluster to which the server belongs
+   * @param clusterSpec the cluster to which the server belongs
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
    */
-  ServerSpecCommonImpl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
+  EffectiveServerSpecCommonImpl(DomainSpec spec, Server server, ClusterSpec clusterSpec, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
-    this.server.fillInFrom(cluster);
+    this.server.fillInFrom(clusterSpec);
     this.server.fillInFrom(spec);
-    this.cluster = cluster;
+    this.clusterSpec = clusterSpec;
   }
 
   private Server getBaseConfiguration(Server server) {
@@ -247,7 +248,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   public String getClusterRestartVersion() {
-    return cluster != null ? cluster.getRestartVersion() : null;
+    return clusterSpec != null ? clusterSpec.getRestartVersion() : null;
   }
 
   @Override
@@ -266,7 +267,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
         .appendSuper(super.toString())
         .append("server", server)
         .append("clusterLimit", clusterLimit)
-        .append("cluster", cluster)
+        .append("cluster", clusterSpec)
         .toString();
   }
 
@@ -276,17 +277,17 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
       return true;
     }
 
-    if (!(o instanceof ServerSpecCommonImpl)) {
+    if (!(o instanceof EffectiveServerSpecCommonImpl)) {
       return false;
     }
 
-    ServerSpecCommonImpl that = (ServerSpecCommonImpl) o;
+    EffectiveServerSpecCommonImpl that = (EffectiveServerSpecCommonImpl) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(server, that.server)
         .append(clusterLimit, that.clusterLimit)
-        .append(cluster, that.cluster)
+        .append(clusterSpec, that.clusterSpec)
         .isEquals();
   }
 
@@ -296,7 +297,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
         .appendSuper(super.hashCode())
         .append(server)
         .append(clusterLimit)
-        .append(cluster)
+        .append(clusterSpec)
         .toHashCode();
   }
 }

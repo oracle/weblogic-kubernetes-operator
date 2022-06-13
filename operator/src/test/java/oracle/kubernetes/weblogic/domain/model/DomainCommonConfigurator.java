@@ -300,19 +300,19 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
   }
 
-  private Cluster getOrCreateCluster(@Nonnull String clusterName) {
-    Cluster cluster = getDomainSpec().getCluster(clusterName);
-    if (cluster != null) {
-      return cluster;
+  private ClusterSpec getOrCreateCluster(@Nonnull String clusterName) {
+    ClusterSpec clusterSpec = getDomainSpec().getCluster(clusterName);
+    if (clusterSpec != null) {
+      return clusterSpec;
     }
 
     return createCluster(clusterName);
   }
 
-  private Cluster createCluster(@Nonnull String clusterName) {
-    Cluster cluster = new Cluster().withClusterName(clusterName);
-    getDomainSpec().getClusters().add(cluster);
-    return cluster;
+  private ClusterSpec createCluster(@Nonnull String clusterName) {
+    ClusterSpec clusterSpec = new ClusterSpec().withClusterName(clusterName);
+    getDomainSpec().getClusters().add(clusterSpec);
+    return clusterSpec;
   }
 
 
@@ -694,33 +694,33 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
-    private final Cluster cluster;
+    private final ClusterSpec clusterSpec;
 
-    ClusterConfiguratorImpl(Cluster cluster) {
-      this.cluster = cluster;
+    ClusterConfiguratorImpl(ClusterSpec clusterSpec) {
+      this.clusterSpec = clusterSpec;
     }
 
     @Override
     public ClusterConfigurator withReplicas(int replicas) {
-      cluster.setReplicas(replicas);
+      clusterSpec.setReplicas(replicas);
       return this;
     }
 
     @Override
     public ClusterConfigurator withMaxUnavailable(int maxUnavailable) {
-      cluster.setMaxUnavailable(maxUnavailable);
+      clusterSpec.setMaxUnavailable(maxUnavailable);
       return this;
     }
 
     @Override
     public ClusterConfigurator withDesiredState(ServerStartState state) {
-      cluster.setServerStartState(state);
+      clusterSpec.setServerStartState(state);
       return this;
     }
 
     @Override
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
-      cluster.addEnvironmentVariable(name, value);
+      clusterSpec.addEnvironmentVariable(name, value);
       return this;
     }
 
@@ -731,158 +731,158 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
     @Override
     public ClusterConfigurator withServerStartPolicy(ServerStartPolicy policy) {
-      cluster.setServerStartPolicy(policy);
+      clusterSpec.setServerStartPolicy(policy);
       return this;
     }
 
     @Override
     public ClusterConfigurator withReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period) {
-      cluster.setReadinessProbe(initialDelay, timeout, period);
+      clusterSpec.setReadinessProbe(initialDelay, timeout, period);
       return this;
     }
 
     @Override
     public ClusterConfigurator withReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
-      cluster.setReadinessProbeThresholds(successThreshold, failureThreshold);
+      clusterSpec.setReadinessProbeThresholds(successThreshold, failureThreshold);
       return this;
     }
 
     @Override
     public ClusterConfigurator withLivenessProbeSettings(Integer initialDelay, Integer timeout, Integer period) {
-      cluster.setLivenessProbe(initialDelay, timeout, period);
+      clusterSpec.setLivenessProbe(initialDelay, timeout, period);
       return this;
     }
 
     @Override
     public ClusterConfigurator withLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
-      cluster.setLivenessProbeThresholds(successThreshold, failureThreshold);
+      clusterSpec.setLivenessProbeThresholds(successThreshold, failureThreshold);
       return this;
     }
 
     @Override
     public ClusterConfigurator withNodeSelector(String labelKey, String labelValue) {
-      cluster.addNodeSelector(labelKey, labelValue);
+      clusterSpec.addNodeSelector(labelKey, labelValue);
       return this;
     }
 
     @Override
     public ClusterConfigurator withRequestRequirement(String resource, String quantity) {
-      cluster.addRequestRequirement(resource, quantity);
+      clusterSpec.addRequestRequirement(resource, quantity);
       return this;
     }
 
     @Override
     public ClusterConfigurator withLimitRequirement(String resource, String quantity) {
-      cluster.addLimitRequirement(resource, quantity);
+      clusterSpec.addLimitRequirement(resource, quantity);
       return this;
     }
 
     @Override
     public ClusterConfigurator withContainerSecurityContext(
         V1SecurityContext containerSecurityContext) {
-      cluster.setContainerSecurityContext(containerSecurityContext);
+      clusterSpec.setContainerSecurityContext(containerSecurityContext);
       return this;
     }
 
     @Override
     public ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
-      cluster.setPodSecurityContext(podSecurityContext);
+      clusterSpec.setPodSecurityContext(podSecurityContext);
       return this;
     }
 
     @Override
     public ClusterConfigurator withAdditionalVolume(String name, String path) {
-      cluster.addAdditionalVolume(name, path);
+      clusterSpec.addAdditionalVolume(name, path);
       return this;
     }
 
     @Override
     public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
-      cluster.addAdditionalVolumeMount(name, path);
+      clusterSpec.addAdditionalVolumeMount(name, path);
       return this;
     }
 
     @Override
     public ClusterConfigurator withInitContainer(V1Container initContainer) {
-      cluster.addInitContainer(initContainer);
+      clusterSpec.addInitContainer(initContainer);
       return this;
     }
 
     @Override
     public ClusterConfigurator withContainer(V1Container container) {
-      cluster.addContainer(container);
+      clusterSpec.addContainer(container);
       return this;
     }
 
     @Override
     public ClusterConfigurator withPodLabel(String name, String value) {
-      cluster.addPodLabel(name, value);
+      clusterSpec.addPodLabel(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withPodAnnotation(String name, String value) {
-      cluster.addPodAnnotation(name, value);
+      clusterSpec.addPodAnnotation(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withServiceLabel(String name, String value) {
-      cluster.addClusterLabel(name, value);
+      clusterSpec.addClusterLabel(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withServiceAnnotation(String name, String value) {
-      cluster.addClusterAnnotation(name, value);
+      clusterSpec.addClusterAnnotation(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withRestartVersion(String restartVersion) {
-      cluster.setRestartVersion(restartVersion);
+      clusterSpec.setRestartVersion(restartVersion);
       return this;
     }
 
     @Override
     public ClusterConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
-      cluster.setRestartPolicy(restartPolicy);
+      clusterSpec.setRestartPolicy(restartPolicy);
       return this;
     }
 
     @Override
     public ClusterConfigurator withAffinity(V1Affinity affinity) {
-      cluster.setAffinity(affinity);
+      clusterSpec.setAffinity(affinity);
       return this;
     }
 
     @Override
     public ClusterConfigurator withNodeName(String nodeName) {
-      cluster.setNodeName(nodeName);
+      clusterSpec.setNodeName(nodeName);
       return this;
     }
 
     @Override
     public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
-      cluster.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
+      clusterSpec.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
       return this;
     }
 
     @Override
     public ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
-      cluster.setMaxConcurrentStartup(maxConcurrentStartup);
+      clusterSpec.setMaxConcurrentStartup(maxConcurrentStartup);
       return this;
     }
 
     @Override
     public ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
-      cluster.setMaxConcurrentShutdown(maxConcurrentShutdown);
+      clusterSpec.setMaxConcurrentShutdown(maxConcurrentShutdown);
       return this;
     }
 
     @Override
     public ClusterConfigurator withMaximumReadyWaitTimeSeconds(long maximumReadyWaitTimeSeconds) {
-      cluster.setMaxReadyWaitTimeSeconds(maximumReadyWaitTimeSeconds);
+      clusterSpec.setMaxReadyWaitTimeSeconds(maximumReadyWaitTimeSeconds);
       return this;
     }
 
