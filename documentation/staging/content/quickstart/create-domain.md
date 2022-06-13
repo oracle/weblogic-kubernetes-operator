@@ -5,9 +5,7 @@ draft: false
 weight: 3
 ---
 
-1.  Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).
-
-1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `user name` and `password` for the domain:
+1. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain:
 
     ```shell
     $ kubectl create secret generic sample-domain1-weblogic-credentials \
@@ -28,7 +26,7 @@ weight: 3
 
     These two commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then you will need to update the sample domain YAML file accordingly in the next step.
 
-1. Create the domain using a domain resource. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain. For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
+1. Create the `sample-domain1` domain using a domain resource. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
 
    - Use the following command to apply the sample domain resource:
 
@@ -36,11 +34,14 @@ weight: 3
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml
        ```
 
-    - **NOTE**: Before running the `kubectl apply` command, you can download the WLS Domain YAML file to `/tmp/quickstart/quick-start-domain-resource.yaml` or similar, using the following command, and make any changes if needed:
+    - **NOTE**: Instead of running the previous `kubectl apply` command, you can download the WLS Domain YAML file to `/tmp/quickstart/quick-start-domain-resource.yaml` or similar, using the following command, and then apply the file using `kubectl apply -f /tmp/quickstart/quick-start-domain-resource.yaml`:
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml -o /tmp/quickstart/quick-start-domain-resource.yaml
       ```
+      This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
+         - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml).
+         - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
 
    {{% notice note %}}
    The Quick Start guide uses a WebLogic Server version 12.2.1.4 General Availability (GA) image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
@@ -192,5 +193,5 @@ weight: 3
     {{< /tabs >}}
 
 
-    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}).
+    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
     {{% /notice %}}

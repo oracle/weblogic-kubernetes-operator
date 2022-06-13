@@ -76,7 +76,8 @@ These steps help you understand and customize auxiliary image creation. Then you
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
-1. Download the sample WDT model, archives and properties files to be included in the auxiliary image and put them in your `/tmp/quickstart/models` directory.
+1. Download the sample WDT model, web application, and properties files to be included in the auxiliary image and put them in your `/tmp/quickstart/models` directory.
+Then, use the JAR command to put the web application files into a model archive ZIP file.
 
    For example:
    ```

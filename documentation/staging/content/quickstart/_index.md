@@ -10,14 +10,10 @@ The Quick Start guide provides a simple tutorial to help you get the operator up
 These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please
 refer to [Manage operators]({{< relref "/managing-operators/_index.md" >}}).
 
-{{% notice note %}}
-All Kubernetes distributions and managed services have small differences. In particular,
-the way that persistent storage and load balancers are managed varies significantly.  
-You may need to adjust the instructions in this guide to suit your particular flavor of Kubernetes.
-{{% /notice %}}
-
-
-
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet]({{< relref "/managing-operators/k8s-setup.md" >}}).
 
 The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For detailed Helm installation and usage information, see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}}).
+
+{{% notice note %}}
+All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly. You may need to adjust the instructions in this guide to suit your particular flavor of Kubernetes.
+{{% /notice %}}
