@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
@@ -489,7 +490,8 @@ public class JobHelper {
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
 
-        if (isJobTimedout(info) || (isImagePullError(jobPodContainerWaitingReason)) || jobInitContainerImagePullError) {
+        if (isJobTimedout(info) || (isImagePullError(jobPodContainerWaitingReason))
+            || jobInitContainerImagePullError || isInProgressJobOutdated(job, info)) {
           jobStartTime = OffsetDateTime.now();
           packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
           nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),
@@ -517,6 +519,26 @@ public class JobHelper {
       return Optional.ofNullable(packet.<Boolean>getValue(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON))
               .orElse(Boolean.FALSE);
     }
+
+    private static boolean isInProgressJobOutdated(V1Job job, DomainPresenceInfo info) {
+      return Optional.ofNullable(job)
+          .map(j -> !JobWatcher.isComplete(j) && hasIntrospectVersionChanged(j, info))
+          .orElse(false);
+    }
+
+    private static boolean hasIntrospectVersionChanged(@Nonnull V1Job job, DomainPresenceInfo info) {
+      return !Objects.equals(getIntrospectVersionLabelFromJob(job),
+          getIntrospectVersion(info));
+    }
+
+    private static String getIntrospectVersionLabelFromJob(V1Job job) {
+      return Optional.ofNullable(job)
+          .map(V1Job::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+          .orElse("");
+    }
+
   }
 
   static ReadDomainIntrospectorPodLogStep readDomainIntrospectorPodLog(Step next) {
