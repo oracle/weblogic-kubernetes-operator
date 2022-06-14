@@ -72,6 +72,7 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
@@ -778,6 +779,75 @@ class DomainIntrospectorJobTest {
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
             "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobInProgressAndIntrospectVersionAdded_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+        .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    getConfigurator().withIntrospectVersion("v2");
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
+        "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobInProgressAndIntrospectVersionChanged_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+        .status(new V1JobStatus());
+    job.getMetadata().putLabelsItem(INTROSPECTION_STATE_LABEL, "v1");
+    testSupport.defineResources(job);
+    getConfigurator().withIntrospectVersion("v2");
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
+        "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobInProgressAndIntrospectVersionUnchanged_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+        .status(new V1JobStatus());
+    job.getMetadata().putLabelsItem(INTROSPECTION_STATE_LABEL, "v2");
+    testSupport.defineResources(job);
+    getConfigurator().withIntrospectVersion("v2");
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
+        "ReadDomainIntrospectorPodStep", "ReadDomainIntrospectorPodLogStep",
+        "DeleteDomainIntrospectorJobStep", "IntrospectionConfigMapStep", "TerminalStep"));
+  }
+
+  @Test
+  void whenJobInProgressAndNullIntrospectVersionUnchanged_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+        .status(new V1JobStatus());
+    job.getMetadata().putLabelsItem(INTROSPECTION_STATE_LABEL, null);
+    testSupport.defineResources(job);
+    getConfigurator().withIntrospectVersion(null);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
+        "ReadDomainIntrospectorPodStep", "ReadDomainIntrospectorPodLogStep",
+        "DeleteDomainIntrospectorJobStep", "IntrospectionConfigMapStep", "TerminalStep"));
   }
 
   @Test

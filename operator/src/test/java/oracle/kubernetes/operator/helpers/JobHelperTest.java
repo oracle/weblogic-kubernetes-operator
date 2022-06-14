@@ -341,6 +341,14 @@ class JobHelperTest extends DomainValidationBaseTest {
     return domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
   }
 
+  private V1Job createJob() {
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    return new DomainIntrospectorJobStepContext(packet).getJobModel();
+  }
+
   @Test
   void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
     V1JobSpec jobSpec = createJobSpec();
@@ -1235,6 +1243,24 @@ class JobHelperTest extends DomainValidationBaseTest {
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
     );
+  }
+
+  @Test
+  void whenDomainHasIntrospectVersion_jobMetatadataCreatedWithLabel() {
+    final String INTROSPECT_VERSION = "v123";
+    configureDomain().withIntrospectVersion(INTROSPECT_VERSION);
+
+    V1Job job = createJob();
+    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
+        is(INTROSPECT_VERSION));
+  }
+
+  @Test
+  void whenDomainHasNoIntrospectVersion_jobMetatadataCreatedWithoutNoLabel() {
+    configureDomain().withIntrospectVersion(null);
+
+    V1Job job = createJob();
+    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
   }
 
   private void markJobCompleted(V1Job job) {

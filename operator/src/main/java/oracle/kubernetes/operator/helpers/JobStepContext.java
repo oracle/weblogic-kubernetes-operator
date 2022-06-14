@@ -371,6 +371,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return domainTopology.getAdminServerName();
   }
 
+  private String getIntrospectVersionLabel() {
+    return Optional.ofNullable(getDomain().getIntrospectVersion()).orElse(null);
+  }
+
   private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
     return Optional.ofNullable(getDomain().getIntrospectorJobActiveDeadlineSeconds())
         .orElse(podTuning.introspectorJobActiveDeadlineSeconds);
@@ -397,6 +401,7 @@ public abstract class JobStepContext extends BasePodStepContext {
         new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, getIntrospectVersionLabel())
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
