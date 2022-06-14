@@ -293,7 +293,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
     executor.accept(getExistingDomainPresenceInfo(presenceInfo));
-    scheduleDomainStatusUpdating(presenceInfo);
   }
 
   /**
@@ -1052,6 +1051,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
+            new DomainStatusStep(),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
@@ -1185,20 +1185,29 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-    final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
-    final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
-    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
+  private class DomainStatusStep extends Step {
 
-    registerStatusUpdater(
-        info.getNamespace(),
-        info.getDomainUid(),
-        delegate.scheduleWithFixedDelay(
-            () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
-                .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
-            initialShortDelay,
-            initialShortDelay,
-            TimeUnit.SECONDS));
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo.fromPacket(packet).ifPresent(this::scheduleDomainStatusUpdating);
+      return doNext(packet);
+    }
+
+    private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+      final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
+      final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
+      final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
+
+      registerStatusUpdater(
+          info.getNamespace(),
+          info.getDomainUid(),
+          delegate.scheduleWithFixedDelay(
+              () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
+                  .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
+              initialShortDelay,
+              initialShortDelay,
+              TimeUnit.SECONDS));
+    }
   }
 
   private static class DownHeadStep extends Step {
