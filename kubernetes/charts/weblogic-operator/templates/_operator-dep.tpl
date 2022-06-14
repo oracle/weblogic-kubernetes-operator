@@ -33,6 +33,10 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
+      {{- if .runAsUser }}
+      securityContext:
+        runAsUser: {{ .runAsUser }}
+      {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
