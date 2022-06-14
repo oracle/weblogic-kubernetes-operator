@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
@@ -402,7 +403,7 @@ public class LoggingExporter {
                     .initContainers(List.of(new V1Container()
                         .name("set-vm-max-map-count")
                         .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)
-                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
                         .securityContext(new V1SecurityContext().privileged(true))))
                     .containers(List.of(new V1Container()

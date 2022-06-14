@@ -16,7 +16,6 @@ import java.util.Set;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -58,10 +57,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -628,7 +629,7 @@ public class CommonMiiTestUtils {
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
       AuxiliaryImage auxImage = new AuxiliaryImage()
-          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
         auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
@@ -1422,7 +1423,7 @@ public class CommonMiiTestUtils {
           String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
           managedServerPodName, domainNamespace)));
     }
-
+    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
     // create patch string
     StringBuffer patchStr = new StringBuffer("[")
         .append("{\"op\":  \"" + addOrReplace + "\",")
@@ -1433,7 +1434,7 @@ public class CommonMiiTestUtils {
         .append("\"value\":  {\"image\": \"")
         .append(auxiliaryImageName)
         .append("\", ")
-        .append("\"imagePullPolicy\": \"IfNotPresent\" ")
+        .append("\"imagePullPolicy\": \"" + imagePullPolicy + "\" ")
         .append("\"}}]");
 
     logger.info("Patch domain with auxiliary image patch string: " + patchStr);

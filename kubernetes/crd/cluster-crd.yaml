@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c33d6897ea1b6036ce0df9f2237acc5c6b1014087d25162b14fff49c77320acb
+    weblogic.sha256: f4568f9bf7ae76f2ebba8c5d647ad6563be34bb88df2bfcdafafa5b48d80c028
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -61,10 +61,9 @@ spec:
                   the Domain to which this Cluster is associated with.
                 type: string
               serverStartPolicy:
-                default: IfNeeded
                 description: 'The strategy for deciding whether to start a WebLogic
-                  Server instance. Legal values are Never, or IfNeeded. Defaults to
-                  IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                  Server instance. Legal values are `Never`, or `IfNeeded`. Defaults
+                  to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                 enum:
                 - Never
                 - IfNeeded
@@ -94,7 +93,6 @@ spec:
                     type: object
                 type: object
               maxUnavailable:
-                default: 1
                 description: The maximum number of cluster members that can be temporarily
                   unavailable. Defaults to 1.
                 minimum: 1
@@ -105,7 +103,6 @@ spec:
                   Required.
                 type: string
               allowReplicasBelowMinDynClusterSize:
-                default: true
                 description: Specifies whether the number of running cluster members
                   is allowed to drop below the minimum dynamic cluster size configured
                   in the WebLogic domain configuration. Otherwise, the operator will
@@ -3033,7 +3030,6 @@ spec:
                 minimum: 0
                 type: integer
               maxConcurrentStartup:
-                default: 0
                 description: The maximum number of Managed Servers instances that
                   the operator will start in parallel for this cluster in response
                   to a change in the `replicas` count. If more Managed Server instances

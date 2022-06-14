@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.ShutdownType;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -339,7 +340,7 @@ class DomainV2Test extends DomainTestBase {
     configureServer(SERVER1)
             .withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
             .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
@@ -358,7 +359,7 @@ class DomainV2Test extends DomainTestBase {
             .withLivenessProbeSettings(null, null, PERIOD)
             .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
@@ -372,7 +373,7 @@ class DomainV2Test extends DomainTestBase {
     configureServer(SERVER1)
             .withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
             .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
@@ -389,7 +390,7 @@ class DomainV2Test extends DomainTestBase {
             .withReadinessProbeSettings(null, null, PERIOD)
             .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
@@ -420,15 +421,15 @@ class DomainV2Test extends DomainTestBase {
     configureServer(SERVER1).withNodeSelector("key3", "server");
     configureAdminServer().withNodeSelector("key2", "admin").withNodeSelector("key3", "admin");
 
-    final ServerSpec serverSpec = domain.getServer(SERVER1, CLUSTER_NAME);
+    final EffectiveServerSpec effectiveServerSpec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key1", "domain"));
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key2", "admin"));
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("key3", "admin"));
 
-    assertThat(serverSpec.getNodeSelectors(), hasEntry("key1", "domain"));
-    assertThat(serverSpec.getNodeSelectors(), hasEntry("key2", "cluser"));
-    assertThat(serverSpec.getNodeSelectors(), hasEntry("key3", "server"));
+    assertThat(effectiveServerSpec.getNodeSelectors(), hasEntry("key1", "domain"));
+    assertThat(effectiveServerSpec.getNodeSelectors(), hasEntry("key2", "cluser"));
+    assertThat(effectiveServerSpec.getNodeSelectors(), hasEntry("key3", "server"));
   }
 
   @Test
@@ -438,10 +439,10 @@ class DomainV2Test extends DomainTestBase {
     configureServer(SERVER1).withRestartVersion("3");
     configureAdminServer().withRestartVersion("4");
 
-    final ServerSpec clusteredServer = domain.getServer(SERVER1, CLUSTER_NAME);
-    final ServerSpec nonClusteredServerWithRestartVersion = domain.getServer(SERVER1, null);
-    final ServerSpec nonClusteredServerNoRestartVersion = domain.getServer("anyServer", null);
-    final ServerSpec adminServer = domain.getAdminServerSpec();
+    final EffectiveServerSpec clusteredServer = domain.getServer(SERVER1, CLUSTER_NAME);
+    final EffectiveServerSpec nonClusteredServerWithRestartVersion = domain.getServer(SERVER1, null);
+    final EffectiveServerSpec nonClusteredServerNoRestartVersion = domain.getServer("anyServer", null);
+    final EffectiveServerSpec adminServer = domain.getAdminServerSpec();
 
     assertThat(clusteredServer.getDomainRestartVersion(), is("1"));
     assertThat(clusteredServer.getClusterRestartVersion(), is("2"));
@@ -737,19 +738,19 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server0", null);
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server0", null);
 
-    assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
-    assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
-    assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
-    assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
+    assertThat(effectiveServerSpec.getImage(), equalTo(DEFAULT_IMAGE));
+    assertThat(effectiveServerSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(effectiveServerSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
+    assertThat(effectiveServerSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
+    assertThat(effectiveServerSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
         domain.getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
-    assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
-    assertThat(serverSpec.shouldStart(1), is(true));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
+    assertThat(effectiveServerSpec.shouldStart(1), is(true));
   }
 
   @Test
@@ -784,37 +785,37 @@ class DomainV2Test extends DomainTestBase {
   void whenDomainReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
       throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server0", "cluster0");
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server0", "cluster0");
 
-    assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
-    assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
-    assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
+    assertThat(effectiveServerSpec.getImage(), equalTo(DEFAULT_IMAGE));
+    assertThat(effectiveServerSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(effectiveServerSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
+    assertThat(effectiveServerSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
         domain.getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
-    assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
-    assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
-    assertThat(serverSpec.shouldStart(1), is(true));
+    assertThat(effectiveServerSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
+    assertThat(effectiveServerSpec.shouldStart(1), is(true));
   }
 
   @Test
   void whenDomainReadFromYaml_adminServerOverridesDefaults() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getAdminServerSpec();
+    EffectiveServerSpec effectiveServerSpec = domain.getAdminServerSpec();
 
-    assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
+    assertThat(effectiveServerSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
   }
 
   @Test
   void whenDomainReadFromYaml_server1OverridesDefaults() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server1", "cluster1");
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server1", "cluster1");
 
-    assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
+    assertThat(effectiveServerSpec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(
-        serverSpec.getEnvironmentVariables(),
+        effectiveServerSpec.getEnvironmentVariables(),
         containsInAnyOrder(
             envVar("JAVA_OPTIONS", "-server"),
             envVar(
@@ -830,11 +831,11 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_cluster2OverridesDefaults() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server2", "cluster2");
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", "cluster2");
 
-    assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("ADMIN"));
     assertThat(
-        serverSpec.getEnvironmentVariables(),
+        effectiveServerSpec.getEnvironmentVariables(),
         containsInAnyOrder(
             envVar("JAVA_OPTIONS", "-verbose"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
@@ -849,8 +850,8 @@ class DomainV2Test extends DomainTestBase {
   void whenDomainReadFromYaml_AdminAndManagedOverrideDomainNodeSelectors()
       throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    final ServerSpec server1Spec = domain.getServer("server1", null);
-    final ServerSpec server2Spec = domain.getServer("server2", null);
+    final EffectiveServerSpec server1Spec = domain.getServer("server1", null);
+    final EffectiveServerSpec server2Spec = domain.getServer("server2", null);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os_arch", "x86_64"));
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
     assertThat(server2Spec.getNodeSelectors(), hasEntry("os_arch", "x86"));
@@ -933,45 +934,45 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_serverReadsDomainDefaultOfNever() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    ServerSpec serverSpec = domain.getServer("server2", null);
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", null);
 
-    assertThat(serverSpec.shouldStart(0), is(false));
+    assertThat(effectiveServerSpec.shouldStart(0), is(false));
   }
 
   @Test
   void whenDomain2ReadFromYaml_serverConfiguresReadinessProbe() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", "cluster1");
 
-    assertThat(serverSpec.getReadinessProbe().getInitialDelaySeconds(), equalTo(10));
-    assertThat(serverSpec.getReadinessProbe().getTimeoutSeconds(), equalTo(15));
-    assertThat(serverSpec.getReadinessProbe().getPeriodSeconds(), equalTo(20));
+    assertThat(effectiveServerSpec.getReadinessProbe().getInitialDelaySeconds(), equalTo(10));
+    assertThat(effectiveServerSpec.getReadinessProbe().getTimeoutSeconds(), equalTo(15));
+    assertThat(effectiveServerSpec.getReadinessProbe().getPeriodSeconds(), equalTo(20));
   }
 
   @Test
   void whenDomain2ReadFromYaml_serverConfiguresLivenessProbe() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", "cluster1");
 
-    assertThat(serverSpec.getLivenessProbe().getInitialDelaySeconds(), equalTo(20));
-    assertThat(serverSpec.getLivenessProbe().getTimeoutSeconds(), equalTo(5));
-    assertThat(serverSpec.getLivenessProbe().getPeriodSeconds(), equalTo(18));
+    assertThat(effectiveServerSpec.getLivenessProbe().getInitialDelaySeconds(), equalTo(20));
+    assertThat(effectiveServerSpec.getLivenessProbe().getTimeoutSeconds(), equalTo(5));
+    assertThat(effectiveServerSpec.getLivenessProbe().getPeriodSeconds(), equalTo(18));
   }
 
   @Test
   void whenDomain2ReadFromYaml_clusterHasNodeSelector() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    ServerSpec serverSpec = domain.getServer(SERVER2, "cluster1");
-    assertThat(serverSpec.getNodeSelectors(), hasEntry("os", "linux"));
+    EffectiveServerSpec effectiveServerSpec = domain.getServer(SERVER2, "cluster1");
+    assertThat(effectiveServerSpec.getNodeSelectors(), hasEntry("os", "linux"));
   }
 
   @Test
   void whenDomain2ReadFromYaml_clusterAndManagedServerHaveDifferentNodeSelectors()
       throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
-    assertThat(serverSpec.getNodeSelectors(), hasEntry("os", "linux"));
-    assertThat(serverSpec.getNodeSelectors(), hasEntry("os_type", "oel7"));
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", "cluster1");
+    assertThat(effectiveServerSpec.getNodeSelectors(), hasEntry("os", "linux"));
+    assertThat(effectiveServerSpec.getNodeSelectors(), hasEntry("os_type", "oel7"));
   }
 
   @Test
@@ -1341,8 +1342,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
-    assertThat(serverSpec.getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", "cluster1");
+    assertThat(effectiveServerSpec.getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
   }
 
   @Test
@@ -1376,8 +1377,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
-    final ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
-    final ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
+    final EffectiveServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
+    final EffectiveServerSpec nonClusteredServer = domain.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
     assertThat(clusteredServer.getClusterRestartVersion(), nullValue());
     assertThat(clusteredServer.getServerRestartVersion(), nullValue());
@@ -1397,21 +1398,21 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_ClusterRestartVersion() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server1", "cluster2");
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server1", "cluster2");
 
-    assertThat(serverSpec.getDomainRestartVersion(), is("1"));
-    assertThat(serverSpec.getClusterRestartVersion(), is("2"));
-    assertThat(serverSpec.getServerRestartVersion(), nullValue());
+    assertThat(effectiveServerSpec.getDomainRestartVersion(), is("1"));
+    assertThat(effectiveServerSpec.getClusterRestartVersion(), is("2"));
+    assertThat(effectiveServerSpec.getServerRestartVersion(), nullValue());
   }
 
   @Test
   void whenDomainReadFromYaml_ServerRestartVersion() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server2", null);
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", null);
 
-    assertThat(serverSpec.getDomainRestartVersion(), is("1"));
-    assertThat(serverSpec.getClusterRestartVersion(), nullValue());
-    assertThat(serverSpec.getServerRestartVersion(), is("3"));
+    assertThat(effectiveServerSpec.getDomainRestartVersion(), is("1"));
+    assertThat(effectiveServerSpec.getClusterRestartVersion(), nullValue());
+    assertThat(effectiveServerSpec.getServerRestartVersion(), is("3"));
   }
 
   @Test

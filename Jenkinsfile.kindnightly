@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
@@ -35,31 +35,22 @@ def kind_k8s_map = [
         '1.21':    'kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e',
         '1.20.15': 'kindest/node:v1.20.15@sha256:a6ce604504db064c5e25921c6c0fffea64507109a1f2a512b1b562ac37d652f3',
         '1.20':    'kindest/node:v1.20.15@sha256:a6ce604504db064c5e25921c6c0fffea64507109a1f2a512b1b562ac37d652f3'
-    ],
-    '0.14.0': [
-        '1.24.0':  'kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e',
-        '1.24':    'kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e',
-        '1.23.6':  'kindest/node:v1.23.6@sha256:b1fa224cc6c7ff32455e0b1fd9cbfd3d3bc87ecaa8fcb06961ed1afb3db0f9ae',
-        '1.23':    'kindest/node:v1.23.6@sha256:b1fa224cc6c7ff32455e0b1fd9cbfd3d3bc87ecaa8fcb06961ed1afb3db0f9ae',
-        '1.22.9':  'kindest/node:v1.22.9@sha256:8135260b959dfe320206eb36b3aeda9cffcb262f4b44cda6b33f7bb73f453105',
-        '1.22':    'kindest/node:v1.22.9@sha256:8135260b959dfe320206eb36b3aeda9cffcb262f4b44cda6b33f7bb73f453105',
-        '1.21.12': 'kindest/node:v1.21.12@sha256:f316b33dd88f8196379f38feb80545ef3ed44d9197dca1bfd48bcb1583210207',
-        '1.21':    'kindest/node:v1.21.12@sha256:f316b33dd88f8196379f38feb80545ef3ed44d9197dca1bfd48bcb1583210207',
-        '1.20.15': 'kindest/node:v1.20.15@sha256:6f2d011dffe182bad80b85f6c00e8ca9d86b5b8922cdf433d53575c4c5212248',
-        '1.20':    'kindest/node:v1.20.15@sha256:6f2d011dffe182bad80b85f6c00e8ca9d86b5b8922cdf433d53575c4c5212248'
     ]
 ]
 def _kind_image = null
 
 pipeline {
     agent { label 'VM.Standard2.8' }
+    triggers {
+        cron('H 5 * * *')
+    }
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
 
     tools {
         maven 'maven-3.8.5'
-        jdk 'OpenJDK 17.0.2'
+        jdk 'jdk11'
     }
 
     environment {
@@ -96,32 +87,29 @@ pipeline {
 
     parameters {
         choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are kind-sequential (the default) and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
-                        'wls-srg',
-                        'integration-tests',
                         'kind-sequential',
-                        'toolkits-srg'
+                        'integration-tests'
                 ]
         )
         string(name: 'IT_TEST',
-               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
+               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode. For integration-tests profile, use **/It* to run parallel suite',
                defaultValue: ''
         )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.14.0',
+                   '0.11.1',
                    '0.13.0',
                    '0.12.0',
-                   '0.11.1'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
-                    '1.21.12',
+                    '1.21.1',
                     '1.24',
                     '1.24.0',
                     '1.23.6',
@@ -148,7 +136,7 @@ pipeline {
         )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
-               defaultValue: '3.7.2'
+               defaultValue: '3.8.1'
         )
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version',
@@ -165,8 +153,8 @@ pipeline {
                      defaultValue: true
         )
         string(name: 'NUMBER_OF_THREADS',
-               description: 'Number of threads to run the classes in parallel, default is 3.',
-               defaultValue: "3"
+               description: 'Number of threads to run the classes in parallel, default is 2.',
+               defaultValue: "2"
         )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
@@ -222,16 +210,6 @@ pipeline {
         )
     }
 
-    stages {
-        stage('Filter unwanted branches') {
-            when {
-                anyOf {
-                    changeRequest()
-                    branch 'main'
-                    branch 'release/3.3'
-                    branch 'release/3.4'
-                }
-            }
             stages {
                 stage('Workaround JENKINS-41929 Parameters bug') {
                     steps {
@@ -301,42 +279,6 @@ pipeline {
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
                 }
-
-                stage('Run Sonar Analysis') {
-                    steps {
-                        sh '''
-                            rm -rf ${WORKSPACE}/.mvn/maven.config
-                            mkdir -p ${WORKSPACE}/.mvn
-                            touch ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            if [ -z "${CHANGE_ID}" ]; then
-                                echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
-                            else
-                                echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
-                            fi
-                            echo "${WORKSPACE}/.mvn/maven.config contents:"
-                            cat "${WORKSPACE}/.mvn/maven.config"
-                        '''
-                        withSonarQubeEnv('SonarCloud') {
-                            // For whatever reason, defining this property in the maven.config file is not working...
-                            //
-                            sh "mvn sonar:sonar"
-                        }
-                    }
-                }
-
-                 stage('Verify Sonar Quality Gate') {
-                    steps {
-                        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                        }
-                    }
-                 }
 
                 stage('Make Workspace bin directory') {
                     steps {
@@ -574,6 +516,7 @@ EOF
                             if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
+
                         '''
                     }
                     post {
@@ -621,6 +564,5 @@ EOF
                     '''
                 }
             }
-        }
-    }
+
 }

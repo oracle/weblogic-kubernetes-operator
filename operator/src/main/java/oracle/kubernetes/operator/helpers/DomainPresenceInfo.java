@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
@@ -42,12 +43,13 @@ import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -115,6 +117,93 @@ public class DomainPresenceInfo implements PacketComponent {
       }
     }
     return false;
+  }
+
+  /**
+   * Returns true if the domain in this presence info has a later generation than the passed-in cached info.
+   * @param cachedInfo another presence info against which to compare this one.
+   */
+  public boolean isGenerationChanged(DomainPresenceInfo cachedInfo) {
+    return getGeneration()
+        .map(gen -> (gen.compareTo(cachedInfo.getGeneration().orElse(0L)) > 0))
+        .orElse(true);
+  }
+
+  private Optional<Long> getGeneration() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getMetadata)
+        .map(V1ObjectMeta::getGeneration);
+  }
+
+
+  /**
+   * Returns true if the state of the current domain presence info, when compared with the cached info for the same
+   * domain, indicates that the make-right should not be run. The user has a number of options to resume processing
+   * the domain.
+   * @param cachedInfo the version of the domain presence info previously processed.
+   */
+  public boolean isDomainProcessingHalted(DomainPresenceInfo cachedInfo) {
+    return isFatalIntrospectorError()
+        || (isDomainProcessingAborted() && versionsUnchanged(cachedInfo))
+        || !isPopulated() && !isNewerThan(cachedInfo);
+  }
+
+  private boolean isFatalIntrospectorError() {
+    final String existingError = Optional.ofNullable(getDomain())
+        .map(DomainResource::getStatus)
+        .map(DomainStatus::getMessage)
+        .orElse(null);
+    return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
+  }
+
+  private boolean isDomainProcessingAborted() {
+    return Optional.ofNullable(getDomain())
+            .map(DomainResource::getStatus)
+            .map(DomainStatus::isAborted)
+            .orElse(false);
+  }
+
+  private boolean versionsUnchanged(DomainPresenceInfo cachedInfo) {
+    return hasSameIntrospectVersion(cachedInfo)
+        && hasSameRestartVersion(cachedInfo)
+        && hasSameIntrospectImage(cachedInfo);
+  }
+
+  private boolean isNewerThan(DomainPresenceInfo cachedInfo) {
+    return getDomain() == null
+        || !KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), getDomain().getMetadata());
+  }
+
+  private boolean hasSameIntrospectVersion(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectVersion(), cachedInfo.getIntrospectVersion());
+  }
+
+  private String getIntrospectVersion() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+  }
+
+  private boolean hasSameRestartVersion(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getRestartVersion(), cachedInfo.getRestartVersion());
+  }
+
+  private String getRestartVersion() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getRestartVersion)
+        .orElse(null);
+  }
+
+  private boolean hasSameIntrospectImage(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectImage(), cachedInfo.getIntrospectImage());
+  }
+
+  private String getIntrospectImage() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
   }
 
   public ThreadLoggingContext setThreadContext() {
@@ -704,24 +793,6 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
-   * Clear all validation warnings.
-   */
-  void clearValidationWarnings() {
-    validationWarnings.clear();
-  }
-
-  /**
-   * Return all validation warnings as a String.
-   * @return validation warnings as a String, or null if there is no validation warnings
-   */
-  public String getValidationWarningsAsString() {
-    if (validationWarnings.isEmpty()) {
-      return null;
-    }
-    return String.join(lineSeparator(), validationWarnings);
-  }
-
-  /**
    * Returns the names of the servers which are supposed to be running.
    */
   public Set<String> getExpectedRunningServers() {
@@ -751,7 +822,7 @@ public class DomainPresenceInfo implements PacketComponent {
   public static class ServerInfo {
     public final WlsServerConfig serverConfig;
     protected final String clusterName;
-    protected final ServerSpec serverSpec;
+    protected final EffectiveServerSpec effectiveServerSpec;
     protected final boolean isServiceOnly;
 
     /**
@@ -759,17 +830,17 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
+     * @param effectiveServerSpec the server startup configuration
      * @param isServiceOnly true, if only the server service should be created
      */
     public ServerInfo(
         @Nonnull WlsServerConfig serverConfig,
         @Nullable String clusterName,
-        ServerSpec serverSpec,
+        EffectiveServerSpec effectiveServerSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
-      this.serverSpec = serverSpec;
+      this.effectiveServerSpec = effectiveServerSpec;
       this.isServiceOnly = isServiceOnly;
     }
 
@@ -786,7 +857,7 @@ public class DomainPresenceInfo implements PacketComponent {
     }
 
     public List<V1EnvVar> getEnvironment() {
-      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
+      return effectiveServerSpec == null ? Collections.emptyList() : effectiveServerSpec.getEnvironmentVariables();
     }
 
     /**
@@ -809,7 +880,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new ToStringBuilder(this)
           .append("serverConfig", serverConfig)
           .append("clusterName", clusterName)
-          .append("serverSpec", serverSpec)
+          .append("serverSpec", effectiveServerSpec)
           .append("isServiceOnly", isServiceOnly)
           .toString();
     }
@@ -829,7 +900,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new EqualsBuilder()
           .append(serverConfig, that.serverConfig)
           .append(clusterName, that.clusterName)
-          .append(serverSpec, that.serverSpec)
+          .append(effectiveServerSpec, that.effectiveServerSpec)
           .append(isServiceOnly, that.isServiceOnly)
           .isEquals();
     }
@@ -839,7 +910,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new HashCodeBuilder(17, 37)
           .append(serverConfig)
           .append(clusterName)
-          .append(serverSpec)
+          .append(effectiveServerSpec)
           .append(isServiceOnly)
           .toHashCode();
     }
@@ -854,11 +925,11 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
+     * @param effectiveServerSpec the server startup configuration
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
-      super(serverConfig, clusterName, serverSpec, false);
+        WlsServerConfig serverConfig, String clusterName, EffectiveServerSpec effectiveServerSpec) {
+      super(serverConfig, clusterName, effectiveServerSpec, false);
     }
   }
 
@@ -879,13 +950,13 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec Server specifications
+     * @param effectiveServerSpec Server specifications
      * @param isServiceOnly If service needs to be preserved
      */
     public ServerShutdownInfo(
             WlsServerConfig serverConfig, String clusterName,
-            ServerSpec serverSpec, boolean isServiceOnly) {
-      super(serverConfig, clusterName, serverSpec, isServiceOnly);
+            EffectiveServerSpec effectiveServerSpec, boolean isServiceOnly) {
+      super(serverConfig, clusterName, effectiveServerSpec, isServiceOnly);
     }
 
     public boolean isServiceOnly() {

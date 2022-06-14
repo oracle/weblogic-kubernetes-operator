@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -45,13 +46,13 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void adminServerSpecHasStandardValues() {
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     verifyStandardFields(spec);
   }
 
   // Confirms the value of fields that are constant across the domain
-  private void verifyStandardFields(ServerSpec spec) {
+  private void verifyStandardFields(EffectiveServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(spec.getImagePullSecrets(), empty());
@@ -59,7 +60,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void unconfiguredManagedServerSpecHasStandardValues() {
-    ServerSpec spec = domain.getServer("aServer", CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer("aServer", CLUSTER_NAME);
 
     verifyStandardFields(spec);
   }
@@ -71,7 +72,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void unconfiguredAdminServer_hasNoEnvironmentVariables() {
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), empty());
   }
@@ -98,7 +99,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenNotSpecified_imageHasDefault() {
     domain.getSpec().setImage(null);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
   }
@@ -108,7 +109,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     domain.getSpec().setImage("test:latest");
     domain.getSpec().setImagePullPolicy(null);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
@@ -118,7 +119,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     domain.getSpec().setImage("test:1.0");
     domain.getSpec().setImagePullPolicy(null);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
   }
@@ -154,7 +155,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -169,7 +170,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), empty());
   }
@@ -178,21 +179,21 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenSpecified_adminServerDesiredStateIsAsSpecified() {
     configureAdminServer().withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
   void whenNotSpecified_adminServerDesiredStateIsRunning() {
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   void whenNotSpecified_managedServerDesiredStateIsRunning() {
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
@@ -201,7 +202,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenSpecified_managedServerDesiredStateIsAsSpecified() {
     configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
@@ -210,7 +211,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
     configureAdminServer().withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
@@ -219,7 +220,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
     configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
@@ -398,7 +399,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
     configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.RUNNING);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
@@ -409,7 +410,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -420,7 +421,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -431,7 +432,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withDesiredState(ServerStartState.ADMIN)
         .withEnvironmentVariable("JAVA_OPTIONS", "value");
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), hasItem(envVar("JAVA_OPTIONS", "value")));
   }
@@ -439,25 +440,25 @@ class DomainResourceBasicTest extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server1", null);
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server1", null);
 
     assertThat(
-        serverSpec.getEnvironmentVariables(),
+        effectiveServerSpec.getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-server")))
             .and(
                 hasItem(
                     envVar(
                         "USER_MEM_ARGS",
                         "-Djava.security.egd=file:/dev/./urandom "))));
-    assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
     DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server2", null);
+    EffectiveServerSpec effectiveServerSpec = domain.getServer("server2", null);
 
-    assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test

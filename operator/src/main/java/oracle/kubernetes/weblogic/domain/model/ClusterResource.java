@@ -59,7 +59,7 @@ public class ClusterResource implements KubernetesObject {
   @Valid
   @Description("The specification of the operation of the WebLogic cluster. Required.")
   @Nonnull
-  private Cluster spec = new Cluster();
+  private ClusterSpec spec = new ClusterSpec();
 
   /**
    * ClusterStatus represents information about the status of a cluster. Status may trail the actual
@@ -83,7 +83,7 @@ public class ClusterResource implements KubernetesObject {
     spec.setReplicas(replicas);
   }
 
-  ClusterResource spec(Cluster spec) {
+  ClusterResource spec(ClusterSpec spec) {
     this.spec = spec;
     return this;
   }
@@ -233,7 +233,7 @@ public class ClusterResource implements KubernetesObject {
   }
 
   @NotNull
-  public Cluster getSpec() {
+  public ClusterSpec getSpec() {
     return spec;
   }
 }

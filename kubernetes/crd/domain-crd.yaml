@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: e6aea5431922398f328870e441512ec371d5f8b7e7f5a5a34fb81e38568df5d7
+    weblogic.sha256: 9422d2a33c9064fe24497f1999e2426763d558aa372ffa8d1ab7c4c242aac3e5
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -42,9 +42,9 @@ spec:
                   appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.
                 properties:
                   image:
-                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5
+                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6
                     description: The WebLogic Monitoring Exporter sidecar container
-                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5
+                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the WebLogic Monitoring
@@ -3653,10 +3653,9 @@ spec:
                         with.
                       type: string
                     serverStartPolicy:
-                      default: IfNeeded
                       description: 'The strategy for deciding whether to start a WebLogic
-                        Server instance. Legal values are Never, or IfNeeded. Defaults
-                        to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                        Server instance. Legal values are `Never`, or `IfNeeded`.
+                        Defaults to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                       type: string
                       enum:
                       - Never
@@ -3687,7 +3686,6 @@ spec:
                             type: string
                           type: object
                     maxUnavailable:
-                      default: 1
                       description: The maximum number of cluster members that can
                         be temporarily unavailable. Defaults to 1.
                       type: integer
@@ -3698,7 +3696,6 @@ spec:
                         domain configuration. Required.
                       type: string
                     allowReplicasBelowMinDynClusterSize:
-                      default: true
                       description: Specifies whether the number of running cluster
                         members is allowed to drop below the minimum dynamic cluster
                         size configured in the WebLogic domain configuration. Otherwise,
@@ -6642,7 +6639,6 @@ spec:
                       type: integer
                       minimum: 0
                     maxConcurrentStartup:
-                      default: 0
                       description: The maximum number of Managed Servers instances
                         that the operator will start in parallel for this cluster
                         in response to a change in the `replicas` count. If more Managed

@@ -20,7 +20,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import org.jetbrains.annotations.NotNull;
@@ -126,7 +126,7 @@ public class WlsConfigValidator {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
     getClusters().stream()
-          .map(Cluster::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
+          .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
   }
 
   private List<ManagedServer> getManagedServers() {
@@ -148,7 +148,7 @@ public class WlsConfigValidator {
     }
   }
 
-  private List<Cluster> getClusters() {
+  private List<ClusterSpec> getClusters() {
     return info.getDomain().getSpec().getClusters();
   }
 
