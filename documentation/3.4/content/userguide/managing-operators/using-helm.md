@@ -288,6 +288,14 @@ affinity:
           - another-node-label-value
 ```
 
+##### `runAsUser`
+Specifies the UID to run the operator container process. If not specified, it defaults to the user specified in the operator's container image.
+
+Example:
+```yaml
+runAsUser: 1000
+```
+
 #### WebLogic domain management
 
 The settings in this section determine the namespaces that an operator
