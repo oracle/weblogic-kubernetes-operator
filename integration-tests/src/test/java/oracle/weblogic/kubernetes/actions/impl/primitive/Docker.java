@@ -26,8 +26,8 @@ public class Docker {
    */
   public static boolean login(String registryName, String username, String password) {
     //debugging
-    String user = new String(Base64.getDecoder().decode(username));
-    String pass = new String(Base64.getDecoder().decode(password));
+    String user = new String(Base64.getMimeDecoder().decode(username));
+    String pass = new String(Base64.getMimeDecoder().decode(password));
     getLogger().info("Debug: docker login registryName: {0}, username: {1}, password; {2}",
         registryName, user, pass);
 
