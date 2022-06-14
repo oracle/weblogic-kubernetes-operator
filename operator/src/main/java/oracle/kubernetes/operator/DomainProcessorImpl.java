@@ -88,7 +88,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
-public class DomainProcessorImpl implements DomainProcessor {
+public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -286,12 +286,13 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
-  static Step bringAdminServerUp(
-        DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory) {
+  static Step bringAdminServerUp(DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory) {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
+  @Override
   public void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
+    scheduleDomainStatusUpdating(presenceInfo);
     executor.accept(getExistingDomainPresenceInfo(presenceInfo));
   }
 
@@ -315,13 +316,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       return doNext(packet);
     }
 
-    @Nonnull
-    private String getRequestedIntrospectVersion(Packet packet) {
-      return DomainPresenceInfo.fromPacket(packet)
-          .map(DomainPresenceInfo::getDomain)
-          .map(DomainResource::getIntrospectVersion)
-          .orElse("0");
-    }
   }
 
   private static Step bringAdminServerUpSteps(
@@ -638,7 +632,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
-    final MakeRightDomainOperationImpl operation = new MakeRightDomainOperationImpl(delegate, liveInfo);
+    final MakeRightDomainOperationImpl operation = new MakeRightDomainOperationImpl(this, delegate, liveInfo);
 
     if (isFirstDomainNewer(liveInfo, getExistingDomainPresenceInfo(liveInfo))) {
       operation.interrupt();
@@ -704,6 +698,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
+    private final MakeRightExecutor executor;
     private final DomainProcessorDelegate delegate;
     @Nonnull
     private DomainPresenceInfo liveInfo;
@@ -716,18 +711,27 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     /**
      * Create the operation.
+     * @param executor an object which can be asked to execute the make right
      * @param delegate a class which handles scheduling and other types of processing
      * @param liveInfo domain presence info read from Kubernetes
      */
-    MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, @NotNull DomainPresenceInfo liveInfo) {
+    MakeRightDomainOperationImpl(
+        MakeRightExecutor executor, DomainProcessorDelegate delegate, @NotNull DomainPresenceInfo liveInfo) {
+      this.executor = executor;
       this.delegate = delegate;
       this.liveInfo = liveInfo;
+    }
+
+    private MakeRightDomainOperation cloneWith(@Nonnull DomainPresenceInfo presenceInfo) {
+      final MakeRightDomainOperationImpl result = new MakeRightDomainOperationImpl(executor, delegate, presenceInfo);
+      result.deleting = deleting;
+      return result;
     }
 
     @Override
     public MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo presenceInfo) {
       presenceInfo.setPopulated(false);
-      return new MakeRightDomainOperationImpl(delegate, presenceInfo).withDeleting(deleting).withExplicitRecheck();
+      return cloneWith(presenceInfo).withExplicitRecheck();
     }
 
     /**
@@ -808,7 +812,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      runMakeRight(this::doExecute, getPresenceInfo());
+      executor.runMakeRight(this::doExecute, getPresenceInfo());
     }
 
     private void doExecute(DomainPresenceInfo cachedInfo) {
@@ -1062,7 +1066,6 @@ public class DomainProcessorImpl implements DomainProcessor {
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
-            new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
