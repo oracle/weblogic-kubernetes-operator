@@ -685,14 +685,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
-    return cachedInfo == null || cachedInfo.getDomain() == null;
-  }
-
-  private void logNotStartingDomain(String domainUid) {
-    LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUid);
-  }
-
   /**
    * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
    */
@@ -762,16 +754,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     @Override
     public MakeRightDomainOperation forDeletion() {
       deleting = true;
-      return this;
-    }
-
-    /**
-     * Modifies the factory to handle shutting down the domain if the 'deleting' flag is set.
-     * @param deleting if true, indicates that the domain is being shut down
-     * @return the updated factory
-     */
-    private MakeRightDomainOperation withDeleting(boolean deleting) {
-      this.deleting = deleting;
       return this;
     }
 
@@ -869,6 +851,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       }
       cachedInfo.setDomain(liveInfo.getDomain());
       return false;
+    }
+
+    private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
+      return cachedInfo == null || cachedInfo.getDomain() == null;
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
@@ -1199,21 +1185,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private class DomainStatusStep extends Step {
-    private final DomainPresenceInfo info;
-
-    DomainStatusStep(DomainPresenceInfo info, Step next) {
-      super(next);
-      this.info = info;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      scheduleDomainStatusUpdating(info);
-      return doNext(packet);
-    }
-  }
-
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
     final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
@@ -1286,7 +1257,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
         getStatusFiberGate(getNamespace())
               .startFiberIfNoCurrentFiber(getDomainUid(), strategy, createPacket(), new CompletionCallbackImpl());
-      } catch (Throwable t) {
+      } catch (Exception t) {
         try (ThreadLoggingContext ignored
                    = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
           LOGGER.severe(MessageKeys.EXCEPTION, t);
