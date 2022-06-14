@@ -34,7 +34,21 @@ First, install the operator.
        --set serviceAccount=sample-weblogic-operator-sa \
        --wait
      ```
-     This Helm release deploys the operator and configures it with the default behavior to manage Domains in any Kubernetes namespace with the label, `weblogic-operator=enabled`.
+     This Helm release deploys the operator with the default behavior of managing Domains in all Kubernetes namespace with the label `weblogic-operator=enabled`.
+
+1. Verify that the operator's pod is running by listing the pods in the operator's namespace. You should see one
+   for the operator and one for the [conversion webhook]({{< relref "/managing-operators/conversion-webhook#introduction" >}}), a
+   singleton Deployment in your Kubernetes cluster that automatically and transparently upgrades domain resources.
+
+     ```shell
+     $ kubectl get pods -n sample-weblogic-operator-ns
+     ```
+
+1. Verify that the operator is up and running by viewing the operator pod's log:
+
+      ```shell
+      $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
+      ```
 
 #### Create a Traefik ingress controller.
 
@@ -60,17 +74,3 @@ First, install the operator.
        --set "kubernetes.namespaces={traefik}"
    ```
     This deploys the Traefik controller with plain text node port `30305`, SSL node port `30443`, and `kubernetes.namespaces` specifically set.
-
-1. Verify that the operator's pod is running by listing the pods in the operator's namespace. You should see one
-for the operator and one for the [conversion webhook]({{< relref "/managing-operators/conversion-webhook#introduction" >}}), a
-singleton Deployment in your Kubernetes cluster that automatically and transparently upgrades domain resources.
-
-    ```shell
-    $ kubectl get pods -n sample-weblogic-operator-ns
-    ```
-
-1. Verify that the operator is up and running by viewing the operator pod's log:
-
-    ```shell
-    $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
-    ```

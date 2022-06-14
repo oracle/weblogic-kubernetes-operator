@@ -6,7 +6,7 @@ pre = "<b> </b>"
 +++
 
 
-The Quick Start guide provides a simple tutorial to help you get the operator up and running quickly. Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the WebLogic Kubernetes Operator (the "operator"). Please note that this walk-through is for demonstration purposes only, not for use in production.
+The Quick Start guide provides a simple tutorial to help you get the operator up and running quickly. Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the WebLogic Kubernetes Operator (the "operator"). Please note that this walk-through is for demonstration purposes _only_, not for use in production.
 These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please
 refer to [Manage operators]({{< relref "/managing-operators/_index.md" >}}).
 

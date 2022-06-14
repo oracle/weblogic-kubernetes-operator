@@ -9,11 +9,12 @@ weight: 3
 
     ```shell
     $ kubectl create secret generic sample-domain1-weblogic-credentials \
-      --from-literal=username=YOUR_USERNAME --from-literal=password=YOUR_PASSWORD \
+      --from-literal=username=ADMIN_USERNAME --from-literal=password=ADMIN_PASSWORD \
       -n sample-domain1-ns
     ```
 
-   Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with your user name and password.
+   Replace `ADMIN_USERNAME` and `ADMIN_PASSWORD` with your choice of user name and password. Note
+   that the password must be at least 8 characters long and must contain at least one non-alphabetical character.
 
 
 1. Create a domain runtime encryption secret using the following command:
@@ -39,12 +40,13 @@ weight: 3
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml -o /tmp/quickstart/quick-start-domain-resource.yaml
       ```
-      This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
-         - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml).
-         - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
+   This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
+
+     - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml).
+     - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
 
    {{% notice note %}}
-   The Quick Start guide uses a WebLogic Server version 12.2.1.4 General Availability (GA) image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+   The Quick Start guide's sample domain resource references a WebLogic Server version 12.2.1.4 General Availability (GA) image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
    {{% /notice %}}
 
 1.	Confirm that the operator started the servers for the domain:
@@ -120,12 +122,16 @@ weight: 3
       --namespace sample-domain1-ns
     ```
 
-      b. Alternatively, before running the `kubectl apply` command, you can download the ingress route YAML file to `/tmp/quickstart/quick-start-ingress-route.yaml` or similar, using the following command, and make any changes if needed.
+      b. **NOTE**: Instead of running the previous  `kubectl apply` command, you can download the ingress route YAML file to `/tmp/quickstart/quick-start-ingress-route.yaml` or similar, using the following command:
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-ingress-route.yaml -o /tmp/quickstart/quick-start-ingress-route.yaml
       ```
-
+      c. Then apply the file using:
+      ```shell
+      $ kubectl apply -f /tmp/quickstart/quick-start-ingress-route.yaml \
+        --namespace sample-domain1-ns
+      ```
 
 1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, send a request to the URL for the "quick start app", as shown in the following example, which will return an HTTP 200 status code.
 
@@ -144,7 +150,7 @@ weight: 3
         <!DOCTYPE html>
         <html>
         <body>
-                <h1>Welcome to WebLogic on Kubernetes Quick Start</font></h1><br>
+                <h1>Welcome to the WebLogic on Kubernetes Quick Start</font></h1><br>
 
                 <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server1<br><b>Server time:</b> 17:20:49<br><p>
         </body>
@@ -168,7 +174,7 @@ weight: 3
        <!DOCTYPE html>
        <html>
        <body>
-               <h1>Welcome to WebLogic on Kubernetes Quick Start</font></h1><br>
+               <h1>Welcome to the WebLogic on Kubernetes Quick Start</font></h1><br>
 
                <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server2<br><b>Server time:</b> 00:22:51<br><p>
        </body>
