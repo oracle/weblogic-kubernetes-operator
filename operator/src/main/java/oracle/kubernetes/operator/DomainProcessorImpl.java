@@ -296,39 +296,30 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   /**
-   * Compares the domain introspection version to current introspection state label and request introspection
+   * Compares the domain introspection version to current introspection state label and requests introspection
    * if they don't match.
    */
   private static class IntrospectionRequestStep extends Step {
 
-    private final String requestedIntrospectVersion;
-
-    public IntrospectionRequestStep(DomainPresenceInfo info) {
-      this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
-    }
-
     @Override
     public NextAction apply(Packet packet) {
-      String computedRequest = getRequestedIntrospectVersion(packet);
+      final String requestedIntrospectVersion = getRequestedIntrospectVersion(packet);
       if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
         packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
       }
 
-      if (!Objects.equals(computedRequest, requestedIntrospectVersion)) {
-        LOGGER.warning("REG-> not the same value: " + computedRequest + " vs. " + requestedIntrospectVersion);
-      }
       return doNext(packet);
     }
 
     private String getRequestedIntrospectVersion(Packet packet) {
-      return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(
-          DomainResource::getIntrospectVersion).orElse(null);
+      return DomainPresenceInfo.fromPacket(packet)
+          .map(DomainPresenceInfo::getDomain)
+          .map(DomainResource::getIntrospectVersion)
+          .orElse(null);
     }
-
   }
 
-  private static Step bringAdminServerUpSteps(
-        DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory) {
+  private static Step bringAdminServerUpSteps(DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory) {
     List<Step> steps = new ArrayList<>();
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
@@ -1074,7 +1065,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
     return Step.chain(
           ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
-          new IntrospectionRequestStep(info),
+          new IntrospectionRequestStep(),
           JobHelper.createIntrospectionStartStep(null));
   }
 
