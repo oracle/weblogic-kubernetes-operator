@@ -674,9 +674,12 @@ public class Kubernetes {
     boolean status = false;
     V1Deployment deployment = getDeployment(deploymentName, label, namespace);
 
-    List<V1DeploymentCondition> deplList = Optional.ofNullable(deployment)
-        .map(V1Deployment::getStatus).map(V1DeploymentStatus::getConditions)
-        .orElse(null);
+    V1DeploymentStatus deploymentStatus = Optional.ofNullable(deployment)
+        .map(V1Deployment::getStatus).orElse(null);
+
+    List<V1DeploymentCondition> deplList = Optional.ofNullable(deploymentStatus)
+        .map(V1DeploymentStatus::getConditions).orElse(null);
+
     if (deplList != null) {
       V1DeploymentCondition v1DeploymentRunningCondition = deplList.stream()
           .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))

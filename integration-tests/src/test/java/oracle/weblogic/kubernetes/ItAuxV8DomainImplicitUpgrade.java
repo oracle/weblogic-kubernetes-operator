@@ -58,7 +58,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -109,7 +110,8 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
+    createBaseRepoSecret(domainNamespace); // needed for AuxDomain
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -417,7 +419,7 @@ class ItAuxV8DomainImplicitUpgrade {
    */
   @Test
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
-  void testErrorPathV8DomaineFilePermission() {
+  void testErrorPathV8DomainFilePermission() {
 
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);

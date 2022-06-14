@@ -16,8 +16,8 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -40,7 +40,7 @@ class DomainPresenceInfoTest {
     return new ServerStartupInfo(
           new WlsServerConfig(serverName, "host", 7001),
           null,
-          Stub.createStub(ServerSpec.class)
+          Stub.createStub(EffectiveServerSpec.class)
           );
   }
 

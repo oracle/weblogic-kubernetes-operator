@@ -18,6 +18,9 @@ spec:
     - port: 8082
       name: "rest"
       appProtocol: https
+    - port: 8083
+      name: "metrics"
+      appProtocol: http
 ---
 apiVersion: "v1"
 kind: "Service"
@@ -31,6 +34,9 @@ spec:
   selector:
     app: "weblogic-operator-webhook"
   ports:
+    - port: 8083
+      name: "metrics"
+      appProtocol: http
     - port: 8084
       name: "restwebhook"
       appProtocol: https
