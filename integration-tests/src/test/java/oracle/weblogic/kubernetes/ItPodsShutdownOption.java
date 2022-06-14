@@ -543,7 +543,6 @@ class ItPodsShutdownOption {
     String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(podName, namespace));
     for (String envVar : envVars) {
       logger.info("Checking Pod {0} for server startup property {1}", podName, envVar);
-      logger.info("DEBUG: pod log for {0} in namespace {1}:\n {2}", podName, namespace, podLog);
       assertTrue(podLog.contains(envVar), "Server log doesn't contain the " + envVar);
       logger.info("Pod {0} contains the property {1} in server startup env", podName, envVar);
     }
