@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
 import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
+import oracle.kubernetes.operator.webhooks.model.DomainAdmissionReview;
 
 public class GsonBuilderUtils {
 
@@ -25,12 +26,12 @@ public class GsonBuilderUtils {
     return getGsonBuilder().toJson(conversionReviewModel, ConversionReviewModel.class);
   }
 
-  public static AdmissionReview readAdmissionReview(String resourceName) {
-    return getGsonBuilder().fromJson(resourceName, AdmissionReview.class);
+  public static DomainAdmissionReview readDomainAdmissionReview(String resourceName) {
+    return getGsonBuilder().fromJson(resourceName, DomainAdmissionReview.class);
   }
 
-  public static String writeAdmissionReview(AdmissionReview admissionReview) {
-    return getGsonBuilder().toJson(admissionReview, AdmissionReview.class);
+  public static String writeDomainAdmissionReview(AdmissionReview admissionReview) {
+    return getGsonBuilder().toJson(admissionReview, DomainAdmissionReview.class);
   }
 
   private static Gson getGsonBuilder() {

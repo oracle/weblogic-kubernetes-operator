@@ -7,7 +7,6 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
  * AdmissionRequest represents a Kubernetes admission request sent by the Kubernetes ApiServer upon invoking an
@@ -26,42 +25,28 @@ public class AdmissionRequest {
    */
   @SerializedName("uid")
   @Expose
-  private String uid;
+  protected String uid;
 
   /**
    * Fully-qualified group/version/kind of the incoming object.
    */
   @SerializedName("kind")
   @Expose
-  private Map<String, String> kind;
+  protected Map<String, String> kind;
 
   /**
    * Fully-qualified group/version/kind of the resource being modified.
    */
   @SerializedName("resource")
   @Expose
-  private Map<String, String> resource;
+  protected Map<String, String> resource;
 
   /**
    * The subresource, if the request is to a subresource.
    */
   @SerializedName("subResource")
   @Expose
-  private Map<String, String> subResource;
-
-  /**
-   * The new object being admitted.
-   */
-  @SerializedName("object")
-  @Expose
-  private DomainResource object;
-
-  /**
-   * The existing object.
-   */
-  @SerializedName("oldObject")
-  @Expose
-  private DomainResource oldObject;
+  protected Map<String, String> subResource;
 
   public String getUid() {
     return uid;
@@ -93,43 +78,5 @@ public class AdmissionRequest {
 
   public void setSubResource(Map<String, String> subResource) {
     this.subResource = subResource;
-  }
-
-  public DomainResource getObject() {
-    return object;
-  }
-
-  public void setObject(DomainResource object) {
-    this.object = object;
-  }
-
-  public AdmissionRequest object(DomainResource object) {
-    setObject(object);
-    return this;
-  }
-
-  public DomainResource getOldObject() {
-    return oldObject;
-  }
-
-  public void setOldObject(DomainResource oldObject) {
-    this.oldObject = oldObject;
-  }
-
-  public AdmissionRequest oldObject(DomainResource oldObject) {
-    setOldObject(oldObject);
-    return this;
-  }
-
-  @Override
-  public String toString() {
-    return "AdmissionRequest{"
-        + "uid='" + uid + '\''
-        + ", kind='" + kind + '\''
-        + ", resource='" + resource + '\''
-        + ", subResource='" + subResource + '\''
-        + ", object='" + object + '\''
-        + ", oldObject='" + oldObject + '\''
-        + '}';
   }
 }

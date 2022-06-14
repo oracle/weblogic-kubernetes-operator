@@ -31,7 +31,7 @@ public class AdmissionReview {
   @SerializedName("apiVersion")
   @Expose
   @Description("The API version defines the versioned schema of this AdminssionReview. Required.")
-  private String apiVersion = KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
+  protected String apiVersion = KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -41,21 +41,14 @@ public class AdmissionReview {
   @SerializedName("kind")
   @Expose
   @Description("The type of the REST resource. Must be \"AdmissionReview\". Required.")
-  private String kind;
-
-  /**
-   * An {@link  AdmissionRequest}  that contains the details of the admission call.
-   */
-  @SerializedName("request")
-  @Expose
-  private AdmissionRequest request;
+  protected String kind;
 
   /**
    * An {@link  AdmissionResponse} that contains the details of the result of the admission call.
    */
   @SerializedName("response")
   @Expose
-  private AdmissionResponse response;
+  protected AdmissionResponse response;
 
 
   public String getApiVersion() {
@@ -66,35 +59,12 @@ public class AdmissionReview {
     this.apiVersion = apiVersion;
   }
 
-  public AdmissionReview apiVersion(String apiVersion) {
-    setApiVersion(apiVersion);
-    return this;
-  }
-
   public String getKind() {
     return kind;
   }
 
   public void setKind(String kind) {
     this.kind = kind;
-  }
-
-  public AdmissionReview kind(String kind) {
-    setKind(kind);
-    return this;
-  }
-
-  public AdmissionRequest getRequest() {
-    return request;
-  }
-
-  public void setRequest(AdmissionRequest request) {
-    this.request = request;
-  }
-
-  public AdmissionReview request(AdmissionRequest request) {
-    setRequest(request);
-    return this;
   }
 
   public AdmissionResponse getResponse() {
@@ -105,18 +75,4 @@ public class AdmissionReview {
     this.response = response;
   }
 
-  public AdmissionReview response(AdmissionResponse response) {
-    setResponse(response);
-    return this;
-  }
-
-  @Override
-  public String toString() {
-    return "AdmissionReview{"
-        + "apiVersion='" + apiVersion + '\''
-        + ", kind='" + kind + '\''
-        + ", request='" + request + '\''
-        + ", response='" + response + '\''
-        + '}';
-  }
 }

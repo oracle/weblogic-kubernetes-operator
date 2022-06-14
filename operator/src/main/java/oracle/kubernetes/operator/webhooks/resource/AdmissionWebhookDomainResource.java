@@ -16,12 +16,14 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
+import oracle.kubernetes.operator.webhooks.model.DomainAdmissionRequest;
+import oracle.kubernetes.operator.webhooks.model.DomainAdmissionReview;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
-import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
-import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomainAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainAdmissionReview;
 
 /**
  * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission
@@ -29,12 +31,12 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAd
  * this endpoint to validate a change request to a domain resource or cluster resource.
  */
 @Path("admission")
-public class AdmissionWebhookResource extends BaseResource {
+public class AdmissionWebhookDomainResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   /** Construct a AdmissionWebhookResource. */
-  public AdmissionWebhookResource() {
+  public AdmissionWebhookDomainResource() {
     super(null, "admission");
   }
 
@@ -51,20 +53,20 @@ public class AdmissionWebhookResource extends BaseResource {
   public String post(String body) {
     LOGGER.fine("Validating webhook is invoked");
 
-    AdmissionReview admissionReview = null;
-    AdmissionRequest admissionRequest = null;
+    DomainAdmissionReview admissionReview = null;
+    DomainAdmissionRequest admissionRequest = null;
     AdmissionResponse admissionResponse;
 
     try {
-      admissionReview = readAdmissionReview(body);
-      admissionRequest = getAdmissionRequest(admissionReview);
+      admissionReview = readDomainAdmissionReview(body);
+      admissionRequest = getDomainAdmissionRequest(admissionReview);
       admissionResponse = createAdmissionResponse(admissionRequest);
     } catch (Exception e) {
-      LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
+      LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getDomainAdmissionRequestAsString(admissionReview));
       admissionResponse = createResponseWithException(admissionRequest, e);
     }
 
-    return writeAdmissionReview(createResponseAdmissionReview(admissionReview, admissionResponse));
+    return writeDomainAdmissionReview(createResponseAdmissionReview(admissionReview, admissionResponse));
   }
 
   private AdmissionResponse createResponseWithException(AdmissionRequest admissionRequest, Exception e) {
@@ -75,7 +77,7 @@ public class AdmissionWebhookResource extends BaseResource {
 
   private AdmissionReview createResponseAdmissionReview(AdmissionReview admissionReview,
                                                         AdmissionResponse admissionResponse) {
-    return new AdmissionReview()
+    return new DomainAdmissionReview()
         .apiVersion(getRequestApiVersion(admissionReview))
         .kind(getRequestKind(admissionReview))
         .response(admissionResponse);
@@ -91,15 +93,15 @@ public class AdmissionWebhookResource extends BaseResource {
     return Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null);
   }
 
-  private AdmissionRequest getAdmissionRequest(AdmissionReview admissionReview) {
+  private DomainAdmissionRequest getDomainAdmissionRequest(DomainAdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
-        .map(AdmissionReview::getRequest)
+        .map(DomainAdmissionReview::getRequest)
         .orElse(null);
   }
 
-  private String getAdmissionRequestAsString(AdmissionReview admissionReview) {
+  private String getDomainAdmissionRequestAsString(DomainAdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
-        .map(AdmissionReview::getRequest)
+        .map(DomainAdmissionReview::getRequest)
         .map(AdmissionRequest::toString)
         .orElse("");
   }
@@ -108,7 +110,7 @@ public class AdmissionWebhookResource extends BaseResource {
     return Optional.ofNullable(request).map(AdmissionRequest::getUid).orElse(null);
   }
 
-  private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
+  private AdmissionResponse createAdmissionResponse(DomainAdmissionRequest request) {
     if (request == null || request.getOldObject() == null || request.getObject() == null) {
       return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
@@ -116,11 +118,16 @@ public class AdmissionWebhookResource extends BaseResource {
     return validate(request);
   }
 
-  private AdmissionResponse validate(@NotNull AdmissionRequest request) {
+  private AdmissionResponse validate(@NotNull DomainAdmissionRequest request) {
     LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-    return new AdmissionChecker(request.getOldObject(), request.getObject()).validate().uid(getUid(request));
+    return createAdmissionChecker(request).validate().uid(getUid(request));
+  }
+
+  @NotNull
+  private DomainAdmissionChecker createAdmissionChecker(@NotNull DomainAdmissionRequest request) {
+    return new DomainAdmissionChecker(request.getOldObject(), request.getObject());
   }
 
 }
