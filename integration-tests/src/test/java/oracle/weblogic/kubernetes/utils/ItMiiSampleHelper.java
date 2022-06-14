@@ -28,6 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -35,6 +36,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
+import static oracle.weblogic.kubernetes.actions.TestActions.inspectImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -284,7 +286,13 @@ public class ItMiiSampleHelper {
       envMap.put("DB_NAMESPACE", dbNamespace);
       envMap.put("DB_IMAGE_PULL_SECRET", TestConstants.BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-
+      if (OKE_CLUSTER) {
+        String output = inspectImage(jrfBaseImageName, FMWINFRA_IMAGE_TAG);
+        assertNotNull(output, String.format("Can't inspect image %s:%s", jrfBaseImageName, FMWINFRA_IMAGE_TAG));
+        if (!output.contains("root")) {
+          envMap.put("CHOWN_ROOT","--chown oracle:oracle");
+        }
+      }
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
       execTestScriptAndAssertSuccess(domainType, "-db,-rcu", "DB/RCU creation failed");

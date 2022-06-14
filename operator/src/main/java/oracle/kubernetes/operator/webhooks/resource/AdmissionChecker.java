@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -190,23 +190,23 @@ public class AdmissionChecker {
     return isValid;
   }
 
-  private Cluster getCluster(@NotNull DomainResource domain, String clusterName) {
+  private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) {
     return Optional.of(domain).map(DomainResource::getSpec)
         .map(DomainSpec::getClusters)
         .orElse(Collections.emptyList())
         .stream().filter(c -> nameMatches(c, clusterName)).findAny().orElse(null);
   }
 
-  private boolean nameMatches(Cluster cluster, String clusterName) {
-    return Optional.ofNullable(cluster).map(Cluster::getClusterName).orElse("").equals(clusterName);
+  private boolean nameMatches(ClusterSpec clusterSpec, String clusterName) {
+    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getClusterName).orElse("").equals(clusterName);
   }
 
   private int getClusterSize(ClusterStatus clusterStatus) {
     return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas).orElse(0);
   }
 
-  private int getProposedReplicaCount(@NotNull DomainResource domain, Cluster cluster) {
-    return Optional.ofNullable(cluster).map(Cluster::getReplicas).orElse(getDomainReplicaCount(domain));
+  private int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
+    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
   private int getDomainReplicaCount(@NotNull DomainResource domain) {
