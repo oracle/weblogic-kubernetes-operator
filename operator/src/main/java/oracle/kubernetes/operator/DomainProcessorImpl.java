@@ -309,10 +309,20 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     @Override
     public NextAction apply(Packet packet) {
+      String computedRequest = getRequestedIntrospectVersion(packet);
       if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
         packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
       }
+
+      if (!Objects.equals(computedRequest, requestedIntrospectVersion)) {
+        LOGGER.warning("REG-> not the same value: " + computedRequest + " vs. " + requestedIntrospectVersion);
+      }
       return doNext(packet);
+    }
+
+    private String getRequestedIntrospectVersion(Packet packet) {
+      return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(
+          DomainResource::getIntrospectVersion).orElse(null);
     }
 
   }
