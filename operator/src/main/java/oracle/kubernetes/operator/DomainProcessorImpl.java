@@ -292,8 +292,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo) {
-    scheduleDomainStatusUpdating(presenceInfo);
     executor.accept(getExistingDomainPresenceInfo(presenceInfo));
+    scheduleDomainStatusUpdating(presenceInfo);
   }
 
   /**
