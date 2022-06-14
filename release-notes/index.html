@@ -12,20 +12,20 @@
     <title>Release Notes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1654887318" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1654887318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1655211246" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1655211246" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1654887318"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1655211246"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1654887318"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1654887318"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1655211246"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1655211246"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1654887318"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1655211246"></script>
 
     
   </div>
@@ -3507,6 +3507,12 @@
 </thead>
 <tbody>
 <tr>
+<td>June 13, 2022</td>
+<td>v3.4.1</td>
+<td>no</td>
+<td>Resolved several issues related to Model in Image and introspection.</td>
+</tr>
+<tr>
 <td>April 22, 2022</td>
 <td>v3.4.0</td>
 <td>no</td>
@@ -3755,6 +3761,11 @@
 </tbody>
 </table>
 <h3 id="change-log">Change log</h3>
+<h4 id="operator-341">Operator 3.4.1</h4>
+<ul>
+<li>Better support for retrying introspector <code>DeadlineExceeded</code> failures (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/3109">#3109</a>).</li>
+<li>For Model in Image, expand the WDT custom folder from the archive in the domain directory before calling update or create domain (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/3110">#3110</a>).</li>
+</ul>
 <h4 id="operator-340">Operator 3.4.0</h4>
 <ul>
 <li>Certified support for Kubernetes 1.22.5+ and 1.23.4+.</li>
@@ -6266,19 +6277,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1654887318"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1655211246"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1654887318"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1654887318"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1655211246"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1655211246"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1654887318"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1655211246"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
