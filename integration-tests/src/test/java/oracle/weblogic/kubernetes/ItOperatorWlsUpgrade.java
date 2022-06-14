@@ -206,17 +206,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
-   * Currently we do not support AuxDomain upgrade 3.3.5 to Latest with 
-   * independent webhook only WebLogic Operator in Latest branch.
-   * Temporarily disabled, re-enable after webhook not pre-created in 
-   * InitializationTasks or the test is moved to a different test suite.
+   * Operator upgrade from 3.4.1 to current.
    */
-  @Disabled
-  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.3.8");
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.4.1 to current")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom341ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom341ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.1", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -227,6 +224,37 @@ class ItOperatorWlsUpgrade {
   void testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() {
     logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
     upgradeWlsAuxDomain("3.4.0");
+  }
+
+  /**
+   * Auxiliary Image Domain upgrade from Operator v3.4.1 to current.
+   * The current release of the 3.4.1 does not conatin the resolution
+   * described in the following PR 
+   * https://github.com/oracle/weblogic-kubernetes-operator/pull/3165/files
+   *
+   * Note testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() uses a 
+   * patched Operator 3.4.0 image to make it pass. See utils/OperatorUtils.java
+   */
+  @Disabled
+  @Test
+  @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom341ToCurrent() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.4.1");
+  }
+
+  /**
+   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
+   * Currently we do not support AuxDomain upgrade 3.3.8 to Latest with 
+   * independent webhook only WebLogic Operator in Latest branch.
+   * Temporarily disabled, re-enable after webhook not pre-created in 
+   * InitializationTasks or the test is moved to a different test suite.
+   */
+  @Disabled
+  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.3.8");
   }
 
   /**

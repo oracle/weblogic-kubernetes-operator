@@ -230,6 +230,15 @@ class ItOperatorFmwUpgrade {
     installAndUpgradeOperator("3.4.0", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
+  /**
+   * Operator upgrade from 3.4.1 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.4.1 to current")
+  void testOperatorFmwUpgradeFrom341ToCurrent() {
+    installAndUpgradeOperator("3.4.1", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
   private void installAndUpgradeOperator(
          String operatorVersion, String domainVersion,
          String externalServiceNameSuffix) {
