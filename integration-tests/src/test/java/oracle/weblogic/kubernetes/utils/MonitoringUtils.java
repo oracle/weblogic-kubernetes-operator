@@ -16,7 +16,6 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -53,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
@@ -698,10 +698,9 @@ public class MonitoringUtils {
         e.printStackTrace();
       }
 
-      V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(exporterImage)
-          .imagePullPolicy(imagePullPolicy)
+          .imagePullPolicy(IMAGE_PULL_POLICY)
           .configuration(contents));
 
       logger.info("Created domain CR with Monitoring exporter configuration : "

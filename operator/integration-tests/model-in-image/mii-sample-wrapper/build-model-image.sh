@@ -65,7 +65,8 @@ echo @@ Info: BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
 echo @@ Info: MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD}
-echo @@ INFO: OKD=${OKD}
+echo @@ Info: OKD=${OKD}
+echo @@ Info: CHOWN_ROOT=${CHOWN_ROOT:="--chown oracle:root"}
 
 IMGTOOL=$WORKDIR/model-images/imagetool/bin/imagetool.sh
 
@@ -75,13 +76,13 @@ output_dryrun() {
 MODEL_YAML_FILES="$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
 MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
 MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
-CHOWN_ROOT="--chown oracle:root"
+#CHOWN_ROOT="--chown oracle:root"
 TARGET="Default"
 
 echo  "@@ Info: OKD=${OKD}"
 echo  "@@ Info: TARGET=${TARGET}"
 
-if [[ ${OKD} ]]; then
+if [[ ${OKD} == "true" ]]; then
   TARGET="OpenShift"
 fi
   
