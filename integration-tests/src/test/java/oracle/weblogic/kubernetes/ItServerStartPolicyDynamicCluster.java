@@ -36,6 +36,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_LI
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CONFIG_CLUSTER;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.DYNAMIC_CLUSTER;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.ROLLING_CLUSTER_SCRIPT;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.SCALE_CLUSTER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.SERVER_LIFECYCLE;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.START_CLUSTER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.START_SERVER_SCRIPT;
@@ -555,5 +556,26 @@ class ItServerStartPolicyDynamicCluster {
     regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(domainUid, domainNamespace,DYNAMIC_CLUSTER, dynamicServerPodName,
         replicaCount, regex, false, samplePath);
+  }
+
+  /**
+   * Verify the sample script reports proper error when a cluster is scaled beyond max cluster size.
+   */
+  @Order(10)
+  @Test
+  @DisplayName("verify the sample script fails when a cluster is scaled beyond max cluster size")
+  void testScaleBeyondMaxClusterSize() {
+    int newReplicaCount = 7;
+    String expectedResult = "Replicas value is not in the allowed range";
+    // use scaleCluster.sh to scale a given cluster
+    logger.info("Scale cluster {0} using the script scaleCluster.sh", DYNAMIC_CLUSTER);
+    String result =  assertDoesNotThrow(() ->
+            executeLifecycleScript(domainUid, domainNamespace, samplePath,
+                SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, DYNAMIC_CLUSTER, " -r " + newReplicaCount, false),
+        String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
+    assertTrue(result.contains(expectedResult), "Expected result " + expectedResult + "not returned");
+    // verify the replica did not change
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
+        domainUid, domainNamespace, replicaCount)));
   }
 }
