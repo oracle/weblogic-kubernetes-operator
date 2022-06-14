@@ -6,9 +6,12 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -38,12 +41,17 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
@@ -60,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterRepli
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -78,8 +87,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to samples.
+ * Test the sample script(s) to create/manage domain(s).
+ * (a) using domain-on-pv and domain-in-image model with wlst and wdt option
+ * (b) verify the server/cluster/domain lifecycle scripts 
+ * (c) verify the setupLodbalancer.sh script to setup Traefik and Nginx
  */
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
@@ -129,6 +142,7 @@ class ItWlsSamples {
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     String opNamespace = namespaces.get(0);
+
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
@@ -140,9 +154,9 @@ class ItWlsSamples {
     logger.info("Assign a unique namespace for Nginx controller");
     assertNotNull(namespaces.get(3), "Namespace is null");
     nginxNamespace = namespaces.get(3);
+    createTestRepoSecret(nginxNamespace);
 
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
+    // create pull secrets for WebLogic image when running in non Kind cluster
     createBaseRepoSecret(domainNamespace);
 
     // install operator and verify its running in ready state
@@ -150,9 +164,11 @@ class ItWlsSamples {
   }
 
   /**
-   * Test domain in image samples using domains created by image tool using wlst and wdt.
+   * Test the sample script to create domain.
+   * using domain-in-image model with wlst and wdt option
    *
-   */
+   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
+  */
   @Order(1)
   @ParameterizedTest
   @MethodSource("paramProvider")
@@ -197,8 +213,6 @@ class ItWlsSamples {
             + ADMIN_USERNAME_DEFAULT
             + " -p "
             + ADMIN_PASSWORD_DEFAULT;
-
-
     String[] additonalStr = {additonalOptions, imageName};
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
@@ -210,8 +224,9 @@ class ItWlsSamples {
 
   /**
    * Test domain in pv samples using domains created by wlst and wdt.
-   * In domain on pv using wdt and wlst usecases, we also run the update domain script from the samples,
-   * to add a cluster to the domain.
+   * In domain on pv using wdt and wlst usecases, 
+   * Also run the update domain script from the samples, to add a cluster 
+   * to the domain.
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
@@ -365,7 +380,6 @@ class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Traefik LoadBalancer.
    */
-  @Order(0)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   @Tag("samples-gate")
@@ -378,15 +392,25 @@ class ItWlsSamples {
 
   /**
    * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
+   * Use the Nginx Controller image on TEST REPOSITOTY instead of k8s.gcr.io
    */
-  @Order(8)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
     setupSample();
+    Map<String, String> templateMap  = new HashMap<>();
+    templateMap.put("TEST_IMAGES_REPO", TEST_IMAGES_REPO);
+    templateMap.put("TEST_NGINX_IMAGE_NAME ", TEST_NGINX_IMAGE_NAME);
+    templateMap.put("NGINX_INGRESS_IMAGE_DIGEST",NGINX_INGRESS_IMAGE_DIGEST);
+    templateMap.put("TEST_IMAGES_REPO_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME);
+    Path srcPropFile = Paths.get(RESOURCE_DIR, "nginx.template.properties");
+    Path targetPropFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcPropFile.toString(), "nginx.properties", templateMap));
+    logger.info("Generated nginx.properties file path is {0}", targetPropFile);
     Path scriptBase = get(tempSamplePath.toString(), "charts/util");
-    setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace);
-    setupLoadBalancer(scriptBase, "nginx", " -d -n " + nginxNamespace);
+    setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace 
+         + " -p " + targetPropFile.toString());
+    setupLoadBalancer(scriptBase, "nginx", " -d -s -n " + nginxNamespace);
   }
 
   // Function to execute domain lifecyle scripts
