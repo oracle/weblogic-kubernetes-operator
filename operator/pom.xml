@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>3.4.0</version>
+    <version>3.4.1</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -338,6 +338,11 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib-common</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
     </dependency>
 
     <!-- test dependencies -->
