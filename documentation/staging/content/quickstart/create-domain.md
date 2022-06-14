@@ -32,17 +32,17 @@ weight: 3
    - Use the following command to apply the sample domain resource:
 
        ```shell
-       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml
+       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
        ```
 
-    - **NOTE**: Instead of running the previous `kubectl apply` command, you can download the WLS Domain YAML file to `/tmp/quickstart/quick-start-domain-resource.yaml` or similar, using the following command, and then apply the file using `kubectl apply -f /tmp/quickstart/quick-start-domain-resource.yaml`:
+    - **NOTE**: Instead of running the previous `kubectl apply` command, you can download the WLS Domain YAML file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command, and then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`:
 
       ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml -o /tmp/quickstart/quick-start-domain-resource.yaml
+      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml -o /tmp/quickstart/domain-resource.yaml
       ```
    This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
 
-     - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml).
+     - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml).
      - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
 
    {{% notice note %}}
@@ -82,7 +82,7 @@ weight: 3
 
 1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
 
-    a. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/quick-start-ingress-route.yaml` or similar:
+    a. Copy the following IngressRoute YAML to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
 
 
     {{%expand "Click here to view the ingress route YAML file." %}}
@@ -118,18 +118,18 @@ weight: 3
           port: 8001
     {{% /expand %}}
     ```shell
-    $ kubectl apply -f /tmp/quickstart/quick-start-ingress-route.yaml \
+    $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
       --namespace sample-domain1-ns
     ```
 
-      b. **NOTE**: Instead of running the previous  `kubectl apply` command, you can download the ingress route YAML file to `/tmp/quickstart/quick-start-ingress-route.yaml` or similar, using the following command:
+      b. **NOTE**: Instead of running the previous  `kubectl apply` command, you can download the ingress route YAML file to `/tmp/quickstart/ingress-route.yaml` or similar, using the following command:
 
       ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-ingress-route.yaml -o /tmp/quickstart/quick-start-ingress-route.yaml
+      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml -o /tmp/quickstart/ingress-route.yaml
       ```
       c. Then apply the file using:
       ```shell
-      $ kubectl apply -f /tmp/quickstart/quick-start-ingress-route.yaml \
+      $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
         --namespace sample-domain1-ns
       ```
 

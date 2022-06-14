@@ -18,12 +18,11 @@ import="java.net.InetAddress"%>
         <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
 	<%
 		StringBuffer message = new StringBuffer();
-		message.append("<h2>WebLogic Server Hosting the Application</h2> ");
-		message.append("<b>Server Name:</b> " + System.getProperty("weblogic.Name"));
+		message.append("<b>WebLogic Server Name:</b> " + System.getProperty("weblogic.Name"));
 		message.append("<br>");
-		message.append("<b>Server Pod Name:</b> " + InetAddress.getLocalHost().getHostName());
+		message.append("<b>Pod Name:</b> " + InetAddress.getLocalHost().getHostName());
 		message.append("<br>");
-		message.append("<b>Server time:</b> " + new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime()));
+		message.append("<b>Current time:</b> " + new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime()));
 		message.append("<br>");
 		message.append("<p>");
 	%>
