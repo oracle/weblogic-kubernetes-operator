@@ -40,7 +40,7 @@ weight: 2
 
     d. Then, read and accept the license agreement.
 
-1. Create a `docker-registry` secret to enable pulling the example image from the registry.
+1. Create a `docker-registry` secret to enable pulling the example WebLogic Server image from the registry.
 
    ```shell
    $ kubectl create secret docker-registry weblogic-repo-credentials \

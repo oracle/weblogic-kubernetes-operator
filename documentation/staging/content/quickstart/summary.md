@@ -20,7 +20,6 @@ Here's some insight into what's happening under the covers during the Quick Star
 
 - The operator detects the domain resource and deploys the domain's WebLogic Administration Server and WebLogic Managed Server pods.
 
-
 ### Advanced do-it-yourself
 
 The following instructions guide you, step-by-step, through the process of creating the Quick Start auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
@@ -327,7 +326,13 @@ If you followed the previous steps to create an auxiliary image, then use these 
 
     {{% /expand %}}
 
-    b. If you chose a different name and tag for the auxiliary image you created, then update the image field under the `spec.configuration.model.auxiliaryImages`
+    b. **NOTE**: Instead of running the previous `kubectl apply` command, you can download the WLS Domain YAML file to `/tmp/quickstart/quick-start-domain-resource.yaml` or similar, using the following command, and then apply the file using `kubectl apply -f /tmp/quickstart/quick-start-domain-resource.yaml`:
+
+      ```shell
+      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/quick-start-domain-resource.yaml -o /tmp/quickstart/quick-start-domain-resource.yaml
+      ```
+
+    c. If you chose a different name and tag for the auxiliary image you created, then update the image field under the `spec.configuration.model.auxiliaryImages`
     section to use that name and tag. For example, if you named the auxiliary image `my-aux-image:v1`, then update the `spec.configuration.model.auxiliaryImages` section as shown:
 
       ```shell
@@ -335,7 +340,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
           - image: "my-aux-image:v1"
       ```
 
-    c. If you chose non-default values for any other fields, such as `spec.image`, `spec.imagePullSecrets`, `spec.webLogicCredentialsSecret`, and `spec.configuration.model.runtimeEncryptionSecret`, then update those fields accordingly.
+    d. If you chose non-default values for any other fields, such as `spec.image`, `spec.imagePullSecrets`, `spec.webLogicCredentialsSecret`, and `spec.configuration.model.runtimeEncryptionSecret`, then update those fields accordingly.
 
 2. Create the domain by applying the domain resource. Run the following command:
 
