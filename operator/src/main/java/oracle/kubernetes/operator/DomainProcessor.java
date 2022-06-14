@@ -64,8 +64,6 @@ public interface DomainProcessor {
    */
   void dispatchEventWatch(Watch.Response<CoreV1Event> item);
 
-  void runMakeRight(MakeRightDomainOperation operation);
-
   /**
    * If the logging level is high enough, reports on any fibers which may currently be suspended.
    */
