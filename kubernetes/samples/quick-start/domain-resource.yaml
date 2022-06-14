@@ -75,11 +75,7 @@ spec:
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
-    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
-    #   to set the WebLogic domain name
     env:
-    - name: CUSTOM_DOMAIN_NAME
-      value: "domain1"
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
@@ -117,21 +113,6 @@ spec:
   clusters:
   - clusterName: cluster-1
     serverStartState: "RUNNING"
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
     # The number of managed servers to start for this cluster
     replicas: 2
 

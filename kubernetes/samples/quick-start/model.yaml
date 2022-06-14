@@ -3,19 +3,13 @@ domainInfo:
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
 topology:
     Name: sample-domain1
-    EnableEeCompliantClassloadingForEmbeddedAdapters: true
     AdminServerName: admin-server
     DomainVersion: 12.2.1.4.0
-    CdiContainer:
-        ImplicitBeanDiscoveryEnabled: false
-    JMX:
-        PlatformMBeanServerUsed: true
     Cluster:
         cluster-1:
             DynamicServers:
                 ServerNamePrefix: managed-server
                 CalculatedListenPorts: false
-                MachineMatchType: name
                 MaximumDynamicServerCount: 5
                 ServerTemplate: server-template_1
                 DynamicClusterSize: 5
@@ -29,11 +23,6 @@ topology:
                 Cluster: cluster-1
             SSL:
                 ListenPort: '@@PROP:ServerTemp.server-template_1.SSL.ListenPort@@'
-            AutoMigrationEnabled: false
-    SecurityConfiguration:
-        Realm:
-            myrealm:
-                CertPathBuilder: WebLogicCertPathProvider
 appDeployments:
     Application:
         quickstart:

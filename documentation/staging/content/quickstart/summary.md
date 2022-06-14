@@ -88,15 +88,15 @@ Then, use the JAR command to put the web application files into a model archive 
    ```
 
    ```
-   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/variables.properties -o /tmp/quickstart/models/variables.properties
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/model.properties -o /tmp/quickstart/models/model.properties
    ```
 
    ```
-   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/index.jsp -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/index.jsp
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/archive/wlsdeploy/applications/quickstart/index.jsp -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/index.jsp
    ```
 
    ```
-   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/WEB-INF/web.xml -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF/web.xml
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/archive/wlsdeploy/applications/quickstart/WEB-INF/web.xml -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF/web.xml
    ```
 
    ```
@@ -115,7 +115,7 @@ WDT model YAML files, application archives, and the WDT installation files:
      $ /tmp/quickstart/tools/imagetool/bin/imagetool.sh createAuxImage \
        --tag quick-start-aux-image:v1 \
        --wdtModel /tmp/quickstart/models/model.yaml \
-       --wdtVariables /tmp/quickstart/models/variables.properties \
+       --wdtVariables /tmp/quickstart/models/model.properties \
        --wdtArchive /tmp/quickstart/models/archive.zip
      ```
 
@@ -322,7 +322,6 @@ If you followed the previous steps to create an auxiliary image, then use these 
      # (the model yaml in the optional configMap or in the image)
      #secrets:
      #- sample-domain1-datasource-secret
-     ```
 
     {{% /expand %}}
 
