@@ -87,8 +87,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to samples.
+ * Test the sample script(s) to create/manage domain(s).
+ * (a) using domain-on-pv and domain-in-image model with wlst and wdt option
+ * (b) verify the server/cluster/domain lifecycle scripts 
+ * (c) verify the setupLodbalancer.sh script to setup Traefik and Nginx
  */
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
@@ -138,6 +142,7 @@ class ItWlsSamples {
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     String opNamespace = namespaces.get(0);
+
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
@@ -151,8 +156,7 @@ class ItWlsSamples {
     nginxNamespace = namespaces.get(3);
     createTestRepoSecret(nginxNamespace);
 
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
+    // create pull secrets for WebLogic image when running in non Kind cluster
     createBaseRepoSecret(domainNamespace);
 
     // install operator and verify its running in ready state
@@ -160,9 +164,11 @@ class ItWlsSamples {
   }
 
   /**
-   * Test domain in image samples using domains created by image tool using wlst and wdt.
+   * Test the sample script to create domain.
+   * using domain-in-image model with wlst and wdt option
    *
-   */
+   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
+  */
   @Order(1)
   @ParameterizedTest
   @MethodSource("paramProvider")
@@ -207,8 +213,6 @@ class ItWlsSamples {
             + ADMIN_USERNAME_DEFAULT
             + " -p "
             + ADMIN_PASSWORD_DEFAULT;
-
-
     String[] additonalStr = {additonalOptions, imageName};
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
@@ -220,8 +224,9 @@ class ItWlsSamples {
 
   /**
    * Test domain in pv samples using domains created by wlst and wdt.
-   * In domain on pv using wdt and wlst usecases, we also run the update domain script from the samples,
-   * to add a cluster to the domain.
+   * In domain on pv using wdt and wlst usecases, 
+   * Also run the update domain script from the samples, to add a cluster 
+   * to the domain.
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
