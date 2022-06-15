@@ -42,7 +42,7 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPER
 public class WebhookHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook";
-  public static final String VALIDATING_WEBHOOK_NAME_DOMAIN = VALIDATING_WEBHOOK_NAME + ".domaink";
+  public static final String VALIDATING_WEBHOOK_NAME_DOMAIN = VALIDATING_WEBHOOK_NAME + ".domain";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
   public static final String VALIDATING_WEBHOOK_PATH_DOMAIN = VALIDATING_WEBHOOK_PATH + "/domain";
   public static final String ADMISSION_REVIEW_VERSION = "v1";
@@ -61,32 +61,32 @@ public class WebhookHelper {
    */
   public static Step createValidatingWebhookConfigStep(
       Certificates certificates) {
-    return new CreateValidatingWebhookConfigurationStep(certificates);
+    return new CreateValidatingWebhookConfigStep(certificates);
   }
 
-  static class CreateValidatingWebhookConfigurationStep extends Step {
+  static class CreateValidatingWebhookConfigStep extends Step {
     private final Certificates certificates;
 
-    CreateValidatingWebhookConfigurationStep(Certificates certificates) {
+    CreateValidatingWebhookConfigStep(Certificates certificates) {
       super();
       this.certificates = certificates;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(createContext().verifyValidatingWebhookConfiguration(getNext()), packet);
+      return doNext(createContext().verifyValidatingWebhookConfig(getNext()), packet);
     }
 
-    protected ValidatingWebhookConfigurationContext createContext() {
-      return new ValidatingWebhookConfigurationContext(this, certificates);
+    protected ValidatingWebhookConfigContext createContext() {
+      return new ValidatingWebhookConfigContext(this, certificates);
     }
   }
   
-  static class ValidatingWebhookConfigurationContext {
+  static class ValidatingWebhookConfigContext {
     private final Step conflictStep;
     private final V1ValidatingWebhookConfiguration model;
 
-    ValidatingWebhookConfigurationContext(Step conflictStep, Certificates certificates) {
+    ValidatingWebhookConfigContext(Step conflictStep, Certificates certificates) {
       this.conflictStep = conflictStep;
       this.model = createModel(certificates);
     }
@@ -151,14 +151,14 @@ public class WebhookHelper {
           .map(Base64::decodeBase64).orElse(null);
     }
 
-    private Step verifyValidatingWebhookConfiguration(Step next) {
+    private Step verifyValidatingWebhookConfig(Step next) {
       return new CallBuilder().readValidatingWebhookConfigurationAsync(
           getName(model), createReadResponseStep(next));
     }
 
     @Nullable
-    private String getName(V1ValidatingWebhookConfiguration validatingWebhookConfiguration) {
-      return Optional.ofNullable(validatingWebhookConfiguration)
+    private String getName(V1ValidatingWebhookConfiguration webhookConfig) {
+      return Optional.ofNullable(webhookConfig)
           .map(V1ValidatingWebhookConfiguration::getMetadata)
           .map(V1ObjectMeta::getName)
           .orElse(null);
@@ -182,9 +182,9 @@ public class WebhookHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
         if (existingWebhookConfig == null) {
-          return doNext(createValidatingWebhookConfiguration(getNext()), packet);
+          return doNext(createValidatingWebhookConfig(getNext()), packet);
         } else if (shouldUpdate(existingWebhookConfig)) {
-          return doNext(replaceValidatingWebhookConfiguration(getNext(), existingWebhookConfig), packet);
+          return doNext(replaceValidatingWebhookConfig(getNext(), existingWebhookConfig), packet);
         } else {
           return doNext(packet);
         }
@@ -218,7 +218,7 @@ public class WebhookHelper {
         return l.isEmpty() ? null : l.get(0);
       }
 
-      private Step createValidatingWebhookConfiguration(Step next) {
+      private Step createValidatingWebhookConfig(Step next) {
         return new CallBuilder().createValidatingWebhookConfigurationAsync(
             model, createCreateResponseStep(next));
       }
@@ -227,7 +227,7 @@ public class WebhookHelper {
         return new CreateResponseStep(next);
       }
 
-      private Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
+      private Step replaceValidatingWebhookConfig(Step next, V1ValidatingWebhookConfiguration existing) {
         return new CallBuilder().replaceValidatingWebhookConfigurationAsync(
             VALIDATING_WEBHOOK_NAME, updateModel(existing), createReplaceResponseStep(next));
       }
