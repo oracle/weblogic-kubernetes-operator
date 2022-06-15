@@ -13,7 +13,6 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
@@ -48,8 +47,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
-import static oracle.kubernetes.operator.helpers.AffinityHelper.DOMAIN_UID_VARIABLE;
-import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -487,22 +484,6 @@ public class PodHelper {
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
 
       init();
-    }
-
-    @Override
-    protected V1PodSpec createSpec() {
-      return super.createSpec().affinity(getAffinity());
-    }
-
-    protected V1Affinity getAffinity() {
-      if (isDefaultAntiAffinity() && clusterName == null) {
-        return new AffinityHelper().domainUID(DOMAIN_UID_VARIABLE).getAntiAffinity();
-      }
-      return getServerSpec().getAffinity();
-    }
-
-    private boolean isDefaultAntiAffinity() {
-      return getServerSpec().getAffinity().equals(getDefaultAntiAffinity());
     }
 
     @Override

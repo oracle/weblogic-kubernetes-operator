@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
@@ -93,6 +94,8 @@ import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.DOMAIN_UID_VARIABLE;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
@@ -670,7 +673,23 @@ public abstract class PodStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(additionalVolume);
     }
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> podSpec.addVolumesItem(createEmptyDirVolume()));
+    podSpec.affinity(getAffinity());
     return podSpec;
+  }
+
+  protected V1Affinity getAffinity() {
+    if (isDefaultAntiAffinity() && getClusterName() == null) {
+      return domainUidVariableAntiAffinity();
+    }
+    return getServerSpec().getAffinity();
+  }
+
+  private boolean isDefaultAntiAffinity() {
+    return getServerSpec().getAffinity().equals(getDefaultAntiAffinity());
+  }
+
+  private V1Affinity domainUidVariableAntiAffinity() {
+    return new AffinityHelper().domainUID(DOMAIN_UID_VARIABLE).getAntiAffinity();
   }
 
   private List<V1Container> getInitContainers() {

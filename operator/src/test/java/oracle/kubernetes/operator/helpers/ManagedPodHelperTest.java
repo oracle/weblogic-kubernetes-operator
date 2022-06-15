@@ -995,12 +995,6 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenNonClusteredServerHasNoAffinity_createdPodHasDomainLevelAffinity() {
-    V1Affinity expected = new AffinityHelper().domainUID(UID).getAntiAffinity();
-    assertThat(getCreatePodAffinity(), is(expected));
-  }
-
-  @Test
   void whenClusterHasNoAffinity_createdPodHasDefaultAntiAffinity() {
     getConfigurator().configureCluster(CLUSTER_NAME);
 
@@ -1254,10 +1248,6 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatePodAffinity(), is(
         new AffinityHelper().clusterName("test-cluster").getAntiAffinity()));
-  }
-
-  V1Affinity getCreatePodAffinity() {
-    return Optional.ofNullable(getCreatedPod().getSpec()).map(V1PodSpec::getAffinity).orElse(new V1Affinity());
   }
 
   V1WeightedPodAffinityTerm createWeightedPodAffinityTerm(String key, String valuesItem) {

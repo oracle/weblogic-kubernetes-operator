@@ -670,6 +670,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey);
   }
 
+  V1Affinity getCreatePodAffinity() {
+    return Optional.ofNullable(getCreatedPod().getSpec()).map(V1PodSpec::getAffinity).orElse(new V1Affinity());
+  }
+
   abstract void setServerPort(int port);
 
   private DomainResource createDomain() {
@@ -2552,6 +2556,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         getCreatedPod().getSpec().getAffinity(),
         is(affinity));
+  }
+
+  @Test
+  void whenServerHasNoAffinity_createdPodHasDomainUidVariableAffinity() {
+    assertThat(getCreatePodAffinity(), is(new AffinityHelper().domainUID(UID).getAntiAffinity()));
   }
 
   @Test
