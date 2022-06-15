@@ -35,7 +35,7 @@ weight: 3
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
        ```
 
-    - **NOTE**: Instead of running the previous `kubectl apply` command, you can download the WLS Domain YAML file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command, and then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`:
+    - **NOTE**: If you need to modify the sample domain YAML file, you can download the file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command, and make any changes needed. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`:
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml -o /tmp/quickstart/domain-resource.yaml
@@ -155,7 +155,7 @@ weight: 3
         <html>
         <body>
                 <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
-        
+
                 <b>WebLogic Server Name:</b> managed-server1<br><b>Pod Name:</b> sample-domain1-managed-server1<br><b>Current time:</b> 14:21:00<br><p>
         </body>
         </html>
@@ -181,7 +181,7 @@ weight: 3
         <html>
         <body>
                 <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
-        
+
                 <b>WebLogic Server Name:</b> managed-server1<br><b>Pod Name:</b> sample-domain1-managed-server1<br><b>Current time:</b> 14:21:00<br><p>
         </body>
         </html>
