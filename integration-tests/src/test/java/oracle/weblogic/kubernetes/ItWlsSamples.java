@@ -10,7 +10,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -38,11 +40,16 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -53,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterRepli
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -376,9 +384,19 @@ class ItWlsSamples {
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
     setupSample();
+    Map<String, String> templateMap  = new HashMap<>();
+    templateMap.put("TEST_IMAGES_REPO", OCIR_REGISTRY);
+    templateMap.put("TEST_NGINX_IMAGE_NAME ",  OCIR_NGINX_IMAGE_NAME);
+    templateMap.put("NGINX_INGRESS_IMAGE_DIGEST",NGINX_INGRESS_IMAGE_DIGEST);
+    templateMap.put("TEST_IMAGES_REPO_SECRET_NAME", OCIR_SECRET_NAME);
+    Path srcPropFile = Paths.get(RESOURCE_DIR, "nginx.template.properties");
+    Path targetPropFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcPropFile.toString(), "nginx.properties", templateMap));
+    logger.info("Generated nginx.properties file path is {0}", targetPropFile);
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
-    setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace);
-    setupLoadBalancer(scriptBase, "nginx", " -d -n " + nginxNamespace);
+    setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace
+         + " -p " + targetPropFile.toString());
+    setupLoadBalancer(scriptBase, "nginx", " -d -s -n " + nginxNamespace);
   }
 
   // Function to execute domain lifecyle scripts
