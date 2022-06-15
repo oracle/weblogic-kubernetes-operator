@@ -389,6 +389,10 @@ public class ItFmwSample {
 
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
+      if (OKE_CLUSTER) {
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+                "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      }
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),

@@ -36,8 +36,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -479,27 +482,47 @@ class ItWlsSamples {
 
     Path pvpvcBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
-    // create pv and pvc
+    if (!OKE_CLUSTER) {
+      // create pv and pvc
+      assertDoesNotThrow(() -> {
+        // when tests are running in local box the PV directories need to exist
+        Path pvHostPath;
+        pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
+
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
+
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+      });
+
+    } else {
+      assertDoesNotThrow(() -> {
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + FSS_DIR);
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStorageNFSServer: nfsServer", "weblogicDomainStorageNFSServer: " + NFS_SERVER);
+        replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+        replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+
+      });
+    }
     assertDoesNotThrow(() -> {
-      // when tests are running in local box the PV directories need to exist
-      Path pvHostPath;
-      pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
-
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      deleteDirectory(pvHostPath.toFile());
-      createDirectories(pvHostPath);
-
-      // set the pvHostPath in create-pv-pvc-inputs.yaml
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "namespace: default", "namespace: " + domainNamespace);
+              "namespace: default", "namespace: " + domainNamespace);
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
+              "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "domainUID:", "domainUID: " + domainName);
+              "domainUID:", "domainUID: " + domainName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -545,6 +568,10 @@ class ItWlsSamples {
   private void updateDomainInputsFile(String domainName, Path sampleBase) {
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
+      if (OKE_CLUSTER) {
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+                "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      }
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
