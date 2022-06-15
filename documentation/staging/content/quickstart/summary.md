@@ -31,7 +31,7 @@ These steps help you understand and customize auxiliary image creation. Then you
 1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to a new directory; for example, use directory `/tmp/quickstart/tools`. Both WDT and WIT are required to create your Model in Image auxiliary images.
 
    For example:
-   ```
+   ```shell
    $ mkdir -p /tmp/quickstart/tools
    ```
 
@@ -79,34 +79,34 @@ These steps help you understand and customize auxiliary image creation. Then you
 Then, use the JAR command to put the web application files into a model archive ZIP file.
 
    For example:
-   ```
+   ```shell
    $ mkdir -p /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF
    ```
 
-   ```
+   ```shell
    $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/model.yaml -o /tmp/quickstart/models/model.yaml
    ```
 
-   ```
+   ```shell
    $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/model.properties -o /tmp/quickstart/models/model.properties
    ```
 
-   ```
+   ```shell
    $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/archive/wlsdeploy/applications/quickstart/index.jsp -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/index.jsp
    ```
 
-   ```
+   ```shell
    $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/archive/wlsdeploy/applications/quickstart/WEB-INF/web.xml -o /tmp/quickstart/models/archive/wlsdeploy/applications/quickstart/WEB-INF/web.xml
    ```
 
-   ```
+   ```shell
    $ jar cvf /tmp/quickstart/models/archive.zip -C /tmp/quickstart/models/archive/ wlsdeploy
    ```
 
 #### Create the auxiliary image.
 
 Follow these steps to create the auxiliary image containing
-WDT model YAML files, application archives, and the WDT installation files:
+WDT model YAML files, application archives, and the WDT installation files.
 
 
 1. Use the `createAuxImage` option of the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) (WIT) to create the auxiliary image. Run the following command:

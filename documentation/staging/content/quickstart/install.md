@@ -58,7 +58,7 @@ First, install the operator.
    $ helm repo add traefik https://helm.traefik.io/traefik --force-update
    ```
 
-1. Create a namespace for the ingress controller.
+1. Create a namespace for the ingress controller:
 
    ```shell
    $ kubectl create namespace traefik
