@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -11,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.json.JsonPatchBuilder;
@@ -109,14 +109,9 @@ public class KubernetesUtils {
    * @return the metadata, if found; otherwise a newly created one.
    */
   static V1ObjectMeta getResourceMetadata(Object resource) {
-    try {
-      Field metadataField = resource.getClass().getDeclaredField("metadata");
-      metadataField.setAccessible(true);
-      return (V1ObjectMeta) metadataField.get(resource);
-    } catch (NoSuchFieldException
-          | SecurityException
-          | IllegalArgumentException
-          | IllegalAccessException e) {
+    if (resource instanceof KubernetesObject) {
+      return ((KubernetesObject) resource).getMetadata();
+    } else {
       return new V1ObjectMeta();
     }
   }
@@ -126,23 +121,16 @@ public class KubernetesUtils {
    * indicates that the creation time is later. If two items have the same creation time, a higher
    * resource version indicates the newer resource.
    *
-   * @param first  the first item to compare
-   * @param second the second item to compare
+   * @param m1  the first item to compare
+   * @param m2 the second item to compare
    * @return true if the first object is newer than the second object
    */
-  public static boolean isFirstNewer(V1ObjectMeta first, V1ObjectMeta second) {
-    if (second == null) {
-      return true;
-    }
-    if (first == null) {
-      return false;
-    }
-
-    OffsetDateTime time1 = first.getCreationTimestamp();
-    OffsetDateTime time2 = second.getCreationTimestamp();
+  public static boolean isFirstNewer(V1ObjectMeta m1, V1ObjectMeta m2) {
+    OffsetDateTime time1 = Optional.ofNullable(m1).map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MIN);
+    OffsetDateTime time2 = Optional.ofNullable(m2).map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MAX);
 
     if (time1.equals(time2)) {
-      return getResourceVersion(first).compareTo(getResourceVersion(second)) > 0;
+      return getResourceVersion(m1).compareTo(getResourceVersion(m2)) > 0;
     } else {
       return time1.isAfter(time2);
     }
