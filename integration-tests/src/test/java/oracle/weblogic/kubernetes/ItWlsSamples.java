@@ -124,7 +124,6 @@ class ItWlsSamples {
   private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
 
   private final Path samplePath = get(ITTESTS_DIR, "../kubernetes/samples");
-  private final Path tempSamplePath = get(WORK_DIR, "wls-sample-testing");
   private final Path domainLifecycleSamplePath = get(samplePath + "/scripts/domain-lifecycle");
   private static String UPDATE_MODEL_FILE = "model-samples-update-domain.yaml";
   private static String UPDATE_MODEL_PROPERTIES = "model-samples-update-domain.properties";
@@ -182,13 +181,13 @@ class ItWlsSamples {
     String script = model.split(":")[0];
 
     String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
-
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainName, script);
     //copy the samples directory to a temporary location
-    setupSample();
+    setupSample(testSamplePath);
     createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    Path sampleBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
+    Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
 
     // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainName, sampleBase);
@@ -242,9 +241,9 @@ class ItWlsSamples {
 
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainName, script);
     //copy the samples directory to a temporary location
-    setupSample();
+    setupSample(testSamplePath);
     String secretName = domainName + "-weblogic-credentials";
     if (!secretExists(secretName, domainNamespace)) {
       createSecretWithUsernamePassword(
@@ -254,12 +253,12 @@ class ItWlsSamples {
           ADMIN_PASSWORD_DEFAULT);
     }
     //create PV and PVC used by the domain
-    createPvPvc(domainName);
+    createPvPvc(domainName, testSamplePath);
 
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
 
-    Path sampleBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+    Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
     // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainName, sampleBase);
@@ -387,8 +386,9 @@ class ItWlsSamples {
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   @Tag("samples-gate")
   void testTraefikIngressController() {
-    setupSample();
-    Path scriptBase = get(tempSamplePath.toString(), "charts/util");
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "traefik");
+    setupSample(testSamplePath);
+    Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
     setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
   }
@@ -400,7 +400,8 @@ class ItWlsSamples {
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
-    setupSample();
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "nginx");
+    setupSample(testSamplePath);
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("TEST_IMAGES_REPO", TEST_IMAGES_REPO);
     templateMap.put("TEST_NGINX_IMAGE_NAME ", TEST_NGINX_IMAGE_NAME);
@@ -410,7 +411,7 @@ class ItWlsSamples {
     Path targetPropFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcPropFile.toString(), "nginx.properties", templateMap));
     logger.info("Generated nginx.properties file path is {0}", targetPropFile);
-    Path scriptBase = get(tempSamplePath.toString(), "charts/util");
+    Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace 
          + " -p " + targetPropFile.toString());
     setupLoadBalancer(scriptBase, "nginx", " -d -s -n " + nginxNamespace);
@@ -457,16 +458,16 @@ class ItWlsSamples {
   }
 
   // copy samples directory to a temporary location
-  private void setupSample() {
+  private void setupSample(Path testSamplePath) {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/wls-sample-testing"
-      logger.info("Deleting and recreating {0}", tempSamplePath);
-      createDirectories(tempSamplePath);
-      deleteDirectory(tempSamplePath.toFile());
-      createDirectories(tempSamplePath);
+      logger.info("Deleting and recreating {0}", testSamplePath);
+      createDirectories(testSamplePath);
+      deleteDirectory(testSamplePath.toFile());
+      createDirectories(testSamplePath);
 
-      logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
-      copyDirectory(samplePath.toFile(), tempSamplePath.toFile());
+      logger.info("Copying {0} to {1}", samplePath, testSamplePath);
+      copyDirectory(samplePath.toFile(), testSamplePath.toFile());
     });
   }
 
@@ -482,7 +483,7 @@ class ItWlsSamples {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc(String domainName) {
+  private void createPvPvc(String domainName, Path testSamplePath) {
 
     final String pvName = domainName + "-weblogic-sample-pv";
     final String pvcName = domainName + "-weblogic-sample-pvc";
@@ -504,7 +505,7 @@ class ItWlsSamples {
         assertDoesNotThrow(() -> pvNotExist(pvName, null),
             String.format("pvNotExists failed for pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
 
-    Path pvpvcBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
+    Path pvpvcBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
     if (!OKE_CLUSTER) {
       // create pv and pvc
@@ -592,10 +593,6 @@ class ItWlsSamples {
   private void updateDomainInputsFile(String domainName, Path sampleBase) {
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
-      if (OKE_CLUSTER) {
-        replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
-      }
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -604,7 +601,10 @@ class ItWlsSamples {
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
-      if (KIND_REPO == null) {
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + domainName + "/domains");
+      if (KIND_REPO == null || OKE_CLUSTER) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
             "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
       }
