@@ -140,45 +140,51 @@ weight: 3
         $ curl -i http://localhost:30305/quickstart/
 
         HTTP/1.1 200 OK
-        Content-Length: 264
+        Content-Length: 274
         Content-Type: text/html; charset=UTF-8
-        Date: Tue, 24 May 2022 17:20:49 GMT
-        Set-Cookie: JSESSIONID=uY73FejgzFGdKmKvG0OOF_tN-0RiHjC28X_mWglMGXN3NqP8f_qR!-1753503593; path=/; HttpOnly
+        Date: Wed, 15 Jun 2022 14:20:59 GMT
+        Set-Cookie: JSESSIONID=JONnvS__IkBUN9nqZG4SfuUU3QdEj_4bissfck1GPbY6YJxgjXpS!1733001435; path=/; HttpOnly
+        X-Oracle-Dms-Ecid: be865b9d-cc96-4dca-ab80-f0b6c5b05326-00000015
+        X-Oracle-Dms-Rid: 0
+
+
 
 
 
         <!DOCTYPE html>
         <html>
         <body>
-                <h1>Welcome to the WebLogic on Kubernetes Quick Start</font></h1><br>
-
-                <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server1<br><b>Server time:</b> 17:20:49<br><p>
+                <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
+        
+                <b>WebLogic Server Name:</b> managed-server1<br><b>Pod Name:</b> sample-domain1-managed-server1<br><b>Current time:</b> 14:21:00<br><p>
         </body>
         </html>
     {{% /tab %}}
     {{% tab name="OKE Cluster" %}}
-       $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
+        $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
 
-       $ curl -i http://${LOADBALANCER_INGRESS_IP}/quickstart/
+        $ curl -i http://${LOADBALANCER_INGRESS_IP}/quickstart/
 
-       HTTP/1.1 200 OK
-       Via: 1.1 10.68.69.7 (McAfee Web Gateway 9.2.4.34298)
-       Date: Thu, 02 Jun 2022 00:22:51 GMT
-       Set-Cookie: JSESSIONID=WHMhyyg-7xmJ-4dvjo6JQuWY4fg94p5_rKmbNAdk2HWWUuKujtRU!182127355; path=/; HttpOnly
-       Content-Type: text/html; charset=UTF-8
-       Content-Length: 264
-       Proxy-Connection: Keep-Alive
+        HTTP/1.1 200 OK
+        Content-Length: 274
+        Content-Type: text/html; charset=UTF-8
+        Date: Wed, 15 Jun 2022 14:20:59 GMT
+        Set-Cookie: JSESSIONID=JONnvS__IkBUN9nqZG4SfuUU3QdEj_4bissfck1GPbY6YJxgjXpS!1733001435; path=/; HttpOnly
+        X-Oracle-Dms-Ecid: be865b9d-cc96-4dca-ab80-f0b6c5b05326-00000015
+        X-Oracle-Dms-Rid: 0
 
 
 
-       <!DOCTYPE html>
-       <html>
-       <body>
-               <h1>Welcome to the WebLogic on Kubernetes Quick Start</font></h1><br>
 
-               <h2>WebLogic Server Hosting the Application</h2> <b>Server Name:</b> sample-domain1-managed-server2<br><b>Server time:</b> 00:22:51<br><p>
-       </body>
-       </html>
+
+        <!DOCTYPE html>
+        <html>
+        <body>
+                <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
+        
+                <b>WebLogic Server Name:</b> managed-server1<br><b>Pod Name:</b> sample-domain1-managed-server1<br><b>Current time:</b> 14:21:00<br><p>
+        </body>
+        </html>
     {{% /tab %}}
     {{< /tabs >}}
 
