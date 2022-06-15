@@ -57,50 +57,6 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
     this.server.fillInFrom(cluster);
     this.server.fillInFrom(spec);
     this.cluster = cluster;
-
-    if (isClusteredServerWithtoutAffinityPolicy(cluster)) {
-      addDefaultAntiAffinityPolicy();
-    }
-  }
-
-  private boolean isClusteredServerWithtoutAffinityPolicy(Cluster cluster) {
-    return cluster != null && cluster.getAffinity() == null;
-  }
-
-  void addDefaultAntiAffinityPolicy() {
-    List<V1WeightedPodAffinityTerm> existingAffinityTerms =
-        Optional.ofNullable(this.server.getAffinity())
-        .map(a -> a.getPodAntiAffinity())
-        .map(aa -> aa.getPreferredDuringSchedulingIgnoredDuringExecution()).orElse(new ArrayList<>());
-    List<V1WeightedPodAffinityTerm> newAffinityTerms = new ArrayList<>();
-    if (existingAffinityTerms.isEmpty()) {
-      addDefaultAntiAffinityPolicy(newAffinityTerms);
-    } else if (!existingAffinityTerms.contains(getPodAntiAffinityTerm())) {
-      newAffinityTerms.addAll(existingAffinityTerms);
-      addDefaultAntiAffinityPolicy(newAffinityTerms);
-    }
-  }
-
-  private void addDefaultAntiAffinityPolicy(List<V1WeightedPodAffinityTerm> newAffinityTerms) {
-    newAffinityTerms.add(getPodAntiAffinityTerm());
-    this.server.setAffinity(Optional.ofNullable(this.server.getAffinity()).orElse(new V1Affinity())
-        .podAntiAffinity(new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(newAffinityTerms)));
-  }
-
-  private V1WeightedPodAffinityTerm getPodAntiAffinityTerm() {
-    return new V1WeightedPodAffinityTerm()
-        .weight(100)
-        .podAffinityTerm(
-            new V1PodAffinityTerm()
-                .labelSelector(
-                    new V1LabelSelector()
-                        .addMatchExpressionsItem(
-                            new V1LabelSelectorRequirement().key(CLUSTERNAME_LABEL).operator("In")
-                                .addValuesItem("$(CLUSTER_NAME)")
-                        )
-                )
-                .topologyKey("kubernetes.io/hostname")
-        );
   }
 
   private Server getBaseConfiguration(Server server) {
