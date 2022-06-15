@@ -308,6 +308,24 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainChangedSpecNewer_setWillInterrupt() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    final MakeRightDomainOperation operation = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
+
+    assertThat(operation.isWillInterrupt(), is(true));
+  }
+
+  @Test
+  void whenDomainChangedSpecNotNewer_dontSetWillInterrupt() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
+
+    final MakeRightDomainOperation operation = processor.createMakeRightOperation(new DomainPresenceInfo(domain));
+
+    assertThat(operation.isWillInterrupt(), is(false));
+  }
+
+  @Test
   void whenDomainChangedSpecButProcessingAborted_dontRunUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
@@ -318,10 +336,32 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainChangedSpecAndProcessingAbortedButRestartVersionChanged_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withRestartVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
   void whenDomainChangedSpecAndProcessingAbortedButInspectionVersionChanged_runUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
     domainConfigurator.withIntrospectVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpecAndProcessingAbortedButImageChanged_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withDefaultImage("abcd:123");
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
