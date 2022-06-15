@@ -14,7 +14,7 @@ import org.awaitility.core.ConditionFactory;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -187,7 +187,7 @@ public class ApplicationUtils {
                                                 String msInternalPort) {
     final LoggingFacade logger = getLogger();
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(APP_DIR, "/testwebapp.war");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         archivePath, domainUid, domainNamespace);
     logger.info("Deploying webapp {0} to admin server and cluster", archivePath);

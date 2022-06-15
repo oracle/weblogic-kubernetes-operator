@@ -157,6 +157,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin-version}</version>
+          <configuration>
+            <nonFilteredFileExtensions>
+              <nonFilteredFileExtension>war</nonFilteredFileExtension>
+            </nonFilteredFileExtensions>
+            <encoding>UTF-8</encoding>
+            <propertiesEncoding>UTF-8</propertiesEncoding>
+          </configuration>
         </plugin>
 
         <plugin>

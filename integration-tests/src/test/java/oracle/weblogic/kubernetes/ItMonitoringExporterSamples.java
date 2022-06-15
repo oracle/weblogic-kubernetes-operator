@@ -57,7 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
@@ -721,7 +721,7 @@ class ItMonitoringExporterSamples {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String app1Path = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
-    String app2Path = String.format("%s/../operator/integration-tests/apps/testwebapp.war", ITTESTS_DIR);
+    String app2Path = String.format("%s/testwebapp.war", APP_DIR);
 
     List<String> appList = new ArrayList<>();
     appList.add(app1Path);
