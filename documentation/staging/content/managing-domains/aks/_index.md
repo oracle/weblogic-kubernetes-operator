@@ -15,6 +15,7 @@ description: "Deploy WebLogic Server on Azure Kubernetes Service."
 - [DNS Configuration](#dns-configuration)
 - [Database](#database)
 - [Review + create](#review--create)
+- [Useful resources](#useful-resources)
 
 
 #### Introduction
@@ -120,7 +121,7 @@ Select **Yes** or **No** for the option **Configure WebLogic Server Administrati
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
-##### TLS/SSL configuration settings
+##### Upload existing KeyStores
 
 | Field | Description |
 |-------|-------------|
@@ -134,7 +135,24 @@ If you want to upload existing keystores, select **Upload existing KeyStores** f
 | Trust KeyStore Data file(.jks,.p12) | Upload a custom trust keystore data file by doing the following: {{< line_break >}} 1. Click on the file icon. {{< line_break >}} 2. Navigate to the folder where the identity keystore file resides, and select the file. {{< line_break >}} 3. Click Open. |
 | Password | Enter the password for the custom trust keystore. |
 | Confirm password | Re-enter the value of the preceding field. |
-| The Identity KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
+| The Trust KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
+
+If you want to use keystores that are stored in Azure Key Vault, select **Use KeyStores stored in Azure Key Vault** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
+
+##### Use KeyStores stored in Azure Key Vault
+
+| Field | Description |
+|-------|-------------|
+| Resource group name in current subscription containing the Key Vault | Enter the name of the Resource Group containing the Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination. |
+| Name of the Azure Key Vault containing secrets for the TLS/SSL certificate | Enter the name of the Azure Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination. |
+| The name of the secret in the specified Key Vault whose value is the Identity KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the identity keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the passphrase for the Identity KeyStore |  Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the identity keystore. |
+| The Identity KeyStore type (JKS,PKCS12) | Select the type of custom identity keystore. The supported values are JKS and PKCS12. |
+| The name of the secret in the specified Key Vault whose value is the Private Key Alias | Enter the name of the Azure Key Vault secret that holds the value of the private key alias. |
+| The name of the secret in the specified Key Vault whose value is the passphrase for the Private Key | Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the private key. |
+| The name of the secret in the specified Key Vault whose value is the Trust KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the trust keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the passphrase for the Trust KeyStore | Enter the name of the Azure Key Vault secret that holds the value of the the passphrase for the trust keystore. |
+| The Trust KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
 
 When you are satisfied with your selections, select **Next : Networking**.
 
@@ -178,7 +196,7 @@ You must select one of the following three options, each described in turn.
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
 
@@ -186,16 +204,17 @@ You must select one of the following three options, each described in turn.
 |-------|-------------|
 | Resource group name in current subscription containing the KeyVault | Enter the name of the Resource Group containing the Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
 | Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination | Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
-| The name of the secret in the specified KeyVault whose value is the SSL Certificate Data | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate data. |
-| The name of the secret in the specified KeyVault whose value is the password for the SSL Certificate | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate password. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| The name of the secret in the specified Key Vault whose value is the front-end TLS/SSL certificate data | Enter the name of the Azure Key Vault secret that holds the value of the Application Gateway front-end SSL certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the password for the front-end TLS/SSL certificate | Enter the name of the Azure Key Vault secret that holds the value of the password for the application gateway front-end SSL certificate. |
+| The name of the secret in the specified Key Vault whose value is the trusted root certificate data | A trusted root certificate is required to allow back-end instances in the application gateway. Enter the name of the Azure Key Vault secret that holds the value of the application gateway trusted root certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Generate a self-signed frontend certificate**
 
 | Field | Description |
 |-------|-------------|
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
 
@@ -271,3 +290,27 @@ In the **Review + create blade**, review the details you provided for deploying 
 If you want to use this template to automate the deployment, download it by selecting **Download a template for automation**.
 
 Click **Create** to create this offer. This process may take 30 to 60 minutes.
+
+
+#### Useful resources
+
+##### Store the TLS/SSL certificate in the Key Vault 
+
+1. Base 64 encoded the certifcate file; omit the `-w0` for macOS: 
+
+    ```bash
+    base64 myIdentity.jks -w0 >mycert.txt
+    # base64 myIdentity.p12 -w0 >mycert.txt
+    # base64 myTrust.jks -w0 >mycert.txt
+    # base64 myTrust.p12 -w0 >mycert.txt
+    # base64 root.cert -w0 >mycert.txt
+    # base64 gatewayCert.pfx -w0 >mycert.txt
+    ```
+
+2. From the Azure portal, open your Key Vault.
+3. In the Settings section, select Secrets.
+4. Select Generate/Import.
+5. Under Upload options, leave the default value.
+6. Under Name, enter `myIdentityCertData`, or whatever name you like.
+7. Under Value, enter the content of the mycert.txt file. 
+8. Leave the remaining values at their defaults and select Create.
