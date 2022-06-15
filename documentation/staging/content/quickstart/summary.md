@@ -168,9 +168,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
 
 1. Prepare the domain resource.
 
-    a. Copy the [WLS Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar.
-
-    - Alternatively, you can download the WLS Domain YAML file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command:
+    a. Copy the [WLS Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Alternatively, you can download the WLS Domain YAML file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command:
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml -o /tmp/quickstart/domain-resource.yaml
