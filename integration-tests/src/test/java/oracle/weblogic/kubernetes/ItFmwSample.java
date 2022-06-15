@@ -491,6 +491,7 @@ public class ItFmwSample {
     Path rcuSamplePathBase = get(dbSamplePath.toString(), "/scripts/create-rcu-schema");
     String script = get(rcuSamplePathBase.toString(), "create-rcu-schema.sh").toString();
     String outputPath = get(rcuSamplePathBase.toString(), "rcuoutput").toString();
+    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
     logger.info("Script for createRcuSchema: {0}", script);
     String command = script
         + " -i " + fmwBaseImageName
@@ -498,7 +499,8 @@ public class ItFmwSample {
         + " -s " + rcuPrefix
         + " -d " + dbUrl
         + " -n " + dbNamespace
-        + " -o " + outputPath;
+        + " -o " + outputPath
+        + " -u " + imagePullPolicy;
     logger.info("Command for createRcuSchema: {0}", command);
     assertTrue(() -> Command.withParams(
         defaultCommandParams()
