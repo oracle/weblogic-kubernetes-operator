@@ -148,6 +148,7 @@ class ItWlsSamples {
     logger.info("Assign a unique namespace for Nginx controller");
     assertNotNull(namespaces.get(3), "Namespace is null");
     nginxNamespace = namespaces.get(3);
+    createOcirRepoSecret(nginxNamespace);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
