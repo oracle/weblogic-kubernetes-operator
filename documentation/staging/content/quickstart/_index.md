@@ -10,7 +10,7 @@ The Quick Start guide provides a simple tutorial to help you get the operator up
 These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please
 refer to [Manage operators]({{< relref "/managing-operators/_index.md" >}}).
 
-For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet]({{< relref "/managing-operators/k8s-setup.md" >}}).
+For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet]({{< relref "/managing-operators/k8s-setup.md" >}}). This guide assumes a Kubernetes cluster with no operator installation.
 
 The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For detailed Helm installation and usage information, see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}}).
 
