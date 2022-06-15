@@ -21,7 +21,6 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
@@ -1159,6 +1158,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
       }
 
+      recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
+
       return AnnotationHelper.createHash(recipe);
     }
 
@@ -1230,12 +1231,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private boolean canAdjustHashForDefaultAffinityPolicy(V1Pod currentPod) {
       V1Pod recipe = createPodRecipe();
-      V1Affinity affinity = currentPod.getSpec().getAffinity();
-      if (affinity == null) {
-        recipe.getSpec().affinity(null);
-      } else if (affinity.getPodAntiAffinity() == null) {
-        recipe.getSpec().getAffinity().podAntiAffinity(null);
-      }
+      recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
       return AnnotationHelper.getHash(currentPod).equals(AnnotationHelper.createHash(recipe));
     }
 

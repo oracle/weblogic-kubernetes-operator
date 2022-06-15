@@ -112,13 +112,13 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SECRET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
@@ -1141,9 +1141,8 @@ class DomainProcessorTest {
       domainSetup.accept(domain);
       domainSetup.accept(newDomain);
     }
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withAffinity(createDefaultAntiAffinity());
-    configureDomain(domain).configureCluster(CLUSTER).withReplicas(MIN_REPLICAS)
-        .withAffinity(createDefaultAntiAffinity());
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withAffinity(getDefaultAntiAffinity());
+    configureDomain(domain).configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withAffinity(getDefaultAntiAffinity());
     defineServerResources(ADMIN_NAME);
     for (Integer i : msNumbers) {
       defineServerResources(getManagedServerName(i));

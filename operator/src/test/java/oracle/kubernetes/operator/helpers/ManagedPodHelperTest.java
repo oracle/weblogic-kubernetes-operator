@@ -995,8 +995,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenNonClusteredServerHasNoAffinity_createdPodHasEmptyAffinity() {
-    assertThat(getCreatePodAffinity(), is(new V1Affinity()));
+  void whenNonClusteredServerHasNoAffinity_createdPodHasDomainLevelAffinity() {
+    V1Affinity expected = new AffinityHelper().domainUID(UID).getAntiAffinity();
+    assertThat(getCreatePodAffinity(), is(expected));
   }
 
   @Test
@@ -1005,7 +1006,11 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
-    assertThat(getCreatePodAffinity(), is(createDefaultAntiAffinity()));
+    assertThat(getCreatePodAffinity(), is(getDefaultAntiAffinity()));
+  }
+
+  private V1Affinity getDefaultAntiAffinity() {
+    return new AffinityHelper().clusterName("test-cluster").domainUID("uid1").getAntiAffinity();
   }
 
   @Test
@@ -1247,7 +1252,8 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                     Collections.singletonList(
                           createWeightedPodAffinityTerm("weblogic.clusterName", "$(CLUSTER_NAME)")))));
 
-    assertThat(getCreatePodAffinity(), is(createDefaultAntiAffinity()));
+    assertThat(getCreatePodAffinity(), is(
+        new AffinityHelper().clusterName("test-cluster").getAntiAffinity()));
   }
 
   V1Affinity getCreatePodAffinity() {
@@ -1266,7 +1272,17 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenDomainAndClusterBothHaveAffinityWithVariables_createManagedPodWithSubstitutions() {
+  void whenClusterHasEmptyAffinity_createClusteredManagedPodWithEmptyAffinity() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+           .withAffinity(new V1Affinity());
+
+    assertThat(getCreatePodAffinity(), is(new V1Affinity()));
+  }
+
+  @Test
+  void whenDomainHasNonDefaultAffinityAndClusterHasEmptyAffinity_createClusteredManagedPodWithEmptyAffinity() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .withAffinity(
@@ -1275,23 +1291,13 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                     Collections.singletonList(
                           createWeightedPodAffinityTerm("weblogic.domainUID", "$(DOMAIN_UID)")))))
         .configureCluster(CLUSTER_NAME)
-        .withAffinity(
-            new V1Affinity().podAntiAffinity(
-                new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
-                    Collections.singletonList(
-                          createWeightedPodAffinityTerm("weblogic.clusterName", "$(CLUSTER_NAME)")))));
+          .withAffinity(new V1Affinity());
 
-    V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
-        new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
-            Arrays.asList(
-                  createWeightedPodAffinityTerm("weblogic.clusterName", CLUSTER_NAME),
-                  createWeightedPodAffinityTerm("weblogic.domainUID", UID))));
-
-    assertThat(getCreatePodAffinity(), is(expectedValue));
+    assertThat(getCreatePodAffinity(), is(new V1Affinity()));
   }
 
   @Test
-  void whenDomainHasAffinityAndClusterHasNoAffinity_createManagedPodsWithMergedDomainLevelAndDefaultAffinityPolicies() {
+  void whenDomainHasAffinityAndClusterHasNoAffinity_createManagedPodsWithDomainLevelAffinityPolicies() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .withAffinity(
@@ -1304,8 +1310,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
         new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
             Arrays.asList(
-                createWeightedPodAffinityTerm("weblogic.domainUID", UID),
-                createWeightedPodAffinityTerm("weblogic.clusterName", CLUSTER_NAME))));
+                createWeightedPodAffinityTerm("weblogic.domainUID", UID))));
 
     assertThat(getCreatePodAffinity(), is(expectedValue));
   }

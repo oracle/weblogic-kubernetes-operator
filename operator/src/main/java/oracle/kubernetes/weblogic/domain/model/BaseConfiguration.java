@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
@@ -28,6 +29,8 @@ import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 
 /**
  * Configuration values shared by multiple levels: domain, admin server, managed server, and
@@ -179,7 +182,7 @@ public abstract class BaseConfiguration {
   }
 
   public V1Affinity getAffinity() {
-    return serverPod.getAffinity();
+    return Optional.ofNullable(serverPod.getAffinity()).orElse(getDefaultAntiAffinity());
   }
 
   void setAffinity(V1Affinity affinity) {
