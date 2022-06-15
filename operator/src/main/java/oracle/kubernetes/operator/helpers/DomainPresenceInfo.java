@@ -34,6 +34,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -42,6 +44,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -67,7 +71,8 @@ public class DomainPresenceInfo implements PacketComponent {
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ClusterResource> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1Service> clusterServices = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
@@ -437,15 +442,15 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   void removeClusterService(String clusterName) {
-    clusters.remove(clusterName);
+    clusterServices.remove(clusterName);
   }
 
   public V1Service getClusterService(String clusterName) {
-    return clusters.get(clusterName);
+    return clusterServices.get(clusterName);
   }
 
   void setClusterService(String clusterName, V1Service service) {
-    clusters.put(clusterName, service);
+    clusterServices.put(clusterName, service);
   }
 
   void setPodDisruptionBudget(String clusterName, V1PodDisruptionBudget pdb) {
@@ -494,12 +499,12 @@ public class DomainPresenceInfo implements PacketComponent {
       return;
     }
 
-    clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
+    clusterServices.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
 
   boolean deleteClusterServiceFromEvent(String clusterName, V1Service event) {
     return removeIfPresentAnd(
-        clusters,
+        clusterServices,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
@@ -745,6 +750,99 @@ public class DomainPresenceInfo implements PacketComponent {
 
   public void setServersToRoll(Map<String, Step.StepAndPacket> serversToRoll) {
     this.serversToRoll = serversToRoll;
+  }
+
+  public ClusterResource getClusterResource(String clusterName) {
+    return Optional.ofNullable(clusterName).map(name -> clusters.get(name))
+        .orElse(null);
+  }
+
+  /**
+   * Add a ClusterResource resource.
+   * @param clusterResource ClusterResource object.
+   */
+  public void addClusterResource(ClusterResource clusterResource) {
+    Optional.ofNullable(clusterResource)
+        .map(c -> c.getSpec())
+        .map(s -> s.getClusterName())
+        .map(name -> clusters.put(name, clusterResource));
+  }
+
+  public ClusterResource removeClusterResource(String clusterName) {
+    return Optional.ofNullable(clusterName)
+        .map(name -> clusters.remove(name)).orElse(null);
+  }
+
+  /**
+   * Get Effective Server spec.
+   * @param serverName name of server.
+   * @param clusterName name of cluster.
+   * @return the effective server spec.
+   */
+  public EffectiveServerSpec getServer(String serverName, String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().getServerSpec(serverName, clusterName, clusterSpec);
+  }
+
+  public EffectiveClusterSpec getCluster(String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().getCluster(clusterSpec);
+  }
+
+  /**
+   * Set replicas count for given cluster.  If no cluster exist by name then the domain replicas
+   * value is updated.
+   * @param clusterName name of cluster.
+   * @param replicaCount replica value.
+   */
+  public void setReplicaCount(String clusterName, int replicaCount) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(
+        clusterName);
+    getDomain().setReplicaCount(clusterSpec, replicaCount);
+  }
+
+  @Nullable
+  private ClusterSpec getClusterSpecFromClusterResource(String clusterName) {
+    return Optional.ofNullable(getClusterResource(clusterName))
+        .map(c -> c.getSpec())
+        .orElse(getDomain().getSpec().getCluster(clusterName));
+  }
+
+  public int getReplicaCount(String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().getReplicaCount(clusterSpec);
+  }
+
+  public int getMaxUnavailable(String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().getMaxUnavailable(clusterSpec);
+  }
+
+  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
+  }
+
+  public int getMaxConcurrentStartup(String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().getMaxConcurrentStartup(clusterSpec);
+  }
+
+  public int getMaxConcurrentShutdown(String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomain().getMaxConcurrentShutdown(clusterSpec);
+  }
+
+  public EffectiveAdminServerSpec getAdminServerSpec() {
+    return getDomain().getAdminServerSpec();
+  }
+
+  public boolean isShuttingDown() {
+    return getDomain().isShuttingDown();
+  }
+
+  public List<String> getAdminServerChannelNames() {
+    return getDomain().getAdminServerChannelNames();
   }
 
   /** Details about a specific managed server. */

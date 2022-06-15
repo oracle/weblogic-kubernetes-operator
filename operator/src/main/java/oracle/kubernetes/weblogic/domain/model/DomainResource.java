@@ -309,6 +309,10 @@ public class DomainResource implements KubernetesObject {
     return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
   }
 
+  public EffectiveServerSpec getServerSpec(String serverName, String clusterName, ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName, clusterSpec);
+  }
+
   /**
    * Returns the specification applicable to a particular cluster.
    *
@@ -317,6 +321,16 @@ public class DomainResource implements KubernetesObject {
    */
   public EffectiveClusterSpec getCluster(String clusterName) {
     return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
+  }
+
+  /**
+   * Returns the specification applicable to a particular cluster.
+   *
+   * @param clusterSpec the spec of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the cluster
+   */
+  public EffectiveClusterSpec getCluster(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getClusterSpec(clusterSpec);
   }
 
   /**
@@ -329,8 +343,22 @@ public class DomainResource implements KubernetesObject {
     return getEffectiveConfigurationFactory().getReplicaCount(clusterName);
   }
 
+  /**
+   * Returns the number of replicas to start for the specified cluster.
+   *
+   * @param clusterSpec the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getReplicaCount(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getReplicaCount(clusterSpec);
+  }
+
   public void setReplicaCount(String clusterName, int replicaLimit) {
     getEffectiveConfigurationFactory().setReplicaCount(clusterName, replicaLimit);
+  }
+
+  public void setReplicaCount(ClusterSpec clusterSpec, int replicaLimit) {
+    getEffectiveConfigurationFactory().setReplicaCount(clusterSpec, replicaLimit);
   }
 
   /**
@@ -341,6 +369,16 @@ public class DomainResource implements KubernetesObject {
    */
   public int getMaxUnavailable(String clusterName) {
     return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
+  }
+
+  /**
+   * Returns the maximum number of unavailable replicas for the specified cluster.
+   *
+   * @param clusterSpec the spec of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMaxUnavailable(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterSpec);
   }
 
   /**
@@ -365,12 +403,32 @@ public class DomainResource implements KubernetesObject {
     return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
   }
 
+  /**
+   * Returns whether the specified cluster is allowed to have replica count below the minimum
+   * dynamic cluster size configured in WebLogic domain configuration.
+   *
+   * @param clusterSpec the configuration of the cluster
+   * @return whether the specified cluster is allowed to have replica count below the minimum
+   *     dynamic cluster size configured in WebLogic domain configuration
+   */
+  public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
+  }
+
   public int getMaxConcurrentStartup(String clusterName) {
     return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
   }
 
+  public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterSpec);
+  }
+
   public int getMaxConcurrentShutdown(String clusterName) {
     return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
+
+  public int getMaxConcurrentShutdown(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterSpec);
   }
 
   /**
@@ -726,7 +784,7 @@ public class DomainResource implements KubernetesObject {
    *
    * @return a list of names; may be empty
    */
-  List<String> getAdminServerChannelNames() {
+  public List<String> getAdminServerChannelNames() {
     return getEffectiveConfigurationFactory().getAdminServerChannelNames();
   }
 
