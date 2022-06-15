@@ -53,11 +53,12 @@ pipeline {
 
     parameters {
         choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are oke-parallel (the default), integration-tests, oke-cert, and oke-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
+                        'oke-parallel',
                         'oke-cert',
-                        'integration-tests',
-                        'toolkits-srg'
+                        'oke-sequential',
+                        'integration-tests'
                 ]
         )
         string(name: 'IT_TEST',
@@ -105,6 +106,10 @@ pipeline {
                choices: ['phx.ocir.io', 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
+        string(name: 'TEST_IMAGES_REPO',
+               description: '',
+               defaultValue: 'phx.ocir.io'
+        )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
                defaultValue: 'weblogick8s/test-images/weblogic'
@@ -135,7 +140,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.5'
+               defaultValue: '2.0.6'
         )
 
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
@@ -177,6 +182,7 @@ pipeline {
                 stage('GitHub Checkout') {
                     steps {
                         sh "sudo rm -rf ${WORKSPACE}/*"
+                        sh "sudo rm -rf ${WORKSPACE}/.mvn"
                         checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
                                   doGenerateSubmoduleConfigurations: false,
                                   extensions: [], submoduleCfg: [],
@@ -418,6 +424,12 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
+                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                         DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
                         DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
@@ -454,7 +466,7 @@ EOF
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
 
                             if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                echo "-Dit.test=\"${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMiiSample, !ItMonitoringExporter*, !ItPodRestart\"" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dit.test=\"${IT_TEST}, !ItExternalRmiTunneling, !ItMiiSampleWlsMain, !ItSamples, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMiiSample, !ItMonitoringExporter*, !ItAuxV8DomainImplicitUpgrade, !ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItMiiSampleFmwMain\"" >> ${WORKSPACE}/.mvn/maven.config
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
@@ -475,6 +487,7 @@ EOF
                             echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
@@ -492,6 +505,11 @@ EOF
                             export DOMAIN_IMAGES_REPO=${DOMAIN_IMAGES_REPO}
                             export BASE_IMAGES_REPO=${BASE_IMAGES_REPO}
                             export OKE_CLUSTER="true"
+                            export OKD="false"
+                            export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
+                            export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
+                            export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
+
 
                             if [ ! -z "${http_proxy}" ]; then
                                 export http_proxy

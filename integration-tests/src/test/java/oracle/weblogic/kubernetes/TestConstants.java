@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
+import static io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
@@ -164,7 +165,7 @@ public interface TestConstants {
   public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
   public static final String NGINX_INGRESS_IMAGE_DIGEST = 
       "sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51";  
-  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/test-images/ingress-nginx/controller";
+  public static final String TEST_NGINX_IMAGE_NAME = "weblogick8s/test-images/ingress-nginx/controller";
   public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
@@ -265,7 +266,7 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.5");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.6");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
@@ -303,6 +304,8 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
+  public static final ImagePullPolicyEnum IMAGE_PULL_POLICY =
+          OKE_CLUSTER ? ImagePullPolicyEnum.ALWAYS : ImagePullPolicyEnum.IFNOTPRESENT;
 
   //OKD constants
   public static final boolean OKD =
