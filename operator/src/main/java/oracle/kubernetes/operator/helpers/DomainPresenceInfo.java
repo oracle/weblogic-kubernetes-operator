@@ -824,7 +824,7 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   public ClusterResource getClusterResource(String clusterName) {
-    return Optional.ofNullable(clusterName).map(name -> clusters.get(name))
+    return Optional.ofNullable(clusterName).map(clusters::get)
         .orElse(null);
   }
 
@@ -834,14 +834,14 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public void addClusterResource(ClusterResource clusterResource) {
     Optional.ofNullable(clusterResource)
-        .map(c -> c.getSpec())
-        .map(s -> s.getClusterName())
+        .map(ClusterResource::getSpec)
+        .map(ClusterSpec::getClusterName)
         .map(name -> clusters.put(name, clusterResource));
   }
 
   public ClusterResource removeClusterResource(String clusterName) {
     return Optional.ofNullable(clusterName)
-        .map(name -> clusters.remove(name)).orElse(null);
+        .map(clusters::remove).orElse(null);
   }
 
   /**
@@ -875,7 +875,7 @@ public class DomainPresenceInfo implements PacketComponent {
   @Nullable
   private ClusterSpec getClusterSpecFromClusterResource(String clusterName) {
     return Optional.ofNullable(getClusterResource(clusterName))
-        .map(c -> c.getSpec())
+        .map(ClusterResource::getSpec)
         .orElse(getDomain().getSpec().getCluster(clusterName));
   }
 

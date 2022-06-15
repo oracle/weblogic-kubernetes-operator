@@ -369,10 +369,9 @@ class DomainPresenceInfoTest {
   @Test
   void whenClusterResourceNotDefined_getEffectiveReplicaCountFromDomain() {
     final String clusterName = "cluster-1";
-    final ClusterSpec clusterSpec = null;
 
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
-    domain.setReplicaCount(clusterSpec, 3);
+    domain.setReplicaCount((ClusterSpec) null, 3);
     final DomainPresenceInfo info = createDomainPresenceInfo(domain);
 
     assertThat(info.getReplicaCount(clusterName), equalTo(3));
