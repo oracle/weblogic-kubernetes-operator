@@ -291,7 +291,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+  public void scheduleDomainStatusUpdates(DomainPresenceInfo info) {
     final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
     final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
     final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
@@ -315,7 +315,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public void unregisterDomain(DomainPresenceInfo info) {
+  public void unregisterDomainPresenceInfo(DomainPresenceInfo info) {
     unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
     unregisterEventK8SObject(info.getNamespace(), info.getDomainUid());
   }
@@ -329,7 +329,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public void endStatusUpdates(DomainPresenceInfo info) {
+  public void endScheduledDomainStatusUpdates(DomainPresenceInfo info) {
     Map<String, ScheduledFuture<?>> map = statusUpdaters.get(info.getNamespace());
     if (map != null) {
       ScheduledFuture<?> existing = map.remove(info.getDomainUid());

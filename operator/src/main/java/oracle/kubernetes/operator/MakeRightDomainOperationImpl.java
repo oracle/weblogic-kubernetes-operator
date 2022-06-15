@@ -34,7 +34,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
@@ -66,7 +65,7 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    * @param liveInfo domain presence info read from Kubernetes
    */
   MakeRightDomainOperationImpl(
-      MakeRightExecutor executor, DomainProcessorDelegate delegate, @NotNull DomainPresenceInfo liveInfo) {
+      MakeRightExecutor executor, DomainProcessorDelegate delegate, @Nonnull DomainPresenceInfo liveInfo) {
     this.executor = executor;
     this.delegate = delegate;
     this.liveInfo = liveInfo;
@@ -265,7 +264,7 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     private void unregisterStatusUpdater(DomainPresenceInfo info) {
       info.setDeleting(true);
-      executor.endStatusUpdates(info);
+      executor.endScheduledDomainStatusUpdates(info);
     }
   }
 
@@ -329,7 +328,7 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo.fromPacket(packet).ifPresent(executor::scheduleDomainStatusUpdating);
+      DomainPresenceInfo.fromPacket(packet).ifPresent(executor::scheduleDomainStatusUpdates);
       return doNext(packet);
     }
   }
@@ -347,7 +346,7 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo.fromPacket(packet).ifPresent(executor::unregisterDomain);
+      DomainPresenceInfo.fromPacket(packet).ifPresent(executor::unregisterDomainPresenceInfo);
       return doNext(packet);
     }
   }
