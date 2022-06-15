@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -51,7 +50,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -344,10 +343,8 @@ class ItPodsShutdownOption {
     int newReplicaCount = replicaCount - 1;
     logger.info("Scaling down the cluster {0} in namespace {1} to set the replicas to {2}",
         clusterName, domainNamespace, newReplicaCount);
-    V1Patch patch = new V1Patch("["
-        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "}" + "]");
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
+    assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, newReplicaCount),
+        String.format("failed to scale down cluster %s in namespace %s", clusterName, domainNamespace));
 
     checkPodDeleted(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace);
 
@@ -416,10 +413,8 @@ class ItPodsShutdownOption {
     int newReplicaCount = replicaCount - 1;
     logger.info("Scaling down the cluster {0} in namespace {1} to set the replicas to {2}",
         clusterName, domainNamespace, newReplicaCount);
-    V1Patch patch = new V1Patch("["
-        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "}" + "]");
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
+    assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, newReplicaCount),
+        String.format("failed to scale down cluster %s in namespace %s", clusterName, domainNamespace));
 
     checkPodDeleted(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace);
 
