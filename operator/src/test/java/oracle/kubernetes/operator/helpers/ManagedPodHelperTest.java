@@ -1004,7 +1004,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   private V1Affinity getDefaultAntiAffinity() {
-    return new AffinityHelper().clusterName("test-cluster").domainUID("uid1").getAntiAffinity();
+    return new AffinityHelper().clusterName(CLUSTER_NAME).domainUID(UID).getAntiAffinity();
   }
 
   @Test
@@ -1247,7 +1247,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                           createWeightedPodAffinityTerm("weblogic.clusterName", "$(CLUSTER_NAME)")))));
 
     assertThat(getCreatePodAffinity(), is(
-        new AffinityHelper().clusterName("test-cluster").getAntiAffinity()));
+        new AffinityHelper().clusterName(CLUSTER_NAME).getAntiAffinity()));
   }
 
   V1WeightedPodAffinityTerm createWeightedPodAffinityTerm(String key, String valuesItem) {
@@ -1301,6 +1301,30 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
             Arrays.asList(
                 createWeightedPodAffinityTerm("weblogic.domainUID", UID))));
+
+    assertThat(getCreatePodAffinity(), is(expectedValue));
+  }
+
+  @Test
+  void whenDomainAndClusterBothHaveAffinityWithVariables_createManagedPodWithClusterAffinityAndSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .withAffinity(
+            new V1Affinity().podAntiAffinity(
+                new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+                    Collections.singletonList(
+                        createWeightedPodAffinityTerm("weblogic.domainUID", "$(DOMAIN_UID)")))))
+        .configureCluster(CLUSTER_NAME)
+        .withAffinity(
+            new V1Affinity().podAntiAffinity(
+                new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+                    Collections.singletonList(
+                        createWeightedPodAffinityTerm("weblogic.clusterName", "$(CLUSTER_NAME)")))));
+
+    V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
+        new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+            Arrays.asList(
+                createWeightedPodAffinityTerm("weblogic.clusterName", CLUSTER_NAME))));
 
     assertThat(getCreatePodAffinity(), is(expectedValue));
   }
