@@ -25,6 +25,7 @@ import oracle.kubernetes.common.logging.CommonLoggingFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V8;
 import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -77,7 +78,7 @@ public class SchemaConversionUtils {
     }
     LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
-    String apiVersion = (String)domain.get("apiVersion");
+    String apiVersion = (String) domain.get("apiVersion");
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     removeObsoleteConditionsFromDomainStatus(domain);
@@ -217,14 +218,35 @@ public class SchemaConversionUtils {
     spec.computeIfPresent("serverStartPolicy", this::serverStartPolicyCamelCase);
   }
 
+  public static <K, V> Map<V, K> invertMapUsingMapper(Map<K, V> sourceMap) {
+    return sourceMap.entrySet().stream().collect(
+            Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (oldValue, newValue) -> oldValue));
+  }
+
+  private static Object convertWithMap(Map<String, String> map, Object value) {
+    if (value instanceof String) {
+      return map.get(value);
+    }
+    return value;
+  }
+
+  private Map<String, String> select(Map<String, String> apiVersion9, Map<String, String> apiVersion8) {
+    switch (targetAPIVersion) {
+      case API_VERSION_V8:
+        return apiVersion8;
+      case API_VERSION_V9:
+      default:
+        return apiVersion9;
+    }
+  }
+
   private static final Map<String, String> serverStartPolicyMap = Map.of(
       "ALWAYS", "Always", "NEVER", "Never", "IF_NEEDED", "IfNeeded", "ADMIN_ONLY", "AdminOnly");
 
+  private static final Map<String, String> invertServerStartPolicyMap = invertMapUsingMapper(serverStartPolicyMap);
+
   private Object serverStartPolicyCamelCase(String key, Object value) {
-    if (value instanceof String) {
-      return serverStartPolicyMap.get(value);
-    }
-    return value;
+    return convertWithMap(select(serverStartPolicyMap, invertServerStartPolicyMap), value);
   }
 
   private void convertOverrideDistributionStrategy(Map<String, Object> configuration) {
@@ -234,11 +256,11 @@ public class SchemaConversionUtils {
   private static final Map<String, String> overrideDistributionStrategyMap = Map.of(
           "DYNAMIC", "Dynamic", "ON_RESTART", "OnRestart");
 
+  private static final Map<String, String> invertOverrideDistributionStrategyMap =
+          invertMapUsingMapper(overrideDistributionStrategyMap);
+
   private Object overrideDistributionStrategyCamelCase(String key, Object value) {
-    if (value instanceof String) {
-      return overrideDistributionStrategyMap.get(value);
-    }
-    return value;
+    return convertWithMap(select(overrideDistributionStrategyMap, invertOverrideDistributionStrategyMap), value);
   }
 
   private void convertLogHomeLayout(Map<String, Object> configuration) {
@@ -248,11 +270,10 @@ public class SchemaConversionUtils {
   private static final Map<String, String> logHomeLayoutMap = Map.of(
           "FLAT", "Flat", "BY_SERVERS", "ByServers");
 
+  private static final Map<String, String> invertLogHomeLayoutMap = invertMapUsingMapper(logHomeLayoutMap);
+
   private Object logHomeLayoutCamelCase(String key, Object value) {
-    if (value instanceof String) {
-      return logHomeLayoutMap.get(value);
-    }
-    return value;
+    return convertWithMap(select(logHomeLayoutMap, invertLogHomeLayoutMap), value);
   }
 
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
