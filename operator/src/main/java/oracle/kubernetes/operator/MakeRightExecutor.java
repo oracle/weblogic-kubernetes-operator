@@ -3,11 +3,19 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 
 public interface MakeRightExecutor {
 
-  void runMakeRight(Consumer<DomainPresenceInfo> executor, DomainPresenceInfo presenceInfo);
+  void runMakeRight(MakeRightDomainOperation operation, Predicate<DomainPresenceInfo> shouldProceed);
+
+  void scheduleDomainStatusUpdating(DomainPresenceInfo info);
+
+  void registerDomainPresenceInfo(DomainPresenceInfo info);
+
+  void unregisterDomain(DomainPresenceInfo info);
+
+  void endStatusUpdates(DomainPresenceInfo info);
 }
