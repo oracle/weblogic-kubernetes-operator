@@ -120,7 +120,12 @@ public class AdmissionWebhookResource extends BaseResource {
     LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-    return new AdmissionChecker(request.getOldObject(), request.getObject()).validate().uid(getUid(request));
+    return createAdmissionChecker(request).validate().uid(getUid(request));
+  }
+
+  @NotNull
+  private AdmissionChecker createAdmissionChecker(@NotNull AdmissionRequest request) {
+    return new DomainAdmissionChecker(request.getExistingDomain(), request.getProposedDomain());
   }
 
 }
