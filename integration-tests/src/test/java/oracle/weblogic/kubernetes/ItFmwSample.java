@@ -177,7 +177,7 @@ public class ItFmwSample {
     createRcuSecretWithUsernamePassword(domainUid + "-rcu-credentials", domainNamespace,
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
-    Path sampleBase = get(samplePath.toString(),
+    Path sampleBase = get(testSamplePath.toString(),
         "scripts/create-fmw-infrastructure-domain/domain-home-on-pv");
 
     //update create-domain-inputs.yaml with the values from this test
