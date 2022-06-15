@@ -647,7 +647,7 @@
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>3.0.4</jersey-version>
-    <grizzly-version>3.0.1</grizzly-version>
+    <grizzly-version>4.0.0</grizzly-version>
     <jakarta-version>5.0.0</jakarta-version>
     <prometheus-version>0.15.0</prometheus-version>
     <jackson-version>2.13.3</jackson-version>
