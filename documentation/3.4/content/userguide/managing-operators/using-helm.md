@@ -22,6 +22,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`labels`](#labels)
     - [`nodeSelector`](#nodeselector)
     - [`affinity`](#affinity)
+    - [`runAsUser`](#runasuser)
   - [WebLogic domain management](#weblogic-domain-management)
     - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
     - [`domainNamespaces`](#domainnamespaces)
