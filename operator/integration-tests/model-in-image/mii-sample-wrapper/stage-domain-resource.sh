@@ -23,11 +23,13 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY:-"IfNotPresent"}
 for var in DOMAIN_UID \
            DOMAIN_NAMESPACE \
            CUSTOM_DOMAIN_NAME \
            WDT_DOMAIN_TYPE \
            IMAGE_PULL_SECRET_NAME \
+           IMAGE_PULL_POLICY \
            DOMAIN_IMAGE_PULL_SECRET_NAME \
            MODEL_IMAGE_NAME \
            MODEL_IMAGE_TAG \
@@ -70,6 +72,7 @@ for template_var in WDT_DOMAIN_TYPE \
                     DOMAIN_UID \
                     DOMAIN_NAMESPACE \
                     IMAGE_PULL_SECRET_NAME \
+                    IMAGE_PULL_POLICY \
                     DOMAIN_IMAGE_PULL_SECRET_NAME \
                     MODEL_IMAGE_NAME \
                     MODEL_IMAGE_TAG \

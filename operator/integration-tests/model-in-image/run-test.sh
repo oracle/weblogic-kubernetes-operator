@@ -22,6 +22,7 @@ source $TESTDIR/test-env.sh
 
 trace "Running end to end MII sample test."
 echo "Is OKD set? $OKD"
+echo "Is OKE_CLUSTER set? $OKE_CLUSTER"
 
 DRY_RUN=false
 DO_CLEANUP=false
@@ -276,6 +277,7 @@ doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 doCommand -c mkdir -p \$WORKDIR
 doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
 doCommand -c export OKD=$OKD
+doCommand -c export OKE_CLUSTER=$OKE_CLUSTER
 
 #
 # Build pre-req (operator)
@@ -289,6 +291,11 @@ fi
 #
 # Deploy pre-reqs (db, rcu schema, traefik, operator)
 #
+
+if [ "$OKE_CLUSTER" = "true" ]; then
+  IMAGE_PULL_POLICY="Always"
+  doCommand -c "export IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY}"
+fi
 
 if [ "$DO_DB" = "true" ]; then
   doCommand -c "echo ====== DB DEPLOY ======"
