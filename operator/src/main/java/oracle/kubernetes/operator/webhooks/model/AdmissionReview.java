@@ -9,7 +9,8 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
 
 /**
- * AdmissionReview represents a request or a response object for an admission webhook call.
+ * AdmissionReview represents a request or a response object for an admission webhook call. It is the common base class
+ * of {@link DomainAdmissionReview} and other review classes.
  *
  * <p></p>When a user performs an operation to a Kubernetes resource, Kubernetes ApiServer invokes all admission
  * webhooks that have registered their interests in the resource. An AdmissionReview object contains the data that is

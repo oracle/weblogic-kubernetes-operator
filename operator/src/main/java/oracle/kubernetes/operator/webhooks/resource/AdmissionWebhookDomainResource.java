@@ -26,18 +26,18 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDom
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainAdmissionReview;
 
 /**
- * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission
+ * AdmissionWebhookDomainResource is a jaxrs resource that implements the REST api for the /admission/domain
  * path. It is used as an endpoint for admission webhook, the API server will invoke
- * this endpoint to validate a change request to a domain resource or cluster resource.
+ * this endpoint to validate a change request to a domain resource.
  */
-@Path("admission")
+@Path("admission/domain")
 public class AdmissionWebhookDomainResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   /** Construct a AdmissionWebhookResource. */
   public AdmissionWebhookDomainResource() {
-    super(null, "admission");
+    super(null, "admission/domain");
   }
 
   /**
@@ -51,7 +51,7 @@ public class AdmissionWebhookDomainResource extends BaseResource {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
-    LOGGER.fine("Validating webhook is invoked");
+    LOGGER.fine("Validating webhook is invoked for domain resource");
 
     DomainAdmissionReview admissionReview = null;
     DomainAdmissionRequest admissionRequest = null;

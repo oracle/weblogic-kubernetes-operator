@@ -110,7 +110,7 @@ public class WebhookMain extends BaseMain {
             createDomainCrdStep(delegate.getProductVersion(), certs),
             createClusterCrdStep(delegate.getProductVersion()),
             new CheckFailureAndCreateEventStep(),
-            WebhookHelper.createValidatingWebhookConfigurationStep(certs)));
+            WebhookHelper.createValidatingWebhookConfigStep(certs)));
   }
 
   private static Step createInitializeWebhookIdentityStep(WebhookMainDelegate delegate, Step next) {

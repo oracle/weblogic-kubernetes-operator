@@ -93,7 +93,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.VALIDATIN
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.UPDATE;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_NAME;
-import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
+import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH_DOMAIN;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -308,7 +308,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getServiceName(generatedConfiguration), equalTo(WEBLOGIC_OPERATOR_WEBHOOK_SVC));
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
     assertThat(getServicePort(generatedConfiguration), equalTo(CONVERSION_WEBHOOK_HTTPS_PORT));
-    assertThat(getServicePath(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_PATH));
+    assertThat(getServicePath(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_PATH_DOMAIN));
   }
 
   @Test

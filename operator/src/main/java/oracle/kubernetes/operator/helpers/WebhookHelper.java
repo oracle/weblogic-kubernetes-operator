@@ -42,10 +42,9 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPER
 public class WebhookHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook";
+  public static final String VALIDATING_WEBHOOK_NAME_DOMAIN = VALIDATING_WEBHOOK_NAME + ".domaink";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
-  public static final String APP_GROUP = DOMAIN_GROUP;
-  public static final String API_VERSION = DOMAIN_VERSION;
-  public static final String DOMAIN_RESOURCES = DOMAIN_PLURAL;
+  public static final String VALIDATING_WEBHOOK_PATH_DOMAIN = VALIDATING_WEBHOOK_PATH + "/domain";
   public static final String ADMISSION_REVIEW_VERSION = "v1";
   public static final String UPDATE = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
@@ -60,7 +59,7 @@ public class WebhookHelper {
    * @param certificates certificates for the webhook
    * @return Step for creating a validating webhook configuration
    */
-  public static Step createValidatingWebhookConfigurationStep(
+  public static Step createValidatingWebhookConfigStep(
       Certificates certificates) {
     return new CreateValidatingWebhookConfigurationStep(certificates);
   }
@@ -95,44 +94,50 @@ public class WebhookHelper {
     private V1ValidatingWebhookConfiguration createModel(Certificates certificates) {
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
-      return AnnotationHelper.withSha256Hash(createValidatingWebhookConfigurationModel(certificates, labels));
+      return AnnotationHelper.withSha256Hash(createValidatingWebhookConfigModel(certificates, labels));
     }
 
-    private V1ValidatingWebhookConfiguration createValidatingWebhookConfigurationModel(
+    private V1ValidatingWebhookConfiguration createValidatingWebhookConfigModel(
         Certificates certificates, Map<String, String> labels) {
       return new V1ValidatingWebhookConfiguration()
           .metadata(createMetadata(labels))
-          .addWebhooksItem(createWebhooksItem(certificates));
+          .addWebhooksItem(getWebhookItemForDomain(certificates));
     }
 
-    private V1ValidatingWebhook createWebhooksItem(Certificates certificates) {
-      return new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
+    private V1ValidatingWebhook getWebhookItemForDomain(Certificates certificates) {
+      return createWebhookItem(certificates, VALIDATING_WEBHOOK_PATH_DOMAIN,
+          DOMAIN_GROUP, DOMAIN_VERSION, DOMAIN_PLURAL);
+    }
+
+    private V1ValidatingWebhook createWebhookItem(Certificates certificates, String path,
+                                                  String apiGroup, String apiVersion, String resourceName) {
+      return new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME_DOMAIN)
           .admissionReviewVersions(Collections.singletonList(ADMISSION_REVIEW_VERSION))
           .sideEffects(SIDE_EFFECT_NONE)
-          .addRulesItem(createRule())
-          .clientConfig(createClientConfig(certificates));
+          .addRulesItem(createRule(apiGroup, apiVersion, resourceName))
+          .clientConfig(createClientConfig(certificates, path));
     }
 
-    private AdmissionregistrationV1WebhookClientConfig createClientConfig(Certificates certificates) {
+    private AdmissionregistrationV1WebhookClientConfig createClientConfig(Certificates certificates, String path) {
       return new AdmissionregistrationV1WebhookClientConfig()
-          .service(createServiceReference())
+          .service(createServiceReference(path))
           .caBundle(getCaBundle(certificates));
     }
 
-    private AdmissionregistrationV1ServiceReference createServiceReference() {
+    private AdmissionregistrationV1ServiceReference createServiceReference(String path) {
       return new AdmissionregistrationV1ServiceReference()
           .namespace(getWebhookNamespace())
           .name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
           .port(CONVERSION_WEBHOOK_HTTPS_PORT)
-          .path(VALIDATING_WEBHOOK_PATH);
+          .path(path);
     }
 
-    private V1RuleWithOperations createRule() {
+    private V1RuleWithOperations createRule(String apiGroup, String apiVersion, String resourceName) {
       return new V1RuleWithOperations()
-          .addApiGroupsItem(APP_GROUP)
-          .apiVersions(Collections.singletonList(API_VERSION))
+          .addApiGroupsItem(apiGroup)
+          .apiVersions(Collections.singletonList(apiVersion))
           .operations(Collections.singletonList(UPDATE))
-          .resources(Collections.singletonList(DOMAIN_RESOURCES))
+          .resources(Collections.singletonList(resourceName))
           .scope(SCOPE);
     }
 

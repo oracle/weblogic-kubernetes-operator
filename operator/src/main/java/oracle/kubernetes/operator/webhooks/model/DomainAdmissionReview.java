@@ -7,7 +7,8 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * AdmissionReview represents a request or a response object for an admission webhook call.
+ * DomainAdmissionReview represents a request or a response object for an admission webhook call targeted to a Domain
+ * resource.
  *
  * <p></p>When a user performs an operation to a Kubernetes resource, Kubernetes ApiServer invokes all admission
  * webhooks that have registered their interests in the resource. An AdmissionReview object contains the data that is

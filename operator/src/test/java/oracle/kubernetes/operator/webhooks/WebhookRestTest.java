@@ -80,6 +80,7 @@ class WebhookRestTest extends RestTestBase {
   private static final String V1 = "v1";
   private static final String WEBHOOK_HREF = "/webhook";
   private static final String VALIDATING_WEBHOOK_HREF = "/admission";
+  private static final String VALIDATING_WEBHOOK_HREF_DOMAIN = VALIDATING_WEBHOOK_HREF + "/domain";
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
   private static final String REJECT_MESSAGE_PATTERN = "Change request to domain resource '%s' cannot be honored"
           + " because the replica count for cluster '%s' would exceed the cluster size '%s'.";
@@ -91,7 +92,7 @@ class WebhookRestTest extends RestTestBase {
   private final ConversionReviewModel conversionReview = createConversionReview();
 
   private DomainAdmissionReview createDomainAdmissionReview() {
-    return (DomainAdmissionReview) new DomainAdmissionReview()
+    return new DomainAdmissionReview()
         .apiVersion(V1).kind("AdmissionReview").request(createDomainAdmissionRequest());
   }
 
@@ -551,7 +552,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private Response sendValidatingWebhookRequest(String domainAdmissionReview) {
-    return createRequest(VALIDATING_WEBHOOK_HREF)
+    return createRequest(VALIDATING_WEBHOOK_HREF_DOMAIN)
         .post(createWebhookRequest(domainAdmissionReview));
   }
 
