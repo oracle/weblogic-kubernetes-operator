@@ -24,7 +24,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.ToNumberPolicy;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import io.kubernetes.client.openapi.models.ApiextensionsV1ServiceReference;
 import io.kubernetes.client.openapi.models.ApiextensionsV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
@@ -142,17 +147,33 @@ public class CrdHelper {
     }
   }
 
+  private static class SimpleNumberTypeAdapter extends TypeAdapter<Double> {
+    @Override
+    public void write(JsonWriter out, Double value) throws IOException {
+      if (value != null && value.equals(Math.rint(value))) {
+        out.value(value.longValue());
+      } else {
+        out.value(value);
+      }
+    }
+
+    @Override
+    public Double read(JsonReader in) throws IOException {
+      throw new IllegalStateException();
+    }
+  }
+
   // Writes a YAML representation of the specified model to the writer. First converts to JSON in order
   // to respect the @SerializedName annotation.
   @SuppressWarnings("unchecked")
   private static void dumpYaml(Writer writer, Object model) {
-    final Gson gson = new Gson();
-    Map<String,Object> map = gson.fromJson(gson.toJson(model), Map.class);
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE);
+    gsonBuilder.registerTypeAdapter(Double.class, new SimpleNumberTypeAdapter());
+    final Gson gson = gsonBuilder.create();
+    Map<String, Object> map = gson.fromJson(gson.toJson(model), Map.class);
     Yaml.dump(map, writer);
   }
-  // a = gson.toJson(model)
-  // Map = gson.fromJson(Map.class)
-  // yaml dump ?  // ordering and format likely to change massively
 
   public static Step createDomainCrdStep(SemanticVersion productVersion) {
     return new DomainCrdStep(productVersion, null);
@@ -382,7 +403,12 @@ public class CrdHelper {
           .plural(getPluralName())
           .singular(getSingularName())
           .kind(getKind())
-          .shortNames(getShortNames());
+          .shortNames(getShortNames())
+          .categories(getCategories());
+    }
+
+    private List<String> getCategories() {
+      return List.of("all", "oracle", "weblogic");
     }
 
     V1CustomResourceValidation createSchemaValidation() {
@@ -390,7 +416,9 @@ public class CrdHelper {
     }
 
     private V1JSONSchemaProps createOpenApiV3Schema() {
-      Gson gson = new Gson();
+      GsonBuilder gsonBuilder = new GsonBuilder();
+      gsonBuilder.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE);
+      Gson gson = gsonBuilder.create();
       JsonElement jsonElementSpec = gson.toJsonTree(createCrdSchemaGenerator().generate(getSpecClass()));
       V1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1JSONSchemaProps.class);
       JsonElement jsonElementStatus = gson.toJsonTree(createCrdSchemaGenerator().generate(getStatusClass()));

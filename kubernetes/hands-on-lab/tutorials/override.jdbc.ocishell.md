@@ -129,7 +129,7 @@ Any override changes require stopping all the WebLogic pods, applying your domai
 
 To stop all the running WebLogic Server pods in your domain, apply a changed resource, and then start the domain:
 
-1. Open the *domain.yaml* file again and set your domain resource `serverStartPolicy` to `NEVER`.
+1. Open the *domain.yaml* file again and set your domain resource `serverStartPolicy` to `Never`.
 
 2. Apply changes:
 ```shell
@@ -146,7 +146,7 @@ No resources found.
 ```
 Wait until all the pods are terminated and no resources found.
 
-3. Open the *domain.yaml* file again and set your domain resource `serverStartPolicy` back to `IF_NEEDED`.
+3. Open the *domain.yaml* file again and set your domain resource `serverStartPolicy` back to `IfNeeded`.
 
 4. Apply changes:
 ```shell

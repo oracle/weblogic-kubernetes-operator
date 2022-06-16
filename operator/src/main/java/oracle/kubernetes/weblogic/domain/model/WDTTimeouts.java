@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -10,28 +11,36 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class WDTTimeouts {
   @Description("WDT application or library deployment timeout in milliseconds. Default: 180000.")
+  @Default(intDefault = 180000)
   private Long deployTimeoutMillis = 180000L;
 
   @Description("WDT application or library redeployment timeout in milliseconds. Default: 180000.")
+  @Default(intDefault = 180000)
   private Long redeployTimeoutMillis = 180000L;
 
   @Description("WDT application or library undeployment timeout in milliseconds. Default: 180000.")
+  @Default(intDefault = 180000)
   private Long undeployTimeoutMillis = 180000L;
 
   @Description("WDT application start timeout in milliseconds. Default: 180000.")
+  @Default(intDefault = 180000)
   private Long startApplicationTimeoutMillis = 180000L;
 
   @Description("WDT application stop timeout in milliseconds. Default: 180000.")
+  @Default(intDefault = 180000)
   private Long stopApplicationTimeoutMillis = 180000L;
 
   @Description("WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.")
+  @Default(intDefault = 120000)
   private Long connectTimeoutMillis = 120000L;
 
   @Description("WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.")
+  @Default(intDefault = 180000)
   private Long activateTimeoutMillis = 180000L;
 
   @Description("WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. "
       + "Default: 180000.")
+  @Default(intDefault = 180000)
   private Long setServerGroupsTimeoutMillis = 180000L;
 
   public Long getDeployTimeoutMillis() {

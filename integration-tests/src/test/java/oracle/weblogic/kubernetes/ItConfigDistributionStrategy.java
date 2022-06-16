@@ -279,7 +279,7 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test server configuration and JDBC datasource configurations are overridden dynamically when
-   * /spec/configuration/overrideDistributionStrategy: field is not set. By default it should be DYNAMIC.
+   * /spec/configuration/overrideDistributionStrategy: field is not set. By default, it should be Dynamic.
    *
    * <p>Test sets the /spec/configuration/overridesConfigMap and with new configuration for config.xml and datasources.
    *
@@ -435,9 +435,9 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test server configuration and datasource configurations are dynamically overridden when
-   * /spec/configuration/overrideDistributionStrategy is set to DYNAMIC.
+   * /spec/configuration/overrideDistributionStrategy is set to Dynamic.
    *
-   * <p>Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap
+   * <p>Test sets the above field to Dynamic and overrides the /spec/configuration/overridesConfigMap
    * with new configuration.
    *
    * <p>Verifies after introspector runs and the server configuration and JDBC datasource configurations are
@@ -445,13 +445,13 @@ class ItConfigDistributionStrategy {
    */
   @Order(3)
   @Test
-  @DisplayName("Test overrideDistributionStrategy value DYNAMIC")
+  @DisplayName("Test overrideDistributionStrategy value Dyanmic")
   void testDynamicOverride() {
 
-    //patching the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: Dynamic
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"DYNAMIC\"}"
+        + "\"value\": \"Dynamic\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -509,9 +509,9 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test server configuration and JDBC datasource configurations are overridden on restart of pods when
-   * /spec/configuration/overrideDistributionStrategy is set to ON_RESTART.
+   * /spec/configuration/overrideDistributionStrategy is set to OnRestart.
    *
-   * <p>Test sets the above field to ON_RESTART and overrides the /spec/configuration/overridesConfigMap and
+   * <p>Test sets the above field to OnRestart and overrides the /spec/configuration/overridesConfigMap and
    * /spec/configuration/secrets with new configuration and new secrets.
    *
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
@@ -519,13 +519,13 @@ class ItConfigDistributionStrategy {
    */
   @Order(4)
   @Test
-  @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
+  @DisplayName("Test overrideDistributionStrategy value OnRestart")
   void testOnRestartOverride() {
 
-    //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: OnRestart
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"ON_RESTART\"}"
+        + "\"value\": \"OnRestart\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -617,9 +617,9 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test patching the domain with values for /spec/configuration/overrideDistributionStrategy field anything other than
-   * DYNAMIC or ON_RESTART fails.
+   * Dynamic or OnRestart fails.
    *
-   * <p>Test tries to set the above field to RESTART and asserts the patching fails.
+   * <p>Test tries to set the above field to OnRestart and asserts the patching fails.
    */
   @Order(5)
   @Test
@@ -912,7 +912,7 @@ class ItConfigDistributionStrategy {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC")
+                .overrideDistributionStrategy("Dynamic")
                 .introspectorJobActiveDeadlineSeconds(300L))
             .domainUid(domainUid)
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
@@ -929,7 +929,7 @@ class ItConfigDistributionStrategy {
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -1000,7 +1000,7 @@ class ItConfigDistributionStrategy {
         domainNamespace);
   }
 
-  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
+  //restart pods by manipulating the serverStartPolicy to Never and IfNeeded
   private void restartDomain() {
     logger.info("Restarting domain {0}", domainNamespace);
     shutdownDomain(domainUid, domainNamespace);

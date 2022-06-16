@@ -138,7 +138,7 @@ class ItIstioSessionMigration {
   /**
    * In an istio enabled Environment, test sends a HTTP request to set http session state(count number),
    * get the primary and secondary server name, session create time and session state and from the util method
-   * and save HTTP session info, then stop the primary server by changing ServerStartPolicy to NEVER and
+   * and save HTTP session info, then stop the primary server by changing ServerStartPolicy to Never and
    * patching domain. Send another HTTP request to get http session state (count number), primary server
    * and session create time. Verify that a new primary server is selected and HTTP session state is migrated.
    */
@@ -167,7 +167,7 @@ class ItIstioSessionMigration {
         + "and session create time {2} before shutting down the primary server.",
         origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
-    // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
+    // stop the primary server by changing ServerStartPolicy to Never and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 

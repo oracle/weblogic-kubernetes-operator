@@ -114,7 +114,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
-    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'BY_SERVERS')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -1811,7 +1811,7 @@ class SitConfigGenerator(Generator):
 
     self.writeln("<d:log" + logaction + ">")
     self.indent()
-    if self.env.getDomainLogHomeLayout() == 'FLAT':
+    if self.env.getDomainLogHomeLayout() == 'Flat':
       self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
     else:
       if not isDomainBean:
@@ -1883,7 +1883,7 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:web-server-log>")
       self.indent()
       # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
-      if self.env.getDomainLogHomeLayout() == 'FLAT':
+      if self.env.getDomainLogHomeLayout() == 'Flat':
         self.writeln("<d:file-name f:combine-mode=\"replace\">"
                      + logs_dir + "/" + name + "_access.log</d:file-name>")
       else:

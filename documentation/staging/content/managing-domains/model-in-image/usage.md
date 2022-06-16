@@ -286,13 +286,13 @@ To reuse the wallet:
 
 Follow these steps to ensure that a JRF domain can continue to access its RCU data after changing its database password.
 
-- Before changing the database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `NEVER`.
+- Before changing the database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `Never`.
 
 - Update the password in the database.
 
 - Update the Kubernetes Secret that contains your `RCUDbInfo.rcu_schema_password` for each domain.
 
-- Restart the domains. For example, change their `serverStartPolicy` from `NEVER` to `IF_NEEDED`.
+- Restart the domains. For example, change their `serverStartPolicy` from `Never` to `IfNeeded`.
 
 - Save your wallet files again, as changing your password generates a different wallet.
 

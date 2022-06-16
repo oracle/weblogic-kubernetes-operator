@@ -5,11 +5,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 88ab9ec08739c28055088c2bb956bb84909019a2b95b4b4fd4741c53ba293bbb
+    weblogic.sha256: f4568f9bf7ae76f2ebba8c5d647ad6563be34bb88df2bfcdafafa5b48d80c028
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
   names:
+    categories:
+    - all
+    - oracle
+    - weblogic
     kind: Cluster
     plural: clusters
     shortNames:
@@ -25,6 +29,7 @@ spec:
           spec:
             properties:
               serverStartState:
+                default: RUNNING
                 description: The WebLogic runtime state in which the server is to
                   be started. Use ADMIN if the server should start in the admin state.
                   Defaults to RUNNING.
@@ -49,19 +54,19 @@ spec:
                   entries under `managedServers`, then this cluster may have more
                   cluster members running than its `replicas` count. Defaults to `spec.replicas`,
                   which defaults 0.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
               domainUID:
                 description: Domain unique identifier. This domainUID is used to identify
                   the Domain to which this Cluster is associated with.
                 type: string
               serverStartPolicy:
                 description: 'The strategy for deciding whether to start a WebLogic
-                  Server instance. Legal values are NEVER, or IF_NEEDED. Defaults
-                  to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                  Server instance. Legal values are `Never`, or `IfNeeded`. Defaults
+                  to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
                 enum:
-                - NEVER
-                - IF_NEEDED
+                - Never
+                - IfNeeded
                 type: string
               restartVersion:
                 description: 'Changes to this field cause the operator to restart
@@ -90,8 +95,8 @@ spec:
               maxUnavailable:
                 description: The maximum number of cluster members that can be temporarily
                   unavailable. Defaults to 1.
-                minimum: 1.0
-                type: number
+                minimum: 1
+                type: integer
               clusterName:
                 description: The name of the cluster. This value must match the name
                   of a WebLogic cluster already defined in the WebLogic domain configuration.
@@ -144,7 +149,7 @@ spec:
                       pods.spec.securityContext`.
                     properties:
                       runAsUser:
-                        type: number
+                        type: integer
                       seLinuxOptions:
                         properties:
                           role:
@@ -157,7 +162,7 @@ spec:
                             type: string
                         type: object
                       fsGroup:
-                        type: number
+                        type: integer
                       seccompProfile:
                         properties:
                           localhostProfile:
@@ -186,10 +191,10 @@ spec:
                         type: string
                       supplementalGroups:
                         items:
-                          type: number
+                          type: integer
                         type: array
                       runAsGroup:
-                        type: number
+                        type: integer
                       runAsNonRoot:
                         type: boolean
                       sysctls:
@@ -284,7 +289,7 @@ spec:
                           - NoSchedule
                           - PreferNoSchedule
                         tolerationSeconds:
-                          type: number
+                          type: integer
                         value:
                           type: string
                         key:
@@ -300,29 +305,31 @@ spec:
                       a WebLogic Server instance.
                     properties:
                       failureThreshold:
+                        default: 1
                         description: Number of times the check is performed before
                           giving up. Giving up in case of liveness probe means restarting
                           the container. In case of readiness probe, the Pod will
                           be marked Unready. Defaults to 1.
-                        minimum: 1.0
-                        type: number
+                        minimum: 1
+                        type: integer
                       periodSeconds:
                         description: The number of seconds between checks.
-                        type: number
+                        type: integer
                       timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
-                        type: number
+                        type: integer
                       successThreshold:
+                        default: 1
                         description: Minimum number of times the check needs to pass
                           for the probe to be considered successful after having failed.
                           Defaults to 1. Must be 1 for liveness Probe.
-                        minimum: 1.0
-                        type: number
+                        minimum: 1
+                        type: integer
                       initialDelaySeconds:
                         description: The number of seconds before the first check
                           is performed.
-                        type: number
+                        type: integer
                     type: object
                   containerSecurityContext:
                     description: Container-level security attributes. Will override
@@ -331,7 +338,7 @@ spec:
                       privileged:
                         type: boolean
                       runAsUser:
-                        type: number
+                        type: integer
                       capabilities:
                         properties:
                           add:
@@ -383,7 +390,7 @@ spec:
                       allowPrivilegeEscalation:
                         type: boolean
                       runAsGroup:
-                        type: number
+                        type: integer
                       runAsNonRoot:
                         type: boolean
                       readOnlyRootFilesystem:
@@ -395,38 +402,41 @@ spec:
                       default scheduler. See `kubectl explain pods.spec.schedulerName`.
                     type: string
                   maxReadyWaitTimeSeconds:
+                    default: 1800
                     description: The maximum time in seconds that the operator waits
                       for a WebLogic Server pod to reach the ready state before it
                       considers the pod failed. Defaults to 1800 seconds.
-                    type: number
+                    type: integer
                   livenessProbe:
                     description: Settings for the liveness probe associated with a
                       WebLogic Server instance.
                     properties:
                       failureThreshold:
+                        default: 1
                         description: Number of times the check is performed before
                           giving up. Giving up in case of liveness probe means restarting
                           the container. In case of readiness probe, the Pod will
                           be marked Unready. Defaults to 1.
-                        minimum: 1.0
-                        type: number
+                        minimum: 1
+                        type: integer
                       periodSeconds:
                         description: The number of seconds between checks.
-                        type: number
+                        type: integer
                       timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
-                        type: number
+                        type: integer
                       successThreshold:
+                        default: 1
                         description: Minimum number of times the check needs to pass
                           for the probe to be considered successful after having failed.
                           Defaults to 1. Must be 1 for liveness Probe.
-                        minimum: 1.0
-                        type: number
+                        minimum: 1
+                        type: integer
                       initialDelaySeconds:
                         description: The number of seconds before the first check
                           is performed.
-                        type: number
+                        type: integer
                     type: object
                   volumes:
                     description: Additional volumes to be created in the server Pod.
@@ -494,7 +504,7 @@ spec:
                                   type: object
                                   properties:
                                     generation:
-                                      type: number
+                                      type: integer
                                     finalizers:
                                       type: array
                                       items:
@@ -539,7 +549,7 @@ spec:
                                     selfLink:
                                       type: string
                                     deletionGracePeriodSeconds:
-                                      type: number
+                                      type: integer
                                     uid:
                                       type: string
                                     managedFields:
@@ -650,7 +660,7 @@ spec:
                             secretName:
                               type: string
                             defaultMode:
-                              type: number
+                              type: integer
                             optional:
                               type: boolean
                             items:
@@ -659,7 +669,7 @@ spec:
                                 type: object
                                 properties:
                                   mode:
-                                    type: number
+                                    type: integer
                                   path:
                                     type: string
                                   key:
@@ -684,7 +694,7 @@ spec:
                                           type: object
                                           properties:
                                             mode:
-                                              type: number
+                                              type: integer
                                             path:
                                               type: string
                                             resourceFieldRef:
@@ -694,7 +704,7 @@ spec:
                                                   type: object
                                                   properties:
                                                     number:
-                                                      type: number
+                                                      type: integer
                                                     format:
                                                       type: string
                                                       enum:
@@ -731,7 +741,7 @@ spec:
                                           type: object
                                           properties:
                                             mode:
-                                              type: number
+                                              type: integer
                                             path:
                                               type: string
                                             key:
@@ -752,7 +762,7 @@ spec:
                                           type: object
                                           properties:
                                             mode:
-                                              type: number
+                                              type: integer
                                             path:
                                               type: string
                                             key:
@@ -768,11 +778,11 @@ spec:
                                       audience:
                                         type: string
                                       expirationSeconds:
-                                        type: number
+                                        type: integer
                                     required:
                                     - path
                             defaultMode:
-                              type: number
+                              type: integer
                         cephfs:
                           type: object
                           properties:
@@ -832,7 +842,7 @@ spec:
                               type: object
                               properties:
                                 number:
-                                  type: number
+                                  type: integer
                                 format:
                                   type: string
                                   enum:
@@ -857,7 +867,7 @@ spec:
                           type: object
                           properties:
                             partition:
-                              type: number
+                              type: integer
                             readOnly:
                               type: boolean
                             pdName:
@@ -913,14 +923,14 @@ spec:
                           type: object
                           properties:
                             defaultMode:
-                              type: number
+                              type: integer
                             items:
                               type: array
                               items:
                                 type: object
                                 properties:
                                   mode:
-                                    type: number
+                                    type: integer
                                   path:
                                     type: string
                                   resourceFieldRef:
@@ -930,7 +940,7 @@ spec:
                                         type: object
                                         properties:
                                           number:
-                                            type: number
+                                            type: integer
                                           format:
                                             type: string
                                             enum:
@@ -958,7 +968,7 @@ spec:
                           type: object
                           properties:
                             partition:
-                              type: number
+                              type: integer
                             volumeID:
                               type: string
                             readOnly:
@@ -982,7 +992,7 @@ spec:
                             iscsiInterface:
                               type: string
                             lun:
-                              type: number
+                              type: integer
                             chapAuthDiscovery:
                               type: boolean
                             iqn:
@@ -1039,7 +1049,7 @@ spec:
                           type: object
                           properties:
                             defaultMode:
-                              type: number
+                              type: integer
                             name:
                               type: string
                             optional:
@@ -1050,7 +1060,7 @@ spec:
                                 type: object
                                 properties:
                                   mode:
-                                    type: number
+                                    type: integer
                                   path:
                                     type: string
                                   key:
@@ -1156,7 +1166,7 @@ spec:
                           type: object
                           properties:
                             lun:
-                              type: number
+                              type: integer
                             targetWWNs:
                               type: array
                               items:
@@ -1226,7 +1236,7 @@ spec:
                                   type: object
                                   properties:
                                     number:
-                                      type: number
+                                      type: integer
                                     format:
                                       type: string
                                       enum:
@@ -1263,6 +1273,7 @@ spec:
                       - name
                     type: array
                   restartPolicy:
+                    default: Always
                     description: 'Restart policy for all containers within the Pod.
                       One of Always, OnFailure, Never. Default to Always. More info:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
@@ -1308,11 +1319,11 @@ spec:
                           type: object
                           properties:
                             terminationGracePeriodSeconds:
-                              type: number
+                              type: integer
                             failureThreshold:
-                              type: number
+                              type: integer
                             periodSeconds:
-                              type: number
+                              type: integer
                             tcpSocket:
                               type: object
                               properties:
@@ -1320,7 +1331,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1332,11 +1343,11 @@ spec:
                               required:
                               - port
                             timeoutSeconds:
-                              type: number
+                              type: integer
                             successThreshold:
-                              type: number
+                              type: integer
                             initialDelaySeconds:
-                              type: number
+                              type: integer
                             exec:
                               type: object
                               properties:
@@ -1348,7 +1359,7 @@ spec:
                               type: object
                               properties:
                                 port:
-                                  type: number
+                                  type: integer
                                 service:
                                   type: string
                               required:
@@ -1367,7 +1378,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1418,7 +1429,7 @@ spec:
                             privileged:
                               type: boolean
                             runAsUser:
-                              type: number
+                              type: integer
                             capabilities:
                               type: object
                               properties:
@@ -1470,7 +1481,7 @@ spec:
                             allowPrivilegeEscalation:
                               type: boolean
                             runAsGroup:
-                              type: number
+                              type: integer
                             runAsNonRoot:
                               type: boolean
                             readOnlyRootFilesystem:
@@ -1479,11 +1490,11 @@ spec:
                           type: object
                           properties:
                             terminationGracePeriodSeconds:
-                              type: number
+                              type: integer
                             failureThreshold:
-                              type: number
+                              type: integer
                             periodSeconds:
-                              type: number
+                              type: integer
                             tcpSocket:
                               type: object
                               properties:
@@ -1491,7 +1502,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1503,11 +1514,11 @@ spec:
                               required:
                               - port
                             timeoutSeconds:
-                              type: number
+                              type: integer
                             successThreshold:
-                              type: number
+                              type: integer
                             initialDelaySeconds:
-                              type: number
+                              type: integer
                             exec:
                               type: object
                               properties:
@@ -1519,7 +1530,7 @@ spec:
                               type: object
                               properties:
                                 port:
-                                  type: number
+                                  type: integer
                                 service:
                                   type: string
                               required:
@@ -1538,7 +1549,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1591,7 +1602,7 @@ spec:
                                         type: object
                                         properties:
                                           number:
-                                            type: number
+                                            type: integer
                                           format:
                                             type: string
                                             enum:
@@ -1642,9 +1653,9 @@ spec:
                               name:
                                 type: string
                               containerPort:
-                                type: number
+                                type: integer
                               hostPort:
-                                type: number
+                                type: integer
                             required:
                             - containerPort
                         command:
@@ -1688,7 +1699,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -1720,7 +1731,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -1753,7 +1764,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -1785,7 +1796,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -1816,11 +1827,11 @@ spec:
                           type: object
                           properties:
                             terminationGracePeriodSeconds:
-                              type: number
+                              type: integer
                             failureThreshold:
-                              type: number
+                              type: integer
                             periodSeconds:
-                              type: number
+                              type: integer
                             tcpSocket:
                               type: object
                               properties:
@@ -1828,7 +1839,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1840,11 +1851,11 @@ spec:
                               required:
                               - port
                             timeoutSeconds:
-                              type: number
+                              type: integer
                             successThreshold:
-                              type: number
+                              type: integer
                             initialDelaySeconds:
-                              type: number
+                              type: integer
                             exec:
                               type: object
                               properties:
@@ -1856,7 +1867,7 @@ spec:
                               type: object
                               properties:
                                 port:
-                                  type: number
+                                  type: integer
                                 service:
                                   type: string
                               required:
@@ -1875,7 +1886,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1954,11 +1965,11 @@ spec:
                           type: object
                           properties:
                             terminationGracePeriodSeconds:
-                              type: number
+                              type: integer
                             failureThreshold:
-                              type: number
+                              type: integer
                             periodSeconds:
-                              type: number
+                              type: integer
                             tcpSocket:
                               type: object
                               properties:
@@ -1966,7 +1977,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -1978,11 +1989,11 @@ spec:
                               required:
                               - port
                             timeoutSeconds:
-                              type: number
+                              type: integer
                             successThreshold:
-                              type: number
+                              type: integer
                             initialDelaySeconds:
-                              type: number
+                              type: integer
                             exec:
                               type: object
                               properties:
@@ -1994,7 +2005,7 @@ spec:
                               type: object
                               properties:
                                 port:
-                                  type: number
+                                  type: integer
                                 service:
                                   type: string
                               required:
@@ -2013,7 +2024,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -2064,7 +2075,7 @@ spec:
                             privileged:
                               type: boolean
                             runAsUser:
-                              type: number
+                              type: integer
                             capabilities:
                               type: object
                               properties:
@@ -2116,7 +2127,7 @@ spec:
                             allowPrivilegeEscalation:
                               type: boolean
                             runAsGroup:
-                              type: number
+                              type: integer
                             runAsNonRoot:
                               type: boolean
                             readOnlyRootFilesystem:
@@ -2125,11 +2136,11 @@ spec:
                           type: object
                           properties:
                             terminationGracePeriodSeconds:
-                              type: number
+                              type: integer
                             failureThreshold:
-                              type: number
+                              type: integer
                             periodSeconds:
-                              type: number
+                              type: integer
                             tcpSocket:
                               type: object
                               properties:
@@ -2137,7 +2148,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -2149,11 +2160,11 @@ spec:
                               required:
                               - port
                             timeoutSeconds:
-                              type: number
+                              type: integer
                             successThreshold:
-                              type: number
+                              type: integer
                             initialDelaySeconds:
-                              type: number
+                              type: integer
                             exec:
                               type: object
                               properties:
@@ -2165,7 +2176,7 @@ spec:
                               type: object
                               properties:
                                 port:
-                                  type: number
+                                  type: integer
                                 service:
                                   type: string
                               required:
@@ -2184,7 +2195,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -2237,7 +2248,7 @@ spec:
                                         type: object
                                         properties:
                                           number:
-                                            type: number
+                                            type: integer
                                           format:
                                             type: string
                                             enum:
@@ -2288,9 +2299,9 @@ spec:
                               name:
                                 type: string
                               containerPort:
-                                type: number
+                                type: integer
                               hostPort:
-                                type: number
+                                type: integer
                             required:
                             - containerPort
                         command:
@@ -2334,7 +2345,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -2366,7 +2377,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -2399,7 +2410,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -2431,7 +2442,7 @@ spec:
                                       type: object
                                       properties:
                                         intValue:
-                                          type: number
+                                          type: integer
                                         isInt:
                                           type: boolean
                                         strValue:
@@ -2462,11 +2473,11 @@ spec:
                           type: object
                           properties:
                             terminationGracePeriodSeconds:
-                              type: number
+                              type: integer
                             failureThreshold:
-                              type: number
+                              type: integer
                             periodSeconds:
-                              type: number
+                              type: integer
                             tcpSocket:
                               type: object
                               properties:
@@ -2474,7 +2485,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -2486,11 +2497,11 @@ spec:
                               required:
                               - port
                             timeoutSeconds:
-                              type: number
+                              type: integer
                             successThreshold:
-                              type: number
+                              type: integer
                             initialDelaySeconds:
-                              type: number
+                              type: integer
                             exec:
                               type: object
                               properties:
@@ -2502,7 +2513,7 @@ spec:
                               type: object
                               properties:
                                 port:
-                                  type: number
+                                  type: integer
                                 service:
                                   type: string
                               required:
@@ -2521,7 +2532,7 @@ spec:
                                   type: object
                                   properties:
                                     intValue:
-                                      type: number
+                                      type: integer
                                     isInt:
                                       type: boolean
                                     strValue:
@@ -2575,23 +2586,28 @@ spec:
                       server instance.
                     properties:
                       ignoreSessions:
+                        default: false
                         description: For graceful shutdown only, indicates to ignore
                           pending HTTP sessions during in-flight work handling. Defaults
                           to false.
                         type: boolean
                       shutdownType:
+                        default: Graceful
                         description: Specifies how the operator will shut down server
-                          instances. Defaults to graceful shutdown.
+                          instances. Legal values are `Graceful` and `Forced`. Defaults
+                          to `Graceful`.
                         enum:
                         - Graceful
                         - Forced
                         type: string
                       timeoutSeconds:
+                        default: 30
                         description: For graceful shutdown only, number of seconds
                           to wait before aborting in-flight work and shutting down
                           the server. Defaults to 30 seconds.
-                        type: number
+                        type: integer
                       waitForAllSessions:
+                        default: false
                         description: For graceful shutdown only, set to true to wait
                           for all HTTP sessions during in-flight work handling; false
                           to wait for non-persisted HTTP sessions only. Defaults to
@@ -2714,7 +2730,7 @@ spec:
                                         - key
                                         - operator
                                 weight:
-                                  type: number
+                                  type: integer
                               required:
                               - preference
                               - weight
@@ -2843,7 +2859,7 @@ spec:
                                   required:
                                   - topologyKey
                                 weight:
-                                  type: number
+                                  type: integer
                               required:
                               - podAffinityTerm
                               - weight
@@ -2972,7 +2988,7 @@ spec:
                                   required:
                                   - topologyKey
                                 weight:
-                                  type: number
+                                  type: integer
                               required:
                               - podAffinityTerm
                               - weight
@@ -2985,6 +3001,7 @@ spec:
                   for this WebLogic cluster.
                 properties:
                   sessionAffinity:
+                    default: None
                     description: 'Supports "ClientIP" and "None". Used to maintain
                       session affinity. Enable client IP based session affinity. Must
                       be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies'
@@ -3010,8 +3027,8 @@ spec:
                   shut down by lowering its replica count. A value of 0 means there
                   is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which
                   defaults to 1.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
               maxConcurrentStartup:
                 description: The maximum number of Managed Servers instances that
                   the operator will start in parallel for this cluster in response
@@ -3020,35 +3037,35 @@ spec:
                   is in the `Ready` state before starting the next Managed Server
                   instance. A value of 0 means all Managed Server instances will start
                   in parallel. Defaults to 0.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
             type: object
           status:
             properties:
               minimumReplicas:
                 description: The minimum number of cluster members.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
               maximumReplicas:
                 description: The maximum number of cluster members.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
               replicas:
                 description: The number of currently running cluster members.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
               clusterName:
                 description: WebLogic cluster name.
                 type: string
               readyReplicas:
                 description: The number of ready cluster members.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
               replicasGoal:
                 description: The requested number of cluster members. Cluster members
                   will be started by the operator if this value is larger than zero.
-                minimum: 0.0
-                type: number
+                minimum: 0
+                type: integer
             type: object
         type: object
     served: true

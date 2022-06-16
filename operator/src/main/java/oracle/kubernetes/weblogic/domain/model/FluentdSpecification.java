@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -33,6 +34,7 @@ public class FluentdSpecification {
   @Description(
         "The Fluentd container image name. Defaults to "
            + DEFAULT_FLUENTD_IMAGE)
+  @Default(strDefault = DEFAULT_FLUENTD_IMAGE)
   private String image;
   
   @Description(

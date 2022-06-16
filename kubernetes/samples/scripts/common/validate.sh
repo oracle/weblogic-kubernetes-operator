@@ -237,16 +237,16 @@ validateServerStartPolicy() {
   validateInputParamsSpecified serverStartPolicy
   if [ ! -z "${serverStartPolicy}" ]; then
     case ${serverStartPolicy} in
-      "NEVER")
+      "Never")
       ;;
-      "ALWAYS")
+      "Always")
       ;;
-      "IF_NEEDED")
+      "IfNeeded")
       ;;
-      "ADMIN_ONLY")
+      "AdminOnly")
       ;;
       *)
-        validationError "Invalid value for serverStartPolicy: ${serverStartPolicy}. Valid values are 'NEVER', 'ALWAYS', 'IF_NEEDED', and 'ADMIN_ONLY'."
+        validationError "Invalid value for serverStartPolicy: ${serverStartPolicy}. Valid values are 'Never', 'Always', 'IfNeeded', and 'AdminOnly'."
       ;;
     esac
   fi

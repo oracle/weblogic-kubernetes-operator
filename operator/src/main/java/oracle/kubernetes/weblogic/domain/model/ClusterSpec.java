@@ -62,7 +62,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
   @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "Legal values are `Never`, or `IfNeeded`. Defaults to `IfNeeded`. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   private ServerStartPolicy serverStartPolicy;
