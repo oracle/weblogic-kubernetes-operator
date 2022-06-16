@@ -114,7 +114,7 @@ class ItWlsSamples {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static String domainNamespace = null;
-  private static final String domainName = "domain1";
+  private static final String domainName = "wlsdomain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
       SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
@@ -128,7 +128,7 @@ class ItWlsSamples {
   private static String UPDATE_MODEL_FILE = "model-samples-update-domain.yaml";
   private static String UPDATE_MODEL_PROPERTIES = "model-samples-update-domain.properties";
 
-  private static final String[] params = {"wlst:domain1", "wdt:domain2"};
+  private static final String[] params = {"wlst:wlsdomain1", "wdt:wlsdomain2"};
 
   private static LoggingFacade logger = null;
 

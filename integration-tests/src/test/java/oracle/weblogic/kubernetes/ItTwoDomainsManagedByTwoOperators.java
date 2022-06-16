@@ -18,7 +18,6 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -27,15 +26,9 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -69,10 +62,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -82,6 +75,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -93,7 +88,8 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
@@ -273,35 +269,26 @@ class ItTwoDomainsManagedByTwoOperators {
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
       // create persistent volume and persistent volume claims
-      Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume");
-
-      V1PersistentVolume v1pv = new V1PersistentVolume()
-          .spec(new V1PersistentVolumeSpec()
-              .addAccessModesItem("ReadWriteMany")
-              .volumeMode("Filesystem")
-              .putCapacityItem("storage", Quantity.fromString("2Gi"))
-              .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
-          .metadata(new V1ObjectMetaBuilder()
-              .withName(pvName)
-              .build()
-              .putLabelsItem("weblogic.domainUid", domainUid));
-
-      V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-          .spec(new V1PersistentVolumeClaimSpec()
-              .addAccessModesItem("ReadWriteMany")
-              .storageClassName(domainUid + "-weblogic-domain-storage-class")
-              .volumeName(pvName)
-              .resources(new V1ResourceRequirements()
-                  .putRequestsItem("storage", Quantity.fromString("2Gi"))))
-          .metadata(new V1ObjectMetaBuilder()
-              .withName(pvcName)
-              .withNamespace(domainNamespace)
-              .build()
-              .putLabelsItem("weblogic.domainUid", domainUid));
-
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-      createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace,
-          domainUid + "-weblogic-domain-storage-class", pvHostPath);
+      createPV(pvName, domainUid, this.getClass().getSimpleName());
+      createPVC(pvName, pvcName, domainUid, domainNamespace);
+      LoggingFacade logger = getLogger();
+      // check the persistent volume and persistent volume claim exist
+      testUntil(
+              assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+                      String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+              logger,
+              "persistent volume {0} exists",
+              pvName);
+
+      testUntil(
+              assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+                      String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                              pvcName, domainNamespace)),
+              logger,
+              "persistent volume claim {0} exists in namespace {1}",
+              pvcName,
+              domainNamespace);
 
       // run create a domain on PV job using WLST
       runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace,
@@ -358,7 +345,7 @@ class ItTwoDomainsManagedByTwoOperators {
                                                String createDomainInPVJobName) {
 
     logger.info("Creating a staging location for domain creation scripts");
-    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV");
+    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV", domainUid);
     assertDoesNotThrow(() -> deleteDirectory(pvTemp.toFile()),"deleteDirectory failed with IOException");
     assertDoesNotThrow(() -> createDirectories(pvTemp), "createDirectories failed with IOException");
 
@@ -370,7 +357,7 @@ class ItTwoDomainsManagedByTwoOperators {
 
     logger.info("Creating WebLogic domain properties file");
     Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
-    createDomainProperties(domainPropertiesFile, domainUid);
+    createDomainProperties(domainPropertiesFile, domainUid, domainNamespace);
 
     logger.info("Adding files to a ConfigMap for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -395,6 +382,7 @@ class ItTwoDomainsManagedByTwoOperators {
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .ports(Collections.singletonList(new V1ContainerPort()
                             .containerPort(ADMIN_SERVER_PORT)))
                         .volumeMounts(Arrays.asList(
@@ -435,13 +423,14 @@ class ItTwoDomainsManagedByTwoOperators {
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
+   * @param domainNamespace   the WebLogic domain namespace
    */
   private void createDomainProperties(Path wlstPropertiesFile,
-                                      String domainUid) {
+                                      String domainUid, String domainNamespace) {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", "/shared/" + domainNamespace + domainUid + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
@@ -647,9 +636,10 @@ class ItTwoDomainsManagedByTwoOperators {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)
+            .domainHome("/shared/" + domainNamespace + domainUid + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET_NAME)))  // this secret is used only for non-kind cluster
