@@ -2,7 +2,7 @@
 # Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# This script create or delete an Ingress controller.
+# This script create or delete an Ingress controller. 
 #  The script supports ingress controllers: Traefik and Nginx.
 
 set -eu
@@ -10,8 +10,8 @@ set -o pipefail
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 
-#Kubernetes command line interface.
-#Default is 'kubectl' if KUBERNETES_CLI env variable is not set.
+#Kubernetes command line interface. 
+#Default is 'kubectl' if KUBERNETES_CLI env variable is not set.  
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 
 # https://github.com/containous/traefik/releases
@@ -28,6 +28,8 @@ namespace=""
 release=""
 repository=""
 chart=""
+ingressPropFile="ingress.properties"
+skipDeleteNamespace="false"
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
@@ -60,6 +62,8 @@ usage() {
     -t <ingress type>    : ingress type traefik or nginx [required]
     -v <ingress version> : ingress release version
     -n <namespace>       : ingress namespace
+    -p <ingress-prop>    : extra ingress helm properties 
+    -s                   : skip deleting ingress namespace
     -m <kubernetes_cli>  : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
     -h                   : print help
 EOF
@@ -68,25 +72,36 @@ exit $1
 
 action_chosen=false
 
-while getopts "cdt:n:r:v:h" opt; do
+while getopts "scdt:p:n:r:v:h" opt; do
   case $opt in
     c) action="create"
        if [ $action_chosen = "true" ]; then
         printError " Both -c (create) and -d (delete) option can not be specified for ingress controller."
         usage 1
-       fi
+       fi 
        action_chosen=true
     ;;
     d) action="delete"
        if [ $action_chosen = "true" ]; then
         printError " Both -c (create) and -d (delete) option can not be specified for ingress controller."
         usage 1
-       fi
+       fi 
        action_chosen=true
+    ;;
+    s) skipDeleteNamespace="true"
+       printInfo "Will Skip the Namespace Deletion"
     ;;
     n) namespace="${OPTARG}"
     ;;
     t) ingressType="${OPTARG}"
+    ;;
+    p) ingressPropFile="${OPTARG}"
+       if [ ${action} == "create" ]; then
+         if [ ! -f ${ingressPropFile} ]; then
+          printError "[create] action is choosen but the custom ingress property file [${ingressPropFile}] is missing."
+          usage 1
+         fi
+      fi 
     ;;
     v) release="${OPTARG}"
     ;;
@@ -100,23 +115,23 @@ while getopts "cdt:n:r:v:h" opt; do
 done
 
 if [ "x${action}" == "x" ]; then
- printError "You must specify either -c (create) or -d (delete) ingress controller"
+ printError "You must specify either -c (create) or -d (delete) ingress controller" 
  usage 1
 fi
 
 if [ "x${ingressType}" == "x" ]; then
  printError "You must specify ingress type (traefik or nginx) thru -t option"
  usage 1
-fi
+fi 
 
-case  ${ingressType} in
-   "traefik")
+case  ${ingressType} in 
+   "traefik") 
               [[ -z "${release}"   ]] && release="${DefaultTraefikVersion}"
               [[ -z "${namespace}" ]] && namespace="${ingressType}"
               repository="traefik"
               chart="traefik-release"
               ;;
-    "nginx")
+    "nginx")   
               [[ -z "${release}"   ]] && release="${DefaultNginxVersion}"
               [[ -z "${namespace}" ]] && namespace="${ingressType}"
               repository="ingress-nginx"
@@ -163,12 +178,12 @@ waitForIngressPod() {
   if [ $? != 0 ]; then
    printError "${type} ingress controller pod not READY in state in 5 min"
    exit -1;
-  else
+  else 
    ipod=$(${kubernetesCli} get pod -n ${ns} -l app.kubernetes.io/instance=${type}-release -o jsonpath="{.items[0].metadata.name}")
    ${kubernetesCli} get po/${ipod} -n ${ns}
    helm list -n ${ns}
-  fi
- }
+  fi 
+ } 
 
 createTraefik() {
   ns=${1}
@@ -184,13 +199,15 @@ createTraefik() {
     printInfo "Traefik chart repository is already added."
   fi
 
+  # load the extra set of helm values if provided thru file using -p option
   if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
     purgeDefaultResources || true
     helm install $chart traefik/traefik --namespace ${ns} \
+     $(cat ${ingressPropFile} 2>&- || false ) \
      --set image.tag=${rel} \
-     --values ${UTILDIR}/../traefik/values.yaml
-    if [ $? != 0 ]; then
+     --values ${UTILDIR}/../traefik/values.yaml 
+    if [ $? != 0 ]; then 
      printError "Helm installation of the Traefik ingress controller failed."
      exit -1;
     fi
@@ -202,27 +219,28 @@ createTraefik() {
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   traefik_image=$(${kubernetesCli} get ${tpod} -n ${ns} -o jsonpath='{.spec.containers[0].image}')
   printInfo "Traefik image chosen [${traefik_image}]"
+  helm get values $chart --namespace ${ns} 
 }
 
 # Remove ingress related resources from default Namespace ( if any )
 purgeDefaultResources() {
    printInfo "Remove ingress related resources from default Namespace (if any)"
   croles=$(${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}')
-  for crole in ${croles}; do
+  for crole in ${croles}; do 
    printInfo "Deleting ClusterRole ${crole} from default Namespace"
-   ${kubernetesCli} delete ClusterRole ${crole}
+   ${kubernetesCli} delete ClusterRole ${crole} 
   done
 
   crbs=$(${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}')
-  for crb in ${crbs}; do
+  for crb in ${crbs}; do 
    printInfo "Deleting ClusterRoleBinding ${crb} from default Namespace"
-   ${kubernetesCli} delete ClusterRoleBinding ${crb}
+   ${kubernetesCli} delete ClusterRoleBinding ${crb} 
   done
 
   vwcs=$(${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}')
-  for vwc in ${vwcs}; do
+  for vwc in ${vwcs}; do 
     printInfo "Deleting ValidatingWebhookConfiguration ${vwc} from default Namespace"
-    ${kubernetesCli} delete ValidatingWebhookConfiguration ${vwc}
+    ${kubernetesCli} delete ValidatingWebhookConfiguration ${vwc} 
   done
 }
 
@@ -230,18 +248,20 @@ deleteIngress() {
   type=${1}
   ns=${2}
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
-    printInfo "Deleting ${type} controller from namespace $ns"
+    printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
     ${kubernetesCli} wait --namespace ${ns} \
        --for=delete pod \
        --selector=app.kubernetes.io/instance=${type}-release \
        --timeout=120s
-    ${kubernetesCli} delete ns ${ns}
-    ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s || true
+    if [ ${skipDeleteNamespace} == "false" ]; then
+      ${kubernetesCli} delete ns ${ns}
+      ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s || true
+    fi
     printInfo "Remove ${type} chart repository [${repository}] "
     helm repo remove ${repository}
   else
-    printInfo "${type} controller has already been deleted from namespace [${ns}] or not installed in the namespace [${ns}]."
+    printInfo "${type} controller has already been deleted from namespace [${ns}] or not installed in the namespace [${ns}]." 
   fi
 
   if [ "${ingressType}" = traefik ]; then
@@ -256,7 +276,7 @@ createNginx() {
   release=${2}
   chart="nginx-release"
   createNameSpace $ns || true
-  printInfo "Creating Nginx controller on namespace ${ns}"
+  printInfo "Creating Nginx controller on namespace ${ns}" 
 
   if [ "$(helm search repo ingress-nginx | grep nginx | wc -l)" = 0 ]; then
     printInfo "Add Nginx chart repository"
@@ -265,11 +285,15 @@ createNginx() {
     printInfo "Nginx chart repository is already added."
   fi
 
+  # load the extra set of helm values if provided thru file using -p option
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
     purgeDefaultResources || true
     helm install $chart ingress-nginx/ingress-nginx \
-         --set "controller.admissionWebhooks.enabled=false" \
-         --namespace ${ns} --version ${release}
+      $(cat ${ingressPropFile} 2>&- || false ) \
+      --set "controller.admissionWebhooks.enabled=false" \
+      --namespace ${ns} --version ${release} \
+      --set "controller.image.pullPolicy=IfNotPresent" \
+      --set "controller.image.tag=v1.2.0" 
     if [ $? != 0 ]; then
      printError "Helm installation of the Nginx ingress controller failed."
      exit -1;
@@ -282,6 +306,7 @@ createNginx() {
   waitForIngressPod nginx ${ns}
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   ${kubernetesCli} describe ${tpod} -n ${ns}
+  helm get values $chart -n ${ns}
 }
 
 main() {
