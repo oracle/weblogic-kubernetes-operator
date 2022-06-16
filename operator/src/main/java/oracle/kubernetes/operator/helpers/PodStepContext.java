@@ -1226,31 +1226,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       V1Probe currentProbe = weblogicContainer.getReadinessProbe();
       recipeContainer.setReadinessProbe(currentProbe);
 
-      // reconcile the container ports.
-      // We added default, default-secure, default-admin channel in recipe pod container ports, need to be removed
-      //
-      // reconcile all the legacy istio container ports,  they need to added back if it is in currentPod
-
-      List<String> defaultPortNames = new ArrayList<>(List.of("default", "default-secure", "default-admin"));
-      List<String> legacyIstiotPortNames = new ArrayList<>(List.of("tcp-default", "tcp-ldap", "http-default",
-            "tcp-snmp", "tcp-iiop", "tcp-cbt", "https-secure", "tls-ldaps", "tls-default", "tls-cbts", "tls-iiops",
-            "https-admin", "http-probe", "http-probe-ext"));
-
+      // copy the ports over for calculating hash
       List<V1ContainerPort>  currentContainerPorts = weblogicContainer.getPorts();
-      List<V1ContainerPort> recipePorts = recipeContainer.getPorts();
-
-      for (String portName : defaultPortNames) {
-        Optional<V1ContainerPort> delPort = recipePorts.stream().filter(p -> p.getName().equals(portName)).findFirst();
-        if (!delPort.isEmpty()) {
-          recipePorts.remove(delPort.get());
-        }
-      }
-
-      for (V1ContainerPort istioPort : currentContainerPorts) {
-        if (legacyIstiotPortNames.contains(istioPort.getName())) {
-          recipePorts.add(istioPort);
-        }
-      }
+      recipeContainer.setPorts(currentContainerPorts);
     }
 
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
@@ -1259,7 +1237,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-      String podmodelYaml = Yaml.dump(getPodModel());
       return (isLegacyPod(currentPod)
               && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
           || (isPodFromRecentOperatorMajorVersion3(currentPod)
