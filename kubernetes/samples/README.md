@@ -6,6 +6,9 @@ create production environments.  They are provided for educational and demonstra
 
 While these samples may be useful and usable as is, it is intended that you would read through all of the sample code in detail, understand how the given sample works, and then customize it to suit your needs.  
 
+## Quick start guide
+* [Quick start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/)
+
 ## Sample scripts
 
 * [Sample for creating a Kubernetes secret](scripts/create-weblogic-domain-credentials/README.md) that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource.
