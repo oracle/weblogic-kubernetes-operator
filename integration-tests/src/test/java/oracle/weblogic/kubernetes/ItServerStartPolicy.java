@@ -24,7 +24,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -171,7 +170,6 @@ class ItServerStartPolicy {
   /**
    * Stop the Administration server by using stopServer.sh sample script.
    * Make sure that Only the Administration server is stopped.
-   * Verify warning message is logged in operator pod when admin server is shutdown.
    * Restart the Administration server by using startServer.sh sample script.
    * Make sure that the Administration server is in RUNNING state.
    */
@@ -206,12 +204,6 @@ class ItServerStartPolicy {
             domainNamespace, cfgTs));
     assertFalse(assertDoesNotThrow(isCfgRestarted::call),
         "Configured managed server pod must not be restated");
-
-    // verify warning message is logged in operator pod when admin server is shutdown
-    logger.info("operator pod name: {0}", operatorPodName);
-    checkPodLogContainsString(opNamespace, operatorPodName, "WARNING");
-    checkPodLogContainsString(opNamespace, operatorPodName,
-        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException");
 
     // verify that the sample script can start admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,
