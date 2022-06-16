@@ -44,6 +44,7 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -663,6 +664,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private V1ObjectMeta getDomainMeta(DomainPresenceInfo info) {
     return Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(DomainResource::getMetadata).orElse(null);
+  }
+
+  @Override
+  public Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info) {
+    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
+    resources.addProcessing(processors);
+    return resources.createListSteps();
   }
 
   public static class PopulatePacketServerMapsStep extends Step {
