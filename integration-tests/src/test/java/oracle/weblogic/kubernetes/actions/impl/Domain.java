@@ -91,12 +91,12 @@ public class Domain {
    */
   public static boolean shutdown(String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
+    // change the /spec/serverStartPolicy to Never to shut down all servers in the domain
     // create patch string to shut down the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
-        .append("\"value\": \"NEVER\"")
+        .append("\"value\": \"Never\"")
         .append("}]");
 
     logger.info("Shutting down domain {0} in namespace {1} using patch string: {2}",
@@ -116,12 +116,12 @@ public class Domain {
    */
   public static boolean start(String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain
+    // change the /spec/serverStartPolicy to IfNeeded to start all servers in the domain
     // create patch string to start the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
-        .append("\"value\": \"IF_NEEDED\"")
+        .append("\"value\": \"IfNeeded\"")
         .append("}]");
 
     logger.info("Restarting domain {0} in namespace {1} using patch string: {2}",

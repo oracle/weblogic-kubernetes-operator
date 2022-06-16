@@ -544,7 +544,7 @@ class CrdHelperTest {
   void whenClusterCrdCreated_specContainsFields() {
     V1CustomResourceDefinition crd = defineClusterCrd();
     assertThat(getPropertiesType(crd, "spec", "clusterName"), equalTo("string"));
-    assertThat(getPropertiesType(crd, "spec", "replicas"), equalTo("number"));
+    assertThat(getPropertiesType(crd, "spec", "replicas"), equalTo("integer"));
   }
 
   private V1CustomResourceDefinition defineClusterCrd() {
@@ -555,9 +555,9 @@ class CrdHelperTest {
   @Test
   void whenClusterCrdCreated_statusContainsExpectedFields() {
     V1CustomResourceDefinition crd = defineClusterCrd();
-    assertThat(getPropertiesType(crd, "status", "replicas"), equalTo("number"));
-    assertThat(getPropertiesType(crd, "status", "readyReplicas"), equalTo("number"));
-    assertThat(getPropertiesType(crd, "status", "maximumReplicas"), equalTo("number"));
+    assertThat(getPropertiesType(crd, "status", "replicas"), equalTo("integer"));
+    assertThat(getPropertiesType(crd, "status", "readyReplicas"), equalTo("integer"));
+    assertThat(getPropertiesType(crd, "status", "maximumReplicas"), equalTo("integer"));
   }
 
   // todo check additional arguments: if second arg not present: error or skip cluster resource ?

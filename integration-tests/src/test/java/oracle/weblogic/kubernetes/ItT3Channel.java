@@ -228,7 +228,7 @@ class ItT3Channel {
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")

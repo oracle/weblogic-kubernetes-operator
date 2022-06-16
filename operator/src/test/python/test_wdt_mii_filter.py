@@ -132,7 +132,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_log_filename, "Expected log file to be at \'/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log\'")
 
   def test_customize_log_in_server_template_flatstructure(self):
-    os.environ['LOG_HOME_LAYOUT'] = 'FLAT'
+    os.environ['LOG_HOME_LAYOUT'] = 'Flat'
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
@@ -140,7 +140,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_log_filename = server_template['Log']['FileName']
     self.assertEqual('/u01/logs/sample-domain1/managed-server${id}.log',
                      template_log_filename, "Expected log file to be at \'/u01/logs/sample-domain1/managed-server${id}.log\'")
-    os.environ['LOG_HOME_LAYOUT'] = 'BY_SERVERS'
+    os.environ['LOG_HOME_LAYOUT'] = 'ByServers'
 
 
   def test_customize_access_log_in_server_template(self):
@@ -154,7 +154,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
 
   def test_customize_access_log_in_server_template_flatstructure(self):
-    os.environ['LOG_HOME_LAYOUT'] = 'FLAT'
+    os.environ['LOG_HOME_LAYOUT'] = 'Flat'
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
@@ -162,7 +162,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_access_log = server_template['WebServer']['WebServerLog']['FileName']
     self.assertEqual('/u01/logs/sample-domain1/managed-server${id}_access.log',
                      template_access_log, "Expected log file at \'/u01/logs/sample-domain1/managed-server${id}_access.log\'")
-    os.environ['LOG_HOME_LAYOUT'] = 'BY_SERVERS'
+    os.environ['LOG_HOME_LAYOUT'] = 'ByServers'
 
   def test_customize_default_filestore_in_server_template(self):
     model = self.getModel()

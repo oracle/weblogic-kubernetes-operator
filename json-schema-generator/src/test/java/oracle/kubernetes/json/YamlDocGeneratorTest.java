@@ -163,7 +163,7 @@ class YamlDocGeneratorTest {
                 "### Start",
                 "",
                 tableHeader(),
-                tableEntry("`deprecatedField`", "number", ""),
+                tableEntry("`deprecatedField`", "integer", ""),
                 tableEntry("`derived`", linkTo("Derived Object", "#derived-object"), ""),
                 tableEntry("`simple`", linkTo("Simple Object", "#simple-object"), ""))));
   }
@@ -189,7 +189,7 @@ class YamlDocGeneratorTest {
                 "### Start",
                 "",
                 tableHeader(),
-                tableEntry("`deprecatedField`", "number", ""),
+                tableEntry("`deprecatedField`", "integer", ""),
                 tableEntry("`derived`", linkTo("Derived Object", "#derived-object"), ""),
                 tableEntry("`simple`", linkTo("Simple Object", "#simple-object"), ""),
                 "",

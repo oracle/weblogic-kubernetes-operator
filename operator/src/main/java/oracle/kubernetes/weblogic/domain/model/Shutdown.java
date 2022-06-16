@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -19,17 +20,20 @@ public class Shutdown {
 
   @Description(
       "Specifies how the operator will shut down server instances."
-          + " Defaults to graceful shutdown.")
+          + " Legal values are `Graceful` and `Forced`. Defaults to `Graceful`.")
+  @Default(strDefault = "Graceful")
   private ShutdownType shutdownType;
 
   @Description(
       "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down"
           + " the server. Defaults to 30 seconds.")
+  @Default(intDefault = 30)
   private Long timeoutSeconds;
 
   @Description(
       "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling."
           + " Defaults to false.")
+  @Default(boolDefault = false)
   private Boolean ignoreSessions;
 
   @Description(
@@ -37,6 +41,7 @@ public class Shutdown {
           + " during in-flight work handling; false to wait for non-persisted"
           + " HTTP sessions only."
           + " Defaults to false.")
+  @Default(boolDefault = false)
   private Boolean waitForAllSessions;
 
   void copyValues(Shutdown fromShutdown) {

@@ -122,14 +122,14 @@ class ItDiagnosticsCompleteAvailableCondition {
   }
 
   /**
-   * Test domain status condition with serverStartPolicy set to IF_NEEDED.
+   * Test domain status condition with serverStartPolicy set to IfNeeded.
    * Verify the following conditions are generated:
    * type: Completed, status: true
    * type: Available, status: true
    * Verify no Failed type condition generated.
    */
   @Test
-  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  @DisplayName("Test domain status condition with serverStartPolicy set to IfNeeded")
   @Tag("gate")
   void testCompleteAvailableConditionWithIfNeeded() {
 
@@ -148,7 +148,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   }
 
   /**
-   * Test domain status condition with serverStartPolicy set to ADMIN_ONLY.
+   * Test domain status condition with serverStartPolicy set to AdminOnly.
    * Verify the following conditions are generated:
    * type: Completed, status: true
    * type: Available, status: false
@@ -159,9 +159,9 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithAdminOnly() {
     String patchStr;
     try {
-      logger.info("patch the domain and change the serverStartPolicy to ADMIN_ONLY");
+      logger.info("patch the domain and change the serverStartPolicy to AdminOnly");
 
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"ADMIN_ONLY\"}]";
+      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"AdminOnly\"}]";
 
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
@@ -194,7 +194,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   }
 
   /**
-   * Test domain status condition with serverStartPolicy set to NEVER.
+   * Test domain status condition with serverStartPolicy set to Never.
    * Verify all the servers will be shutdown.
    * Verify the following conditions are generated:
    * type: Completed, status: true
@@ -202,12 +202,12 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify no Failed type condition generated.
    */
   @Test
-  @DisplayName("Test domain status condition with serverStartPolicy set to NEVER")
+  @DisplayName("Test domain status condition with serverStartPolicy set to Never")
   void testCompleteAvailableConditionWithNever() {
     String patchStr;
     try {
-      logger.info("patch the domain resource with serverStartPolicy set to NEVER");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"NEVER\"}]";
+      logger.info("patch the domain resource with serverStartPolicy set to Never");
+      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"Never\"}]";
 
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
@@ -287,7 +287,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   }
 
   /**
-   * Test domain status condition with cluster serverStartPolicy to NEVER.
+   * Test domain status condition with cluster serverStartPolicy to Never.
    * Verify all the cluster servers pods will be shutdown.
    * Verify the following conditions are generated:
    * type: Completed, status: true
@@ -295,12 +295,12 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify no Failed type condition generated.
    */
   @Test
-  @DisplayName("Test domain status condition with cluster serverStartPolicy to NEVER")
+  @DisplayName("Test domain status condition with cluster serverStartPolicy to Never")
   void testCompleteAvailableConditionWithClusterNever() {
     String patchStr;
     try {
-      logger.info("patch the domain resource with cluster serverStartPolicy to NEVER");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"NEVER\"}]";
+      logger.info("patch the domain resource with cluster serverStartPolicy to Never");
+      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"Never\"}]";
 
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
@@ -656,12 +656,12 @@ class ItDiagnosticsCompleteAvailableCondition {
 
   private void restoreDomainResource() {
     // patch the domain back to the original state
-    logger.info("patch the domain and change the serverStartPolicy to IF_NEEDED");
+    logger.info("patch the domain and change the serverStartPolicy to IfNeeded");
     String patchStr
         = "["
-        + "{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"},"
+        + "{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"},"
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": 2},"
-        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}"
+        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IfNeeded\"}"
         + "]";
 
     logger.info("Updating domain configuration using patch string: {0}", patchStr);

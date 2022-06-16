@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/sh
 # Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -14,7 +14,7 @@ usage() {
 
   This script stops a WebLogic cluster in a domain by patching
   'spec.clusters[<cluster-name>].serverStartPolicy' attribute of the domain
-  resource to 'NEVER'. This change will cause the operator to initiate shutdown
+  resource to 'Never'. This change will cause the operator to initiate shutdown
   of cluster's WebLogic server instance pods if the pods are running.
  
   Usage:
@@ -105,15 +105,15 @@ if [ -z "${startPolicy}" ]; then
   getDomainPolicy "${domainJson}" startPolicy
 fi
 
-if [[ "${startPolicy}" == 'NEVER' || "${startPolicy}" == 'ADMIN_ONLY' ]]; then 
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'NEVER' or 'ADMIN_ONLY'."
+if [[ "${startPolicy}" == 'Never' || "${startPolicy}" == 'AdminOnly' ]]; then
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'Never' or 'AdminOnly'."
   exit 0
 fi
 
-# Set policy value to NEVER
-printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'NEVER'."
-createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "NEVER" patchJson
+# Set policy value to Never
+printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'Never'."
+createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "Never" patchJson
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched cluster '${clusterName}' with 'NEVER' start policy!"
+printInfo "Successfully patched cluster '${clusterName}' with 'Never' start policy!"

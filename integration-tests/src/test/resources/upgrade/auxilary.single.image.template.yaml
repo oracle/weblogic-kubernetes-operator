@@ -8,14 +8,13 @@ metadata:
 spec:
   domainHomeSourceType: FromModel
   image: "BASE_IMAGE"
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: IfNotPresent
   webLogicCredentialsSecret: 
     name: weblogic-credentials
   imagePullSecrets:
   - name: base-images-repo-secret
   - name: test-images-repo-secret
   includeServerOutInPodLog: true
-  serverStartPolicy: "IF_NEEDED"
   auxiliaryImageVolumes:
   - name: auxiliaryImageVolume
     mountPath: "/auxiliary"
@@ -62,7 +61,7 @@ spec:
   configuration:
     introspectorJobActiveDeadlineSeconds: 600
     model:
-      domainType: "WLS"
+      domainType: WLS
       modelHome: "/auxiliary/models"
       wdtInstallHome: "/auxiliary/weblogic-deploy"
       runtimeEncryptionSecret: encryptionsecret

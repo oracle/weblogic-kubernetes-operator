@@ -378,7 +378,7 @@ class ItDiagnosticsFailedCondition {
               .logHomeEnabled(Boolean.TRUE)
               .logHome("/shared/logs/" + domainName)
               .dataHome("")
-              .serverStartPolicy("IF_NEEDED")
+              .serverStartPolicy("IfNeeded")
               .serverPod(new ServerPod() //serverpod
                   .addEnvItem(new V1EnvVar()
                       .name("USER_MEM_ARGS")
@@ -626,7 +626,7 @@ class ItDiagnosticsFailedCondition {
       }
 
       String patchStr
-          = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"NEVER\"}]";
+          = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"Never\"}]";
 
       logger.info("Shutting down cluster using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
@@ -649,7 +649,7 @@ class ItDiagnosticsFailedCondition {
       PodUtils.checkPodDeleted(dbPodName, null, domainNamespace);
 
       patchStr
-          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
 
       logger.info("Starting cluster using patch string: {0}", patchStr);
       patch = new V1Patch(patchStr);
@@ -700,7 +700,7 @@ class ItDiagnosticsFailedCondition {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -751,7 +751,7 @@ class ItDiagnosticsFailedCondition {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

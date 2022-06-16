@@ -460,10 +460,10 @@ that is included in the sample source.
     #logHome: /shared/logs/sample-domain1
 
     # Set which WebLogic Servers the Operator will start
-    # - "NEVER" will not start any server in the domain
-    # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-    # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-    serverStartPolicy: "IF_NEEDED"
+    # - "Never" will not start any server in the domain
+    # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+    # - "IfNeeded" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+    serverStartPolicy: IfNeeded
 
     # Settings for all server pods in the domain including the introspector job pod
     serverPod:
