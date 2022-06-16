@@ -435,11 +435,11 @@ class ItOperatorWlsUpgrade {
     installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
 
     // upgrade to current operator
-    upgradeOperatorAndVerify(externalServiceNameSuffix,
+    upgradeOperatorAndVerify(domainVersion, externalServiceNameSuffix,
           opNamespace, domainNamespace);
   }
 
-  private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
+  private void upgradeOperatorAndVerify(String domApiVersion, String externalServiceNameSuffix,
                   String opNamespace, String domainNamespace) {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
@@ -523,7 +523,7 @@ class ItOperatorWlsUpgrade {
         true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
 
-    restartDomain(domainUid, domainNamespace);
+    restartDomain(domApiVersion, domainUid, domainNamespace);
   }
 
   private void createSecrets() {
@@ -664,7 +664,8 @@ class ItOperatorWlsUpgrade {
   /**
    * Restart the domain after upgrade by changing serverStartPolicy.
    */
-  private void restartDomain(String domainUid, String domainNamespace) {
+  private void restartDomain(String domApiVersion, String domainUid, String domainNamespace) {
+    String ifNeeded = OLD_DOMAIN_VERSION.equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded";
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/serverStartPolicy", "Never"),
@@ -673,8 +674,8 @@ class ItOperatorWlsUpgrade {
     checkDomainStopped(domainUid, domainNamespace);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "IfNeeded"),
-         "Failed to patch Domain's serverStartPolicy to IfNeeded");
+         "/spec/serverStartPolicy", ifNeeded),
+         "Failed to patch Domain's serverStartPolicy to " + ifNeeded);
     logger.info("Domain is patched to re start");
     checkDomainStarted(domainUid, domainNamespace);
   }
@@ -714,7 +715,7 @@ class ItOperatorWlsUpgrade {
                             .name(adminSecretName)
                             .namespace(domainNamespace))
                     .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IfNeeded")
+                    .serverStartPolicy("weblogic.oracle/v8".equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
