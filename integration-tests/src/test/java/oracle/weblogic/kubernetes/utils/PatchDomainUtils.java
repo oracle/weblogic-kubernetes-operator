@@ -3,7 +3,10 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.Map;
+
 import io.kubernetes.client.custom.V1Patch;
+import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -15,7 +18,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 /**
  * The common utility class for domain patching tests.
@@ -266,4 +268,51 @@ public class PatchDomainUtils {
     return patchDomainResource(domainUid, domainNamespace, patchStr);
   }
 
+  /**
+   * Add server pod compute resources.
+   *
+   * @param domainUid unique domain identifier
+   * @param domainNamespace the Kubernetes namespace where the domain is
+   * @param resourceLimits resource limit to be added to domain spec serverPod resources limits
+   * @param resourceRequest resource request to be added to domain spec serverPod resources requests
+   * @return true if patching domain custom resource is successful, false otherwise
+   */
+  public static boolean addServerPodResources(String domainUid,
+                                              String domainNamespace,
+                                              Map<String, String> resourceLimits,
+                                              Map<String, String> resourceRequest) {
+    LoggingFacade logger = getLogger();
+    // construct the patch string for adding server pod resources
+    StringBuffer patchStr = new StringBuffer("[");
+    for (String key : resourceLimits.keySet()) {
+      patchStr.append("{\"op\": \"add\", ")
+          .append("\"path\": \"/spec/serverPod/resources/limits/")
+          .append(key)
+          .append("\", ")
+          .append("\"value\": \"")
+          .append(resourceLimits.get(key))
+          .append("\"},");
+    }
+
+    for (String key : resourceRequest.keySet()) {
+      patchStr.append("{\"op\": \"add\", ")
+          .append("\"path\": \"/spec/serverPod/resources/requests/")
+          .append(key)
+          .append("\", ")
+          .append("\"value\": \"")
+          .append(resourceRequest.get(key))
+          .append("\"},");
+    }
+
+    // remove last comma
+    patchStr = patchStr.deleteCharAt(patchStr.lastIndexOf(","));
+    patchStr.append("]");
+
+    logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return Domain.patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
 }

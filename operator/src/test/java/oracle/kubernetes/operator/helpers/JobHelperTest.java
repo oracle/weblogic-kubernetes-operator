@@ -346,6 +346,10 @@ class JobHelperTest extends DomainValidationTestBase {
     return JobHelper.createJobSpec(new Packet().with(domainPresenceInfo));
   }
 
+  private V1Job createJob() {
+    return new JobStepContext(new Packet().with(domainPresenceInfo)).getJobModel();
+  }
+
   @Test
   void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
     V1JobSpec jobSpec = createJobSpec();
@@ -1330,6 +1334,24 @@ class JobHelperTest extends DomainValidationTestBase {
     return new V1Pod().metadata(new V1ObjectMeta().creationTimestamp(SystemClock.now()));
   }
 
+
+  @Test
+  void whenDomainHasIntrospectVersion_jobMetatadataCreatedWithLabel() {
+    final String INTROSPECT_VERSION = "v123";
+    configureDomain().withIntrospectVersion(INTROSPECT_VERSION);
+
+    V1Job job = createJob();
+    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
+        is(INTROSPECT_VERSION));
+  }
+
+  @Test
+  void whenDomainHasNoIntrospectVersion_jobMetatadataCreatedWithoutNoLabel() {
+    configureDomain().withIntrospectVersion(null);
+
+    V1Job job = createJob();
+    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
+  }
 
   private V1Job job;
 

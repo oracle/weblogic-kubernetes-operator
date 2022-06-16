@@ -12,16 +12,20 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
@@ -49,11 +53,12 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
-import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
@@ -62,11 +67,14 @@ import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CO
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_STARTED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -78,6 +86,8 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.VALIDATING_WEBHOOK_CONFIGURATION;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -86,6 +96,7 @@ import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOO
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -198,12 +209,12 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenConversionWebhookCreated_logStartupMessage() {
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CONVERSION_WEBHOOK_STARTED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WEBHOOK_STARTED);
 
     WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords,
-               containsInfo(CONVERSION_WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
+        containsInfo(WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
   }
 
   @Test
@@ -223,33 +234,35 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
     WebhookMain.createMain(buildProperties).completeBegin();
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 WEBHOOK_START_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
-  private void simulateMissingCRD() {
-    testSupport.failOnResource(DOMAIN, null, getWebhookNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+  private void simulateMissingCRD(String resourceType) {
+    testSupport.failOnResource(resourceType, null, getWebhookNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
   }
 
   private void recheckCRD() {
     testSupport.runSteps(main.createCRDRecheckSteps());
   }
 
-  @Test
-  void whenNoCRD_logReasonForFailure() {
+  @ParameterizedTest
+  @ValueSource(strings = {DOMAIN, CLUSTER})
+  void whenNoCRD_logReasonForFailure(String resourceType) {
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
-    simulateMissingCRD();
+    simulateMissingCRD(resourceType);
 
     recheckCRD();
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
 
-  @Test
-  void afterLoggedCRDMissing_dontDoItASecondTime() {
+  @ParameterizedTest
+  @ValueSource(strings = {DOMAIN, CLUSTER})
+  void afterLoggedCRDMissing_dontDoItASecondTime(String resourceType) {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WAIT_FOR_CRD_INSTALLATION);
-    simulateMissingCRD();
+    simulateMissingCRD(resourceType);
     recheckCRD();
     logRecords.clear();
 
@@ -258,15 +271,16 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(logRecords, not(containsSevere(WAIT_FOR_CRD_INSTALLATION)));
   }
 
-  @Test
-  void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure() {
-    simulateMissingCRD();
+  @ParameterizedTest
+  @ValueSource(strings = {DOMAIN, CLUSTER})
+  void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure(String resourceType) {
+    simulateMissingCRD(resourceType);
     recheckCRD();
     testSupport.cancelFailures();
     recheckCRD();
 
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
-    simulateMissingCRD();
+    simulateMissingCRD(resourceType);
     recheckCRD();
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
@@ -295,6 +309,23 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
     assertThat(getServicePort(generatedConfiguration), equalTo(CONVERSION_WEBHOOK_HTTPS_PORT));
     assertThat(getServicePath(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_PATH));
+  }
+
+  @Test
+  void afterWebhookCreated_domainAndClusterCrdsExist() {
+    testSupport.runSteps(main.createStartupSteps());
+    logRecords.clear();
+
+    assertThat(getCreatedCrdNames(), containsInAnyOrder(DOMAIN_CRD_NAME, CLUSTER_CRD_NAME));
+  }
+
+  @Nonnull
+  private List<String> getCreatedCrdNames() {
+    return testSupport.<V1CustomResourceDefinition>getResources(CUSTOM_RESOURCE_DEFINITION).stream()
+        .map(V1CustomResourceDefinition::getMetadata)
+        .filter(Objects::nonNull)
+        .map(V1ObjectMeta::getName)
+        .collect(Collectors.toList());
   }
 
   @Test
@@ -394,7 +425,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
+  void whenValidatingWebhookCreatedAfterFailure504_logStartupFailedMessage() {
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());

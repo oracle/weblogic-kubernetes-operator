@@ -74,6 +74,9 @@ class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
     V1Service service = createService();
 
+    assertThat(service, containsPort("metrics", "http", 300));
+  }
+
     assertThat(service, containsPort("metrics", 300));
   }
 

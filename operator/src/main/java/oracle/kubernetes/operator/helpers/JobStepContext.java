@@ -309,6 +309,7 @@ public class JobStepContext extends BasePodStepContext {
         new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, getIntrospectVersionLabel())
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
@@ -644,6 +645,10 @@ public class JobStepContext extends BasePodStepContext {
 
   private String getAsServiceName() {
     return LegalNames.toServerServiceName(getDomainUid(), getAsName());
+  }
+
+  private String getIntrospectVersionLabel() {
+    return Optional.ofNullable(getDomain().getIntrospectVersion()).orElse(null);
   }
 
   @Override

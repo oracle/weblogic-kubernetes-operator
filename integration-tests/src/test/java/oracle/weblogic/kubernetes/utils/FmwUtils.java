@@ -25,7 +25,7 @@ import oracle.weblogic.domain.Opss;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -235,7 +235,7 @@ public class FmwUtils {
             .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domNamespace))

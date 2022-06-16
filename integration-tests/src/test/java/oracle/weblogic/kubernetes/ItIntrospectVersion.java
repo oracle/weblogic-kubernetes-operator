@@ -56,13 +56,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -719,12 +720,16 @@ class ItIntrospectVersion {
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
+    logger.info("DOMAIN_IMAGES_REPO {0}", DOMAIN_IMAGES_REPO);
+    logger.info("WEBLOGIC_IMAGE_NAME {0}", WEBLOGIC_IMAGE_NAME);
 
+    String kindWlsImage = KIND_REPO + WEBLOGIC_IMAGE_NAME_DEFAULT;
+    String testWlsImage = TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT; 
     //change image name to imageUpdate
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
-    String imageUpdate = KIND_REPO != null ? KIND_REPO
-        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : OCIR_REGISTRY + "/" + OCIR_WEBLOGIC_IMAGE_NAME + ":" + imageTag;
+    String imageUpdate = KIND_REPO != null 
+         ? (kindWlsImage + ":" + imageTag)
+         : (testWlsImage + ":" + imageTag);
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
@@ -846,7 +851,7 @@ class ItIntrospectVersion {
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
    * The usecase update the introspectVersion by passing differnt value to -i
-   * option (non-numeic, non-numeric with space, no value) and make sure that
+   * option (non-numeic, non-numeric with underscore and dash, no value) and make sure that
    * the introspectVersion is updated accrodingly in both domain sepc level
    * and server pod level.
    * It also verifies the intospector job is started/stoped and none of the
@@ -909,8 +914,8 @@ class ItIntrospectVersion {
     verifyIntrospectVersionLabelInPod();
 
     // use introspectDomain.sh to initiate introspection
-    logger.info("Initiate introspection with non numeric string with space");
-    introspectVersion = "My Version";
+    logger.info("Initiate introspection with non numeric string with underscore and dash");
+    introspectVersion = "My_Version-1";
     String extraParam2 = " -i " + "\"" + introspectVersion + "\"";
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam2),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));

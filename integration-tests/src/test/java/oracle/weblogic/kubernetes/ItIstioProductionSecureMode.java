@@ -33,15 +33,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
@@ -103,10 +103,10 @@ class ItIstioProductionSecureMode {
    * Deploy istio gateways and virtual service.
    *
    * Verify server pods are in ready state and services are created.
-   * To verify istio ingress we need to update /etc/hosts files of the host 
-   * to include k8s cluster IP address. This cannot be verified in automated 
+   * To verify istio ingress we need to update /etc/hosts files of the host
+   * to include k8s cluster IP address. This cannot be verified in automated
    * jenkin. So this usecase only verifies that all WebLogic servers comes up
-   * in a productionmode secured environment when istio is enabled. 
+   * in a productionmode secured environment when istio is enabled.
    * https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/
    */
   @Test
@@ -115,7 +115,7 @@ class ItIstioProductionSecureMode {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -138,24 +138,24 @@ class ItIstioProductionSecureMode {
                     String.format("createSecret failed for %s", encryptionSecretName));
 
     String yamlString = "topology:\n"
-        + "  SecurityConfiguration: \n" 
+        + "  SecurityConfiguration: \n"
         + "    SecureMode: \n"
         + "         SecureModeEnabled: true \n"
-        + "  ServerTemplate: \n" 
+        + "  ServerTemplate: \n"
         + "    \"cluster-1-template\": \n"
         + "       ListenPort: '7001' \n"
         + "       SSL: \n"
         + "         Enabled: true \n"
         + "         ListenPort: '7002' \n";
 
-    // create WDT config map with SSL/SecureMode Configuration 
+    // create WDT config map with SSL/SecureMode Configuration
     createModelConfigMap(configMapName, yamlString, domainUid);
 
     // create the domain object
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
-                                      OCIR_SECRET_NAME,
+                                      TEST_IMAGES_REPO_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -186,9 +186,9 @@ class ItIstioProductionSecureMode {
     Path targetHttpFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-    
+
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
@@ -205,9 +205,9 @@ class ItIstioProductionSecureMode {
 
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace, 
-           String adminSecretName, String repoSecretName, 
-           String encryptionSecretName, int replicaCount, 
+  private Domain createDomainResource(String domainUid, String domNamespace,
+           String adminSecretName, String repoSecretName,
+           String encryptionSecretName, int replicaCount,
            String miiImage, String configmapName) {
 
     // create the domain CR
@@ -254,7 +254,7 @@ class ItIstioProductionSecureMode {
     return domain;
   }
 
-  // create a ConfigMap with a model that enable SSL/SecureMode 
+  // create a ConfigMap with a model that enable SSL/SecureMode
   private static void createModelConfigMap(String configMapName, String model, String domainUid) {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);

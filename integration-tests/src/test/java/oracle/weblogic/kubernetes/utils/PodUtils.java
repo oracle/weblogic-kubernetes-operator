@@ -24,9 +24,12 @@ import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.impl.Pod.isPodEvictedStatusLoggedInOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -391,5 +394,26 @@ public class PodUtils {
     }
 
     return introspectorLog.contains(errormsg);
+  }
+
+  /**
+   * Check if pod Evicted status is logged in Operator log.
+   *
+   * @param opNamespace in which the pod is running
+   * @param regex the regular expression to which this string is to be matched
+   * @return true if pod Evicted status is logged in Operator log, otherwise false
+   */
+  public static Callable<Boolean> checkPodEvictedStatusInOperatorLogs(String opNamespace, String regex) {
+    return () -> {
+      String operatorPodName =
+          assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+          "Can't get operator's pod name");
+
+      String operatorLog =
+          assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace, OPERATOR_RELEASE_NAME),
+          "Can't get operator log");
+
+      return isPodEvictedStatusLoggedInOperator(operatorLog, regex);
+    };
   }
 }

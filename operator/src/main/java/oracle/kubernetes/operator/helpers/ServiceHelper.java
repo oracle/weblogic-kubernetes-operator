@@ -483,6 +483,7 @@ public class ServiceHelper {
           .name(LegalNames.toDns1123LegalName(portName))
           .appProtocol(appProtocol)
           .port(port)
+          .appProtocol(appProtocol)
           .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 

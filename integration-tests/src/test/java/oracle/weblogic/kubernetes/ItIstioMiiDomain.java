@@ -39,7 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -62,7 +62,7 @@ import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRe
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
@@ -91,7 +91,7 @@ class ItIstioMiiDomain {
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final String workManagerName = "newWM";
   private final int replicaCount = 2;
-  
+
   private static LoggingFacade logger = null;
 
   /**
@@ -130,10 +130,10 @@ class ItIstioMiiDomain {
    * Verify server pods are in ready state and services are created.
    * Verify WebLogic console is accessible thru istio ingress port.
    * Verify WebLogic console is accessible thru kubectl forwarded port.
-   * Deploy a web application thru istio http ingress port using REST api.  
+   * Deploy a web application thru istio http ingress port using REST api.
    * Access web application thru istio http ingress port using curl.
-   * 
-   * Create a configmap with a sparse model file to add a new workmanager 
+   *
+   * Create a configmap with a sparse model file to add a new workmanager
    * with custom min threads constraint and a max threads constraint
    * Patch the domain resource with the configmap.
    * Update the introspect version of the domain resource.
@@ -149,7 +149,7 @@ class ItIstioMiiDomain {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -177,7 +177,7 @@ class ItIstioMiiDomain {
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
-                                      OCIR_SECRET_NAME,
+                                      TEST_IMAGES_REPO_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -208,9 +208,9 @@ class ItIstioMiiDomain {
     Path targetHttpFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-    
+
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
@@ -225,22 +225,22 @@ class ItIstioMiiDomain {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    // We can not verify Rest Management console thru Adminstration NodePort 
+    // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
       String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = 
+      boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
-      String forwardPort = 
-           startPortForwardProcess(localhost, domainNamespace, 
+      String forwardPort =
+           startPortForwardProcess(localhost, domainNamespace,
            domainUid, 7001);
       assertNotNull(forwardPort, "port-forward command fails to assign local port");
       logger.info("Forwarded local port is {0}", forwardPort);
       consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole = 
+      checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
       logger.info("WebLogic console is accessible thru port forwarding");
@@ -254,7 +254,7 @@ class ItIstioMiiDomain {
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
           + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
-          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?" 
+          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
       ExecResult result = null;
@@ -264,7 +264,7 @@ class ItIstioMiiDomain {
 
       if (result.exitValue() == 0) {
         logger.info("curl command returned {0}", result.toString());
-        assertTrue(result.stdout().contains("SecurityValidationWarnings"), 
+        assertTrue(result.stdout().contains("SecurityValidationWarnings"),
                 "Could not access the Security Warning Tool page");
         assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
         logger.info("No minimum umask warning reported");
@@ -274,13 +274,13 @@ class ItIstioMiiDomain {
     } else {
       logger.info("Skipping Security warning check, since Security Warning tool "
             + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
-    } 
+    }
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
+    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, domainNamespace + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
@@ -311,7 +311,7 @@ class ItIstioMiiDomain {
 
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
-    String wmRuntimeUrl  = "http://" + K8S_NODEPORT_HOST + ":"  
+    String wmRuntimeUrl  = "http://" + K8S_NODEPORT_HOST + ":"
            + istioIngressPort + "/management/weblogic/latest/domainRuntime"
            + "/serverRuntimes/managed-server1/applicationRuntimes"
            + "/testwebapp/workManagerRuntimes/newWM/"
@@ -326,9 +326,9 @@ class ItIstioMiiDomain {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace, 
-           String adminSecretName, String repoSecretName, 
-           String encryptionSecretName, int replicaCount, 
+  private Domain createDomainResource(String domainUid, String domNamespace,
+           String adminSecretName, String repoSecretName,
+           String encryptionSecretName, int replicaCount,
            String miiImage, String configmapName) {
 
     // create the domain CR

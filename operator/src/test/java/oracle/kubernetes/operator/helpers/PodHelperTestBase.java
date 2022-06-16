@@ -575,6 +575,29 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(metricsPort.getContainerPort(), equalTo(300));
   }
 
+  @Test
+  void afterUpgradeIstioMonitoringExporterPod_dontReplacePod() {
+    useProductionHash();
+    defineExporterConfiguration().withIstio();
+
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    // Surprisingly, verifyPodPatched() is the correct assertion -- because the logic to adjust the recipe and
+    // generate hashes for pre-existing pods works correctly, the existing pod will not be replaced; however,
+    // it will be patched to update the weblogic.operatorVersion label and the annotation with the hash.
+    verifyPodPatched();
+  }
+
+  @Test
+  void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
+    defineExporterConfiguration().withIstio();
+
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
+    assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
+
   private V1ContainerPort getExporterContainerPort(@Nonnull String name) {
     return Optional.ofNullable(getExporterContainer().getPorts()).orElse(Collections.emptyList()).stream()
           .filter(p -> name.equals(p.getName())).findFirst().orElse(null);
@@ -723,6 +746,39 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
+
+  abstract String getReferenceIstioMonitoringExporterTcpProtocol();
+
+  @Test
+  void afterUpgradingPlainPortPodFrom30_patchIt() {
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_0()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWith3_3_AuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiAuxImagePodYaml_3_3()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
 
   private V1Container createInitContainer() {
     return new V1Container().name("compatibility-mode-operator-aux-container1").image("model-in-image:WLS-AI-v1")

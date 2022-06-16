@@ -117,7 +117,7 @@ public class AdminService implements ServiceConfigurator {
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(DomainResource.sortOrNull(channels))
+        .append(DomainResource.sortList(channels))
         .append(labels)
         .append(annotations)
         .toHashCode();
@@ -133,7 +133,7 @@ public class AdminService implements ServiceConfigurator {
     }
     AdminService as = (AdminService) o;
     return new EqualsBuilder()
-        .append(DomainResource.sortOrNull(channels), DomainResource.sortOrNull(as.channels))
+        .append(DomainResource.sortList(channels), DomainResource.sortList(as.channels))
         .append(labels, as.labels)
         .append(annotations, as.annotations)
         .isEquals();

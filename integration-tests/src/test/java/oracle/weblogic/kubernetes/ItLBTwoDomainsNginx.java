@@ -38,7 +38,7 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleD
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyAdminServerAccess;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLoadbalancing;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyHeadersInAdminServerLog;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithTLSCertKey;
@@ -105,7 +105,7 @@ class ItLBTwoDomainsNginx {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
       domainUids.add("wls-nginx-domain-" + i);

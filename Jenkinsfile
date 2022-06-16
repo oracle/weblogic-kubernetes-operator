@@ -35,6 +35,18 @@ def kind_k8s_map = [
         '1.21':    'kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e',
         '1.20.15': 'kindest/node:v1.20.15@sha256:a6ce604504db064c5e25921c6c0fffea64507109a1f2a512b1b562ac37d652f3',
         '1.20':    'kindest/node:v1.20.15@sha256:a6ce604504db064c5e25921c6c0fffea64507109a1f2a512b1b562ac37d652f3'
+    ],
+    '0.14.0': [
+        '1.24.0':  'kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e',
+        '1.24':    'kindest/node:v1.24.0@sha256:0866296e693efe1fed79d5e6c7af8df71fc73ae45e3679af05342239cdc5bc8e',
+        '1.23.6':  'kindest/node:v1.23.6@sha256:b1fa224cc6c7ff32455e0b1fd9cbfd3d3bc87ecaa8fcb06961ed1afb3db0f9ae',
+        '1.23':    'kindest/node:v1.23.6@sha256:b1fa224cc6c7ff32455e0b1fd9cbfd3d3bc87ecaa8fcb06961ed1afb3db0f9ae',
+        '1.22.9':  'kindest/node:v1.22.9@sha256:8135260b959dfe320206eb36b3aeda9cffcb262f4b44cda6b33f7bb73f453105',
+        '1.22':    'kindest/node:v1.22.9@sha256:8135260b959dfe320206eb36b3aeda9cffcb262f4b44cda6b33f7bb73f453105',
+        '1.21.12': 'kindest/node:v1.21.12@sha256:f316b33dd88f8196379f38feb80545ef3ed44d9197dca1bfd48bcb1583210207',
+        '1.21':    'kindest/node:v1.21.12@sha256:f316b33dd88f8196379f38feb80545ef3ed44d9197dca1bfd48bcb1583210207',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:6f2d011dffe182bad80b85f6c00e8ca9d86b5b8922cdf433d53575c4c5212248',
+        '1.20':    'kindest/node:v1.20.15@sha256:6f2d011dffe182bad80b85f6c00e8ca9d86b5b8922cdf433d53575c4c5212248'
     ]
 ]
 def _kind_image = null
@@ -99,13 +111,14 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                   '0.14.0',
                    '0.13.0',
                    '0.12.0',
                    '0.11.1'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
                     '1.21.12',
@@ -163,7 +176,7 @@ pipeline {
                description: 'URL to download WIT.',
                defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
         )
-        string(name: 'REPO_REGISTRY',
+        string(name: 'TEST_IMAGES_REPO',
                description: '',
                defaultValue: 'phx.ocir.io'
         )
@@ -172,7 +185,7 @@ pipeline {
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
-               description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
+               description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
                defaultValue: 'weblogick8s/test-images/weblogic'
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
@@ -180,7 +193,7 @@ pipeline {
                defaultValue: '12.2.1.4'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
-               description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
+               description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
                defaultValue: 'weblogick8s/test-images/fmw-infrastructure'
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
@@ -188,7 +201,7 @@ pipeline {
                defaultValue: '12.2.1.4'
         )
         string(name: 'DB_IMAGE_NAME',
-               description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
+               description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
                defaultValue: 'weblogick8s/test-images/database/enterprise'
         )
         string(name: 'DB_IMAGE_TAG',
@@ -487,13 +500,13 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        OCR_USERNAME = credentials("${ocr_username_creds}")
-                        OCR_PASSWORD = credentials("${ocr_password_creds}")
-                        OCR_EMAIL = credentials("${ocr_username_creds}")
-                        OCIR_REGISTRY = credentials("${ocir_registry_creds}")
-                        OCIR_USERNAME = credentials("${ocir_username_creds}")
-                        OCIR_PASSWORD = credentials("${ocir_password_creds}")
-                        OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
+                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
                         sh '''
@@ -520,7 +533,7 @@ EOF
                             echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
@@ -536,12 +549,9 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
 
-                            export OCR_USERNAME=${OCR_USERNAME}
-                            export OCR_PASSWORD=${OCR_PASSWORD}
-                            export OCR_EMAIL=${OCR_EMAIL}
-                            export OCIR_USERNAME=${OCIR_USERNAME}
-                            export OCIR_PASSWORD=${OCIR_PASSWORD}
-                            export OCIR_EMAIL=$OCIR_EMAIL}
+                            export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
+                            export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
+                            export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
 
                             if [ ! -z "${http_proxy}" ]; then
                                 export http_proxy

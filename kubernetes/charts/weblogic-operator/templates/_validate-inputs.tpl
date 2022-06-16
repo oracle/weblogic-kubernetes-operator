@@ -47,10 +47,10 @@
 {{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
 {{-   end -}}
 {{-   if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
+{{-     $ignore := include "utils.verifyOptionalString" (list $scope "domainNamespaceLabelSelector") -}}
 {{-   end -}}
 {{-   if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
-{{-     $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{-     $ignore := include "utils.verifyOptionalString" (list $scope "domainNamespaceRegExp") -}}
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
