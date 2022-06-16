@@ -39,10 +39,6 @@ public class GsonBuilderUtils {
     return getGsonBuilder().fromJson(resourceName, DomainResource.class);
   }
 
-  public static String writeDomain(DomainResource domain) {
-    return getGsonBuilder().toJson(domain,DomainResource.class);
-  }
-
   public static Map<String, Object> writeDomainToMap(DomainResource domain) {
     return readMap(getGsonBuilder().toJson(domain, DomainResource.class));
   }
