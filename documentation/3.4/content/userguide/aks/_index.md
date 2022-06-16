@@ -296,7 +296,7 @@ Click **Create** to create this offer. This process may take 30 to 60 minutes.
 
 ##### Store the TLS/SSL certificate in the Key Vault 
 
-1. Base 64 encoded the certifcate file; omit the `-w0` for macOS: 
+1. Base 64 encode the certifcate file; omit the `-w0` for macOS: 
 
     ```bash
     base64 myIdentity.jks -w0 >mycert.txt
