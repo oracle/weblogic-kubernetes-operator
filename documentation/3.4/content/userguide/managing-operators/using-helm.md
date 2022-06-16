@@ -22,6 +22,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`labels`](#labels)
     - [`nodeSelector`](#nodeselector)
     - [`affinity`](#affinity)
+    - [`runAsUser`](#runasuser)
   - [WebLogic domain management](#weblogic-domain-management)
     - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
     - [`domainNamespaces`](#domainnamespaces)
@@ -286,6 +287,14 @@ affinity:
           operator: In
           values:
           - another-node-label-value
+```
+
+##### `runAsUser`
+Specifies the UID to run the operator container process. If not specified, it defaults to the user specified in the operator's container image.
+
+Example:
+```yaml
+runAsUser: 1000
 ```
 
 #### WebLogic domain management
