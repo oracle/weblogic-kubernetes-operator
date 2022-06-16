@@ -181,8 +181,8 @@ public class ServiceHelper {
 
   static String getAppProtocol(String protocol) {
     List<String> httpProtocols = new ArrayList<>(Arrays.asList("http"));
-    List<String> httpsProtocols = new ArrayList<>(Arrays.asList("https", "admin"));
-    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips"));
+    List<String> httpsProtocols = new ArrayList<>(Arrays.asList("https"));
+    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", "admin"));
 
     String appProtocol = "tcp";
     if (httpProtocols.contains(protocol)) {
@@ -348,7 +348,7 @@ public class ServiceHelper {
       }
       addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       if (isSipProtocol(protocol)) {
-        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
+        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port, getAppProtocol(protocol)));
       }
     }
 
@@ -425,9 +425,9 @@ public class ServiceHelper {
         addNapServicePort(ports, networkAccessPoint);
       }
 
-      addServicePortIfNeeded(ports, "default", serverConfig.getListenPort());
-      addServicePortIfNeeded(ports, "default-secure", serverConfig.getSslListenPort());
-      addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
+      addServicePortIfNeeded(ports, "default", "tcp", serverConfig.getListenPort());
+      addServicePortIfNeeded(ports, "default-secure", "https", serverConfig.getSslListenPort());
+      addServicePortIfNeeded(ports, "default-admin", "admin", serverConfig.getAdminPort());
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
@@ -487,7 +487,7 @@ public class ServiceHelper {
           .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 
-    V1ServicePort createSipUdpServicePort(String portName, Integer port) {
+    V1ServicePort createSipUdpServicePort(String portName, Integer port, String appProtocol) {
       //      if (isIstioEnabled()) {
       //        // The introspector will have already prefixed the portName with either "tcp-" or "tls-".
       //        Remove the prefix.
@@ -496,6 +496,7 @@ public class ServiceHelper {
 
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
+          .appProtocol(appProtocol)
           .port(port)
           .protocol(V1ServicePort.ProtocolEnum.UDP);
     }
@@ -808,7 +809,7 @@ public class ServiceHelper {
         addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       }
       if (isSipProtocol(protocol)) {
-        V1ServicePort udpPort = createSipUdpServicePort(portName, port);
+        V1ServicePort udpPort = createSipUdpServicePort(portName, port, getAppProtocol(protocol));
         addServicePortIfNeeded(ports, udpPort);
       }
     }

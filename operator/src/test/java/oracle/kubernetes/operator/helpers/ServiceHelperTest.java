@@ -331,7 +331,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     V1Service model = createService();
 
     for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet()) {
-      assertThat(model, containsPort(entry.getKey(), getExpectedProtocol(entry.getKey()), entry.getValue()));
+      assertThat(model, containsPort(entry.getKey(), getExpectedProtocol(entry.getKey()),
+          getExpectedAppProtocol(entry.getKey()), entry.getValue()));
     }
   }
 
@@ -339,13 +340,24 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return portName.startsWith("udp-") ? V1ServicePort.ProtocolEnum.UDP : V1ServicePort.ProtocolEnum.TCP;
   }
 
+  private String getExpectedAppProtocol(String portName) {
+    if (portName.equals("udp-sip-secure") || portName.equals("default-admin") || portName.equals("sip-secure")) {
+      return "tls";
+    } else {
+      return "tcp";
+    }
+  }
+
   @Test
   void whenCreated_modelIncludesStandardListenPorts() {
     V1Service model = createService();
 
-    assertThat(model, containsPort("default", testFacade.getExpectedListenPort()));
-    assertThat(model, containsPort("default-secure", testFacade.getExpectedSslListenPort()));
-    assertThat(model, containsPort("default-admin", testFacade.getExpectedAdminPort()));
+    assertThat(model, containsPort("default", "tcp",
+        testFacade.getExpectedListenPort()));
+    assertThat(model, containsPort("default-secure", "https",
+        testFacade.getExpectedSslListenPort()));
+    assertThat(model, containsPort("default-admin", "tls",
+        testFacade.getExpectedAdminPort()));
   }
 
   @Test
@@ -837,6 +849,12 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     static PortMatcher containsPort(@Nonnull String expectedName,
                                     @Nonnull V1ServicePort.ProtocolEnum expectedProtocol, Integer expectedValue) {
       return new PortMatcher(expectedName, expectedProtocol, expectedValue);
+    }
+
+    static PortMatcher containsPort(@Nonnull String expectedName,
+                                    @Nonnull V1ServicePort.ProtocolEnum expectedProtocol,
+                                    @Nonnull String expectedAppProtocol,Integer expectedValue) {
+      return new PortMatcher(expectedName, expectedProtocol, expectedAppProtocol, expectedValue);
     }
 
     static PortMatcher containsPort(@Nonnull String expectedName,

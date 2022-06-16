@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
@@ -486,7 +486,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private void addLegacyPrometheusAnnotationsFrom31(V1Pod pod) {
+  private void addLegacyPrometheusAnnotationsFrom31(V1Pod pod, V1Pod currentPod) {
     AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
   }
 
@@ -1131,9 +1131,10 @@ public abstract class PodStepContext extends BasePodStepContext {
       setLabel(toPod, key, getLabel(fromPod, key));
     }
 
-    private String adjustedHash(V1Pod currentPod, Consumer<V1Pod> prometheusAdjustment) {
+
+    private String adjustedHash(V1Pod currentPod, BiConsumer<V1Pod, V1Pod> prometheusAdjustment) {
       V1Pod recipe = createPodRecipe();
-      prometheusAdjustment.accept(recipe);
+      prometheusAdjustment.accept(recipe, currentPod);
 
       if (isLegacyMiiPod(currentPod)) {
         copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
@@ -1142,7 +1143,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       return AnnotationHelper.createHash(recipe);
     }
 
-    private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod) {
+    private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod, V1Pod currentPod) {
       AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
     }
 
@@ -1182,7 +1183,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
     }
 
-    private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
+    private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod, V1Pod currentPod) {
       V1PodSpec podSpec = pod.getSpec();
       List<V1Container> convertedInitContainers = new ArrayList<>();
       Optional.ofNullable(podSpec.getInitContainers())
@@ -1201,11 +1202,55 @@ public abstract class PodStepContext extends BasePodStepContext {
       pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
     }
 
-    private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod pod) {
+    private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod pod, V1Pod currentPod) {
       V1PodSpec podSpec = pod.getSpec();
       podSpec.getContainers().stream().filter(c -> "monitoring-exporter".equals(c.getName()))
           .findFirst().flatMap(c -> c.getPorts().stream().filter(p -> "metrics".equals(p.getName()))
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
+      restoreLegacyIstioPortsConfig(pod, currentPod);
+    }
+
+    private void restoreLegacyIstioPortsConfig(V1Pod recipePod, V1Pod currentPod) {
+      V1PodSpec recipePodSpec = recipePod.getSpec();
+
+      V1Container weblogicContainer = currentPod.getSpec().getContainers().stream()
+          .filter(c -> "weblogic-server".equals(c.getName()))
+          .findFirst().get();
+
+      V1Container recipeContainer = recipePodSpec.getContainers().stream()
+          .filter(c -> "weblogic-server".equals(c.getName()))
+          .findFirst().get();
+
+      // reset the readiness port since new recipe no longer use the istio.readinessProbe
+
+      V1Probe currentProbe = weblogicContainer.getReadinessProbe();
+      recipeContainer.setReadinessProbe(currentProbe);
+
+      // reconcile the container ports.
+      // We added default, default-secure, default-admin channel in recipe pod container ports, need to be removed
+      //
+      // reconcile all the legacy istio container ports,  they need to added back if it is in currentPod
+
+      List<String> defaultPortNames = new ArrayList<>(List.of("default", "default-secure", "default-admin"));
+      List<String> legacyIstiotPortNames = new ArrayList<>(List.of("tcp-default", "tcp-ldap", "http-default",
+            "tcp-snmp", "tcp-iiop", "tcp-cbt", "https-secure", "tls-ldaps", "tls-default", "tls-cbts", "tls-iiops",
+            "https-admin", "http-probe", "http-probe-ext"));
+
+      List<V1ContainerPort>  currentContainerPorts = weblogicContainer.getPorts();
+      List<V1ContainerPort> recipePorts = recipeContainer.getPorts();
+
+      for (String portName : defaultPortNames) {
+        Optional<V1ContainerPort> delPort = recipePorts.stream().filter(p -> p.getName().equals(portName)).findFirst();
+        if (!delPort.isEmpty()) {
+          recipePorts.remove(delPort.get());
+        }
+      }
+
+      for (V1ContainerPort istioPort : currentContainerPorts) {
+        if (legacyIstiotPortNames.contains(istioPort.getName())) {
+          recipePorts.add(istioPort);
+        }
+      }
     }
 
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
@@ -1214,6 +1259,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
+      String podmodelYaml = Yaml.dump(getPodModel());
       return (isLegacyPod(currentPod)
               && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
           || (isPodFromRecentOperatorMajorVersion3(currentPod)
