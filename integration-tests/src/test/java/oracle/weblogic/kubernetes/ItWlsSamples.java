@@ -608,6 +608,13 @@ class ItWlsSamples {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
             "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
       }
+      if (OKE_CLUSTER) {
+        String chownCommand = "chown 1000:0 %DOMAIN_ROOT_DIR%"
+                + "/. && find %DOMAIN_ROOT_DIR%"
+                + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-job-template.yaml").toString(),
+                "chown -R 1000:0 %DOMAIN_ROOT_DIR%", chownCommand);
+      }
     });
   }
 
