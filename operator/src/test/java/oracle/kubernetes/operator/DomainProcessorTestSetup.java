@@ -20,7 +20,7 @@ import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
  * should run this in their setup, before trying to create and execute 
- * a {@link DomainProcessorImpl.MakeRightDomainOperationImpl}.
+ * a {@link MakeRightDomainOperationImpl}.
  */
 public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
