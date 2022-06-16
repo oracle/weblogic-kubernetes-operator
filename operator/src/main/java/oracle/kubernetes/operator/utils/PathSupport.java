@@ -30,8 +30,4 @@ public class PathSupport {
     return stringToPath.apply(file.getPath());
   }
 
-  public static Path getPath(String pathString) {
-    return stringToPath.apply(pathString);
-  }
-
 }
