@@ -13,7 +13,7 @@ spec:
   webLogicCredentialsSecret:
     name: sample-domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: IF_NEEDED
+  serverStartPolicy: IfNeeded
   serverPod:
     env:
     - name: CUSTOM_DOMAIN_NAME

@@ -196,11 +196,11 @@ e. The operator will now initiate a rolling restart, which will apply the update
 #### Avoiding a rolling restart when changing the image field on a Domain
 If you've created a new image that is not rolling-compatible, and you've changed the image name, then:
 
-1. Bring the domain down (stopping all the server pods) by setting the `serverStartPolicy` to `NEVER`. See [Shut down all the servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#shut-down-all-the-servers">}}).
+1. Bring the domain down (stopping all the server pods) by setting the `serverStartPolicy` to `Never`. See [Shut down all the servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#shut-down-all-the-servers">}}).
 
 2. Update the `image` property with a new image name.
 
-3. Start up the domain (starting all the server pods) by setting the `serverStartPolicy` to `IF_NEEDED`.
+3. Start up the domain (starting all the server pods) by setting the `serverStartPolicy` to `IfNeeded`.
 
 #### Other considerations for restarting a domain
 
@@ -215,11 +215,11 @@ If you've created a new image that is not rolling-compatible, and you've changed
 
     Alternatively, if you know that your set of changes are not rolling-compatible, then you must avoiding a rolling restart by:
 
-     1. Bringing the domain down (stopping all the server pods) by setting the `serverStartPolicy` to `NEVER`. See [Shut down all the servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#shut-down-all-the-servers">}}).
+     1. Bringing the domain down (stopping all the server pods) by setting the `serverStartPolicy` to `Never`. See [Shut down all the servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#shut-down-all-the-servers">}}).
 
      2. Make all your changes to the Oracle WebLogic Server in Kubernetes environment.
 
-     3. Starting up the domain (starting all the server pods) by setting the `serverStartPolicy` to `IF_NEEDED`.
+     3. Starting up the domain (starting all the server pods) by setting the `serverStartPolicy` to `IfNeeded`.
 
 * **Changes that require domain knowledge**.
 

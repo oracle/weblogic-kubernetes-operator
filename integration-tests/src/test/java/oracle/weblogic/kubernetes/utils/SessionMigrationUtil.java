@@ -41,7 +41,7 @@ public class SessionMigrationUtil {
 
   /**
    * Patch domain to shutdown a WebLogic server by changing the value of
-   * server's serverStartPolicy property to NEVER.
+   * server's serverStartPolicy property to Never.
    *
    * @param domainUid unique domain identifier
    * @param domainNamespace namespace in which the domain will be created
@@ -59,7 +59,7 @@ public class SessionMigrationUtil {
         shutdownManagedServerUsingServerStartPolicy(domainUid, domainNamespace, serverName));
     assertTrue(serverStopped, String.format("Failed to shutdown server %s ", serverName));
 
-    // check that the managed server pod shutdown successfylly
+    // check that the managed server pod shutdown successfully
     logger.info("Check that managed server pod {0} stopped in namespace {1}", podName, domainNamespace);
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
   }

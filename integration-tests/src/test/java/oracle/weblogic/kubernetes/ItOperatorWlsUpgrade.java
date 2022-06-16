@@ -667,14 +667,14 @@ class ItOperatorWlsUpgrade {
   private void restartDomain(String domainUid, String domainNamespace) {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "NEVER"),
-         "Failed to patch Domain's serverStartPolicy to NEVER");
+         "/spec/serverStartPolicy", "Never"),
+         "Failed to patch Domain's serverStartPolicy to Never");
     logger.info("Domain is patched to shutdown");
     checkDomainStopped(domainUid, domainNamespace);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "IF_NEEDED"),
-         "Failed to patch Domain's serverStartPolicy to IF_NEEDED");
+         "/spec/serverStartPolicy", "IfNeeded"),
+         "Failed to patch Domain's serverStartPolicy to IfNeeded");
     logger.info("Domain is patched to re start");
     checkDomainStarted(domainUid, domainNamespace);
   }
@@ -714,7 +714,7 @@ class ItOperatorWlsUpgrade {
                             .name(adminSecretName)
                             .namespace(domainNamespace))
                     .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
+                    .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")

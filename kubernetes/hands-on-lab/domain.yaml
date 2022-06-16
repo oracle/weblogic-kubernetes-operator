@@ -28,7 +28,7 @@ spec:
   image: "iad.ocir.io/weblogick8s/weblogic-operator-tutorial-store:1.0"
 
   # imagePullPolicy defaults to "Always" if image version is :latest
-  imagePullPolicy: "Always"
+  imagePullPolicy: Always
 
   # If credentials are needed to pull the image, uncomment this section and identify which
   # Secret contains the credentials for pulling an image:
@@ -51,12 +51,12 @@ spec:
   # and introspector .out files. Default is /shared/logs/<domainUID>. See also logHomeEnabled.
   # logHome: /shared/logs/domain1
 
-  # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+  # serverStartPolicy legal values are "Never", "IfNeeded", or "AdminOnly"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "NEVER" will not start any server in the domain
-  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-  # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
-  serverStartPolicy: "IF_NEEDED"
+  # - "Never" will not start any server in the domain
+  # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+  # - "IfNeeded" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: IfNeeded
 #  restartVersion: "applicationV2"
   serverPod:
     # an (optional) list of environment variable to be set on the servers

@@ -8,6 +8,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import jakarta.validation.Valid;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -20,6 +21,7 @@ public class Model {
   public static final String DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH = "/aux";
 
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
+  @Default(strDefault = "WLS")
   private ModelInImageDomainType domainType;
 
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
