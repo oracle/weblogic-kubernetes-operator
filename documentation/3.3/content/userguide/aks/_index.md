@@ -144,12 +144,12 @@ If you want to use keystores that are stored in Azure Key Vault, select **Use Ke
 |-------|-------------|
 | Resource group name in current subscription containing the Key Vault | Enter the name of the Resource Group containing the Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination. |
 | Name of the Azure Key Vault containing secrets for the TLS/SSL certificate | Enter the name of the Azure Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination. |
-| The name of the secret in the specified Key Vault whose value is the Identity KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the identity keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the Identity KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the identity keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
 | The name of the secret in the specified Key Vault whose value is the passphrase for the Identity KeyStore |  Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the identity keystore. |
 | The Identity KeyStore type (JKS,PKCS12) | Select the type of custom identity keystore. The supported values are JKS and PKCS12. |
 | The name of the secret in the specified Key Vault whose value is the Private Key Alias | Enter the name of the Azure Key Vault secret that holds the value of the private key alias. |
 | The name of the secret in the specified Key Vault whose value is the passphrase for the Private Key | Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the private key. |
-| The name of the secret in the specified Key Vault whose value is the Trust KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the trust keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the Trust KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the trust keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
 | The name of the secret in the specified Key Vault whose value is the passphrase for the Trust KeyStore | Enter the name of the Azure Key Vault secret that holds the value of the the passphrase for the trust keystore. |
 | The Trust KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
 
@@ -203,9 +203,9 @@ You must select one of the following three options, each described in turn.
 |-------|-------------|
 | Resource group name in current subscription containing the KeyVault | Enter the name of the Resource Group containing the Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
 | Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination | Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
-| The name of the secret in the specified Key Vault whose value is the front-end TLS/SSL certificate data | Enter the name of the Azure Key Vault secret that holds the value of the Application Gateway front-end SSL certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the front-end TLS/SSL certificate data | Enter the name of the Azure Key Vault secret that holds the value of the Application Gateway front-end SSL certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
 | The name of the secret in the specified Key Vault whose value is the password for the front-end TLS/SSL certificate | Enter the name of the Azure Key Vault secret that holds the value of the password for the application gateway front-end SSL certificate. |
-| The name of the secret in the specified Key Vault whose value is the trusted root certificate data | A trusted root certificate is required to allow back-end instances in the application gateway. Enter the name of the Azure Key Vault secret that holds the value of the application gateway trusted root certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the trusted root certificate data | A trusted root certificate is required to allow back-end instances in the application gateway. Enter the name of the Azure Key Vault secret that holds the value of the application gateway trusted root certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
 | Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Generate a self-signed frontend certificate**
@@ -290,8 +290,9 @@ If you want to use this template to automate the deployment, download it by sele
 
 Click **Create** to create this offer. This process may take 30 to 60 minutes.
 
-
 #### Useful resources
+
+Review the following useful resources.
 
 ##### Store the TLS/SSL certificate in the Key Vault 
 
