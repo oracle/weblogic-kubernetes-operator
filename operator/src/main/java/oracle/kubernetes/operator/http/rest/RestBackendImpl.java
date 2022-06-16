@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
 import oracle.kubernetes.operator.http.rest.model.DomainAction;
 import oracle.kubernetes.operator.http.rest.model.DomainActionType;
@@ -308,7 +309,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void patchClusterReplicas(DomainResource domain, String cluster, int replicas) {
-    if (replicas == domain.getReplicaCount(cluster)) {
+    if (replicas == new DomainPresenceInfo(domain).getReplicaCount(cluster)) {
       return;
     }
 

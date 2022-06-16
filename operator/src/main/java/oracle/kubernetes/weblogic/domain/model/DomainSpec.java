@@ -759,8 +759,8 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return replicas
    */
-  public Integer getReplicas() {
-    return this.replicas;
+  public int getReplicas() {
+    return Optional.ofNullable(replicas).orElse(0);
   }
 
   /**
@@ -847,10 +847,6 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getIstio)
         .map(Istio::getEnabled)
         .orElse(false);
-  }
-
-  Istio getIstio() {
-    return Optional.ofNullable(configuration).map(Configuration::getIstio).orElse(null);
   }
 
   /**
@@ -1190,22 +1186,13 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public EffectiveServerSpec getServerSpec(String serverName, String clusterName) {
-      return getServerSpec(getManagedServer(serverName), getCluster(clusterName),
-          getClusterLimit(clusterName));
-    }
-
-    public EffectiveServerSpec getServerSpec(String serverName, String clusterName, ClusterSpec clusterSpec) {
-      return getServerSpec(getManagedServer(serverName), clusterSpec,
-          getClusterLimit(clusterName));
-    }
-
-    private EffectiveServerSpec getServerSpec(ManagedServer server, ClusterSpec clusterSpec, Integer clusterLimit) {
+    public EffectiveServerSpec getServerSpec(
+        String serverName, String clusterName, ClusterSpec clusterSpec) {
       return new EffectiveManagedServerSpecCommonImpl(
           DomainSpec.this,
-          server,
+          getManagedServer(serverName),
           clusterSpec,
-          clusterLimit);
+          getClusterLimit(clusterName, clusterSpec));
     }
 
     private boolean hasReplicaCount(ClusterSpec clusterSpec) {
@@ -1246,14 +1233,7 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     private int getReplicaCountFor(ClusterSpec clusterSpec) {
-      return hasReplicaCount(clusterSpec)
-          ? clusterSpec.getReplicas()
-          : Optional.ofNullable(replicas).orElse(0);
-    }
-
-    @Override
-    public EffectiveClusterSpec getClusterSpec(String clusterName) {
-      return getClusterSpec(getCluster(clusterName));
+      return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getReplicas());
     }
 
     @Override
@@ -1261,8 +1241,8 @@ public class DomainSpec extends BaseConfiguration {
       return new EffectiveClusterSpecCommonImpl(DomainSpec.this, clusterSpec);
     }
 
-    private Integer getClusterLimit(String clusterName) {
-      return clusterName == null ? null : getReplicaCount(clusterName);
+    private Integer getClusterLimit(String clusterName, ClusterSpec clusterSpec) {
+      return clusterName == null ? null : getReplicaCount(clusterSpec);
     }
 
     @Override
@@ -1271,31 +1251,15 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public int getReplicaCount(String clusterName) {
-      return getReplicaCount(getCluster(clusterName));
-    }
-
     public int getReplicaCount(ClusterSpec clusterSpec) {
-      return hasReplicaCount(clusterSpec)
-          ? clusterSpec.getReplicas()
-          : Optional.ofNullable(replicas).orElse(0);
+      return getReplicaCountFor(clusterSpec);
     }
 
     @Override
-    public void setReplicaCount(String clusterName, int replicaCount) {
-      setReplicaCount(getOrCreateCluster(clusterName), replicaCount);
-    }
-
-    @Override
-    public void setReplicaCount(ClusterSpec clusterSpec, int replicaCount) {
-      Optional.ofNullable(clusterSpec).ifPresentOrElse(
-          c -> c.setReplicas(replicaCount),
-          () -> setReplicas(replicaCount));
-    }
-
-    @Override
-    public int getMaxUnavailable(String clusterName) {
-      return getMaxUnavailable(getCluster(clusterName));
+    public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount) {
+      // TODO: Remove creation of cluster in Domain spec
+      Optional.ofNullable(clusterSpec).ifPresentOrElse(c -> c.setReplicas(replicaCount),
+          () -> getOrCreateCluster(clusterName).setReplicas(replicaCount));
     }
 
     @Override
@@ -1309,28 +1273,13 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
-      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
-    }
-
-    @Override
     public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
       return isAllowReplicasBelowDynClusterSizeFor(clusterSpec);
     }
 
     @Override
-    public int getMaxConcurrentStartup(String clusterName) {
-      return getMaxConcurrentStartup(getCluster(clusterName));
-    }
-
-    @Override
     public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
       return getMaxConcurrentStartupFor(clusterSpec);
-    }
-
-    @Override
-    public int getMaxConcurrentShutdown(String clusterName) {
-      return getMaxConcurrentShutdown(getCluster(clusterName));
     }
 
     @Override

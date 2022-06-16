@@ -155,7 +155,7 @@ public class ManagedServerUpIteratorStep extends Step {
         .filter(this::isServerInCluster)
         .forEach(ssi ->
             factories.computeIfAbsent(ssi.getClusterName(),
-                k -> new StartClusteredServersStepFactory(getMaxConcurrentStartup(domain, ssi)))
+                k -> new StartClusteredServersStepFactory(getMaxConcurrentStartup(info, ssi)))
                 .add(createManagedServerUpDetails(packet, ssi)));
 
     return factories;
@@ -219,8 +219,8 @@ public class ManagedServerUpIteratorStep extends Step {
     }
   }
 
-  private int getMaxConcurrentStartup(DomainResource domain, ServerStartupInfo ssi) {
-    return domain.getMaxConcurrentStartup(ssi.getClusterName());
+  private int getMaxConcurrentStartup(DomainPresenceInfo info, ServerStartupInfo ssi) {
+    return info.getMaxConcurrentStartup(ssi.getClusterName());
   }
 
   private static class StartClusteredServersStepFactory {

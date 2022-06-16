@@ -299,139 +299,6 @@ public class DomainResource implements KubernetesObject {
   }
 
   /**
-   * Returns the specification applicable to a particular server/cluster combination.
-   *
-   * @param serverName  the name of the server
-   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
-   * @return the effective configuration for the server
-   */
-  public EffectiveServerSpec getServer(String serverName, String clusterName) {
-    return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
-  }
-
-  public EffectiveServerSpec getServerSpec(String serverName, String clusterName, ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName, clusterSpec);
-  }
-
-  /**
-   * Returns the specification applicable to a particular cluster.
-   *
-   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
-   * @return the effective configuration for the cluster
-   */
-  public EffectiveClusterSpec getCluster(String clusterName) {
-    return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
-  }
-
-  /**
-   * Returns the specification applicable to a particular cluster.
-   *
-   * @param clusterSpec the spec of the cluster; may be null or empty if no applicable cluster.
-   * @return the effective configuration for the cluster
-   */
-  public EffectiveClusterSpec getCluster(ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().getClusterSpec(clusterSpec);
-  }
-
-  /**
-   * Returns the number of replicas to start for the specified cluster.
-   *
-   * @param clusterName the name of the cluster
-   * @return the result of applying any configurations for this value
-   */
-  public int getReplicaCount(String clusterName) {
-    return getEffectiveConfigurationFactory().getReplicaCount(clusterName);
-  }
-
-  /**
-   * Returns the number of replicas to start for the specified cluster.
-   *
-   * @param clusterSpec the name of the cluster
-   * @return the result of applying any configurations for this value
-   */
-  public int getReplicaCount(ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().getReplicaCount(clusterSpec);
-  }
-
-  public void setReplicaCount(String clusterName, int replicaLimit) {
-    getEffectiveConfigurationFactory().setReplicaCount(clusterName, replicaLimit);
-  }
-
-  public void setReplicaCount(ClusterSpec clusterSpec, int replicaLimit) {
-    getEffectiveConfigurationFactory().setReplicaCount(clusterSpec, replicaLimit);
-  }
-
-  /**
-   * Returns the maximum number of unavailable replicas for the specified cluster.
-   *
-   * @param clusterName the name of the cluster
-   * @return the result of applying any configurations for this value
-   */
-  public int getMaxUnavailable(String clusterName) {
-    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
-  }
-
-  /**
-   * Returns the maximum number of unavailable replicas for the specified cluster.
-   *
-   * @param clusterSpec the spec of the cluster
-   * @return the result of applying any configurations for this value
-   */
-  public int getMaxUnavailable(ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterSpec);
-  }
-
-  /**
-   * Returns the minimum number of replicas for the specified cluster.
-   *
-   * @param clusterName the name of the cluster
-   * @return the result of applying any configurations for this value
-   */
-  public int getMinAvailable(String clusterName) {
-    return Math.max(getReplicaCount(clusterName) - getMaxUnavailable(clusterName), 0);
-  }
-
-  /**
-   * Returns whether the specified cluster is allowed to have replica count below the minimum
-   * dynamic cluster size configured in WebLogic domain configuration.
-   *
-   * @param clusterName the name of the cluster
-   * @return whether the specified cluster is allowed to have replica count below the minimum
-   *     dynamic cluster size configured in WebLogic domain configuration
-   */
-  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
-    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
-  }
-
-  /**
-   * Returns whether the specified cluster is allowed to have replica count below the minimum
-   * dynamic cluster size configured in WebLogic domain configuration.
-   *
-   * @param clusterSpec the configuration of the cluster
-   * @return whether the specified cluster is allowed to have replica count below the minimum
-   *     dynamic cluster size configured in WebLogic domain configuration
-   */
-  public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
-  }
-
-  public int getMaxConcurrentStartup(String clusterName) {
-    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
-  }
-
-  public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterSpec);
-  }
-
-  public int getMaxConcurrentShutdown(String clusterName) {
-    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
-  }
-
-  public int getMaxConcurrentShutdown(ClusterSpec clusterSpec) {
-    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterSpec);
-  }
-
-  /**
    * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
    * @return {@link MIINonDynamicChangesMethod}
    */
@@ -823,18 +690,6 @@ public class DomainResource implements KubernetesObject {
         .map(Configuration::getIntrospectorJobActiveDeadlineSeconds).orElse(null);
   }
 
-  /**
-   * Returns the value of the maximum server pod ready wait time.
-   *
-   * @param serverName server name
-   * @param clusterName cluster name
-   * @return value of the wait time in seconds.
-   */
-  public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
-    return Optional.ofNullable(getServer(serverName, clusterName))
-        .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
-  }
-
   public String getWdtConfigMap() {
     return spec.getWdtConfigMap();
   }
@@ -976,6 +831,59 @@ public class DomainResource implements KubernetesObject {
 
   public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
     return new Validator().getAdditionalValidationFailures(podSpec);
+  }
+
+  public PrivateDomainApi getPrivateApi() {
+    return new PrivateDomainApiImpl();
+  }
+
+  class PrivateDomainApiImpl implements PrivateDomainApi {
+
+    @Override
+    public EffectiveServerSpec getServer(
+        String serverName, String clusterName, ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName, clusterSpec);
+    }
+
+    @Override
+    public EffectiveClusterSpec getCluster(ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().getClusterSpec(clusterSpec);
+    }
+
+    @Override
+    public int getReplicaCount(ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().getReplicaCount(clusterSpec);
+    }
+
+    @Override
+    public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaLimit) {
+      getEffectiveConfigurationFactory().setReplicaCount(clusterName, clusterSpec, replicaLimit);
+    }
+
+    @Override
+    public int getMaxUnavailable(ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().getMaxUnavailable(clusterSpec);
+    }
+
+    @Override
+    public int getMinAvailable(ClusterSpec clusterSpec) {
+      return Math.max(getReplicaCount(clusterSpec) - getMaxUnavailable(clusterSpec), 0);
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
+    }
+
+    @Override
+    public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterSpec);
+    }
+
+    @Override
+    public int getMaxConcurrentShutdown(ClusterSpec clusterSpec) {
+      return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterSpec);
+    }
   }
 
   class Validator {

@@ -377,7 +377,7 @@ public abstract class BaseConfiguration {
   }
 
 
-  long getMaximumReadyWaitTimeSeconds() {
+  Long getMaximumReadyWaitTimeSeconds() {
     return serverPod.getMaxReadyWaitTimeSeconds();
   }
 

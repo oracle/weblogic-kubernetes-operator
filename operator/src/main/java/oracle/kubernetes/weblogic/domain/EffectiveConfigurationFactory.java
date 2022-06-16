@@ -18,23 +18,13 @@ public interface EffectiveConfigurationFactory {
 
   EffectiveAdminServerSpec getAdminServerSpec();
 
-  EffectiveServerSpec getServerSpec(String serverName, String clusterName);
-
   EffectiveServerSpec getServerSpec(String serverName, String clusterName, ClusterSpec clusterSpec);
-
-  EffectiveClusterSpec getClusterSpec(String clusterName);
 
   EffectiveClusterSpec getClusterSpec(ClusterSpec clusterSpec);
 
-  int getReplicaCount(String clusterName);
-
   int getReplicaCount(ClusterSpec clusterSpec);
 
-  void setReplicaCount(String clusterName, int replicaCount);
-
-  void setReplicaCount(ClusterSpec clusterSpec, int replicaCount);
-
-  int getMaxUnavailable(String clusterName);
+  void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount);
 
   int getMaxUnavailable(ClusterSpec clusterSpec);
 
@@ -42,15 +32,10 @@ public interface EffectiveConfigurationFactory {
 
   List<String> getAdminServerChannelNames();
 
-  boolean isAllowReplicasBelowMinDynClusterSize(String clusterName);
-
   boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec);
-
-  int getMaxConcurrentStartup(String clusterName);
 
   int getMaxConcurrentStartup(ClusterSpec clusterSpec);
 
-  int getMaxConcurrentShutdown(String clusterName);
-
   int getMaxConcurrentShutdown(ClusterSpec clusterSpec);
+
 }
