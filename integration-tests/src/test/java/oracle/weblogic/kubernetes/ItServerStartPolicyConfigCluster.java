@@ -188,21 +188,21 @@ class ItServerStartPolicyConfigCluster {
   }
 
   /**
-   * Verify ALWAYS serverStartPolicy (configured cluster) overrides replica count.
+   * Verify Always serverStartPolicy (configured cluster) overrides replica count.
    * The configured cluster has a second managed server(config-cluster-server2)
-   * with serverStartPolicy set to IF_NEEDED. Initially, the server will not 
+   * with serverStartPolicy set to IfNeeded. Initially, the server will not
    * come up since the replica count for the cluster is set to 1. 
    * Update the serverStartPolicy for the server config-cluster-server2 to 
-   * ALWAYS by patching the resource definition with 
-   *  spec/managedServers/1/serverStartPolicy set to ALWAYS
+   * Always by patching the resource definition with
+   *  spec/managedServers/1/serverStartPolicy set to Always
    * Make sure that managed server config-cluster-server2 is up and running
    * Stop the managed server by patching the resource definition 
-   *   with spec/managedServers/1/serverStartPolicy set to IF_NEEDED.
+   *   with spec/managedServers/1/serverStartPolicy set to IfNeeded.
    * Make sure the specified managed server is stopped as per replica count.
    */
   @Order(2)
   @Test
-  @DisplayName("Start/stop configured cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
+  @DisplayName("Start/stop configured cluster managed server by updating serverStartPolicy to Always/IfNeeded")
   void testConfigClusterStartServerAlways() {
     String serverName = "config-cluster-server2";
     String serverPodName = domainUid + "-" + serverName;
@@ -210,17 +210,17 @@ class ItServerStartPolicyConfigCluster {
     // Make sure that managed server is not running 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/managedServers/1/serverStartPolicy", "ALWAYS"),
-         "Failed to patch config managedServers's serverStartPolicy to ALWAYS");
-    logger.info("Configured managed server is patched to set the serverStartPolicy to ALWAYS");
+         "/spec/managedServers/1/serverStartPolicy", "Always"),
+         "Failed to patch config managedServers's serverStartPolicy to Always");
+    logger.info("Configured managed server is patched to set the serverStartPolicy to Always");
     checkPodReadyAndServiceExists(serverPodName, 
           domainUid, domainNamespace);
     logger.info("Configured cluster managed server is RUNNING");
 
-    // Stop the server by changing the serverStartPolicy to IF_NEEDED
+    // Stop the server by changing the serverStartPolicy to IfNeeded
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/managedServers/1/serverStartPolicy", "IF_NEEDED"),
-         "Failed to patch config managedServers's serverStartPolicy to IF_NEEDED");
+         "/spec/managedServers/1/serverStartPolicy", "IfNeeded"),
+         "Failed to patch config managedServers's serverStartPolicy to IfNeeded");
     logger.info("Domain resource patched to shutdown the second managed server in configured cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -230,7 +230,7 @@ class ItServerStartPolicyConfigCluster {
 
   /**
    * Add the first managed server (config-cluster-server1) in a configured 
-   * cluster with serverStartPolicy IF_NEEDED. 
+   * cluster with serverStartPolicy IfNeeded.
    * Initially, the server will come up since the replica count is set to 1.
    * (a) Shutdown config-cluster-server1 using the sample script stopServer.sh
    *     with keep_replica_constant option set to true

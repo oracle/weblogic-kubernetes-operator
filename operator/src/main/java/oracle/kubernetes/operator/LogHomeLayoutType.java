@@ -3,13 +3,29 @@
 
 package oracle.kubernetes.operator;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Log home layout type determines how the log files are created under logHome.
- *   FLAT - all log files are under a single directory logHome.
- *   BY_SERVERS - introspector and domain log files are under root of logHome,
+ *   Flat - all log files are under a single directory logHome.
+ *   ByServers - introspector and domain log files are under root of logHome,
  *     server log files are under logHome/servers/{serverName}/logs
  */
 public enum LogHomeLayoutType {
-  FLAT,
-  BY_SERVERS
+  @SerializedName("Flat")
+  FLAT("Flat"),
+
+  @SerializedName("ByServers")
+  BY_SERVERS("ByServers");
+
+  private final String value;
+
+  LogHomeLayoutType(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(this.value);
+  }
 }

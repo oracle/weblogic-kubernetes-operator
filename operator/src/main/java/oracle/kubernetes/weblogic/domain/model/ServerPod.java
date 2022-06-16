@@ -41,6 +41,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -118,6 +119,7 @@ class ServerPod extends KubernetesResource {
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. "
       + "See `kubectl explain pods.spec.restartPolicy`.")
+  @Default(strDefault = "Always")
   private V1PodSpec.RestartPolicyEnum restartPolicy = null;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
@@ -247,6 +249,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
       + "before it considers the pod failed. Defaults to 1800 seconds.")
+  @Default(intDefault = 1800)
   private Long maxReadyWaitTimeSeconds = 1800L;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {

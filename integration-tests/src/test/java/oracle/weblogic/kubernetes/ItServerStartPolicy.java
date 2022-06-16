@@ -226,12 +226,12 @@ class ItServerStartPolicy {
    * Stop the entire domain using the sample script stopDomain.sh
    * Make sure that all servers in the domain are stopped.
    * Restart the domain by patching the resource definition with
-   *  spec/serverStartPolicy set to ADMIN_ONLY.
+   *  spec/serverStartPolicy set to AdminOnly.
    * Make sure that ONLY administration server is in RUNNING state.
-   * Make sure that no managed server can be started with ADMIN_ONLY policy.
+   * Make sure that no managed server can be started with AdminOnly policy.
    * Restart the domain using the sample script startDomain.sh
    * Make sure that all servers in the domain are in RUNNING state.
-   * The usecase also verify the scripts startDomain.sh/stopDomain.sh make
+   * The use case also verify the scripts startDomain.sh/stopDomain.sh make
    * no changes in a running/stopped domain respectively.
    */
   @Order(2)
@@ -269,13 +269,13 @@ class ItServerStartPolicy {
         String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(result.contains("Cannot start server"),
         "The script shouldn't start the managed server");
-    logger.info("Managed server instances can not be started while spec.serverStartPolicy is NEVER");
+    logger.info("Managed server instances can not be started while spec.serverStartPolicy is Never");
 
-    // Patch the Domain with serverStartPolicy set to ADMIN_ONLY
+    // Patch the Domain with serverStartPolicy set to AdminOnly
     // Here only Administration server pod should come up
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/serverStartPolicy", "ADMIN_ONLY"),
-        "Failed to patch domain's serverStartPolicy to ADMIN_ONLY");
+        "/spec/serverStartPolicy", "AdminOnly"),
+        "Failed to patch domain's serverStartPolicy to AdminOnly");
     logger.info("Domain is patched to start only administrative server");
 
     checkPodReadyAndServiceExists(adminServerPodName,
@@ -288,14 +288,14 @@ class ItServerStartPolicy {
     checkPodDeleted(standaloneServerPodName, domainUid, domainNamespace);
 
     // verify managed server instances can not be started while
-    // spec.serverStartPolicy is ADMIN_ONLY
+    // spec.serverStartPolicy is AdminOnly
     result =  assertDoesNotThrow(() ->
             executeLifecycleScript(domainUid, domainNamespace, samplePath,
                 START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
         String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(result.contains("Cannot start server"),
         "The script shouldn't start the managed server");
-    logger.info("Managed server instances can not be started while spec.serverStartPolicy is ADMIN_ONLY");
+    logger.info("Managed server instances can not be started while spec.serverStartPolicy is AdminOnly");
 
     // Verify server instances are started after startDomain script execution
     logger.info("Start entire WebLogic domain using the script");
@@ -314,18 +314,18 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Start an independent managed server with serverStartPolicy to IF_NEEDED.
-   * The serverStartPolicy transition is IF_NEEDED-->NEVER-->ALWAYS
+   * Start an independent managed server with serverStartPolicy to IfNeeded.
+   * The serverStartPolicy transition is IfNeeded-->Never-->Always
    * Stop an independent managed server by patching the domain resource with
-   *  spec/managedServers/0/serverStartPolicy set to NEVER.
+   *  spec/managedServers/0/serverStartPolicy set to Never.
    * Make sure that ONLY the specified managed server is stopped.
    * Restart the independent managed server by patching the resource definition
-   * with spec/managedServers/0/serverStartPolicy set to ALWAYS.
+   * with spec/managedServers/0/serverStartPolicy set to Always.
    * Make sure that the specified managed server is in RUNNING state
    */
   @Order(3)
   @Test
-  @DisplayName("Restart the standalone managed server with serverStartPolicy ALWAYS")
+  @DisplayName("Restart the standalone managed server with serverStartPolicy Always")
   void testStandaloneManagedRestartAlways() {
     String serverName = "standalone-managed";
     String serverPodName = domainUid + "-" + serverName;
@@ -336,36 +336,36 @@ class ItServerStartPolicy {
     logger.info("Standalone managed server is RUNNING");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/managedServers/0/serverStartPolicy", "NEVER"),
-        "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
+        "/spec/managedServers/0/serverStartPolicy", "Never"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to Never");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     logger.info("Configured managed server shutdown success");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/managedServers/0/serverStartPolicy", "ALWAYS"),
-        "Failed to patch Standalone managedServers's serverStartPolicy to ALWAYS");
+        "/spec/managedServers/0/serverStartPolicy", "Always"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to Always");
     logger.info("Domain is patched to start standalone managed server");
 
     checkPodReadyAndServiceExists(serverPodName,
         domainUid, domainNamespace);
-    logger.info("Standalone managed server restart (ALWAYS) success");
+    logger.info("Standalone managed server restart (Always) success");
   }
 
   /**
-   * Start an independent managed server with serverStartPolicy to IF_NEEDED.
-   * The serverStartPolicy transition is IF_NEEDED-->NEVER-->IF_NEEDED
+   * Start an independent managed server with serverStartPolicy to IfNeeded.
+   * The serverStartPolicy transition is IfNeeded-->Never-->IfNeeded
    * Stop an independent managed server by patching the domain resource with
-   *  spec/managedServers/0/serverStartPolicy set to NEVER.
+   *  spec/managedServers/0/serverStartPolicy set to Never.
    * Make sure that ONLY the specified managed server is stopped.
    * Restart the independent managed server by patching the resource definition
-   * with spec/managedServers/0/serverStartPolicy set to IF_NEEDED.
+   * with spec/managedServers/0/serverStartPolicy set to IfNeeded.
    * Make sure that the specified managed server is in RUNNING state
    */
   @Order(4)
   @Test
-  @DisplayName("Restart the standalone managed server with serverStartPolicy IF_NEEDED")
+  @DisplayName("Restart the standalone managed server with serverStartPolicy IfNeeded")
   void testStandaloneManagedRestartIfNeeded() {
     String serverName = "standalone-managed";
     String serverPodName = domainUid + "-" + serverName;
@@ -376,20 +376,20 @@ class ItServerStartPolicy {
     logger.info("Standalone managed server is RUNNING");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/managedServers/0/serverStartPolicy", "NEVER"),
-        "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
+        "/spec/managedServers/0/serverStartPolicy", "Never"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to Never");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     logger.info("Standalone managed server shutdown success");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-        "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED"),
-        "Failed to patch Standalone managedServers's serverStartPolicy to IF_NEEDED");
+        "/spec/managedServers/0/serverStartPolicy", "IfNeeded"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to IfNeeded");
     logger.info("Domain is patched to start standalone managed server");
     checkPodReadyAndServiceExists(serverPodName,
         domainUid, domainNamespace);
-    logger.info("Standalone managed server restart (IF_NEEDED) success");
+    logger.info("Standalone managed server restart (IfNeeded) success");
   }
 
   /**
@@ -534,8 +534,8 @@ class ItServerStartPolicy {
 
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-          "/spec/adminServer/serverStartPolicy", "NEVER"),
-          "Failed to patch adminServer's serverStartPolicy to NEVER");
+          "/spec/adminServer/serverStartPolicy", "Never"),
+          "Failed to patch adminServer's serverStartPolicy to Never");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
@@ -565,8 +565,8 @@ class ItServerStartPolicy {
 
       // (re)Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-          "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+          "/spec/adminServer/serverStartPolicy", "IfNeeded"),
+          "Failed to patch adminServer's serverStartPolicy to IfNeeded");
 
       checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
@@ -581,8 +581,8 @@ class ItServerStartPolicy {
     } finally {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-          "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+          "/spec/adminServer/serverStartPolicy", "IfNeeded"),
+          "Failed to patch adminServer's serverStartPolicy to IfNeeded");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)

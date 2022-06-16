@@ -1479,7 +1479,7 @@ public class TestActions {
 
   /**
    * Patch domain to shutdown a WebLogic server by changing the value of
-   * server's serverStartPolicy property to NEVER.
+   * server's serverStartPolicy property to Never.
    *
    * @param domainUid unique domain identifier
    * @param namespace name of the namespace
@@ -1495,7 +1495,7 @@ public class TestActions {
 
   /**
    * Patch domain to start a WebLogic server by changing the value of
-   * server's serverStartPolicy property to IF_NEEDED.
+   * server's serverStartPolicy property to IfNeeded.
    *
    * @param domainUid unique domain identifier
    * @param namespace name of the namespace

@@ -348,10 +348,10 @@ class ItFmwMiiDomain {
   }
 
   /**
-   * Shutdown the domain by setting serverStartPolicy as "NEVER".
+   * Shutdown the domain by setting serverStartPolicy as "Never".
    */
   private void shutdownDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "Never", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
 
     // make sure all the server pods are removed after patch
@@ -365,10 +365,10 @@ class ItFmwMiiDomain {
   }
 
   /**
-   * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
+   * Startup the domain by setting serverStartPolicy as "IfNeeded".
    */
   private void startupDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IfNeeded", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to start all servers in the domain");
   }
 

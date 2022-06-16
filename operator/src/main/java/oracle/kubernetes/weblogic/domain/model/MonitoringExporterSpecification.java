@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import com.google.gson.Gson;
 import io.kubernetes.client.openapi.models.V1Container;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.PreserveUnknown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -34,6 +35,7 @@ public class MonitoringExporterSpecification {
   @Description(
         "The WebLogic Monitoring Exporter sidecar container image name. Defaults to "
            + DEFAULT_EXPORTER_IMAGE)
+  @Default(strDefault = DEFAULT_EXPORTER_IMAGE)
   private String image;
   
   @Description(
@@ -46,6 +48,7 @@ public class MonitoringExporterSpecification {
       "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. "
           + "Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server "
           + "instance, including the ports of built-in channels or network access points (NAPs).")
+  @Default(intDefault = 8080)
   private Integer port;
 
   /**

@@ -21,7 +21,7 @@ public class AdminServer {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
+          + "Legal values are Always, Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty("Configuration affecting server pods.")

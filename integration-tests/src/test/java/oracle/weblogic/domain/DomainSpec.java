@@ -36,7 +36,7 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+          + "Legal values are AdminOnly, Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty(
@@ -52,8 +52,8 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "Control how the log files under logHome is organized. "
-          + "FLAT - all files are under the logHome root directory. "
-          + "BY_SERVERS (default) - domain log file and introspector.out are at the logHome root level, all other files"
+          + "Flat - all files are under the logHome root directory. "
+          + "ByServers (default) - domain log file and introspector.out are at the logHome root level, all other files"
           + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
   private String logHomeLayout;
 

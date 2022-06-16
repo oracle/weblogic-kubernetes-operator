@@ -109,7 +109,7 @@ public abstract class DomainValues {
         .weblogicDomainStorageSize("20Gi")
         .productionModeEnabled("false")
         .weblogicCredentialsSecretName("test-weblogic-credentials")
-        .serverStartPolicy("IF_NEEDED")
+        .serverStartPolicy("IfNeeded")
         .t3PublicAddress("TestT3PublicAddress")
         .t3ChannelPort("30013");
   }

@@ -679,7 +679,7 @@ class ItPodsRestart {
                 .name(adminSecretName)
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
