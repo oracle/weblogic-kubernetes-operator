@@ -22,6 +22,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`labels`](#labels)
     - [`nodeSelector`](#nodeselector)
     - [`affinity`](#affinity)
+    - [`runAsUser`](#runasuser)
   - [WebLogic domain conversion webhook](#weblogic-domain-conversion-webhook)
     - [`webhookOnly`](#webhookonly)
     - [`operatorOnly`](#operatoronly)
@@ -291,6 +292,13 @@ affinity:
           operator: In
           values:
           - another-node-label-value
+```
+##### `runAsUser`
+Specifies the UID to run the operator and conversion webhook container processes. If not specified, it defaults to the user specified in the operator's container image.
+
+Example:
+```yaml
+runAsUser: 1000
 ```
 
 #### WebLogic domain conversion webhook
