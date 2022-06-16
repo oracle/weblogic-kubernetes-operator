@@ -259,6 +259,6 @@ clusterSizePaddingValidationEnabled: true
 # domainPresenceFailureRetryMaxCount: 5
 # domainPresenceFailureRetrySeconds: 10
 
-# runAsuser specifies the UID to run the operator and webhook container processes. If not
-# specified, it defaults to the user specified in the operator's container image.
+# runAsuser specifies the UID to run the operator and conversion webhook container processes. 
+# If not specified, it defaults to the user specified in the operator's container image.
 #runAsUser: 1000
