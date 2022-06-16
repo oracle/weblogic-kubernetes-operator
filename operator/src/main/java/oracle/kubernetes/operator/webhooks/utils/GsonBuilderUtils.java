@@ -47,7 +47,7 @@ public class GsonBuilderUtils {
     return readMap(getGsonBuilder().toJson(domain, DomainResource.class));
   }
 
-  public static String writeMap(Map map) {
+  public static String writeMap(Map<String, Object> map) {
     return getGsonBuilder().toJson(map, Map.class);
   }
 

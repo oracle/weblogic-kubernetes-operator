@@ -7,7 +7,6 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
@@ -124,11 +123,11 @@ public class AdmissionRequest {
     return this;
   }
 
-  public DomainResource getExistingDomain() {
+  public Object getExistingResource() {
     return readDomain(writeMap(getOldObject()));
   }
 
-  public DomainResource getProposedDomain() {
+  public Object getProposedResource() {
     return readDomain(writeMap(getObject()));
   }
 
