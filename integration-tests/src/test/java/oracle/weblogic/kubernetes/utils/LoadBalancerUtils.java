@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
@@ -167,6 +168,7 @@ public class LoadBalancerUtils {
                                                   String chartVersion) {
     LoggingFacade logger = getLogger();
     // Helm install parameters
+    createTestRepoSecret(nginxNamespace);
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
@@ -181,7 +183,10 @@ public class LoadBalancerUtils {
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
         .helmParams(nginxHelmParams);
-
+    
+    // set secret to pull images from private registry
+    nginxParams.imageRepoSecret(TEST_IMAGES_REPO_SECRET_NAME);
+    
     if (nodeportshttp != 0 && nodeportshttps != 0) {
       nginxParams
           .nodePortsHttp(nodeportshttp)
@@ -326,14 +331,14 @@ public class LoadBalancerUtils {
 
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
     // this secret is used only for non-kind cluster
-    if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, apacheNamespace)) {
+    if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
       createTestRepoSecret(apacheNamespace);
     }
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
+    secretNameMap.put("name", BASE_IMAGES_REPO_SECRET_NAME);
 
     // Helm install parameters
     HelmParams apacheHelmParams = new HelmParams()

@@ -380,7 +380,7 @@ public class FileUtils {
           installWdtParams(locationURL))
           .download(downloadDir), "WDT download failed");
     }
-    String cmdToExecute = String.format("unzip %s -d %s", wlDeployZipFile, unzipLocation);
+    String cmdToExecute = String.format("unzip -o %s -d %s", wlDeployZipFile, unzipLocation);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(cmdToExecute))

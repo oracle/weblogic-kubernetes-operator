@@ -829,7 +829,7 @@ class ItIntrospectVersion {
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
    * The usecase update the introspectVersion by passing different value to -i
-   * option (non-numeric, non-numeric with space, no value) and make sure that
+   * option (non-numeric, non-numeric with underscore and dash, no value) and make sure that
    * the introspectVersion is updated accordingly in both domain spec level
    * and server pod level.
    * It also verifies the introspector job is started/stopped and none of the
@@ -893,8 +893,8 @@ class ItIntrospectVersion {
     verifyIntrospectVersionLabelInPod();
 
     // use introspectDomain.sh to initiate introspection
-    logger.info("Initiate introspection with non numeric string with space");
-    introspectVersion = "My Version";
+    logger.info("Initiate introspection with non numeric string with underscore and dash");
+    introspectVersion = "My_Version-1";
     String extraParam2 = " -i " + "\"" + introspectVersion + "\"";
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam2),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));

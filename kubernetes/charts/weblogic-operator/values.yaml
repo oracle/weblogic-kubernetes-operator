@@ -63,7 +63,7 @@ domainNamespaces:
 enableClusterRoleBinding: false
 
 # image specifies the container image containing the operator.
-image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.4.0"
+image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.4.1"
 
 # imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent
@@ -228,3 +228,8 @@ clusterSizePaddingValidationEnabled: true
 # Defaults to 5 retries and 10 seconds between each retry.
 # domainPresenceFailureRetryMaxCount: 5
 # domainPresenceFailureRetrySeconds: 10
+
+# runAsUser specifies the UID to run the operator container process. If not specified, 
+# it defaults to the user specified in the operator's container image.
+#runAsUser: 1000
+

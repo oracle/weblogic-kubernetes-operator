@@ -163,7 +163,7 @@ class ItOCILoadBalancer {
       managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
 
-    // check that NGINX can access the sample apps from all managed servers in the domain
+    // check that LB can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sample-war/index.jsp",
             lbIp,
