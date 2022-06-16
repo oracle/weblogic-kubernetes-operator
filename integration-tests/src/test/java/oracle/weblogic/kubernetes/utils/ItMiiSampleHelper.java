@@ -122,7 +122,8 @@ public class ItMiiSampleHelper {
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
-    envMap.put("IMAGE_PULL_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME); //ocir secret
+    envMap.put("IMAGE_PULL_SECRET_NAME", BASE_IMAGES_REPO_SECRET_NAME);
+    envMap.put("DOMAIN_IMAGE_PULL_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME);
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("OKD", "" +  OKD);
     envMap.put("DO_AI", String.valueOf(imageType == ImageType.AUX));
@@ -145,11 +146,16 @@ public class ItMiiSampleHelper {
     execTestScriptAndAssertSuccess(DomainType.WLS, "-traefik", "Traefik deployment failure");
 
     logger.info("Setting up docker secrets");
-    // Create the repo secret to pull the image
+    // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
             TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
+    // Create the repo secret to pull the base image
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(domainNamespace);
+    logger.info("Docker registry secret {0} created successfully in namespace {1}",
+            BASE_IMAGES_REPO_SECRET_NAME, domainNamespace);
 
     if (domainType.equals(DomainType.JRF)) {
       // install db for FMW test cases
