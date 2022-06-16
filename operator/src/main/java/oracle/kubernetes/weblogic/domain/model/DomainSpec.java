@@ -1195,10 +1195,6 @@ public class DomainSpec extends BaseConfiguration {
           getClusterLimit(clusterName, clusterSpec));
     }
 
-    private boolean hasReplicaCount(ClusterSpec clusterSpec) {
-      return clusterSpec != null && clusterSpec.getReplicas() != null;
-    }
-
     private boolean hasMaxUnavailable(ClusterSpec clusterSpec) {
       return clusterSpec != null && clusterSpec.getMaxUnavailable() != null;
     }
@@ -1257,7 +1253,6 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount) {
-      // TODO: Remove creation of cluster in Domain spec
       Optional.ofNullable(clusterSpec).ifPresentOrElse(c -> c.setReplicas(replicaCount),
           () -> getOrCreateCluster(clusterName).setReplicas(replicaCount));
     }
