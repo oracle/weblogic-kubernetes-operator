@@ -27,8 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import org.jetbrains.annotations.Nullable;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -36,6 +39,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 public abstract class InMemoryFileSystem extends FileSystem {
   private static InMemoryFileSystem instance;
   private final FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);
+  private String throwExceptionOnGetPath;
 
   public static InMemoryFileSystem createInstance() {
     return instance = createStrictStub(InMemoryFileSystem.class);
@@ -53,6 +57,37 @@ public abstract class InMemoryFileSystem extends FileSystem {
     return provider.fileContents.get(filePath);
   }
 
+  public void throwExceptionOnGetPath(String path) {
+    this.throwExceptionOnGetPath = path;
+  }
+
+  /**
+   * Connect this instance to PathSupport, so that all code which uses the latter will now be
+   * accessing the in-memory file system rather than the system one.
+   */
+  public Memento install() throws NoSuchFieldException {
+    return new Memento() {
+      final Function<URI, Path> uriToPath = InMemoryFileSystem.this::getPath;
+      final Function<String, Path> stringToPath = InMemoryFileSystem.this::getPath;
+      private final List<Memento> mementos = new ArrayList<>();
+
+      {
+        mementos.add(StaticStubSupport.install(PathSupport.class, "uriToPath", uriToPath));
+        mementos.add(StaticStubSupport.install(PathSupport.class, "stringToPath", stringToPath));
+      }
+
+      @Override
+      public void revert() {
+        mementos.forEach(Memento::revert);
+      }
+
+      @Override
+      public <T> T getOriginalValue() {
+        return null;
+      }
+    };
+  }
+  
   @Nonnull
   public Path getPath(@Nonnull String first, @Nonnull String... more) {
     return PathStub.createPathStub(createPathString(first, more));
@@ -63,12 +98,13 @@ public abstract class InMemoryFileSystem extends FileSystem {
     return PathStub.createPathStub(createPathString(uri.getPath(), new String[0]));
   }
 
-  @Nonnull
-  public Path getPathThrowsIllegaArgumentException(@Nonnull URI uri) {
-    throw new IllegalArgumentException("test");
+  private void throwException(String pathString) {
+    throw new IllegalArgumentException(pathString);
   }
 
   private String createPathString(String first, String[] more) {
+    Optional.ofNullable(throwExceptionOnGetPath).filter(first::equals).ifPresent(this::throwException);
+
     return more.length == 0 ? first : first + "/" + String.join("/", more);
   }
 
@@ -291,7 +327,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
     }
 
     @Override
-    public int write(ByteBuffer src) throws IOException {
+    public int write(ByteBuffer src) {
       byte[] newContents = new byte[contents.length + src.limit()];
       System.arraycopy(contents, 0, newContents, 0, contents.length);
       System.arraycopy(src.array(), src.position(), newContents, contents.length, src.limit() - src.position());
