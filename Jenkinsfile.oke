@@ -4,9 +4,9 @@
 
 pipeline {
     agent { label 'VM.Standard2.8' }
-    triggers {
-        cron('H 5 * * *')
-    }
+    //triggers {
+    //    cron('H 5 * * *')
+    //}
     options {
         timeout(time: 800, unit: 'MINUTES')
         disableConcurrentBuilds()
