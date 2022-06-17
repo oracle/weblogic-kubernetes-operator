@@ -9,8 +9,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,6 +50,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.utils.PathSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -130,11 +128,8 @@ public class CrdHelper {
     }
   }
 
-  @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
-  private static Function<URI, Path> uriToPath = Paths::get;
-
   static void writeAsYaml(URI outputFileName, Object model) {
-    try (Writer writer = Files.newBufferedWriter(uriToPath.apply(outputFileName))) {
+    try (Writer writer = Files.newBufferedWriter(PathSupport.getPath(outputFileName))) {
       writer.write(
             "# Copyright (c) 2020, 2022, Oracle and/or its affiliates.\n"
                   + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");

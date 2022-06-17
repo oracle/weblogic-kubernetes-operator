@@ -3,18 +3,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionVersion;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -44,7 +40,6 @@ class ClusterCrdTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
-  private final Function<URI, Path> pathFunction = fileSystem::getPath;
 
   private static V1CustomResourceDefinition createCrd() {
     return new CrdHelper.ClusterCrdContext().createModel(PRODUCT_VERSION, getCertificates());
@@ -56,8 +51,7 @@ class ClusterCrdTest {
             .collectLogMessages(logRecords, CREATING_CRD, REPLACE_CRD_FAILED, CREATE_CRD_FAILED)
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
-    mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
+    mementos.add(fileSystem.install());
     mementos.add(TuningParametersStub.install());
   }
 
