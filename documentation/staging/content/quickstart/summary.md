@@ -76,7 +76,7 @@ These steps help you understand and customize auxiliary image creation. Then you
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
 1. Download the sample WDT model, web application, and properties files to be included in the auxiliary image and put them in your `/tmp/quickstart/models` directory.
-Then, use the JAR command to put the web application files into a model archive ZIP file.
+Then use the JAR command to put the web application files into a model archive ZIP file.
 
    For example:
    ```shell
@@ -168,11 +168,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
 
 1. Prepare the domain resource.
 
-    a. Copy the [WLS Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Alternatively, you can download the WLS Domain YAML file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command:
-
-      ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml -o /tmp/quickstart/domain-resource.yaml
-      ```
+    a. Copy the [WLS Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. 
 
     b. If you chose a different name and tag for the auxiliary image you created, then update the image field under the `spec.configuration.model.auxiliaryImages`
     section to use that name and tag. For example, if you named the auxiliary image `my-aux-image:v1`, then update the `spec.configuration.model.auxiliaryImages` section as shown:

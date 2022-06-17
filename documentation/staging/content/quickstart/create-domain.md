@@ -35,7 +35,7 @@ weight: 3
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
        ```
 
-    - **NOTE**: If you need to modify the sample domain YAML file, you can download the file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command, and make any changes needed. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`:
+    - **NOTE**: If you want to view or need to modify the sample domain YAML file, you can download it to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`.
 
       ```shell
       $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml -o /tmp/quickstart/domain-resource.yaml
@@ -117,21 +117,12 @@ weight: 3
           name: sample-domain1-cluster-cluster-1
           port: 8001
     {{% /expand %}}
+
+    b. Then apply the file using:
     ```shell
     $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
       --namespace sample-domain1-ns
     ```
-
-      b. **NOTE**: Instead of running the previous  `kubectl apply` command, you can download the ingress route YAML file to `/tmp/quickstart/ingress-route.yaml` or similar, using the following command:
-
-      ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml -o /tmp/quickstart/ingress-route.yaml
-      ```
-      c. Then apply the file using:
-      ```shell
-      $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
-        --namespace sample-domain1-ns
-      ```
 
 1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, send a request to the URL for the "quick start app", as shown in the following example, which will return an HTTP 200 status code.
 
