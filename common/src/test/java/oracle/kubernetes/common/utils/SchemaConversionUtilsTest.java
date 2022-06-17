@@ -26,6 +26,7 @@ import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -226,6 +227,26 @@ class SchemaConversionUtilsTest {
     getMapAtPath(v8Domain, "spec.configuration").put("overridesConfigMap", configMap);
   }
 
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> addCluster(Map<String, Object> v8Domain, String name) {
+    List<Map<String, Object>> clusters = (List<Map<String, Object>>) getDomainSpec(v8Domain)
+            .computeIfAbsent("clusters", k -> new ArrayList<>());
+    Map<String, Object> newCluster = new HashMap<>();
+    newCluster.put("clusterName", name);
+    clusters.add(newCluster);
+    return newCluster;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> addManagedServer(Map<String, Object> v8Domain, String name) {
+    List<Map<String, Object>> managedServers = (List<Map<String, Object>>) getDomainSpec(v8Domain)
+            .computeIfAbsent("managedServers", k -> new ArrayList<>());
+    Map<String, Object> newServer = new HashMap<>();
+    newServer.put("serverName", name);
+    managedServers.add(newServer);
+    return newServer;
+  }
+
   @Test
   void testV8DomainWithConfigOverrideSecrets_moveToConfigurationSecrets() {
     setConfigOverrideSecrets(v8Domain, Collections.singletonList("someSecret"));
@@ -256,4 +277,63 @@ class SchemaConversionUtilsTest {
     getMapAtPath(v8Domain, "spec.configuration").put("secrets", secrets);
   }
 
+  @Test
+  void testV8DomainWithSeverStartPolicy_changeToCamelCase() {
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasJsonPath("$.spec.serverStartPolicy", equalTo("IfNeeded")));
+  }
+
+  @Test
+  void testV8DomainClusterWithSeverStartPolicy_changeToCamelCase() {
+    Map<String, Object> cluster = addCluster(v8Domain, "cluster-2");
+    cluster.put("serverStartPolicy", "NEVER");
+
+    converter.convert(v8Domain);
+
+    assertThat(cluster, hasEntry("serverStartPolicy", "Never"));
+  }
+
+  @Test
+  void testV8DomainManagedServerWithSeverStartPolicy_changeToCamelCase() {
+    Map<String, Object> managedServer = addManagedServer(v8Domain, "ms-3");
+    managedServer.put("serverStartPolicy", "ALWAYS");
+
+    converter.convert(v8Domain);
+
+    assertThat(managedServer, hasEntry("serverStartPolicy", "Always"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testV8DomainWithAdminSeverStartPolicy_changeToCamelCase() {
+    Map<String, Object> adminServer = (Map<String, Object>) getDomainSpec(v8Domain)
+            .computeIfAbsent("adminServer", k -> new HashMap<>());
+    adminServer.put("serverStartPolicy", "IF_NEEDED");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.adminServer.serverStartPolicy", equalTo("IfNeeded")));
+  }
+
+  @Test
+  void testV8DomainWithOverrideDistributionStrategy_changeToCamelCase() {
+    getMapAtPath(v8Domain, "spec.configuration").put("overrideDistributionStrategy", "ON_RESTART");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.configuration.overrideDistributionStrategy", equalTo("OnRestart")));
+  }
+
+  @Test
+  void testV8DomainWithLogHomeLayout_changeToCamelCase() {
+    getMapAtPath(v8Domain, "spec").put("logHomeLayout", "BY_SERVERS");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
+  }
 }

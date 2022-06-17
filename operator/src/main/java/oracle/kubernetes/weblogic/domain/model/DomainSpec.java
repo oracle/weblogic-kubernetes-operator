@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
@@ -76,17 +77,18 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
+   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
    * to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
   @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
   @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
+  @Default(strDefault = "IfNeeded")
   private ServerStartPolicy serverStartPolicy;
 
   /**
@@ -116,15 +118,16 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The log files layout under `logHome`.
-   *   FLAT - all files is in one directory
-   *   BY_SERVERS - log files are organized under loghome/servers/server name/logs.
+   *   Flat - all files is in one directory
+   *   ByServers - log files are organized under loghome/servers/server name/logs.
    * */
   @Description(
       "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. "
-        + "`FLAT` - all files directly in the `logHome` root directory. "
-        + "`BY_SERVERS` (default) - domain log files and `introspector.out` are at the `logHome` root level, "
+        + "`Flat` specifies that all files are kept directly in the `logHome` root directory. "
+        + "`ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, "
         + "all other files are organized under the respective server name logs directory  "
-        + "`logHome/servers/<server name>/logs`.")
+        + "`logHome/servers/<server name>/logs`. Defaults to `ByServers`.")
+  @Default(strDefault = "ByServers")
   private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
 
 
@@ -136,7 +139,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "Specifies whether the log home folder is enabled. "
           + "Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.")
-  private Boolean logHomeEnabled; // Boolean object, null if unspecified
+  private Boolean logHomeEnabled;
 
   /**
    * An optional, in-pod location for data storage of default and custom file stores. If dataHome is
@@ -152,6 +155,7 @@ public class DomainSpec extends BaseConfiguration {
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("Specifies whether the server .out file will be included in the Pod's log. "
       + "Defaults to true.")
+  @Default(boolDefault = true)
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
@@ -159,6 +163,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Specifies whether the server HTTP access log files will be written to the same "
       + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
       + "the directory configured in the WebLogic domain configuration. Defaults to true.")
+  @Default(boolDefault = true)
   private Boolean httpAccessLogInLogHome;
 
   /**
@@ -233,37 +238,43 @@ public class DomainSpec extends BaseConfiguration {
       + "because of their entries under `managedServers`, then a cluster may have more cluster members "
       + "running than its `replicas` count. Defaults to 0.")
   @Range(minimum = 0)
+  @Default(intDefault = 0)
   private Integer replicas;
 
   @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
       + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
       + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
   )
+  @Default(boolDefault = true)
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
       "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
-          + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
-          + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
+      + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
+      + "`clusters` field. A value of 0 means there is no configured limit. Defaults to 0."
   )
   @Range(minimum = 0)
+  @Default(intDefault = 0)
   private Integer maxClusterConcurrentStartup;
 
   @Description(
       "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
-          + "is being partially shut down by lowering its replica count. You can override this default on a "
-          + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
-          + "there is no limit. Defaults to 1."
+      + "is being partially shut down by lowering its replica count. You can override this default on a "
+      + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
+      + "there is no limit. Defaults to 1."
   )
   @Range(minimum = 0)
+  @Default(intDefault = 1)
   private Integer maxClusterConcurrentShutdown;
 
   @Description("The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.")
   @Range(minimum = 0)
+  @Default(intDefault = 120)
   private Long failureRetryIntervalSeconds;
 
   @Description("The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.")
   @Range(minimum = 0)
+  @Default(intDefault = 1440)
   private Long failureRetryLimitMinutes;
 
   /**
@@ -272,12 +283,12 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is present in the container image"
-          + " specified by the `image` field. PersistentVolume indicates that the domain home file system is located"
-          + " on a persistent volume. FromModel indicates that the domain home file system will be created"
-          + " and managed by the operator based on a WDT domain model."
-          + " Defaults to Image.")
+      "Domain home file system source type: Legal values: `Image`, `PersistentVolume`, `FromModel`."
+      + " `Image` indicates that the domain home file system is present in the container image"
+      + " specified by the `image` field. `PersistentVolume` indicates that the domain home file system is located"
+      + " on a persistent volume. `FromModel` indicates that the domain home file system will be created"
+      + " and managed by the operator based on a WDT domain model."
+      + " Defaults to `Image`, unless `configuration.model` is set, in which case the default is `FromModel`.")
   private DomainSourceType domainHomeSourceType;
 
   /**
@@ -288,10 +299,10 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. "
       + "Repeating introspection is required for the operator to recognize changes to the domain configuration, "
-      + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, "
-      + "or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs "
+      + "such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or "
+      + "to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs "
       + "automatically, without requiring change to this field, when servers are first started or restarted after a "
-      + "full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running "
+      + "full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running "
       + "server must be restarted because of changes to any of the fields listed here: "
       + "https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. "
@@ -431,7 +442,11 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  AdminServer getOrCreateAdminServer() {
+  /**
+   * Get Admin Server configuration or else create default, if doesn't exist.
+   * @return Admin Server configuration.
+   */
+  public AdminServer getOrCreateAdminServer() {
     if (adminServer != null) {
       return adminServer;
     }
@@ -744,8 +759,8 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return replicas
    */
-  public Integer getReplicas() {
-    return this.replicas;
+  public int getReplicas() {
+    return Optional.ofNullable(replicas).orElse(0);
   }
 
   /**
@@ -832,10 +847,6 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getIstio)
         .map(Istio::getEnabled)
         .orElse(false);
-  }
-
-  Istio getIstio() {
-    return Optional.ofNullable(configuration).map(Configuration::getIstio).orElse(null);
   }
 
   /**
@@ -1092,7 +1103,12 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
-  ManagedServer getManagedServer(String serverName) {
+  /**
+   * Find Managed Server.
+   * @param serverName name of managed server.
+   * @return ManagedServer object or null, if not defined.
+   */
+  public ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {
       for (ManagedServer s : managedServers) {
         if (serverName.equals(s.getServerName())) {
@@ -1103,7 +1119,12 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  ClusterSpec getCluster(String clusterName) {
+  /**
+   * Get Cluster configuration.
+   * @param clusterName name of cluster.
+   * @return cluster configuration or null, if not defined.
+   */
+  public ClusterSpec getCluster(String clusterName) {
     if (clusterName != null) {
       for (ClusterSpec c : clusters) {
         if (clusterName.equals(c.getClusterName())) {
@@ -1165,16 +1186,13 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public EffectiveServerSpec getServerSpec(String serverName, String clusterName) {
+    public EffectiveServerSpec getServerSpec(
+        String serverName, String clusterName, ClusterSpec clusterSpec) {
       return new EffectiveManagedServerSpecCommonImpl(
           DomainSpec.this,
           getManagedServer(serverName),
-          getCluster(clusterName),
-          getClusterLimit(clusterName));
-    }
-
-    private boolean hasReplicaCount(ClusterSpec clusterSpec) {
-      return clusterSpec != null && clusterSpec.getReplicas() != null;
+          clusterSpec,
+          getClusterLimit(clusterName, clusterSpec));
     }
 
     private boolean hasMaxUnavailable(ClusterSpec clusterSpec) {
@@ -1211,18 +1229,16 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     private int getReplicaCountFor(ClusterSpec clusterSpec) {
-      return hasReplicaCount(clusterSpec)
-          ? clusterSpec.getReplicas()
-          : Optional.ofNullable(replicas).orElse(0);
+      return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getReplicas());
     }
 
     @Override
-    public EffectiveClusterSpec getClusterSpec(String clusterName) {
-      return new EffectiveClusterSpecCommonImpl(DomainSpec.this, getCluster(clusterName));
+    public EffectiveClusterSpec getClusterSpec(ClusterSpec clusterSpec) {
+      return new EffectiveClusterSpecCommonImpl(DomainSpec.this, clusterSpec);
     }
 
-    private Integer getClusterLimit(String clusterName) {
-      return clusterName == null ? null : getReplicaCount(clusterName);
+    private Integer getClusterLimit(String clusterName, ClusterSpec clusterSpec) {
+      return clusterName == null ? null : getReplicaCount(clusterSpec);
     }
 
     @Override
@@ -1231,18 +1247,19 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public int getReplicaCount(String clusterName) {
-      return getReplicaCountFor(getCluster(clusterName));
+    public int getReplicaCount(ClusterSpec clusterSpec) {
+      return getReplicaCountFor(clusterSpec);
     }
 
     @Override
-    public void setReplicaCount(String clusterName, int replicaCount) {
-      getOrCreateCluster(clusterName).setReplicas(replicaCount);
+    public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount) {
+      Optional.ofNullable(clusterSpec).ifPresentOrElse(c -> c.setReplicas(replicaCount),
+          () -> getOrCreateCluster(clusterName).setReplicas(replicaCount));
     }
 
     @Override
-    public int getMaxUnavailable(String clusterName) {
-      return getMaxUnavailableFor(getCluster(clusterName));
+    public int getMaxUnavailable(ClusterSpec clusterSpec) {
+      return getMaxUnavailableFor(clusterSpec);
     }
 
     @Override
@@ -1251,18 +1268,18 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
-      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
+    public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
+      return isAllowReplicasBelowDynClusterSizeFor(clusterSpec);
     }
 
     @Override
-    public int getMaxConcurrentStartup(String clusterName) {
-      return getMaxConcurrentStartupFor(getCluster(clusterName));
+    public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
+      return getMaxConcurrentStartupFor(clusterSpec);
     }
 
     @Override
-    public int getMaxConcurrentShutdown(String clusterName) {
-      return getMaxConcurrentShutdownFor(getCluster(clusterName));
+    public int getMaxConcurrentShutdown(ClusterSpec clusterSpec) {
+      return getMaxConcurrentShutdownFor(clusterSpec);
     }
 
     private ClusterSpec getOrCreateCluster(String clusterName) {

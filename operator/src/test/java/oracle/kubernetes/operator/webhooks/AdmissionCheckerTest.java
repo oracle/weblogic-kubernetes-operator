@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.webhooks;
 import java.util.Collections;
 
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.DomainAdmissionChecker;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class AdmissionCheckerTest {
   private final DomainResource existingDomain = createDomain();
   private final DomainResource proposedDomain = createDomain();
-  private final AdmissionChecker admissionChecker = new AdmissionChecker(existingDomain, proposedDomain);
+  private final DomainAdmissionChecker admissionChecker = new DomainAdmissionChecker(existingDomain, proposedDomain);
 
   @Test
   void whenSameObject_returnTrue() {

@@ -454,20 +454,28 @@ public class LoggingUtil {
     }
   }
 
-
   private static Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
-    return () -> {
-      String podLog;
-      try {
-        podLog = getPodLog(podName, namespace);
-        getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
-      } catch (ApiException apiEx) {
-        getLogger().severe("got ApiException while getting pod log: ", apiEx);
-        return false;
-      }
+    return () -> doesPodLogContainString(namespace, podName, expectedString);
+  }
 
-      return podLog.contains(expectedString);
-    };
+  /**
+   * Check whether pod log contains expected string.
+   * @param namespace - namespace where pod exists
+   * @param podName - pod name of the log
+   * @param expectedString - expected string in the pod log
+   * @return true if pod log contains expected string, false otherwise
+   */
+  public static boolean doesPodLogContainString(String namespace, String podName, String expectedString) {
+    String podLog;
+    try {
+      podLog = getPodLog(podName, namespace);
+      getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
+    } catch (ApiException apiEx) {
+      getLogger().severe("got ApiException while getting pod log: ", apiEx);
+      return false;
+    }
+
+    return podLog.contains(expectedString);
   }
 
   /**

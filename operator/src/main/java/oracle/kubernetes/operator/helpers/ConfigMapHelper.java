@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -839,18 +840,40 @@ public class ConfigMapHelper {
    *   DOMAIN_RESTART_VERSION             a field from the domain to force rolling when changed
    *   DOMAIN_INPUTS_HASH                 a hash of the image used in the domain.
    *
-   * @param ns the namespace of the domain
-   * @param domainUid the unique domain ID
    * @return a step to do the processing.
    */
-  public static Step readExistingIntrospectorConfigMap(String ns, String domainUid) {
-    String configMapName = getIntrospectorConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectorConfigMapStep());
+  public static Step readExistingIntrospectorConfigMap() {
+    return new ReadIntrospectorConfigMapStep(ReadIntrospectorConfigMapResponseStep::new);
   }
 
-  private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
+  static class ReadIntrospectorConfigMapStep extends Step {
 
-    ReadIntrospectorConfigMapStep() {
+    private final Function<Step, ResponseStep<V1ConfigMap>> responseStepConstructor;
+
+    private ReadIntrospectorConfigMapStep(Function<Step, ResponseStep<V1ConfigMap>> constructor) {
+      this.responseStepConstructor = constructor;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      final DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      return doNext(createReadStep(info), packet);
+    }
+
+    private Step createReadStep(DomainPresenceInfo info) {
+      final String ns = info.getNamespace();
+      final String domainUid = info.getDomainUid();
+      final String configMapName = getIntrospectorConfigMapName(domainUid);
+
+      return new CallBuilder()
+          .readConfigMapAsync(configMapName, ns, domainUid, responseStepConstructor.apply(getNext()));
+    }
+  }
+
+  private static class ReadIntrospectorConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    ReadIntrospectorConfigMapResponseStep(Step next) {
+      super(next);
     }
 
     @Override
@@ -921,14 +944,10 @@ public class ConfigMapHelper {
    * Reads the introspector config map for the specified domain, populating the following packet entries.
    *   INTROSPECTION_STATE_LABEL          the value of the domain's 'introspectVersion' when this map was created
    *
-   * @param ns the namespace of the domain
-   * @param domainUid the unique domain ID
    * @return a step to do the processing.
    */
-  public static Step readIntrospectionVersionStep(String ns, String domainUid) {
-    String configMapName = getIntrospectorConfigMapName(domainUid);
-    return new CallBuilder()
-        .readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionResponseStep());
+  public static Step readIntrospectionVersionStep() {
+    return new ReadIntrospectorConfigMapStep(ReadIntrospectionVersionResponseStep::new);
   }
 
   /**
@@ -967,6 +986,10 @@ public class ConfigMapHelper {
   }
 
   private static class ReadIntrospectionVersionResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    private ReadIntrospectionVersionResponseStep(Step nextStep) {
+      super(nextStep);
+    }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {

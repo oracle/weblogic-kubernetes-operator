@@ -11,7 +11,7 @@ adminPort: 7001
 adminServerName: admin-server
 
 # Unique ID identifying a domain.
-# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains
+# This ID must not contain an underscore ("_"), and must be lowercase and unique across all domains
 # in a Kubernetes cluster.
 domainUID: domain1
 
@@ -20,8 +20,8 @@ domainUID: domain1
 domainHome: /u01/oracle/user_projects/domains/domain1
 
 # Determines which OracleFMWInfrastructure Servers the operator will start up
-# Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
-serverStartPolicy: IF_NEEDED
+# Legal values are "Never", "IfNeeded", or "AdminOnly"
+serverStartPolicy: IfNeeded
 
 # Cluster name
 clusterName: cluster-1

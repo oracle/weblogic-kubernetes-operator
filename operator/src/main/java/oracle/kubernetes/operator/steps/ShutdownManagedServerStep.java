@@ -129,7 +129,7 @@ public class ShutdownManagedServerStep extends Step {
       List<V1EnvVar> envVarList = getV1EnvVars();
 
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
+      Shutdown shutdown = Optional.ofNullable(info.getServer(serverName, clusterName))
           .map(EffectiveServerSpec::getShutdown).orElse(null);
 
       isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);

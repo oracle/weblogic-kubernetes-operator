@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -17,6 +18,7 @@ public class ClusterService extends KubernetesResource {
       "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. "
           + "Must be ClientIP or None. Defaults to None. More info: "
           + "https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies")
+  @Default(strDefault = "None")
   private V1ServiceSpec.SessionAffinityEnum sessionAffinity;
 
   void fillInFrom(ClusterService clusterService1) {

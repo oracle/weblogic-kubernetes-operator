@@ -769,7 +769,7 @@ Spec:
       Requests:
         Cpu:            250m
         Memory:         768Mi
-  Server Start Policy:  IF_NEEDED
+  Server Start Policy:  IfNeeded
   Web Logic Credentials Secret:
     Name:  sample-domain1-weblogic-credentials
 Status:

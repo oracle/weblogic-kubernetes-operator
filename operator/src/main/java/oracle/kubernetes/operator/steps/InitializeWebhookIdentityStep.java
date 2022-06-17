@@ -7,17 +7,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -29,17 +28,21 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.utils.PathSupport;
+import oracle.kubernetes.operator.utils.SelfSignedCertUtils;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.io.FileUtils;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBHOOK_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 
 public class InitializeWebhookIdentityStep extends Step {
@@ -51,10 +54,9 @@ public class InitializeWebhookIdentityStep extends Step {
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
   public static final String WEBHOOK_KEY = "webhookKey";
   public static final String EXCEPTION = "Exception";
+  // allow unit tests to set this
   @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
-  private static Function<String, Path> getPath = Paths::get;
-  @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
-  private static Function<URI, Path> uriToPath = Paths::get;
+  private static SslIdentityFactory identityFactory = new SslIdentityFactoryImpl();
 
   private final File webhookCertFile;
   private final File webhookKeyFile;
@@ -77,12 +79,10 @@ public class InitializeWebhookIdentityStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     try {
-      if (isFileExists(certFile) && isFileExists(keyFile)) {
-        // The webhook's ssl identity has already been created.
+      if (isWebHoodSslIdentityAlreadyCreated()) {
         reuseIdentity();
         return doNext(getNext(), packet);
       } else {
-        // The webhook's ssl identity hasn't been created yet.
         return createIdentity(packet);
       }
     } catch (IdentityInitializationException | IOException e) {
@@ -92,8 +92,12 @@ public class InitializeWebhookIdentityStep extends Step {
     }
   }
 
+  private boolean isWebHoodSslIdentityAlreadyCreated() {
+    return isFileExists(certFile) && isFileExists(keyFile);
+  }
+
   private static boolean isFileExists(File file) {
-    return Files.isRegularFile(getPath.apply(file.getPath()));
+    return Files.isRegularFile(PathSupport.getPath(file));
   }
 
   private void reuseIdentity() throws IOException {
@@ -105,11 +109,10 @@ public class InitializeWebhookIdentityStep extends Step {
 
   private NextAction createIdentity(Packet packet) throws IdentityInitializationException {
     try {
-      KeyPair keyPair = createKeyPair();
-      String key = convertToPEM(keyPair.getPrivate());
+      final KeyPair keyPair = identityFactory.createKeyPair();
+      final String key = identityFactory.convertToPEM(keyPair.getPrivate());
       writeToFile(key, webhookKeyFile);
-      X509Certificate cert = generateCertificate(webhookCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
-          CERTIFICATE_VALIDITY_DAYS);
+      X509Certificate cert = identityFactory.createCertificate(webhookCertFile.getName(), keyPair);
       String certString = getBase64Encoded(cert);
       writeToFile(certString, webhookCertFile);
       // put the new certificate and key in the webhook's secret so that it will be available
@@ -120,25 +123,17 @@ public class InitializeWebhookIdentityStep extends Step {
     }
   }
 
-  private static String convertToPEM(Object object) throws IOException {
-    StringWriter writer = new StringWriter();
-    try (JcaPEMWriter pemWriter = new JcaPEMWriter(writer)) {
-      pemWriter.writeObject(object);
-      pemWriter.flush();
-    }
-    return writer.toString();
-  }
-
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   private static void writeToFile(String content, File path) throws IOException {
     path.getParentFile().mkdirs();
-    try (Writer wr = Files.newBufferedWriter(getPath.apply(path.toString()))) {
+    try (Writer wr = Files.newBufferedWriter(PathSupport.getPath(path))) {
       wr.write(content);
       wr.flush();
     }
   }
 
   private static String getBase64Encoded(X509Certificate cert) throws IOException {
-    return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
+    return Base64.getEncoder().encodeToString(identityFactory.convertToPEM(cert).getBytes());
   }
 
   private Step recordWebhookIdentity(WebhookIdentity webhookIdentity, Step next) {
@@ -196,6 +191,31 @@ public class InitializeWebhookIdentityStep extends Step {
     private void reuseExistingIdentity(Map<String, byte[]> data) throws IOException {
       Files.write(webhookKeyFile.toPath(), data.get(WEBHOOK_KEY));
       Files.write(webhookCertFile.toPath(), data.get(WEBHOOK_CERTIFICATE));
+    }
+  }
+
+  private static class SslIdentityFactoryImpl implements SslIdentityFactory {
+
+    @Override
+    @NotNull
+    public KeyPair createKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException {
+      return SelfSignedCertUtils.createKeyPair();
+    }
+
+    @Override
+    public String convertToPEM(Object object) throws IOException {
+      StringWriter writer = new StringWriter();
+      try (JcaPEMWriter pemWriter = new JcaPEMWriter(writer)) {
+        pemWriter.writeObject(object);
+        pemWriter.flush();
+      }
+      return writer.toString();
+    }
+
+    @Override
+    public X509Certificate createCertificate(String name, KeyPair keyPair)
+        throws OperatorCreationException, CertificateException, CertIOException {
+      return generateCertificate(name, keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
     }
   }
 

@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/sh
 # Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -12,7 +12,7 @@ usage() {
   cat << EOF
 
   This script starts a deployed WebLogic domain by patching 'spec.serverStartPolicy'
-  attribute of the domain resource to 'IF_NEEDED'. This change will cause the operator
+  attribute of the domain resource to 'IfNeeded'. This change will cause the operator
   to initiate startup of domain's WebLogic server instance pods if the pods are not
   already running.
  
@@ -83,15 +83,15 @@ fi
 
 getDomainPolicy "${domainJson}" serverStartPolicy
 
-if [ "${serverStartPolicy}" == 'IF_NEEDED' ]; then 
-  printInfo "No changes needed, exiting. The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'."
+if [ "${serverStartPolicy}" == 'IfNeeded' ]; then
+  printInfo "No changes needed, exiting. The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IfNeeded'."
   exit 0
 fi
 
-printInfo "Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IF_NEEDED'."
+printInfo "Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IfNeeded'."
 
-createPatchJsonToUpdateDomainPolicy "IF_NEEDED" patchJson
+createPatchJsonToUpdateDomainPolicy "IfNeeded" patchJson
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'IF_NEEDED' start policy!"
+printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'IfNeeded' start policy!"

@@ -429,7 +429,7 @@ class IntrospectorConfigMapTest {
           DOMAIN_INPUTS_HASH, INPUTS_HASH_VALUE,
           NUM_CONFIG_MAPS, NUM_MAPS_STRING)));
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.readExistingIntrospectorConfigMap(NS, UID));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.readExistingIntrospectorConfigMap());
 
     assertThat(packet.get(SECRETS_MD_5), equalTo(MD5_SECRETS));
     assertThat(packet.get(DOMAINZIP_HASH), equalTo(DOMAIN_HASH_VALUE));

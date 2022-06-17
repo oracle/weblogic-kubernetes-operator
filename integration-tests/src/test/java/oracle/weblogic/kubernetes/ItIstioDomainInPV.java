@@ -222,7 +222,7 @@ class ItIstioDomainInPV  {
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -359,8 +359,8 @@ class ItIstioDomainInPV  {
     // Refer JIRA OWLS-86407
     // Stop and Start the managed server in absense of administration server
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/adminServer/serverStartPolicy", "NEVER"),
-         "Failed to patch administrationi server serverStartPolicy to NEVER");
+         "/spec/adminServer/serverStartPolicy", "Never"),
+         "Failed to patch administration server serverStartPolicy to Never");
     logger.info("Domain is patched to shutdown administration server");
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
@@ -371,9 +371,9 @@ class ItIstioDomainInPV  {
         domainUid, domainNamespace));
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
-    logger.info("Cluster is scaled down in absense of administration server");
+    logger.info("Cluster is scaled down in absence of administration server");
     checkPodDeleted(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
-    logger.info("Managed Server stopped in absense of administration server");
+    logger.info("Managed Server stopped in absence of administration server");
 
     scalingSuccess = assertDoesNotThrow(() ->
         scaleCluster(domainUid, domainNamespace, "cluster-1", 2),
@@ -381,10 +381,10 @@ class ItIstioDomainInPV  {
         domainUid, domainNamespace));
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
-    logger.info("Cluster is scaled up in absense of administration server");
+    logger.info("Cluster is scaled up in absence of administration server");
     checkServiceExists(managedServerPodNamePrefix + "2", domainNamespace);
     checkPodReady(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
-    logger.info("Managed Server started in absense of administration server");
+    logger.info("Managed Server started in absence of administration server");
   }
 
   /**

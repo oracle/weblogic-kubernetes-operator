@@ -18,6 +18,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -36,6 +37,7 @@ public class MonitoringExporterConfiguration {
   private Boolean metricsNameSnakeCase;
 
   @Description("If true, metrics qualifiers will include the operator domain. Defaults to false.")
+  @Default(boolDefault = false)
   private Boolean domainQualifier;
 
   private ExporterQuery[] queries;

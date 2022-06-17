@@ -4,8 +4,8 @@
 # Apache webtier docker image
 image: "oracle/apache:12.2.1.3"
 
-# imagePullPolicy specifies the image pull policy for the apache webiter docker image
-imagePullPolicy: "IfNotPresent"
+# imagePullPolicy specifies the image pull policy for the Apache webtier container image
+imagePullPolicy: IfNotPresent
 
 # imagePullSecrets contains an optional list of Kubernetes secrets, that are needed
 # to access the registry containing the apache webtier image.
