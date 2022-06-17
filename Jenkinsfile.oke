@@ -59,6 +59,7 @@ pipeline {
                         'oke-cert',
                         'oke-sequential',
                         'oke-unstable',
+                        'oke-add',
                         'integration-tests'
                 ]
         )

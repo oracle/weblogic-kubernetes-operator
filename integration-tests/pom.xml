@@ -433,14 +433,30 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItCoherenceTests,
                     **/ItConfigDistributionStrategy,
-                    **/ItCrossDomainTransaction,
-                    **/ItElasticLoggingFluentd,
-                    **/ItEvictedPodsCycling,
                     **/ItExternalLbTunneling,
                     **/ItExternalNodePortService,
                     **/ItFmwBigCMMiiDomain,
+                    **/ItLBTwoDomainsNginx,
+                    **/ItLBTwoDomainsApache,
+                    **/ItLiftAndShiftFromOnPremDomain,
+                    **/ItMiiCustomSslStore,
+                    **/ItWlsSamples,
+                    **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItMultiDomainModelsWithLoadBalancer
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>oke-add</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItCoherenceTests,
+                    **/ItCrossDomainTransaction,
+                    **/ItDiagnosticsFailedCondition,
+                    **/ItElasticLoggingFluentd,
+                    **/ItEvictedPodsCycling,
                     **/ItFmwDiiSample,
                     **/ItFmwMiiDomain,
                     **/ItFmwSample,
@@ -448,15 +464,11 @@
                     **/ItIstioProductionSecureMode,
                     **/ItKubernetesDomainEvents,
                     **/ItIstioCrossDomainTransaction,
-                    **/ItLBTwoDomains*,
-                    **/ItLiftAndShiftFromOnPremDomain,
-                    **/ItMiiCustomSslStore,
+                    **/ItLBTwoDomainsTraefik,
                     **/ItMiiSampleWlsMain,
                     **/ItWlsSamples,
-                    **/ItTwoDomainsManagedByTwoOperators,
                     **/ItProductionSecureMode,
                     **/ItPodTemplates,
-                    **/ItMultiDomainModelsWithLoadBalancer,
                     **/ItMiiSampleWlsAux,
                     **/ItDiagnosticsFailedCondition
                 </includes-failsafe>
