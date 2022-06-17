@@ -80,41 +80,7 @@ weight: 3
 
 1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
 
-    a. Copy the following IngressRoute YAML to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
-
-
-    {{%expand "Click here to view the ingress route YAML file." %}}
-    # Copyright (c) 2022, Oracle and/or its affiliates.
-    # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
-    apiVersion: traefik.containo.us/v1alpha1
-    kind: IngressRoute
-    metadata:
-      name: console
-      namespace: sample-domain1-ns
-    spec:
-      routes:
-        - kind: Rule
-          match: PathPrefix(`/console`)
-          services:
-            - kind: Service
-              name: sample-domain1-admin-server
-              port: 7001
-    ---
-    apiVersion: traefik.containo.us/v1alpha1
-    kind: IngressRoute
-    metadata:
-      name: quickstart
-      namespace: sample-domain1-ns
-    spec:
-      routes:
-      - kind: Rule
-        match: PathPrefix(`/quickstart`)
-        services:
-        - kind: Service
-          name: sample-domain1-cluster-cluster-1
-          port: 8001
-    {{% /expand %}}
+    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
 
     b. Then apply the file using:
     ```shell
