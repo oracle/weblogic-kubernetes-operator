@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -20,6 +21,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listServiceAccounts;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.readSecretByReference;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Secret {
 
@@ -110,34 +112,38 @@ public class Secret {
    * @return the encoded token of the secret
    */
   public static String getSecretEncodedToken(String namespace, String secretName) {
+    LoggingFacade logger = getLogger();
+    for (int i = 0; i < 10; i++) {
+      String token = getToken(namespace, secretName);
+      if (token != null) {
+        logger.info("Got the token {0}", token);
+        return token;
+      }
+      logger.info("Token is null, retrying after 5 seconds");
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(5));
+    }
+    logger.warning("Secret token is null");
+    return null;
+  }
 
+  private static String getToken(String namespace, String secretName) {
+    String token = null;
     List<V1Secret> v1Secrets = new ArrayList<>();
-
     V1SecretList secretList = listSecrets(namespace);
     if (secretList != null) {
       v1Secrets = secretList.getItems();
     }
-
     for (V1Secret v1Secret : v1Secrets) {
       if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
         if (v1Secret.getMetadata().getName().equals(secretName)) {
-          if (v1Secret.getData() != null) {
+          if (v1Secret.getData() != null && v1Secret.getData().get("token") != null) {
             byte[] encodedToken = v1Secret.getData().get("token");
-            getLogger().info(new String(encodedToken));
-            Base64.Encoder encoder = Base64.getEncoder();
-            if (encoder != null) {
-              String encodeToString = encoder.encodeToString(encodedToken);
-              getLogger().info(encodeToString);
-            } else {
-              getLogger().info("encoder is null");
-            }
-            return Base64.getEncoder().encodeToString(encodedToken);
+            token = Base64.getEncoder().encodeToString(encodedToken);
           }
         }
       }
     }
-
-    return "";
+    return token;
   }
 
   /**
