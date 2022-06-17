@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 9422d2a33c9064fe24497f1999e2426763d558aa372ffa8d1ab7c4c242aac3e5
+    weblogic.sha256: 146b956ab8e3159fb98cc751d72aa542b941e5d3972a8cff704506f9353c8b42
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1783,7 +1783,6 @@ spec:
                           - name
                         type: array
                       restartPolicy:
-                        default: Always
                         description: 'Restart policy for all containers within the
                           Pod. One of Always, OnFailure, Never. Default to Always.
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
@@ -4882,7 +4881,6 @@ spec:
                             required:
                             - name
                         restartPolicy:
-                          default: Always
                           description: 'Restart policy for all containers within the
                             Pod. One of Always, OnFailure, Never. Default to Always.
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
@@ -7931,7 +7929,6 @@ spec:
                       - name
                     type: array
                   restartPolicy:
-                    default: Always
                     description: 'Restart policy for all containers within the Pod.
                       One of Always, OnFailure, Never. Default to Always. More info:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
@@ -10878,7 +10875,6 @@ spec:
                             required:
                             - name
                         restartPolicy:
-                          default: Always
                           description: 'Restart policy for all containers within the
                             Pod. One of Always, OnFailure, Never. Default to Always.
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
