@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator;
+package oracle.kubernetes.operator.makeright;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +17,14 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import oracle.kubernetes.operator.DomainProcessorDelegate;
+import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
+import oracle.kubernetes.operator.MakeRightExecutor;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.Processors;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
@@ -25,7 +33,6 @@ import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.makeright.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.MonitoringExporterSteps;
@@ -44,7 +51,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
  */
-class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
+public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
   private final MakeRightExecutor executor;
   private final DomainProcessorDelegate delegate;
@@ -64,7 +71,7 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    * @param delegate a class which handles scheduling and other types of processing
    * @param liveInfo domain presence info read from Kubernetes
    */
-  MakeRightDomainOperationImpl(
+  public MakeRightDomainOperationImpl(
       MakeRightExecutor executor, DomainProcessorDelegate delegate, @Nonnull DomainPresenceInfo liveInfo) {
     this.executor = executor;
     this.delegate = delegate;
@@ -380,11 +387,9 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     }
 
     private Step getRecordExistingResourcesSteps() {
-      NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
-
-      resources.addProcessing(new NamespacedResources.Processors() {
+      final Processors processor = new Processors() {
         @Override
-        Consumer<V1PodList> getPodListProcessing() {
+        public Consumer<V1PodList> getPodListProcessing() {
           return list -> list.getItems().forEach(this::addPod);
         }
 
@@ -393,7 +398,7 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
         }
 
         @Override
-        Consumer<V1ServiceList> getServiceListProcessing() {
+        public Consumer<V1ServiceList> getServiceListProcessing() {
           return list -> list.getItems().forEach(this::addService);
         }
 
@@ -402,16 +407,16 @@ class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
         }
 
         @Override
-        Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+        public Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
           return list -> list.getItems().forEach(this::addPodDisruptionBudget);
         }
 
         private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
           PodDisruptionBudgetHelper.addToPresence(info, pdb);
         }
-      });
+      };
 
-      return resources.createListSteps();
+      return executor.createNamespacedResourceSteps(processor, info);
     }
 
   }

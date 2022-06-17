@@ -256,7 +256,7 @@ public class ServiceHelper {
     }
 
     private EffectiveServerSpec getServerSpec() {
-      return getDomain().getServer(getServerName(), getClusterName());
+      return info.getServer(getServerName(), getClusterName());
     }
 
     @Override
@@ -852,7 +852,7 @@ public class ServiceHelper {
     }
 
     EffectiveClusterSpec getClusterSpec() {
-      return getDomain().getCluster(clusterName);
+      return info.getCluster(clusterName);
     }
 
     @Override

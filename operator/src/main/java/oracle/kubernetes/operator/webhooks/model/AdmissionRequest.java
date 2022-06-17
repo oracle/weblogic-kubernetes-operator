@@ -7,7 +7,9 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
+
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 
 /**
  * AdmissionRequest represents a Kubernetes admission request sent by the Kubernetes ApiServer upon invoking an
@@ -54,14 +56,14 @@ public class AdmissionRequest {
    */
   @SerializedName("object")
   @Expose
-  private DomainResource object;
+  private Map<String,Object> object;
 
   /**
    * The existing object.
    */
   @SerializedName("oldObject")
   @Expose
-  private DomainResource oldObject;
+  private Map<String,Object> oldObject;
 
   public String getUid() {
     return uid;
@@ -95,30 +97,38 @@ public class AdmissionRequest {
     this.subResource = subResource;
   }
 
-  public DomainResource getObject() {
+  public Map<String,Object> getObject() {
     return object;
   }
 
-  public void setObject(DomainResource object) {
+  public void setObject(Map<String,Object> object) {
     this.object = object;
   }
 
-  public AdmissionRequest object(DomainResource object) {
+  public AdmissionRequest object(Map<String,Object> object) {
     setObject(object);
     return this;
   }
 
-  public DomainResource getOldObject() {
+  public Map<String,Object> getOldObject() {
     return oldObject;
   }
 
-  public void setOldObject(DomainResource oldObject) {
+  public void setOldObject(Map<String,Object> oldObject) {
     this.oldObject = oldObject;
   }
 
-  public AdmissionRequest oldObject(DomainResource oldObject) {
+  public AdmissionRequest oldObject(Map<String,Object> oldObject) {
     setOldObject(oldObject);
     return this;
+  }
+
+  public Object getExistingResource() {
+    return readDomain(writeMap(getOldObject()));
+  }
+
+  public Object getProposedResource() {
+    return readDomain(writeMap(getObject()));
   }
 
   @Override
