@@ -3,21 +3,17 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
@@ -29,6 +25,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -76,45 +73,8 @@ class CrdHelperTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
-  private final Function<URI, Path> pathFunction = fileSystem::getPath;
-  private final Function<URI, Path> pathFunctionWithException = fileSystem::getPathThrowsIllegaArgumentException;
-  private final Function<String, Path> getInMemoryPath = fileSystem::getPath;
   private final TerminalStep terminalStep = new TerminalStep();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
-
-  private V1CustomResourceDefinition defineDomainCrd() {
-    return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());
-  }
-
-  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion, String crdName) {
-    return new V1CustomResourceDefinition()
-        .apiVersion("apiextensions.k8s.io/v1")
-        .kind("CustomResourceDefinition")
-        .metadata(createMetadata(operatorVersion, crdName))
-        .spec(createSpec());
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion, String crdName) {
-    return new V1ObjectMeta()
-        .name(crdName)
-        .putLabelsItem(LabelConstants.OPERATOR_VERSION,
-            Optional.ofNullable(operatorVersion).map(SemanticVersion::toString).orElse(null));
-  }
-
-  private V1CustomResourceDefinitionSpec createSpec() {
-    return new V1CustomResourceDefinitionSpec()
-        .group(KubernetesConstants.DOMAIN_GROUP)
-        .scope("Namespaced")
-        .addVersionsItem(new V1CustomResourceDefinitionVersion()
-            .served(true).name(KubernetesConstants.OLD_DOMAIN_VERSION))
-        .names(
-            new V1CustomResourceDefinitionNames()
-                .plural(KubernetesConstants.DOMAIN_PLURAL)
-                .singular(KubernetesConstants.DOMAIN_SINGULAR)
-                .kind(KubernetesConstants.DOMAIN)
-                .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
-  }
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -123,9 +83,8 @@ class CrdHelperTest {
             .collectLogMessages(logRecords, CREATING_CRD, REPLACE_CRD_FAILED, CREATE_CRD_FAILED)
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
-    mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath));
+    mementos.add(fileSystem.install());
+    mementos.add(InMemoryCertificates.install(fileSystem));
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
   }
@@ -535,7 +494,7 @@ class CrdHelperTest {
 
   @Test
   void testCrdCreationExceptionWhenWritingCrd() throws NoSuchFieldException {
-    StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunctionWithException);
+    fileSystem.throwExceptionOnGetPath("/crd.yaml");
 
     Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> CrdHelper.main("crd.yaml", "cluster.yaml"));
   }
@@ -561,5 +520,40 @@ class CrdHelperTest {
   }
 
   // todo check additional arguments: if second arg not present: error or skip cluster resource ?
+
+
+  private V1CustomResourceDefinition defineDomainCrd() {
+    return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());
+  }
+
+  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion, String crdName) {
+    return new V1CustomResourceDefinition()
+        .apiVersion("apiextensions.k8s.io/v1")
+        .kind("CustomResourceDefinition")
+        .metadata(createMetadata(operatorVersion, crdName))
+        .spec(createSpec());
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion, String crdName) {
+    return new V1ObjectMeta()
+        .name(crdName)
+        .putLabelsItem(LabelConstants.OPERATOR_VERSION,
+            Optional.ofNullable(operatorVersion).map(SemanticVersion::toString).orElse(null));
+  }
+
+  private V1CustomResourceDefinitionSpec createSpec() {
+    return new V1CustomResourceDefinitionSpec()
+        .group(KubernetesConstants.DOMAIN_GROUP)
+        .scope("Namespaced")
+        .addVersionsItem(new V1CustomResourceDefinitionVersion()
+            .served(true).name(KubernetesConstants.OLD_DOMAIN_VERSION))
+        .names(
+            new V1CustomResourceDefinitionNames()
+                .plural(KubernetesConstants.DOMAIN_PLURAL)
+                .singular(KubernetesConstants.DOMAIN_SINGULAR)
+                .kind(KubernetesConstants.DOMAIN)
+                .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
+  }
 
 }

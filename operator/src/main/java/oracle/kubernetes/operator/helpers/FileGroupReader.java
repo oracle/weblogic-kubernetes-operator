@@ -20,12 +20,13 @@ import java.util.stream.Stream;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.utils.PathSupport;
 
 /**
  * This class can load a group of files under a specified classpath directory into a map. It handles
  * both files on the file system and in a JAR.
  */
-class FileGroupReader {
+public class FileGroupReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String pathToGroup;
@@ -109,7 +110,7 @@ class FileGroupReader {
 
     @Override
     public Path getScriptsDir() {
-      return uriToPath.apply(uri);
+      return PathSupport.getPath(uri);
     }
 
     @Override
