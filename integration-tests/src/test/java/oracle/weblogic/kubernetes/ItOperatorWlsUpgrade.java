@@ -435,12 +435,10 @@ class ItOperatorWlsUpgrade {
     installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
 
     // upgrade to current operator
-    upgradeOperatorAndVerify(domainVersion, externalServiceNameSuffix,
-          opNamespace, domainNamespace);
+    upgradeOperatorAndVerify(opNamespace, domainNamespace);
   }
 
-  private void upgradeOperatorAndVerify(String domApiVersion, String externalServiceNameSuffix,
-                  String opNamespace, String domainNamespace) {
+  private void upgradeOperatorAndVerify(String opNamespace, String domainNamespace) {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
@@ -464,7 +462,7 @@ class ItOperatorWlsUpgrade {
 
     // start a new thread to collect the availability data of
     // the application while the main thread performs operator upgrade
-    List<Integer> appAvailability = new ArrayList<Integer>();
+    List<Integer> appAvailability = new ArrayList<>();
     logger.info("Start a thread to keep track of application availability");
     Thread accountingThread =
           new Thread(
@@ -523,7 +521,7 @@ class ItOperatorWlsUpgrade {
         true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
 
-    restartDomain(domApiVersion, domainUid, domainNamespace);
+    restartDomain(domainUid, domainNamespace);
   }
 
   private void createSecrets() {
@@ -664,9 +662,7 @@ class ItOperatorWlsUpgrade {
   /**
    * Restart the domain after upgrade by changing serverStartPolicy.
    */
-  private void restartDomain(String domApiVersion, String domainUid, String domainNamespace) {
-    String ifNeeded = OLD_DOMAIN_VERSION.equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded";
-
+  private void restartDomain(String domainUid, String domainNamespace) {
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/serverStartPolicy", "Never"),
          "Failed to patch Domain's serverStartPolicy to Never");
@@ -674,8 +670,8 @@ class ItOperatorWlsUpgrade {
     checkDomainStopped(domainUid, domainNamespace);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", ifNeeded),
-         "Failed to patch Domain's serverStartPolicy to " + ifNeeded);
+         "/spec/serverStartPolicy", "IfNeeded"),
+         "Failed to patch Domain's serverStartPolicy to IfNeeded");
     logger.info("Domain is patched to re start");
     checkDomainStarted(domainUid, domainNamespace);
   }
