@@ -91,7 +91,7 @@ class ManagedServersUpStepTest {
   private final Step nextStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final DomainPresenceInfo info = createDomainPresenceInfo();
   private final ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private Memento factoryMemento;
@@ -133,7 +133,7 @@ class ManagedServersUpStepTest {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(factoryMemento = TestStepFactory.install());
     mementos.add(testSupport.install());
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(info);
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
@@ -159,7 +159,7 @@ class ManagedServersUpStepTest {
   }
 
   private void addRunningServer(String serverName) {
-    addServer(domainPresenceInfo, serverName);
+    addServer(info, serverName);
   }
 
   private void addWlsCluster(String clusterName, String... serverNames) {
@@ -460,7 +460,7 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
-    assertThat(domainPresenceInfo.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+    assertThat(info.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
   }
 
   @Test
@@ -476,17 +476,17 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
-    addServer(domainPresenceInfo, "server1");
+    addServer(info, "server1");
 
     assertThat(firstNonEventStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
   void whenExclusionsSpecified_doNotAddToListOfServers() {
-    addServer(domainPresenceInfo, "server1");
-    addServer(domainPresenceInfo, "server2");
-    addServer(domainPresenceInfo, "server3");
-    addServer(domainPresenceInfo, ADMIN);
+    addServer(info, "server1");
+    addServer(info, "server2");
+    addServer(info, "server3");
+    addServer(info, ADMIN);
 
     assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")),
         "server1", "server3");
@@ -496,10 +496,10 @@ class ManagedServersUpStepTest {
   void whenShuttingDown_allowAdminServerNameInListOfServers() {
     configurator.setShuttingDown(true);
 
-    addServer(domainPresenceInfo, "server1");
-    addServer(domainPresenceInfo, "server2");
-    addServer(domainPresenceInfo, "server3");
-    addServer(domainPresenceInfo, ADMIN);
+    addServer(info, "server1");
+    addServer(info, "server2");
+    addServer(info, "server3");
+    addServer(info, ADMIN);
 
     assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")), "server1",
         "server3", ADMIN);
@@ -567,7 +567,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(2, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(2, equalTo(info.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -579,7 +579,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(0, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(0, equalTo(info.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -592,7 +592,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(3, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(3, equalTo(info.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -670,19 +670,19 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domainPresenceInfo);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, info);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
-    domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
+    info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
     serversUpStepFactory.shutdownInfos.addAll(ssi);
-    return factory.createServerStep(domainPresenceInfo, config, serversUpStepFactory, nextStep);
+    return factory.createServerStep(info, config, serversUpStepFactory, nextStep);
   }
 
   private Step createNextStepWithNullWlsDomainConfig() {
     configSupport.setAdminServerName(ADMIN);
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo);
-    return factory.createServerStep(domainPresenceInfo, null, serversUpStepFactory, nextStep);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, info);
+    return factory.createServerStep(info, null, serversUpStepFactory, nextStep);
   }
 
   private void addShutdownServerInfo(String serverName, List<String> servers,

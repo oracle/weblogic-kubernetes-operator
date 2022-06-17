@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -30,6 +31,7 @@ public abstract class DomainTestBase {
   static final String DOMAIN_UID = "uid1";
 
   final DomainResource domain = createDomain();
+  final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   static DomainResource createDomain() {
     return new DomainResource()
@@ -63,6 +65,11 @@ public abstract class DomainTestBase {
     String json = jsonFromYaml(resourceName);
     Gson gson = new GsonBuilder().create();
     return gson.fromJson(json, DomainResource.class);
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  protected DomainPresenceInfo readDomainPresence(String resourceName) throws IOException {
+    return new DomainPresenceInfo(readDomain(resourceName));
   }
 
   private String jsonFromYaml(String resourceName) throws IOException {

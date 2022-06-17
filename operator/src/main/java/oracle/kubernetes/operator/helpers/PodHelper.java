@@ -488,7 +488,7 @@ public class PodHelper {
 
     @Override
     EffectiveServerSpec getServerSpec() {
-      return getDomain().getServer(getServerName(), getClusterName());
+      return info.getServer(getServerName(), getClusterName());
     }
 
     @Override
@@ -688,7 +688,7 @@ public class PodHelper {
           clusterName = labels.get(CLUSTERNAME_LABEL);
         }
 
-        EffectiveServerSpec effectiveServerSpec = info.getDomain().getServer(serverName, clusterName);
+        EffectiveServerSpec effectiveServerSpec = info.getServer(serverName, clusterName);
         if (effectiveServerSpec != null) {
           // We add a 10 second fudge factor here to account for the fact that WLST takes
           // ~6 seconds to start, so along with any other delay in connecting and issuing
