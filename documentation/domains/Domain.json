@@ -985,7 +985,6 @@
           }
         },
         "restartPolicy": {
-          "default": "Always",
           "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`.",
           "type": "string",
           "enum": [
