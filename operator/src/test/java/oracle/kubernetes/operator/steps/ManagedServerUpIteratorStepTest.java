@@ -116,7 +116,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   private final Step nextStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithAdminServer();
+  private DomainPresenceInfo info = createDomainPresenceInfoWithAdminServer();
   private final WlsDomainConfig domainConfig = createDomainConfig();
   private final Collection<ServerStartupInfo> startupInfos = new ArrayList<>();
 
@@ -190,7 +190,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     testSupport.defineResources(domain);
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
-            .addDomainPresenceInfo(domainPresenceInfo);
+            .addDomainPresenceInfo(info);
     testSupport.doOnCreate(POD, p -> schedulePodUpdates((V1Pod) p));
     testSupport.addComponent(
             ProcessingConstants.PODWATCHER_COMPONENT_NAME,
@@ -248,7 +248,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
   @Nonnull
   private List<String> getStartedManagedServers() {
-    return domainPresenceInfo.getServerPods()
+    return info.getServerPods()
           .map(this::getServerName)
           .filter(name -> !ADMIN.equals(name))
           .collect(Collectors.toList());
@@ -318,10 +318,10 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
   private void createDomainPresenceInfoWithNoAdminServer() {
-    domainPresenceInfo = new DomainPresenceInfo(domain);
+    info = new DomainPresenceInfo(domain);
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
-            .addDomainPresenceInfo(domainPresenceInfo);
+            .addDomainPresenceInfo(info);
   }
 
   @Test
@@ -389,11 +389,11 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
     invokeStepWithServerStartupInfos();
 
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
+    assertThat(MS3 + " pod", info.getServerPod(MS3), notNullValue());
   }
 
   private void addScheduledClusteredServer(String serverName) {
-    domainPresenceInfo.setServerPod(serverName,
+    info.setServerPod(serverName,
           new V1Pod().metadata(
                 withNames(new V1ObjectMeta().namespace(NS).putLabelsItem(CLUSTERNAME_LABEL, CLUSTER1), serverName))
                       .spec(new V1PodSpec().nodeName("scheduled")));
@@ -422,7 +422,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     startupInfos.add(
           new ServerStartupInfo(configSupport.getWlsServer(serverName),
               null,
-              domain.getServer(serverName, null))
+              info.getServer(serverName, null))
     );
   }
 
@@ -432,7 +432,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
             startupInfos.add(
                 new ServerStartupInfo(configSupport.getWlsServer(clusterName, server),
                     clusterName,
-                    domain.getServer(server, clusterName))
+                    info.getServer(server, clusterName))
             )
     );
 

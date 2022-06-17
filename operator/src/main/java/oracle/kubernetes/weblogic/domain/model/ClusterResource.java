@@ -83,7 +83,7 @@ public class ClusterResource implements KubernetesObject {
     spec.setReplicas(replicas);
   }
 
-  ClusterResource spec(ClusterSpec spec) {
+  public ClusterResource spec(ClusterSpec spec) {
     this.spec = spec;
     return this;
   }
