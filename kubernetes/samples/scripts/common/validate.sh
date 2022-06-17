@@ -83,6 +83,27 @@ validateLowerCase() {
 }
 
 #
+# Function to check if a value is a valid WLS domain name.
+# must include only alphanumeric characters, hyphens (-)
+# or underscore characters (_) and contain at least one letter
+# but must start with an alphanumeric or underscore character.
+#
+# $1 - value to check
+validateWlsDomainName() {
+  echo "validateWlsDomainName called with $2"
+  if ! [[ "$2" =~ ^[a-z_][a-z0-9_.-]*$ ]] ; then
+    validationError "$1 with value of $2 is not a valid WebLogic domain name. "\
+     "A valid WebLogic domain name must include only alphanumeric characters, hyphens (-) "\
+     "or underscore characters (_) but must start with an alphanumeric or underscore character."
+  else
+    if ! [[ "$2" =~ ^.*[a-z0-9].*$ ]] ; then
+      validationError "$1 with value of $2 is not a valid WebLogic domain name. "\
+       "A valid WebLogic domain name must contain at least one alphanumeric character."
+    fi
+  fi
+}
+
+#
 # Function to check if a value is lowercase and legal DNS name
 # $1 - name of object being checked
 # $2 - value to check
@@ -115,6 +136,7 @@ validateVersion() {
 #
 validateDomainUid() {
   validateLowerCase "domainUID" ${domainUID}
+  validateWlsDomainName "domainUID" "${domainUID}"
   validateDNS1123LegalName domainUID ${domainUID}
 }
 
