@@ -152,7 +152,7 @@ public class JobHelper {
     // Returns true if the specified cluster is configured to start.
     private boolean shouldStart(ClusterSpec clusterSpec) {
       return (shouldStart(clusterSpec.getServerStartPolicy()))
-              && getDomain().getReplicaCount(clusterSpec.getClusterName()) > 0;
+              && info.getReplicaCount(clusterSpec.getClusterName()) > 0;
     }
 
     // Returns true if the specified server start policy will allow starting a server.

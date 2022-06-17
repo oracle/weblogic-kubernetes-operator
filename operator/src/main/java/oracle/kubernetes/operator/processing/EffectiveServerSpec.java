@@ -169,5 +169,5 @@ public interface EffectiveServerSpec {
 
   boolean alwaysStart();
 
-  long getMaximumReadyWaitTimeSeconds();
+  Long getMaximumReadyWaitTimeSeconds();
 }

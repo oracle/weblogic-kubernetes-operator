@@ -257,7 +257,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
-  public long getMaximumReadyWaitTimeSeconds() {
+  public Long getMaximumReadyWaitTimeSeconds() {
     return server.getMaximumReadyWaitTimeSeconds();
   }
 
