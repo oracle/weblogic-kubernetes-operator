@@ -133,11 +133,13 @@ validateVersion() {
 
 #
 # Function to ensure the domain uid is a legal DNS name
+# Because the domain uid is also used as a WebLogic domain
+# name, it must also be a valid WebLogic domain name.
 #
 validateDomainUid() {
   validateLowerCase "domainUID" ${domainUID}
-  validateWlsDomainName "domainUID" "${domainUID}"
   validateDNS1123LegalName domainUID ${domainUID}
+  validateWlsDomainName "domainUID" "${domainUID}"
 }
 
 #
