@@ -34,12 +34,6 @@ while getopts ":s:d:" opt; do
   esac
 done
 
-# total number of command-line arguments
-echo "Total arguments passed are: $#"
-
-# $* is used to show the command line arguments
-echo "The arguments are: $*"
-
 # Clean last war build
 if [ -e ${DESTDIR}/${WARFILENAME} ]; then
     echo "Removing old war {DESTDIR}/${WARFILENAME}"
@@ -52,12 +46,8 @@ if [ -d ${SRCDIR} ]; then
     echo "build ${DESTDIR}/${WARFILENAME} with command jar -cvf ${DESTDIR}/${WARFILENAME} *"
     mkdir -p ${DESTDIR}
     cd ${SRCDIR}
-    CURRDIR2=`pwd`
-    echo "CURRDIR2 ${CURRDIR2}"
     jar -cvf ${DESTDIR}/${WARFILENAME} *
     cd ${CURRDIR}
-    CURRDIR3=`pwd`
-    echo "CURRDIR3 ${CURRDIR3}"
 fi
 
 # Show war details

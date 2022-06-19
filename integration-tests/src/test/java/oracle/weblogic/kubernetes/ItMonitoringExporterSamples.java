@@ -725,7 +725,7 @@ class ItMonitoringExporterSamples {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String app1Path = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
-    String app2Path = testWebAppWarLoc; //String.format("%s/testwebapp.war", APP_DIR);
+    String app2Path = testWebAppWarLoc;
 
     List<String> appList = new ArrayList<>();
     appList.add(app1Path);
