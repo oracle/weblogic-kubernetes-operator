@@ -57,7 +57,6 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
@@ -71,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -162,6 +162,7 @@ class ItMonitoringExporterSamples {
   private static  String monitoringExporterAppDir;
   private static String hostPortPrometheus;
 
+  private static String testWebAppWarLoc = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -204,6 +205,9 @@ class ItMonitoringExporterSamples {
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(5), "Namespace list is null");
     final String nginxNamespace = namespaces.get(5);
+
+    // create testwebapp.war
+    testWebAppWarLoc = createTestWebAppWarFile(domain1Namespace);
 
     logger.info("install and verify operator");
     installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
@@ -721,7 +725,7 @@ class ItMonitoringExporterSamples {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String app1Path = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
-    String app2Path = String.format("%s/testwebapp.war", APP_DIR);
+    String app2Path = testWebAppWarLoc; //String.format("%s/testwebapp.war", APP_DIR);
 
     List<String> appList = new ArrayList<>();
     appList.add(app1Path);
