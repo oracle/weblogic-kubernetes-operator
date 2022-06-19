@@ -443,6 +443,11 @@
                     **/ItMiiCustomSslStore,
                     **/ItWlsSamples,
                     **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItFmwDiiSample,
+                    **/ItWlsSamples,
+                    **/ItKubernetesDomainEvents,
+                    **/ItLBTwoDomainsTraefik,
+                    **/ItFmwSample,
                     **/ItMultiDomainModelsWithLoadBalancer
                 </includes-failsafe>
             </properties>
@@ -457,16 +462,11 @@
                     **/ItDiagnosticsFailedCondition,
                     **/ItElasticLoggingFluentd,
                     **/ItEvictedPodsCycling,
-                    **/ItFmwDiiSample,
                     **/ItFmwMiiDomain,
-                    **/ItFmwSample,
                     **/ItIstioManagedCoherence,
                     **/ItIstioProductionSecureMode,
-                    **/ItKubernetesDomainEvents,
                     **/ItIstioCrossDomainTransaction,
-                    **/ItLBTwoDomainsTraefik,
                     **/ItMiiSampleWlsMain,
-                    **/ItWlsSamples,
                     **/ItProductionSecureMode,
                     **/ItPodTemplates,
                     **/ItMiiSampleWlsAux,

@@ -13,6 +13,12 @@ UTILDIR="$(dirname "$(readlink -f "$0")")"
 #Kubernetes command line interface. 
 #Default is 'kubectl' if KUBERNETES_CLI env variable is not set.  
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
+okecluster=${OKE_CLUSTER:-false}
+if [ "${okecluster}" = "true" ]; then
+  image_pull_policy="Always"
+else
+  image_pull_policy="IfNotPresent"
+fi
 
 # https://github.com/containous/traefik/releases
 DefaultTraefikVersion=2.6.0
@@ -206,6 +212,7 @@ createTraefik() {
     helm install $chart traefik/traefik --namespace ${ns} \
      $(cat ${ingressPropFile} 2>&- || false ) \
      --set image.tag=${rel} \
+     --set image.pullPolicy=${image_pull_policy} \
      --values ${UTILDIR}/../traefik/values.yaml 
     if [ $? != 0 ]; then 
      printError "Helm installation of the Traefik ingress controller failed."
@@ -292,7 +299,7 @@ createNginx() {
       $(cat ${ingressPropFile} 2>&- || false ) \
       --set "controller.admissionWebhooks.enabled=false" \
       --namespace ${ns} --version ${release} \
-      --set "controller.image.pullPolicy=IfNotPresent" \
+      --set "controller.image.pullPolicy=${image_pull_policy}" \
       --set "controller.image.tag=v1.2.0" 
     if [ $? != 0 ]; then
      printError "Helm installation of the Nginx ingress controller failed."
