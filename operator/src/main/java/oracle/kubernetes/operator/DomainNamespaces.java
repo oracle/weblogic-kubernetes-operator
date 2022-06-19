@@ -32,6 +32,8 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -48,6 +50,8 @@ public class DomainNamespaces {
   private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
   private final Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
 
+  private final WatcherControl<ClusterResource, ClusterWatcher> clusterWatchers
+      = new WatcherControl<>(ClusterWatcher::create, d -> d::dispatchClusterWatch);
   private final WatcherControl<V1ConfigMap, ConfigMapWatcher> configMapWatchers
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
   private final WatcherControl<DomainResource, DomainWatcher> domainWatchers
@@ -110,6 +114,7 @@ public class DomainNamespaces {
     namespaceStoppingMap.remove(ns).set(true);
     namespaceStatuses.remove(ns);
 
+    clusterWatchers.removeWatcher(ns);
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
     operatorEventWatchers.removeWatcher(ns);
@@ -124,6 +129,10 @@ public class DomainNamespaces {
 
   ConfigMapWatcher getConfigMapWatcher(String namespace) {
     return configMapWatchers.getWatcher(namespace);
+  }
+
+  ClusterWatcher getClusterWatcher(String namespace) {
+    return clusterWatchers.getWatcher(namespace);
   }
 
   DomainWatcher getDomainWatcher(String namespace) {
@@ -283,6 +292,11 @@ public class DomainNamespaces {
     @Override
     public Consumer<DomainList> getDomainListProcessing() {
       return l -> domainWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+
+    @Override
+    public Consumer<ClusterList> getClusterListProcessing() {
+      return l -> clusterWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
   }
 }
