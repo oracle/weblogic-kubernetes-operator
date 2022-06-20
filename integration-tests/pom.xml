@@ -442,11 +442,9 @@
                     **/ItLiftAndShiftFromOnPremDomain,
                     **/ItMiiCustomSslStore,
                     **/ItWlsSamples,
-                    **/ItTwoDomainsManagedByTwoOperators,
                     **/ItFmwDiiSample,
                     **/ItWlsSamples,
                     **/ItKubernetesDomainEvents,
-                    **/ItLBTwoDomainsTraefik,
                     **/ItFmwSample,
                     **/ItMultiDomainModelsWithLoadBalancer
                 </includes-failsafe>
@@ -457,20 +455,9 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItCoherenceTests,
-                    **/ItCrossDomainTransaction,
-                    **/ItDiagnosticsFailedCondition,
-                    **/ItElasticLoggingFluentd,
-                    **/ItEvictedPodsCycling,
-                    **/ItFmwMiiDomain,
-                    **/ItIstioManagedCoherence,
-                    **/ItIstioProductionSecureMode,
-                    **/ItIstioCrossDomainTransaction,
-                    **/ItMiiSampleWlsMain,
-                    **/ItProductionSecureMode,
-                    **/ItPodTemplates,
                     **/ItMiiSampleWlsAux,
-                    **/ItDiagnosticsFailedCondition
+                    **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItLBTwoDomainsTraefik
                 </includes-failsafe>
             </properties>
         </profile>
@@ -527,7 +514,6 @@
                     **/ItMiiSampleWlsMain,
                     **/ItProductionSecureMode,
                     **/ItPodTemplates,
-                    **/ItMiiSampleWlsAux,
                     **/ItDiagnosticsFailedCondition
                 </includes-failsafe>
             </properties>
