@@ -514,7 +514,21 @@
                     **/ItRemoteConsole,
                     **/ItKubernetesNameSpaceWatchingEvents,
                     **/ItIstioSessionMigration,
-                    **/ItIstioDomainInPV
+                    **/ItIstioDomainInPV,
+                    **/ItCoherenceTests,
+                    **/ItCrossDomainTransaction,
+                    **/ItDiagnosticsFailedCondition,
+                    **/ItElasticLoggingFluentd,
+                    **/ItEvictedPodsCycling,
+                    **/ItFmwMiiDomain,
+                    **/ItIstioManagedCoherence,
+                    **/ItIstioProductionSecureMode,
+                    **/ItIstioCrossDomainTransaction,
+                    **/ItMiiSampleWlsMain,
+                    **/ItProductionSecureMode,
+                    **/ItPodTemplates,
+                    **/ItMiiSampleWlsAux,
+                    **/ItDiagnosticsFailedCondition
                 </includes-failsafe>
             </properties>
         </profile>
