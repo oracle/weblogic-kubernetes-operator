@@ -32,7 +32,7 @@ rules:
   resources: ["pods/exec"]
   verbs: ["get", "create"]
 - apiGroups: ["weblogic.oracle"]
-  resources: ["domains"]
+  resources: ["clusters", "domains"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains/status"]
