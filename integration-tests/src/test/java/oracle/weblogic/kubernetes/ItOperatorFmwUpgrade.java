@@ -435,8 +435,8 @@ class ItOperatorFmwUpgrade {
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IfNeeded")
-            .serverPod(new ServerPod() //serverpod
+            .serverStartPolicy("v8".equals(domainVersion) ? "IF_NEEDED" : "IfNeeded")
+            .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
