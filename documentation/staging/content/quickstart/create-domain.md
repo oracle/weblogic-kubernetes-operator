@@ -31,15 +31,13 @@ weight: 3
 
    - Use the following command to apply the sample domain resource:
 
-       ```shell
-       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
-       ```
+     ```shell
+     $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
+     ```
 
-    - **NOTE**: If you need to modify the sample domain YAML file, you can download the file to `/tmp/quickstart/domain-resource.yaml` or similar, using the following command, and make any changes needed. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`:
+   - **NOTE**: If you want to view or need to modify it, you can download the [sample domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`.
 
-      ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml -o /tmp/quickstart/domain-resource.yaml
-      ```
+
    This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
 
      - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml).
@@ -82,56 +80,13 @@ weight: 3
 
 1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
 
-    a. Copy the following IngressRoute YAML to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
+    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
 
-
-    {{%expand "Click here to view the ingress route YAML file." %}}
-    # Copyright (c) 2022, Oracle and/or its affiliates.
-    # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
-    apiVersion: traefik.containo.us/v1alpha1
-    kind: IngressRoute
-    metadata:
-      name: console
-      namespace: sample-domain1-ns
-    spec:
-      routes:
-        - kind: Rule
-          match: PathPrefix(`/console`)
-          services:
-            - kind: Service
-              name: sample-domain1-admin-server
-              port: 7001
-    ---
-    apiVersion: traefik.containo.us/v1alpha1
-    kind: IngressRoute
-    metadata:
-      name: quickstart
-      namespace: sample-domain1-ns
-    spec:
-      routes:
-      - kind: Rule
-        match: PathPrefix(`/quickstart`)
-        services:
-        - kind: Service
-          name: sample-domain1-cluster-cluster-1
-          port: 8001
-    {{% /expand %}}
+    b. Then apply the file using:
     ```shell
     $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
       --namespace sample-domain1-ns
     ```
-
-      b. **NOTE**: Instead of running the previous  `kubectl apply` command, you can download the ingress route YAML file to `/tmp/quickstart/ingress-route.yaml` or similar, using the following command:
-
-      ```shell
-      $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml -o /tmp/quickstart/ingress-route.yaml
-      ```
-      c. Then apply the file using:
-      ```shell
-      $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
-        --namespace sample-domain1-ns
-      ```
 
 1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, send a request to the URL for the "quick start app", as shown in the following example, which will return an HTTP 200 status code.
 

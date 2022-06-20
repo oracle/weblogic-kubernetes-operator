@@ -119,7 +119,6 @@ class ServerPod extends KubernetesResource {
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. "
       + "See `kubectl explain pods.spec.restartPolicy`.")
-  @Default(strDefault = "Always")
   private V1PodSpec.RestartPolicyEnum restartPolicy = null;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
