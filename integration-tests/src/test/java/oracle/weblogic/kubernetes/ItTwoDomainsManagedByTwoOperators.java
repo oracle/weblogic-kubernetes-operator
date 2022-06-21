@@ -345,7 +345,7 @@ class ItTwoDomainsManagedByTwoOperators {
                                                String createDomainInPVJobName) {
 
     logger.info("Creating a staging location for domain creation scripts");
-    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV", domainUid);
+    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV", domainNamespace);
     assertDoesNotThrow(() -> deleteDirectory(pvTemp.toFile()),"deleteDirectory failed with IOException");
     assertDoesNotThrow(() -> createDirectories(pvTemp), "createDirectories failed with IOException");
 
