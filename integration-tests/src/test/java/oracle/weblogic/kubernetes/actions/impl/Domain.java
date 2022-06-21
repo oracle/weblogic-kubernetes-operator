@@ -795,6 +795,7 @@ public class Domain {
               .name(WLDF_CLUSTER_ROLE_NAME))
           .addRulesItem(new V1PolicyRule()
               .addApiGroupsItem("weblogic.oracle")
+              .addResourcesItem("clusters")
               .addResourcesItem("domains")
               .addVerbsItem("get")
               .addVerbsItem("list")
