@@ -642,6 +642,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
 
+    assertThat(domainNamespaces.getClusterWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getDomainWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getEventWatcher(NS), notNullValue());
@@ -721,6 +722,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private void verifyWatchersNotDefined(DomainNamespaces domainNamespaces, String ns) {
+    assertThat(domainNamespaces.getClusterWatcher(ns), nullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(ns), nullValue());
     assertThat(domainNamespaces.getDomainWatcher(ns), nullValue());
     assertThat(domainNamespaces.getEventWatcher(ns), nullValue());
@@ -759,6 +761,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private void verifyWatchersDefined(DomainNamespaces domainNamespaces, String ns) {
+    assertThat(domainNamespaces.getClusterWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getDomainWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getEventWatcher(ns), notNullValue());
