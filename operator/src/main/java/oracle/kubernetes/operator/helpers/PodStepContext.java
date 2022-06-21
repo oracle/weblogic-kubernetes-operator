@@ -688,17 +688,21 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected V1Affinity getAffinity() {
-    if (isDefaultAntiAffinity() && getClusterName() == null) {
-      return domainUidVariableAntiAffinity();
+    if (isDefaultAntiAffinity() && isNonClusteredServer()) {
+      return defaultDomainUidVariableAntiAffinity();
     }
     return getServerSpec().getAffinity();
+  }
+
+  private boolean isNonClusteredServer() {
+    return getClusterName() == null;
   }
 
   private boolean isDefaultAntiAffinity() {
     return getServerSpec().getAffinity().equals(getDefaultAntiAffinity());
   }
 
-  private V1Affinity domainUidVariableAntiAffinity() {
+  private V1Affinity defaultDomainUidVariableAntiAffinity() {
     return new AffinityHelper().domainUID(DOMAIN_UID_VARIABLE).getAntiAffinity();
   }
 

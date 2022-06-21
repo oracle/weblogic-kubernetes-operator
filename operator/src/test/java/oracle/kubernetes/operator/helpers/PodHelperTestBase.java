@@ -2539,6 +2539,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenDomainHasNoAffinity_createdPodHasDefaultDomainUidVariableAffinity() {
+    assertThat(getCreatePodAffinity(), is(new AffinityHelper().domainUID(UID).getAntiAffinity()));
+  }
+
+  @Test
   void whenDomainHasAffinity_createPodWithIt() {
     getConfigurator()
         .withAffinity(affinity);
@@ -2556,11 +2561,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         getCreatedPod().getSpec().getAffinity(),
         is(affinity));
-  }
-
-  @Test
-  void whenServerHasNoAffinity_createdPodHasDomainUidVariableAffinity() {
-    assertThat(getCreatePodAffinity(), is(new AffinityHelper().domainUID(UID).getAntiAffinity()));
   }
 
   @Test
