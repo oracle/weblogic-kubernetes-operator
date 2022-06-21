@@ -138,8 +138,8 @@ validateVersion() {
 # name, it must also be a valid WebLogic domain name.
 #
 validateDomainUid() {
-  validateLowerCase "domainUID" ${domainUID}
-  validateDNS1123LegalName domainUID ${domainUID}
+  validateLowerCase "domainUID" "${domainUID}"
+  validateDNS1123LegalName "domainUID" "${domainUID}"
   validateWlsDomainName "domainUID" "${domainUID}"
 }
 
