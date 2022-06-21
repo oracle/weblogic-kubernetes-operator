@@ -38,7 +38,7 @@ weight: 2
 
     c. From the drop-down menu, select your language and click Continue.
 
-    d. Then, read and accept the license agreement.
+    d. Then read and accept the license agreement.
 
 1. Create a `docker-registry` secret to enable pulling the example WebLogic Server image from the registry:
 
