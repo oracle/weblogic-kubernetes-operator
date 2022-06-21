@@ -281,6 +281,13 @@ pipeline {
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
+                                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
+                                                                                        sh "mkdir -p ${WORKSPACE}/terraform"
+                                                                                        sh "cp -rf \$oci_private_key ${WORKSPACE}/terraform/oci_api_key.pem"
+                                                                                        sh " ls -al ${WORKSPACE}/terraform/*"
+                                                                                        sh "chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem"
+
+                                                               }
                                         mkdir -p ${WORKSPACE}/oci
                                         cp -rf ${oci_config_file} ${WORKSPACE}/oci/config
                                         chmod 777 ${WORKSPACE}/oci/config
