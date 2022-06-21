@@ -429,39 +429,6 @@
             </properties>
         </profile>
         <profile>
-            <id>oke-unstable</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItConfigDistributionStrategy,
-                    **/ItExternalLbTunneling,
-                    **/ItExternalNodePortService,
-                    **/ItFmwBigCMMiiDomain,
-                    **/ItLBTwoDomainsNginx,
-                    **/ItLBTwoDomainsApache,
-                    **/ItLiftAndShiftFromOnPremDomain,
-                    **/ItMiiCustomSslStore,
-                    **/ItWlsSamples,
-                    **/ItFmwDiiSample,
-                    **/ItWlsSamples,
-                    **/ItKubernetesDomainEvents,
-                    **/ItFmwSample,
-                    **/ItMultiDomainModelsWithLoadBalancer
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
-            <id>oke-add</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItMiiSampleWlsAux,
-                    **/ItTwoDomainsManagedByTwoOperators,
-                    **/ItLBTwoDomainsTraefik
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
             <id>oke-parallel</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -514,7 +481,10 @@
                     **/ItMiiSampleWlsMain,
                     **/ItProductionSecureMode,
                     **/ItPodTemplates,
-                    **/ItDiagnosticsFailedCondition
+                    **/ItDiagnosticsFailedCondition,
+                    **/ItMiiSampleWlsAux,
+                    **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItLBTwoDomainsTraefik
                 </includes-failsafe>
             </properties>
         </profile>
