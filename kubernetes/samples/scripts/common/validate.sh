@@ -88,7 +88,8 @@ validateLowerCase() {
 # or underscore characters (_) and contain at least one letter
 # but must start with an alphanumeric or underscore character.
 #
-# $1 - value to check
+# $1 - name of object being checked
+# $2 - value to check
 validateWlsDomainName() {
   echo "validateWlsDomainName called with $2"
   if ! [[ "$2" =~ ^[a-z_][a-z0-9_.-]*$ ]] ; then
