@@ -94,7 +94,9 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.nodeSelector`.")
   private final Map<String, String> nodeSelector = new HashMap<>();
 
-  @Description("If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity`")
+  @Description("The Pod's scheduling constraints."
+      + " More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/. "
+      + " See `kubectl explain pods.spec.affinity`.")
   private V1Affinity affinity = null;
 
   @Description("If specified, indicates the Pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "

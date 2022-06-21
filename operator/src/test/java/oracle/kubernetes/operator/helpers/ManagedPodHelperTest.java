@@ -1272,7 +1272,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenDomainHasNonDefaultAffinityAndClusterHasEmptyAffinity_createClusteredManagedPodWithEmptyAffinity() {
+  void whenDomainHasAffinityAndClusterHasEmptyAffinity_createClusteredManagedPodWithEmptyAffinity() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .withAffinity(

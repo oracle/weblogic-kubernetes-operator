@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 146b956ab8e3159fb98cc751d72aa542b941e5d3972a8cff704506f9353c8b42
+    weblogic.sha256: b2138012a1e913d3b2426a8c72a639d5ad362932564df6aa41494ab82466a7ab
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3124,8 +3124,9 @@ spec:
                             type: boolean
                         type: object
                       affinity:
-                        description: If specified, the Pod's scheduling constraints.
-                          See `kubectl explain pods.spec.affinity`
+                        description: 'The Pod''s scheduling constraints. More info:
+                          https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                          `kubectl explain pods.spec.affinity`.'
                         properties:
                           nodeAffinity:
                             properties:
@@ -6222,8 +6223,9 @@ spec:
                                 only. Defaults to false.
                               type: boolean
                         affinity:
-                          description: If specified, the Pod's scheduling constraints.
-                            See `kubectl explain pods.spec.affinity`
+                          description: 'The Pod''s scheduling constraints. More info:
+                            https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                            `kubectl explain pods.spec.affinity`.'
                           type: object
                           properties:
                             nodeAffinity:
@@ -9270,8 +9272,8 @@ spec:
                         type: boolean
                     type: object
                   affinity:
-                    description: If specified, the Pod's scheduling constraints. See
-                      `kubectl explain pods.spec.affinity`
+                    description: 'The Pod''s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                      `kubectl explain pods.spec.affinity`.'
                     properties:
                       nodeAffinity:
                         properties:
@@ -12216,8 +12218,9 @@ spec:
                                 only. Defaults to false.
                               type: boolean
                         affinity:
-                          description: If specified, the Pod's scheduling constraints.
-                            See `kubectl explain pods.spec.affinity`
+                          description: 'The Pod''s scheduling constraints. More info:
+                            https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                            `kubectl explain pods.spec.affinity`.'
                           type: object
                           properties:
                             nodeAffinity:

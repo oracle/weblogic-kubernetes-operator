@@ -1019,7 +1019,7 @@
           "$ref": "#/definitions/Shutdown"
         },
         "affinity": {
-          "description": "If specified, the Pod\u0027s scheduling constraints. See `kubectl explain pods.spec.affinity`",
+          "description": "The Pod\u0027s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         }
       }

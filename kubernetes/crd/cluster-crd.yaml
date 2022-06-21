@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ff363c3fc470df89610b5d67dcf5173ee730a180c19957eb3bc004053393a8f0
+    weblogic.sha256: b3abce7faf0386c7a2b9c620aea7955a028439ecc65fbebea84dc9f1fbaf0513
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2614,8 +2614,8 @@ spec:
                         type: boolean
                     type: object
                   affinity:
-                    description: If specified, the Pod's scheduling constraints. See
-                      `kubectl explain pods.spec.affinity`
+                    description: 'The Pod''s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                      `kubectl explain pods.spec.affinity`.'
                     properties:
                       nodeAffinity:
                         properties:
