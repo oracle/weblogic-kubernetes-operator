@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
@@ -110,6 +111,11 @@ public class WatchBuilder {
   public Watchable<DomainResource> createDomainWatch(String namespace) throws ApiException {
     return factory.createWatch(
         callParams, DomainResource.class, new ListDomainsCall(namespace));
+  }
+
+  public Watchable<ClusterResource> createClusterWatch(String namespace) throws ApiException {
+    return factory.createWatch(
+        callParams, ClusterResource.class, new ListClustersCall(namespace));
   }
 
   /**
@@ -356,6 +362,36 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private static class ListClustersCall implements BiFunction<ApiClient, CallParams, Call> {
+    private final String namespace;
+
+    ListClustersCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      configureClient(client);
+
+      try {
+        return new WeblogicApi(client)
+            .listNamespacedClusterCall(
+                namespace,
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);

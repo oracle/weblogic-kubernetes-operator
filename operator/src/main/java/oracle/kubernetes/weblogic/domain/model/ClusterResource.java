@@ -236,4 +236,14 @@ public class ClusterResource implements KubernetesObject {
   public ClusterSpec getSpec() {
     return spec;
   }
+
+  public ClusterResource withApiVersion(String apiVersion) {
+    setApiVersion(apiVersion);
+    return this;
+  }
+
+  public ClusterResource withKind(String kind) {
+    setKind(kind);
+    return this;
+  }
 }
