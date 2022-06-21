@@ -64,6 +64,7 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdm
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainToMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -168,7 +169,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 CONVERSION_WEBHOOK_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
             CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
@@ -474,7 +475,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private void setExistingAndProposedDomain() {
-    admissionReview.getRequest().oldObject(existingDomain).object(proposedDomain);
+    admissionReview.getRequest().oldObject(writeDomainToMap(existingDomain)).object(writeDomainToMap(proposedDomain));
   }
 
   private void setProposedDomain() {
@@ -482,7 +483,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private void setProposedDomain(DomainResource domain) {
-    admissionReview.getRequest().setObject(domain);
+    admissionReview.getRequest().setObject(writeDomainToMap(domain));
   }
 
   private void setExistingDomain() {
@@ -490,7 +491,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private void setExistingDomain(DomainResource domain) {
-    admissionReview.getRequest().setOldObject(domain);
+    admissionReview.getRequest().setOldObject(writeDomainToMap(domain));
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {

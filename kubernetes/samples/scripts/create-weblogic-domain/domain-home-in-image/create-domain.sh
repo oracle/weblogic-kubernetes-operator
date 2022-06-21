@@ -190,7 +190,7 @@ initialize() {
 # Image build is skipped when -s option is specified OR image is not available
 # e.g. If -s option is specified script will skip the image build only when 
 # image is available else build the image
-# If -s option is NOT specified script will ALWAYS build the image
+# If -s option is NOT specified script will Always build the image
 createDomainHome() {
 
   if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then

@@ -41,35 +41,35 @@ class DomainResourcesValidation {
     this.processor = processor;
   }
 
-  NamespacedResources.Processors getProcessors() {
-    return new NamespacedResources.Processors() {
+  Processors getProcessors() {
+    return new Processors() {
       @Override
-      Consumer<V1PodList> getPodListProcessing() {
+      public Consumer<V1PodList> getPodListProcessing() {
         return DomainResourcesValidation.this::addPodList;
       }
 
       @Override
-      Consumer<V1ServiceList> getServiceListProcessing() {
+      public Consumer<V1ServiceList> getServiceListProcessing() {
         return DomainResourcesValidation.this::addServiceList;
       }
 
       @Override
-      Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
         return DomainResourcesValidation.this::addOperatorEventList;
       }
 
       @Override
-      Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+      public Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
         return DomainResourcesValidation.this::addPodDisruptionBudgetList;
       }
 
       @Override
-      Consumer<DomainList> getDomainListProcessing() {
+      public Consumer<DomainList> getDomainListProcessing() {
         return DomainResourcesValidation.this::addDomainList;
       }
 
       @Override
-      void completeProcessing(Packet packet) {
+      public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));

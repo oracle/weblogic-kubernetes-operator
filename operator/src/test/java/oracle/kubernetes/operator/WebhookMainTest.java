@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -38,7 +36,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.OnConflictRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
+import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -59,7 +57,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
-import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
@@ -68,9 +65,10 @@ import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CO
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_STARTED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
@@ -128,7 +126,6 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   private final WebhookMain main = new WebhookMain(delegate);
   private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
   private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
 
   private final String testNamespace = "ns1";
@@ -186,8 +183,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     mementos.add(StubWatchFactory.install());
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "instance", this));
     mementos.add(NoopWatcherStarter.install());
-    mementos.add(StaticStubSupport.install(InitializeWebhookIdentityStep.class, "getPath", getInMemoryPath));
+    mementos.add(inMemoryFileSystem.install());
     mementos.add(InMemoryCertificates.install());
+    mementos.add(UnitTestHash.install());
 
     HelmAccessStub.defineVariable(WEBHOOK_NAMESPACE_ENV, WEBHOOK_NAMESPACE);
     HelmAccessStub.defineVariable(WEBHOOK_POD_NAME_ENV, WEBHOOK_POD_NAME);
@@ -209,12 +207,12 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenConversionWebhookCreated_logStartupMessage() {
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CONVERSION_WEBHOOK_STARTED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WEBHOOK_STARTED);
 
     WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords,
-               containsInfo(CONVERSION_WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
+        containsInfo(WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
   }
 
   @Test
@@ -234,9 +232,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
     WebhookMain.createMain(buildProperties).completeBegin();
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 WEBHOOK_START_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   private void simulateMissingCRD(String resourceType) {
@@ -425,7 +423,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
+  void whenValidatingWebhookCreatedAfterFailure504_logStartupFailedMessage() {
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());

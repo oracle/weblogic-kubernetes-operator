@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -851,7 +852,7 @@ class ItIntrospectVersion {
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
    * The usecase update the introspectVersion by passing differnt value to -i
-   * option (non-numeic, non-numeric with space, no value) and make sure that
+   * option (non-numeic, non-numeric with underscore and dash, no value) and make sure that
    * the introspectVersion is updated accrodingly in both domain sepc level
    * and server pod level.
    * It also verifies the intospector job is started/stoped and none of the
@@ -914,8 +915,8 @@ class ItIntrospectVersion {
     verifyIntrospectVersionLabelInPod();
 
     // use introspectDomain.sh to initiate introspection
-    logger.info("Initiate introspection with non numeric string with space");
-    introspectVersion = "My Version";
+    logger.info("Initiate introspection with non numeric string with underscore and dash");
+    introspectVersion = "My_Version-1";
     String extraParam2 = " -i " + "\"" + introspectVersion + "\"";
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam2),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
@@ -1041,7 +1042,7 @@ class ItIntrospectVersion {
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(introDomainNamespace))
@@ -1049,7 +1050,7 @@ class ItIntrospectVersion {
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

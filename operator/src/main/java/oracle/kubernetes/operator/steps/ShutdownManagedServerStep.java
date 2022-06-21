@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.http.rest.Scan;
 import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -38,7 +39,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -129,8 +129,8 @@ public class ShutdownManagedServerStep extends Step {
       List<V1EnvVar> envVarList = getV1EnvVars();
 
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
-          .map(ServerSpec::getShutdown).orElse(null);
+      Shutdown shutdown = Optional.ofNullable(info.getServer(serverName, clusterName))
+          .map(EffectiveServerSpec::getShutdown).orElse(null);
 
       isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
       timeout = getTimeout(envVarList, shutdown);

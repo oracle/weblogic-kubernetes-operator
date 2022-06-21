@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -250,7 +251,7 @@ class ItKubernetesDomainEvents {
         = "[{\"op\": \"add\",\"path\": \""
         + "/spec/managedServers/-\", \"value\": "
         + "{\"serverName\" : \"nonexisting-ms\", "
-        + "\"serverStartPolicy\": \"IF_NEEDED\","
+        + "\"serverStartPolicy\": \"IfNeeded\","
         + "\"serverStartState\": \"RUNNING\"}"
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
@@ -311,7 +312,7 @@ class ItKubernetesDomainEvents {
   /**
    * Test the following domain events are logged when domain resource goes through introspector failure.
    * Patch the domain resource to shutdown servers.
-   * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IF_NEEDED.
+   * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IfNeeded.
    * Verifies Failed event with Aborted failure reason is logged.
    * Cleanup by patching the domain resource to a valid location and introspectVersion to bring up all servers again.
    */
@@ -321,7 +322,7 @@ class ItKubernetesDomainEvents {
     try {
       V1Patch patch;
       String patchStr;
-      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER",
+      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "Never",
           spec -> spec.failureRetryLimitMinutes(2L));
       assertNotNull(domain, " Can't create domain resource");
 
@@ -343,7 +344,7 @@ class ItKubernetesDomainEvents {
               + " Changed and Failed events are logged");
       patchStr = "[{\"op\": \"replace\", "
               + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
@@ -736,7 +737,7 @@ class ItKubernetesDomainEvents {
   private  static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
 
     assertDoesNotThrow(() -> createDomain(domainNamespace, domainUid, pvName, pvcName,
-            "IF_NEEDED"),
+            "IfNeeded"),
             "Failed to create domain custom resource");
 
     // verify the admin server service created
@@ -819,7 +820,7 @@ class ItKubernetesDomainEvents {
                     .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
                     .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
                     .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .imagePullSecrets(Arrays.asList(
                             new V1LocalObjectReference()
                                     .name(BASE_IMAGES_REPO_SECRET_NAME))) // secret for non-kind cluster

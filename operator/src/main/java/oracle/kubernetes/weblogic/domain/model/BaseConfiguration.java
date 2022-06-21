@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
@@ -53,6 +54,7 @@ public abstract class BaseConfiguration {
   @Description(
       "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
           + "in the admin state. Defaults to RUNNING.")
+  @Default(strDefault = "RUNNING")
   private ServerStartState serverStartState;
 
   /**
@@ -136,8 +138,8 @@ public abstract class BaseConfiguration {
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
+   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
    * to be started to get to the cluster's replica count..
    *
    * @since 2.0
@@ -373,12 +375,12 @@ public abstract class BaseConfiguration {
     return restartVersion;
   }
 
-  void setRestartVersion(String restartVersion) {
+  public void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
   }
 
 
-  long getMaximumReadyWaitTimeSeconds() {
+  Long getMaximumReadyWaitTimeSeconds() {
     return serverPod.getMaxReadyWaitTimeSeconds();
   }
 

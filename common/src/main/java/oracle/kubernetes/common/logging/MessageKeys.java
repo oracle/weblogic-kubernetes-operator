@@ -240,7 +240,7 @@ public class MessageKeys {
   public static final String REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION = "WLSEO-0030";
 
   // Webhook messages
-  public static final String CONVERSION_WEBHOOK_STARTED = "WLSWH-0001";
+  public static final String WEBHOOK_STARTED = "WLSWH-0001";
   public static final String NO_WEBHOOK_CERTIFICATE = "WLSWH-0002";
   public static final String WEBHOOK_CONFIG_NAMESPACE = "WLSWH-0003";
   public static final String WAIT_FOR_CRD_INSTALLATION = "WLSWH-0004";
@@ -257,6 +257,7 @@ public class MessageKeys {
   public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0015";
   public static final String CLUSTER_REPLICAS_TOO_HIGH = "WLSWH-0016";
   public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSWH-0017";
+  public static final String WEBHOOK_STARTUP_FAILED = "WLSWH-0018";
 
   private MessageKeys() {
   }

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,6 +61,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.PodTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -73,7 +75,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -478,10 +479,19 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract Step createCycleEndStep(Step next);
 
-  private boolean isRecentOperatorMajorVersion3(String operatorVersion) {
+  private boolean isRecentOperator(String operatorVersion) {
     try {
       SemanticVersion version = new SemanticVersion(operatorVersion);
-      return version.getMajor() == 3 && version.getMinor() >= 2;
+      return version.getMajor() > 3 || (version.getMajor() == 3 && version.getMinor() >= 2);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private boolean isOperatorMajorMinorVersion34RevAbove0(String operatorVersion) {
+    try {
+      SemanticVersion version = new SemanticVersion(operatorVersion);
+      return version.getMajor() == 3 && version.getMinor() == 4 && version.getRevision() > 0;
     } catch (Exception e) {
       return false;
     }
@@ -601,12 +611,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private Shutdown getShutdownSpec() {
-    return Optional.ofNullable(getServerSpec()).map(ServerSpec::getShutdown).orElse(new Shutdown());
+    return Optional.ofNullable(getServerSpec()).map(EffectiveServerSpec::getShutdown).orElse(new Shutdown());
   }
 
   private void updateEnvForStartupMode(List<V1EnvVar> env) {
     Optional.ofNullable(getServerSpec())
-          .map(ServerSpec::getDesiredState)
+          .map(EffectiveServerSpec::getDesiredState)
           .filter(this::isNotRunning)
           .ifPresent(s -> addDefaultEnvVarIfMissing(env, "STARTUP_MODE", s));
     Optional.ofNullable(getDomain().getLivenessProbeCustomScript())
@@ -1151,9 +1161,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       return !hasLabel(currentPod, OPERATOR_VERSION);
     }
 
-    private boolean isPodFromRecentOperatorMajorVersion3(V1Pod currentPod) {
+    private boolean isPodFromRecentOperator(V1Pod currentPod) {
       return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
-          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isRecentOperatorMajorVersion3).orElse(false);
+          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isRecentOperator).orElse(false);
     }
 
     private boolean isLegacyMiiPod(V1Pod currentPod) {
@@ -1169,9 +1179,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       setLabel(toPod, key, getLabel(fromPod, key));
     }
 
-    private String adjustedHash(V1Pod currentPod, Consumer<V1Pod> prometheusAdjustment) {
+    private String adjustedLegacyHash(V1Pod currentPod, Consumer<V1Pod> adjustment) {
       V1Pod recipe = createPodRecipe();
-      prometheusAdjustment.accept(recipe);
+      adjustment.accept(recipe);
 
       if (isLegacyMiiPod(currentPod)) {
         copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
@@ -1182,25 +1192,35 @@ public abstract class PodStepContext extends BasePodStepContext {
       return AnnotationHelper.createHash(recipe);
     }
 
+    private String adjustedHash(V1Pod currentPod, BiConsumer<V1Pod, V1Pod> adjustment) {
+      V1Pod recipe = createPodRecipe();
+      adjustment.accept(recipe, currentPod);
+
+      recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
+      return AnnotationHelper.createHash(recipe);
+    }
+
     private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod) {
       AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
     }
 
     private boolean canAdjustLegacyHashToMatch(V1Pod currentPod, String requiredHash) {
       // Legacy pods could be created by operator version 3.0 or 3.1
-      return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom30))
-          || requiredHash.equals(adjustedHash(currentPod, PodStepContext.this::addLegacyPrometheusAnnotationsFrom31));
+      return requiredHash.equals(adjustedLegacyHash(currentPod, this::addLegacyPrometheusAnnotationsFrom30))
+          || requiredHash.equals(
+              adjustedLegacyHash(currentPod, PodStepContext.this::addLegacyPrometheusAnnotationsFrom31));
     }
 
     private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
       convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
     }
 
-    private void adjustContainer(List<V1Container> convertedContainers, V1Container container) {
-      adjustContainer(convertedContainers, container, false);
+    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, V1Pod currentPod) {
+      adjustContainer(convertedContainers, container, false, currentPod);
     }
 
-    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, boolean initContainer) {
+    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, boolean initContainer,
+                                 V1Pod currentPod) {
       String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
       List<V1EnvVar> newEnv = new ArrayList<>();
       Optional.of(container.getEnv())
@@ -1211,60 +1231,62 @@ public abstract class PodStepContext extends BasePodStepContext {
       List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
       Optional.ofNullable(container.getVolumeMounts())
           .ifPresent(vms -> vms.forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i)));
-      if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)) {
+      if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)
+          && !isPodFromOperatorMajorMinorVersion34RevAbove0(currentPod)) {
         container.resources(null);
       }
       convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
-          .volumeMounts(convertedVolumeMounts));
+          .volumeMounts(convertedVolumeMounts.isEmpty() ? null : convertedVolumeMounts));
+    }
+
+    private boolean isPodFromOperatorMajorMinorVersion34RevAbove0(V1Pod currentPod) {
+      return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
+          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isOperatorMajorMinorVersion34RevAbove0)
+          .orElse(false);
     }
 
     private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
       convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
     }
 
-    private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
+    private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod, V1Pod currentPod) {
       V1PodSpec podSpec = pod.getSpec();
       List<V1Container> convertedInitContainers = new ArrayList<>();
       Optional.ofNullable(podSpec.getInitContainers())
           .ifPresent(initContainers -> initContainers.forEach(
-              i -> adjustContainer(convertedInitContainers, i, true)));
+              i -> adjustContainer(convertedInitContainers, i, true, currentPod)));
       podSpec.initContainers(convertedInitContainers);
 
       List<V1Container> convertedContainers = new ArrayList<>();
-      podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c));
+      podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c, currentPod));
       podSpec.containers(convertedContainers);
 
       List<V1Volume> convertedVolumes = new ArrayList<>();
       Optional.ofNullable(podSpec.getVolumes())
           .ifPresent(volumes -> volumes.forEach(i -> adjustVolumeName(convertedVolumes, i)));
       podSpec.volumes(convertedVolumes);
-      pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
+      pod.spec(new V1PodSpecBuilder(podSpec).build()
+          .initContainers(convertedInitContainers.isEmpty() ? null : convertedInitContainers)
+          .volumes(convertedVolumes.isEmpty() ? null : convertedVolumes));
     }
 
-    private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod pod) {
+    private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod pod, V1Pod currentPod) {
       V1PodSpec podSpec = pod.getSpec();
       podSpec.getContainers().stream().filter(c -> "monitoring-exporter".equals(c.getName()))
           .findFirst().flatMap(c -> c.getPorts().stream().filter(p -> "metrics".equals(p.getName()))
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
-    private boolean canAdjustHashForDefaultAffinityPolicy(V1Pod currentPod) {
-      V1Pod recipe = createPodRecipe();
-      recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
-      return AnnotationHelper.getHash(currentPod).equals(AnnotationHelper.createHash(recipe));
-    }
-
-    private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
+    private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(String requiredHash, V1Pod currentPod) {
       return requiredHash.equals(adjustedHash(currentPod, this::restoreMetricsExporterSidecarPortTcpMetrics))
-          || requiredHash.equals(adjustedHash(currentPod, this::convertAuxImagesInitContainerVolumeAndMounts))
-          || canAdjustHashForDefaultAffinityPolicy(currentPod);
+          || requiredHash.equals(adjustedHash(currentPod, this::convertAuxImagesInitContainerVolumeAndMounts));
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
       return (isLegacyPod(currentPod)
               && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
-          || (isPodFromRecentOperatorMajorVersion3(currentPod)
-              && canAdjustRecentOperatorMajorVersion3HashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
+          || (isPodFromRecentOperator(currentPod)
+              && canAdjustRecentOperatorMajorVersion3HashToMatch(AnnotationHelper.getHash(currentPod), currentPod))
           || AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
     }
 

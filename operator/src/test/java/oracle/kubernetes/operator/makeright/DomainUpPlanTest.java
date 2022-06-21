@@ -1,7 +1,7 @@
 // Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator;
+package oracle.kubernetes.operator.makeright;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,10 +14,13 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import oracle.kubernetes.operator.ClientFactoryStub;
+import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
-import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -32,17 +35,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
-import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
-import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.makeright.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 class DomainUpPlanTest {
 
@@ -54,11 +52,9 @@ class DomainUpPlanTest {
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain)
                     .withWebLogicCredentialsSecret("secret", NS);
   private final DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
-  private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegateStub.class));
 
   private DomainPresenceStep getDomainPresenceStep() {
-    return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
+    return DomainPresenceStep.createDomainPresenceStep(adminStep, managedServersStep);
   }
 
   @BeforeEach
@@ -106,43 +102,6 @@ class DomainUpPlanTest {
 
     assertThat(adminStep.wasRun(), is(false));
     assertThat(managedServersStep.wasRun(), is(true));
-  }
-
-  @Test
-  void whenNotShuttingDown_selectAdminServerStep() {
-    configurator.setShuttingDown(false);
-
-    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
-
-    assertThat(plan, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
-  }
-
-  @Test
-  void whenShuttingDown_selectManagedServerStepOnly() {
-    configurator.setShuttingDown(true);
-
-    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
-
-    assertThat(
-        plan,
-        both(hasChainWithStep("ManagedServersUpStep"))
-            .and(not(hasChainWithStep("AdminServerStep"))));
-  }
-
-  @Test
-  void useSequenceBeforeAdminServerStep() {
-    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
-
-    assertThat(
-        plan,
-        hasChainWithStepsInOrder(
-            "DomainPresenceStep",
-            "IntrospectionStartStep",
-            "BeforeAdminServiceStep",
-            "AdminPodStep",
-            "ForServerStep",
-            "WatchPodReadyAdminStep",
-            "ManagedServersUpStep"));
   }
 
   @Test
@@ -270,11 +229,4 @@ class DomainUpPlanTest {
     }
   }
 
-  abstract static class DomainProcessorDelegateStub implements DomainProcessorDelegate {
-    @Override
-    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-      return new NullPodWaiter();
-    }
-
-  }
 }

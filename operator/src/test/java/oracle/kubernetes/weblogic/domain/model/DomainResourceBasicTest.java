@@ -9,6 +9,8 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -45,13 +47,13 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void adminServerSpecHasStandardValues() {
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     verifyStandardFields(spec);
   }
 
   // Confirms the value of fields that are constant across the domain
-  private void verifyStandardFields(ServerSpec spec) {
+  private void verifyStandardFields(EffectiveServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
     assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(spec.getImagePullSecrets(), empty());
@@ -59,7 +61,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void unconfiguredManagedServerSpecHasStandardValues() {
-    ServerSpec spec = domain.getServer("aServer", CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer("aServer", CLUSTER_NAME);
 
     verifyStandardFields(spec);
   }
@@ -71,7 +73,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void unconfiguredAdminServer_hasNoEnvironmentVariables() {
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), empty());
   }
@@ -81,7 +83,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureDomain(domain).withDefaultImage(IMAGE);
 
     assertThat(domain.getAdminServerSpec().getImage(), equalTo(IMAGE));
-    assertThat(domain.getServer("aServer", "aCluster").getImage(), equalTo(IMAGE));
+    assertThat(info.getServer("aServer", "aCluster").getImage(), equalTo(IMAGE));
   }
 
   @Test
@@ -90,7 +92,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
     assertThat(
-        domain.getServer("aServer", "aCluster").getImagePullPolicy(),
+        info.getServer("aServer", "aCluster").getImagePullPolicy(),
         equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
@@ -98,7 +100,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenNotSpecified_imageHasDefault() {
     domain.getSpec().setImage(null);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
   }
@@ -108,7 +110,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     domain.getSpec().setImage("test:latest");
     domain.getSpec().setImagePullPolicy(null);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
@@ -118,7 +120,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     domain.getSpec().setImage("test:1.0");
     domain.getSpec().setImagePullPolicy(null);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
   }
@@ -129,7 +131,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
     assertThat(
-        domain.getServer("aServer", "aCluster").getImagePullPolicy(),
+        info.getServer("aServer", "aCluster").getImagePullPolicy(),
         equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
@@ -140,7 +142,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     assertThat(domain.getAdminServerSpec().getImagePullSecrets(), hasItem(secretReference));
     assertThat(
-        domain.getServer("aServer", "aCluster").getImagePullSecrets(), hasItem(secretReference));
+        info.getServer("aServer", "aCluster").getImagePullSecrets(), hasItem(secretReference));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -154,7 +156,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -169,7 +171,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), empty());
   }
@@ -178,21 +180,21 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenSpecified_adminServerDesiredStateIsAsSpecified() {
     configureAdminServer().withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
   void whenNotSpecified_adminServerDesiredStateIsRunning() {
-    ServerSpec spec = domain.getAdminServerSpec();
+    EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   void whenNotSpecified_managedServerDesiredStateIsRunning() {
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
@@ -201,7 +203,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenSpecified_managedServerDesiredStateIsAsSpecified() {
     configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
@@ -210,7 +212,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
     configureAdminServer().withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
@@ -219,66 +221,66 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
     configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.ADMIN);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
   void whenNoReplicaCountSpecified_canChangeIt() {
-    domain.setReplicaCount("cluster1", 7);
+    info.setReplicaCount("cluster1", 7);
 
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(7));
+    assertThat(info.getReplicaCount("cluster1"), equalTo(7));
   }
 
   @Test
   void afterReplicaCountSetForCluster_canReadIt() {
     configureCluster("cluster1").withReplicas(5);
 
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(5));
+    assertThat(info.getReplicaCount("cluster1"), equalTo(5));
   }
 
   @Test
   void afterReplicaCountSetForCluster_canChangeIt() {
     configureCluster("cluster1").withReplicas(5);
 
-    domain.setReplicaCount("cluster1", 4);
-    assertThat(domain.getReplicaCount("cluster1"), equalTo(4));
+    info.setReplicaCount("cluster1", 4);
+    assertThat(info.getReplicaCount("cluster1"), equalTo(4));
   }
 
   @Test
   void afterReplicaCountMaxUnavailableSetForCluster_canReadMinAvailable() {
     configureCluster("cluster1").withReplicas(5).withMaxUnavailable(2);
 
-    assertThat(domain.getMinAvailable("cluster1"), equalTo(3));
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
   }
 
   @Test
   void afterReplicaCountSetForCluster_canReadMinAvailable() {
     configureCluster("cluster1").withReplicas(5);
 
-    assertThat(domain.getMinAvailable("cluster1"), equalTo(4));
+    assertThat(info.getMinAvailable("cluster1"), equalTo(4));
   }
 
   @Test
   void afterReplicaCountMaxUnavailableSetForCluster_zeroMin() {
     configureCluster("cluster1").withReplicas(3).withMaxUnavailable(10);
 
-    assertThat(domain.getMinAvailable("cluster1"), equalTo(0));
+    assertThat(info.getMinAvailable("cluster1"), equalTo(0));
   }
 
   @Test
   void afterMaxUnavailableSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxUnavailable(5);
 
-    assertThat(domain.getMaxUnavailable("cluster1"), equalTo(5));
+    assertThat(info.getMaxUnavailable("cluster1"), equalTo(5));
   }
 
   @Test
   void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
     configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
 
-    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
   }
 
   @Test
@@ -286,7 +288,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1");
     configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(null);
 
-    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"),
         equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
   }
 
@@ -295,13 +297,13 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1");
     configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(false);
 
-    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"),
         equalTo(false));
   }
 
   @Test
   void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
-    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
         equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
   }
 
@@ -310,7 +312,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
     configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(true);
 
-    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"),
         equalTo(false));
   }
 
@@ -318,7 +320,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void afterMaxConcurrentStartupSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxConcurrentStartup(3);
 
-    assertThat(domain.getMaxConcurrentStartup("cluster1"), equalTo(3));
+    assertThat(info.getMaxConcurrentStartup("cluster1"), equalTo(3));
   }
 
   @Test
@@ -326,7 +328,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentStartup(null);
 
-    assertThat(domain.getMaxConcurrentStartup("cluster1"),
+    assertThat(info.getMaxConcurrentStartup("cluster1"),
         equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
@@ -335,13 +337,13 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentStartup(2);
 
-    assertThat(domain.getMaxConcurrentStartup("cluster1"),
+    assertThat(info.getMaxConcurrentStartup("cluster1"),
         equalTo(2));
   }
 
   @Test
   void whenNoClusterSpec_maxConcurrentStartupHasDefault() {
-    assertThat(domain.getMaxConcurrentStartup("cluster-with-no-spec"),
+    assertThat(info.getMaxConcurrentStartup("cluster-with-no-spec"),
         equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
@@ -350,7 +352,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1").withMaxConcurrentStartup(1);
     configureDomain(domain).withMaxConcurrentStartup(0);
 
-    assertThat(domain.getMaxConcurrentStartup("cluster1"),
+    assertThat(info.getMaxConcurrentStartup("cluster1"),
         equalTo(1));
   }
 
@@ -358,7 +360,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   void afterMaxConcurrentShutdownSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxConcurrentShutdown(3);
 
-    assertThat(domain.getMaxConcurrentShutdown("cluster1"), equalTo(3));
+    assertThat(info.getMaxConcurrentShutdown("cluster1"), equalTo(3));
   }
 
   @Test
@@ -366,7 +368,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentShutdown(null);
 
-    assertThat(domain.getMaxConcurrentShutdown("cluster1"),
+    assertThat(info.getMaxConcurrentShutdown("cluster1"),
             equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN));
   }
 
@@ -374,13 +376,13 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenNotSpecified_maxConcurrentShutdownFromDomain() {
     configureDomain(domain).withMaxConcurrentShutdown(2);
 
-    assertThat(domain.getMaxConcurrentShutdown("cluster1"),
+    assertThat(info.getMaxConcurrentShutdown("cluster1"),
             equalTo(2));
   }
 
   @Test
   void whenNoClusterSpec_maxConcurrentShutdownHasDefault() {
-    assertThat(domain.getMaxConcurrentShutdown("cluster-with-no-spec"),
+    assertThat(info.getMaxConcurrentShutdown("cluster-with-no-spec"),
             equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN));
   }
 
@@ -389,7 +391,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1").withMaxConcurrentShutdown(1);
     configureDomain(domain).withMaxConcurrentShutdown(0);
 
-    assertThat(domain.getMaxConcurrentShutdown("cluster1"),
+    assertThat(info.getMaxConcurrentShutdown("cluster1"),
             equalTo(1));
   }
 
@@ -398,7 +400,7 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
     configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.RUNNING);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
@@ -409,7 +411,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -420,7 +422,7 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
   }
@@ -431,42 +433,42 @@ class DomainResourceBasicTest extends DomainTestBase {
         .withDesiredState(ServerStartState.ADMIN)
         .withEnvironmentVariable("JAVA_OPTIONS", "value");
 
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), hasItem(envVar("JAVA_OPTIONS", "value")));
   }
 
   @Test
   void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server1", null);
+    DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
+    EffectiveServerSpec effectiveServerSpec = info.getServer("server1", null);
 
     assertThat(
-        serverSpec.getEnvironmentVariables(),
+        effectiveServerSpec.getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-server")))
             .and(
                 hasItem(
                     envVar(
                         "USER_MEM_ARGS",
                         "-Djava.security.egd=file:/dev/./urandom "))));
-    assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
   void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
-    ServerSpec serverSpec = domain.getServer("server2", null);
+    DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
+    EffectiveServerSpec effectiveServerSpec = info.getServer("server2", null);
 
-    assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
+    assertThat(effectiveServerSpec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
   void whenDomainReadFromYaml_Cluster2OverridesDefaults() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
 
-    assertThat(domain.getReplicaCount("cluster2"), equalTo(5));
+    assertThat(info.getReplicaCount("cluster2"), equalTo(5));
     assertThat(
-        domain.getServer("server3", "cluster2").getEnvironmentVariables(),
+        info.getServer("server3", "cluster2").getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-verbose")))
             .and(hasItem(envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "))));
   }

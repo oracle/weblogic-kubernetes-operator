@@ -2,59 +2,52 @@
 title: "Create a domain"
 date: 2019-02-22T15:44:42-05:00
 draft: false
-weight: 6
+weight: 3
 ---
 
-
-1. For use in the following steps:
-
-   * Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).
-   * Pick or create a directory to which you can write output.
-
-1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
+1. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain:
 
     ```shell
-    $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
-      -u <username> -p <password> -n sample-domain1-ns -d sample-domain1
+    $ kubectl create secret generic sample-domain1-weblogic-credentials \
+      --from-literal=username=ADMIN_USERNAME --from-literal=password=ADMIN_PASSWORD \
+      -n sample-domain1-ns
     ```
 
-    The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
-    with the value specified by the `-d` flag.  For example, the previous command would create a secret named
-    `sample-domain1-weblogic-credentials`.
+   Replace `ADMIN_USERNAME` and `ADMIN_PASSWORD` with your choice of user name and password. Note
+   that the password must be at least 8 characters long and must contain at least one non-alphabetical character.
 
-1.	Create a new image with a domain home, plus create a domain resource that the operator will use to deploy the image, by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
 
-    The script's behavior is controlled by an inputs file plus command-line options. The script downloads the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) and [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) and uses these tools to create a new image with a domain home. The script also creates a domain resource YAML file that references the image, and, if the `-e` option is specified, deploys the domain resource to Kubernetes. For a detailed understanding of the steps that the `create-domain.sh` script performs for you, see the bulleted items under [Use the script to create a domain]({{< relref "/samples/domains/domain-home-in-image/#use-the-script-to-create-a-domain" >}})
-
-    {{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
-    {{% /notice%}}
-
-    First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
-       * `domainUID`: `sample-domain1`
-       * `image`: Leave empty unless you need to tag the new image that the script builds to a different name.
-          For example if you are using a remote cluster that will need to pull the image from a container registry,
-          then you should set this value to the fully qualified image name.  Note that you will need to
-          push the image manually.
-       * `weblogicCredentialsSecretName`: `sample-domain1-weblogic-credentials`
-       * `namespace`: `sample-domain1-ns`
-       * `domainHomeImageBase`: `container-registry.oracle.com/middleware/weblogic:12.2.1.4`
-
-    For example, assuming you named your copy `my-inputs.yaml`:
+1. Create a domain runtime encryption secret using the following command:
 
     ```shell
-    $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
+    $ kubectl -n sample-domain1-ns create secret generic \
+      sample-domain1-runtime-encryption-secret \
+       --from-literal=password=my_runtime_password
     ```
-    ```shell
-    $ ./create-domain.sh -i my-inputs.yaml -o /<your output directory> -u <username> -p <password> -e
-    ```
-    {{% notice note %}}You need to provide the same WebLogic domain administrator user name and password in the `-u` and `-p` options
-    respectively, as you provided when creating the Kubernetes Secret in Step 2.
-    {{% /notice %}}
 
-    For the detailed steps that the `create-domain.sh` script performs, see [Domain Home In Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}).
+    These two commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then you will need to update the sample domain YAML file accordingly in the next step.
+
+1. Create the `sample-domain1` domain using a domain resource. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
+
+   - Use the following command to apply the sample domain resource:
+
+     ```shell
+     $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
+     ```
+
+   - **NOTE**: If you want to view or need to modify it, you can download the [sample domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`.
 
 
-1.	Confirm that the operator started the servers for the domain:
+   This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
+
+     - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml).
+     - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
+
+   {{% notice note %}}
+   The Quick Start guide's sample domain resource references a WebLogic Server version 12.2.1.4 General Availability (GA) image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+   {{% /notice %}}
+
+1.	Confirm that the operator started the servers for the domain.
 
     a. Use `kubectl` to show that the Domain was created:
 
@@ -62,59 +55,110 @@ weight: 6
     $ kubectl describe domain sample-domain1 -n sample-domain1-ns
     ```
 
-    b. After a short time, you will see the Administration Server and Managed Servers running.
+    b. Get the domain status using the following command. If you don't have the `jq` executable installed, then run the second command to get the domain status.
+    ```shell
+    $ kubectl get domain sample-domain1 -n sample-domain1-ns -o json | jq .status
+    ```
+    OR
+    ```shell
+    $ kubectl get domain sample-domain1 -n sample-domain1-ns -o jsonpath='{.status}'
+    ```
+
+    c. After a short time, you will see the Administration Server and Managed Servers running.
 
     ```shell
     $ kubectl get pods -n sample-domain1-ns
     ```
 
-    c. You should also see all the Kubernetes Services for the domain.
+    d. You should also see all the Kubernetes Services for the domain.
 
     ```shell
     $ kubectl get services -n sample-domain1-ns
     ```
 
-1.	Create an ingress for the domain, in the domain namespace, by using the [sample](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
+   	 If the operator didn't start the servers for the domain, see [Domain debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
+1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
+
+    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
+
+    b. Then apply the file using:
     ```shell
-    $ helm install sample-domain1-ingress kubernetes/samples/charts/ingress-per-domain \
-      --namespace sample-domain1-ns \
-      --set wlsDomain.domainUID=sample-domain1 \
-      --set traefik.hostname=sample-domain1.org
+    $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
+      --namespace sample-domain1-ns
     ```
 
+1.  To confirm that the ingress controller noticed the new ingress route and is successfully routing to the domain's server pods, send a request to the URL for the "quick start app", as shown in the following example, which will return an HTTP 200 status code.
 
-1.	To confirm that the ingress controller noticed the new ingress and is successfully routing to the domain's server pods,
-    you can send a request to the URL for the "WebLogic ReadyApp framework", as
-    shown in the following example, which will return an HTTP 200 status code.   
+    {{< tabs groupId="config" >}}
+    {{% tab name="Single Node Cluster" %}}
+        $ curl -i http://localhost:30305/quickstart/
 
-    ```shell
-    $ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready
-    ```
-    ```
-      About to connect() to localhost port 30305 (#0)
-        Trying 10.196.1.64...
-        Connected to localhost (10.196.1.64) port 30305 (#0)
-    > GET /weblogic/ HTTP/1.1
-    > User-Agent: curl/7.29.0
-    > Accept: */*
-    > host: domain1.org
-    >
-    < HTTP/1.1 200 OK
-    < Content-Length: 0
-    < Date: Thu, 20 Dec 2018 14:52:22 GMT
-    < Vary: Accept-Encoding
-    <   Connection #0 to host localhost left intact
-    ```
+        HTTP/1.1 200 OK
+        Content-Length: 274
+        Content-Type: text/html; charset=UTF-8
+        Date: Wed, 15 Jun 2022 14:20:59 GMT
+        Set-Cookie: JSESSIONID=JONnvS__IkBUN9nqZG4SfuUU3QdEj_4bissfck1GPbY6YJxgjXpS!1733001435; path=/; HttpOnly
+        X-Oracle-Dms-Ecid: be865b9d-cc96-4dca-ab80-f0b6c5b05326-00000015
+        X-Oracle-Dms-Rid: 0
+
+
+
+
+
+        <!DOCTYPE html>
+        <html>
+        <body>
+                <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
+
+                <b>WebLogic Server Name:</b> managed-server1<br><b>Pod Name:</b> sample-domain1-managed-server1<br><b>Current time:</b> 14:21:00<br><p>
+        </body>
+        </html>
+    {{% /tab %}}
+    {{% tab name="OKE Cluster" %}}
+        $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
+
+        $ curl -i http://${LOADBALANCER_INGRESS_IP}/quickstart/
+
+        HTTP/1.1 200 OK
+        Content-Length: 274
+        Content-Type: text/html; charset=UTF-8
+        Date: Wed, 15 Jun 2022 14:20:59 GMT
+        Set-Cookie: JSESSIONID=JONnvS__IkBUN9nqZG4SfuUU3QdEj_4bissfck1GPbY6YJxgjXpS!1733001435; path=/; HttpOnly
+        X-Oracle-Dms-Ecid: be865b9d-cc96-4dca-ab80-f0b6c5b05326-00000015
+        X-Oracle-Dms-Rid: 0
+
+
+
+
+
+        <!DOCTYPE html>
+        <html>
+        <body>
+                <h1>Welcome to the WebLogic on Kubernetes Quick Start Sample</font></h1><br>
+
+                <b>WebLogic Server Name:</b> managed-server1<br><b>Pod Name:</b> sample-domain1-managed-server1<br><b>Current time:</b> 14:21:00<br><p>
+        </body>
+        </html>
+    {{% /tab %}}
+    {{< /tabs >}}
+
+
     {{% notice note %}} Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
     {{% /notice %}}
-
-
 1.	To access the WebLogic Server Administration Console:
+    {{< tabs groupId="config" >}}
+    {{% tab name="Single Node Cluster" %}}
+      Open a browser to http://localhost:30305/console.
+    {{% /tab %}}
+    {{% tab name="OKE Cluster" %}}
+      a. Get the load balancer ingress IP address using the following command:
+         $ LOADBALANCER_INGRESS_IP=$(kubectl get svc traefik-operator -n traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}{"\n"}')
 
-    a. Edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`.
+      b. Open a browser to http://${LOADBALANCER_INGRESS_IP}/console.
+    {{% /tab %}}
+    {{< /tabs >}}
 
-    b. Open a browser to `http://localhost:30701`.
 
-    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}).
+    {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
     {{% /notice %}}

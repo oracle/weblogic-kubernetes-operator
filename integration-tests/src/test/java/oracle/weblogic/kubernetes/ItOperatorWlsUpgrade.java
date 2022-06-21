@@ -206,17 +206,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
-   * Currently we do not support AuxDomain upgrade 3.3.5 to Latest with 
-   * independent webhook only WebLogic Operator in Latest branch.
-   * Temporarily disabled, re-enable after webhook not pre-created in 
-   * InitializationTasks or the test is moved to a different test suite.
+   * Operator upgrade from 3.4.1 to current.
    */
-  @Disabled
-  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.3.8");
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.4.1 to current")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom341ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom341ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.1", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -227,6 +224,37 @@ class ItOperatorWlsUpgrade {
   void testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() {
     logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
     upgradeWlsAuxDomain("3.4.0");
+  }
+
+  /**
+   * Auxiliary Image Domain upgrade from Operator v3.4.1 to current.
+   * The current release of the 3.4.1 does not conatin the resolution
+   * described in the following PR 
+   * https://github.com/oracle/weblogic-kubernetes-operator/pull/3165/files
+   *
+   * Note testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() uses a 
+   * patched Operator 3.4.0 image to make it pass. See utils/OperatorUtils.java
+   */
+  @Disabled
+  @Test
+  @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom341ToCurrent() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.4.1");
+  }
+
+  /**
+   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
+   * Currently we do not support AuxDomain upgrade 3.3.8 to Latest with 
+   * independent webhook only WebLogic Operator in Latest branch.
+   * Temporarily disabled, re-enable after webhook not pre-created in 
+   * InitializationTasks or the test is moved to a different test suite.
+   */
+  @Disabled
+  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.3.8");
   }
 
   /**
@@ -407,12 +435,10 @@ class ItOperatorWlsUpgrade {
     installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
 
     // upgrade to current operator
-    upgradeOperatorAndVerify(externalServiceNameSuffix,
-          opNamespace, domainNamespace);
+    upgradeOperatorAndVerify(opNamespace, domainNamespace);
   }
 
-  private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
-                  String opNamespace, String domainNamespace) {
+  private void upgradeOperatorAndVerify(String opNamespace, String domainNamespace) {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
@@ -436,7 +462,7 @@ class ItOperatorWlsUpgrade {
 
     // start a new thread to collect the availability data of
     // the application while the main thread performs operator upgrade
-    List<Integer> appAvailability = new ArrayList<Integer>();
+    List<Integer> appAvailability = new ArrayList<>();
     logger.info("Start a thread to keep track of application availability");
     Thread accountingThread =
           new Thread(
@@ -637,16 +663,15 @@ class ItOperatorWlsUpgrade {
    * Restart the domain after upgrade by changing serverStartPolicy.
    */
   private void restartDomain(String domainUid, String domainNamespace) {
-
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "NEVER"),
-         "Failed to patch Domain's serverStartPolicy to NEVER");
+         "/spec/serverStartPolicy", "Never"),
+         "Failed to patch Domain's serverStartPolicy to Never");
     logger.info("Domain is patched to shutdown");
     checkDomainStopped(domainUid, domainNamespace);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "IF_NEEDED"),
-         "Failed to patch Domain's serverStartPolicy to IF_NEEDED");
+         "/spec/serverStartPolicy", "IfNeeded"),
+         "Failed to patch Domain's serverStartPolicy to IfNeeded");
     logger.info("Domain is patched to re start");
     checkDomainStarted(domainUid, domainNamespace);
   }
@@ -686,7 +711,7 @@ class ItOperatorWlsUpgrade {
                             .name(adminSecretName)
                             .namespace(domainNamespace))
                     .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
+                    .serverStartPolicy("weblogic.oracle/v8".equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")

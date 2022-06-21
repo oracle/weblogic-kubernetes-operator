@@ -425,7 +425,7 @@ spec:
       containers:
         - name: prometheus-server-configmap-reload
           image: "jimmidyson/configmap-reload:v0.3.0"
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: IfNotPresent
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090/-/reload
@@ -438,7 +438,7 @@ spec:
 
         - name: prometheus-server
           image: "prom/prometheus:v2.19.0"
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: IfNotPresent
           args:
             - --storage.tsdb.retention.time=15d
             - --config.file=/etc/config/prometheus.yml

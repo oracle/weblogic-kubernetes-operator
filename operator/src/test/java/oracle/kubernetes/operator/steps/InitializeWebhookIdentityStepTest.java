@@ -3,8 +3,12 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.net.URI;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +17,7 @@ import java.util.function.Function;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.WebhookMain;
@@ -27,12 +32,13 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Matchers;
 import org.hamcrest.junit.MatcherAssert;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.DEFAULT_NAMESPACE;
@@ -51,12 +57,8 @@ class InitializeWebhookIdentityStepTest {
   private final Step initializeWebhookIdentityStep = new InitializeWebhookIdentityStep(delegate,
       new WebhookMain.CheckFailureAndCreateEventStep());
 
-  public static final String NS = "namespace";
-  private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<URI, Path> pathFunction = inMemoryFileSystem::getPath;
+  private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
+  private static final Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
 
   @BeforeEach
   void setup() throws NoSuchFieldException {
@@ -64,13 +66,11 @@ class InitializeWebhookIdentityStepTest {
 
     mementos.add(testSupport.install());
 
-    mementos.add(StaticStubSupport.install(InitializeWebhookIdentityStep.class, "getPath", getInMemoryPath));
-    mementos.add(StaticStubSupport.install(InitializeWebhookIdentityStep.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath));
-
     mementos.add(SystemClockTestSupport.installClock());
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
+    mementos.add(inMemoryFileSystem.install());
+    mementos.add(SSlIdentityFactoryStub.install());
   }
 
   @AfterEach
@@ -95,9 +95,10 @@ class InitializeWebhookIdentityStepTest {
     inMemoryFileSystem.defineFile("/deployment/secrets/webhookKey", "xyz");
 
     testSupport.runSteps(initializeWebhookIdentityStep);
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+
+    MatcherAssert.assertThat("Found 1 WEBHOOK_STARTUP_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -111,9 +112,9 @@ class InitializeWebhookIdentityStepTest {
 
     testSupport.runSteps(initializeWebhookIdentityStep);
 
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+    MatcherAssert.assertThat("Found 1 WEBHOOK_STARTUP_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -144,9 +145,10 @@ class InitializeWebhookIdentityStepTest {
     inMemoryFileSystem.defineFile("/deployment/secrets/webhookKey", "xyz");
 
     testSupport.runSteps(initializeWebhookIdentityStep);
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+
+    MatcherAssert.assertThat("Found 1 WEBHOOK_STARTUP_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
+            WEBHOOK_STARTUP_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -167,5 +169,29 @@ class InitializeWebhookIdentityStepTest {
 
   private V1ObjectMeta createSecretMetadata() {
     return new V1ObjectMeta().name(WEBHOOK_SECRETS).namespace(DEFAULT_NAMESPACE);
+  }
+
+  static class SSlIdentityFactoryStub implements SslIdentityFactory {
+
+    static Memento install() throws NoSuchFieldException {
+      return StaticStubSupport.install(
+          InitializeWebhookIdentityStep.class, "identityFactory", new SSlIdentityFactoryStub());
+    }
+
+    @NotNull
+    @Override
+    public KeyPair createKeyPair() {
+      return new KeyPair(Stub.createNiceStub(PublicKey.class), Stub.createNiceStub(PrivateKey.class));
+    }
+
+    @Override
+    public String convertToPEM(Object object) throws IOException {
+      return Integer.toString(object.hashCode());
+    }
+
+    @Override
+    public X509Certificate createCertificate(String name, KeyPair keyPair) {
+      return Stub.createNiceStub(X509Certificate.class);
+    }
   }
 }

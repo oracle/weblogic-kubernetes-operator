@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.SemanticVersion.Compatibility;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -374,7 +375,7 @@ public class IstioUtils {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -409,7 +410,7 @@ public class IstioUtils {
         e.printStackTrace();
         fail("Failed to read configuration file");
       }
-      V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
+      V1Container.ImagePullPolicyEnum imagePullPolicy = IMAGE_PULL_POLICY;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(monexpImage)
           .imagePullPolicy(imagePullPolicy)

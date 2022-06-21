@@ -277,7 +277,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainSpecNotChanged_dontRunUpdateThread() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
 
     makeRightOperation.execute();
 
@@ -292,7 +292,7 @@ class DomainProcessorTest {
   
   @Test
   void whenDomainExplicitSet_runUpdateThread() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
 
@@ -301,7 +301,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainChangedSpec_runUpdateThread() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
@@ -309,8 +309,26 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainChangedSpecNewer_setWillInterrupt() {
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    final MakeRightDomainOperation operation = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
+
+    assertThat(operation.isWillInterrupt(), is(true));
+  }
+
+  @Test
+  void whenDomainChangedSpecNotNewer_dontSetWillInterrupt() {
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
+
+    final MakeRightDomainOperation operation = processor.createMakeRightOperation(new DomainPresenceInfo(domain));
+
+    assertThat(operation.isWillInterrupt(), is(false));
+  }
+
+  @Test
   void whenDomainChangedSpecButProcessingAborted_dontRunUpdateThread() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
@@ -319,10 +337,32 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainChangedSpecAndProcessingAbortedButRestartVersionChanged_runUpdateThread() {
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withRestartVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
   void whenDomainChangedSpecAndProcessingAbortedButInspectionVersionChanged_runUpdateThread() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
     domainConfigurator.withIntrospectVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpecAndProcessingAbortedButImageChanged_runUpdateThread() {
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withDefaultImage("abcd:123");
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
@@ -359,6 +399,7 @@ class DomainProcessorTest {
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+    assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
@@ -372,6 +413,7 @@ class DomainProcessorTest {
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
     assertThat(updatedDomain, hasCondition(COMPLETED).withStatus("False"));
+    assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
@@ -1147,7 +1189,7 @@ class DomainProcessorTest {
     for (Integer i : msNumbers) {
       defineServerResources(getManagedServerName(i));
     }
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE, clusterNames, independentServers));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
     domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
@@ -1397,7 +1439,7 @@ class DomainProcessorTest {
   private void getMIIOnlineUpdateIntrospectResult(DomainConditionType domainConditionType, String updateResult)
       throws Exception {
 
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"
@@ -1938,7 +1980,7 @@ class DomainProcessorTest {
   @Test
   void whenExceptionDuringProcessing_reportInDomainStatus() {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    DomainProcessorImpl.registerDomainPresenceInfo(info);
+    processor.registerDomainPresenceInfo(info);
     forceExceptionDuringProcessing();
 
     testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
@@ -1956,7 +1998,7 @@ class DomainProcessorTest {
   @Test
   void whenExceptionDuringProcessing_createFailedEvent() {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    DomainProcessorImpl.registerDomainPresenceInfo(info);
+    processor.registerDomainPresenceInfo(info);
     forceExceptionDuringProcessing();
 
     testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
@@ -1973,7 +2015,7 @@ class DomainProcessorTest {
   @Test
   void whenWebLogicCredentialsSecretRemoved_NullPointerExceptionAndAbortedEventNotGenerated() {
     consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     domain.getSpec().withWebLogicCredentialsSecret(null);
     int time = 0;
 

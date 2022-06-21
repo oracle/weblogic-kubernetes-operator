@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -49,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,7 +132,7 @@ public class JobStepContext extends BasePodStepContext {
     return info.getDomain();
   }
 
-  ServerSpec getServerSpec() {
+  EffectiveServerSpec getServerSpec() {
     return getDomain().getAdminServerSpec();
   }
 
@@ -327,6 +327,7 @@ public class JobStepContext extends BasePodStepContext {
         new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, getIntrospectVersionLabel())
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
@@ -667,6 +668,10 @@ public class JobStepContext extends BasePodStepContext {
 
   private String getAsServiceName() {
     return LegalNames.toServerServiceName(getDomainUid(), getAsName());
+  }
+
+  private String getIntrospectVersionLabel() {
+    return Optional.ofNullable(getDomain().getIntrospectVersion()).orElse(null);
   }
 
   @Override

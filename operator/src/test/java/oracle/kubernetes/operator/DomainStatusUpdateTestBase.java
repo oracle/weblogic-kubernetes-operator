@@ -144,7 +144,8 @@ abstract class DomainStatusUpdateTestBase {
 
   void initializeDomainStatus(WlsDomainConfig domainConfig) {
     final DomainStatusUpdater.DomainStatusFactory domainStatusFactory
-          = new DomainStatusUpdater.DomainStatusFactory(getRecordedDomain(), domainConfig, this::isConfiguredToRun);
+          = new DomainStatusUpdater.DomainStatusFactory(info, getRecordedDomain(), domainConfig,
+              this::isConfiguredToRun);
 
     domainStatusFactory.setStatusDetails(info.getDomain().getOrCreateStatus());
   }
@@ -163,6 +164,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
+    // Observed generation is only updated during a make-right status update
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), nullValue());
     assertThat(
         getServerStatus(getRecordedDomain(), "server1"),
         equalTo(
@@ -652,7 +655,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenRollInProcessAndReplicasTooHighAndAllServersRunning_removeRollingCondition() {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
-    domain.setReplicaCount("cluster1", 5);
+    info.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -663,7 +666,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenRollInProcessAndReplicasTooHighAndAllServersRunning_generateDomainRollCompletedEvent() {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
-    domain.setReplicaCount("cluster1", 5);
+    info.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -948,7 +951,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_removeOldReplicasTooHighFailure() {
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH));
-    domain.setReplicaCount("cluster1", 4);
+    info.setReplicaCount("cluster1", 4);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -958,7 +961,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {
-    domain.setReplicaCount("cluster1", 4);
+    info.setReplicaCount("cluster1", 4);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -968,7 +971,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
-    domain.setReplicaCount("cluster1", 5);
+    info.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -980,7 +983,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_generateFailedEvent() {
-    domain.setReplicaCount("cluster1", 5);
+    info.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -1357,7 +1360,7 @@ abstract class DomainStatusUpdateTestBase {
     clearPacketServerStatusMaps();
 
     testSupport.runSteps(
-        Step.chain(processor.createPopulatePacketServerMapsStep(),
+        Step.chain(new DomainProcessorImpl.PopulatePacketServerMapsStep(),
             DomainStatusUpdater.createStatusUpdateStep(endStep)));
 
     assertThat(getRecordedDomain().getMetadata().getResourceVersion(), equalTo(cachedResourceVersion));

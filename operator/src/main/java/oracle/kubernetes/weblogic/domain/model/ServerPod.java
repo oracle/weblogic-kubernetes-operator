@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import jakarta.validation.Valid;
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -240,6 +241,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
       + "before it considers the pod failed. Defaults to 1800 seconds.")
+  @Default(intDefault = 1800)
   private Long maxReadyWaitTimeSeconds = 1800L;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {

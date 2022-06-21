@@ -108,11 +108,11 @@ public class ServerDownIteratorStep extends Step {
     }
 
     private int getMaxConcurrentShutdown(ServerShutdownInfo ssi) {
-      return info.getDomain().getMaxConcurrentShutdown(ssi.getClusterName());
+      return info.getMaxConcurrentShutdown(ssi.getClusterName());
     }
 
     private int getReplicaCount(ServerShutdownInfo ssi) {
-      return info.getDomain().getReplicaCount(ssi.getClusterName());
+      return info.getReplicaCount(ssi.getClusterName());
     }
 
     @Nonnull

@@ -232,11 +232,11 @@ public class DomainNamespaces {
     }
   }
 
-  private NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
+  private Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
     return new WatcherStartupProcessing(ns, domainProcessor);
   }
 
-  class WatcherStartupProcessing extends NamespacedResources.Processors {
+  class WatcherStartupProcessing implements Processors {
     private final String ns;
     private final DomainProcessor domainProcessor;
 
@@ -246,42 +246,42 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<V1ConfigMapList> getConfigMapListProcessing() {
+    public Consumer<V1ConfigMapList> getConfigMapListProcessing() {
       return l -> configMapWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<CoreV1EventList> getEventListProcessing() {
+    public Consumer<CoreV1EventList> getEventListProcessing() {
       return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+    public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
       return l -> operatorEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<V1JobList> getJobListProcessing() {
+    public Consumer<V1JobList> getJobListProcessing() {
       return l -> jobWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<V1PodList> getPodListProcessing() {
+    public Consumer<V1PodList> getPodListProcessing() {
       return l -> podWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<V1ServiceList> getServiceListProcessing() {
+    public Consumer<V1ServiceList> getServiceListProcessing() {
       return l -> serviceWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+    public Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
       return l -> podDisruptionBudgetWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<DomainList> getDomainListProcessing() {
+    public Consumer<DomainList> getDomainListProcessing() {
       return l -> domainWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
   }

@@ -22,7 +22,7 @@ public class Cluster {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are NEVER, or IF_NEEDED.")
+          + "Legal values are Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty(

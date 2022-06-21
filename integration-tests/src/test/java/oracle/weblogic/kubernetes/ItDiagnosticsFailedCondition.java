@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_F
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -366,7 +367,7 @@ class ItDiagnosticsFailedCondition {
               .domainHome("/shared/domains/" + domainName) // point to domain home in pv
               .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
               .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-              .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+              .imagePullPolicy(IMAGE_PULL_POLICY)
               .imagePullSecrets(Arrays.asList(
                   new V1LocalObjectReference()
                       .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))) // this secret for non-kind cluster
@@ -377,7 +378,7 @@ class ItDiagnosticsFailedCondition {
               .logHomeEnabled(Boolean.TRUE)
               .logHome("/shared/logs/" + domainName)
               .dataHome("")
-              .serverStartPolicy("IF_NEEDED")
+              .serverStartPolicy("IfNeeded")
               .serverPod(new ServerPod() //serverpod
                   .addEnvItem(new V1EnvVar()
                       .name("USER_MEM_ARGS")
@@ -625,7 +626,7 @@ class ItDiagnosticsFailedCondition {
       }
 
       String patchStr
-          = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"NEVER\"}]";
+          = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"Never\"}]";
 
       logger.info("Shutting down cluster using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
@@ -648,7 +649,7 @@ class ItDiagnosticsFailedCondition {
       PodUtils.checkPodDeleted(dbPodName, null, domainNamespace);
 
       patchStr
-          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
 
       logger.info("Starting cluster using patch string: {0}", patchStr);
       patch = new V1Patch(patchStr);
@@ -699,7 +700,7 @@ class ItDiagnosticsFailedCondition {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -750,7 +751,7 @@ class ItDiagnosticsFailedCondition {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

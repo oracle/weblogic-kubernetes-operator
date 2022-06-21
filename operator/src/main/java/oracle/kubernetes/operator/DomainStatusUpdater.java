@@ -42,6 +42,7 @@ import oracle.kubernetes.operator.http.rest.Scan;
 import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -389,12 +390,14 @@ public class DomainStatusUpdater {
   static class DomainStatusUpdaterContext {
     @Nonnull
     private final DomainPresenceInfo info;
+    private final boolean isMakeRight;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
     }
 
@@ -459,12 +462,19 @@ public class DomainStatusUpdater {
         LOGGER.finer("status change: " + createPatchString());
       }
       DomainResource oldDomain = getDomain();
+
+      DomainStatus status = getNewStatus();
+      if (isMakeRight) {
+        // Only set observedGeneration during a make-right, but not during a background status update
+        status.setObservedGeneration(oldDomain.getMetadata().getGeneration());
+      }
+
       DomainResource newDomain = new DomainResource()
           .withKind(KubernetesConstants.DOMAIN)
           .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
-          .withStatus(getNewStatus());
+          .withStatus(status);
 
       return new CallBuilder().replaceDomainStatusAsync(
           getDomainName(),
@@ -853,7 +863,7 @@ public class DomainStatusUpdater {
         }
 
         private int minReplicas() {
-          return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
+          return getInfo().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
         private long numServersReady() {
@@ -863,7 +873,7 @@ public class DomainStatusUpdater {
         }
 
         private int maxUnavailable() {
-          return getDomain().getMaxUnavailable(clusterName);
+          return getInfo().getMaxUnavailable(clusterName);
         }
 
         private String createFailureMessage() {
@@ -873,7 +883,7 @@ public class DomainStatusUpdater {
 
       private void setStatusDetails(DomainStatus status) {
         getDomainConfig()
-            .map(c -> new DomainStatusFactory(getDomain(), c, this::isStartedServer))
+            .map(c -> new DomainStatusFactory(getInfo(), getDomain(), c, this::isStartedServer))
             .ifPresent(f -> f.setStatusDetails(status));
       }
 
@@ -1087,7 +1097,8 @@ public class DomainStatusUpdater {
 
       private long getMaxReadyWaitTime(V1Pod pod) {
         return Optional.ofNullable(getInfo().getDomain())
-            .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
+            .map(d -> getInfo().getServer(getServerName(pod), getClusterNameFromPod(pod)))
+            .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds)
             .orElse(TuningParameters.getInstance().getMaxReadyWaitTimeSeconds());
       }
 
@@ -1155,6 +1166,7 @@ public class DomainStatusUpdater {
    */
   static class DomainStatusFactory {
 
+    private DomainPresenceInfo info;
     @Nonnull
     private final DomainResource domain;
     private final WlsDomainConfig domainConfig;
@@ -1163,13 +1175,17 @@ public class DomainStatusUpdater {
     /**
      * Creates a factory to create a DomainStatus object, initialized with state from the configuration.
      *
+     * @param info the domain presence info
      * @param domain an operator domain resource
      * @param domainConfig a WebLogic domain configuration
      * @param isServerConfiguredToRun returns true if the named server is configured to start
      */
-    public DomainStatusFactory(@Nonnull DomainResource domain,
-                               @Nonnull WlsDomainConfig domainConfig,
-                               @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
+    public DomainStatusFactory(
+        @Nonnull DomainPresenceInfo info,
+        @Nonnull DomainResource domain,
+        @Nonnull WlsDomainConfig domainConfig,
+        @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
+      this.info = info;
       this.domain = domain;
       this.domainConfig = domainConfig;
       this.isServerConfiguredToRun = isServerConfiguredToRun;
@@ -1212,7 +1228,7 @@ public class DomainStatusUpdater {
       }
 
       private String getDesiredState(String serverName, String clusterName) {
-        return domain.getServer(serverName, clusterName).getDesiredState();
+        return info.getServer(serverName, clusterName).getDesiredState();
       }
 
       private boolean wasServerStarted() {
@@ -1230,11 +1246,11 @@ public class DomainStatusUpdater {
     }
 
     private boolean useMinimumClusterSize(String clusterName) {
-      return !domain.isAllowReplicasBelowMinDynClusterSize(clusterName);
+      return !info.isAllowReplicasBelowMinDynClusterSize(clusterName);
     }
 
     private Integer getClusterSizeGoal(String clusterName) {
-      return domain.getReplicaCount(clusterName);
+      return info.getReplicaCount(clusterName);
     }
 
   }

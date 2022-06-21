@@ -63,7 +63,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -252,7 +252,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
             .withConfiguration(new Configuration()
                 .withOverridesConfigMap(OVERRIDES_CM).withSecrets(List.of(OVERRIDE_SECRET_1, OVERRIDE_SECRET_2)))
-            .withCluster(new Cluster()
+            .withCluster(new ClusterSpec()
                 .withClusterName("cluster-1").withReplicas(1).withServerStartPolicy(ServerStartPolicy.IF_NEEDED))
             .withImage(LATEST_IMAGE)
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
@@ -781,6 +781,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     getDomain().getOrCreateStatus().setFailedIntrospectionUid(JOB_UID);
   }
 
+  private void defineIntrospectionWithIntrospectVersionLabel(String introspectVersion) {
+    testSupport.defineResources(createIntrospectorJobWithIntrospectVersionLabel(introspectVersion));
+  }
+
   @Test
   void whenPreviousFailedJobExists_deleteIt() {
     ignoreJobCreatedAndDeletedLogs();
@@ -989,6 +993,69 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(affectedJob, nullValue());
   }
 
+  @Test
+  void whenJobInProgressAndIntrospectVersionAdded_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withIntrospectVersion("v2");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospection();
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndIntrospectVersionChanged_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withIntrospectVersion("v2");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithIntrospectVersionLabel("v1");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndIntrospectVersionUnchanged_doNotCreateNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withIntrospectVersion("v2");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithIntrospectVersionLabel("v2");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, nullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndNullIntrospectVersionUnchanged_doNotCreateNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withIntrospectVersion(null);
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithIntrospectVersionLabel(null);
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, nullValue());
+  }
 
   private void replaceFailedJobPodWithSuccess() {
     testSupport.deleteResources(createIntrospectorJobPod());
@@ -1184,6 +1251,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     V1PodSpec podSpec = new V1PodSpec().addContainersItem(container);
     V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec().spec(podSpec);
     return new V1JobSpec().template(podTemplateSpec);
+  }
+
+  private V1Job createIntrospectorJobWithIntrospectVersionLabel(String introspectVersion) {
+    V1Job job = createIntrospectorJob(UID);
+    job.getMetadata().putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
+    return job;
   }
 
   private V1ObjectMeta createJobMetadata(String uid) {
@@ -1478,10 +1551,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
-  private Cluster getCluster(String clusterName) {
+  private ClusterSpec getCluster(String clusterName) {
     return domain.getSpec().getClusters().stream()
           .filter(c -> clusterName.equals(c.getClusterName()))
-          .findFirst().orElse(new Cluster());
+          .findFirst().orElse(new ClusterSpec());
   }
 
   private String getDomainHome() {

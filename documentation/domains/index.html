@@ -927,6 +927,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "serverStartState": {
+          "default": "RUNNING",
           "description": "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
@@ -943,16 +944,18 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
+          "default": true,
           "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to true.",
           "type": "boolean"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "ALWAYS",
-            "NEVER",
-            "IF_NEEDED"
+            "Always",
+            "Never",
+            "IfNeeded"
           ]
         },
         "adminService": {
@@ -1026,86 +1029,18 @@ window.onload = function() {
         },
         "nodePort": {
           "description": "Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel.",
-          "type": "number"
+          "type": "integer"
         }
       },
       "required": [
         "channelName"
       ]
     },
-    "Cluster": {
-      "type": "object",
-      "properties": {
-        "serverStartState": {
-          "description": "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.",
-          "type": "string",
-          "enum": [
-            "RUNNING",
-            "ADMIN"
-          ]
-        },
-        "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
-          "type": "number",
-          "minimum": 0.0
-        },
-        "domainUID": {
-          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
-          "type": "string"
-        },
-        "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
-          "type": "string",
-          "enum": [
-            "NEVER",
-            "IF_NEEDED"
-          ]
-        },
-        "restartVersion": {
-          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
-          "type": "string"
-        },
-        "serverService": {
-          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerService"
-        },
-        "maxUnavailable": {
-          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
-          "type": "number",
-          "minimum": 1.0
-        },
-        "clusterName": {
-          "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
-          "type": "string"
-        },
-        "allowReplicasBelowMinDynClusterSize": {
-          "description": "Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true.",
-          "type": "boolean"
-        },
-        "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerPod"
-        },
-        "clusterService": {
-          "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
-          "$ref": "#/definitions/ClusterService"
-        },
-        "maxConcurrentShutdown": {
-          "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
-          "type": "number",
-          "minimum": 0.0
-        },
-        "maxConcurrentStartup": {
-          "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
-          "type": "number",
-          "minimum": 0.0
-        }
-      }
-    },
     "ClusterService": {
       "type": "object",
       "properties": {
         "sessionAffinity": {
+          "default": "None",
           "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
           "type": "string",
           "enum": [
@@ -1129,22 +1064,92 @@ window.onload = function() {
         }
       }
     },
+    "ClusterSpec": {
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "default": "RUNNING",
+          "description": "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "replicas": {
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
+          "type": "integer",
+          "minimum": 0.0
+        },
+        "domainUID": {
+          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
+          "type": "string"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are `Never`, or `IfNeeded`. Defaults to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "type": "string",
+          "enum": [
+            "Never",
+            "IfNeeded"
+          ]
+        },
+        "restartVersion": {
+          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
+          "type": "string"
+        },
+        "serverService": {
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "maxUnavailable": {
+          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
+          "type": "integer",
+          "minimum": 1.0
+        },
+        "clusterName": {
+          "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
+          "type": "string"
+        },
+        "allowReplicasBelowMinDynClusterSize": {
+          "description": "Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true.",
+          "type": "boolean"
+        },
+        "serverPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "clusterService": {
+          "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
+          "$ref": "#/definitions/ClusterService"
+        },
+        "maxConcurrentShutdown": {
+          "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
+          "type": "integer",
+          "minimum": 0.0
+        },
+        "maxConcurrentStartup": {
+          "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
+          "type": "integer",
+          "minimum": 0.0
+        }
+      }
+    },
     "ClusterStatus": {
       "type": "object",
       "properties": {
         "minimumReplicas": {
           "description": "The minimum number of cluster members.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "maximumReplicas": {
           "description": "The maximum number of cluster members.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "replicas": {
           "description": "The number of currently running cluster members.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "clusterName": {
@@ -1153,12 +1158,12 @@ window.onload = function() {
         },
         "readyReplicas": {
           "description": "The number of ready cluster members.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "replicasGoal": {
           "description": "The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         }
       }
@@ -1167,11 +1172,12 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "overrideDistributionStrategy": {
-          "description": "Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server\u0027s next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to DYNAMIC.",
+          "default": "Dynamic",
+          "description": "Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are `Dynamic`, which means that the operator will distribute updated configuration overrides dynamically to running servers, and `OnRestart`, which means that servers will use updated configuration overrides only after the server\u0027s next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to `Dynamic`.",
           "type": "string",
           "enum": [
-            "DYNAMIC",
-            "ON_RESTART"
+            "Dynamic",
+            "OnRestart"
           ]
         },
         "opss": {
@@ -1198,8 +1204,9 @@ window.onload = function() {
           "type": "string"
         },
         "introspectorJobActiveDeadlineSeconds": {
+          "default": 120.0,
           "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
-          "type": "number"
+          "type": "integer"
         }
       }
     },
@@ -1299,15 +1306,16 @@ window.onload = function() {
           "type": "string"
         },
         "logHomeLayout": {
-          "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `FLAT` - all files directly in the `logHome` root directory. `BY_SERVERS` (default) - domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`.",
+          "default": "ByServers",
+          "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `Flat` specifies that all files are kept directly in the `logHome` root directory. `ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`. Defaults to `ByServers`.",
           "type": "string",
           "enum": [
-            "FLAT",
-            "BY_SERVERS"
+            "Flat",
+            "ByServers"
           ]
         },
         "domainHomeSourceType": {
-          "description": "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is present in the container image specified by the `image` field. PersistentVolume indicates that the domain home file system is located on a persistent volume. FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. Defaults to Image.",
+          "description": "Domain home file system source type: Legal values: `Image`, `PersistentVolume`, `FromModel`. `Image` indicates that the domain home file system is present in the container image specified by the `image` field. `PersistentVolume` indicates that the domain home file system is located on a persistent volume. `FromModel` indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. Defaults to `Image`, unless `configuration.model` is set, in which case the default is `FromModel`.",
           "type": "string",
           "enum": [
             "Image",
@@ -1316,6 +1324,7 @@ window.onload = function() {
           ]
         },
         "httpAccessLogInLogHome": {
+          "default": true,
           "description": "Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.",
           "type": "boolean"
         },
@@ -1328,8 +1337,9 @@ window.onload = function() {
           "$ref": "#/definitions/AdminServer"
         },
         "failureRetryIntervalSeconds": {
+          "default": 120.0,
           "description": "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "logHome": {
@@ -1337,11 +1347,13 @@ window.onload = function() {
           "type": "string"
         },
         "failureRetryLimitMinutes": {
+          "default": 1440.0,
           "description": "The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "includeServerOutInPodLog": {
+          "default": true,
           "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
           "type": "boolean"
         },
@@ -1349,10 +1361,11 @@ window.onload = function() {
           "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Cluster"
+            "$ref": "#/definitions/ClusterSpec"
           }
         },
         "serverStartState": {
+          "default": "RUNNING",
           "description": "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
@@ -1374,27 +1387,31 @@ window.onload = function() {
           ]
         },
         "maxClusterConcurrentStartup": {
+          "default": 0.0,
           "description": "The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "replicas": {
+          "default": 0.0,
           "description": "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "maxClusterConcurrentShutdown": {
+          "default": 1.0,
           "description": "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster\u0027s `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "NEVER",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "Never",
+            "IfNeeded",
+            "AdminOnly"
           ]
         },
         "livenessProbeCustomScript": {
@@ -1406,7 +1423,7 @@ window.onload = function() {
           "type": "string"
         },
         "introspectVersion": {
-          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. See also `domains.spec.configuration.overrideDistributionStrategy`.",
+          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`.",
           "type": "string"
         },
         "dataHome": {
@@ -1418,6 +1435,7 @@ window.onload = function() {
           "type": "boolean"
         },
         "allowReplicasBelowMinDynClusterSize": {
+          "default": true,
           "description": "Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.",
           "type": "boolean"
         },
@@ -1452,12 +1470,12 @@ window.onload = function() {
         "introspectJobFailureCount": {
           "deprecated": "true",
           "description": "Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter \u0027domainPresenceFailureRetryMaxCount\u0027 (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "replicas": {
           "description": "The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case.",
-          "type": "number",
+          "type": "integer",
           "minimum": 0.0
         },
         "failedIntrospectionUid": {
@@ -1487,6 +1505,10 @@ window.onload = function() {
           "description": "A human readable message indicating details about why the domain is in this condition.",
           "type": "string"
         },
+        "observedGeneration": {
+          "description": "The generation observed by the WebLogic operator.",
+          "type": "integer"
+        },
         "clusters": {
           "description": "Status of WebLogic clusters in this domain.",
           "type": "array",
@@ -1500,6 +1522,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "image": {
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
           "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
           "type": "string"
         },
@@ -1549,7 +1572,7 @@ window.onload = function() {
       "properties": {
         "replicationChannelPort": {
           "description": "The operator will create a `T3` protocol WebLogic network access point on each WebLogic Server that is part of a cluster with this port to handle EJB and servlet session state replication traffic between servers. This setting is ignored for clusters where the WebLogic cluster configuration already defines a `replication-channel` attribute. Defaults to 4564.",
-          "type": "number"
+          "type": "integer"
         },
         "localhostBindingsEnabled": {
           "description": "This setting was added in operator version 3.3.3, defaults to the `istioLocalhostBindingsEnabled` Helm install value which in turn defaults to `true`, and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio 1.10 and later, will not create localhost bindings, and ignores this attribute. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#istiolocalhostbindingsenabled",
@@ -1557,7 +1580,7 @@ window.onload = function() {
         },
         "readinessPort": {
           "description": "The operator will create WebLogic network access points with this port on each WebLogic Server. The readiness probe on each pod will use these network access points to verify that the pod is ready for application traffic. Defaults to 8888.",
-          "type": "number"
+          "type": "integer"
         },
         "enabled": {
           "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified.",
@@ -1569,6 +1592,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "serverStartState": {
+          "default": "RUNNING",
           "description": "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
@@ -1589,12 +1613,13 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
           "enum": [
-            "ALWAYS",
-            "NEVER",
-            "IF_NEEDED"
+            "Always",
+            "Never",
+            "IfNeeded"
           ]
         },
         "restartVersion": {
@@ -1617,6 +1642,7 @@ window.onload = function() {
           "type": "string"
         },
         "domainType": {
+          "default": "WLS",
           "description": "WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
           "type": "string",
           "enum": [
@@ -1666,7 +1692,8 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "image": {
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -1684,8 +1711,9 @@ window.onload = function() {
           "$ref": "#/definitions/Map"
         },
         "port": {
+          "default": 8080.0,
           "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs).",
-          "type": "number"
+          "type": "integer"
         }
       }
     },
@@ -1693,7 +1721,8 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "onNonDynamicChanges": {
-          "description": "Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are \u0027CommitUpdateOnly\u0027 (default), and \u0027CommitUpdateAndRoll\u0027. \n\n If set to \u0027CommitUpdateOnly\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. \n\n If set to \u0027CommitUpdateAndRoll\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. \n\n For more information, see the runtime update section of the Model in Image user guide.",
+          "default": "CommitUpdateOnly",
+          "description": "Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are \u0027CommitUpdateOnly\u0027 and \u0027CommitUpdateAndRoll\u0027. Defaults to `CommitUpdateOnly`. If set to \u0027CommitUpdateOnly\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. If set to \u0027CommitUpdateAndRoll\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. For more information, see the runtime update section of the Model in Image user guide.",
           "type": "string",
           "enum": [
             "CommitUpdateAndRoll",
@@ -1701,6 +1730,7 @@ window.onload = function() {
           ]
         },
         "enabled": {
+          "default": false,
           "description": "Enable online update. Default is \u0027false\u0027.",
           "type": "boolean"
         },
@@ -1726,26 +1756,28 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "failureThreshold": {
+          "default": 1.0,
           "description": "Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1.",
-          "type": "number",
+          "type": "integer",
           "minimum": 1.0
         },
         "periodSeconds": {
           "description": "The number of seconds between checks.",
-          "type": "number"
+          "type": "integer"
         },
         "timeoutSeconds": {
           "description": "The number of seconds with no response that indicates a failure.",
-          "type": "number"
+          "type": "integer"
         },
         "successThreshold": {
+          "default": 1.0,
           "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe.",
-          "type": "number",
+          "type": "integer",
           "minimum": 1.0
         },
         "initialDelaySeconds": {
           "description": "The number of seconds before the first check is performed.",
-          "type": "number"
+          "type": "integer"
         }
       }
     },
@@ -1847,8 +1879,9 @@ window.onload = function() {
           "type": "string"
         },
         "maxReadyWaitTimeSeconds": {
+          "default": 1800.0,
           "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds.",
-          "type": "number"
+          "type": "integer"
         },
         "livenessProbe": {
           "description": "Settings for the liveness probe associated with a WebLogic Server instance.",
@@ -1983,11 +2016,13 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "ignoreSessions": {
+          "default": false,
           "description": "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Defaults to false.",
           "type": "boolean"
         },
         "shutdownType": {
-          "description": "Specifies how the operator will shut down server instances. Defaults to graceful shutdown.",
+          "default": "Graceful",
+          "description": "Specifies how the operator will shut down server instances. Legal values are `Graceful` and `Forced`. Defaults to `Graceful`.",
           "type": "string",
           "enum": [
             "Graceful",
@@ -1995,10 +2030,12 @@ window.onload = function() {
           ]
         },
         "timeoutSeconds": {
+          "default": 30.0,
           "description": "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds.",
-          "type": "number"
+          "type": "integer"
         },
         "waitForAllSessions": {
+          "default": false,
           "description": "For graceful shutdown only, set to true to wait for all HTTP sessions during in-flight work handling; false to wait for non-persisted HTTP sessions only. Defaults to false.",
           "type": "boolean"
         }
@@ -2028,36 +2065,44 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "setServerGroupsTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         },
         "connectTimeoutMillis": {
+          "default": 120000.0,
           "description": "WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.",
-          "type": "number"
+          "type": "integer"
         },
         "undeployTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT application or library undeployment timeout in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         },
         "deployTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT application or library deployment timeout in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         },
         "startApplicationTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT application start timeout in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         },
         "activateTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         },
         "stopApplicationTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT application stop timeout in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         },
         "redeployTimeoutMillis": {
+          "default": 180000.0,
           "description": "WDT application or library redeployment timeout in milliseconds. Default: 180000.",
-          "type": "number"
+          "type": "integer"
         }
       }
     }
