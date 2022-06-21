@@ -771,8 +771,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
       clusterList.add(new Cluster()
           .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .replicas(replicaCount));
     }
 
     // create the domain CR
@@ -803,7 +802,6 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
@@ -1065,7 +1063,6 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")

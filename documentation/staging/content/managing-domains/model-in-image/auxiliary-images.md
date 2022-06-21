@@ -492,11 +492,7 @@ that is included in the sample source.
       #  name: weblogic-domain-storage-volume
 
     # The desired behavior for starting the domain's administration server.
-    adminServer:
-      # The serverStartState legal values are "RUNNING" or "ADMIN"
-      # "RUNNING" means the listed server will be started up to "RUNNING" mode
-      # "ADMIN" means the listed server will be start up to "ADMIN" mode
-      serverStartState: "RUNNING"
+    # adminServer:
       # Setup a Kubernetes node port for the administration server default channel
       #adminService:
       #  channels:
@@ -509,7 +505,6 @@ that is included in the sample source.
     # The desired behavior for starting a specific cluster's member servers
     clusters:
     - clusterName: cluster-1
-      serverStartState: "RUNNING"
       serverPod:
         # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
         # already members of the same cluster.

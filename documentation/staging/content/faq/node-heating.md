@@ -17,7 +17,6 @@ To use these features, edit the Domain Custom Resource to add content to the `se
 ```yaml
 clusters:
 - clusterName: cluster-1
-  serverStartState: "RUNNING"
   serverPod:
     affinity:
       podAntiAffinity:

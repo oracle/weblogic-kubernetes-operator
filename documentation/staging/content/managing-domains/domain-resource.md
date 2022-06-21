@@ -139,7 +139,6 @@ Elements related to security:
 Elements related to domain [startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}):
 
 * `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded.
-* `serverStartState`: The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.
 * `restartVersion`: Changes to this field cause the [operator to restart]({{< relref "/managing-domains/domain-lifecycle/startup#restarting-servers" >}}) WebLogic Server instances.
 * `replicas`: The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field.
    * For each cluster, first the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9".
@@ -214,7 +213,7 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 * `clusters`: Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.
 * `managedServers`: Lifecycle options for individual Managed Servers, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic domain configuration or that matches a dynamic cluster member based on the server template.
 
-The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
+The elements `serverStartPolicy`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
 
 Elements related to the customization of liveness and readiness probes:
 * See [Liveness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
@@ -331,12 +330,8 @@ spec:
     - name: USER_MEM_ARGS
       value: "-Djava.security.egd=file:/dev/./urandom "
 
-  adminServer:
-    serverStartState: "RUNNING"
-
   clusters:
   - clusterName: cluster-1
-    serverStartState: "RUNNING"
     serverPod:
       affinity:
         podAntiAffinity:

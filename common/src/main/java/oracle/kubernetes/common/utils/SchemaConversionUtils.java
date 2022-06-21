@@ -3,9 +3,11 @@
 
 package oracle.kubernetes.common.utils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +19,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.ReadContext;
 import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.CommonConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
@@ -63,7 +70,11 @@ public class SchemaConversionUtils {
   }
 
   public static SchemaConversionUtils create() {
-    return new SchemaConversionUtils();
+    return create(API_VERSION_V9);
+  }
+
+  public static SchemaConversionUtils create(String targetAPIVersion) {
+    return new SchemaConversionUtils(targetAPIVersion);
   }
 
   /**
@@ -71,6 +82,7 @@ public class SchemaConversionUtils {
    * @param domain Domain to be converted.
    * @return Domain The converted domain.
    */
+  @SuppressWarnings("java:S112")
   public Map<String, Object> convertDomainSchema(Map<String, Object> domain) {
     Map<String, Object> spec = getSpec(domain);
     if (spec == null) {
@@ -88,6 +100,17 @@ public class SchemaConversionUtils {
     moveConfigOverrideSecrets(domain);
     constantsToCamelCase(spec);
     adjustReplicasDefault(spec, apiVersion);
+
+    Map<String, Object> toBePreserved = new HashMap<>();
+    convertServerStartState(spec, toBePreserved);
+
+    try {
+      preserve(domain, toBePreserved, apiVersion);
+      restore(domain);
+    } catch (IOException io) {
+      throw new RuntimeException(io); // need to use unchecked exception because of stream processing
+    }
+
     domain.put("apiVersion", targetAPIVersion);
     LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -313,7 +336,11 @@ public class SchemaConversionUtils {
   }
 
   Map<String, Object> getSpec(Map<String, Object> domain) {
-    return (Map<String, Object>)domain.get("spec");
+    return (Map<String, Object>) domain.get("spec");
+  }
+
+  Map<String, Object> getMetadata(Map<String, Object> domain) {
+    return (Map<String, Object>) domain.get("metadata");
   }
 
   private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,
@@ -483,5 +510,85 @@ public class SchemaConversionUtils {
     if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
       spec.putIfAbsent("replicas", 0);
     }
+  }
+
+  private void convertServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+    removeAndPreserveServerStartState(spec, toBePreserved, "$.spec");
+    Optional.ofNullable(getAdminServer(spec)).ifPresent(
+        as -> removeAndPreserveServerStartState(as, toBePreserved, "$.spec.adminServer"));
+    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+        removeAndPreserveServerStartStateForCluster((Map<String, Object>) cluster, toBePreserved)));
+    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
+        removeAndPreserveServerStartStateForManagedServer((Map<String, Object>) managedServer, toBePreserved)));
+  }
+
+  private void removeAndPreserveServerStartStateForCluster(Map<String, Object> cluster,
+                                                 Map<String, Object> toBePreserved) {
+    Object name = cluster.get("clusterName");
+    if (name != null) {
+      removeAndPreserveServerStartState(cluster, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
+    }
+  }
+
+  private void removeAndPreserveServerStartStateForManagedServer(Map<String, Object> managedServer,
+                                                           Map<String, Object> toBePreserved) {
+    Object name = managedServer.get("serverName");
+    if (name != null) {
+      removeAndPreserveServerStartState(
+          managedServer, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')]");
+    }
+  }
+
+  private void removeAndPreserveServerStartState(Map<String, Object> spec,
+                                                 Map<String, Object> toBePreserved, String scope) {
+    Object existing = spec.remove("serverStartState");
+    if (existing != null) {
+      toBePreserved.put(scope, Map.of("serverStartState", existing));
+    }
+  }
+
+  private void preserve(Map<String, Object> domain, Map<String, Object> toBePreserved, String apiVersion)
+      throws IOException {
+    if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion) && !API_VERSION_V8.equals(targetAPIVersion)) {
+      Map<String, Object> meta = getMetadata(domain);
+      Map<String, Object> labels = (Map<String, Object>) meta.computeIfAbsent("labels", k -> new LinkedHashMap<>());
+      labels.put("weblogic.v8.preserved", new ObjectMapper().writeValueAsString(toBePreserved));
+    }
+  }
+
+  @SuppressWarnings("java:S112")
+  private void restore(Map<String, Object> domain) {
+    if (API_VERSION_V8.equals(targetAPIVersion)) {
+      Optional.ofNullable(getMetadata(domain))
+          .map(meta -> (Map<String, Object>) meta.get("labels"))
+          .map(meta -> (String) meta.remove("weblogic.v8.preserved"))
+          .ifPresent(labelValue -> {
+            try {
+              restore(domain, new ObjectMapper().readValue(labelValue, new TypeReference<>(){}));
+            } catch (JsonProcessingException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    }
+  }
+
+  private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored) {
+    if (toBeRestored != null && !toBeRestored.isEmpty()) {
+      ReadContext context = JsonPath.parse(domain);
+      toBeRestored.entrySet().forEach(entry -> {
+        JsonPath path = JsonPath.compile(entry.getKey());
+        Optional.ofNullable(read(context, path)).map(List::stream)
+            .ifPresent(stream -> stream.forEach(item -> item.putAll((Map<String, Object>) entry.getValue())));
+      });
+    }
+  }
+
+  private List<Map<String, Object>> read(ReadContext context, JsonPath path) {
+    Object value = context.read(path);
+    if (value instanceof List) {
+      return (List<Map<String, Object>>) value;
+    }
+
+    return List.of((Map<String, Object>) value);
   }
 }

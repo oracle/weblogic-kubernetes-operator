@@ -23,12 +23,15 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V8;
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class SchemaConversionUtilsTest {
 
@@ -38,7 +41,8 @@ class SchemaConversionUtilsTest {
   private static final String DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML = "converted-domain-sample-2.yaml";
 
   private final List<Memento> mementos = new ArrayList<>();
-  private final ConversionAdapter converter = new ConversionAdapter();
+  private final ConversionAdapter converter = new ConversionAdapter(API_VERSION_V9);
+  private final ConversionAdapter converterv8 = new ConversionAdapter(API_VERSION_V8);
   private Map<String, Object> v8Domain;
 
   @BeforeEach
@@ -66,11 +70,18 @@ class SchemaConversionUtilsTest {
   }
 
   static class ConversionAdapter {
-    private final SchemaConversionUtils utils = SchemaConversionUtils.create();
+
+    private final SchemaConversionUtils utils;
     private Map<String, Object> convertedDomain;
 
+    ConversionAdapter(String targetApiVersion) {
+      utils = SchemaConversionUtils.create(targetApiVersion);
+    }
+
     void convert(Map<String, Object> yaml) {
-      convertedDomain = utils.convertDomainSchema(yaml);
+      assertDoesNotThrow(() -> {
+        convertedDomain = utils.convertDomainSchema(yaml);
+      });
     }
 
     Map<String, Object> getDomain() {
@@ -345,5 +356,27 @@ class SchemaConversionUtilsTest {
 
     assertThat(converter.getDomain(),
         hasJsonPath("$.spec.replicas", equalTo(0)));
+  }
+
+  @Test
+  void testV8DomainServerStartState_preserved() {
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.adminServer.serverStartState"));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].serverStartState"));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.labels.['weblogic.v8.preserved']",
+        equalTo("{\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"serverStartState\":\"RUNNING\"},"
+            + "\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"}}")));
+  }
+
+  @Test
+  void testV9DomainServerStartState_restored() throws IOException {
+    converterv8.convert(readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML));
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.labels.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.adminServer.serverStartState",
+        equalTo("RUNNING")));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
+        equalTo("RUNNING")));
   }
 }

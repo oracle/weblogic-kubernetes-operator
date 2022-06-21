@@ -21,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -52,7 +51,6 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
@@ -578,44 +576,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
             hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
-  }
-
-  @Test
-  void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().configureAdminServer().withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator()
-        .withServerStartState(ServerStartState.RUNNING)
-        .configureAdminServer()
-        .withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
-    getConfigurator()
-        .withServerStartState(ServerStartState.ADMIN)
-        .configureAdminServer()
-        .withServerStartState(ServerStartState.RUNNING);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test

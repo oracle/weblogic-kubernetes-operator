@@ -21,12 +21,12 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.processing.EffectiveServerSpecBase;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
@@ -114,12 +114,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
 
   @Override
   public String getDesiredState() {
-    return getEffectiveServerStartPolicy().equals(ServerStartPolicy.NEVER) ? SHUTDOWN_STATE
-            : Optional.ofNullable(getConfiguredDesiredState()).orElse(ServerStartState.RUNNING).toString();
-  }
-
-  private ServerStartState getConfiguredDesiredState() {
-    return server.getServerStartState();
+    return getEffectiveServerStartPolicy().equals(ServerStartPolicy.NEVER) ? SHUTDOWN_STATE : RUNNING_STATE;
   }
 
   @Override

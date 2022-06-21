@@ -117,7 +117,6 @@ spec:
           limits:
             memory: "256Mi"
     - serverName: server2
-      serverStartState: ADMIN
       restartVersion: "3"
       serverPod:
         shutdown:

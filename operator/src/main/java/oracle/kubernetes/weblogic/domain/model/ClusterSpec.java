@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An element representing a cluster in the domain configuration.
@@ -27,6 +28,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
       + "in the WebLogic domain configuration. Required.")
+  @NotNull
   private String clusterName;
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
