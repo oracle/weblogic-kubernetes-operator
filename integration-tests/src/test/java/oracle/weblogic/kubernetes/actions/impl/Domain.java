@@ -454,8 +454,12 @@ public class Domain {
       List<String> ns = Kubernetes.listNamespaces();
       for (String n : ns) {
         if (n.startsWith("ns-")) {
-          oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, n);
-          logger.info(Yaml.dump(domain));
+          try {
+            oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, n);
+            logger.info(Yaml.dump(domain));
+          } catch (ApiException e) {
+            logger.warning(e.getMessage());
+          }
         }
       }
     } catch (ApiException e) {
