@@ -304,7 +304,7 @@ class ItLogHomeFlatStructure {
                             .namespace(domNamespace))
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/" + domainNamespace + "/logs/" + domainUid )
+                    .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
                     .logHomeLayout("Flat")
                     .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()

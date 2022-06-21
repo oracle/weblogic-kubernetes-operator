@@ -243,7 +243,8 @@ public class CommonLBTestUtils {
     getLogger().info("Creating WebLogic domain properties file");
     Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
     createDomainProperties(
-        domainPropertiesFile, domainUid, domainNamespace, clusterName, adminServerPort, managedServerPort, t3ChannelPort);
+            domainPropertiesFile, domainUid, domainNamespace,
+            clusterName, adminServerPort, managedServerPort, t3ChannelPort);
 
     getLogger().info("Adding files to a ConfigMap for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -481,7 +482,7 @@ public class CommonLBTestUtils {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
-    p.setProperty("domain_logs", "/shared/"+ domainNamespace + "/logs/" + domainUid);
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
     p.setProperty("production_mode_enabled", "true");
 
     FileOutputStream fileOutputStream =
