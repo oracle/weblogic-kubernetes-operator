@@ -174,7 +174,7 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 cd ${WORKSPACE}
 echo 'Run tests...'
-if [ "${maven_profile_name}" = "oke-cert" ] || [ "${maven_profile_name}" = "oke-sequential" ] || [ "${maven_profile_name}" = "oke-add" ] || [ "${maven_profile_name}" = "oke-unstable" ]; then
+if [ "${maven_profile_name}" = "oke-cert" ] || [ "${maven_profile_name}" = "oke-sequential" ]; then
   echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
   mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 else
