@@ -336,4 +336,14 @@ class SchemaConversionUtilsTest {
     assertThat(converter.getDomain(),
             hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
   }
+
+  @Test
+  void testV8DomainWithoutReplicas_setToZero() {
+    getDomainSpec(v8Domain).remove("replicas");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.spec.replicas", equalTo(0)));
+  }
 }

@@ -87,6 +87,7 @@ public class SchemaConversionUtils {
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
     constantsToCamelCase(spec);
+    adjustReplicasDefault(spec, apiVersion);
     domain.put("apiVersion", targetAPIVersion);
     LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -476,5 +477,11 @@ public class SchemaConversionUtils {
     envVar.put("name", name);
     envVar.put("value", value);
     vars.add(envVar);
+  }
+
+  private void adjustReplicasDefault(Map<String, Object> spec, String apiVersion) {
+    if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
+      spec.putIfAbsent("replicas", 0);
+    }
   }
 }

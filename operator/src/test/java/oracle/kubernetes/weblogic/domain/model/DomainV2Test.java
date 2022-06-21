@@ -54,7 +54,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class DomainV2Test extends DomainTestBase {
 
   private static final String SERVER2 = "ms2";
-  private static final int DEFAULT_REPLICA_LIMIT = 0;
+  private static final int DEFAULT_REPLICA_LIMIT = 1;
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
@@ -147,8 +147,8 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsZero() {
-    assertThat(info.getReplicaCount("nosuchcluster"), equalTo(0));
+  void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsOne() {
+    assertThat(info.getReplicaCount("nosuchcluster"), equalTo(1));
   }
 
   @Test

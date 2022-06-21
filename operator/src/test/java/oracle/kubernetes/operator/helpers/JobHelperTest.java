@@ -227,6 +227,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void creatingServers_false_when_no_domain_nor_cluster_replicas() {
+    configureDomain().withDefaultReplicaCount(0);
+
     configureCluster("cluster1");
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));

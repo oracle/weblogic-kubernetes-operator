@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 146b956ab8e3159fb98cc751d72aa542b941e5d3972a8cff704506f9353c8b42
+    weblogic.sha256: 926791eaf7528738788ff2c544758fca118b7eec0b7adde8d80ff915071e7375
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3643,7 +3643,7 @@ spec:
                         started. If cluster members are started because of their related
                         entries under `managedServers`, then this cluster may have
                         more cluster members running than its `replicas` count. Defaults
-                        to `spec.replicas`, which defaults 0.
+                        to `spec.replicas`, which defaults 1.
                       type: integer
                       minimum: 0
                     domainUID:
@@ -6679,7 +6679,7 @@ spec:
                 minimum: 0
                 type: integer
               replicas:
-                default: 0
+                default: 1
                 description: The default number of cluster member Managed Server instances
                   to start for each WebLogic cluster in the domain configuration,
                   unless `replicas` is specified for that cluster under the `clusters`
@@ -6696,7 +6696,7 @@ spec:
                   the sorted list that are not already started. If cluster members
                   are started because of their entries under `managedServers`, then
                   a cluster may have more cluster members running than its `replicas`
-                  count. Defaults to 0.
+                  count. Defaults to 1.
                 minimum: 0
                 type: integer
               maxClusterConcurrentShutdown:
