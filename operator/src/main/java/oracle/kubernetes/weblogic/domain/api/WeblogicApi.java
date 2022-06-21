@@ -218,6 +218,19 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * Read domain.
+   *
+   * @param name      name of the domain
+   * @param namespace namespace of the domain
+   * @return domain
+   * @throws ApiException on failure
+   */
+  public DomainResource readNamespacedDomain(String name, String namespace)
+      throws ApiException {
+    return toDomain(getNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL, name));
+  }
+
+  /**
    * Asynchronously replace domain.
    *
    * @param name      name

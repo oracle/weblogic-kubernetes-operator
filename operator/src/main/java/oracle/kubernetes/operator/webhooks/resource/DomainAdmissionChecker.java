@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -10,10 +12,15 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_TRIGGER_CHANGED;
 import static oracle.kubernetes.operator.KubernetesConstants.AUXILIARY_IMAGES;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_IMAGE;
@@ -39,7 +46,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
   private final DomainResource existingDomain;
   private final DomainResource proposedDomain;
 
-  /** Construct a AdmissionChecker. */
+  /** Construct a DomainAdmissionChecker. */
   public DomainAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
     super(existingDomain.getDomainUid());
     this.existingDomain = existingDomain;
@@ -70,6 +77,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
    *
    * @return true if valid, otherwise false
    */
+  @Override
   public boolean isProposedChangeAllowed() {
     return isUnchanged()
         || areAllClusterReplicaCountsValid(proposedDomain)
@@ -101,6 +109,41 @@ public class DomainAdmissionChecker extends AdmissionChecker {
       warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, DOMAIN_INTROSPECT_VERSION));
     }
     return changed;
+  }
+
+  boolean areAllClusterReplicaCountsValid(DomainResource domain) {
+    return getClusterStatusList(domain).stream().allMatch(c -> isReplicaCountValid(domain, c));
+  }
+
+  @NotNull
+  private List<ClusterStatus> getClusterStatusList(@NotNull DomainResource domain) {
+    return Optional.of(domain)
+        .map(DomainResource::getStatus)
+        .map(DomainStatus::getClusters)
+        .orElse(Collections.emptyList());
+  }
+
+  private Boolean isReplicaCountValid(@NotNull DomainResource domain, @NotNull ClusterStatus status) {
+    boolean isValid =
+        getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
+    if (!isValid) {
+      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
+          domainUid, status.getClusterName(), getClusterSize(status)));
+      warnings.add(LOGGER.formatMessage(CLUSTER_REPLICAS_TOO_HIGH,
+          domainUid, status.getClusterName(), getClusterSize(status)));
+    }
+    return isValid;
+  }
+
+  private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) {
+    return Optional.of(domain).map(DomainResource::getSpec)
+        .map(DomainSpec::getClusters)
+        .orElse(Collections.emptyList())
+        .stream().filter(c -> nameMatches(c, clusterName)).findAny().orElse(null);
+  }
+
+  private boolean nameMatches(ClusterSpec clusterSpec, String clusterName) {
+    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getClusterName).orElse("").equals(clusterName);
   }
 
   private boolean imagesChanged() {

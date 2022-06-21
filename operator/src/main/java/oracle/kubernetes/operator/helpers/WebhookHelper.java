@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
@@ -44,8 +46,8 @@ public class WebhookHelper {
   public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
   public static final String APP_GROUP = DOMAIN_GROUP;
-  public static final String API_VERSION = DOMAIN_VERSION;
   public static final String DOMAIN_RESOURCES = DOMAIN_PLURAL;
+  public static final String CLUSTER_RESOURCES = CLUSTER_PLURAL;
   public static final String ADMISSION_REVIEW_VERSION = "v1";
   public static final String UPDATE = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
@@ -109,8 +111,9 @@ public class WebhookHelper {
       return new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
           .admissionReviewVersions(Collections.singletonList(ADMISSION_REVIEW_VERSION))
           .sideEffects(SIDE_EFFECT_NONE)
-          .addRulesItem(createRule())
-          .clientConfig(createClientConfig(certificates));
+          .clientConfig(createClientConfig(certificates))
+          .addRulesItem(createRuleForDomain())
+          .addRulesItem(createRuleForCluster());
     }
 
     private AdmissionregistrationV1WebhookClientConfig createClientConfig(Certificates certificates) {
@@ -130,10 +133,21 @@ public class WebhookHelper {
     private V1RuleWithOperations createRule() {
       return new V1RuleWithOperations()
           .addApiGroupsItem(APP_GROUP)
-          .apiVersions(Collections.singletonList(API_VERSION))
           .operations(Collections.singletonList(UPDATE))
-          .resources(Collections.singletonList(DOMAIN_RESOURCES))
           .scope(SCOPE);
+    }
+
+    private V1RuleWithOperations createRuleForDomain() {
+      return createRule().apiVersions(createList(DOMAIN_VERSION)).resources(createList(DOMAIN_RESOURCES));
+    }
+
+    @NotNull
+    private List<String> createList(String item) {
+      return Collections.singletonList(item);
+    }
+
+    private V1RuleWithOperations createRuleForCluster() {
+      return createRule().apiVersions(createList(CLUSTER_VERSION)).resources(createList(CLUSTER_RESOURCES));
     }
 
     private V1ObjectMeta createMetadata(Map<String, String> labels) {

@@ -5,8 +5,10 @@ package oracle.kubernetes.operator.webhooks;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
@@ -14,6 +16,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 
 /**
@@ -45,12 +49,24 @@ class AdmissionWebhookTestSetUp {
         .withImage(ORIGINAL_IMAGE_NAME)
         .setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
     domain.getSpec()
-        .withCluster(createCluster(CLUSTER_NAME_1))
-        .withCluster(createCluster(CLUSTER_NAME_2));
+        .withCluster(createClusterSpec(CLUSTER_NAME_1))
+        .withCluster(createClusterSpec(CLUSTER_NAME_2));
     return domain;
   }
 
-  private static ClusterSpec createCluster(String clusterName) {
+  /**
+   * Create a Cluster resource model that contains the cluster configuration and status for WebhookRestTest
+   * and ValidationUtilsTest.
+   */
+  public static ClusterResource createCluster() {
+    ClusterResource clusterResource =
+        new ClusterResource().withMetadata(new V1ObjectMeta().name(UID).namespace(NS))
+            .spec(createClusterSpec(CLUSTER_NAME_1).withDomainUid(UID));
+    clusterResource.setStatus(createClusterStatus(CLUSTER_NAME_1));
+    return clusterResource;
+  }
+
+  private static ClusterSpec createClusterSpec(String clusterName) {
     return new ClusterSpec().withClusterName(clusterName);
   }
 
