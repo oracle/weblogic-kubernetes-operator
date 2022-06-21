@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.Model;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -258,7 +259,9 @@ public class ItMiiDomainModelInPV {
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, clusterName);
-    domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
+    Model withModelHome = domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
+    logger.info(Yaml.dump(withModelHome));
+    logger.info(Yaml.dump(domainCR.spec().configuration()));
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
             .name(pvName)
