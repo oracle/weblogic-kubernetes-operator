@@ -762,7 +762,7 @@ class ItKubernetesDomainEvents {
                                      String pvName, String pvcName, String serverStartupPolicy,
                                      UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
 
-    String uniquePath = "/shared/" + domainNamespace + "/domains";
+    String uniquePath = "/shared/" + domainNamespace + "/domains/" + domainUid + "/";
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -794,7 +794,7 @@ class ItKubernetesDomainEvents {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", uniquePath + "/logs");
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid + "/");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
                     -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -817,7 +817,7 @@ class ItKubernetesDomainEvents {
                     .namespace(domainNamespace))
             .spec(domainSpecUnaryOperator.apply(new DomainSpec()
                     .domainUid(domainUid)
-                    .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
+                    .domainHome(uniquePath) // point to domain home in pv
                     .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
                     .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                     .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -829,7 +829,7 @@ class ItKubernetesDomainEvents {
                             .namespace(domainNamespace))
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
-                    .logHome(uniquePath + "/logs/" + domainUid)
+                    .logHome("/shared/" + domainNamespace + "/logs/" + domainUid + "/")
                     .dataHome("")
                     .serverStartPolicy(serverStartupPolicy)
                     .serverPod(new ServerPod() //serverpod

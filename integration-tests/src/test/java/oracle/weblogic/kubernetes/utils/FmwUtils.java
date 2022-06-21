@@ -247,7 +247,7 @@ public class FmwUtils {
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domNamespace + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
