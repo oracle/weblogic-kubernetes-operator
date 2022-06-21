@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.NoopWatcherStarter;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,6 +73,34 @@ class WatchBuilderTest {
   @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
+  }
+
+  @Test
+  void whenClusterWatchReceivesAddResponse_returnItFromIterator() throws Exception {
+    ClusterResource cluster =
+        new ClusterResource()
+            .withApiVersion(API_VERSION)
+            .withKind("Cluster")
+            .withMetadata(createMetaData("cluster1", NAMESPACE));
+    StubWatchFactory.addCallResponses(createAddResponse(cluster));
+
+    Watchable<ClusterResource> clusterWatch = new WatchBuilder().createClusterWatch(NAMESPACE);
+
+    assertThat(clusterWatch, contains(addEvent(cluster)));
+  }
+
+  @Test
+  void whenClusterWatchReceivesBookmarkResponse_updateResourceVersion() throws Exception {
+    ClusterResource cluster =
+        new ClusterResource()
+            .withApiVersion(API_VERSION)
+            .withKind("Cluster")
+            .withMetadata(createMetaData("cluster1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
+    StubWatchFactory.addCallResponses(createBookmarkResponse(cluster));
+
+    Watchable<ClusterResource> clusterWatch = new WatchBuilder().createClusterWatch(NAMESPACE);
+
+    assertThat(clusterWatch, contains(bookmarkEvent(cluster)));
   }
 
   @Test
