@@ -5,7 +5,7 @@
 
 resource "oci_file_storage_file_system" "oketest_fs" {
   #Required
-  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[3]["name"]
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[2]["name"]
   compartment_id      = var.compartment_ocid
 }
 
