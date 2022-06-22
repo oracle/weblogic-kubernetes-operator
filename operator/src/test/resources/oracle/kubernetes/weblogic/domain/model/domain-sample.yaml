@@ -94,7 +94,6 @@ spec:
         limits:
           memory: "256Mi"
   - serverName: server2
-    serverStartState: ADMIN
     restartVersion: "3"
       
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.

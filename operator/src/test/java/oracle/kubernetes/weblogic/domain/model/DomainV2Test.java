@@ -25,7 +25,6 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
@@ -35,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
@@ -54,7 +52,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class DomainV2Test extends DomainTestBase {
 
   private static final String SERVER2 = "ms2";
-  private static final int DEFAULT_REPLICA_LIMIT = 0;
+  private static final int DEFAULT_REPLICA_LIMIT = 1;
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
@@ -147,8 +145,8 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsZero() {
-    assertThat(info.getReplicaCount("nosuchcluster"), equalTo(0));
+  void whenClusterNotConfiguredAndNoDomainReplicaCount_countIsOne() {
+    assertThat(info.getReplicaCount("nosuchcluster"), equalTo(1));
   }
 
   @Test
@@ -200,14 +198,6 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenAdminServerChannelsNotDefined_exportedNamesIsEmpty() {
     assertThat(domain.getAdminServerChannelNames(), empty());
-  }
-
-  @Test
-  void whenServerStartStateConfiguredOnClusterAndServer_useServerSetting() {
-    configureCluster("cluster1").withServerStartState(ServerStartState.ADMIN);
-    configureServer("server1").withServerStartState(ServerStartState.RUNNING);
-
-    assertThat(info.getServer("server1", "cluster1").getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
@@ -266,13 +256,6 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainStartPolicyNever_adminServerDesiredStateIsShutdown() {
-    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
-
-    assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
-  }
-
-  @Test
   void whenClusterStartPolicyNever_ignoreServerSettings() {
     configureCluster("cluster1").withServerStartPolicy(ServerStartPolicy.NEVER);
     configureServer("server1").withServerStartPolicy(ServerStartPolicy.ALWAYS);
@@ -294,14 +277,6 @@ class DomainV2Test extends DomainTestBase {
     configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(domain.getAdminServerSpec().shouldStart(0), is(false));
-  }
-
-  @Test
-  void whenAdminServerStartPolicyNever_desiredStateIsShutdown() {
-    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
-    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
-
-    assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
   }
 
   @Test
@@ -750,7 +725,6 @@ class DomainV2Test extends DomainTestBase {
     assertThat(
         info.getDomain().getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
-    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(effectiveServerSpec.shouldStart(1), is(true));
   }
 
@@ -797,7 +771,6 @@ class DomainV2Test extends DomainTestBase {
         info.getDomain().getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(effectiveServerSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
-    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(effectiveServerSpec.shouldStart(1), is(true));
   }
 
@@ -834,7 +807,6 @@ class DomainV2Test extends DomainTestBase {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
     EffectiveServerSpec effectiveServerSpec = info.getServer("server2", "cluster2");
 
-    assertThat(effectiveServerSpec.getDesiredState(), equalTo("ADMIN"));
     assertThat(
         effectiveServerSpec.getEnvironmentVariables(),
         containsInAnyOrder(

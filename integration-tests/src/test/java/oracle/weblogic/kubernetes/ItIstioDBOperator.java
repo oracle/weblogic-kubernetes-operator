@@ -21,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -816,12 +815,9 @@ class ItIstioDBOperator {
             .addVolumeMountsItem(new V1VolumeMount()
                 .mountPath("/shared")
                 .name(pvName)))
-        .adminServer(new AdminServer()
-            .serverStartState("RUNNING"))
         .addClustersItem(new Cluster()
             .clusterName(clusterName)
-            .replicas(replicaCount)
-            .serverStartState("RUNNING"))
+            .replicas(replicaCount))
         .configuration(new Configuration()
             .istio(new Istio()
                 .enabled(Boolean.TRUE)
