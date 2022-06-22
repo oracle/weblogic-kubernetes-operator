@@ -1077,8 +1077,10 @@ class ItConfigDistributionStrategy {
       p.setProperty("dsName", dsName);
       p.setProperty("dsUrl", jdbcDsUrl);
       if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("12.2.1.3")) {
-        p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+        logger.info("Using 12.2.1.3 image, driver is com.mysql.jdbc.Driver");
+        p.setProperty("dsDriver", "com.mysql.jdbc.Driver");
       } else {
+        logger.info("Using 12.2.1.4 and later image, driver is com.mysql.cj.jdbc.Driver");
         p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
       }
       p.setProperty("dsUser", user);
