@@ -7,6 +7,7 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
@@ -60,8 +61,9 @@ class AdmissionWebhookTestSetUp {
    */
   public static ClusterResource createCluster() {
     ClusterResource clusterResource =
-        new ClusterResource().withMetadata(new V1ObjectMeta().name(UID).namespace(NS))
+        new ClusterResource().withMetadata(new V1ObjectMeta().name(CLUSTER_NAME_1).namespace(NS))
             .spec(createClusterSpec(CLUSTER_NAME_1).withDomainUid(UID));
+    clusterResource.setApiVersion((KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION));
     clusterResource.setStatus(createClusterStatus(CLUSTER_NAME_1));
     return clusterResource;
   }

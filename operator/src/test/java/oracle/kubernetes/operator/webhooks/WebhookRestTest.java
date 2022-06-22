@@ -20,6 +20,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestTestBase;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
@@ -38,8 +39,11 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.lang.System.lineSeparator;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Arrays.asList;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
@@ -364,7 +368,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(false));
-    assertThat(getMessage(responseReview), equalTo(getRejectMessage(0)));
+    assertThat(getResponseStatusMessage(responseReview), equalTo(getRejectMessage(0)));
   }
 
   private String getRejectMessage(int i) {
@@ -384,7 +388,7 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(isAllowed(responseReview), equalTo(false));
-    assertThat(getMessage(responseReview), equalTo(getRejectMessage(1)));
+    assertThat(getResponseStatusMessage(responseReview), equalTo(getRejectMessage(1)));
   }
 
   @Test
@@ -617,6 +621,35 @@ class WebhookRestTest extends RestTestBase {
     assertThat(isAllowed(responseReview), equalTo(true));
   }
 
+  @Test
+  void whenClusterReplicasChangedValidAndReadDomainFailed404_acceptIt() {
+    testSupport.defineResources(proposedDomain);
+    existingCluster.getSpec().withReplicas(GOOD_REPLICAS + 1);
+    proposedCluster.getSpec().withReplicas(GOOD_REPLICAS);
+    setExistingAndProposedCluster();
+
+    testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenClusterReplicasChangedUnsetAndReadDomainFailed404_rejectItWithException() {
+    testSupport.defineResources(proposedDomain);
+    existingCluster.getSpec().withReplicas(GOOD_REPLICAS);
+    proposedCluster.getSpec().withReplicas(null);
+    setExistingAndProposedCluster();
+
+    testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(isAllowed(responseReview), equalTo(false));
+    assertThat(getResponseStatusMessage(responseReview).contains("failure reported in test"), equalTo(true));
+  }
+
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
     return readAdmissionReview(sendValidatingRequestAsString(writeAdmissionReview(admissionReview)));
   }
@@ -666,7 +699,7 @@ class WebhookRestTest extends RestTestBase {
     return String.join(lineSeparator(), messages);
   }
 
-  private String getMessage(AdmissionReview admissionResponse) {
+  private String getResponseStatusMessage(AdmissionReview admissionResponse) {
     return Optional.ofNullable(admissionResponse).map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus)
         .map(AdmissionResponseStatus::getMessage).orElse("");
   }
