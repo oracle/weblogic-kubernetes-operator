@@ -271,8 +271,7 @@ class ItManagedCoherence {
     for (int i = NUMBER_OF_CLUSTERS; i >= 1; i--) {
       clusterList.add(new Cluster()
           .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .replicas(replicaCount));
     }
 
     // create the domain CR
@@ -301,7 +300,6 @@ class ItManagedCoherence {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
