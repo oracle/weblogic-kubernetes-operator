@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
@@ -94,6 +95,8 @@ import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.DOMAIN_UID_VARIABLE;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
@@ -663,7 +666,27 @@ public abstract class PodStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(additionalVolume);
     }
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> podSpec.addVolumesItem(createEmptyDirVolume()));
+    podSpec.affinity(getAffinity());
     return podSpec;
+  }
+
+  protected V1Affinity getAffinity() {
+    if (isDefaultAntiAffinity() && isNonClusteredServer()) {
+      return defaultDomainUidVariableAntiAffinity();
+    }
+    return getServerSpec().getAffinity();
+  }
+
+  private boolean isNonClusteredServer() {
+    return getClusterName() == null;
+  }
+
+  private boolean isDefaultAntiAffinity() {
+    return getServerSpec().getAffinity().equals(getDefaultAntiAffinity());
+  }
+
+  private V1Affinity defaultDomainUidVariableAntiAffinity() {
+    return new AffinityHelper().domainUID(DOMAIN_UID_VARIABLE).getAntiAffinity();
   }
 
   private List<V1Container> getInitContainers() {
@@ -1151,6 +1174,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
       }
 
+      restoreAffinityContent(recipe, currentPod);
+
       return AnnotationHelper.createHash(recipe);
     }
 
@@ -1176,11 +1201,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
     }
 
-    private void adjustContainer(List<V1Container> convertedContainers, V1Container container) {
-      adjustContainer(convertedContainers, container, false);
+    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, V1Pod currentPod) {
+      adjustContainer(convertedContainers, container, false, currentPod);
     }
 
-    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, boolean initContainer) {
+    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, boolean initContainer,
+                                 V1Pod currentPod) {
       String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
       List<V1EnvVar> newEnv = new ArrayList<>();
       Optional.of(container.getEnv())
@@ -1191,11 +1217,19 @@ public abstract class PodStepContext extends BasePodStepContext {
       List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
       Optional.ofNullable(container.getVolumeMounts())
           .ifPresent(vms -> vms.forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i)));
-      if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)) {
+      if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)
+          && !isPodFromOperatorMajorMinorVersion34RevAbove0(currentPod)) {
         container.resources(null);
       }
+
       convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
           .volumeMounts(convertedVolumeMounts.isEmpty() ? null : convertedVolumeMounts));
+    }
+
+    private boolean isPodFromOperatorMajorMinorVersion34RevAbove0(V1Pod currentPod) {
+      return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
+          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isOperatorMajorMinorVersion34RevAbove0)
+          .orElse(false);
     }
 
     private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
@@ -1207,11 +1241,11 @@ public abstract class PodStepContext extends BasePodStepContext {
       List<V1Container> convertedInitContainers = new ArrayList<>();
       Optional.ofNullable(podSpec.getInitContainers())
           .ifPresent(initContainers -> initContainers.forEach(
-              i -> adjustContainer(convertedInitContainers, i, true)));
+              i -> adjustContainer(convertedInitContainers, i, true, currentPod)));
       podSpec.initContainers(convertedInitContainers);
 
       List<V1Container> convertedContainers = new ArrayList<>();
-      podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c));
+      podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c, currentPod));
       podSpec.containers(convertedContainers);
 
       List<V1Volume> convertedVolumes = new ArrayList<>();
@@ -1230,13 +1264,18 @@ public abstract class PodStepContext extends BasePodStepContext {
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
+    private void restoreAffinityContent(V1Pod recipe, V1Pod currentPod) {
+      recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
       List<BiConsumer<V1Pod, V1Pod>> adjustments = List.of(
-          this::restoreMetricsExporterSidecarPortTcpMetrics, this::convertAuxImagesInitContainerVolumeAndMounts);
+          this::restoreMetricsExporterSidecarPortTcpMetrics, this::convertAuxImagesInitContainerVolumeAndMounts,
+          this::restoreAffinityContent);
 
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
@@ -1281,6 +1320,11 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(packet);
       }
     }
+  }
+
+  private boolean isOperatorMajorMinorVersion34RevAbove0(String operatorVersion) {
+    SemanticVersion version = new SemanticVersion(operatorVersion);
+    return version.getMajor() == 3 && version.getMinor() == 4 && version.getRevision() > 0;
   }
 
   private abstract class BaseResponseStep extends ResponseStep<V1Pod> {
