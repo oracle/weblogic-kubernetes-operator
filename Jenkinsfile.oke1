@@ -192,6 +192,85 @@ pipeline {
                     }
                 }
 
+                // Creating terraform property file.
+
+                stage('Setup terraform property file  ') {
+                    environment {
+                        FSS_DIR="/oketest"
+                        VCN_CIDR_PREFIX="10.0"
+                        OKE_CLUSTER_NAME="wktui-test"
+                        NODE_SHAPE="VM.Standard2.4"
+                        LINUX_VER="Oracle-Linux-7.4"
+                        OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
+                        TVARS_FILE = credentials("${terraform_property_file}")
+                        OCIPK_FILE = credentials("${ocipk_file}")
+                        FINGERPRINT = credentials("${wkobuild_cert_fingerprint}")
+                        TENANCY_OCID = credentials("${weblogick8s_tenancy_ocid}")
+                        COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
+                        USER_OCID = credentials("${wkobuild_user_ocid}")
+                        WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
+                    }
+                    steps {
+                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
+                                                sh "mkdir -p ${WORKSPACE}/terraform"
+                                                sh "cp -rf \$oci_private_key ${WORKSPACE}/terraform/oci_api_key.pem"
+                                                sh " ls -al ${WORKSPACE}/terraform/*"
+                                                sh "chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem"
+
+                        }
+
+                        sh '''
+
+                        export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
+
+                        echo 'Set env vars needed for integration tests...'
+
+
+                        export OKE_CLUSTER="true"
+                        export FSS_DIR="/oketest"
+
+                        export VCN_CIDR_PREFIX=${VCN_CIDR_PREFIX}
+
+                        export OKE_CLUSTER_NAME=${OKE_CLUSTER_NAME}
+                        export NODE_SHAPE=${NODE_SHAPE}
+                        export LINUX_VER=${LINUX_VER}
+
+                        export OCI_PROP_FILE=${OCI_PROP_FILE}
+
+                        #export IMAGE_TAG_WEBLOGIC="12.2.1.4"
+                        #export IMAGE_TAG_FMWINFRA="12.2.1.4"
+
+                        #################
+                        echo "Generating property file oci.prop for terraform scripts"
+
+                        cat > $OCI_PROP_FILE <<EOF
+
+                        user.ocid=${USER_OCID}
+                        okeclustername=${OKE_CLUSTER_NAME}
+                        tfvars.filename=${OKE_CLUSTER_NAME}
+                        region=us-phoenix-1
+                        tenancy.ocid=${TENANCY_OCID}
+                        compartment.ocid=${COMPARTMENT_OCID}
+                        compartment.name=QualityAssurance
+                        ociapi.pubkey.fingerprint=${FINGERPRINT}
+                        ocipk.path=${WORKSPACE}/terraform/oci_api_key.pem
+                        vcn.cidr.prefix=${VCN_CIDR_PREFIX}
+                        vcn.cidr=${VCN_CIDR_PREFIX}.0.0/16
+                        nodepool.shape=${NODE_SHAPE}
+                        nodepool.imagename=${LINUX_VER}
+                        k8s.version=v${KUBE_VERSION}
+                        nodepool.ssh.pubkey=${WKOBUILD_PUBLIC_CERT}
+                        terraform.installdir=${WORKSPACE}/terraform/terraforminstall
+EOF
+
+                        ##################
+
+                        cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
+                        mkdir -p ${WORKSPACE}/terraform/terraforminstall
+                        '''
+
+                    }
+                }
 
                 stage('Build WebLogic Kubernetes Operator') {
                     environment {
@@ -264,6 +343,40 @@ pipeline {
                     }
                 }
 
+                stage('Create OKE cluster') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                        oci_config_file = credentials("${wkobuild_oci_config}")
+                        OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
+                        KUBECONFIG ="${WORKSPACE}/terraform/wktui-test_kubeconfig"
+                        terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
+
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            export KUBECONFIG=${KUBECONFIG}
+                            mkdir -p ${WORKSPACE}/oci
+                            cp -rf ${oci_config_file} ${WORKSPACE}/oci/config
+                            chmod 777 ${WORKSPACE}/oci/config
+                            sed -i -e "s:@WORKSPACE@:${WORKSPACE}:g" ${WORKSPACE}/oci/config
+                            export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
+                            export OCI_CLI_PROFILE=WKOBUILD
+                            echo 'Create a OKE cluster'
+
+                            cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
+                            cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
+                            cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
+                            cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
+                            cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
+                            chmod 777 ${WORKSPACE}/terraform/*.sh
+                            mkdir -p ${WORKSPACE}/terraform/terraforminstall
+                            oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.phx.aaaaaaaaf6udkt7ync6t2k2seu6tp43toik3bq2kpk6ghahslc2bmqputbxa --file ${KUBECONFIG} --region us-phoenix-1 --token-version 2.0.0 --kube-endpoint PUBLIC_ENDPOINT
+                            #sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                        '''
+                    }
+                }
+
                  stage('Setup OFSS') {
                                     environment {
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:${WORKSPACE}/terraform/terraforminstall"
@@ -276,23 +389,11 @@ pipeline {
                                     }
                                     steps {
                                         sh '''
-
+                                        cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
-                                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
-                                                                                        sh "mkdir -p ${WORKSPACE}/terraform"
-                                                                                        sh "cp -rf \$oci_private_key ${WORKSPACE}/terraform/oci_api_key.pem"
-                                                                                        sh " ls -al ${WORKSPACE}/terraform/*"
-                                                                                        sh "chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem"
-
-                                                               }
-                                        mkdir -p ${WORKSPACE}/oci
-                                        cp -rf ${oci_config_file} ${WORKSPACE}/oci/config
-                                        chmod 777 ${WORKSPACE}/oci/config
-                                        sed -i -e "s:@WORKSPACE@:${WORKSPACE}:g" ${WORKSPACE}/oci/config
-                                        oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.phx.aaaaaaaaf6udkt7ync6t2k2seu6tp43toik3bq2kpk6ghahslc2bmqputbxa --file ${kubeconfig_file} --region us-phoenix-1 --token-version 2.0.0  --kube-endpoint PUBLIC_ENDPOINT
 
                                         echo "creating storage class to setup OFSS ..."
                                         echo "getting MountTarget ID"
@@ -458,9 +559,15 @@ EOF
             post {
                 always {
                     sh '''
+                        export PATH="${WORKSPACE}/bin:${PATH}"
+                        export KUBECONFIG=${kubeconfig_file}
+                        export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
+                        export OCI_CLI_PROFILE=WKOBUILD
+                        #echo 'Remove old OKE cluster (if any)...'
 
-                        echo 'Finished (if any)...'
-
+                        #if [ -f "$OCI_PROP_FILE" ] && [ -f "${WORKSPACE}/terraform/oke.delete.sh" ]; then
+                        #    ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                        #fi
 
                     '''
                 }
