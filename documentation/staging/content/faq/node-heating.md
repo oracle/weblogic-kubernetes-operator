@@ -12,7 +12,7 @@ One solution is to ensure that all necessary container images are available on w
 
 The operator team recommends a different solution that is based on [inter-pod affinity and anti-affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity). This solution has the advantage of both resolving the Node heating problem and of explicitly directing the Kubernetes Scheduler to spread the Pods for WebLogic Server instances from a given cluster or domain more widely across the available Nodes. Inter-pod affinity and anti-affinity are features of the Kubernetes Scheduler that allow the scheduler to choose a Node for a new Pod based on details of the Pods that are already running. For WebLogic Server use cases, the intent will often be for anti-affinity with the Pods for other WebLogic Server instances so that server instances spread over the available Nodes.
 
-To use these features, edit the Domain Custom Resource to add content to the `serverPod` element, in this case at the scope of a cluster, as shown in the following example:
+Beginning with operator version 4.0, by default, the operator adds the following content to the `serverPod` element at the cluster scope in the Domain Custom Resource.
 
 ```yaml
 clusters:
@@ -29,12 +29,37 @@ clusters:
                     operator: In
                     values:
                     - $(CLUSTER_NAME)
+                  - key: "weblogic.domainUID"
+                    operator: In
+                    values:
+                    - $(DOMAIN_UID)
               topologyKey: "kubernetes.io/hostname"
 ```
 
-Because the `serverPod` element here is scoped to a cluster, the content of the `affinity` element will be added to the Pod generated for each WebLogic Server instance that is a member of this WebLogic cluster. This inter-pod anti-affinity statement expresses a preference that the scheduler select a Node for the new Pod avoiding, as much as possible, Nodes that already have Pods with the label "weblogic.clusterName" and the name of this cluster. Note that the `weight` is set to `100`, which is the maximum weight, so that this term will outweigh any possible preference for a Node based on availability of container images.
+Because the `serverPod` element here is scoped to a cluster, the content of the `affinity` element will be added to the Pod generated for each WebLogic Server instance that is a member of this WebLogic cluster. This inter-pod anti-affinity statement expresses a preference that the scheduler select a Node for the new Pod avoiding, as much as possible, Nodes that already have Pods with the label `weblogic.clusterName` and the name of this cluster, and with the label `weblogic.domainUID` and the UID of this domain. Note that the `weight` is set to `100`, which is the maximum weight, so that this term will outweigh any possible preference for a Node based on availability of container images.
 
-It is possible to express many other scheduling preferences or constraints. The following example similarly expresses an anti-affinity, but changes the test to have all WebLogic Server instances in the domain prefer to run on Nodes where there is not already a Pod for a running instance:
+For the server pods that are not part of a WebLogic cluster, the operator adds the following content to the `serverPod` element at the domain scope in the Domain Custom Resource.  The following expresses an anti-affinity, but changes the test to have all WebLogic Server instances in the domain prefer to run on Nodes where there is not already a Pod for a running instance.
+
+```yaml
+clusters:
+- clusterName: cluster-1
+  serverStartState: "RUNNING"
+  serverPod:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "weblogic.domainUID"
+                    operator: In
+                    values:
+                    - $(DOMAIN_UID)
+              topologyKey: "kubernetes.io/hostname"
+```
+
+It is possible to customize the default affinity preferences and express many other scheduling preferences or constraints. The following example similarly expresses an anti-affinity, but changes the test to have all WebLogic Server instances in the domain prefer to run on Nodes where there is not already a Pod with a `security` label with the value of `S1`.
 
 ```yaml
 serverPod:
@@ -45,10 +70,10 @@ serverPod:
         podAffinityTerm:
           labelSelector:
             matchExpressions:
-            - key: "weblogic.domainUID"
+            - key: "security"
               operator: In
               values:
-              - $(DOMAIN_UID)
+              - "S1"
           topologyKey: "kubernetes.io/hostname"
 ```
 
