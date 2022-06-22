@@ -364,15 +364,15 @@ EOF
                             export OCI_CLI_PROFILE=WKOBUILD
                             echo 'Create a OKE cluster'
 
-                            cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
-                            cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
-                            cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
+                            cp -rf ${terraform_script_dir_name}/onecluster/*.tf ${WORKSPACE}/terraform/.
+                            #cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
+                            #cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
-                            oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.phx.aaaaaaaaf6udkt7ync6t2k2seu6tp43toik3bq2kpk6ghahslc2bmqputbxa --file ${KUBECONFIG} --region us-phoenix-1 --token-version 2.0.0 --kube-endpoint PUBLIC_ENDPOINT
-                            #sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                            #oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.phx.aaaaaaaaf6udkt7ync6t2k2seu6tp43toik3bq2kpk6ghahslc2bmqputbxa --file ${KUBECONFIG} --region us-phoenix-1 --token-version 2.0.0 --kube-endpoint PUBLIC_ENDPOINT
+                            sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                         '''
                     }
                 }
@@ -394,12 +394,12 @@ EOF
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
-                                        kubectl -n kube-system create serviceaccount ${clusterName}-sa
-                                        kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:${clusterName}-sa
-                                        TOKENNAME=`kubectl -n kube-system get serviceaccount/${clusterName}-sa -o jsonpath='{.secrets[0].name}'`
-                                        TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
-                                        kubectl config set-credentials ${clusterName}-sa --token=$TOKEN
-                                        kubectl config set-context --current --user=${clusterName}-sa
+                                        #kubectl -n kube-system create serviceaccount ${clusterName}-sa
+                                        #kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:${clusterName}-sa
+                                        #TOKENNAME=`kubectl -n kube-system get serviceaccount/${clusterName}-sa -o jsonpath='{.secrets[0].name}'`
+                                        #TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
+                                        #kubectl config set-credentials ${clusterName}-sa --token=$TOKEN
+                                        #kubectl config set-context --current --user=${clusterName}-sa
 
                                         echo "creating storage class to setup OFSS ..."
                                         echo "getting MountTarget ID"
