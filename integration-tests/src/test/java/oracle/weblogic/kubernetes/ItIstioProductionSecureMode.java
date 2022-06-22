@@ -227,7 +227,7 @@ class ItIstioProductionSecureMode {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

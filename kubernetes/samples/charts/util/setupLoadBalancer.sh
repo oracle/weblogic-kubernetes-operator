@@ -28,6 +28,8 @@ namespace=""
 release=""
 repository=""
 chart=""
+ingressPropFile="ingress.properties"
+skipDeleteNamespace="false"
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
@@ -60,6 +62,8 @@ usage() {
     -t <ingress type>    : ingress type traefik or nginx [required]
     -v <ingress version> : ingress release version
     -n <namespace>       : ingress namespace
+    -p <ingress-prop>    : extra ingress helm properties 
+    -s                   : skip deleting ingress namespace
     -m <kubernetes_cli>  : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
     -h                   : print help
 EOF
@@ -68,7 +72,7 @@ exit $1
 
 action_chosen=false
 
-while getopts "cdt:n:r:v:h" opt; do
+while getopts "scdt:p:n:r:v:h" opt; do
   case $opt in
     c) action="create"
        if [ $action_chosen = "true" ]; then
@@ -84,9 +88,20 @@ while getopts "cdt:n:r:v:h" opt; do
        fi 
        action_chosen=true
     ;;
+    s) skipDeleteNamespace="true"
+       printInfo "Will Skip the Namespace Deletion"
+    ;;
     n) namespace="${OPTARG}"
     ;;
     t) ingressType="${OPTARG}"
+    ;;
+    p) ingressPropFile="${OPTARG}"
+       if [ ${action} == "create" ]; then
+         if [ ! -f ${ingressPropFile} ]; then
+          printError "[create] action is choosen but the custom ingress property file [${ingressPropFile}] is missing."
+          usage 1
+         fi
+      fi 
     ;;
     v) release="${OPTARG}"
     ;;
@@ -184,10 +199,12 @@ createTraefik() {
     printInfo "Traefik chart repository is already added."
   fi
 
+  # load the extra set of helm values if provided thru file using -p option
   if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
     purgeDefaultResources || true
     helm install $chart traefik/traefik --namespace ${ns} \
+     $(cat ${ingressPropFile} 2>&- || false ) \
      --set image.tag=${rel} \
      --values ${UTILDIR}/../traefik/values.yaml 
     if [ $? != 0 ]; then 
@@ -202,6 +219,7 @@ createTraefik() {
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   traefik_image=$(${kubernetesCli} get ${tpod} -n ${ns} -o jsonpath='{.spec.containers[0].image}')
   printInfo "Traefik image chosen [${traefik_image}]"
+  helm get values $chart --namespace ${ns} 
 }
 
 # Remove ingress related resources from default Namespace ( if any )
@@ -236,8 +254,10 @@ deleteIngress() {
        --for=delete pod \
        --selector=app.kubernetes.io/instance=${type}-release \
        --timeout=120s
-    ${kubernetesCli} delete ns ${ns}
-    ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s || true
+    if [ ${skipDeleteNamespace} == "false" ]; then
+      ${kubernetesCli} delete ns ${ns}
+      ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s || true
+    fi
     printInfo "Remove ${type} chart repository [${repository}] "
     helm repo remove ${repository}
   else
@@ -265,11 +285,15 @@ createNginx() {
     printInfo "Nginx chart repository is already added."
   fi
 
+  # load the extra set of helm values if provided thru file using -p option
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
     purgeDefaultResources || true
     helm install $chart ingress-nginx/ingress-nginx \
-         --set "controller.admissionWebhooks.enabled=false" \
-         --namespace ${ns} --version ${release}
+      $(cat ${ingressPropFile} 2>&- || false ) \
+      --set "controller.admissionWebhooks.enabled=false" \
+      --namespace ${ns} --version ${release} \
+      --set "controller.image.pullPolicy=IfNotPresent" \
+      --set "controller.image.tag=v1.2.0" 
     if [ $? != 0 ]; then
      printError "Helm installation of the Nginx ingress controller failed."
      exit -1;
@@ -282,6 +306,7 @@ createNginx() {
   waitForIngressPod nginx ${ns}
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   ${kubernetesCli} describe ${tpod} -n ${ns}
+  helm get values $chart -n ${ns}
 }
 
 main() {

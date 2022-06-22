@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,7 +121,13 @@ public class AdmissionWebhookResource extends BaseResource {
     LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-    return new AdmissionChecker(request.getOldObject(), request.getObject()).validate().uid(getUid(request));
+    return createAdmissionChecker(request).validate().uid(getUid(request));
+  }
+
+  @NotNull
+  private AdmissionChecker createAdmissionChecker(@NotNull AdmissionRequest request) {
+    return new DomainAdmissionChecker((DomainResource)request.getExistingResource(),
+        (DomainResource)request.getProposedResource());
   }
 
 }

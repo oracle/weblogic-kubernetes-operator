@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
@@ -227,6 +228,15 @@ class ItOperatorFmwUpgrade {
   @DisplayName("Upgrade Operator from 3.4.0 to current")
   void testOperatorFmwUpgradeFrom340ToCurrent() {
     installAndUpgradeOperator("3.4.0", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 3.4.1 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.4.1 to current")
+  void testOperatorFmwUpgradeFrom341ToCurrent() {
+    installAndUpgradeOperator("3.4.1", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   private void installAndUpgradeOperator(
@@ -414,7 +424,7 @@ class ItOperatorFmwUpgrade {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET_NAME)))
@@ -425,8 +435,8 @@ class ItOperatorFmwUpgrade {
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod() //serverpod
+            .serverStartPolicy("v8".equals(domainVersion) ? "IF_NEEDED" : "IfNeeded")
+            .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))

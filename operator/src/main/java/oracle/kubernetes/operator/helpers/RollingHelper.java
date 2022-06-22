@@ -251,7 +251,7 @@ public class RollingHelper {
       }
       
       private int getMinAvailable(String clusterName) {
-        return getInfo().getDomain().getMinAvailable(clusterName);
+        return getInfo().getMinAvailable(clusterName);
       }
 
       @NotNull

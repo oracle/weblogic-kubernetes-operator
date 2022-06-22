@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -94,6 +95,7 @@ class ItInitContainers {
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
   private static LoggingFacade logger = null;
+
 
   /**
    * Get namespaces for operator, domains.
@@ -340,7 +342,7 @@ class ItInitContainers {
                 .name(adminSecretName)
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -366,7 +368,7 @@ class ItInitContainers {
         domain.getSpec().getServerPod().addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from Domain\"")
             .name("init-container")
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG).addEnvItem(new V1EnvVar()
                                     .name("DOMAIN_NAME")
                                     .value("xyz")));
@@ -377,7 +379,7 @@ class ItInitContainers {
             .addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from AdminServer\"")
             .name("init-container")
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
         setPodAntiAffinity(domain);
         break;
@@ -393,7 +395,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("init-container")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
         break;
       case "managedServers":
@@ -403,7 +405,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from managed-server1\"")
                     .name("init-container")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG))));
         setPodAntiAffinity(domain);
         break;

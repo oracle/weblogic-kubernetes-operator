@@ -44,4 +44,12 @@
         <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/json\-schema@.*$</packageUrl>
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-jdk7@.*$</packageUrl>
+        <cpe>cpe:/a:jetbrains:kotlin</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-jdk8@.*$</packageUrl>
+        <cpe>cpe:/a:jetbrains:kotlin</cpe>
+    </suppress>
 </suppressions>

@@ -225,8 +225,8 @@ public class PodDisruptionBudgetHelper {
 
     private V1Patch createPodDisruptionBudgetPatch(String clusterName, DomainPresenceInfo info) {
       JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-      patchBuilder.replace("/spec/minAvailable", Math.max(0, info.getDomain().getReplicaCount(clusterName)
-              - info.getDomain().getMaxUnavailable(clusterName)));
+      patchBuilder.replace("/spec/minAvailable", Math.max(0, info.getReplicaCount(clusterName)
+              - info.getMaxUnavailable(clusterName)));
       return new V1Patch(patchBuilder.build().toString());
     }
 
@@ -237,8 +237,8 @@ public class PodDisruptionBudgetHelper {
     }
 
     private static int expectedMinAvailableValue(DomainPresenceInfo info, String clusterName) {
-      return Math.max(0, info.getDomain().getReplicaCount(clusterName)
-              - info.getDomain().getMaxUnavailable(clusterName));
+      return Math.max(0, info.getReplicaCount(clusterName)
+              - info.getMaxUnavailable(clusterName));
     }
 
     private Step createNewPodDisruptionBudget(Step next) {
@@ -269,8 +269,8 @@ public class PodDisruptionBudgetHelper {
     }
 
     V1PodDisruptionBudget createRecipe() {
-      int minAvailable = Math.max(0, info.getDomain().getReplicaCount(clusterName)
-              - info.getDomain().getMaxUnavailable(clusterName));
+      int minAvailable = Math.max(0, info.getReplicaCount(clusterName)
+              - info.getMaxUnavailable(clusterName));
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
       labels.put(DOMAINUID_LABEL, info.getDomainUid());

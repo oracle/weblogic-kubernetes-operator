@@ -297,7 +297,7 @@ class ItPodTemplates {
                 .name(adminSecretName)
                 .namespace(namespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .annotations(annotationKeyValues)
                 .labels(labelKeyValues)

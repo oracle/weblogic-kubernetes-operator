@@ -126,9 +126,9 @@ Elements related to logging:
 * `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false. See also `logHomeLayout`.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
 * `logHomeLayout`: Specifies how log files are organized under the `logHome` directory when `logHomeEnabled` is set to `true`.
-  Defaults to `BY_SERVER`, where domain logs and `introspector.out` are placed at root level
+  Defaults to `ByServers`, where domain logs and `introspector.out` are placed at root level
   and all other log files are organized under `logHome/servers/<server-name>/logs`.
-  If `FLAT` is specified, then all files are placed at root level.
+  If `Flat` is specified, then all files are placed at root level.
 * `httpAccessLogInLogHome`: Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.
 
 Elements related to security:
@@ -138,7 +138,7 @@ Elements related to security:
 
 Elements related to domain [startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}):
 
-* `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED.
+* `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded.
 * `serverStartState`: The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.
 * `restartVersion`: Changes to this field cause the [operator to restart]({{< relref "/managing-domains/domain-lifecycle/startup#restarting-servers" >}}) WebLogic Server instances.
 * `replicas`: The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field.
@@ -153,7 +153,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
 * These elements are under `configuration`.
 
   * `overridesConfigMap`: The name of the ConfigMap for WebLogic [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
-  * `overrideDistributionStrategy`: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to DYNAMIC.
+  * `overrideDistributionStrategy`: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are Dynamic, which means that the operator will distribute updated configuration overrides dynamically to running servers, and OnRestart, which means that servers will use updated configuration overrides only after the server's next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to `Dynamic`.
   * `secrets`: A list of names of the Secrets for WebLogic [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}) or model.
   * `introspectorJobActiveDeadlineSeconds`: The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.
 
@@ -323,7 +323,7 @@ spec:
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: "IF_NEEDED"
+  serverStartPolicy: IfNeeded
   serverPod:
     env:
     - name: JAVA_OPTIONS

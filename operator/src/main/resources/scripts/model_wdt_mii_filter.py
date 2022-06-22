@@ -70,7 +70,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
-    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'BY_SERVERS')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -286,7 +286,7 @@ def customizeLog(name, topologyOrServer, isDomainLog=False):
   if 'Log' not in topologyOrServer:
     topologyOrServer['Log'] = {}
 
-  if env.getDomainLogHomeLayout() == "FLAT":
+  if env.getDomainLogHomeLayout() == "Flat":
     topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
   else:
     if isDomainLog:
@@ -566,7 +566,7 @@ def customizeAccessLog(name, server):
     web_server_log = web_server['WebServerLog']
     if 'FileName' not in web_server_log:
       web_server_log['FileName'] = {}
-    if env.getDomainLogHomeLayout() == "FLAT":
+    if env.getDomainLogHomeLayout() == "Flat":
       web_server_log['FileName'] = logs_dir + "/" + name + "_access.log"
     else:
       web_server_log['FileName'] = "%s/servers/%s/logs/%s_access.log" % (logs_dir, name, name)

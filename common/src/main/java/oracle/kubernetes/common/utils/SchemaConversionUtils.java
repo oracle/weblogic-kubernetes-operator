@@ -25,6 +25,7 @@ import oracle.kubernetes.common.logging.CommonLoggingFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V8;
 import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -77,7 +78,7 @@ public class SchemaConversionUtils {
     }
     LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
-    String apiVersion = (String)domain.get("apiVersion");
+    String apiVersion = (String) domain.get("apiVersion");
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     removeObsoleteConditionsFromDomainStatus(domain);
@@ -85,6 +86,7 @@ public class SchemaConversionUtils {
     convertDomainHomeInImageToDomainHomeSourceType(domain);
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
+    constantsToCamelCase(spec);
     domain.put("apiVersion", targetAPIVersion);
     LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -173,13 +175,16 @@ public class SchemaConversionUtils {
     }
   }
 
+  private Map<String, Object> getOrCreateConfiguration(Map<String, Object> domainSpec) {
+    return (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+  }
+
   private void moveConfigOverrides(Map<String, Object> domain) {
     Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
     if (domainSpec != null) {
       Object existing = domainSpec.remove("configOverrides");
       if (existing != null) {
-        Map<String, Object> configuration =
-            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        Map<String, Object> configuration = getOrCreateConfiguration(domainSpec);
         configuration.putIfAbsent("overridesConfigMap", existing);
       }
     }
@@ -190,15 +195,93 @@ public class SchemaConversionUtils {
     if (domainSpec != null) {
       Object existing = domainSpec.remove("configOverrideSecrets");
       if (existing != null) {
-        Map<String, Object> configuration =
-            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        Map<String, Object> configuration = getOrCreateConfiguration(domainSpec);
         configuration.putIfAbsent("secrets", existing);
       }
     }
   }
 
+  private void constantsToCamelCase(Map<String, Object> spec) {
+    convertServerStartPolicy(spec);
+    Optional.ofNullable(getAdminServer(spec)).ifPresent(this::convertServerStartPolicy);
+    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+            convertServerStartPolicy((Map<String, Object>) cluster)));
+    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
+            convertServerStartPolicy((Map<String, Object>) managedServer)));
+
+    Optional.ofNullable(getConfiguration(spec)).ifPresent(this::convertOverrideDistributionStrategy);
+
+    convertLogHomeLayout(spec);
+  }
+
+  private void convertServerStartPolicy(Map<String, Object> spec) {
+    spec.computeIfPresent("serverStartPolicy", this::serverStartPolicyCamelCase);
+  }
+
+  public static <K, V> Map<V, K> invertMapUsingMapper(Map<K, V> sourceMap) {
+    return sourceMap.entrySet().stream().collect(
+            Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (oldValue, newValue) -> oldValue));
+  }
+
+  private static Object convertWithMap(Map<String, String> map, Object value) {
+    if (value instanceof String) {
+      return map.get(value);
+    }
+    return value;
+  }
+
+  private Map<String, String> select(Map<String, String> apiVersion9, Map<String, String> apiVersion8) {
+    switch (targetAPIVersion) {
+      case API_VERSION_V8:
+        return apiVersion8;
+      case API_VERSION_V9:
+      default:
+        return apiVersion9;
+    }
+  }
+
+  private static final Map<String, String> serverStartPolicyMap = Map.of(
+      "ALWAYS", "Always", "NEVER", "Never", "IF_NEEDED", "IfNeeded", "ADMIN_ONLY", "AdminOnly");
+
+  private static final Map<String, String> invertServerStartPolicyMap = invertMapUsingMapper(serverStartPolicyMap);
+
+  private Object serverStartPolicyCamelCase(String key, Object value) {
+    return convertWithMap(select(serverStartPolicyMap, invertServerStartPolicyMap), value);
+  }
+
+  private void convertOverrideDistributionStrategy(Map<String, Object> configuration) {
+    configuration.computeIfPresent("overrideDistributionStrategy", this::overrideDistributionStrategyCamelCase);
+  }
+
+  private static final Map<String, String> overrideDistributionStrategyMap = Map.of(
+          "DYNAMIC", "Dynamic", "ON_RESTART", "OnRestart");
+
+  private static final Map<String, String> invertOverrideDistributionStrategyMap =
+          invertMapUsingMapper(overrideDistributionStrategyMap);
+
+  private Object overrideDistributionStrategyCamelCase(String key, Object value) {
+    return convertWithMap(select(overrideDistributionStrategyMap, invertOverrideDistributionStrategyMap), value);
+  }
+
+  private void convertLogHomeLayout(Map<String, Object> configuration) {
+    configuration.computeIfPresent("logHomeLayout", this::logHomeLayoutCamelCase);
+  }
+
+  private static final Map<String, String> logHomeLayoutMap = Map.of(
+          "FLAT", "Flat", "BY_SERVERS", "ByServers");
+
+  private static final Map<String, String> invertLogHomeLayoutMap = invertMapUsingMapper(logHomeLayoutMap);
+
+  private Object logHomeLayoutCamelCase(String key, Object value) {
+    return convertWithMap(select(logHomeLayoutMap, invertLogHomeLayoutMap), value);
+  }
+
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
     return (List<Object>) spec.get("auxiliaryImageVolumes");
+  }
+
+  private Map<String, Object> getConfiguration(Map<String, Object> spec) {
+    return (Map<String, Object>) spec.get("configuration");
   }
 
   private Map<String, Object> getAdminServer(Map<String, Object> spec) {

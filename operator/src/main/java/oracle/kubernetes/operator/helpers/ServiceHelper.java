@@ -26,6 +26,9 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.ActionResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.DeleteServiceListStep;
@@ -36,12 +39,9 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -273,8 +273,8 @@ public class ServiceHelper {
       return metadata;
     }
 
-    private ServerSpec getServerSpec() {
-      return getDomain().getServer(getServerName(), getClusterName());
+    private EffectiveServerSpec getServerSpec() {
+      return info.getServer(getServerName(), getClusterName());
     }
 
     @Override
@@ -863,8 +863,8 @@ public class ServiceHelper {
       return CLUSTER_SERVICE_REPLACED;
     }
 
-    ClusterSpec getClusterSpec() {
-      return getDomain().getCluster(clusterName);
+    EffectiveClusterSpec getClusterSpec() {
+      return info.getCluster(clusterName);
     }
 
     @Override
@@ -1001,7 +1001,7 @@ public class ServiceHelper {
 
     private Optional<AdminService> getNullableAdminService() {
       return Optional.ofNullable(getDomain().getAdminServerSpec())
-          .map(AdminServerSpec::getAdminService);
+          .map(EffectiveAdminServerSpec::getAdminService);
     }
   }
 }

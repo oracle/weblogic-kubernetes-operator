@@ -178,16 +178,16 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusterSpecsHaveUniqueNames_dontReportError() {
-    domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
-    domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster2"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster2"));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenClusterSpecsHaveDuplicateNames_reportError() {
-    domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
-    domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("clusters", "cluster1")));
@@ -195,8 +195,8 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusterSpecsHaveDns1123DuplicateNames_reportError() {
-    domain.getSpec().getClusters().add(new Cluster().withClusterName("Cluster-1"));
-    domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster_1"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("Cluster-1"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster_1"));
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("clusters", "cluster-1")));

@@ -26,7 +26,7 @@ kubernetes:
     image: "%WEBLOGIC_IMAGE%"
 
     # imagePullPolicy defaults to "Always" if image version is :latest
-    imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
+    imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
 
     # Identify which Secret contains the credentials for pulling an image
     %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
@@ -53,12 +53,12 @@ kubernetes:
     # data storage directories are determined from the WebLogic domain home configuration.
     dataHome: "%DATA_HOME%"
 
-    # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+    # serverStartPolicy legal values are "Never", "IfNeeded", or "AdminOnly"
     # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-    # - "NEVER" will not start any server in the domain
-    # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-    # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
-    serverStartPolicy: "%SERVER_START_POLICY%"
+    # - "Never" will not start any server in the domain
+    # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+    # - "IfNeeded" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+    serverStartPolicy: %SERVER_START_POLICY%
 
     serverPod:
       # an (optional) list of environment variable to be set on the servers

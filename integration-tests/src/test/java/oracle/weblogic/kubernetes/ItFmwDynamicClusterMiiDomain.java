@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.util.Collections;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -35,6 +34,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -239,14 +239,14 @@ class ItFmwDynamicClusterMiiDomain {
                 .domainUid(domainUid)
                 .domainHomeSourceType("FromModel")
                 .image(miiImage)
-                .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                .imagePullPolicy(IMAGE_PULL_POLICY)
                 .addImagePullSecretsItem(new V1LocalObjectReference()
                     .name(repoSecretName))
                 .webLogicCredentialsSecret(new V1SecretReference()
                     .name(adminSecretName)
                     .namespace(domNamespace))
                 .includeServerOutInPodLog(true)
-                .serverStartPolicy("IF_NEEDED")
+                .serverStartPolicy("IfNeeded")
                 .serverPod(new ServerPod()
                     .addEnvItem(new V1EnvVar()
                         .name("JAVA_OPTIONS")

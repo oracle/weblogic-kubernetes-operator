@@ -47,7 +47,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Server;
@@ -133,8 +133,8 @@ public class JobHelper {
       return domainShouldStart() || willStartACluster() || willStartAServer();
     }
 
-    // If Domain level Server Start Policy = ALWAYS, IF_NEEDED or ADMIN_ONLY we most likely will start a server pod.
-    // NOTE: that will not be the case if every cluster and server is marked as NEVER.
+    // If Domain level Server Start Policy = Always, IfNeeded or AdminOnly we most likely will start a server pod.
+    // NOTE: that will not be the case if every cluster and server is marked as Never.
     private boolean domainShouldStart() {
       return shouldStart(getDomainSpec().getServerStartPolicy());
     }
@@ -150,8 +150,9 @@ public class JobHelper {
     }
 
     // Returns true if the specified cluster is configured to start.
-    private boolean shouldStart(Cluster cluster) {
-      return (shouldStart(cluster.getServerStartPolicy())) && getDomain().getReplicaCount(cluster.getClusterName()) > 0;
+    private boolean shouldStart(ClusterSpec clusterSpec) {
+      return (shouldStart(clusterSpec.getServerStartPolicy()))
+              && info.getReplicaCount(clusterSpec.getClusterName()) > 0;
     }
 
     // Returns true if the specified server start policy will allow starting a server.
@@ -177,14 +178,20 @@ public class JobHelper {
    *  ProcessingConstants.DOMAIN_RESTART_VERSION - the restart version from the domain
    *  ProcessingConstants.DOMAIN_INPUTS_HASH
    *  ProcessingConstants.DOMAIN_INTROSPECT_VERSION - the introspect version from the old domain spec
-   *
-   * @param next Next processing step
    */
+  public static Step createIntrospectionStartStep() {
+    return new IntrospectionStartStep();
+  }
+
   public static Step createIntrospectionStartStep(Step next) {
     return new IntrospectionStartStep(next);
   }
 
   private static class IntrospectionStartStep extends Step {
+
+    IntrospectionStartStep() {
+      super();
+    }
 
     IntrospectionStartStep(Step next) {
       super(next);
@@ -438,7 +445,7 @@ public class JobHelper {
 
     private Step createIntrospectionSteps(Step next) {
       return Step.chain(
-              readExistingIntrospectorConfigMap(getNamespace(), getDomainUid()),
+              readExistingIntrospectorConfigMap(),
               startNewIntrospection(next));
     }
 

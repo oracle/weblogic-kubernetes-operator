@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -12,29 +13,28 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class OnlineUpdate {
 
   @Description("Enable online update. Default is 'false'.")
+  @Default(boolDefault = false)
   private Boolean enabled = false;
 
   @Description(""
        + "Controls behavior when non-dynamic WebLogic configuration changes are detected"
        + " during an online update."
        + " Non-dynamic changes are changes that require a domain restart to take effect."
-       + " Valid values are 'CommitUpdateOnly' (default), and 'CommitUpdateAndRoll'."
-       + " \n\n"
+       + " Valid values are 'CommitUpdateOnly' and 'CommitUpdateAndRoll'. Defaults to `CommitUpdateOnly`."
        + " If set to 'CommitUpdateOnly' and any non-dynamic changes are detected, then"
        + " all changes will be committed,"
        + " dynamic changes will take effect immediately,"
        + " the domain will not automatically restart (roll),"
        + " and any non-dynamic changes will become effective on a pod only if"
        + " the pod is later restarted."
-       + " \n\n"
        + " If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then"
        + " all changes will be committed,"
        + " dynamic changes will take effect immediately,"
        + " the domain will automatically restart (roll),"
        + " and non-dynamic changes will take effect on each pod once the pod restarts."
-       + " \n\n"
        + " For more information, see the runtime update section of the Model in Image user guide."
   )
+  @Default(strDefault = "CommitUpdateOnly")
   private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
 
   private WDTTimeouts wdtTimeouts;

@@ -139,7 +139,7 @@ public class Pod {
 
   /**
    * Patch domain to shutdown a WebLogic  server by changing the value of
-   * its serverStartPolicy property to NEVER.
+   * its serverStartPolicy property to Never.
    *
    * @param domainUid  unique domain identifier
    * @param namespace  name of the namespace
@@ -150,12 +150,12 @@ public class Pod {
   public static boolean shutdownManagedServerUsingServerStartPolicy(String domainUid,
                                                                     String namespace,
                                                                     String serverName) throws ApiException {
-    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "NEVER");
+    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "Never");
   }
 
   /**
    * Patch domain to start a WebLogic server by changing the value of
-   * its serverStartPolicy property to IF_NEEDED.
+   * its serverStartPolicy property to IfNeeded.
    *
    * @param domainUid  unique domain identifier
    * @param namespace  name of the namespace
@@ -166,7 +166,7 @@ public class Pod {
   public static boolean startManagedServerUsingServerStartPolicy(String domainUid,
                                                                  String namespace,
                                                                  String serverName) throws ApiException {
-    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "IF_NEEDED");
+    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "IfNeeded");
   }
 
   /**

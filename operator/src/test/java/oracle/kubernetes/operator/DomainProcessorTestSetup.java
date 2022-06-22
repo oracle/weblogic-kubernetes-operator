@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -20,7 +21,7 @@ import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
  * should run this in their setup, before trying to create and execute 
- * a {@link DomainProcessorImpl.MakeRightDomainOperationImpl}.
+ * a {@link MakeRightDomainOperationImpl}.
  */
 public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
