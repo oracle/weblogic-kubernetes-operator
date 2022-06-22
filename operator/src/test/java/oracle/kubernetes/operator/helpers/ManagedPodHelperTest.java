@@ -1406,6 +1406,11 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  String getReferenceMiiConvertedAuxImagePodYaml_3_4_1() {
+    return ReferenceObjects.MANAGED_MII_CONVERTED_AUX_IMAGE_POD_3_4_1;
+  }
+
+  @Override
   String getReferenceIstioMonitoringExporterTcpProtocol() {
     return ReferenceObjects.MANAGED_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL;
   }
