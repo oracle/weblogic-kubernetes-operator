@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +46,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
 
   private final DomainResource existingDomain;
   private final DomainResource proposedDomain;
+  final List<String> warnings = new ArrayList<>();
 
   /** Construct a DomainAdmissionChecker. */
   public DomainAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {

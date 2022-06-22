@@ -62,8 +62,6 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
       } else {
         return response.status(new AdmissionResponseStatus().message(exception.getMessage()));
       }
-    } else if (!warnings.isEmpty()) {
-      return response.warnings(warnings);
     }
     return response;
   }

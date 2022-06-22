@@ -31,7 +31,6 @@ import static java.lang.System.lineSeparator;
 
 public abstract class AdmissionChecker {
   final List<String> messages = new ArrayList<>();
-  final List<String> warnings = new ArrayList<>();
   final String domainUid;
 
   /** Construct a AdmissionChecker. */
