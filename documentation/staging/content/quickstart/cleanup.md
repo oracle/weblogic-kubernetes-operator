@@ -8,20 +8,20 @@ weight: 4
 
 #### Remove the domain.
 
-1.	Remove the domain's ingress routes by using `kubectl`:
+1.	Remove the domain's ingress routes by using `kubectl`.
 
     ```shell
     $ kubectl delete ingressroute quickstart -n sample-domain1-ns
     $ kubectl delete ingressroute console -n sample-domain1-ns
     ```
 
-1.	Use `kubectl` to delete the domain:
+1.	Use `kubectl` to delete the domain.
 
     ```shell
     $ kubectl delete domain sample-domain1 -n sample-domain1-ns
     ```
 
-1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone:
+1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone.
 
     ```shell
     $ kubectl get pods -n sample-domain1-ns
@@ -30,7 +30,7 @@ weight: 4
     $ kubectl get domains -n sample-domain1-ns
     ```
 
-1.	Remove the Kubernetes Secrets associated with the domain:
+1.	Remove the Kubernetes Secrets associated with the domain.
 
     ```shell
     $ kubectl -n sample-domain1-ns delete secret sample-domain1-weblogic-credentials
@@ -39,7 +39,7 @@ weight: 4
 
 
 #### Remove the domain namespace.
-1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace:
+1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace.
 
     ```shell
     $ helm upgrade traefik-operator traefik/traefik \
@@ -48,7 +48,7 @@ weight: 4
         --set "kubernetes.namespaces={traefik}"
     ```
 
-1.	Delete the domain namespace:
+1.	Delete the domain namespace.
 
     ```shell
     $ kubectl delete namespace sample-domain1-ns
@@ -57,13 +57,13 @@ weight: 4
 
 #### Remove the operator.
 
-1.	Remove the operator:
+1.	Remove the operator.
 
     ```shell
     $ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
     ```
 
-1.	Remove the operator's namespace:
+1.	Remove the operator's namespace.
 
     ```shell
     $ kubectl delete namespace sample-weblogic-operator-ns
@@ -71,13 +71,13 @@ weight: 4
 
 #### Remove the ingress controller.
 
-1.	Remove the Traefik ingress controller:
+1.	Remove the Traefik ingress controller.
 
     ```shell
     $ helm uninstall traefik-operator -n traefik
     ```
 
-1.	Remove the Traefik namespace:
+1.	Remove the Traefik namespace.
 
     ```shell
     $ kubectl delete namespace traefik
