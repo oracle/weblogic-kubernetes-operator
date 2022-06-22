@@ -349,7 +349,6 @@ public class FileUtils {
     String content = new String(Files.readAllBytes(src), charset);
     String newcontent = content.replaceAll(regex, replacement);
     logger.info("with {0}", replacement);
-    logger.info("DEBUG: updated content " + newcontent);
     if (content.equals(newcontent)) {
       logger.info("search string {0} not found to replace with {1}", regex, replacement);
     }
