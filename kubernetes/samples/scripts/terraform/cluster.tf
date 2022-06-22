@@ -68,6 +68,11 @@ resource "oci_containerengine_cluster" "tfsample_cluster" {
   name               = var.cluster_name
   vcn_id             = oci_core_virtual_network.oke-vcn.id
 
+  timeouts {
+    create = "60m"
+    delete = "2h"
+  }
+
   #Optional
   options {
     service_lb_subnet_ids = [oci_core_subnet.oke-subnet-loadbalancer-1.id, oci_core_subnet.oke-subnet-loadbalancer-2.id]
