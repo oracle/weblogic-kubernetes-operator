@@ -502,8 +502,7 @@ class ItManageNameSpace {
     List<Cluster> clusters = new ArrayList<>();
     clusters.add(new Cluster()
         .clusterName(clusterName)
-        .replicas(replicaCount)
-        .serverStartState("RUNNING"));
+        .replicas(replicaCount));
 
     // create the domain CR
     Domain domain = new Domain()
@@ -531,7 +530,6 @@ class ItManageNameSpace {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")

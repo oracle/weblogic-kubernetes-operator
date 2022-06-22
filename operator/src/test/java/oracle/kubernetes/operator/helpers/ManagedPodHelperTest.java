@@ -30,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
@@ -54,7 +53,6 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.helpers.AdminPodHelperTest.CUSTOM_MOUNT_PATH2;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -539,71 +537,6 @@ class ManagedPodHelperTest extends PodHelperTestBase {
             hasVolumeMount("volume1", "/domain-path1"),
             hasVolumeMount("volume2", "/cluster-path"),
             hasVolumeMount("volume3", "/server-path")));
-  }
-
-  @Test
-  void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().configureServer(SERVER_NAME).withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator()
-        .withServerStartState(ServerStartState.RUNNING)
-        .configureServer(SERVER_NAME)
-        .withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
-    getConfigurator()
-        .withServerStartState(ServerStartState.ADMIN)
-        .configureServer(SERVER_NAME)
-        .withServerStartState(ServerStartState.RUNNING);
-
-    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
-  }
-
-  @Test
-  void whenClusterDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().configureServer(SERVER_NAME);
-
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-    getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenClusterDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().configureServer(SERVER_NAME).withServerStartState(ServerStartState.ADMIN);
-
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-    getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ServerStartState.RUNNING);
-
-    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenClusterDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
-    getConfigurator().configureServer(SERVER_NAME).withServerStartState(ServerStartState.RUNNING);
-
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-    getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test

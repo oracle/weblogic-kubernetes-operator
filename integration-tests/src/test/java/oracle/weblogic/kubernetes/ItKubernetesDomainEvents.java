@@ -251,8 +251,7 @@ class ItKubernetesDomainEvents {
         = "[{\"op\": \"add\",\"path\": \""
         + "/spec/managedServers/-\", \"value\": "
         + "{\"serverName\" : \"nonexisting-ms\", "
-        + "\"serverStartPolicy\": \"IfNeeded\","
-        + "\"serverStartState\": \"RUNNING\"}"
+        + "\"serverStartPolicy\": \"IfNeeded\"}"
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -288,7 +287,7 @@ class ItKubernetesDomainEvents {
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"nonexisting-cluster\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "    {\"clusterName\" : \"nonexisting-cluster\", \"replicas\": 2}"
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -844,15 +843,13 @@ class ItKubernetesDomainEvents {
                                     .mountPath("/shared")
                                     .name(pvName)))
                     .adminServer(new AdminServer() //admin server
-                            .serverStartState("RUNNING")
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
                     .addClustersItem(new Cluster() //cluster
                             .clusterName(cluster1Name)
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))));
+                            .replicas(replicaCount))));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
@@ -931,7 +928,7 @@ class ItKubernetesDomainEvents {
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
