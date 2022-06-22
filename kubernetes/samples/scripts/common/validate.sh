@@ -134,6 +134,8 @@ function validateVersion {
 
 #
 # Function to ensure the domain uid is a legal DNS name
+# Because the domain uid is also used as a WebLogic domain
+# name, it must also be a valid WebLogic domain name.
 #
 function validateDomainUid {
   validateLowerCase "domainUID" "${domainUID}"
