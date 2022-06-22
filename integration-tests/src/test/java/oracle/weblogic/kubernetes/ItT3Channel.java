@@ -158,7 +158,7 @@ class ItT3Channel {
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains/" + domainUid);
+    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);

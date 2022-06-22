@@ -470,7 +470,7 @@ public class CommonLBTestUtils {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
-    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains/" + domainUid);
+    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);

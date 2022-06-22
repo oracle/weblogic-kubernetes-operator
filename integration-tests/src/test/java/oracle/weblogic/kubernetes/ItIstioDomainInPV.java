@@ -171,7 +171,7 @@ class ItIstioDomainInPV  {
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains/" + domainUid);
+    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("domain_uid", domainUid);
     p.setProperty("cluster_name", clusterName);

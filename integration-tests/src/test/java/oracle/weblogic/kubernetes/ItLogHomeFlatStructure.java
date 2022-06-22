@@ -100,6 +100,7 @@ class ItLogHomeFlatStructure {
   private final String adminServerName = "admin-server";
   private final String clusterName = "cluster-1";
   private String adminSvcExtHost = null;
+  private static String logsDir = null;
 
   private static LoggingFacade logger = null;
 
@@ -149,7 +150,7 @@ class ItLogHomeFlatStructure {
             "##W%*}!\"'\"`']\\\\//1$$~x", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
              String.format("createSecret failed for %s", dbSecretName));
     String configMapName = "jdbc-jms-wldf-configmap";
-
+    logsDir = "/shared/" + domainNamespace + "/logs/" + domainUid;
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.sysresources.yaml"));
@@ -211,7 +212,7 @@ class ItLogHomeFlatStructure {
   @DisplayName("Check the server logs are written to PersistentVolume")
   void testMiiServerLogsAreOnPV() {
     // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV("grep RUNNING /shared/logs/"
+    checkLogsOnPV("grep RUNNING " + logsDir + "/"
         + adminServerName + ".log", adminServerPodName);
   }
 
@@ -242,7 +243,7 @@ class ItLogHomeFlatStructure {
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
       logger.info("Checking HTTP server logs are written on PV and look for string sample-war/index.jsp in log");
-      checkLogsOnPV("grep sample-war/index.jsp /shared/logs/"
+      checkLogsOnPV("grep sample-war/index.jsp " + logsDir + "/"
           + server + "_access.log",  adminServerPodName);
     }
   }

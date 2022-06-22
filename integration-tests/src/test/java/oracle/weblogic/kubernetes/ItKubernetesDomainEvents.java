@@ -762,7 +762,7 @@ class ItKubernetesDomainEvents {
                                      String pvName, String pvcName, String serverStartupPolicy,
                                      UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
 
-    String uniquePath = "/shared/" + domainNamespace + "/domains/" + domainUid + "/";
+    String uniquePath = "/shared/" + domainNamespace + "/domains";
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -817,7 +817,7 @@ class ItKubernetesDomainEvents {
                     .namespace(domainNamespace))
             .spec(domainSpecUnaryOperator.apply(new DomainSpec()
                     .domainUid(domainUid)
-                    .domainHome(uniquePath) // point to domain home in pv
+                    .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
                     .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
                     .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                     .imagePullPolicy(IMAGE_PULL_POLICY)
