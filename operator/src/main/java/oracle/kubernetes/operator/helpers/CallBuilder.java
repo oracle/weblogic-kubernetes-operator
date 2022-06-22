@@ -440,6 +440,13 @@ public class CallBuilder {
                   resourceVersion,
                   timeoutSeconds,
                   watch);
+  private final SynchronousCallFactory<DomainResource> readDomainCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .readNamespacedDomain(
+                  requestParams.name,
+                  requestParams.namespace
+              );
   private final SynchronousCallFactory<DomainResource> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -729,6 +736,19 @@ public class CallBuilder {
   public Step readDomainAsync(String name, String namespace, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
+  }
+
+  /**
+   * Read domain synchronously.
+   *
+   * @param uid the domain uid (unique within the k8s cluster)
+   * @param namespace Namespace
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public DomainResource readDomain(String uid, String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("readDomain", namespace, uid, null, (String)null);
+    return executeSynchronousCall(requestParams, readDomainCall);
   }
 
   /**
