@@ -304,6 +304,7 @@ printSummary() {
   echo "  ${dcrOutput}"
   echo ""
   echo "Completed"
+  cat ${dcrOutput}
 }
 
 # Perform the sequence of steps to create a domain
