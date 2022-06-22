@@ -1174,7 +1174,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
       }
 
-      recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
+      restoreAffinityContent(recipe, currentPod);
 
       return AnnotationHelper.createHash(recipe);
     }
