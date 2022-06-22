@@ -96,6 +96,11 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   node_image_name    = var.node_pool_node_image_name
   node_shape         = var.node_pool_node_shape
 
+  timeouts {
+    create = "60m"
+    delete = "2h"
+  }
+
   #subnet_ids = ["${oci_core_subnet.oke-subnet-worker-1.id}", "${oci_core_subnet.oke-subnet-worker-2.id}","${oci_core_subnet.oke-subnet-worker-3.id}"]
   subnet_ids = [oci_core_subnet.oke-subnet-worker-1.id, oci_core_subnet.oke-subnet-worker-2.id]
 

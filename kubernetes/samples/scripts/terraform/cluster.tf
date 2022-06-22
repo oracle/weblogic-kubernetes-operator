@@ -96,6 +96,11 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   node_shape         = var.node_pool_node_shape
   subnet_ids         = [oci_core_subnet.oke-subnet-worker-1.id, oci_core_subnet.oke-subnet-worker-2.id, oci_core_subnet.oke-subnet-worker-3.id]
 
+  timeouts {
+    create = "60m"
+    delete = "2h"
+  }
+
   #Optional
   quantity_per_subnet = var.node_pool_quantity_per_subnet
   ssh_public_key      = var.node_pool_ssh_public_key
