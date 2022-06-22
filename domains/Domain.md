@@ -141,7 +141,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity` |
+| `affinity` | [Affinity](k8s1.13.5.md#affinity) | The Pod's scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`. |
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `containers` | Array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
 | `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
