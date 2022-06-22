@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -252,6 +253,10 @@ public class ItMiiDomainModelInPV {
 
     String domainUid = params.getKey();
     String image = params.getValue();
+    
+    if (domainUid.equals(domainUid1)) {
+      assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(5));
+    }
 
     // create domain custom resource and verify all the pods came up
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
