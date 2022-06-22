@@ -3,9 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import javax.annotation.Nonnull;
-
 import com.google.gson.annotations.SerializedName;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -23,7 +22,7 @@ public class Channel implements Comparable<Channel> {
           + "Otherwise, provide the name of one of the Administration Server's network access points, "
           + "which is configured using the ServerMBean's NetworkAccessMBeans. The \"default\", \"default-secure\", "
           + "and \"default-admin\" channels may not be specified here when using Istio.")
-  @Nonnull
+  @NotNull
   private String channelName;
 
   @SerializedName("nodePort")

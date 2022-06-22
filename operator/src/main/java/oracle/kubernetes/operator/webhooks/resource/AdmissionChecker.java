@@ -55,7 +55,7 @@ public abstract class AdmissionChecker {
   }
 
   int getDomainReplicaCount(@NotNull DomainResource domain) {
-    return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getReplicas).orElse(0);
+    return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getReplicas).orElse(1);
   }
 
   private String perLine(List<String> errors) {

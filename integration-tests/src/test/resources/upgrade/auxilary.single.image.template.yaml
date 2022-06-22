@@ -35,7 +35,6 @@ spec:
       imagePullPolicy: IfNotPresent
       volume: auxiliaryImageVolume
   adminServer:
-    serverStartState: "RUNNING"
     adminService:
       channels:
        - channelName: default
@@ -43,7 +42,6 @@ spec:
   replicas: 2
   clusters:
   - clusterName: cluster-1
-    serverStartState: "RUNNING"
     serverPod:
       affinity:
         podAntiAffinity:

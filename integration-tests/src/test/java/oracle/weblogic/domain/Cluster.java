@@ -43,11 +43,6 @@ public class Cluster {
   private ServerService serverService;
 
   @ApiModelProperty(
-      "The state in which the server is to be started. Use ADMIN if server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
-
-  @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
           + " the required servers.")
   private String restartVersion;
@@ -162,23 +157,6 @@ public class Cluster {
     this.serverService = serverService;
   }
 
-  public Cluster serverStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-    return this;
-  }
-
-  public String serverStartState() {
-    return serverStartState;
-  }
-
-  public String getServerStartState() {
-    return serverStartState;
-  }
-
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public Cluster restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -204,7 +182,6 @@ public class Cluster {
         .append("serverStartPolicy", serverStartPolicy)
         .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
-        .append("serverStartState", serverStartState)
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
@@ -229,7 +206,6 @@ public class Cluster {
         .append(maxUnavailable, rhs.maxUnavailable)
         .append(serverPod, rhs.serverPod)
         .append(serverService, rhs.serverService)
-        .append(serverStartState, rhs.serverStartState)
         .append(restartVersion, rhs.restartVersion)
         .isEquals();
   }
@@ -244,7 +220,6 @@ public class Cluster {
         .append(maxUnavailable)
         .append(serverPod)
         .append(serverService)
-        .append(serverStartState)
         .append(restartVersion)
         .toHashCode();
   }
