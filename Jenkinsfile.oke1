@@ -198,7 +198,7 @@ pipeline {
                     environment {
                         FSS_DIR="/oketest"
                         VCN_CIDR_PREFIX="10.6"
-                        OKE_CLUSTER_NAME="wktui-test"
+                        OKE_CLUSTER_NAME="wktui"
                         NODE_SHAPE="VM.Standard2.4"
                         LINUX_VER="Oracle-Linux-7.4"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
@@ -348,7 +348,7 @@ EOF
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
-                        KUBECONFIG ="${WORKSPACE}/terraform/wktui-test_kubeconfig"
+                        KUBECONFIG ="${WORKSPACE}/terraform/wktui_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
                     }
@@ -382,7 +382,7 @@ EOF
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:${WORKSPACE}/terraform/terraforminstall"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
-                                        clusterName = "wktui-test"
+                                        clusterName = "wktui"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
                                         availability_domain = "VPGL:PHX-AD-3"
 
@@ -446,7 +446,7 @@ EOF
                         DOMAIN_IMAGES_REPO = "phx.ocir.io"
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
-                        clusterName = "wktui-test"
+                        clusterName = "wktui"
                         FSS_DIR = "/oketest"
 
                     }
