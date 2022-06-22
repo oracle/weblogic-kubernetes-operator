@@ -244,8 +244,7 @@ class ItIstioDomainInPV  {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)

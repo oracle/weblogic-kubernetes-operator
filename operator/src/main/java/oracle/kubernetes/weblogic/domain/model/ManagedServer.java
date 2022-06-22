@@ -20,7 +20,7 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
   @Description("The name of the Managed Server. This name must match the name of a Managed Server instance or of a "
       + "dynamic cluster member name from a server template already defined in the WebLogic domain configuration. "
       + "Required.")
-  @Nonnull
+  @NotNull
   private String serverName;
 
   @NotNull

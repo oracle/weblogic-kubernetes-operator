@@ -58,12 +58,10 @@ spec:
     - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
       mountPath: /auxiliary
   adminServer:
-    serverStartState: RUNNING
     adminChannelPortForwardingEnabled: false
   replicas: 1
   clusters:
   - clusterName: cluster-1
-    serverStartState: RUNNING
     serverPod:
       affinity:
         podAntiAffinity:

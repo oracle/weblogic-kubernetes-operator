@@ -19,7 +19,6 @@ Find the following part:
 ```yaml
 clusters:
 - clusterName: cluster-1
-  serverStartState: "RUNNING"
   replicas: 2
 ```
 Modify `replicas` to 3 and save the changes. You can use the `vi` editor for example:

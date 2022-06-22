@@ -391,15 +391,13 @@ class ItDiagnosticsFailedCondition {
                       .mountPath("/shared")
                       .name(pvName)))
               .adminServer(new AdminServer() //admin server
-                  .serverStartState("RUNNING")
                   .adminService(new AdminService()
                       .addChannelsItem(new Channel()
                           .channelName("default")
                           .nodePort(getNextFreePort()))))
               .addClustersItem(new Cluster() //cluster
                   .clusterName("cluster-1")
-                  .replicas(replicaCount)
-                  .serverStartState("RUNNING")));
+                  .replicas(replicaCount)));
       setPodAntiAffinity(domain);
 
       // verify the domain custom resource is created
@@ -471,7 +469,6 @@ class ItDiagnosticsFailedCondition {
         BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     AdminServer as = new AdminServer()
-        .serverStartState("RUNNING")
         .adminService(new AdminService()
             .addChannelsItem(new Channel()
                 .channelName("default")
@@ -710,7 +707,6 @@ class ItDiagnosticsFailedCondition {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .serverService(new ServerService()
                     .annotations(keyValueMap)
                     .labels(keyValueMap))
@@ -720,8 +716,7 @@ class ItDiagnosticsFailedCondition {
                         .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -762,15 +757,13 @@ class ItDiagnosticsFailedCondition {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")

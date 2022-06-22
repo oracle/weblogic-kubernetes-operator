@@ -647,7 +647,7 @@ class ItIntrospectVersion {
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
@@ -1076,15 +1076,13 @@ class ItIntrospectVersion {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(cluster1Name)
-                .replicas(cluster1ReplicaCount)
-                .serverStartState("RUNNING")));
+                .replicas(cluster1ReplicaCount)));
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();

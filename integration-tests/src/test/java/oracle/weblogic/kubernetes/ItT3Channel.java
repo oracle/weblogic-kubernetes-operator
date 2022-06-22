@@ -241,7 +241,6 @@ class ItT3Channel {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -251,8 +250,7 @@ class ItT3Channel {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .replicas(replicaCount)));
 
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);

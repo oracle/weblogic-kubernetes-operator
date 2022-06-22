@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -58,7 +57,7 @@ public class ClusterResource implements KubernetesObject {
   @Expose
   @Valid
   @Description("The specification of the operation of the WebLogic cluster. Required.")
-  @Nonnull
+  @NotNull
   private ClusterSpec spec = new ClusterSpec();
 
   /**

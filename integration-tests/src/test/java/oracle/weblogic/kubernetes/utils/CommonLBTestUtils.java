@@ -369,7 +369,6 @@ public class CommonLBTestUtils {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -379,8 +378,7 @@ public class CommonLBTestUtils {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .replicas(replicaCount)));
     setPodAntiAffinity(domain);
     return domain;
   }

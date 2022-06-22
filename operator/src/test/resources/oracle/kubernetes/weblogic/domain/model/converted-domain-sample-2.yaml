@@ -27,7 +27,6 @@ spec:
         cpu: 250m
         memory: 768Mi
   adminServer:
-    serverStartState: RUNNING
     serverPod:
       volumes:
       - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
@@ -65,7 +64,6 @@ spec:
   replicas: 1
   clusters:
   - clusterName: cluster-1
-    serverStartState: RUNNING
     serverPod:
       affinity:
         podAntiAffinity:

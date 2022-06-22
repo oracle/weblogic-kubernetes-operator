@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -683,12 +682,9 @@ class ItPodsRestart {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()

@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -435,8 +434,7 @@ class ItIstioManagedCoherence {
     for (int i = NUMBER_OF_CLUSTERS; i >= 1; i--) {
       clusterList.add(new Cluster()
           .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .replicas(replicaCount));
     }
 
     // create the domain CR
@@ -464,8 +462,6 @@ class ItIstioManagedCoherence {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
             .clusters(clusterList)
             .configuration(new Configuration()
                 .istio(new Istio()

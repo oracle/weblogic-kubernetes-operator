@@ -618,15 +618,13 @@ public class DomainUtils {
                     .mountPath("/u01/shared")
                     .name(pvName)))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .replicas(replicaCount)));
     setPodAntiAffinity(domain);
 
     return domain;
@@ -918,15 +916,13 @@ public class DomainUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE))

@@ -671,7 +671,6 @@ class ItTwoDomainsManagedByTwoOperators {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -681,8 +680,7 @@ class ItTwoDomainsManagedByTwoOperators {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .replicas(replicaCount)));
     setPodAntiAffinity(domain);
     return domain;
   }

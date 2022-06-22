@@ -384,12 +384,9 @@ public class IstioUtils {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)
@@ -440,8 +437,7 @@ public class IstioUtils {
    * @return AdminServer instance.
    */
   public static AdminServer createAdminServer() {
-    AdminServer adminServer = new AdminServer()
-        .serverStartState("RUNNING");
+    AdminServer adminServer = new AdminServer();
 
     if (!isLocalHostBindingsEnabled()) {
       adminServer.adminChannelPortForwardingEnabled(true);

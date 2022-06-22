@@ -8,7 +8,6 @@ import java.io.IOException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import org.hamcrest.MatcherAssert;
@@ -174,56 +173,6 @@ class DomainResourceBasicTest extends DomainTestBase {
     EffectiveServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), empty());
-  }
-
-  @Test
-  void whenSpecified_adminServerDesiredStateIsAsSpecified() {
-    configureAdminServer().withDesiredState(ServerStartState.ADMIN);
-
-    EffectiveServerSpec spec = domain.getAdminServerSpec();
-
-    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
-  }
-
-  @Test
-  void whenNotSpecified_adminServerDesiredStateIsRunning() {
-    EffectiveServerSpec spec = domain.getAdminServerSpec();
-
-    assertThat(spec.getDesiredState(), equalTo("RUNNING"));
-  }
-
-  @Test
-  void whenNotSpecified_managedServerDesiredStateIsRunning() {
-    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getDesiredState(), equalTo("RUNNING"));
-  }
-
-  @Test
-  void whenSpecified_managedServerDesiredStateIsAsSpecified() {
-    configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
-
-    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
-  }
-
-  @Test
-  void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
-    configureAdminServer().withDesiredState(ServerStartState.ADMIN);
-
-    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getDesiredState(), equalTo("RUNNING"));
-  }
-
-  @Test
-  void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
-    configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.ADMIN);
-
-    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
@@ -396,16 +345,6 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
-  void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
-    configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
-    configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.RUNNING);
-
-    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
-  }
-
-  @Test
   void whenSpecifiedOnServer_managedServerHasEnvironmentVariables() {
     configureServer(SERVER1)
         .withEnvironmentVariable(NAME1, VALUE1)
@@ -428,17 +367,6 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
-  void whenDesiredStateAdminAndSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
-    configureCluster(CLUSTER_NAME)
-        .withDesiredState(ServerStartState.ADMIN)
-        .withEnvironmentVariable("JAVA_OPTIONS", "value");
-
-    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getEnvironmentVariables(), hasItem(envVar("JAVA_OPTIONS", "value")));
-  }
-
-  @Test
   void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
     EffectiveServerSpec effectiveServerSpec = info.getServer("server1", null);
@@ -451,15 +379,6 @@ class DomainResourceBasicTest extends DomainTestBase {
                     envVar(
                         "USER_MEM_ARGS",
                         "-Djava.security.egd=file:/dev/./urandom "))));
-    assertThat(effectiveServerSpec.getDesiredState(), equalTo("RUNNING"));
-  }
-
-  @Test
-  void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
-    DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
-    EffectiveServerSpec effectiveServerSpec = info.getServer("server2", null);
-
-    assertThat(effectiveServerSpec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test

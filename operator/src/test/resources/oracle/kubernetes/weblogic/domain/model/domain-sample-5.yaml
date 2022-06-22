@@ -80,7 +80,6 @@ spec:
             image: busybox
             command: ['sh', '-c', 'echo managed server && sleep 120']
     - serverName: server2
-      serverStartState: ADMIN
       restartVersion: "3"
       serverPod:
         shutdown:

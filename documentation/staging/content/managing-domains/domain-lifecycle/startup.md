@@ -96,16 +96,6 @@ Servers configured as `Always` count toward the cluster's `replicas` count.
 If more servers are configured as `Always` than the cluster's `replicas` count, they will all be started and the `replicas` count will be exceeded.
 {{% /notice %}}
 
-### Server start state
-
-For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server instances
-so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
-field, which is available at domain, cluster, and server levels. When `serverStartState` is set to `ADMIN`, then servers will
-progress only to the administrative state.  Then you could use the WebLogic Server Administration Console, REST API, or a WLST script to make any necessary
-updates before advancing the server to the running state.
-
-Changes to the `serverStartState` property do not affect already started servers.
-
 ### Common starting and stopping scenarios
 
 #### Normal running state
