@@ -705,13 +705,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(DomainResource::getMetadata).orElse(null);
   }
 
-  @Override
-  public Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info) {
-    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
-    resources.addProcessing(processors);
-    return resources.createListSteps();
-  }
-
   public static class PopulatePacketServerMapsStep extends Step {
 
     @Override

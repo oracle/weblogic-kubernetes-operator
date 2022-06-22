@@ -23,6 +23,8 @@ import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -66,6 +68,11 @@ class DomainResourcesValidation {
       @Override
       public Consumer<DomainList> getDomainListProcessing() {
         return DomainResourcesValidation.this::addDomainList;
+      }
+
+      @Override
+      public Consumer<ClusterList> getClusterListProcessing() {
+        return DomainResourcesValidation.this::addClusterList;
       }
 
       @Override
@@ -131,8 +138,18 @@ class DomainResourcesValidation {
     getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
+  private void addClusterList(ClusterList list) {
+    list.getItems().forEach(this::addCluster);
+  }
+
+  private void addCluster(ClusterResource clusterResource) {
+    getDomainPresenceInfo(clusterResource.getDomainUid()).addClusterResource(clusterResource);
+  }
+
+
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
-    return Stream.concat(domainPresenceInfoMap.values().stream().filter(this::isStranded),
+    return Stream.concat(
+        domainPresenceInfoMap.values().stream().filter(this::isStranded),
         dp.findStrandedDomainPresenceInfos(namespace, domainPresenceInfoMap.keySet()));
   }
 

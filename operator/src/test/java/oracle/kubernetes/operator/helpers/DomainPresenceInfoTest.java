@@ -229,7 +229,9 @@ class DomainPresenceInfoTest {
     pod.spec(new V1PodSpec().nodeName("aNode"));
   }
 
-  // todo compute availability per cluster: how many servers need to be running, list of servers in cluster
+  // todo compute availability per cluster: how many servers need to be running, list of servers in
+  // cluster
+  // todo accept list of up-to-date clusters, remove any in info not in the list
 
   @Test
   void whenNoneDefined_getClusterResourceReturnsNull() {

@@ -31,9 +31,12 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -137,6 +141,42 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
                 .resourceVersion("1")
                 .creationTimestamp(SystemClock.now()))
         .withStatus(new DomainStatus());
+  }
+
+  @Test
+  void whenClustersMatchDomain_addToDomainPresenceInfo() {
+    DomainResource domain = createDomain(UID1, NS);
+    ClusterResource cluster1 = createClusterResource(UID1, NS, "cluster1");
+    ClusterResource cluster2 = createClusterResource(UID1, NS, "cluster2");
+    ClusterResource cluster3 = createClusterResource(UID1, "ns2", "cluster3");
+    testSupport.defineResources(domain, cluster1, cluster2, cluster3);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(info.getClusterResource("cluster1"), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource("cluster2"), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource("cluster3"), nullValue());
+  }
+
+  // todo when cluster added, add to info
+  // todo when cluster removed, remove from info
+  // todo when cluster modified, update info
+
+  // todo domain validation should use cluster resources, not cluster from domain spec
+  // todo unit tests should create cluster resources, not cluster in domain spec
+  // todo when upgrading from v8 domain, create cluster resource (WebHook) and tag as operator-created
+  // todo when deleting domain, also delete any operator-created clusters
+
+  // tell dp - here are the actual clusters that exist.
+  // dp goes through its active domains, remove clusters no longer present?
+
+  private ClusterResource createClusterResource(String uid, String namespace,
+      String clusterName) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
+        .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
   }
 
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap(DomainProcessorStub dp) {
