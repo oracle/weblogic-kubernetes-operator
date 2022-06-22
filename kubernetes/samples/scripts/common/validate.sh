@@ -139,7 +139,7 @@ function validateVersion {
 #
 function validateDomainUid {
   validateLowerCase "domainUID" "${domainUID}"
-  validateDNS1123LegalName domainUID "${domainUID}"
+  validateDNS1123LegalName "domainUID" "${domainUID}"
   validateWlsDomainName "domainUID" "${domainUID}"
 }
 
