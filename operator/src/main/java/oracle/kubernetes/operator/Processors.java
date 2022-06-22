@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 /**
@@ -65,6 +66,13 @@ public interface Processors {
    * Return the processing to be performed on a list of services found in Kubernetes. May be null.
    */
   default Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+    return null;
+  }
+
+  /**
+   * Return the processing to be performed on a list of clusters found in Kubernetes. May be null.
+   */
+  default Consumer<ClusterList> getClusterListProcessing() {
     return null;
   }
 

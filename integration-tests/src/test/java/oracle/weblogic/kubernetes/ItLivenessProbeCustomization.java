@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -605,8 +604,7 @@ class ItLivenessProbeCustomization {
     for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
       clusterList.add(new Cluster()
           .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .replicas(replicaCount));
     }
     // create the domain CR
     Domain domain = new Domain()
@@ -642,8 +640,6 @@ class ItLivenessProbeCustomization {
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
             .clusters(clusterList)
             .configuration(new Configuration()
                 .model(new Model()

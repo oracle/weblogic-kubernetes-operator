@@ -307,8 +307,9 @@ class DomainPresenceInfoTest {
   }
 
   @Test
-  void whenUnconfiguredClusterHasDefaultNumberOfReplicas_dontStartServer() {
+  void whenUnconfiguredClusterHasDefaultNumberOfReplicasAndDomainReplicasIs0_dontStartServer() {
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
+    domain.getSpec().setReplicas(0);
     final DomainPresenceInfo info = createDomainPresenceInfo(domain);
     assertThat(info.getServer("server1", "cls1").shouldStart(0), Is.is(false));
   }

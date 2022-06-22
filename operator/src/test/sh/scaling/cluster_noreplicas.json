@@ -4,8 +4,7 @@
   "spec": {
     "clusters": [
         {
-            "clusterName": "cluster-1",
-            "serverStartState": "RUNNING"
+            "clusterName": "cluster-1"
         }
     ],
     "dataHome": "",

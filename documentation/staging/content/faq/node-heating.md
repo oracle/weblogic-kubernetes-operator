@@ -17,7 +17,6 @@ Beginning with operator version 4.0, the operator adds the following content to 
 ```yaml
 clusters:
 - clusterName: cluster-1
-  serverStartState: "RUNNING"
   serverPod:
     affinity:
       podAntiAffinity:

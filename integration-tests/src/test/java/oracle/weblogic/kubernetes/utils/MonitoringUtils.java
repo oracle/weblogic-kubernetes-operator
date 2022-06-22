@@ -661,7 +661,6 @@ public class MonitoringUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -671,8 +670,7 @@ public class MonitoringUtils {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
                 .clusterName(cluster1Name)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -681,8 +679,7 @@ public class MonitoringUtils {
     if (twoClusters) {
       domain.getSpec().getClusters().add(new Cluster()
           .clusterName(cluster2Name)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .replicas(replicaCount));
     }
     setPodAntiAffinity(domain);
     // create domain using model in image

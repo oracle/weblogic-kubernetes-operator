@@ -606,16 +606,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private void updateEnvForStartupMode(List<V1EnvVar> env) {
-    Optional.ofNullable(getServerSpec())
-          .map(EffectiveServerSpec::getDesiredState)
-          .filter(this::isNotRunning)
-          .ifPresent(s -> addDefaultEnvVarIfMissing(env, "STARTUP_MODE", s));
     Optional.ofNullable(getDomain().getLivenessProbeCustomScript())
           .ifPresent(s -> addDefaultEnvVarIfMissing(env, "LIVENESS_PROBE_CUSTOM_SCRIPT", s));
-  }
-
-  private boolean isNotRunning(String desiredState) {
-    return !WebLogicConstants.RUNNING_STATE.equals(desiredState);
   }
 
   private void defineConfigOverride(List<V1EnvVar> env) {

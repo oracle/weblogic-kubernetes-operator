@@ -289,7 +289,6 @@ public class CommonMiiTestUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new oracle.weblogic.domain.AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
@@ -303,8 +302,7 @@ public class CommonMiiTestUtils {
       domain.spec()
           .addClustersItem(new oracle.weblogic.domain.Cluster()
               .clusterName(clusterName)
-              .replicas(replicaCount)
-              .serverStartState("RUNNING"));
+              .replicas(replicaCount));
     }
 
     domain.spec().setImagePullSecrets(secrets);
@@ -535,7 +533,6 @@ public class CommonMiiTestUtils {
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
                     .adminServer(new oracle.weblogic.domain.AdminServer()
-                            .serverStartState("RUNNING")
                             .adminService(new oracle.weblogic.domain.AdminService()
                                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                                             .channelName("default")
@@ -549,8 +546,7 @@ public class CommonMiiTestUtils {
       domain.spec()
               .addClustersItem(new oracle.weblogic.domain.Cluster()
                       .clusterName(clusterName)
-                      .replicas(replicaCount)
-                      .serverStartState("RUNNING"));
+                      .replicas(replicaCount));
     }
 
     domain.spec().setImagePullSecrets(secrets);
@@ -715,15 +711,13 @@ public class CommonMiiTestUtils {
                 .mountPath("/shared")
                 .name(pvName)))
         .adminServer(new AdminServer()
-            .serverStartState("RUNNING")
             .adminService(new AdminService()
                 .addChannelsItem(new Channel()
                     .channelName("default")
                     .nodePort(0))))
         .addClustersItem(new Cluster()
             .clusterName(clusterName)
-            .replicas(replicaCount)
-            .serverStartState("RUNNING"))
+            .replicas(replicaCount))
         .configuration(new Configuration()
             .secrets(securityList)
             .model(new Model()
@@ -1598,8 +1592,7 @@ public class CommonMiiTestUtils {
     for (int i = numOfClusters; i >= 1; i--) {
       Cluster cluster = new Cluster()
           .clusterName("cluster-" + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING");
+          .replicas(replicaCount);
 
       if (serverPodLabels != null) {
         cluster.serverPod(new ServerPod()
@@ -1646,8 +1639,6 @@ public class CommonMiiTestUtils {
                 .resources(new V1ResourceRequirements()
                     .requests(resourceRequest)
                     .limits(resourceLimit)))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
             .clusters(clusterList)
             .configuration(new Configuration()
                 .istio(new Istio()
@@ -1763,7 +1754,6 @@ public class CommonMiiTestUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .serverService(new ServerService()
                     .annotations(keyValueMap)
                     .labels(keyValueMap))
@@ -1776,8 +1766,7 @@ public class CommonMiiTestUtils {
                         .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")

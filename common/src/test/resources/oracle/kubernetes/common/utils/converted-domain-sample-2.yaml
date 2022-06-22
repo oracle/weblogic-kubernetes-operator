@@ -5,6 +5,7 @@ metadata:
   namespace: sample-domain1-ns
   labels:
     weblogic.domainUID: sample-domain1
+    weblogic.v8.preserved: '{"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"},"$.spec.adminServer":{"serverStartState":"RUNNING"}}'
 spec:
   domainHomeSourceType: FromModel
   domainHome: /u01/domains/sample-domain1
@@ -27,7 +28,6 @@ spec:
         cpu: 250m
         memory: 768Mi
   adminServer:
-    serverStartState: RUNNING
     serverPod:
       volumes:
       - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
@@ -65,7 +65,6 @@ spec:
   replicas: 1
   clusters:
   - clusterName: cluster-1
-    serverStartState: RUNNING
     serverPod:
       affinity:
         podAntiAffinity:
