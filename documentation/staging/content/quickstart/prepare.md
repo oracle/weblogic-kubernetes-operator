@@ -6,7 +6,7 @@ weight: 2
 ---
 
 
-1.  Create and label a namespace that can host one or more domains:
+1.  Create and label a namespace that can host one or more domains.
 
     ```shell
     $ kubectl create namespace sample-domain1-ns
@@ -15,7 +15,7 @@ weight: 2
     $ kubectl label ns sample-domain1-ns weblogic-operator=enabled
     ```
 
-1.  Configure Traefik to manage ingresses created in this namespace:
+1.  Configure Traefik to manage ingresses created in this namespace.
 
     ```shell
     $ helm upgrade traefik-operator traefik/traefik \
@@ -40,7 +40,7 @@ weight: 2
 
     d. Then read and accept the license agreement.
 
-1. Create a `docker-registry` secret to enable pulling the example WebLogic Server image from the registry:
+1. Create a `docker-registry` secret to enable pulling the example WebLogic Server image from the registry.
 
    ```shell
    $ kubectl create secret docker-registry weblogic-repo-credentials \
