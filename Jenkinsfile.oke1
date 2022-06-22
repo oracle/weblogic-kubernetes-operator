@@ -197,7 +197,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         FSS_DIR="/oketest"
-                        VCN_CIDR_PREFIX="10.0"
+                        VCN_CIDR_PREFIX="10.6"
                         OKE_CLUSTER_NAME="wktui-test"
                         NODE_SHAPE="VM.Standard2.4"
                         LINUX_VER="Oracle-Linux-7.4"
