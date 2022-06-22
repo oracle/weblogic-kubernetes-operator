@@ -11,6 +11,7 @@ import com.google.gson.GsonBuilder;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
 import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public class GsonBuilderUtils {
@@ -41,6 +42,14 @@ public class GsonBuilderUtils {
 
   public static Map<String, Object> writeDomainToMap(DomainResource domain) {
     return readMap(getGsonBuilder().toJson(domain, DomainResource.class));
+  }
+
+  public static ClusterResource readCluster(String resourceName) {
+    return getGsonBuilder().fromJson(resourceName, ClusterResource.class);
+  }
+
+  public static Map<String, Object> writeClusterToMap(ClusterResource cluster) {
+    return readMap(getGsonBuilder().toJson(cluster, ClusterResource.class));
   }
 
   public static String writeMap(Map<String, Object> map) {
