@@ -221,7 +221,7 @@ updateDomainHome() {
     count=`expr $count + 1`
     kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/update" | grep "wko-domain.yaml"
   done
-  kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
+  kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/update/wko-domain.yaml ${domainOutputDir}/domain.yaml
 
   # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
   # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
