@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1Subject;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -449,8 +448,6 @@ public class Domain {
     String decodedToken = new String(Base64.getDecoder().decode(secretToken));
     logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
-    
-    dumpLogs(domainUid);
 
     // build the curl command to scale the cluster
     String command = new StringBuffer()
@@ -482,28 +479,8 @@ public class Domain {
     testUntil(
         () -> Command.withParams(params).execute(),
         logger,
-        "Calling curl command");    
-    dumpLogs(domainUid);    
+        "Calling curl command");
     return true;
-  }
-  
-  private static void dumpLogs(String domainUid) {
-    LoggingFacade logger = getLogger();
-    try {
-      List<String> ns = Kubernetes.listNamespaces();
-      for (String n : ns) {
-        if (n.startsWith("ns-")) {
-          try {
-            oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, n);
-            logger.info(Yaml.dump(domain));
-          } catch (ApiException e) {
-            logger.warning(e.getMessage());
-          }
-        }
-      }
-    } catch (ApiException e) {
-      logger.warning(e.getMessage());
-    }
   }
 
   /**

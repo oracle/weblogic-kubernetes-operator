@@ -253,10 +253,6 @@ public class ItMiiDomainModelInPV {
 
     String domainUid = params.getKey();
     String image = params.getValue();
-    
-    if (domainUid.equals(domainUid1)) {
-      assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(5));
-    }
 
     // create domain custom resource and verify all the pods came up
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
@@ -265,8 +261,6 @@ public class ItMiiDomainModelInPV {
         image, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, clusterName);
     Model withModelHome = domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
-    logger.info(Yaml.dump(withModelHome));
-    logger.info(Yaml.dump(domainCR.spec().configuration()));
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
             .name(pvName)
@@ -280,7 +274,6 @@ public class ItMiiDomainModelInPV {
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     
     logger.info(Yaml.dump(domainCR));
-
     logger.info("Creating domain {0} with model in image {1} in namespace {2}",
         domainUid, image, domainNamespace);
     createVerifyDomain(domainUid, domainCR, adminServerPodName, managedServerPodNamePrefix);
@@ -292,6 +285,10 @@ public class ItMiiDomainModelInPV {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    
+    if (domainUid.equals(domainUid1)) {
+      assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(30));
+    }    
 
   }
 
