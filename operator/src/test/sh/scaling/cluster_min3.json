@@ -5,8 +5,7 @@
     "clusters": [
         {
             "clusterName": "cluster-1",
-            "replicas": 1,
-            "serverStartState": "RUNNING"
+            "replicas": 1
         }
     ],
     "dataHome": "",

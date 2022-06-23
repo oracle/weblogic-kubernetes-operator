@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
@@ -57,6 +58,7 @@ class NamespacedResources {
           getPodListSteps(),
           getServiceListSteps(),
           getPodDisruptionBudgetListSteps(),
+          getClusterListSteps(),
           getDomainListSteps(),
           new CompletionStep()
     );
@@ -132,6 +134,14 @@ class NamespacedResources {
 
   private Step createServiceListStep(List<Consumer<V1ServiceList>> processing) {
     return createSubResourceCallBuilder().listServiceAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getClusterListSteps() {
+    return getListProcessing(Processors::getClusterListProcessing).map(this::createClusterListSteps).orElse(null);
+  }
+
+  private Step createClusterListSteps(List<Consumer<ClusterList>> processing) {
+    return new CallBuilder().listClusterAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getDomainListSteps() {

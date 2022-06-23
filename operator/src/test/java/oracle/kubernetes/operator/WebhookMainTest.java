@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.junit.MatcherAssert;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +74,9 @@ import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_E
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -302,12 +306,25 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
     assertThat(getLabels(generatedConfiguration), hasEntry(CREATEDBYOPERATOR_LABEL, "true"));
     assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
-    assertThat(getRuleOperation(generatedConfiguration), equalTo(UPDATE));
     assertThat(getServiceName(generatedConfiguration), equalTo(WEBLOGIC_OPERATOR_WEBHOOK_SVC));
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
     assertThat(getServicePort(generatedConfiguration), equalTo(CONVERSION_WEBHOOK_HTTPS_PORT));
     assertThat(getServicePath(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_PATH));
   }
+
+  @Test
+  void whenValidatingWebhookCreated_foundExpectedRuleContents() {
+    testSupport.runSteps(main.createStartupSteps());
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getRules(generatedConfiguration).size(), equalTo(2));
+    assertThat(allRuleOperationsMatch(generatedConfiguration, UPDATE), equalTo(true));
+    assertThat(oneRuleForDomain(generatedConfiguration), equalTo(true));
+    assertThat(oneRuleForCluster(generatedConfiguration), equalTo(true));
+  }
+
 
   @Test
   void afterWebhookCreated_domainAndClusterCrdsExist() {
@@ -588,17 +605,52 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
         .orElse(null);
   }
 
-  @Nullable
-  private V1RuleWithOperations getFirstRule(V1ValidatingWebhookConfiguration configuration) {
-    return (V1RuleWithOperations) Optional.ofNullable(getFirstWebhook(configuration))
-        .map(V1ValidatingWebhook::getRules)
+  private List<V1RuleWithOperations> getRules(@Nonnull V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration))
+        .map(V1ValidatingWebhook::getRules).orElse(Collections.emptyList());
+  }
+
+  private boolean allRuleOperationsMatch(V1ValidatingWebhookConfiguration configuration, String operation) {
+    return getRules(configuration).stream().allMatch(r -> isOperationEquals(operation, r));
+  }
+
+  private boolean oneRuleForDomain(V1ValidatingWebhookConfiguration configuration) {
+    return oneRuleFor(configuration, DOMAIN_PLURAL);
+  }
+
+  private boolean oneRuleForCluster(V1ValidatingWebhookConfiguration configuration) {
+    return oneRuleFor(configuration, CLUSTER_PLURAL);
+  }
+
+  private boolean oneRuleFor(V1ValidatingWebhookConfiguration configuration, String resource) {
+    return getMatchRules(configuration, resource).size() == 1;
+  }
+
+  @NotNull
+  private List<V1RuleWithOperations> getMatchRules(V1ValidatingWebhookConfiguration configuration, String resource) {
+    return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).collect(Collectors.toList());
+  }
+
+  private boolean isOperationEquals(String operation, V1RuleWithOperations r) {
+    return operation.equals(getOperation(r));
+  }
+
+  private boolean isResourceEquals(String resource, V1RuleWithOperations r) {
+    return resource.equals(getResource(r));
+  }
+
+  private String getOperation(V1RuleWithOperations rule) {
+    return (String) Optional.ofNullable(rule)
+        .map(V1RuleWithOperations::getOperations)
         .map(this::getFirstElement)
         .orElse(null);
   }
 
-  private String getRuleOperation(V1ValidatingWebhookConfiguration configuration) {
-    return (String) Optional.ofNullable(getFirstRule(configuration))
-        .map(V1RuleWithOperations::getOperations).map(this::getFirstElement).orElse(null);
+  private String getResource(V1RuleWithOperations rule) {
+    return (String) Optional.ofNullable(rule)
+        .map(V1RuleWithOperations::getResources)
+        .map(this::getFirstElement)
+        .orElse(null);
   }
 
   private <T> Object getFirstElement(List<T> l) {

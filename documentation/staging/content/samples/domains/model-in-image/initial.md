@@ -545,11 +545,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #  name: weblogic-domain-storage-volume
 
       # The desired behavior for starting the domain's administration server.
-      adminServer:
-        # The serverStartState legal values are "RUNNING" or "ADMIN"
-        # "RUNNING" means the listed server will be started up to "RUNNING" mode
-        # "ADMIN" means the listed server will be start up to "ADMIN" mode
-        serverStartState: "RUNNING"
+      # adminServer:
         # Setup a Kubernetes node port for the administration server default channel
         #adminService:
         #  channels:
@@ -562,7 +558,6 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # The desired behavior for starting a specific cluster's member servers
       clusters:
       - clusterName: cluster-1
-        serverStartState: "RUNNING"
         replicas: 2
 
       # Change the `restartVersion` to force the introspector job to rerun
@@ -667,11 +662,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       #  name: weblogic-domain-storage-volume
 
     # The desired behavior for starting the domain's administration server.
-    adminServer:
-      # The serverStartState legal values are "RUNNING" or "ADMIN"
-      # "RUNNING" means the listed server will be started up to "RUNNING" mode
-      # "ADMIN" means the listed server will be start up to "ADMIN" mode
-      serverStartState: "RUNNING"
+    # adminServer:
       # Setup a Kubernetes node port for the administration server default channel
       #adminService:
       #  channels:
@@ -684,7 +675,6 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     # The desired behavior for starting a specific cluster's member servers
     clusters:
     - clusterName: cluster-1
-      serverStartState: "RUNNING"
       replicas: 2
 
     # Change the restartVersion to force the introspector job to rerun

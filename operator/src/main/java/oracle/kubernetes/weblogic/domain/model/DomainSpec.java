@@ -236,9 +236,9 @@ public class DomainSpec extends BaseConfiguration {
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
       + "because of their entries under `managedServers`, then a cluster may have more cluster members "
-      + "running than its `replicas` count. Defaults to 0.")
+      + "running than its `replicas` count. Defaults to 1.")
   @Range(minimum = 0)
-  @Default(intDefault = 0)
+  @Default(intDefault = 1)
   private Integer replicas;
 
   @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
@@ -760,7 +760,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return replicas
    */
   public int getReplicas() {
-    return Optional.ofNullable(replicas).orElse(0);
+    return Optional.ofNullable(replicas).orElse(1);
   }
 
   /**

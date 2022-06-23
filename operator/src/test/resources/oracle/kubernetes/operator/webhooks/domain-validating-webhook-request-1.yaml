@@ -24,14 +24,10 @@
         "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
       },
       "spec": {
-        "adminServer": {
-          "serverStartState": "RUNNING"
-        },
         "clusters": [
           {
             "clusterName": "cluster-1",
-            "replicas": 2,
-            "serverStartState": "RUNNING"
+            "replicas": 2
           }
         ],
         "domainHome": "/u01/domains/sample-domain1",
@@ -64,14 +60,10 @@
           "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
         },
         "spec": {
-          "adminServer": {
-            "serverStartState": "RUNNING"
-          },
           "clusters": [
             {
               "clusterName": "cluster-1",
-              "replicas": 2,
-              "serverStartState": "RUNNING"
+              "replicas": 2
             }
           ],
           "domainHome": "/u01/domains/sample-domain1",

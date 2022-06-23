@@ -8,6 +8,8 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import static oracle.kubernetes.operator.helpers.WebhookHelper.CLUSTER_RESOURCES;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 
@@ -124,11 +126,11 @@ public class AdmissionRequest {
   }
 
   public Object getExistingResource() {
-    return readDomain(writeMap(getOldObject()));
+    return isCluster() ? readCluster(writeMap(getOldObject())) : readDomain(writeMap(getOldObject()));
   }
 
   public Object getProposedResource() {
-    return readDomain(writeMap(getObject()));
+    return isCluster() ? readCluster(writeMap(getObject())) : readDomain(writeMap(getObject()));
   }
 
   @Override
@@ -141,5 +143,9 @@ public class AdmissionRequest {
         + ", object='" + object + '\''
         + ", oldObject='" + oldObject + '\''
         + '}';
+  }
+
+  public boolean isCluster() {
+    return resource.get("resource").equals(CLUSTER_RESOURCES);
   }
 }

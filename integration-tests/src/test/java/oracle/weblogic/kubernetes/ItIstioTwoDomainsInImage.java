@@ -13,7 +13,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -339,12 +338,9 @@ class ItIstioTwoDomainsInImage {
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING"))
                     .addClustersItem(new Cluster()
                             .clusterName(clusterName)
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
+                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS"))

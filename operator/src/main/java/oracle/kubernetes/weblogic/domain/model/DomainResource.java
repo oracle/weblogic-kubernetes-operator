@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -104,7 +105,7 @@ public class DomainResource implements KubernetesObject {
   @Expose
   @Valid
   @Description("The resource metadata. Must include the `name` and `namespace`. Required.")
-  @Nonnull
+  @NotNull
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
   /**
@@ -114,7 +115,7 @@ public class DomainResource implements KubernetesObject {
   @Expose
   @Valid
   @Description("The specification of the operation of the WebLogic domain. Required.")
-  @Nonnull
+  @NotNull
   private DomainSpec spec = new DomainSpec();
 
   /**

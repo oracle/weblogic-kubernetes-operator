@@ -4,8 +4,9 @@ date: 2019-02-22T15:44:42-05:00
 draft: false
 weight: 3
 ---
+#### Create the domain using a domain resource.
 
-1. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain:
+1. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain.
 
     ```shell
     $ kubectl create secret generic sample-domain1-weblogic-credentials \
@@ -17,7 +18,7 @@ weight: 3
    that the password must be at least 8 characters long and must contain at least one non-alphabetical character.
 
 
-1. Create a domain runtime encryption secret using the following command:
+1. Create a domain runtime encryption secret.
 
     ```shell
     $ kubectl -n sample-domain1-ns create secret generic \
@@ -29,7 +30,7 @@ weight: 3
 
 1. Create the `sample-domain1` domain using a domain resource. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-   - Use the following command to apply the sample domain resource:
+   - Use the following command to apply the sample domain resource.
 
      ```shell
      $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
@@ -49,7 +50,7 @@ weight: 3
 
 1.	Confirm that the operator started the servers for the domain.
 
-    a. Use `kubectl` to show that the Domain was created:
+    a. Use `kubectl` to show that the Domain was created.
 
     ```shell
     $ kubectl describe domain sample-domain1 -n sample-domain1-ns
@@ -78,11 +79,13 @@ weight: 3
 
    	 If the operator didn't start the servers for the domain, see [Domain debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
+#### Create an ingress route for the domain.
+
 1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
 
-    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
+    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar.
 
-    b. Then apply the file using:
+    b. Then apply the file using the following command.
     ```shell
     $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
       --namespace sample-domain1-ns

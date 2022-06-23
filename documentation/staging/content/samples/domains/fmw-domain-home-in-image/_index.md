@@ -295,10 +295,6 @@ spec:
 
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-    # serverStartState legal values are "RUNNING" or "ADMIN"
-    # "RUNNING" means the listed server will be started up to "RUNNING" mode
-    # "ADMIN" means the listed server will be start up to "ADMIN" mode
-    serverStartState: "RUNNING"
     adminService:
       channels:
     # The Admin Server's NodePort
@@ -316,22 +312,6 @@ spec:
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
   - clusterName: cluster-1
-    serverStartState: "RUNNING"
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
     replicas: 1
   # The number of managed servers to start for unlisted clusters
   # replicas: 1

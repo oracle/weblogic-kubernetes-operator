@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -96,12 +95,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy) {
     getDomainSpec().setServerStartPolicy(startPolicy);
-    return this;
-  }
-
-  @Override
-  public DomainConfigurator withServerStartState(ServerStartState startState) {
-    getDomainSpec().setServerStartState(startState);
     return this;
   }
 
@@ -487,12 +480,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withDesiredState(ServerStartState desiredState) {
-      server.setServerStartState(desiredState);
-      return this;
-    }
-
-    @Override
     public ServerConfigurator withEnvironmentVariable(String name, String value) {
       server.addEnvironmentVariable(name, value);
       return this;
@@ -502,11 +489,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     public ServerConfigurator withEnvironmentVariable(V1EnvVar envVar) {
       server.addEnvironmentVariable(envVar);
       return this;
-    }
-
-    @Override
-    public ServerConfigurator withServerStartState(ServerStartState state) {
-      return withDesiredState(state);
     }
 
     @Override
@@ -687,20 +669,9 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withDesiredState(ServerStartState state) {
-      clusterSpec.setServerStartState(state);
-      return this;
-    }
-
-    @Override
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       clusterSpec.addEnvironmentVariable(name, value);
       return this;
-    }
-
-    @Override
-    public ClusterConfigurator withServerStartState(ServerStartState state) {
-      return withDesiredState(state);
     }
 
     @Override

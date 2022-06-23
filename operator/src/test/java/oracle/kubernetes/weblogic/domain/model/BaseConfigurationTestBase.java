@@ -7,7 +7,6 @@ import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -46,21 +45,6 @@ public abstract class BaseConfigurationTestBase {
   void whenEnvironmentsDiffer_objectsAreNotEqual() {
     instance1.setEnv(Arrays.asList(env("a", "b"), env("c", "d")));
     instance2.addEnvironmentVariable("a", "b");
-
-    assertThat(instance1, not(equalTo(instance2)));
-  }
-
-  @Test
-  void whenServerStartStatesAreSame_objectsAreEqual() {
-    instance1.setServerStartState(ServerStartState.ADMIN);
-    instance2.setServerStartState(ServerStartState.ADMIN);
-
-    assertThat(instance1, equalTo(instance2));
-  }
-
-  @Test
-  void whenServerStartStatesDiffer_objectsAreNotEqual() {
-    instance1.setServerStartState(ServerStartState.ADMIN);
 
     assertThat(instance1, not(equalTo(instance2)));
   }

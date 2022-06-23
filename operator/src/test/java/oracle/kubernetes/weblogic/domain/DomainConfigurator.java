@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -314,14 +313,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy);
-
-  /**
-   * Sets the server start state ("RUNNING" or "ADMIN") for the domain.
-   *
-   * @param startState the server start state
-   * @return this object
-   */
-  public abstract DomainConfigurator withServerStartState(ServerStartState startState);
 
   /**
    * Add an environment variable with the given name and value to the domain.

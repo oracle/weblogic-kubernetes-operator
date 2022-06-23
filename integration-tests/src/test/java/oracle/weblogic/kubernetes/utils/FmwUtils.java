@@ -87,15 +87,13 @@ public class FmwUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .opss(new Opss()
                     .walletPasswordSecret(opssWalletPasswordSecretName))
@@ -179,12 +177,9 @@ public class FmwUtils {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                .replicas(replicaCount))
             .configuration(new Configuration()
                 .opss(new Opss()
                     .walletPasswordSecret(opssWalletPasswordSecretName))
@@ -259,7 +254,6 @@ public class FmwUtils {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -269,8 +263,7 @@ public class FmwUtils {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .replicas(replicaCount)));
 
     return domain;
   }

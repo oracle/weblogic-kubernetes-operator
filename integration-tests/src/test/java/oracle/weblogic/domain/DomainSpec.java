@@ -207,17 +207,15 @@ public class DomainSpec {
   @ApiModelProperty("Configuration for the clusters.")
   private List<Cluster> clusters = new ArrayList<>();
 
+  @ApiModelProperty("Experimental feature configurations.")
+  private Experimental experimental;
+
   @ApiModelProperty("Configuration affecting server pods.")
   private ServerPod serverPod;
 
   @ApiModelProperty(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   private ServerService serverService;
-
-  @ApiModelProperty(
-      "The state in which the server is to be started. Use ADMIN if server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
 
   @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
@@ -644,6 +642,23 @@ public class DomainSpec {
     this.clusters = clusters;
   }
 
+  public DomainSpec experimental(Experimental experimental) {
+    this.experimental = experimental;
+    return this;
+  }
+
+  public Experimental experimental() {
+    return experimental;
+  }
+
+  public Experimental getExperimental() {
+    return experimental;
+  }
+
+  public void setExperimental(Experimental experimental) {
+    this.experimental = experimental;
+  }
+
   public DomainSpec serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
@@ -676,23 +691,6 @@ public class DomainSpec {
 
   public void setServerService(ServerService serverService) {
     this.serverService = serverService;
-  }
-
-  public DomainSpec serverStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-    return this;
-  }
-
-  public String serverStartState() {
-    return serverStartState;
-  }
-
-  public String getServerStartState() {
-    return serverStartState;
-  }
-
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
   }
 
   public DomainSpec restartVersion(String restartVersion) {
@@ -768,7 +766,7 @@ public class DomainSpec {
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
-            .append("serverStartState", serverStartState)
+            .append("experimental", experimental)
             .append("serverPod", serverPod)
             .append("serverService", serverService)
             .append("restartVersion", restartVersion)
@@ -804,9 +802,9 @@ public class DomainSpec {
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
+            .append(experimental)
             .append(serverPod)
             .append(serverService)
-            .append(serverStartState)
             .append(restartVersion)
             .append(monitoringExporter)
             .append(fluentdSpecification);
@@ -848,9 +846,9 @@ public class DomainSpec {
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
+            .append(experimental, rhs.experimental)
             .append(serverPod, rhs.serverPod)
             .append(serverService, rhs.serverService)
-            .append(serverStartState, rhs.serverStartState)
             .append(restartVersion, rhs.restartVersion)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(fluentdSpecification, rhs.fluentdSpecification);
