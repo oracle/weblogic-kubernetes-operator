@@ -209,7 +209,7 @@ function createDomainHome {
   # When using WDT to create a domain, a job to create a domain is started. It then creates
   # a pod which will run a script that creates a domain. The script then will extract the domain
   # resource using  WDT's extractDomainResource tool. So, the following code loops until the
-  # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
+  # domain resource is created by exec'ing into the pod to look for the presence of wko-domain.yaml file.
 
   if [ "$useWdt" = true ]; then
     POD_NAME=$(getPodName "${JOB_NAME}" "${namespace}")
@@ -219,16 +219,16 @@ function createDomainHome {
     sleep 30
     max=30
     count=0
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/create" | grep "wko-domain.yaml"
     while [ $? -eq 1 -a $count -lt $max ]; do
       sleep 5
       count=`expr $count + 1`
-      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/create" | grep "wko-domain.yaml"
     done
-    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/create/wko-domain.yaml ${domainOutputDir}/domain.yaml
 
-    # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
-    # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
+    # The pod waits for this script to copy the domain resource yaml (wko-domain.yaml) out of the pod and into
+    # the output directory as domain.yaml. To let the pod know that wko-domain.yaml has been copied, a file called
     # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
 
     touch doneExtract
