@@ -102,7 +102,8 @@ public class SchemaConversionUtils {
     adjustReplicasDefault(spec, apiVersion);
 
     Map<String, Object> toBePreserved = new HashMap<>();
-    convertServerStartState(spec, toBePreserved);
+    removeAndPreserveServerStartState(spec, toBePreserved);
+    removeAndPreserveIstio(spec, toBePreserved);
 
     try {
       preserve(domain, toBePreserved, apiVersion);
@@ -512,7 +513,16 @@ public class SchemaConversionUtils {
     }
   }
 
-  private void convertServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+  private void removeAndPreserveIstio(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+    Optional.ofNullable(getConfiguration(spec)).ifPresent(configuration -> {
+      Object existing = configuration.remove("istio");
+      if (existing != null) {
+        toBePreserved.put("$.spec.configuration", Map.of("istio", existing));
+      }
+    });
+  }
+
+  private void removeAndPreserveServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     removeAndPreserveServerStartState(spec, toBePreserved, "$.spec");
     Optional.ofNullable(getAdminServer(spec)).ifPresent(
         as -> removeAndPreserveServerStartState(as, toBePreserved, "$.spec.adminServer"));
@@ -522,6 +532,14 @@ public class SchemaConversionUtils {
         removeAndPreserveServerStartStateForManagedServer((Map<String, Object>) managedServer, toBePreserved)));
   }
 
+  private void removeAndPreserveServerStartState(Map<String, Object> spec,
+                                                 Map<String, Object> toBePreserved, String scope) {
+    Object existing = spec.remove("serverStartState");
+    if (existing != null) {
+      toBePreserved.put(scope, Map.of("serverStartState", existing));
+    }
+  }
+  
   private void removeAndPreserveServerStartStateForCluster(Map<String, Object> cluster,
                                                  Map<String, Object> toBePreserved) {
     Object name = cluster.get("clusterName");
@@ -536,14 +554,6 @@ public class SchemaConversionUtils {
     if (name != null) {
       removeAndPreserveServerStartState(
           managedServer, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')]");
-    }
-  }
-
-  private void removeAndPreserveServerStartState(Map<String, Object> spec,
-                                                 Map<String, Object> toBePreserved, String scope) {
-    Object existing = spec.remove("serverStartState");
-    if (existing != null) {
-      toBePreserved.put(scope, Map.of("serverStartState", existing));
     }
   }
 
