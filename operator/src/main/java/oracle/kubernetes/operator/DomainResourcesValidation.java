@@ -5,8 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -37,6 +39,7 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private final Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+  private ClusterList upToDateClusterNames;
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
@@ -77,11 +80,27 @@ class DomainResourcesValidation {
 
       @Override
       public void completeProcessing(Packet packet) {
-        DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-        getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        DomainProcessor dp =
+            Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
+        getStrandedDomainPresenceInfos(dp)
+            .forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        if (upToDateClusterNames != null) {
+          getActiveDomainPresenceInfos()
+              .forEach(info -> removeInactiveClusterResources(upToDateClusterNames, info));
+        }
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
+  }
+
+  private void removeInactiveClusterResources(ClusterList clusters, DomainPresenceInfo info) {
+    Set<String> clusterNames = clusters.getItems().stream().filter(c -> isForDomain(c, info))
+        .map(c -> c.getSpec().getClusterName()).collect(Collectors.toSet());
+    info.removeInactiveClusterResources(clusterNames);
+  }
+
+  private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
+    return clusterResource.getDomainUid().equals(info.getDomainUid());
   }
 
   private void addPodList(V1PodList list) {
@@ -139,6 +158,7 @@ class DomainResourcesValidation {
   }
 
   private void addClusterList(ClusterList list) {
+    upToDateClusterNames = list;
     list.getItems().forEach(this::addCluster);
   }
 

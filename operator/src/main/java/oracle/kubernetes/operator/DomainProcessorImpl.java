@@ -613,17 +613,17 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
-    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getSpec().getClusterName(),
+    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
         cluster.getDomainUid());
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
-    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getSpec().getClusterName(),
+    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
         cluster.getDomainUid());
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
-    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getSpec().getClusterName(),
+    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(),
         cluster.getDomainUid());
   }
 

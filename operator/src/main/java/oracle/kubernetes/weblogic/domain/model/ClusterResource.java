@@ -70,7 +70,7 @@ public class ClusterResource implements KubernetesObject {
   @Description("The current status of the operation of the WebLogic cluster. Updated automatically by the operator.")
   private ClusterStatus status;
 
-  String getClusterName() {
+  public String getClusterName() {
     return Optional.ofNullable(spec.getClusterName()).orElse(getMetadata().getName());
   }
 

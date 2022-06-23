@@ -840,8 +840,15 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   public ClusterResource removeClusterResource(String clusterName) {
-    return Optional.ofNullable(clusterName)
-        .map(clusters::remove).orElse(null);
+    return Optional.ofNullable(clusterName).map(clusters::remove).orElse(null);
+  }
+
+  /**
+   * Removes references to any cluster resources whose names are not in the active list.
+   * @param activeClusterNames list of active cluster resource names.
+   */
+  public void removeInactiveClusterResources(Set<String> activeClusterNames) {
+    clusters.entrySet().removeIf(e -> !activeClusterNames.contains(e.getKey()));
   }
 
   /**

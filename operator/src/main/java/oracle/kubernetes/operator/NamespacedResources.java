@@ -58,8 +58,8 @@ class NamespacedResources {
           getPodListSteps(),
           getServiceListSteps(),
           getPodDisruptionBudgetListSteps(),
-          getClusterListSteps(),
           getDomainListSteps(),
+          getClusterListSteps(),
           new CompletionStep()
     );
   }

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Stub;
@@ -42,6 +43,10 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainPresenceInfoTest {
+
+  public static final String CLUSTER_1 = "cluster1";
+  public static final String CLUSTER_2 = "cluster2";
+  public static final String CLUSTER_3 = "cluster3";
   private static final String[] MANAGED_SERVER_NAMES = {"ms1", "ms2", "ms3"};
   private static final List<ServerStartupInfo> STARTUP_INFOS = Arrays.stream(MANAGED_SERVER_NAMES)
         .map(DomainPresenceInfoTest::toServerStartupInfo)
@@ -234,6 +239,19 @@ class DomainPresenceInfoTest {
   // todo accept list of up-to-date clusters, remove any in info not in the list
 
   @Test
+  void whenListClusterResources_removeStrandedClustersFromDomainPresenceInfo() {
+    for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
+      info.addClusterResource(createClusterResource(clusterName, DOMAIN_UID));
+    }
+
+    info.removeInactiveClusterResources(Set.of(CLUSTER_1, CLUSTER_3));
+
+    assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
+    assertThat(info.getClusterResource(CLUSTER_2), nullValue());
+    assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+  }
+
+  @Test
   void whenNoneDefined_getClusterResourceReturnsNull() {
     assertThat(info.getClusterResource("cluster-1"), nullValue());
   }
@@ -248,7 +266,7 @@ class DomainPresenceInfoTest {
     assertThat(info.getClusterResource(clusterName).getDomainUid(), equalTo(DOMAIN_UID));
   }
 
-  @Test
+  @Test // todo do we need there?
   void afterRemoveClusterResource_verifyClusterResourceIsNull() {
     final String clusterName = "cluster-1";
     final DomainResource domain = createDomain(NAMESPACE, DOMAIN_UID);
@@ -259,7 +277,7 @@ class DomainPresenceInfoTest {
     assertThat(info.getClusterResource(clusterName), nullValue());
   }
 
-  @Test
+  @Test // todo do we need there?
   void whenClusterResourceNotDefined_removeReturnsNull() {
     final String clusterName = "cluster-1";
     ClusterResource clusterResource = info.removeClusterResource(clusterName);
