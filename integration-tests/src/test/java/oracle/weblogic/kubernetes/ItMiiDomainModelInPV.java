@@ -286,9 +286,8 @@ public class ItMiiDomainModelInPV {
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     
-    if (domainUid.equals(domainUid1)) {
-      assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(30));
-    }    
+    
+    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(30));
 
   }
 
