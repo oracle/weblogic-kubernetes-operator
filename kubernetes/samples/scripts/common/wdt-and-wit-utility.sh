@@ -212,7 +212,7 @@ run_wdt() {
   cmd="
   $wdt_bin_dir/extractDomainResource.sh
      -oracle_home $oracle_home
-     -domain_resource_file domain${action}.yaml
+     -output_file domain${action}.yaml
      -domain_home $domain_home_dir
      -model_file $model_final
      -variable_file $inputs_final
