@@ -262,12 +262,18 @@ class OfflineWlstEnv(object):
     ret = None
     try:
       cd('/Cluster/' + cluster.getName() + '/DynamicServers')
-      childNodes = ls(returnMap='true', returnType='c')
-      if not childNodes.isEmpty():
-        cd(childNodes[0])
-        ret = cmo
+      # DynamicServers MBean can be found under
+      # /Cluster/<clusterName>/DynamicServers/<clusterName>/
+      # or
+      # /Cluster/<clusterName>/DynamicServers/NO_NAME_0/
+      childObjs = ls(returnMap='true', returnType='c')
+      if not childObjs.isEmpty():
+        cd(childObjs[0])
+        if get('ServerTemplate') is not None:
+          # Cluster is a dynamic cluster if a ServerTemplate MBean is found
+          ret = cmo
     except:
-      trace("Ignoring getDynamicServers() exception, this is expected.")
+      trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
     return ret;
 
   def addGeneratedFile(self, filePath):
