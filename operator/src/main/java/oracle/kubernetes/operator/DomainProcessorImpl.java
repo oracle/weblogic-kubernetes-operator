@@ -55,6 +55,7 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
@@ -322,11 +323,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void unregisterEventK8SObject(String ns, String domainUid) {
-    Optional.ofNullable(domainEventK8SObjects.get(ns)).map(m -> m.remove(domainUid));
+    Optional.ofNullable(domainEventK8SObjects.get(ns)).ifPresent(m -> m.remove(domainUid));
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUid) {
-    Optional.ofNullable(domains.get(ns)).map(m -> m.remove(domainUid));
+    Optional.ofNullable(domains.get(ns)).ifPresent(m -> m.remove(domainUid));
   }
 
   @Override
@@ -588,6 +589,44 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       }
     }
   }
+
+  /**
+   * Dispatch the Cluster event to the appropriate handler.
+   *
+   * @param item An item received from a Watch response.
+   */
+  public void dispatchClusterWatch(Watch.Response<ClusterResource> item) {
+    switch (item.type) {
+      case ADDED:
+        handleAddedCluster(item.object);
+        break;
+      case MODIFIED:
+        handleModifiedCluster(item.object);
+        break;
+      case DELETED:
+        handleDeletedCluster(item.object);
+        break;
+
+      case ERROR:
+      default:
+    }
+  }
+
+  private void handleAddedCluster(ClusterResource cluster) {
+    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getSpec().getClusterName(),
+        cluster.getDomainUid());
+  }
+
+  private void handleModifiedCluster(ClusterResource cluster) {
+    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getSpec().getClusterName(),
+        cluster.getDomainUid());
+  }
+
+  private void handleDeletedCluster(ClusterResource cluster) {
+    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getSpec().getClusterName(),
+        cluster.getDomainUid());
+  }
+
 
   /**
    * Dispatch the Domain event to the appropriate handler.

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 146b956ab8e3159fb98cc751d72aa542b941e5d3972a8cff704506f9353c8b42
+    weblogic.sha256: e95b0224af894664c76646ffbc3082481ecac49716b147cbd089b8c9fe7258fd
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -585,15 +585,6 @@ spec:
                   which channels or network access points should be exposed using
                   a NodePort Service.
                 properties:
-                  serverStartState:
-                    default: RUNNING
-                    description: The WebLogic runtime state in which the server is
-                      to be started. Use ADMIN if the server should start in the admin
-                      state. Defaults to RUNNING.
-                    enum:
-                    - RUNNING
-                    - ADMIN
-                    type: string
                   serverService:
                     description: Customization affecting the generation of ClusterIP
                       Services for WebLogic Server instances.
@@ -3124,8 +3115,9 @@ spec:
                             type: boolean
                         type: object
                       affinity:
-                        description: If specified, the Pod's scheduling constraints.
-                          See `kubectl explain pods.spec.affinity`
+                        description: 'The Pod''s scheduling constraints. More info:
+                          https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                          `kubectl explain pods.spec.affinity`.'
                         properties:
                           nodeAffinity:
                             properties:
@@ -3562,8 +3554,6 @@ spec:
                                 If not specified, defaults to the port defined by
                                 the WebLogic channel.
                               type: integer
-                          required:
-                          - channelName
                         type: array
                       annotations:
                         additionalProperties:
@@ -3617,52 +3607,6 @@ spec:
                 items:
                   type: object
                   properties:
-                    serverStartState:
-                      default: RUNNING
-                      description: The WebLogic runtime state in which the server
-                        is to be started. Use ADMIN if the server should start in
-                        the admin state. Defaults to RUNNING.
-                      type: string
-                      enum:
-                      - RUNNING
-                      - ADMIN
-                    replicas:
-                      description: The number of cluster member Managed Server instances
-                        to start for this WebLogic cluster. The operator will sort
-                        cluster member Managed Server names from the WebLogic domain
-                        configuration by normalizing any numbers in the Managed Server
-                        name and then sorting alphabetically. This is done so that
-                        server names such as "managed-server10" come after "managed-server9".
-                        The operator will then start Managed Server instances from
-                        the sorted list, up to the `replicas` count, unless specific
-                        Managed Servers are specified as starting in their entry under
-                        the `managedServers` field. In that case, the specified Managed
-                        Server instances will be started and then additional cluster
-                        members will be started, up to the `replicas` count, by finding
-                        further cluster members in the sorted list that are not already
-                        started. If cluster members are started because of their related
-                        entries under `managedServers`, then this cluster may have
-                        more cluster members running than its `replicas` count. Defaults
-                        to `spec.replicas`, which defaults 0.
-                      type: integer
-                      minimum: 0
-                    domainUID:
-                      description: Domain unique identifier. This domainUID is used
-                        to identify the Domain to which this Cluster is associated
-                        with.
-                      type: string
-                    serverStartPolicy:
-                      description: 'The strategy for deciding whether to start a WebLogic
-                        Server instance. Legal values are `Never`, or `IfNeeded`.
-                        Defaults to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
-                      type: string
-                      enum:
-                      - Never
-                      - IfNeeded
-                    restartVersion:
-                      description: 'Changes to this field cause the operator to restart
-                        WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
-                      type: string
                     serverService:
                       description: Customization affecting the generation of ClusterIP
                         Services for WebLogic Server instances.
@@ -3689,6 +3633,26 @@ spec:
                         be temporarily unavailable. Defaults to 1.
                       type: integer
                       minimum: 1
+                    replicas:
+                      description: The number of cluster member Managed Server instances
+                        to start for this WebLogic cluster. The operator will sort
+                        cluster member Managed Server names from the WebLogic domain
+                        configuration by normalizing any numbers in the Managed Server
+                        name and then sorting alphabetically. This is done so that
+                        server names such as "managed-server10" come after "managed-server9".
+                        The operator will then start Managed Server instances from
+                        the sorted list, up to the `replicas` count, unless specific
+                        Managed Servers are specified as starting in their entry under
+                        the `managedServers` field. In that case, the specified Managed
+                        Server instances will be started and then additional cluster
+                        members will be started, up to the `replicas` count, by finding
+                        further cluster members in the sorted list that are not already
+                        started. If cluster members are started because of their related
+                        entries under `managedServers`, then this cluster may have
+                        more cluster members running than its `replicas` count. Defaults
+                        to `spec.replicas`, which defaults 1.
+                      type: integer
+                      minimum: 0
                     clusterName:
                       description: The name of the cluster. This value must match
                         the name of a WebLogic cluster already defined in the WebLogic
@@ -6222,8 +6186,9 @@ spec:
                                 only. Defaults to false.
                               type: boolean
                         affinity:
-                          description: If specified, the Pod's scheduling constraints.
-                            See `kubectl explain pods.spec.affinity`
+                          description: 'The Pod''s scheduling constraints. More info:
+                            https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                            `kubectl explain pods.spec.affinity`.'
                           type: object
                           properties:
                             nodeAffinity:
@@ -6602,6 +6567,11 @@ spec:
                                     required:
                                     - podAffinityTerm
                                     - weight
+                    domainUID:
+                      description: Domain unique identifier. This domainUID is used
+                        to identify the Domain to which this Cluster is associated
+                        with.
+                      type: string
                     clusterService:
                       description: Customization affecting Kubernetes Service generated
                         for this WebLogic cluster.
@@ -6636,6 +6606,14 @@ spec:
                         which defaults to 1.
                       type: integer
                       minimum: 0
+                    serverStartPolicy:
+                      description: 'The strategy for deciding whether to start a WebLogic
+                        Server instance. Legal values are `Never`, or `IfNeeded`.
+                        Defaults to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
+                      type: string
+                      enum:
+                      - Never
+                      - IfNeeded
                     maxConcurrentStartup:
                       description: The maximum number of Managed Servers instances
                         that the operator will start in parallel for this cluster
@@ -6646,16 +6624,11 @@ spec:
                         Server instances will start in parallel. Defaults to 0.
                       type: integer
                       minimum: 0
+                    restartVersion:
+                      description: 'Changes to this field cause the operator to restart
+                        WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
+                      type: string
                 type: array
-              serverStartState:
-                default: RUNNING
-                description: The WebLogic runtime state in which the server is to
-                  be started. Use ADMIN if the server should start in the admin state.
-                  Defaults to RUNNING.
-                enum:
-                - RUNNING
-                - ADMIN
-                type: string
               image:
                 description: The WebLogic Server image; required when `domainHomeSourceType`
                   is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
@@ -6679,7 +6652,7 @@ spec:
                 minimum: 0
                 type: integer
               replicas:
-                default: 0
+                default: 1
                 description: The default number of cluster member Managed Server instances
                   to start for each WebLogic cluster in the domain configuration,
                   unless `replicas` is specified for that cluster under the `clusters`
@@ -6696,7 +6669,7 @@ spec:
                   the sorted list that are not already started. If cluster members
                   are started because of their entries under `managedServers`, then
                   a cluster may have more cluster members running than its `replicas`
-                  count. Defaults to 0.
+                  count. Defaults to 1.
                 minimum: 0
                 type: integer
               maxClusterConcurrentShutdown:
@@ -9270,8 +9243,8 @@ spec:
                         type: boolean
                     type: object
                   affinity:
-                    description: If specified, the Pod's scheduling constraints. See
-                      `kubectl explain pods.spec.affinity`
+                    description: 'The Pod''s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                      `kubectl explain pods.spec.affinity`.'
                     properties:
                       nodeAffinity:
                         properties:
@@ -9661,15 +9634,6 @@ spec:
                 items:
                   type: object
                   properties:
-                    serverStartState:
-                      default: RUNNING
-                      description: The WebLogic runtime state in which the server
-                        is to be started. Use ADMIN if the server should start in
-                        the admin state. Defaults to RUNNING.
-                      type: string
-                      enum:
-                      - RUNNING
-                      - ADMIN
                     serverService:
                       description: Customization affecting the generation of ClusterIP
                         Services for WebLogic Server instances.
@@ -12216,8 +12180,9 @@ spec:
                                 only. Defaults to false.
                               type: boolean
                         affinity:
-                          description: If specified, the Pod's scheduling constraints.
-                            See `kubectl explain pods.spec.affinity`
+                          description: 'The Pod''s scheduling constraints. More info:
+                            https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See
+                            `kubectl explain pods.spec.affinity`.'
                           type: object
                           properties:
                             nodeAffinity:
@@ -12610,8 +12575,6 @@ spec:
                       description: 'Changes to this field cause the operator to restart
                         WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
                       type: string
-                  required:
-                  - serverName
                 type: array
             type: object
           status:

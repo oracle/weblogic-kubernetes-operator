@@ -50,6 +50,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
@@ -81,6 +82,8 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -94,7 +97,10 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.common.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
+import static oracle.kubernetes.common.logging.MessageKeys.WATCH_CLUSTER;
+import static oracle.kubernetes.common.logging.MessageKeys.WATCH_CLUSTER_DELETED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -112,6 +118,7 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -1182,7 +1189,8 @@ class DomainProcessorTest {
       domainSetup.accept(domain);
       domainSetup.accept(newDomain);
     }
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withAffinity(getDefaultAntiAffinity());
+    configureDomain(domain).configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withAffinity(getDefaultAntiAffinity());
     defineServerResources(ADMIN_NAME);
     for (Integer i : msNumbers) {
       defineServerResources(getManagedServerName(i));
@@ -2028,5 +2036,35 @@ class DomainProcessorTest {
 
   private List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
+  }
+
+  @Test
+  void whenClusterResourceAdded_verifyDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
+    ClusterResource clusterResource = new ClusterResource().spec(new ClusterSpec()
+        .withClusterName(CLUSTER).withDomainUid(UID));
+    Response<ClusterResource> item = new Response<>("ADDED", clusterResource);
+    processor.dispatchClusterWatch(item);
+    assertThat(logRecords, containsInfo(WATCH_CLUSTER));
+  }
+
+  @Test
+  void whenClusterResourceModified_verifyDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    ClusterResource clusterResource = new ClusterResource().spec(new ClusterSpec()
+        .withClusterName(CLUSTER).withDomainUid(UID));
+    Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource);
+    processor.dispatchClusterWatch(item);
+    assertThat(logRecords, containsFine(WATCH_CLUSTER));
+  }
+
+  @Test
+  void whenClusterResourceDeleted_verifyDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
+    ClusterResource clusterResource = new ClusterResource().spec(new ClusterSpec()
+        .withClusterName(CLUSTER).withDomainUid(UID));
+    Response<ClusterResource> item = new Response<>("DELETED", clusterResource);
+    processor.dispatchClusterWatch(item);
+    assertThat(logRecords, containsInfo(WATCH_CLUSTER_DELETED));
   }
 }

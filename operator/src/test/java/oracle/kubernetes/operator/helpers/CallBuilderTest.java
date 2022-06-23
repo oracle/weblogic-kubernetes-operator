@@ -197,6 +197,15 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void readDomains_returnsResourceAsJson() throws ApiException {
+    DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID).namespace(NAMESPACE));
+    defineHttpGetResponse(DOMAIN_RESOURCE, UID, domain);
+
+    assertThat(callBuilder.readDomain(UID, NAMESPACE), equalTo(domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void readDomain_returnsResource() throws InterruptedException {
     DomainResource resource = new DomainResource().withMetadata(createMetadata());
     defineHttpGetResponse(DOMAIN_RESOURCE, UID, resource);

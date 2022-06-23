@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
@@ -22,13 +23,13 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 
 /**
  * Configuration values shared by multiple levels: domain, admin server, managed server, and
@@ -46,13 +47,6 @@ public abstract class BaseConfiguration {
   @SerializedName("serverService")
   @Expose
   private final ServerService serverService = new ServerService();
-
-  /** Desired startup state. Legal values are RUNNING or ADMIN. */
-  @Description(
-      "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  @Default(strDefault = "RUNNING")
-  private ServerStartState serverStartState;
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
@@ -79,9 +73,6 @@ public abstract class BaseConfiguration {
       return;
     }
 
-    if (serverStartState == null) {
-      serverStartState = other.getServerStartState();
-    }
     if (overrideStartPolicyFrom(other)) {
       setServerStartPolicy(other.getServerStartPolicy());
     }
@@ -103,15 +94,6 @@ public abstract class BaseConfiguration {
 
   private boolean isStartNever() {
     return Objects.equals(getServerStartPolicy(), ServerStartPolicy.NEVER);
-  }
-
-  @Nullable
-  ServerStartState getServerStartState() {
-    return serverStartState;
-  }
-
-  void setServerStartState(@Nullable ServerStartState serverStartState) {
-    this.serverStartState = serverStartState;
   }
 
   @Nullable
@@ -181,7 +163,7 @@ public abstract class BaseConfiguration {
   }
 
   public V1Affinity getAffinity() {
-    return serverPod.getAffinity();
+    return Optional.ofNullable(serverPod.getAffinity()).orElse(getDefaultAntiAffinity());
   }
 
   void setAffinity(V1Affinity affinity) {
@@ -388,7 +370,6 @@ public abstract class BaseConfiguration {
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .append("serverStartState", serverStartState)
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
@@ -410,7 +391,6 @@ public abstract class BaseConfiguration {
     return new EqualsBuilder()
         .append(serverPod, that.serverPod)
         .append(serverService, that.serverService)
-        .append(serverStartState, that.serverStartState)
         .append(restartVersion, that.restartVersion)
         .isEquals();
   }
@@ -420,7 +400,6 @@ public abstract class BaseConfiguration {
     return new HashCodeBuilder(17, 37)
         .append(serverPod)
         .append(serverService)
-        .append(serverStartState)
         .append(restartVersion)
         .toHashCode();
   }

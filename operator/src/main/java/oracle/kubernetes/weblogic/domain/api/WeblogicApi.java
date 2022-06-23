@@ -32,6 +32,39 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * Generate call to list clusters.
+   *
+   * @param namespace       namespace
+   * @param pretty          pretty flag
+   * @param cont            continuation
+   * @param fieldSelector   field selector
+   * @param labelSelector   label selector
+   * @param limit           limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds  timeout
+   * @param watch           if watch
+   * @param callback        callback
+   * @return call
+   * @throws ApiException on failure
+   */
+  public Call listNamespacedClusterCall(
+      String namespace,
+      String pretty,
+      String cont,
+      String fieldSelector,
+      String labelSelector,
+      Integer limit,
+      String resourceVersion,
+      Integer timeoutSeconds,
+      boolean watch,
+      ApiCallback<ClusterList> callback)
+      throws ApiException {
+    return listNamespacedCustomObjectCall(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
+        timeoutSeconds, watch, wrapForClusterList(callback));
+  }
+
+  /**
    * Asynchronously read domain.
    *
    * @param name      name
@@ -215,6 +248,19 @@ public class WeblogicApi extends CustomObjectsApi {
       throws ApiException {
     return toDomain(replaceNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null));
+  }
+
+  /**
+   * Read domain.
+   *
+   * @param name      name of the domain
+   * @param namespace namespace of the domain
+   * @return domain
+   * @throws ApiException on failure
+   */
+  public DomainResource readNamespacedDomain(String name, String namespace)
+      throws ApiException {
+    return toDomain(getNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL, name));
   }
 
   /**

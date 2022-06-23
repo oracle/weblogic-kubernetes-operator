@@ -238,10 +238,6 @@ spec:
       name: weblogic-domain-storage-volume
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-    # serverStartState legal values are "RUNNING" or "ADMIN"
-    # "RUNNING" means the listed server will be started up to "RUNNING" mode
-    # "ADMIN" means the listed server will be start up to "ADMIN" mode
-    serverStartState: "RUNNING"
     adminService:
       channels:
     # The Admin Server's NodePort
@@ -253,7 +249,6 @@ spec:
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
   - clusterName: cluster-1
-    serverStartState: "RUNNING"
     replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1

@@ -9,19 +9,19 @@ weight: 1
 
 First, install the operator.
 
-1. Create a namespace for the operator:
+1. Create a namespace for the operator.
 
     ```shell
     $ kubectl create namespace sample-weblogic-operator-ns
     ```
 
-1. Create a service account for the operator in the operator's namespace:
+1. Create a service account for the operator in the operator's namespace.
 
     ```shell
     $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
     ```
 
-1. Set up Helm with the location of the operator Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`.
+1. Set up Helm with the location of the operator Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`
 
     ```
     $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
@@ -44,7 +44,7 @@ First, install the operator.
      $ kubectl get pods -n sample-weblogic-operator-ns
      ```
 
-1. Verify that the operator is up and running by viewing the operator pod's log:
+1. Verify that the operator is up and running by viewing the operator pod's log.
 
       ```shell
       $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
@@ -52,13 +52,13 @@ First, install the operator.
 
 #### Create a Traefik ingress controller.
 
-1. Set up Helm with the location of the Traefik Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`.
+1. Set up Helm with the location of the Traefik Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`
 
    ```shell
    $ helm repo add traefik https://helm.traefik.io/traefik --force-update
    ```
 
-1. Create a namespace for the ingress controller:
+1. Create a namespace for the ingress controller.
 
    ```shell
    $ kubectl create namespace traefik

@@ -451,7 +451,6 @@ class ItOperatorFmwUpgrade {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -461,9 +460,7 @@ class ItOperatorFmwUpgrade {
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")
-                ));
+                .replicas(replicaCount)));
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created
