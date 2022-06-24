@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -25,9 +24,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.Model;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -260,7 +257,7 @@ public class ItMiiDomainModelInPV {
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, clusterName);
-    Model withModelHome = domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
+    domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
             .name(pvName)
@@ -273,7 +270,6 @@ public class ItMiiDomainModelInPV {
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     
-    logger.info(Yaml.dump(domainCR));
     logger.info("Creating domain {0} with model in image {1} in namespace {2}",
         domainUid, image, domainNamespace);
     createVerifyDomain(domainUid, domainCR, adminServerPodName, managedServerPodNamePrefix);
@@ -285,10 +281,6 @@ public class ItMiiDomainModelInPV {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    
-    
-    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(30));
-
   }
 
   // generates the stream of objects used by parametrized test.
