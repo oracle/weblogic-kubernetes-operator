@@ -161,7 +161,13 @@ class ItLiftAndShiftFromOnPremDomain {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final String clusterService = domainUid + "-cluster-cluster-1";
-    final int replicaCount = 5;
+    // As of WDT v2.3.1, the discovery tool will not put the replica count 
+    // in genererated domain resource yaml file. So the Operator will start 
+    // only one managed servers (default replica count)  
+    // To add custom replica count, need to create a wdt model file with 
+    // kubernates section with custom repilca count
+    // final int replicaCount = 5;
+    final int replicaCount = 1;
 
     assertDoesNotThrow(() -> {
       logger.info("Deleting and recreating {0}", LIFT_AND_SHIFT_WORK_DIR);
