@@ -561,8 +561,9 @@ public class SchemaConversionUtils {
       throws IOException {
     if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion) && !API_VERSION_V8.equals(targetAPIVersion)) {
       Map<String, Object> meta = getMetadata(domain);
-      Map<String, Object> labels = (Map<String, Object>) meta.computeIfAbsent("labels", k -> new LinkedHashMap<>());
-      labels.put("weblogic.v8.preserved", new ObjectMapper().writeValueAsString(toBePreserved));
+      Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
+          "annotations", k -> new LinkedHashMap<>());
+      annotations.put("weblogic.v8.preserved", new ObjectMapper().writeValueAsString(toBePreserved));
     }
   }
 
@@ -570,7 +571,7 @@ public class SchemaConversionUtils {
   private void restore(Map<String, Object> domain) {
     if (API_VERSION_V8.equals(targetAPIVersion)) {
       Optional.ofNullable(getMetadata(domain))
-          .map(meta -> (Map<String, Object>) meta.get("labels"))
+          .map(meta -> (Map<String, Object>) meta.get("annotations"))
           .map(meta -> (String) meta.remove("weblogic.v8.preserved"))
           .ifPresent(labelValue -> {
             try {

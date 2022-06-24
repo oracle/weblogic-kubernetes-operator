@@ -365,7 +365,7 @@ class SchemaConversionUtilsTest {
 
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.adminServer.serverStartState"));
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].serverStartState"));
-    assertThat(converter.getDomain(), hasJsonPath("$.metadata.labels.['weblogic.v8.preserved']",
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
         equalTo("{\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"serverStartState\":\"RUNNING\"},"
             + "\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"}}")));
   }
@@ -374,7 +374,7 @@ class SchemaConversionUtilsTest {
   void testV9DomainServerStartState_restored() throws IOException {
     converterv8.convert(readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML));
 
-    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.labels.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.adminServer.serverStartState",
         equalTo("RUNNING")));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
@@ -396,20 +396,20 @@ class SchemaConversionUtilsTest {
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.configuration.istio"));
-    assertThat(converter.getDomain(), hasJsonPath("$.metadata.labels.['weblogic.v8.preserved']",
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
         equalTo("{\"$.spec.configuration\":{\"istio\":{\"enabled\":true,\"readinessPort\":9000}}}")));
   }
 
   @Test
   void testV9DomainIstio_restored() throws IOException {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
-    getMapAtPath(v9Domain, "metadata.labels")
+    getMapAtPath(v9Domain, "metadata.annotations")
         .put("weblogic.v8.preserved",
             "{\"$.spec.configuration\":{\"istio\":{\"enabled\":true,\"readinessPort\":9000}}}");
 
     converterv8.convert(v9Domain);
 
-    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.labels.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.enabled",
         equalTo(true)));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.readinessPort",
