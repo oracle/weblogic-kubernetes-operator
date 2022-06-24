@@ -6,11 +6,13 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -226,11 +228,9 @@ public class ItMiiSampleHelper {
                 .redirect(true)
         ).executeAndReturnResult();
 
-        // check if kill command failed during cleanup, it will cause the exit value to be non-zero.
-        boolean cleaupFailed = result.stderr() != null && result.stderr().contains("kill: usage");
         boolean success =
             result != null
-                && (result.exitValue() == 0 || cleaupFailed)
+                && (result.exitValue() == 0 || cleaupFailed(result))
                 && result.stdout() != null
                 && result.stdout().contains(successSearchString);
 
@@ -246,6 +246,12 @@ public class ItMiiSampleHelper {
 
       previousTestSuccessful = true;
     }
+  }
+
+  @NotNull
+  private Boolean cleaupFailed(ExecResult result) {
+    // check if kill command failed during cleanup, it will cause the exit value to be non-zero.
+    return Optional.ofNullable(result.stderr()).map(c -> c.contains("kill: usage")).orElse(false);
   }
 
   /**
