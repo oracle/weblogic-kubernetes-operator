@@ -392,11 +392,72 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
+   * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
+   * stopServer.sh and startServer.sh while keeping the replica count constant.
+   * The test case verifies that scripts work when serverStartPolicy is not set at the managed server level.
+   */
+  @Order(6)
+  @Test
+  @DisplayName("Restart the dynamic cluster managed server using sample scripts with constant replica count")
+  void testRestartingMSWhileKeepingReplicaConstant() {
+    String serverName = managedServerNamePrefix + 1;
+    String serverPodName = managedServerPrefix + 1;
+    String keepReplicasConstant = "-k";
+
+    // shut down the dynamic cluster managed server using the script stopServer.sh and keep replicas constant
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicasConstant);
+    checkPodDeleted(serverPodName, domainUid, domainNamespace);
+    logger.info("managed server " + serverName + " stopped successfully.");
+
+    // start the dynamic cluster managed server using the script startServer.sh and keep replicas constant
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicasConstant);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+    logger.info("managed server " + serverName + " restarted successfully.");
+  }
+
+  /**
+   * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
+   * stopServer.sh and startServer.sh along with changing the replica count.
+   * The test case verifies that scripts work when serverStartPolicy is not set at the managed server level.
+   */
+  @Order(7)
+  @Test
+  @DisplayName("Restart the dynamic cluster managed server using sample scripts with varying replica count")
+  void testRestartingMSWhileVaryingReplicaCount() {
+    String serverName = managedServerNamePrefix + 1;
+    String serverPodName = managedServerPrefix + 1;
+    String keepReplicasConstant = "-k";
+
+    // shut down managed server3 using the script stopServer.sh and keep replicas constant
+    executeLifecycleScript(domainUid, domainNamespace, samplePath, STOP_SERVER_SCRIPT, SERVER_LIFECYCLE,
+        managedServerNamePrefix + 3, keepReplicasConstant);
+    checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+
+    // shut down the dynamic cluster managed server using the script stopServer.sh and let replicas decrease
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    checkPodDeleted(serverPodName, domainUid, domainNamespace);
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER, domainUid,
+        domainNamespace, 1)));
+    logger.info("managed server " + serverName + " stopped successfully.");
+
+    // start the dynamic cluster managed server using the script startServer.sh and let replicas increase
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
+        domainUid, domainNamespace, 2)));
+    logger.info("managed server " + serverName + " restarted successfully.");
+  }
+
+  /**
    * Rolling restart the dynamic cluster using the sample script rollCluster.sh script
    * Verify that server(s) in the dynamic cluster are restarted and in RUNNING state.
    * Verify that server(s) in the configured cluster are not affected.
    */
-  @Order(6)
+  @Order(8)
   @Test
   @DisplayName("Rolling restart the dynamic cluster with rollCluster.sh script")
   void testDynamicClusterRollingRestart() {
@@ -448,7 +509,7 @@ class ItServerStartPolicyDynamicCluster {
    * Verify that server(s) in the configured cluster are not affected.
    * Restore the env using the sample script stopServer.sh.
    */
-  @Order(7)
+  @Order(9)
   @Test
   @DisplayName("Scale the dynamic cluster with scaleCluster.sh script")
   void testDynamicClusterScale() {
@@ -498,7 +559,7 @@ class ItServerStartPolicyDynamicCluster {
   /**
    * Verify the sample script reports proper error when a cluster is scaled beyond max cluster size.
    */
-  @Order(8)
+  @Order(10)
   @Test
   @DisplayName("verify the sample script fails when a cluster is scaled beyond max cluster size")
   void testScaleBeyondMaxClusterSize() {

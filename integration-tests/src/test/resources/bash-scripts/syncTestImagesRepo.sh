@@ -40,7 +40,7 @@ dockerPullPushImage() {
  docker rmi -f ${tgt_image} 
 }
 
-dockerPullPushImages {
+dockerPullPushImages() {
  file="images.properties"
  egrep -v '^#' $file | grep -v "^$" |
    while IFS=";" read -r f1 f2 
@@ -75,4 +75,3 @@ if [ ${SOURCE_REPO} == ${TARGET_REPO} ]; then
 fi
 
 dockerLogin 
-dockerPullPushImages
