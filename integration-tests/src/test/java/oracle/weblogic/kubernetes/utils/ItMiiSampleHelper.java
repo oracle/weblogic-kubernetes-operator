@@ -226,9 +226,11 @@ public class ItMiiSampleHelper {
                 .redirect(true)
         ).executeAndReturnResult();
 
+        // check if kill command failed during cleanup, it will cause the exit value to be non-zero.
+        boolean cleaupFailed = result.stderr() != null && result.stderr().contains("kill: usage");
         boolean success =
             result != null
-                && result.exitValue() == 0
+                && (result.exitValue() == 0 || cleaupFailed)
                 && result.stdout() != null
                 && result.stdout().contains(successSearchString);
 
