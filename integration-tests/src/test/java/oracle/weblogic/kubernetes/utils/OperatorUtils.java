@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -46,10 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OperatorUtils {
-
-  public static final String OPERATOR_VERSION_340 = "3.4.0";
-  public static final String OPERATOR_340_IMAGE_OWLS_99380 =
-      "phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:owls_99380";
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -445,13 +441,7 @@ public class OperatorUtils {
             .name(opServiceAccount))));
     logger.info("Created service account: {0}", opServiceAccount);
 
-    // get operator image name.
-    // For operator version 3.4.0, temporarily use the image with OWLS_99380 fix from OCIR.
-    if (OPERATOR_VERSION_340.equals(opHelmParams.getChartVersion())) {
-      operatorImage = OPERATOR_340_IMAGE_OWLS_99380;
-    } else {
-      operatorImage = getOperatorImageName();
-    }
+    operatorImage = getOperatorImageName();
 
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
@@ -484,7 +474,7 @@ public class OperatorUtils {
     }
 
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
-    if ((opHelmParams.getRepoUrl() == null) || (OPERATOR_VERSION_340.equals(opHelmParams.getChartVersion()))) {
+    if (opHelmParams.getRepoUrl() == null)  {
       opParams.image(operatorImage);
     }
 
