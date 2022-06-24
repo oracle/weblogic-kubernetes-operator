@@ -218,12 +218,6 @@ class ItOperatorWlsUpgrade {
 
   /**
    * Auxiliary Image Domain upgrade from Operator v3.4.1 to current.
-   * The current release of the 3.4.1 does not conatin the resolution
-   * described in the following PR 
-   * https://github.com/oracle/weblogic-kubernetes-operator/pull/3165/files
-   *
-   * Note testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() uses a 
-   * patched Operator 3.4.0 image to make it pass. See utils/OperatorUtils.java
    */
   @Test
   @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
