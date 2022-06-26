@@ -125,35 +125,45 @@ class SchemaConversionUtilsTest {
 
   @Test
   void whenOldDomainHasProgressingCondition_removeIt() {
-    addStatusCondition("Progressing", null, "in progress");
+    addStatusCondition("Progressing", "True", null, "in progress");
 
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
   }
 
-  private void addStatusCondition(String type, String reason, String message) {
+  private void addStatusCondition(String type, String status, String reason, String message) {
+    addStatusCondition(v8Domain, type, status, reason, message);
+  }
+
+  private void addStatusCondition(Map<String, Object> domain, String type, String status,
+                                  String reason, String message) {
     final Map<String, String> condition = new HashMap<>();
     condition.put("type", type);
+    condition.put("status", status);
     Optional.ofNullable(reason).ifPresent(r -> condition.put("reason", r));
     Optional.ofNullable(message).ifPresent(m -> condition.put("message", m));
-    getStatusConditions().add(condition);
+    getStatusConditions(domain).add(condition);
   }
 
   @SuppressWarnings("unchecked")
-  private List<Object> getStatusConditions() {
-    return (List<Object>) getStatus().computeIfAbsent("conditions", k -> new ArrayList<>());
+  private List<Object> getStatusConditions(Map<String, Object> domain) {
+    return (List<Object>) getStatus(domain).computeIfAbsent("conditions", k -> new ArrayList<>());
   }
 
   @SuppressWarnings("unchecked")
   private Map<String,Object> getStatus() {
-    return (Map<String, Object>) v8Domain.computeIfAbsent("status", k -> new HashMap<>());
+    return getStatus(v8Domain);
+  }
+
+  private Map<String,Object> getStatus(Map<String, Object> domain) {
+    return (Map<String, Object>) domain.computeIfAbsent("status", k -> new HashMap<>());
   }
 
   @Test
   void whenOldDomainHasUnsupportedConditionReasons_removeThem() {
-    addStatusCondition("Completed", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "Internal", "whoops");
+    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
+    addStatusCondition("Failed", "True", "Internal", "whoops");
 
     converter.convert(v8Domain);
 
@@ -165,8 +175,8 @@ class SchemaConversionUtilsTest {
 
   @Test
   void whenOldDomainHasSupportedConditionReasons_dontRemoveThem() {
-    addStatusCondition("Completed", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "Internal", "whoops");
+    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
+    addStatusCondition("Failed", "True", "Internal", "whoops");
 
     converter.convert(v8Domain);
 
@@ -378,5 +388,30 @@ class SchemaConversionUtilsTest {
         equalTo("RUNNING")));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
         equalTo("RUNNING")));
+  }
+
+  @Test
+  void testV9DomainCompletedIsFalse_toProgressing() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    addStatusCondition(v9Domain, "Completed", "False", "Something", "Hello");
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Progressing')].reason", contains("Something")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Progressing')].message", contains("Hello")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Progressing')].status", contains("True")));
+  }
+
+  @Test
+  void testV9DomainCompletedIsTrue_removeIt() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    addStatusCondition(v9Domain, "Completed", "True", "Something", "Hello");
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
   }
 }

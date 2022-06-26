@@ -38,6 +38,10 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
+  private static final String METADATA = "metadata";
+  private static final String SPEC = "spec";
+  private static final String STATUS = "status";
+  private static final String TYPE = "type";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -164,10 +168,10 @@ public class SchemaConversionUtils {
     Iterator<Map<String, String>> conditions = getStatusConditions(domain).iterator();
     while (conditions.hasNext()) {
       Map<String, String> condition = conditions.next();
-      if ("Completed".equals(condition.get("type"))) {
-        if ("False".equals(condition.get("status"))) {
-          condition.put("type", "Progressing");
-          condition.put("status", "True");
+      if ("Completed".equals(condition.get(TYPE))) {
+        if ("False".equals(condition.get(STATUS))) {
+          condition.put(TYPE, "Progressing");
+          condition.put(STATUS, "True");
         } else {
           conditions.remove();
         }
@@ -361,15 +365,15 @@ public class SchemaConversionUtils {
   }
 
   Map<String, Object> getSpec(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("spec");
+    return (Map<String, Object>) domain.get(SPEC);
   }
 
   Map<String, Object> getStatus(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("status");
+    return (Map<String, Object>) domain.get(STATUS);
   }
 
   Map<String, Object> getMetadata(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("metadata");
+    return (Map<String, Object>) domain.get(METADATA);
   }
 
   private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,
