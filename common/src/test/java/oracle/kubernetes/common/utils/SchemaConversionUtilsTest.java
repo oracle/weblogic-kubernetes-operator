@@ -364,7 +364,7 @@ class SchemaConversionUtilsTest {
 
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.adminServer.serverStartState"));
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].serverStartState"));
-    assertThat(converter.getDomain(), hasJsonPath("$.metadata.labels.['weblogic.v8.preserved']",
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
         equalTo("{\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"serverStartState\":\"RUNNING\"},"
             + "\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"}}")));
   }
@@ -373,7 +373,7 @@ class SchemaConversionUtilsTest {
   void testV9DomainServerStartState_restored() throws IOException {
     converterv8.convert(readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML));
 
-    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.labels.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.adminServer.serverStartState",
         equalTo("RUNNING")));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
