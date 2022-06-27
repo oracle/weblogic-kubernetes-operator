@@ -34,8 +34,9 @@ cat << EOF
 
   The script runs in phases:  
 
-    Phase 1:  Set the serverStartPolicy of each domain to Never if
-              it's not already Never.  This should cause each
+    Phase 1:  Set the serverStartPolicy of each domain. For v9 domains
+              set serverStartPolicy to Never. For v8 domains set the
+              serverStartPolicy to NEVER. This will cause each
               domain's operator to initiate a controlled shutdown
               of the domain.  Immediately proceed to phase 2.
 
