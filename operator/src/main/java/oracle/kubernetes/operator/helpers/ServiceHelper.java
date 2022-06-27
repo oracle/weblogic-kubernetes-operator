@@ -66,7 +66,6 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static String METRICS_SERVICE_NAME = "metrics";
 
   private ServiceHelper() {
   }
@@ -431,13 +430,9 @@ public class ServiceHelper {
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, getMetricsPortName(), "http", specification.getRestPort());
+          addServicePortIfNeeded(ports, "metrics", "http", specification.getRestPort());
         }
       });
-    }
-
-    private String getMetricsPortName() {
-      return METRICS_SERVICE_NAME;
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {

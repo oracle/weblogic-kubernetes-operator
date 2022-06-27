@@ -1245,25 +1245,28 @@ public abstract class PodStepContext extends BasePodStepContext {
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
-    private void restoreLegacyIstioPortsConfig(V1Pod recipePod, V1Pod currentPod) {
+    private void restoreLegacyIstioPortsConfig(V1Pod recipePod,  V1Pod currentPod) {
       V1PodSpec recipePodSpec = recipePod.getSpec();
 
-      V1Container weblogicContainer = currentPod.getSpec().getContainers().stream()
-          .filter(c -> "weblogic-server".equals(c.getName()))
-          .findFirst().get();
+      Optional<V1Container> weblogicContainer =
+          currentPod.getSpec().getContainers().stream().filter(c -> "weblogic-server".equals(c.getName()))
+          .findFirst();
 
-      V1Container recipeContainer = recipePodSpec.getContainers().stream()
+      Optional<V1Container> recipeContainer = recipePodSpec.getContainers().stream()
           .filter(c -> "weblogic-server".equals(c.getName()))
-          .findFirst().get();
+          .findFirst();
 
       // reset the readiness port since new recipe no longer use the istio.readinessProbe
 
-      V1Probe currentProbe = weblogicContainer.getReadinessProbe();
-      recipeContainer.setReadinessProbe(currentProbe);
+      recipeContainer.ifPresent(c -> c.setReadinessProbe(weblogicContainer.map(V1Container::getReadinessProbe).get()));
 
       // copy the ports over for calculating hash
-      List<V1ContainerPort>  currentContainerPorts = weblogicContainer.getPorts();
-      recipeContainer.setPorts(currentContainerPorts);
+      Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
+      if (currentContainerPorts.isEmpty()) {
+        recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
+      } else {
+        recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
+      }
     }
 
     private void restoreAffinityContent(V1Pod recipe, V1Pod currentPod) {
