@@ -213,7 +213,7 @@ updateDomainHome() {
   local end_secs=$((SECONDS + 30))
   POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   while [ -z "${POD_NAME}" ] || [ "$POD_NAME" = "$OLD_POD_NAME" ]; do
-    if [ $SECONDS -le $end_secs ]; then
+    if [ $SECONDS -gt $end_secs ]; then
       fail "Job pod was not find in 30 seconds"
     fi
     sleep 1
