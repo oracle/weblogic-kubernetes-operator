@@ -415,7 +415,7 @@ class SchemaConversionUtilsTest {
     assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
     assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
   }
-}  
+
   @Test
   void testV8DomainIstio_preserved() {
     // Simplify domain to focus on Istio
