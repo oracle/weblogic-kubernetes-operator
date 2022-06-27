@@ -484,6 +484,7 @@
                     **/ItDiagnosticsFailedCondition,
                     **/ItMiiSampleWlsAux,
                     **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItLBTwoDomainsNginx,
                     **/ItLBTwoDomainsTraefik
                 </includes-failsafe>
             </properties>
