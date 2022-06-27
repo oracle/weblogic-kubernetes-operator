@@ -89,7 +89,7 @@ class ItLogHomeFlatStructure {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static int replicaCount = 2;
-  private static final String domainUid = "mii-add-config";
+  private static final String domainUid = "loghomeflat";
   private static final String pvName = getUniqueName(domainUid + "-pv-");
   private static final String pvcName = getUniqueName(domainUid + "-pvc-");
   private StringBuffer curlString = null;
@@ -212,7 +212,7 @@ class ItLogHomeFlatStructure {
   @DisplayName("Check the server logs are written to PersistentVolume")
   void testMiiServerLogsAreOnPV() {
     // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV("grep RUNNING " + logsDir + "/"
+    checkLogsOnPV("ls " + logsDir + " && grep RUNNING " + logsDir + "/"
         + adminServerName + ".log", adminServerPodName);
   }
 
