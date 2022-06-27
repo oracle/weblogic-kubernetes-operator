@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,10 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
+  private static final String METADATA = "metadata";
+  private static final String SPEC = "spec";
+  private static final String STATUS = "status";
+  private static final String TYPE = "type";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -93,8 +98,7 @@ public class SchemaConversionUtils {
     String apiVersion = (String) domain.get("apiVersion");
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
-    removeObsoleteConditionsFromDomainStatus(domain);
-    removeUnsupportedDomainStatusConditionReasons(domain);
+    convertDomainStatus(domain);
     convertDomainHomeInImageToDomainHomeSourceType(domain);
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
@@ -151,6 +155,31 @@ public class SchemaConversionUtils {
     spec.remove("auxiliaryImageVolumes");
   }
 
+  private void convertDomainStatus(Map<String, Object> domain) {
+    if (API_VERSION_V8.equals(targetAPIVersion)) {
+      convertCompletedToProgressing(domain);
+      Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
+    } else { // 9 or above
+      removeObsoleteConditionsFromDomainStatus(domain);
+      removeUnsupportedDomainStatusConditionReasons(domain);
+    }
+  }
+
+  private void convertCompletedToProgressing(Map<String, Object> domain) {
+    Iterator<Map<String, String>> conditions = getStatusConditions(domain).iterator();
+    while (conditions.hasNext()) {
+      Map<String, String> condition = conditions.next();
+      if ("Completed".equals(condition.get(TYPE))) {
+        if ("False".equals(condition.get(STATUS))) {
+          condition.put(TYPE, "Progressing");
+          condition.put(STATUS, "True");
+        } else {
+          conditions.remove();
+        }
+      }
+    }
+  }
+
   private void removeObsoleteConditionsFromDomainStatus(Map<String, Object> domain) {
     getStatusConditions(domain).removeIf(this::isObsoleteCondition);
   }
@@ -165,7 +194,7 @@ public class SchemaConversionUtils {
 
   @Nonnull
   private List<Map<String,String>> getStatusConditions(Map<String, Object> domain) {
-    return (List<Map<String,String>>) Optional.ofNullable((Map<String, Object>) domain.get("status"))
+    return (List<Map<String,String>>) Optional.ofNullable(getStatus(domain))
           .map(status -> status.get("conditions"))
           .orElse(Collections.emptyList());
   }
@@ -337,11 +366,15 @@ public class SchemaConversionUtils {
   }
 
   Map<String, Object> getSpec(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("spec");
+    return (Map<String, Object>) domain.get(SPEC);
+  }
+
+  Map<String, Object> getStatus(Map<String, Object> domain) {
+    return (Map<String, Object>) domain.get(STATUS);
   }
 
   Map<String, Object> getMetadata(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("metadata");
+    return (Map<String, Object>) domain.get(METADATA);
   }
 
   private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,

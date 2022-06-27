@@ -6,7 +6,7 @@
 # extractDomainResource script to generate a domain.yaml
 #
 kubernetes:
-  apiVersion: weblogic.oracle/v8
+  apiVersion: "weblogic.oracle/v8"
   kind: Domain
   metadata:
     name: %DOMAIN_UID%
@@ -52,11 +52,11 @@ kubernetes:
     # data storage directories are determined from the WebLogic domain home configuration.
     dataHome: "%DATA_HOME%"
 
-    # serverStartPolicy legal values are "Never", "IfNeeded", or "AdminOnly"
+    # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
     # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-    # - "Never" will not start any server in the domain
-    # - "AdminOnly" will start up only the administration server (no managed servers will be started)
-    # - "IfNeeded" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+    # - "NEVER" will not start any server in the domain
+    # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+    # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
     serverStartPolicy: %SERVER_START_POLICY%
 
     serverPod:
