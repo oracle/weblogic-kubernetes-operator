@@ -122,7 +122,7 @@ getServerPolicy() {
 # Function to create server start policy patch string
 # $1 - Domain resource in json format
 # $2 - Name of server whose policy will be patched
-# $3 - Policy value 
+# $3 - Policy value
 # $4 - Return value containing server start policy patch string
 #
 createServerStartPolicyPatch() {
@@ -150,7 +150,7 @@ createServerStartPolicyPatch() {
       else .+  [{serverName: \"${serverName}\" , serverStartPolicy: \"${policy}\"}] end"
     serverStartPolicyPatch=$(echo ${domainJson} | jq "${extractSpecCmd}" | jq "${mapCmd}")
   else
-    # Server start policy exists, replace policy value 
+    # Server start policy exists, replace policy value
     replacePolicyCmd="(.spec.managedServers[] \
       | select (.serverName == \"${serverName}\") | .serverStartPolicy) |= \"${policy}\""
     servers="(.spec.managedServers)"
@@ -178,7 +178,7 @@ createPatchJsonToUnsetPolicyAndUpdateReplica() {
 }
 
 #
-# Function to create patch json string to update policy 
+# Function to create patch json string to update policy
 # $1 - String containing start policy info
 # $2 - String containing json to patch domain resource
 #
@@ -218,7 +218,7 @@ createPatchJsonToUpdateAdminPolicy() {
 }
 
 #
-# Function to create patch json string to update replica 
+# Function to create patch json string to update replica
 # $1 - String containing replica
 # $2 - String containing json to patch domain resource
 #
@@ -306,7 +306,7 @@ createPatchJsonToUpdateClusterPolicy() {
   local existingClusters=""
   local patchJsonVal=""
   local startPolicyPatch=""
-  
+
   existingClusters=$(echo ${domainJson} | jq -cr '(.spec.clusters)')
   if [ "${existingClusters}" == "null" ]; then
     # cluster doesn't exist, add cluster with server start policy
@@ -370,7 +370,7 @@ createPatchJsonToUpdateReplicas() {
 createPatchJsonToUpdateDomainPolicy() {
   local policy=$1
   local __result=$2
-  
+
   patchServerStartPolicy="{\"spec\": {\"serverStartPolicy\": \"${policy}\"}}"
   eval $__result="'${patchServerStartPolicy}'"
 }
@@ -379,8 +379,8 @@ createPatchJsonToUpdateDomainPolicy() {
 # Function to get sorted list of servers in a cluster.
 # The sorted list is created in 'sortedByAlwaysServers' array.
 # $1 - Domain resource in json format
-# $2 - Name of server 
-# $3 - Name of cluster 
+# $2 - Name of server
+# $3 - Name of cluster
 # $4 - Indicates if policy of current server would be unset.
 #      valid values are "UNSET" and "CONSTANT"
 #
@@ -403,7 +403,7 @@ getSortedListOfServers() {
     IFS=$'\n' sortedServers=($(sort --version-sort <<<"${servers[*]}" ))
     unset IFS
     clusterSize=${#sortedServers[@]}
-  else 
+  else
     # Cluster is a dynamic cluster, calculate server names
     prefix=$(echo ${dynaCluster} | jq -r .serverNamePrefix)
     clusterSize=$(echo ${dynaCluster} | jq .dynamicClusterSize) 
@@ -425,7 +425,7 @@ getSortedListOfServers() {
       otherServers+=(${localServerName})
     fi
   done
-  
+
   # append other servers to the list of servers with always policy
   for otherServer in ${otherServers[@]:-}; do
     sortedByAlwaysServers+=($otherServer)
@@ -435,7 +435,7 @@ getSortedListOfServers() {
 #
 # Get replica count for a cluster
 # $1 - Domain resource in json format
-# $2 - Name of cluster 
+# $2 - Name of cluster
 # $3 - Return value containing replica count
 #
 getReplicaCount() {
@@ -604,11 +604,11 @@ createPatchJsonToUpdateClusterRestartVersion() {
 }
 
 #
-# Check servers started in a cluster based on server start policy and 
+# Check servers started in a cluster based on server start policy and
 # replica count.
 # $1 - Domain resource in json format
-# $2 - Name of server 
-# $3 - Name of cluster 
+# $2 - Name of server
+# $3 - Name of cluster
 # $4 - Indicates if replicas will stay constant, incremented or decremented.
 #      Valid values are "CONSTANT", "INCREMENT" and "DECREMENT"
 # $5 - Indicates if policy of current server will stay constant or unset.
@@ -628,7 +628,7 @@ checkStartedServers() {
   local currentReplicas=0
   local startedServers=()
   local sortedByAlwaysServers=()
-  
+
   # Get sorted list of servers in 'sortedByAlwaysServers' array
   getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${withPolicy}"
   getReplicaCount "${domainJson}" "${clusterName}" replicaCount
@@ -673,7 +673,7 @@ checkStartedServers() {
 shouldStart() {
   local currentReplicas=$1
   local policy=$2
-  local replicaCount=$3 
+  local replicaCount=$3
   local __result=$4
 
   if [ "$policy" == "Always" ]; then
@@ -682,7 +682,7 @@ shouldStart() {
     eval $__result=false
   elif [ "${currentReplicas}" -lt "${replicaCount}" ]; then
     eval $__result=true
-  else 
+  else
     eval $__result=false
   fi
 }
@@ -777,7 +777,7 @@ getMaxReplicas() {
 # Function to create patch string for updating replica count
 # $1 - Domain resource in json format
 # $2 - Name of cluster whose replica count will be patched
-# $3 - operation string indicating whether to increment or decrement replica count. 
+# $3 - operation string indicating whether to increment or decrement replica count.
 #      Valid values are "INCREMENT" and "DECREMENT"
 # $4 - Return value containing replica update patch string
 # $5 - Return value containing updated replica count
@@ -821,7 +821,7 @@ Not increasing replica count value."
 #
 validateServerAndFindCluster() {
   local domainUid=$1
-  local domainNamespace=$2 
+  local domainNamespace=$2
   local serverName=$3
   local __isValidServer=$4
   local __clusterName=$5
@@ -907,14 +907,14 @@ validateClusterName() {
 getTopology() {
   local domainUid=$1
   local domainNamespace=$2
-  local __result=$3 
+  local __result=$3
   local __jsonTopology=""
   local __topology=""
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
       -n ${domainNamespace} -o yaml --ignore-not-found)
-  else 
+  else
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
       -n ${domainNamespace} -o json --ignore-not-found)
   fi
@@ -1051,4 +1051,3 @@ toDNS1123Legal() {
   val=${val//"_"/"-"}
   eval $__result="'$val'"
 }
-
