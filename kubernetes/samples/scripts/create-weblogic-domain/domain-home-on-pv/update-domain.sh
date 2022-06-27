@@ -210,7 +210,13 @@ function updateDomainHome {
   # a pod which will run a script that creates a domain. The script then will extract the domain
   # resource using  WDT's extractDomainResource tool. So, the following code loops until the
   # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
+  local end_secs=$((SECONDS + 30))
+  POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   while [ -z "${POD_NAME}" ] || [ "$POD_NAME" = "$OLD_POD_NAME" ]; do
+    if [ $SECONDS -le $end_secs ]; then
+      fail "Job pod was not find in 30 seconds"
+    fi
+    sleep 1
     POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
     echo "Pod name is $POD_NAME"
   done
