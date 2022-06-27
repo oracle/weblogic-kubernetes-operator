@@ -269,7 +269,7 @@ public class ItMiiDomainModelInPV {
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    
+
     logger.info("Creating domain {0} with model in image {1} in namespace {2}",
         domainUid, image, domainNamespace);
     createVerifyDomain(domainUid, domainCR, adminServerPodName, managedServerPodNamePrefix);
@@ -281,6 +281,7 @@ public class ItMiiDomainModelInPV {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
   }
 
   // generates the stream of objects used by parametrized test.
