@@ -30,14 +30,21 @@ dockerPullPushImage() {
  src_image="${1}"
  tgt_image="${TARGET_REPO}/${2}"
 
- printf 'SRC[%s] TARGET[%s] \n' "${src_image}" "${tgt_image}"
+ if [ ${DRY_RUN} == "true" ]; then 
+   echo "Executing a dry run ..."
+   echo "docker pull ${src_image} "
+   echo "docker tag  ${src_image} ${tgt_image} "
+   echo "docker push ${tgt_image} "
+ else 
+   printf 'SRC[%s] TARGET[%s] \n' "${src_image}" "${tgt_image}"
+   docker pull ${src_image}
+   docker tag  ${src_image} ${tgt_image}
+   docker push ${tgt_image}
 
- docker pull ${src_image}
- docker tag  ${src_image} ${tgt_image}
- docker push ${tgt_image}
-
- docker rmi -f ${src_image} 
- docker rmi -f ${tgt_image} 
+   docker rmi -f ${src_image} 
+   docker rmi -f ${tgt_image} 
+ fi
+   
 }
 
 dockerPullPushImages() {
@@ -67,6 +74,8 @@ TARGET_REPO=${TARGET_REPO:-phx.ocir.io}
 TARGET_USER=${TARGET_USER:-oracle}
 TARGET_PASSWORD=${TARGET_PASSWORD:-changeme}
 
+DRY_RUN=${DRY_RUN:-false}
+
 echo "SOURCE_REPO[$SOURCE_REPO] and TARGET_REPO[${TARGET_REPO}]"
 
 if [ ${SOURCE_REPO} == ${TARGET_REPO} ]; then
@@ -75,3 +84,4 @@ if [ ${SOURCE_REPO} == ${TARGET_REPO} ]; then
 fi
 
 dockerLogin 
+dockerPullPushImages
