@@ -335,6 +335,7 @@ public interface TestConstants {
 
   // domain status condition type
   public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
+  public static final String DOMAIN_STATUS_CONDITION_PROGRESSING_TYPE = "Progressing";
   public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
   public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
