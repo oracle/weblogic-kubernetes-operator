@@ -333,18 +333,6 @@ spec:
   clusters:
   - clusterName: cluster-1
     serverPod:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                      - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
       volumes:
       - name: $(SERVER_NAME)-volume
         emptyDir: {}
