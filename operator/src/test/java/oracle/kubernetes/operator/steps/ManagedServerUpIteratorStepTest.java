@@ -19,12 +19,12 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -147,7 +147,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
             .withDomainUid(UID)
-            .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+            .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
             .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
             .withImage(LATEST_IMAGE);
   }
