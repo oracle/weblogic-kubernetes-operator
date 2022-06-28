@@ -10,10 +10,10 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -277,8 +277,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace) {
-    getDomainSpec().setWebLogicCredentialsSecret(new V1SecretReference().name(secretName).namespace(namespace));
+  public DomainConfigurator withWebLogicCredentialsSecret(String secretName) {
+    getDomainSpec().setWebLogicCredentialsSecret(new V1LocalObjectReference().name(secretName));
     return this;
   }
 

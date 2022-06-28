@@ -414,4 +414,14 @@ class SchemaConversionUtilsTest {
     assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
     assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
   }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testV8DomainWebLogicCredentialsSecretWithNamespace_remove() {
+    ((Map<String, Object>) getDomainSpec(v8Domain).get("webLogicCredentialsSecret")).put("namespace", "my-ns");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.webLogicCredentialsSecret.namespace"));
+  }
 }
