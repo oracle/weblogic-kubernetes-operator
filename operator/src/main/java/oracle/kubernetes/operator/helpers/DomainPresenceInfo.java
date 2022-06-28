@@ -834,8 +834,7 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public void addClusterResource(ClusterResource clusterResource) {
     Optional.ofNullable(clusterResource)
-        .map(ClusterResource::getSpec)
-        .map(ClusterSpec::getClusterName)
+        .map(ClusterResource::getClusterName)
         .ifPresent(name -> clusters.put(name, clusterResource));
   }
 

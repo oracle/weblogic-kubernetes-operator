@@ -39,7 +39,7 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private final Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
-  private ClusterList upToDateClusterNames;
+  private ClusterList activeClusterResources;
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
@@ -84,10 +84,8 @@ class DomainResourcesValidation {
             Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
         getStrandedDomainPresenceInfos(dp)
             .forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
-        if (upToDateClusterNames != null) {
-          getActiveDomainPresenceInfos()
-              .forEach(info -> removeInactiveClusterResources(upToDateClusterNames, info));
-        }
+        Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
+            .forEach(info -> removeInactiveClusterResources(c, info)));
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
@@ -158,7 +156,7 @@ class DomainResourcesValidation {
   }
 
   private void addClusterList(ClusterList list) {
-    upToDateClusterNames = list;
+    activeClusterResources = list;
     list.getItems().forEach(this::addCluster);
   }
 

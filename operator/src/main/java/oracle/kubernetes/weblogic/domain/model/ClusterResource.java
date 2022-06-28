@@ -254,4 +254,8 @@ public class ClusterResource implements KubernetesObject {
     setKind(kind);
     return this;
   }
+
+  public String getNamespace() {
+    return getMetadata().getNamespace();
+  }
 }
