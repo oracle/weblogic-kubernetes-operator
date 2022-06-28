@@ -309,9 +309,6 @@ printSummary() {
   echo "  ${dcrOutput}"
   echo ""
   echo "Completed"
-  # TODO fix this
-  #sed -i '/istio:/,+1 s/^/#/' ${dcrOutput}
-  cat ${dcrOutput}
 }
 
 # Perform the sequence of steps to create a domain
