@@ -35,7 +35,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.makeright.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
@@ -50,7 +49,7 @@ class DomainUpPlanTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain)
-                    .withWebLogicCredentialsSecret("secret", NS);
+                    .withWebLogicCredentialsSecret("secret");
   private final DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
 
   private DomainPresenceStep getDomainPresenceStep() {

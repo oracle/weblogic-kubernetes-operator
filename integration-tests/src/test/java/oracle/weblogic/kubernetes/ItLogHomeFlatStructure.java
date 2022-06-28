@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -300,9 +299,8 @@ class ItLogHomeFlatStructure {
                     .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
                     .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)

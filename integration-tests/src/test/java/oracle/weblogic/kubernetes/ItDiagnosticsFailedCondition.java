@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -371,9 +370,8 @@ class ItDiagnosticsFailedCondition {
               .imagePullSecrets(Arrays.asList(
                   new V1LocalObjectReference()
                       .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))) // this secret for non-kind cluster
-              .webLogicCredentialsSecret(new V1SecretReference()
-                  .name(adminSecretName)
-                  .namespace(domainNamespace))
+              .webLogicCredentialsSecret(new V1LocalObjectReference()
+                  .name(adminSecretName))
               .includeServerOutInPodLog(true)
               .logHomeEnabled(Boolean.TRUE)
               .logHome("/shared/logs/" + domainName)
@@ -694,9 +692,8 @@ class ItDiagnosticsFailedCondition {
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
@@ -744,9 +741,8 @@ class ItDiagnosticsFailedCondition {
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()

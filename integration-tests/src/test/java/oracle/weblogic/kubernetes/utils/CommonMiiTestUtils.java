@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -277,9 +276,8 @@ public class CommonMiiTestUtils {
             .domainHomeSourceType("FromModel")
             .image(imageName)
             .imagePullPolicy(IMAGE_PULL_POLICY)
-            .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new oracle.weblogic.domain.ServerPod()
@@ -522,9 +520,8 @@ public class CommonMiiTestUtils {
                     .domainHomeSourceType("FromModel")
                     .image(imageName)
                     .imagePullPolicy(IMAGE_PULL_POLICY)
-                    .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
                     .serverStartPolicy("IfNeeded")
                     .serverPod(new oracle.weblogic.domain.ServerPod()
@@ -692,9 +689,8 @@ public class CommonMiiTestUtils {
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
             .name(repoSecretName))
-        .webLogicCredentialsSecret(new V1SecretReference()
-            .name(adminSecretName)
-            .namespace(domNamespace))
+        .webLogicCredentialsSecret(new V1LocalObjectReference()
+            .name(adminSecretName))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(Boolean.TRUE)
         .logHome(uniquePath + "/logs")
@@ -1628,9 +1624,8 @@ public class CommonMiiTestUtils {
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
@@ -1746,9 +1741,8 @@ public class CommonMiiTestUtils {
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
