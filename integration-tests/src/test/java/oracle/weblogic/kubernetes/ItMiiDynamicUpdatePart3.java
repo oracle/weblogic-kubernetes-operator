@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test dynamic updates to a model in image domain, part3")
 @IntegrationTest
+@Tag("oke-sequential")
 class ItMiiDynamicUpdatePart3 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();

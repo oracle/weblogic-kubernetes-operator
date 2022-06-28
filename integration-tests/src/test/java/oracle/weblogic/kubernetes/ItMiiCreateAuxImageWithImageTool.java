@@ -69,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
