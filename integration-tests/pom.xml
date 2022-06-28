@@ -429,7 +429,7 @@
             </properties>
         </profile>
         <profile>
-            <id>oke-parallel</id>
+            <id>oke-parallel-old</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
@@ -638,6 +638,13 @@
             <properties>
                 <skipITs>false</skipITs>
                 <groups>gate,samples-gate</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>oke-parallel</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>oke-parallel</groups>
             </properties>
         </profile>
         <profile>
