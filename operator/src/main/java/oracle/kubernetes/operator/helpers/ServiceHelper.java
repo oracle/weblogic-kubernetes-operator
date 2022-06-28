@@ -483,11 +483,6 @@ public class ServiceHelper {
     }
 
     V1ServicePort createSipUdpServicePort(String portName, Integer port, String appProtocol) {
-      //      if (isIstioEnabled()) {
-      //        // The introspector will have already prefixed the portName with either "tcp-" or "tls-".
-      //        Remove the prefix.
-      //        portName = portName.substring(4);
-      //      }
 
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
