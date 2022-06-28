@@ -15,7 +15,6 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
@@ -101,7 +100,7 @@ public class DomainSpec extends BaseConfiguration {
           + "`password` fields.")
   @Valid
   @NotNull
-  private V1SecretReference webLogicCredentialsSecret;
+  private V1LocalObjectReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, Node Manager, server logs, server
@@ -547,13 +546,12 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  // NOTE: we ignore the namespace, which could be confusing. We should change it with the next schema update.
-  V1SecretReference getWebLogicCredentialsSecret() {
+  V1LocalObjectReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
@@ -564,7 +562,7 @@ public class DomainSpec extends BaseConfiguration {
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
    * @return this
    */
-  public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  public DomainSpec withWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
   }

@@ -5,9 +5,9 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.utils.SystemClock;
@@ -91,7 +91,7 @@ public class DomainProcessorTestSetup {
   public static DomainResource createTestDomain(String uid, Long generation) {
     DomainSpec ds = new DomainSpec()
         .withDomainUid(uid)
-        .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(SECRET_NAME));
     ds.setNodeName(NODE_NAME);
     return new DomainResource()
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)

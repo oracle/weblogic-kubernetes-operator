@@ -56,7 +56,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null);
+          .withWebLogicCredentialsSecret(SECRET_NAME);
   }
 
   @AfterEach
@@ -440,17 +440,9 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenWebLogicCredentialsSecretNameFoundWithExplicitNamespace_dontReportError() {
-    configureDomain(domain)
-          .withWebLogicCredentialsSecret(SECRET_NAME, NS);
-
-    assertThat(domain.getValidationFailures(resourceLookup), empty());
-  }
-
-  @Test
   void whenWebLogicCredentialsSecretNamespaceUndefined_useDomainNamespace() {
     configureDomain(domain)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null);
+          .withWebLogicCredentialsSecret(SECRET_NAME);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -559,16 +551,6 @@ class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
-  }
-
-  @Test
-  void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, "badNamespace");
-    configureDomain(domain)
-          .withWebLogicCredentialsSecret(SECRET_NAME, "badNamespace");
-
-    assertThat(domain.getValidationFailures(resourceLookup),
-          contains(stringContainsInOrder("Bad namespace", "badNamespace")));
   }
 
   @Test
@@ -792,7 +774,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
@@ -808,7 +790,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
@@ -825,7 +807,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
@@ -841,7 +823,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()

@@ -250,6 +250,31 @@ class OfflineWlstEnv(object):
       ret = None
     return ret
 
+  # Work-around bug in off-line WLST where cluster.getDynamicServers() may throw
+  # when there are no 'real' DynamicServers.  Exception looks like:
+  #     at com.sun.proxy.$Proxy46.getDynamicServers(Unknown Source)
+  #     at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+  #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+  #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  #     at java.lang.reflect.Method.invoke(Method.java:498)
+  def getDynamicServersOrNone(self,cluster):
+    ret = None
+    try:
+      cd('/Cluster/' + cluster.getName() + '/DynamicServers')
+      # DynamicServers MBean can be found under
+      # /Cluster/<clusterName>/DynamicServers/<clusterName>/
+      # or
+      # /Cluster/<clusterName>/DynamicServers/NO_NAME_0/
+      childObjs = ls(returnMap='true', returnType='c')
+      if not childObjs.isEmpty():
+        cd(childObjs[0])
+        if get('ServerTemplate') is not None:
+          # Cluster is a dynamic cluster if a ServerTemplate MBean is found
+          ret = cmo
+    except:
+      trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
+    return ret;
+
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
 
@@ -380,23 +405,6 @@ class TopologyGenerator(Generator):
       self.close()
 
   # Work-around bug in off-line WLST where cluster.getDynamicServers() may throw
-  # when there are no 'real' DynamicServers.  Exception looks like:
-  #     at com.sun.proxy.$Proxy46.getDynamicServers(Unknown Source)
-  #     at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-  #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-  #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-  #     at java.lang.reflect.Method.invoke(Method.java:498)
-  def getDynamicServersOrNone(self,cluster):
-    try:
-      ret = cluster.getDynamicServers()
-      # Dynamic Servers must be configured with a ServerTemplate
-      if ret is not None:
-        if ret.getServerTemplate() is None:
-          ret = None
-    except:
-      trace("Ignoring getDynamicServers() exception, this is expected.")
-      ret = None
-    return ret
 
   def isConsensusLeasing(self, cluster):
     if cluster is not None and cluster.getMigrationBasis() == "consensus":
@@ -453,21 +461,22 @@ class TopologyGenerator(Generator):
   def validateDynamicClustersDuplicateServerNamePrefix(self):
     serverNamePrefixes = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersOrNone(cluster) is not None:
-        if cluster.getDynamicServers().getServerNamePrefix() is None:
+      dynamicServers = self.env.getDynamicServersOrNone(cluster)
+      if dynamicServers is not None:
+        if dynamicServers.getServerNamePrefix() is None:
           self.addError("The ServerNamePrefix is not set for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers. The ServerNamePrefix must be set for each WebLogic dynamic cluster.")
         else:
-          if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
-            self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+          if dynamicServers.getServerNamePrefix() in serverNamePrefixes:
+            self.addError("The ServerNamePrefix '" + dynamicServers.getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
           else:
-            serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
+            serverNamePrefixes.append(dynamicServers.getServerNamePrefix())
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
-    if self.getDynamicServersOrNone(cluster) is None:
+    if self.env.getDynamicServersOrNone(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
       self.validateDynamicCluster(cluster)
@@ -748,8 +757,10 @@ class TopologyGenerator(Generator):
         self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced by configured server " + self.name(server) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
-    if cluster.getDynamicServers().isCalculatedListenPorts() == True:
-      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
+    dynamicServers = self.env.getDynamicServersOrNone(cluster)
+    if dynamicServers is not None:
+      if dynamicServers.isCalculatedListenPorts() == True:
+        self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def validateServerCustomChannelName(self):
     reservedNames = ['default','default-secure','default-admin']
@@ -798,13 +809,13 @@ class TopologyGenerator(Generator):
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersOrNone(cluster) is None:
+      if self.env.getDynamicServersOrNone(cluster) is None:
         rtn.append(cluster)
     return rtn
 
   def addConfiguredCluster(self, cluster):
     self.writeln("- name: " + self.name(cluster))
-    dynamicServers = self.getDynamicServersOrNone(cluster)
+    dynamicServers = self.env.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       self.indent();
       self.writeln("dynamicServersConfig:")
@@ -891,7 +902,7 @@ class TopologyGenerator(Generator):
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersOrNone(cluster) is not None:
+      if self.env.getDynamicServersOrNone(cluster) is not None:
         rtn.append(cluster)
     return rtn
 
@@ -908,7 +919,7 @@ class TopologyGenerator(Generator):
 
   def getDynamicClusterServerTemplate(self, cluster):
     serverTemplate = None
-    dynamicServers = self.getDynamicServersOrNone(cluster)
+    dynamicServers = self.env.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       serverTemplate = dynamicServers.getServerTemplate()
     return serverTemplate
@@ -1355,7 +1366,7 @@ class SitConfigGenerator(Generator):
 
   def customizeServerTemplate(self, template):
     name=template.getName()
-    server_name_prefix=template.getCluster().getDynamicServers().getServerNamePrefix()
+    server_name_prefix=self.env.getDynamicServersOrNone(template.getCluster()).getServerNamePrefix()
     listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "${id}")
     self.writeln("<d:server-template>")
     self.indent()

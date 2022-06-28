@@ -450,4 +450,13 @@ class SchemaConversionUtilsTest {
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.readinessPort",
         equalTo(9000)));
   }
+  
+  @SuppressWarnings("unchecked")
+  void testV8DomainWebLogicCredentialsSecretWithNamespace_remove() {
+    ((Map<String, Object>) getDomainSpec(v8Domain).get("webLogicCredentialsSecret")).put("namespace", "my-ns");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.webLogicCredentialsSecret.namespace"));
+  }
 }

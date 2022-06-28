@@ -27,9 +27,9 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -391,7 +391,7 @@ public class DomainResource implements KubernetesObject {
    * @return the secret name
    */
   public String getWebLogicCredentialsSecretName() {
-    return Optional.ofNullable(spec.getWebLogicCredentialsSecret()).map(V1SecretReference::getName).orElse(null);
+    return Optional.ofNullable(spec.getWebLogicCredentialsSecret()).map(V1LocalObjectReference::getName).orElse(null);
   }
 
   /**
@@ -872,7 +872,6 @@ public class DomainResource implements KubernetesObject {
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
       addIllegalSitConfigForMii();
-      verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
       verifyIntrospectorJobName();
       verifyLivenessProbeSuccessThreshold();
@@ -1213,18 +1212,6 @@ public class DomainResource implements KubernetesObject {
       if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
       }
-    }
-
-    private void verifyNoAlternateSecretNamespaceSpecified() {
-      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace())) {
-        failures.add(DomainValidationMessages.illegalSecretNamespace(getSpecifiedWebLogicCredentialsNamespace()));
-      }
-    }
-
-    private String getSpecifiedWebLogicCredentialsNamespace() {
-      return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
-          .map(V1SecretReference::getNamespace)
-          .orElse(getNamespace());
     }
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {

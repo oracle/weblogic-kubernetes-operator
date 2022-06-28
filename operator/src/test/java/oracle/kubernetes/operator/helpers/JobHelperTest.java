@@ -644,7 +644,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
     configureDomain()
           .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
+          .withWebLogicCredentialsSecret(SECRET_NAME)
           .withAdditionalVolume("volume1", VOLUME_PATH_1)
           .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
@@ -664,7 +664,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
     configureDomain()
           .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
+          .withWebLogicCredentialsSecret(SECRET_NAME)
           .withAdditionalVolume("volume1", VOLUME_PATH_1)
           .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 

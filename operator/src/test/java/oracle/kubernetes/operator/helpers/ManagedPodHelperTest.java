@@ -289,7 +289,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     getConfigurator()
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withAdditionalVolume("volume1", VOLUME_PATH_1)
         .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
@@ -311,7 +311,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     getConfigurator()
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withAdditionalVolume("volume1", VOLUME_PATH_1)
         .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
@@ -332,7 +332,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     getConfigurator()
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withWebLogicCredentialsSecret(SECRET_NAME)
         .withAdditionalVolume("volume1", VOLUME_PATH_1)
         .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
