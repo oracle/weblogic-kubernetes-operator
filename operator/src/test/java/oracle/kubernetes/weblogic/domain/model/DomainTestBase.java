@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -38,7 +38,7 @@ public abstract class DomainTestBase {
         .withMetadata(new V1ObjectMeta().namespace(NS))
         .withSpec(
               new DomainSpec()
-                    .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME))
+                    .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(SECRET_NAME))
                     .withDomainUid(DOMAIN_UID));
   }
 
