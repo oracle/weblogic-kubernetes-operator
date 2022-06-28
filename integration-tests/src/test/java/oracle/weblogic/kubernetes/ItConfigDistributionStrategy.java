@@ -115,6 +115,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests related to overrideDistributionStrategy attribute.
@@ -555,8 +556,18 @@ class ItConfigDistributionStrategy {
     Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-1.xml");
     String tempString = assertDoesNotThrow(()
         -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", dsUrl2));
-    assertDoesNotThrow(()
-        -> Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8)));
+    logger.info("Before override \n{0}", tempString);
+    if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("12.2.1.3")) {
+      logger.info("Using 12.2.1.3 image, driver is com.mysql.jdbc.Driver");
+      tempString = tempString.replaceAll("com.mysql.cj.jdbc.Driver", "com.mysql.jdbc.Driver");
+    }
+    logger.info("After override \n{0}", tempString);
+    try {
+      Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8));
+    } catch (IOException ioe) {
+      logger.severe(ioe.getMessage());
+      fail("Couldn't write override file");
+    }
 
     List<Path> overrideFiles = new ArrayList<>();
     overrideFiles.add(dstDsOverrideFile);
@@ -1076,7 +1087,13 @@ class ItConfigDistributionStrategy {
       p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
       p.setProperty("dsName", dsName);
       p.setProperty("dsUrl", jdbcDsUrl);
-      p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      if (WEBLOGIC_IMAGE_TO_USE_IN_SPEC.contains("12.2.1.3")) {
+        logger.info("Using 12.2.1.3 image, driver is com.mysql.jdbc.Driver");
+        p.setProperty("dsDriver", "com.mysql.jdbc.Driver");
+      } else {
+        logger.info("Using 12.2.1.4 and later image, driver is com.mysql.cj.jdbc.Driver");
+        p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      }
       p.setProperty("dsUser", user);
       p.setProperty("dsPassword", password);
       p.setProperty("dsTarget", clusterName);
