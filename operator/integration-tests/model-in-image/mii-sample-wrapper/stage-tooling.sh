@@ -73,15 +73,25 @@ download_zip() {
     fi
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
     echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
-  fi
 
-  if [ ! "$dry_run" = "true" ]; then
-    rm -f $ZIPFILE
-    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE'"
-    curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE
+    if [ ! "$dry_run" = "true" ]; then
+      rm -f $ZIPFILE
+      echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE'"
+      curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE
+    else
+      echo "dryrun:rm -f $ZIPFILE"
+      echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
+    fi
   else
-    echo "dryrun:rm -f $ZIPFILE"
-    echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
+    echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/$ZIPFILE' "
+    if [ ! "$dry_run" = "true" ]; then
+      rm -f $ZIPFILE
+      echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $ZIPFILE'"
+      curl $curl_parms -fL $LOCATION -o $ZIPFILE
+    else
+      echo "dryrun:rm -f $ZIPFILE"
+      echo "dryrun:curl $curl_parms -fL $LOCATION -o $ZIPFILE"
+    fi
   fi
 }
 
