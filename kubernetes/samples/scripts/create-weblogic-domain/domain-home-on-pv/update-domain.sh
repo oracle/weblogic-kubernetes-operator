@@ -215,13 +215,13 @@ function updateDomainHome {
   sleep 30
   max=30
   count=0
-  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/update" | grep "wko-domain.yaml"
   while [ $? -eq 1 -a $count -lt $max ]; do
     sleep 5
     count=`expr $count + 1`
-    kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
+    kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/update" | grep "wko-domain.yaml"
   done
-  kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
+  kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/update/wko-domain.yaml ${domainOutputDir}/domain.yaml
 
   # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
   # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
