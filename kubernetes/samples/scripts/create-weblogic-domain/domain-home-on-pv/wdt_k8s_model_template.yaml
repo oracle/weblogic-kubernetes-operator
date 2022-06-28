@@ -30,8 +30,7 @@ kubernetes:
 
     # Identify which Secret contains the credentials for pulling an image
     %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%":
-
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  - name: "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%"
     # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
     # how to create that Secret at the end of this file)
     webLogicCredentialsSecret:
@@ -64,19 +63,19 @@ kubernetes:
     serverPod:
       # an (optional) list of environment variable to be set on the servers
       env:
-        JAVA_OPTIONS:
+        - name: JAVA_OPTIONS
           value: "%JAVA_OPTIONS%"
-        USER_MEM_ARGS:
+        - name: USER_MEM_ARGS
           value: "-Djava.security.egd=file:/dev/./urandom "
       %OPTIONAL_SERVERPOD_RESOURCES%
       %LOG_HOME_ON_PV_PREFIX%volumes:
-      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
-      %LOG_HOME_ON_PV_PREFIX%     persistentVolumeClaim:
+      %LOG_HOME_ON_PV_PREFIX%  - name: 'weblogic-domain-storage-volume'
+      %LOG_HOME_ON_PV_PREFIX%    persistentVolumeClaim:
       %LOG_HOME_ON_PV_PREFIX%       claimName: '%DOMAIN_PVC_NAME%'
       %LOG_HOME_ON_PV_PREFIX%volumeMounts:
-      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
-      %LOG_HOME_ON_PV_PREFIX%     mountPath: %DOMAIN_ROOT_DIR%
-
+      %LOG_HOME_ON_PV_PREFIX%  - name: 'weblogic-domain-storage-volume'
+      %LOG_HOME_ON_PV_PREFIX%    mountPath: %DOMAIN_ROOT_DIR%
+             
     # adminServer is used to configure the desired behavior for starting the administration server.
     adminServer:
       # serverStartState legal values are "RUNNING" or "ADMIN"
