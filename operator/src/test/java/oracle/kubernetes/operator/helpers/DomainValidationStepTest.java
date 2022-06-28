@@ -15,9 +15,9 @@ import java.util.stream.IntStream;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.Step;
@@ -188,7 +188,7 @@ class DomainValidationStepTest {
 
   @Test
   void whenDomainRefersToUnknownSecret_updateStatus() {
-    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
+    domain.getSpec().withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"));
 
     testSupport.runSteps(domainValidationSteps);
 
@@ -199,7 +199,7 @@ class DomainValidationStepTest {
 
   @Test
   void whenDomainRefersToUnknownSecret_dontRunNextStep() {
-    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
+    domain.getSpec().withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"));
 
     testSupport.runSteps(domainValidationSteps);
 
@@ -208,7 +208,7 @@ class DomainValidationStepTest {
 
   @Test
   void whenDomainRefersToDefinedSecret_runNextStep() {
-    domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name"));
+    domain.getSpec().withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"));
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
 
     testSupport.runSteps(domainValidationSteps);
@@ -240,7 +240,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToDefinedSecretInMiddleChunk_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(
-            new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK).namespace(NS));
+            new V1LocalObjectReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK));
     createSecrets(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
@@ -250,7 +250,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToDefinedSecretInFirstChunk_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(
-        new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK).namespace(NS));
+        new V1LocalObjectReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK));
     createSecrets(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
@@ -260,7 +260,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToDefinedSecretInLastChunk_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(
-        new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_LAST_NUM).namespace(NS));
+        new V1LocalObjectReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_LAST_NUM));
     createSecrets(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
@@ -304,7 +304,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToDefinedConfigMapInMiddleChunk_runNextStep() {
     domain.getSpec()
-        .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"))
         .setConfiguration(new Configuration().withModel(
             new Model().withConfigMap(TEST_CONFIGMAP_PREFIX + MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK)
                 .withRuntimeEncryptionSecret("name")));
@@ -320,7 +320,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToDefinedConfigMapInFirstChunk_runNextStep() {
     domain.getSpec()
-        .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"))
         .setConfiguration(new Configuration().withModel(
             new Model().withConfigMap(TEST_CONFIGMAP_PREFIX + MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK)
                 .withRuntimeEncryptionSecret("name")));
@@ -336,7 +336,7 @@ class DomainValidationStepTest {
   @Test
   void whenDomainRefersToDefinedConfigMapInLastChunk_runNextStep() {
     domain.getSpec()
-        .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name("name"))
         .setConfiguration(new Configuration().withModel(
             new Model().withConfigMap(TEST_CONFIGMAP_PREFIX + MULTI_CHUNKS_LAST_NUM)
                 .withRuntimeEncryptionSecret("name")));
