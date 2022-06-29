@@ -66,11 +66,11 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static String PROTOCOL_HTTP = "http";
-  private static String PROTOCOL_HTTPS = "https";
-  private static String PROTOCOL_TCP = "tcp";
-  private static String PROTOCOL_TLS = "tls";
-  private static String PROTOCOL_ADMIN = "admin";
+  private static final String PROTOCOL_HTTP = "http";
+  private static final String PROTOCOL_HTTPS = "https";
+  private static final String PROTOCOL_TCP = "tcp";
+  private static final String PROTOCOL_TLS = "tls";
+  private static final String PROTOCOL_ADMIN = "admin";
 
   private ServiceHelper() {
   }
