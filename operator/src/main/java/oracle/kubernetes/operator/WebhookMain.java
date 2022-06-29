@@ -171,6 +171,7 @@ public class WebhookMain extends BaseMain {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
       warnedOfCrdAbsence = false;
+      crdPresenceCheckCount.set(0);
       return super.onSuccess(packet, callResponse);
     }
 
