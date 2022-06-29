@@ -1603,7 +1603,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
+  void whenDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"
@@ -1667,7 +1667,6 @@ class DomainProcessorTest {
             + "      sslListenPort: 8004\n";
 
     //establishPreviousIntrospection(null);
-    domainConfigurator.withIstio();
     domainConfigurator.configureCluster("cluster-1").withReplicas(2);
 
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1697,7 +1696,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() {
+  void whenDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"
@@ -1756,7 +1755,6 @@ class DomainProcessorTest {
         + "      sslListenPort: 8004\n";
 
     //establishPreviousIntrospection(null);
-    domainConfigurator.withIstio();
     domainConfigurator.configureCluster("cluster-1").withReplicas(2);
 
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1766,18 +1764,23 @@ class DomainProcessorTest {
     List<V1Pod> runningPods = getRunningPods();
     assertThat(runningPods.size(), equalTo(6));
 
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-server1"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-server2"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server1"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(8888));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server1"), equalTo(8003));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server2"), equalTo(8004));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server1"), equalTo(7104));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(7104));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(7001));
 
     // default  is not set
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"), equalTo(null));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
+        equalTo(null));
 
   }
 

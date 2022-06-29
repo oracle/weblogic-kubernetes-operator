@@ -18,7 +18,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
 import oracle.weblogic.domain.ServerPod;
@@ -32,7 +31,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -180,10 +178,6 @@ public class FmwUtils {
                 .clusterName("cluster-1")
                 .replicas(replicaCount))
             .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888)
-                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .opss(new Opss()
                     .walletPasswordSecret(opssWalletPasswordSecretName))
                 .model(new Model()
