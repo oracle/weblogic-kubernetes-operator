@@ -2,7 +2,7 @@
 title: "Scheduling pods to particular nodes"
 date: 2020-06-30T08:55:00-05:00
 draft: false
-weight: 15
+weight: 14
 description: "How do I constrain scheduling WebLogic Server pods to particular nodes?"
 ---
 
