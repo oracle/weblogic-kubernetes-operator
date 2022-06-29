@@ -66,6 +66,11 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static String PROTOCOL_HTTP = "http";
+  private static String PROTOCOL_HTTPS = "https";
+  private static String PROTOCOL_TCP = "tcp";
+  private static String PROTOCOL_TLS = "tls";
+  private static String PROTOCOL_ADMIN = "admin";
 
   private ServiceHelper() {
   }
@@ -179,17 +184,17 @@ public class ServiceHelper {
   }
 
   static String getAppProtocol(String protocol) {
-    List<String> httpProtocols = new ArrayList<>(Arrays.asList("http"));
-    List<String> httpsProtocols = new ArrayList<>(Arrays.asList("https"));
-    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", "admin"));
+    List<String> httpProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTP));
+    List<String> httpsProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTPS));
+    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", PROTOCOL_ADMIN));
 
-    String appProtocol = "tcp";
+    String appProtocol = PROTOCOL_TCP;
     if (httpProtocols.contains(protocol)) {
-      appProtocol = "http";
+      appProtocol = PROTOCOL_HTTP;
     } else if (httpsProtocols.contains(protocol)) {
-      appProtocol = "https";
+      appProtocol = PROTOCOL_HTTPS;
     } else if (tlsProtocols.contains(protocol)) {
-      appProtocol = "tls";
+      appProtocol = PROTOCOL_TLS;
     }
     return appProtocol;
   }
@@ -424,13 +429,13 @@ public class ServiceHelper {
         addNapServicePort(ports, networkAccessPoint);
       }
 
-      addServicePortIfNeeded(ports, "default", "tcp", serverConfig.getListenPort());
-      addServicePortIfNeeded(ports, "default-secure", "https", serverConfig.getSslListenPort());
-      addServicePortIfNeeded(ports, "default-admin", "admin", serverConfig.getAdminPort());
+      addServicePortIfNeeded(ports, "default", PROTOCOL_TCP, serverConfig.getListenPort());
+      addServicePortIfNeeded(ports, "default-secure", PROTOCOL_HTTPS, serverConfig.getSslListenPort());
+      addServicePortIfNeeded(ports, "default-admin", PROTOCOL_ADMIN, serverConfig.getAdminPort());
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, "metrics", "http", specification.getRestPort());
+          addServicePortIfNeeded(ports, "metrics", PROTOCOL_HTTP, specification.getRestPort());
         }
       });
     }
