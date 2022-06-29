@@ -274,7 +274,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       callResponse.getResult().getItems().stream().filter(c -> isForDomain(c, info))
-          .forEach(c -> info.addClusterResource(c));
+          .forEach(info::addClusterResource);
 
       return doContinueListOrNext(callResponse, packet);
     }
