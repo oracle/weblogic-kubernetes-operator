@@ -356,7 +356,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     V1Job persistedJob = jobFunction.apply(createJob());
     testSupport.defineResources(persistedJob);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(persistedJob.getMetadata().getName()));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, persistedJob.getMetadata().getName(),
+    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, persistedJob.getMetadata().getName(),
             true, true);
     testSupport.defineResources(jobPod);
 
