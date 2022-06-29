@@ -289,7 +289,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
         Step.chain(
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(),
-            DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(),
             DomainProcessorImpl.bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);

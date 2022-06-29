@@ -18,6 +18,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -63,15 +64,11 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
-import static oracle.kubernetes.common.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -86,8 +83,6 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
-import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
@@ -160,7 +155,7 @@ public class DomainStatusUpdater {
         super(packet, domainStatusUpdaterStep);
       }
 
-      @NotNull
+      @Nonnull
       @Override
       List<EventData> createDomainEvents() {
         final List<EventData> result = new ArrayList<>();
@@ -209,7 +204,7 @@ public class DomainStatusUpdater {
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep(Step next) {
-    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH);
+    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
   }
 
   /**
@@ -260,11 +255,12 @@ public class DomainStatusUpdater {
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
+   * @param message a fuller description of the problem
+   * @param next the next step to run. May be null.
    */
-  public static Step createAbortedFailureSteps() {
-    return createEventStep(new EventData(DOMAIN_FAILED, INTROSPECTOR_MAX_ERRORS_EXCEEDED).failureReason(ABORTED));
+  public static Step createTopologyMismatchFailureSteps(String message, Step next) {
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
   }
-
 
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
@@ -272,8 +268,8 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    * @param next the next step to run. May be null.
    */
-  public static Step createTopologyMismatchFailureSteps(String message, Step next) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
+  public static Step createReplicasTooHighFailureSteps(String message, Step next) {
+    return new FailureStep(REPLICAS_TOO_HIGH, message, next).removingOldFailures(REPLICAS_TOO_HIGH);
   }
 
   /**
@@ -408,7 +404,7 @@ public class DomainStatusUpdater {
       return newStatus;
     }
 
-    @NotNull
+    @Nonnull
     private DomainStatus createNewStatus() {
       DomainStatus cloneStatus = cloneStatus();
       modifyStatus(cloneStatus);
@@ -431,7 +427,7 @@ public class DomainStatusUpdater {
       return getDomain().getMetadata();
     }
 
-    @NotNull
+    @Nonnull
     DomainPresenceInfo getInfo() {
       return info;
     }
@@ -600,7 +596,7 @@ public class DomainStatusUpdater {
         return list;
       }
 
-      @NotNull
+      @Nonnull
       private List<EventData> getNewConditionEvents(@Nonnull  Conditions conditions) {
         return conditions.getNewConditions().stream()
             .map(this::toEvent)
@@ -660,11 +656,9 @@ public class DomainStatusUpdater {
 
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
-          this.status.removeConditionsMatching(c -> c.hasType(FAILED) && REPLICAS_TOO_HIGH == c.getReason());
           this.clusterChecks = createClusterChecks();
           conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
           conditionList.add(new DomainCondition(AVAILABLE).withStatus(sufficientServersRunning()));
-          computeTooManyReplicasFailures();
           if (allIntendedServersReady()) {
             this.status.removeConditionsWithType(ROLLING);
           }
@@ -801,17 +795,6 @@ public class DomainStatusUpdater {
         private boolean allClustersAvailable() {
           return Arrays.stream(clusterChecks).allMatch(ClusterCheck::isAvailable);
         }
-
-        private void computeTooManyReplicasFailures() {
-          final String message = Arrays.stream(clusterChecks)
-              .filter(ClusterCheck::hasTooManyReplicas)
-              .map(ClusterCheck::createFailureMessage)
-              .collect(Collectors.joining(System.lineSeparator()));
-
-          if (!isNullOrEmpty(message)) {
-            addFailure(status, new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH).withMessage(message));
-          }
-        }
       }
 
       private class ClusterCheck {
@@ -875,15 +858,11 @@ public class DomainStatusUpdater {
         private int maxUnavailable() {
           return getInfo().getMaxUnavailable(clusterName);
         }
-
-        private String createFailureMessage() {
-          return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
-        }
       }
 
       private void setStatusDetails(DomainStatus status) {
         getDomainConfig()
-            .map(c -> new DomainStatusFactory(getInfo(), getDomain(), c, this::isStartedServer))
+            .map(c -> new DomainStatusFactory(getInfo(), c, this::isStartedServer))
             .ifPresent(f -> f.setStatusDetails(status));
       }
 
@@ -1154,6 +1133,11 @@ public class DomainStatusUpdater {
     }
 
     @Override
+    protected String getDetail() {
+      return selectedReasons.stream().map(DomainFailureReason::toString).collect(Collectors.joining(", "));
+    }
+
+    @Override
     void modifyStatus(DomainStatus status) {
       selectedReasons.forEach(status::markFailuresForRemoval);
       status.removeMarkedFailures();
@@ -1166,9 +1150,7 @@ public class DomainStatusUpdater {
    */
   static class DomainStatusFactory {
 
-    private DomainPresenceInfo info;
-    @Nonnull
-    private final DomainResource domain;
+    private final DomainPresenceInfo info;
     private final WlsDomainConfig domainConfig;
     private final Function<String, Boolean> isServerConfiguredToRun;
 
@@ -1176,17 +1158,14 @@ public class DomainStatusUpdater {
      * Creates a factory to create a DomainStatus object, initialized with state from the configuration.
      *
      * @param info the domain presence info
-     * @param domain an operator domain resource
      * @param domainConfig a WebLogic domain configuration
      * @param isServerConfiguredToRun returns true if the named server is configured to start
      */
     public DomainStatusFactory(
         @Nonnull DomainPresenceInfo info,
-        @Nonnull DomainResource domain,
         @Nonnull WlsDomainConfig domainConfig,
         @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
       this.info = info;
-      this.domain = domain;
       this.domainConfig = domainConfig;
       this.isServerConfiguredToRun = isServerConfiguredToRun;
     }

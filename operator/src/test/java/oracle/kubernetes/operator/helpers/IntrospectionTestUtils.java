@@ -54,7 +54,7 @@ public class IntrospectionTestUtils {
    * @param testSupport a kubernetes test support instance
    * @param introspectResult the log to be returned from the job pod
    */
-  static void defineIntrospectionPodLog(KubernetesTestSupport testSupport, String introspectResult) {
+  public static void defineIntrospectionPodLog(KubernetesTestSupport testSupport, String introspectResult) {
     defineIntrospectionResult(testSupport, introspectResult, IntrospectionTestUtils::createCompletedStatus);
   }
 
