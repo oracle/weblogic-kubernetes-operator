@@ -919,6 +919,19 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
     </item>
     
     <item>
+      <title>Scheduling pods to particular nodes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/node-selector/</guid>
+      <description>How do I constrain scheduling WebLogic Server pods to a particular set of nodes?
+ To do this:
+First, set a label on the nodes on which the WebLogic Server pods will run. For example:
+$ kubectl label nodes name=weblogic-pods In the Domain CR, set a nodeSelector: a selector which must match a node&amp;rsquo;s labels for the pod to be scheduled on that node. See kubectl explain pods.spec.nodeSelector.
+You can set nodeSelector labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain.</description>
+    </item>
+    
+    <item>
       <title>Handling security validations</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</link>
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
