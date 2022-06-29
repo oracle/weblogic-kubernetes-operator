@@ -119,6 +119,17 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   }
 
   /**
+   * Set the event data that is associated with this operation.
+   *
+   * @param eventData event data
+   * @return the updated factory
+   */
+  public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+    this.eventData = eventData;
+    return this;
+  }
+
+  /**
    * Modifies the factory to handle shutting down the domain.
    *
    * @return the updated factory

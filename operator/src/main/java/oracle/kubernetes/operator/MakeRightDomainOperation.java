@@ -7,6 +7,7 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -30,6 +31,8 @@ public interface MakeRightDomainOperation {
   MakeRightDomainOperation withExplicitRecheck();
 
   MakeRightDomainOperation withEventData(EventItem eventItem, String message);
+
+  MakeRightDomainOperation withEventData(EventData eventData);
 
   MakeRightDomainOperation interrupt();
 

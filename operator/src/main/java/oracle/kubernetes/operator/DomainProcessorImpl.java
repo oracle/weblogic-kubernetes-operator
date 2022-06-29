@@ -33,6 +33,7 @@ import oracle.kubernetes.common.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -622,7 +623,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(info)
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(EventItem.CLUSTER_CREATED, null)
+        .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
         .execute();
   }
 
@@ -636,7 +637,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(info)
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(EventItem.CLUSTER_CHANGED, null)
+        .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
         .execute();
   }
 
@@ -651,7 +652,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(info)
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(EventItem.CLUSTER_DELETED, null)
+        .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
         .execute();
   }
 
