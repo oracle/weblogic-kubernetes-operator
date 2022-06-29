@@ -41,6 +41,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.FluentdUtils;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -203,6 +204,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
     mementos.add(SystemClockTestSupport.installClock());
+    mementos.add(UnitTestHash.install());
+
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
@@ -622,7 +625,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain).withFluentdConfiguration(true, "elastic-cred", null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
+    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
     testSupport.defineResources(jobPod);
     defineFailedFluentdContainerInIntrospection();
 
@@ -645,8 +648,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, "elastic-cred", null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
-        true, false);
+    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, false);
     testSupport.defineResources(jobPod);
     defineNormalFluentdContainerInIntrospection();
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));

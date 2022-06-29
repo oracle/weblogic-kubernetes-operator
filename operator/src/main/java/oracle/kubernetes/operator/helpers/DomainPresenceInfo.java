@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -838,6 +839,10 @@ public class DomainPresenceInfo implements PacketComponent {
         .ifPresent(name -> clusters.put(name, clusterResource));
   }
 
+  /**
+   * Remove a named cluster resource.
+   * @param clusterName the name of the resource to remove.
+   */
   public ClusterResource removeClusterResource(String clusterName) {
     return Optional.ofNullable(clusterName).map(clusters::remove).orElse(null);
   }
@@ -848,6 +853,16 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public void removeInactiveClusterResources(Set<String> activeClusterNames) {
     clusters.entrySet().removeIf(e -> !activeClusterNames.contains(e.getKey()));
+  }
+
+  /**
+   * Returns all clusters associated with this domain presence.
+   */
+  public List<ClusterSpec> getClusters() {
+    final Map<String, ClusterSpec> result = new HashMap<>();
+    getDomain().getSpec().getClusters().forEach(c -> result.put(c.getClusterName(), c));
+    clusters.values().stream().map(ClusterResource::getSpec).forEach(c -> result.put(c.getClusterName(), c));
+    return new ArrayList<>(result.values());
   }
 
   /**

@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.client.HttpResponseStub;
@@ -91,11 +92,9 @@ class ShutdownManagedServerStepTest {
   private final V1Pod configuredManagedServer1 = defineManagedPod(CONFIGURED_MANAGED_SERVER1);
   private final V1Pod standaloneManagedServer1 = defineManagedPod(MANAGED_SERVER1);
   private final V1Pod dynamicManagedServer1 = defineManagedPod(DYNAMIC_MANAGED_SERVER1);
-  private final V1Service configuredServerService = createServerService(CONFIGURED_MANAGED_SERVER1,
-      CONFIGURED_CLUSTER_NAME);
-  private final V1Service standaloneServerService = createServerService(MANAGED_SERVER1, null);
-  private final V1Service dynamicServerService = createServerService(DYNAMIC_MANAGED_SERVER1,
-      DYNAMIC_CLUSTER_NAME);
+  private V1Service configuredServerService;
+  private V1Service standaloneServerService;
+  private V1Service dynamicServerService;
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -128,11 +127,15 @@ class ShutdownManagedServerStepTest {
     mementos.add(httpSupport.install());
     mementos.add(SystemClockTestSupport.installClock());
     mementos.add(TuningParametersStub.install());
+    mementos.add(UnitTestHash.install());
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.defineResources(domain);
 
+    configuredServerService = createServerService(CONFIGURED_MANAGED_SERVER1, CONFIGURED_CLUSTER_NAME);
+    standaloneServerService = createServerService(MANAGED_SERVER1, null);
+    dynamicServerService = createServerService(DYNAMIC_MANAGED_SERVER1, DYNAMIC_CLUSTER_NAME);
     DomainProcessorTestSetup.defineSecretData(testSupport);
     defineServerPodsInDomainPresenceInfo();
   }

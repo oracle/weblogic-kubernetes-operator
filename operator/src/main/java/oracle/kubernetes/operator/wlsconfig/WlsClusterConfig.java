@@ -111,7 +111,7 @@ public class WlsClusterConfig {
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
   public String getName() {
-    return name;
+    return getClusterName();
   }
 
   public WlsDynamicServersConfig getDynamicServersConfig() {
@@ -191,21 +191,21 @@ public class WlsClusterConfig {
   /**
    * Returns the maximum size of the dynamic cluster.
    *
-   * @return the maximum size of the dynamic cluster, or -1 if there is no dynamic servers in this
+   * @return the maximum size of the dynamic cluster, or 0 if there are no dynamic servers in this
    *     cluster
    */
   public int getMaxDynamicClusterSize() {
-    return dynamicServersConfig != null ? dynamicServersConfig.getMaxDynamicClusterSize() : -1;
+    return Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getMaxDynamicClusterSize).orElse(0);
   }
 
   /**
    * Returns the minimum size of the dynamic cluster.
    *
-   * @return the minimum size of the dynamic cluster, or -1 if there is no dynamic servers in this
+   * @return the minimum size of the dynamic cluster, or 0 if there are no dynamic servers in this
    *     cluster
    */
   public int getMinDynamicClusterSize() {
-    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : -1;
+    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : 0;
   }
 
   /**

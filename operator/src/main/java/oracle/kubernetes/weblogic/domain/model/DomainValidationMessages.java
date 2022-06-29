@@ -18,7 +18,7 @@ import oracle.kubernetes.utils.OperatorUtils;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
-class DomainValidationMessages {
+public class DomainValidationMessages {
 
   private DomainValidationMessages() {
     // no-op
@@ -94,7 +94,7 @@ class DomainValidationMessages {
                             new String[] {getBundleString("singularToBe"), getBundleString("pluralToBe")});
   }
 
-  static String noSuchSecret(String secretName, String namespace, SecretType type) {
+  public static String noSuchSecret(String secretName, String namespace, SecretType type) {
     return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
   }
 
