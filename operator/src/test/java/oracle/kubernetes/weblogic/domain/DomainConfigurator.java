@@ -461,10 +461,9 @@ public abstract class DomainConfigurator {
   /**
    * Defines a secret reference for the domain.
    * @param secretName the name of the secret
-   * @param namespace the namespace containing the secret
    * @return this object
    */
-  public abstract DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace);
+  public abstract DomainConfigurator withWebLogicCredentialsSecret(String secretName);
 
   /**
    * Set affinity for the pod configuration.
@@ -592,27 +591,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
-
-  /**
-   * Add Istio for the domain resource.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstio();
-
-  /**
-   * Add Istio for the domain resource and enable localhostBindingsEnabled attribute.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstioLocalhostBindingsEnabled(Boolean localhostBindingsEnabled);
-
-  /**
-   * Add Istio for the domain resource and set replication channel port.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstioReplicationChannelPort(Integer replicationChannelPort);
 
   /**
    * Add domain type for the domain resource.

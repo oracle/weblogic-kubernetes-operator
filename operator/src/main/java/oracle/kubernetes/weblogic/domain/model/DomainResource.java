@@ -27,9 +27,9 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -45,7 +45,6 @@ import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
-import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -392,7 +391,7 @@ public class DomainResource implements KubernetesObject {
    * @return the secret name
    */
   public String getWebLogicCredentialsSecretName() {
-    return Optional.ofNullable(spec.getWebLogicCredentialsSecret()).map(V1SecretReference::getName).orElse(null);
+    return Optional.ofNullable(spec.getWebLogicCredentialsSecret()).map(V1LocalObjectReference::getName).orElse(null);
   }
 
   /**
@@ -582,9 +581,6 @@ public class DomainResource implements KubernetesObject {
         .map(OnlineUpdate::getWdtTimeouts);
   }
 
-  public boolean isIstioEnabled() {
-    return spec.isIstioEnabled();
-  }
 
   /**
    * check if the admin channel port forwarding is enabled for the admin server.
@@ -597,33 +593,6 @@ public class DomainResource implements KubernetesObject {
             .map(AdminServer::isAdminChannelPortForwardingEnabled).orElse(true);
   }
 
-  public int getIstioReadinessPort() {
-    return spec.getIstioReadinessPort();
-  }
-
-  public int getIstioReplicationPort() {
-    return spec.getIstioReplicationPort();
-  }
-
-  /**
-   * For Istio version prior to 1.10, proxy redirects traffic to localhost and thus requires
-   * localhostBindingsEnabled configuration to be true.  Istio 1.10 and later redirects traffic
-   * to server pods' IP interface and thus localhostBindingsEnabled configuration should be false.
-   * @return true if if the proxy redirects traffic to localhost, false otherwise.
-   */
-  public boolean isLocalhostBindingsEnabled() {
-    Boolean isLocalHostBindingsEnabled = spec.isLocalhostBindingsEnabled();
-    if (isLocalHostBindingsEnabled != null) {
-      return isLocalHostBindingsEnabled;
-    }
-
-    String istioLocalhostBindingsEnabled = TuningParameters.getInstance().get("istioLocalhostBindingsEnabled");
-    if (istioLocalhostBindingsEnabled != null) {
-      return Boolean.parseBoolean(istioLocalhostBindingsEnabled);
-    }
-
-    return true;
-  }
 
   /**
    * Returns the domain home. May be null, but will not be an empty string.
@@ -903,9 +872,7 @@ public class DomainResource implements KubernetesObject {
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
       addIllegalSitConfigForMii();
-      verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
-      verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
       verifyLivenessProbeSuccessThreshold();
       verifyContainerNameValidInPodSpec();
@@ -1166,22 +1133,6 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private void verifyIstioExposingDefaultChannel() {
-      if (spec.isIstioEnabled()) {
-        Optional.ofNullable(spec.getAdminServer())
-            .map(AdminServer::getAdminService)
-            .map(AdminService::getChannels)
-            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
-      }
-    }
-
-    private void checkForDefaultNameExposed(Channel channel) {
-      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
-            || "default-secure".equals(channel.getChannelName())) {
-        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
-      }
-    }
-
     private void addReservedEnvironmentVariables() {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
@@ -1261,18 +1212,6 @@ public class DomainResource implements KubernetesObject {
       if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
       }
-    }
-
-    private void verifyNoAlternateSecretNamespaceSpecified() {
-      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace())) {
-        failures.add(DomainValidationMessages.illegalSecretNamespace(getSpecifiedWebLogicCredentialsNamespace()));
-      }
-    }
-
-    private String getSpecifiedWebLogicCredentialsNamespace() {
-      return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
-          .map(V1SecretReference::getNamespace)
-          .orElse(getNamespace());
     }
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {

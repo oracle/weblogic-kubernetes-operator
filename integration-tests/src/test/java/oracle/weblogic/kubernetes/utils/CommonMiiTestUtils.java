@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -40,7 +39,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
@@ -95,7 +93,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
@@ -276,9 +273,8 @@ public class CommonMiiTestUtils {
             .domainUid(domainResourceName)
             .domainHomeSourceType("FromModel")
             .image(imageName)
-            .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new oracle.weblogic.domain.ServerPod()
@@ -520,9 +516,8 @@ public class CommonMiiTestUtils {
                     .domainUid(domainResourceName)
                     .domainHomeSourceType("FromModel")
                     .image(imageName)
-                    .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
                     .serverStartPolicy("IfNeeded")
                     .serverPod(new oracle.weblogic.domain.ServerPod()
@@ -689,9 +684,8 @@ public class CommonMiiTestUtils {
         .image(imageName)
         .addImagePullSecretsItem(new V1LocalObjectReference()
             .name(repoSecretName))
-        .webLogicCredentialsSecret(new V1SecretReference()
-            .name(adminSecretName)
-            .namespace(domNamespace))
+        .webLogicCredentialsSecret(new V1LocalObjectReference()
+            .name(adminSecretName))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(Boolean.TRUE)
         .logHome(uniquePath + "/logs")
@@ -1624,9 +1618,8 @@ public class CommonMiiTestUtils {
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
@@ -1641,10 +1634,6 @@ public class CommonMiiTestUtils {
                     .limits(resourceLimit)))
             .clusters(clusterList)
             .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888)
-                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionsecret))
@@ -1741,9 +1730,8 @@ public class CommonMiiTestUtils {
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()

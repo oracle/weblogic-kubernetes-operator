@@ -54,7 +54,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -578,7 +577,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void afterUpgradeIstioMonitoringExporterPod_dontReplacePod() {
     useProductionHash();
-    defineExporterConfiguration().withIstio();
+    defineExporterConfiguration();
 
     initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
 
@@ -590,7 +589,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
-    defineExporterConfiguration().withIstio();
+    defineExporterConfiguration();
 
     V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
@@ -687,7 +686,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
         .withDomainUid(UID)
-        .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }

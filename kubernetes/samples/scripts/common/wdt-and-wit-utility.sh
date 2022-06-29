@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021,2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -209,10 +209,12 @@ run_wdt() {
 
   cd $WDT_DIR || return 1
 
+  mkdir ${action}
+
   cmd="
   $wdt_bin_dir/extractDomainResource.sh
      -oracle_home $oracle_home
-     -domain_resource_file domain${action}.yaml
+     -output_dir ./${action}
      -domain_home $domain_home_dir
      -model_file $model_final
      -variable_file $inputs_final

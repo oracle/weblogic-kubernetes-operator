@@ -17,7 +17,6 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -53,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_PROGRESSING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -217,25 +217,8 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator v3.4.0 to current.
-   */
-  @Test
-  @DisplayName("Upgrade 3.4.0 Auxiliary Domain(v8 schema) Image to current")
-  void testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
-    upgradeWlsAuxDomain("3.4.0");
-  }
-
-  /**
    * Auxiliary Image Domain upgrade from Operator v3.4.1 to current.
-   * The current release of the 3.4.1 does not conatin the resolution
-   * described in the following PR 
-   * https://github.com/oracle/weblogic-kubernetes-operator/pull/3165/files
-   *
-   * Note testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() uses a 
-   * patched Operator 3.4.0 image to make it pass. See utils/OperatorUtils.java
    */
-  @Disabled
   @Test
   @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
   void testOperatorWlsAuxDomainUpgradeFrom341ToCurrent() {
@@ -707,9 +690,8 @@ class ItOperatorWlsUpgrade {
                     .image(domainImage)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(TEST_IMAGES_REPO_SECRET_NAME))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domainNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
                     .serverStartPolicy("weblogic.oracle/v8".equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded")
                     .serverPod(new ServerPod()
@@ -772,21 +754,18 @@ class ItOperatorWlsUpgrade {
 
   void checkDomainStatus(String domainNamespace) {
 
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
     // verify the condition type Available exists
     checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, OLD_DOMAIN_VERSION);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", OLD_DOMAIN_VERSION);
     // verify the condition Available type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", OLD_DOMAIN_VERSION);
     // verify there is no status condition type Failed
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_FAILED_TYPE, OLD_DOMAIN_VERSION);
+    // verify there is no status condition type Progressing
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_PROGRESSING_TYPE, OLD_DOMAIN_VERSION);
   }
 
   private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {

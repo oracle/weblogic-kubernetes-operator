@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
@@ -58,6 +59,29 @@ public abstract class Step {
    */
   public static Step chain(List<Step> stepGroups) {
     return chain(stepGroups.toArray(new Step[0]));
+  }
+
+  /**
+   * Inserts a step into a chain of steps before the first step whose name is specified. The name is given without
+   * its package and/or outer class. If no step with the specified class is found, the step will be inserted at the end.
+   * @param stepToInsert the step to insert
+   * @param stepClassName the name of the class before which to insert the new step
+   */
+  public void insertBefore(Step stepToInsert, @Nullable String stepClassName) {
+    Step step = this;
+    while (step.getNext() != null && !isSpecifiedStep(step.getNext(), stepClassName)) {
+      step = step.getNext();
+    }
+    stepToInsert.next = step.getNext();
+    step.next = stepToInsert;
+  }
+
+  private boolean isSpecifiedStep(Step step, String stepClassName) {
+    return stepClassName != null && hasSpecifiedClassName(step.getClass().getName(), stepClassName);
+  }
+
+  private boolean hasSpecifiedClassName(String name, String stepClassName) {
+    return name.endsWith("." + stepClassName) || name.endsWith("$" + stepClassName);
   }
 
   private static int getFirstNonNullIndex(Step[] stepGroups) {

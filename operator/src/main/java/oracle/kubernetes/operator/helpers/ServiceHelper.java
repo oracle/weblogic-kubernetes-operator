@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -65,6 +66,11 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final String PROTOCOL_HTTP = "http";
+  private static final String PROTOCOL_HTTPS = "https";
+  private static final String PROTOCOL_TCP = "tcp";
+  private static final String PROTOCOL_TLS = "tls";
+  private static final String PROTOCOL_ADMIN = "admin";
 
   private ServiceHelper() {
   }
@@ -175,6 +181,22 @@ public class ServiceHelper {
 
   static V1Service createExternalServiceModel(Packet packet) {
     return new ExternalServiceStepContext(null, packet).createModel();
+  }
+
+  static String getAppProtocol(String protocol) {
+    List<String> httpProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTP));
+    List<String> httpsProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTPS));
+    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", PROTOCOL_ADMIN));
+
+    String appProtocol = PROTOCOL_TCP;
+    if (httpProtocols.contains(protocol)) {
+      appProtocol = PROTOCOL_HTTP;
+    } else if (httpsProtocols.contains(protocol)) {
+      appProtocol = PROTOCOL_HTTPS;
+    } else if (tlsProtocols.contains(protocol)) {
+      appProtocol = PROTOCOL_TLS;
+    }
+    return appProtocol;
   }
 
   private static class ForServerStep extends ServiceHelperStep {
@@ -324,15 +346,13 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(
-        List<V1ServicePort> ports, String portName, String protocol, String appProtocol, Integer port) {
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
       if (port == null) {
         return;
       }
-
-      addServicePortIfNeeded(ports, createServicePort(portName, appProtocol, port));
+      addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       if (isSipProtocol(protocol)) {
-        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
+        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port, getAppProtocol(protocol)));
       }
     }
 
@@ -408,15 +428,14 @@ public class ServiceHelper {
       for (NetworkAccessPoint networkAccessPoint : getNetworkAccessPoints(serverConfig)) {
         addNapServicePort(ports, networkAccessPoint);
       }
-      if (!isIstioEnabled()) {
-        addServicePortIfNeeded(ports, "default", null, serverConfig.getListenPort());
-        addServicePortIfNeeded(ports, "default-secure", null, serverConfig.getSslListenPort());
-        addServicePortIfNeeded(ports, "default-admin", null, serverConfig.getAdminPort());
-      }
+
+      addServicePortIfNeeded(ports, "default", PROTOCOL_TCP, serverConfig.getListenPort());
+      addServicePortIfNeeded(ports, "default-secure", PROTOCOL_HTTPS, serverConfig.getSslListenPort());
+      addServicePortIfNeeded(ports, "default-admin", PROTOCOL_ADMIN, serverConfig.getAdminPort());
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, "metrics", "http", specification.getRestPort());
+          addServicePortIfNeeded(ports, "metrics", PROTOCOL_HTTP, specification.getRestPort());
         }
       });
     }
@@ -426,15 +445,14 @@ public class ServiceHelper {
     }
 
     void addNapServicePort(List<V1ServicePort> ports, NetworkAccessPoint nap) {
-      addServicePortIfNeeded(ports, nap.getName(), nap.getProtocol(), null, nap.getListenPort());
+      addServicePortIfNeeded(ports, nap.getName(), nap.getProtocol(), nap.getListenPort());
     }
 
-    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String appProtocol, Integer port) {
-      addServicePortIfNeeded(ports, portName, null, appProtocol, port);
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, Integer port) {
+      addServicePortIfNeeded(ports, portName, null, port);
     }
 
-    abstract void addServicePortIfNeeded(
-        List<V1ServicePort> ports, String portName, String protocol, String appProtocol, Integer port);
+    abstract void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port);
 
     protected void addServicePortIfNeeded(List<V1ServicePort> ports, V1ServicePort port) {
       if (isNoDuplicatedName(ports, port) && isNoDuplicatedProtocolAndPort(ports, port)) {
@@ -460,26 +478,20 @@ public class ServiceHelper {
       return one.getProtocol().equals(two.getProtocol());
     }
 
-    V1ServicePort createServicePort(String portName, Integer port) {
-      return createServicePort(portName, null, port);
-    }
-
-    V1ServicePort createServicePort(String portName, String appProtocol, Integer port) {
+    V1ServicePort createServicePort(String portName, Integer port, String appProtocol) {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
+          .appProtocol(appProtocol)
           .port(port)
           .appProtocol(appProtocol)
           .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 
-    V1ServicePort createSipUdpServicePort(String portName, Integer port) {
-      if (isIstioEnabled()) {
-        // The introspector will have already prefixed the portName with either "tcp-" or "tls-". Remove the prefix.
-        portName = portName.substring(4);
-      }
+    V1ServicePort createSipUdpServicePort(String portName, Integer port, String appProtocol) {
 
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
+          .appProtocol(appProtocol)
           .port(port)
           .protocol(V1ServicePort.ProtocolEnum.UDP);
     }
@@ -519,10 +531,6 @@ public class ServiceHelper {
 
     String getNamespace() {
       return info.getNamespace();
-    }
-
-    boolean isIstioEnabled() {
-      return getDomain().isIstioEnabled();
     }
 
     protected abstract String createServiceName();
@@ -791,13 +799,12 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(
-        List<V1ServicePort> ports, String portName, String protocol, String appProtocol, Integer port) {
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
       if (port != null) {
-        addServicePortIfNeeded(ports, createServicePort(portName, appProtocol, port));
+        addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       }
       if (isSipProtocol(protocol)) {
-        V1ServicePort udpPort = createSipUdpServicePort(portName, port);
+        V1ServicePort udpPort = createSipUdpServicePort(portName, port, getAppProtocol(protocol));
         addServicePortIfNeeded(ports, udpPort);
       }
     }
@@ -969,24 +976,17 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(
-        List<V1ServicePort> ports, String channelName, String protocol, String appProtocol, Integer internalPort) {
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
-
-      if (channel == null && isIstioEnabled() && channelName != null) {
-        String[] tokens = channelName.split("-");
-        if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-              || "tls".equals(tokens[0])) {
-          int index = channelName.indexOf('-');
-          channel = getChannel(channelName.substring(index + 1));
-        }
+      if (channel == null && channelName != null) {
+        channel = getChannel(channelName);
       }
       if (channel == null || internalPort == null) {
         return;
       }
 
       addServicePortIfNeeded(ports,
-          createServicePort(channelName, appProtocol, internalPort)
+          createServicePort(channelName, internalPort, getAppProtocol(protocol))
             .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 

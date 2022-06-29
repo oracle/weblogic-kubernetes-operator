@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -66,6 +67,9 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
   private static final ThreadLocal<Fiber> CURRENT_FIBER = new ThreadLocal<>();
   /** Used to allocate unique number for each fiber. */
   private static final AtomicInteger iotaGen = new AtomicInteger();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static BiConsumer<NextAction, String> preApplyReport = Fiber::reportPreApplyState;
+
   public final Engine owner;
   private final Fiber parent;
   private final int id;
@@ -173,11 +177,11 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         if (LOGGER.isFinerEnabled()) {
           LOGGER.finer("{0} resuming.", getName());
         }
-        na.packet = resumePacket;
+        na.setPacket(resumePacket);
         if (na.kind == Kind.SUSPEND) {
           doAddRunnable = true;
           NextAction resume = new NextAction();
-          resume.invoke(na.next, na.packet);
+          resume.invoke(na.getNext(), na.getPacket());
           na = resume;
         } else {
           if (LOGGER.isFinerEnabled()) {
@@ -267,7 +271,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     lock.lock();
     try {
       if (na != null && na.kind == Kind.SUSPEND) {
-        return last.next;
+        return last.getNext();
       }
       return null;
     } finally {
@@ -354,7 +358,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
       int s = status.get();
       if (s == CANCELLED
           || (s == NOT_COMPLETE
-              && (na.throwable != null || (na.next == null && na.kind != Kind.SUSPEND)))) {
+              && (na.throwable != null || (na.getNext() == null && na.kind != Kind.SUSPEND)))) {
         if (LOGGER.isFinerEnabled()) {
           LOGGER.finer("{0} completed", getName());
         }
@@ -367,9 +371,9 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         try {
           if (s == NOT_COMPLETE && completionCallback != null) {
             if (na.throwable != null) {
-              completionCallback.onThrowable(na.packet, na.throwable);
+              completionCallback.onThrowable(na.getPacket(), na.throwable);
             } else {
-              completionCallback.onCompletion(na.packet);
+              completionCallback.onCompletion(na.getPacket());
             }
           }
         } catch (Throwable t) {
@@ -460,32 +464,23 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     while (isReady()) {
       if (status.get() != NOT_COMPLETE) {
         na = new NextAction();
-        na.invoke(null, na.packet);
+        na.invoke(null, na.getPacket());
         break;
       }
 
-      if (na.next == null) {
+      if (na.getNext() == null) {
         // nothing else to execute. we are done.
         return false;
       }
 
-      LOGGER.finer(CURRENT_STEPS, na.next);
-
-      if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer(
-            "{0} {1}.apply({2})",
-            getName(),
-            na.next,
-            na.packet != null ? "Packet@" + Integer.toHexString(na.packet.hashCode()) : "null");
-      }
-
+      preApplyReport.accept(na, getName());
       addBreadCrumb(na);
 
       NextAction result;
       try {
-        result = na.next.apply(na.packet);
-      } catch (Throwable t) {
-        Packet p = na.packet;
+        result = na.getNext().apply(na.getPacket());
+      } catch (Exception t) {
+        Packet p = na.getPacket();
         na = new NextAction();
         na.terminate(t, p);
 
@@ -494,13 +489,13 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
       }
 
       if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("{0} {1} returned with {2}", getName(), na.next, result);
+        LOGGER.finer("{0} {1} returned with {2}", getName(), na.getNext(), result);
       }
 
       // If resume is called before suspend, then make sure
       // resume(Packet) is not lost
       if (result.kind != NextAction.Kind.SUSPEND) {
-        result.packet = na.packet;
+        result.setPacket(na.getPacket());
       }
 
       last = na;
@@ -526,6 +521,18 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     // we'll be back when this fiber is resumed.
 
     return false;
+  }
+
+  private static void reportPreApplyState(NextAction na, String fiberName) {
+    LOGGER.finer(CURRENT_STEPS, na.getNext());
+
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer(
+          "{0} {1}.apply({2})",
+          fiberName,
+          na.getNext(),
+          na.getPacket() != null ? "Packet@" + Integer.toHexString(na.getPacket().hashCode()) : "null");
+    }
   }
 
   private boolean isReady() {
@@ -561,7 +568,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
    * @return the packet
    */
   public Packet getPacket() {
-    return na.packet;
+    return na.getPacket();
   }
 
   /**
