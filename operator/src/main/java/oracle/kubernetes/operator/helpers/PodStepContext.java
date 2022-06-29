@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,6 +21,8 @@ import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -1245,6 +1248,15 @@ public abstract class PodStepContext extends BasePodStepContext {
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
+    private Map<String, String> getPreservedIstioConfigFromAnnotation() {
+
+      return Optional.ofNullable(getDomain())
+          .map(DomainResource::getMetadata)
+          .map(V1ObjectMeta::getAnnotations)
+          .orElseGet(Collections::emptyMap);
+
+    }
+
     private void restoreLegacyIstioPortsConfig(V1Pod recipePod,  V1Pod currentPod) {
       V1PodSpec recipePodSpec = recipePod.getSpec();
 
@@ -1252,20 +1264,62 @@ public abstract class PodStepContext extends BasePodStepContext {
           currentPod.getSpec().getContainers().stream().filter(c -> "weblogic-server".equals(c.getName()))
           .findFirst();
 
-      Optional<V1Container> recipeContainer = recipePodSpec.getContainers().stream()
-          .filter(c -> "weblogic-server".equals(c.getName()))
-          .findFirst();
+      Optional<List<V1EnvVar>> envVars =
+          currentPod.getSpec().getContainers().stream().filter(c -> "istio-proxy".equals(c.getName()))
+              .findFirst().map(V1Container::getEnv);
 
-      // reset the readiness port since new recipe no longer use the istio.readinessProbe
+      if (!envVars.isEmpty()) {
+        V1Probe currentProbe = weblogicContainer.map(V1Container::getReadinessProbe).get();
 
-      recipeContainer.ifPresent(c -> c.setReadinessProbe(weblogicContainer.map(V1Container::getReadinessProbe).get()));
+        for (V1EnvVar var : envVars.get()) {
+          if ("ISTIO_KUBE_APP_PROBERS".equals(var.getName())) {
+            try {
+              Map<String, LinkedHashMap> readinessValue =
+                  new ObjectMapper().readValue(var.getValue(), HashMap.class);
 
-      // copy the ports over for calculating hash
-      Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
-      if (currentContainerPorts.isEmpty()) {
-        recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
-      } else {
-        recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
+              LinkedHashMap readyProbe = readinessValue.get("/app-health/weblogic-server/readyz");
+              LinkedHashMap httpGet = (LinkedHashMap) readyProbe.get("httpGet");
+
+              Optional<V1Container> recipeContainer = recipePodSpec.getContainers().stream()
+                  .filter(c -> "weblogic-server".equals(c.getName()))
+                  .findFirst();
+
+              // reset the readiness port since new recipe no longer use the istio.readinessProbe from the istio sidecar
+              V1Probe probe = new V1Probe();
+              Integer port = (Integer)httpGet.get("port");
+              String scheme = (String)httpGet.get("scheme");
+
+              // Set this from the current probe
+              probe.setFailureThreshold(currentProbe.getFailureThreshold());
+              //probe.setSuccessThreshold(currentProbe.getSuccessThreshold());
+              probe.setPeriodSeconds(currentProbe.getPeriodSeconds());
+              probe.setTerminationGracePeriodSeconds(currentProbe.getTerminationGracePeriodSeconds());
+              probe.setInitialDelaySeconds(currentProbe.getInitialDelaySeconds());
+              probe.setTimeoutSeconds(currentProbe.getTimeoutSeconds());
+
+              V1HTTPGetAction httpGetAction = new V1HTTPGetAction().port(new IntOrString(port)).path("/weblogic/ready");
+              if (scheme.equals("HTTPS")) {
+                httpGetAction.setScheme(V1HTTPGetAction.SchemeEnum.HTTPS);
+              }
+              probe.setHttpGet(httpGetAction);
+
+              recipeContainer.ifPresent(c -> c.setReadinessProbe(probe));
+
+              // copy the ports over for calculating hash
+              Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
+              if (currentContainerPorts.isEmpty()) {
+                recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
+              } else {
+                recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
+              }
+              recipePodSpec.setAffinity(null);
+              Yaml.dump(recipePod);
+            } catch (JsonProcessingException e) {
+              throw new RuntimeException(e);
+            }
+            break;
+          }
+        }
       }
     }
 
@@ -1279,7 +1333,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
       List<BiConsumer<V1Pod, V1Pod>> adjustments = List.of(
-          this::restoreMetricsExporterSidecarPortTcpMetrics, this::convertAuxImagesInitContainerVolumeAndMounts,
+          this::restoreMetricsExporterSidecarPortTcpMetrics,
+          this::convertAuxImagesInitContainerVolumeAndMounts,
           this::restoreLegacyIstioPortsConfig,
           this::restoreAffinityContent);
 
