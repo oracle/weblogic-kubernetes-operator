@@ -593,27 +593,6 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
 
   /**
-   * Add Istio for the domain resource.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstio();
-
-  /**
-   * Add Istio for the domain resource and enable localhostBindingsEnabled attribute.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstioLocalhostBindingsEnabled(Boolean localhostBindingsEnabled);
-
-  /**
-   * Add Istio for the domain resource and set replication channel port.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstioReplicationChannelPort(Integer replicationChannelPort);
-
-  /**
    * Add domain type for the domain resource.
    *
    * @param type the domain type

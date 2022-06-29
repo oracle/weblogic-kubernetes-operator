@@ -108,6 +108,7 @@ public class SchemaConversionUtils {
 
     Map<String, Object> toBePreserved = new HashMap<>();
     removeAndPreserveServerStartState(spec, toBePreserved);
+    removeAndPreserveIstio(spec, toBePreserved);
 
     try {
       preserve(domain, toBePreserved, apiVersion);
@@ -546,10 +547,20 @@ public class SchemaConversionUtils {
     }
   }
 
+
+  private void removeAndPreserveIstio(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+    Optional.ofNullable(getConfiguration(spec)).ifPresent(configuration -> {
+      Object existing = configuration.remove("istio");
+      if (existing != null) {
+        toBePreserved.put("$.spec.configuration", Map.of("istio", existing));
+      }
+    });
+  }
+  
   private void removeWebLogicCredentialsSecretNamespace(Map<String, Object> spec, String apiVersion) {
     if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
       Optional.ofNullable((Map<String, Object>) spec.get("webLogicCredentialsSecret"))
-              .ifPresent(wcs -> wcs.remove("namespace"));
+          .ifPresent(wcs -> wcs.remove("namespace"));
     }
   }
 

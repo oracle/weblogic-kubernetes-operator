@@ -407,24 +407,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withIstio() {
-    getOrCreateIstio();
-    return this;
-  }
-
-  @Override
-  public DomainConfigurator withIstioLocalhostBindingsEnabled(Boolean localhostBindingsEnabled) {
-    getOrCreateIstio().setLocalhostBindingsEnabled(localhostBindingsEnabled);
-    return this;
-  }
-
-  @Override
-  public DomainConfigurator withIstioReplicationChannelPort(Integer replicationChannelPort) {
-    getOrCreateIstio().setReplicationChannelPort(replicationChannelPort);
-    return this;
-  }
-
-  @Override
   public DomainConfigurator withDomainType(ModelInImageDomainType type) {
     getOrCreateModel().withDomainType(type);
     return this;
@@ -464,14 +446,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       configuration.setOpss(new Opss());
     }
     return configuration.getOpss();   
-  }
-
-  private Istio getOrCreateIstio() {
-    Configuration configuration = getOrCreateConfiguration();
-    if (configuration.getIstio() == null) {
-      configuration.withIstio(new Istio());
-    }
-    return configuration.getIstio();
   }
 
   @Override

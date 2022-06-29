@@ -20,6 +20,8 @@ import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -300,11 +302,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1ContainerPort> ports = new ArrayList<>();
     getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
 
-    if (!getDomain().isIstioEnabled()) { // if Istio enabled, the following were added to the NAPs by introspection.
-      addContainerPort(ports, "default", getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
-      addContainerPort(ports, "default-secure", getSslListenPort(), V1ContainerPort.ProtocolEnum.TCP);
-      addContainerPort(ports, "default-admin", getAdminPort(), V1ContainerPort.ProtocolEnum.TCP);
-    }
+    addContainerPort(ports, "default", getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+    addContainerPort(ports, "default-secure", getSslListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+    addContainerPort(ports, "default-admin", getAdminPort(), V1ContainerPort.ProtocolEnum.TCP);
 
     return ports;
   }
@@ -329,8 +329,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   private void addContainerPort(List<V1ContainerPort> ports, String name,
                                 @Nullable Integer listenPort, V1ContainerPort.ProtocolEnum protocol) {
     if (listenPort != null) {
-      name = createContainerPortName(ports, name);
-      ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+      String finalName = createContainerPortName(ports, name);
+      // add if needed
+      if (ports.stream().noneMatch(p -> p.getProtocol().equals(protocol) && p.getContainerPort().equals(listenPort)
+          && Objects.equals(p.getName(), finalName))) {
+        ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+      }
     }
   }
 
@@ -892,33 +896,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     try {
-      boolean istioEnabled = getDomain().isIstioEnabled();
-      if (istioEnabled) {
-        int istioReadinessPort = getDomain().getIstioReadinessPort();
-        // if admin port enabled (whether it is domain wide or per server, it must use the admin port
-        // for readiness probe instead of the istio readiness port otherwise the ready app reject the
-        // request.
-        //
-        if (isDomainWideAdminPortEnabled()) {
-          readinessProbe =
-              readinessProbe.httpGet(
-                  httpGetAction(
-                      READINESS_PATH,
-                      getLocalAdminProtocolChannelPort(),
-                      isLocalAdminProtocolChannelSecure()));
-        } else {
-          readinessProbe =
-              readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
-                  false));
-        }
-      } else {
-        readinessProbe =
-            readinessProbe.httpGet(
-                httpGetAction(
-                    READINESS_PATH,
-                    getLocalAdminProtocolChannelPort(),
-                    isLocalAdminProtocolChannelSecure()));
-      }
+      readinessProbe =
+          readinessProbe.httpGet(
+              httpGetAction(
+                  READINESS_PATH,
+                  getLocalAdminProtocolChannelPort(),
+                  isLocalAdminProtocolChannelSecure()));
     } catch (Exception e) {
       // do nothing
     }
@@ -1264,6 +1247,76 @@ public abstract class PodStepContext extends BasePodStepContext {
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
+    private void restoreLegacyIstioPortsConfig(V1Pod recipePod,  V1Pod currentPod) {
+      V1PodSpec recipePodSpec = recipePod.getSpec();
+
+      Optional<V1Container> weblogicContainer =
+          currentPod.getSpec().getContainers().stream().filter(c -> "weblogic-server".equals(c.getName()))
+          .findFirst();
+
+      // Get the istio side car env list
+
+      Optional<List<V1EnvVar>> envVars =
+          currentPod.getSpec().getContainers().stream().filter(c -> "istio-proxy".equals(c.getName()))
+              .findFirst().map(V1Container::getEnv);
+
+      if (!envVars.isEmpty()) {
+        Optional<V1Probe> currentProbe = weblogicContainer.map(V1Container::getReadinessProbe);
+        if (currentProbe.isPresent()) {
+          resetIstioPodRecipeAfterUpgrade(recipePodSpec, weblogicContainer, envVars.get(), currentProbe.get());
+        }
+      }
+    }
+
+    @SuppressWarnings("java:S112")
+    private void resetIstioPodRecipeAfterUpgrade(V1PodSpec recipePodSpec, Optional<V1Container> weblogicContainer,
+                                                 List<V1EnvVar> envVars, V1Probe currentProbe) {
+
+      for (V1EnvVar envVar : envVars) {
+        if ("ISTIO_KUBE_APP_PROBERS".equals(envVar.getName())) {
+          try {
+
+            Map<String, Object> readinessValue =
+                new ObjectMapper().readValue(envVar.getValue(), HashMap.class);
+
+            Map<String, Object> readyProbe = (Map<String, Object>)
+                readinessValue.get("/app-health/weblogic-server/readyz");
+            Map<String, Object> httpGet = (Map<String, Object>) readyProbe.get("httpGet");
+
+            Optional<V1Container> recipeContainer = recipePodSpec.getContainers().stream()
+                .filter(c -> "weblogic-server".equals(c.getName()))
+                .findFirst();
+
+            // reset the readiness port since new recipe no longer use the istio.readinessProbe from the istio sidecar
+            Integer port = (Integer)httpGet.get("port");
+            String scheme = (String)httpGet.get("scheme");
+
+            recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet().path(READINESS_PATH)
+                .port(new IntOrString(port)));
+
+            if (scheme.equals("HTTPS")) {
+              recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet()
+                  .setScheme(V1HTTPGetAction.SchemeEnum.HTTPS));
+            } else if (scheme.equals("HTTP")) {
+              recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet()
+                  .setScheme(null));
+            }
+
+            // copy the ports over for calculating hash
+            Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
+            if (currentContainerPorts.isEmpty()) {
+              recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
+            } else {
+              recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
+            }
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+          }
+          break;
+        }
+      }
+    }
+
     private void restoreAffinityContent(V1Pod recipe, V1Pod currentPod) {
       recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
     }
@@ -1274,15 +1327,17 @@ public abstract class PodStepContext extends BasePodStepContext {
       // for each combination, start with pod recipe, apply all adjustments, and generate hash
       // return true if any adjusted hash matches required hash
       List<BiConsumer<V1Pod, V1Pod>> adjustments = List.of(
-          this::restoreMetricsExporterSidecarPortTcpMetrics, this::convertAuxImagesInitContainerVolumeAndMounts,
+          this::restoreMetricsExporterSidecarPortTcpMetrics,
+          this::convertAuxImagesInitContainerVolumeAndMounts,
+          this::restoreLegacyIstioPortsConfig,
           this::restoreAffinityContent);
-
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
+
       return (isLegacyPod(currentPod)
               && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
           || (isPodFromRecentOperator(currentPod)
@@ -1321,6 +1376,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       }
     }
   }
+
 
   private boolean isOperatorMajorMinorVersion34RevAbove0(String operatorVersion) {
     SemanticVersion version = new SemanticVersion(operatorVersion);
