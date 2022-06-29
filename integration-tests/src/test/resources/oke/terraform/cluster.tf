@@ -68,12 +68,6 @@ resource "oci_containerengine_cluster" "tfsample_cluster" {
   name               = var.cluster_name
   vcn_id             = oci_core_virtual_network.oke-vcn.id
 
-
-  timeouts {
-    create = "60m"
-    delete = "2h"
-  }
-
   #Optional
   options {
     service_lb_subnet_ids = [oci_core_subnet.oke-subnet-loadbalancer-1.id, oci_core_subnet.oke-subnet-loadbalancer-2.id]
@@ -87,27 +81,6 @@ resource "oci_containerengine_cluster" "tfsample_cluster" {
   }
 }
 
-resource "oci_containerengine_node_pool" "tfsample_node_pool" {
-  #Required
-  cluster_id         = oci_containerengine_cluster.tfsample_cluster.id
-  compartment_id     = var.compartment_ocid
-  kubernetes_version = var.node_pool_kubernetes_version
-  name               = var.node_pool_name
-  node_image_name    = var.node_pool_node_image_name
-  node_shape         = var.node_pool_node_shape
-
-  timeouts {
-    create = "60m"
-    delete = "2h"
-  }
-
-  #subnet_ids = ["${oci_core_subnet.oke-subnet-worker-1.id}", "${oci_core_subnet.oke-subnet-worker-2.id}","${oci_core_subnet.oke-subnet-worker-3.id}"]
-  subnet_ids = [oci_core_subnet.oke-subnet-worker-1.id, oci_core_subnet.oke-subnet-worker-2.id]
-
-  #Optional
-  quantity_per_subnet = var.node_pool_quantity_per_subnet
-  ssh_public_key      = var.node_pool_ssh_public_key
-}
 
 output "cluster_id" {
   value = oci_containerengine_cluster.tfsample_cluster.id

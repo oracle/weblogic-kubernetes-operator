@@ -68,7 +68,7 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.21.5'
+               defaultValue: '1.23.4'
         )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
