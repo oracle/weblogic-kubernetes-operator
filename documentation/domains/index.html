@@ -1305,7 +1305,7 @@ window.onload = function() {
         },
         "webLogicCredentialsSecret": {
           "description": "Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         },
         "adminServer": {
           "description": "Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service.",
@@ -1894,7 +1894,7 @@ window.onload = function() {
           "$ref": "#/definitions/Shutdown"
         },
         "affinity": {
-          "description": "If specified, the Pod\u0027s scheduling constraints. See `kubectl explain pods.spec.affinity`",
+          "description": "The Pod\u0027s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         }
       }

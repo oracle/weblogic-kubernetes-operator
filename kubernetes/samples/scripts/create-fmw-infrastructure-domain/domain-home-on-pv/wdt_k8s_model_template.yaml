@@ -6,7 +6,7 @@
 # extractDomainResource script to generate a domain.yaml
 #
 kubernetes:
-  apiVersion: "weblogic.oracle/v9"
+  apiVersion: "weblogic.oracle/v8"
   kind: Domain
   metadata:
     name: %DOMAIN_UID%
@@ -30,8 +30,7 @@ kubernetes:
 
     # Identify which Secret contains the credentials for pulling an image
     %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%":
-
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  - name: "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%"
     # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
     # how to create that Secret at the end of this file)
     webLogicCredentialsSecret:
@@ -53,29 +52,29 @@ kubernetes:
     # data storage directories are determined from the WebLogic domain home configuration.
     dataHome: "%DATA_HOME%"
 
-    # serverStartPolicy legal values are "Never", "IfNeeded", or "AdminOnly"
+    # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
     # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-    # - "Never" will not start any server in the domain
-    # - "AdminOnly" will start up only the administration server (no managed servers will be started)
-    # - "IfNeeded" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+    # - "NEVER" will not start any server in the domain
+    # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+    # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
     serverStartPolicy: %SERVER_START_POLICY%
 
     serverPod:
       # an (optional) list of environment variable to be set on the servers
       env:
-        JAVA_OPTIONS:
+        - name: JAVA_OPTIONS
           value: "%JAVA_OPTIONS%"
-        USER_MEM_ARGS:
+        - name: USER_MEM_ARGS
           value: "-Djava.security.egd=file:/dev/./urandom "
       %OPTIONAL_SERVERPOD_RESOURCES%
       %LOG_HOME_ON_PV_PREFIX%volumes:
-      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
-      %LOG_HOME_ON_PV_PREFIX%     persistentVolumeClaim:
+      %LOG_HOME_ON_PV_PREFIX%  - name: 'weblogic-domain-storage-volume'
+      %LOG_HOME_ON_PV_PREFIX%    persistentVolumeClaim:
       %LOG_HOME_ON_PV_PREFIX%       claimName: '%DOMAIN_PVC_NAME%'
       %LOG_HOME_ON_PV_PREFIX%volumeMounts:
-      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
-      %LOG_HOME_ON_PV_PREFIX%     mountPath: %DOMAIN_ROOT_DIR%
-
+      %LOG_HOME_ON_PV_PREFIX%  - name: 'weblogic-domain-storage-volume'
+      %LOG_HOME_ON_PV_PREFIX%    mountPath: %DOMAIN_ROOT_DIR%
+             
     # adminServer is used to configure the desired behavior for starting the administration server.
     adminServer:
       %EXPOSE_ANY_CHANNEL_PREFIX%adminService:

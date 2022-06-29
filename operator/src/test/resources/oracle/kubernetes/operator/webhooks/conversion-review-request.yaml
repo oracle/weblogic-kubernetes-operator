@@ -9,7 +9,6 @@
         "apiVersion": "weblogic.oracle/v8",
         "kind": "Domain",
         "metadata": {
-          "annotations": "",
           "name": "sample-domain1",
           "namespace": "sample-domain1-ns",
           "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
@@ -47,7 +46,7 @@
                           },
                           "topologyKey": "kubernetes.io/hostname"
                         },
-                        "weight": 100
+                        "weight": 100.0
                       }
                     ]
                   }

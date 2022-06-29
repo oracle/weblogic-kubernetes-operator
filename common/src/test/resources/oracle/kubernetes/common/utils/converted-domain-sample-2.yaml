@@ -3,9 +3,10 @@ kind: Domain
 metadata:
   name: sample-domain1
   namespace: sample-domain1-ns
+  annotations:
+    weblogic.v8.preserved: '{"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"},"$.spec.adminServer":{"serverStartState":"RUNNING"}}'
   labels:
     weblogic.domainUID: sample-domain1
-    weblogic.v8.preserved: '{"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"},"$.spec.adminServer":{"serverStartState":"RUNNING"}}'
 spec:
   domainHomeSourceType: FromModel
   domainHome: /u01/domains/sample-domain1

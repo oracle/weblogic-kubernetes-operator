@@ -54,7 +54,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -670,6 +669,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey);
   }
 
+  V1Affinity getCreatePodAffinity() {
+    return Optional.ofNullable(getCreatedPod().getSpec()).map(V1PodSpec::getAffinity).orElse(new V1Affinity());
+  }
+
   abstract void setServerPort(int port);
 
   private DomainResource createDomain() {
@@ -683,7 +686,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
         .withDomainUid(UID)
-        .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }
@@ -747,6 +750,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
 
+  // Returns the YAML for a 3.4.1 Mii pod with converted aux image.
+  abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4_1();
+
   abstract String getReferenceIstioMonitoringExporterTcpProtocol();
 
   @Test
@@ -806,6 +812,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     useProductionHash();
     initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWith3_4_1_ConvertedAuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4_1()));
 
     verifyPodPatched();
 
@@ -2532,6 +2557,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
         allOf(
             hasVolumeMount("volume1", "/destination-path1"),
             hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  void whenDomainHasNoAffinity_createdNonClusteredPodHasDefaultDomainUidVariableAffinity() {
+    assertThat(getCreatePodAffinity(), is(new AffinityHelper().domainUID(UID).getAntiAffinity()));
   }
 
   @Test

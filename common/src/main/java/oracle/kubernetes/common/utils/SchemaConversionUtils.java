@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,10 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
+  private static final String METADATA = "metadata";
+  private static final String SPEC = "spec";
+  private static final String STATUS = "status";
+  private static final String TYPE = "type";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -93,16 +98,16 @@ public class SchemaConversionUtils {
     String apiVersion = (String) domain.get("apiVersion");
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
-    removeObsoleteConditionsFromDomainStatus(domain);
-    removeUnsupportedDomainStatusConditionReasons(domain);
+    convertDomainStatus(domain);
     convertDomainHomeInImageToDomainHomeSourceType(domain);
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
     constantsToCamelCase(spec);
     adjustReplicasDefault(spec, apiVersion);
+    removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
 
     Map<String, Object> toBePreserved = new HashMap<>();
-    convertServerStartState(spec, toBePreserved);
+    removeAndPreserveServerStartState(spec, toBePreserved);
 
     try {
       preserve(domain, toBePreserved, apiVersion);
@@ -150,6 +155,31 @@ public class SchemaConversionUtils {
     spec.remove("auxiliaryImageVolumes");
   }
 
+  private void convertDomainStatus(Map<String, Object> domain) {
+    if (API_VERSION_V8.equals(targetAPIVersion)) {
+      convertCompletedToProgressing(domain);
+      Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
+    } else { // 9 or above
+      removeObsoleteConditionsFromDomainStatus(domain);
+      removeUnsupportedDomainStatusConditionReasons(domain);
+    }
+  }
+
+  private void convertCompletedToProgressing(Map<String, Object> domain) {
+    Iterator<Map<String, String>> conditions = getStatusConditions(domain).iterator();
+    while (conditions.hasNext()) {
+      Map<String, String> condition = conditions.next();
+      if ("Completed".equals(condition.get(TYPE))) {
+        if ("False".equals(condition.get(STATUS))) {
+          condition.put(TYPE, "Progressing");
+          condition.put(STATUS, "True");
+        } else {
+          conditions.remove();
+        }
+      }
+    }
+  }
+
   private void removeObsoleteConditionsFromDomainStatus(Map<String, Object> domain) {
     getStatusConditions(domain).removeIf(this::isObsoleteCondition);
   }
@@ -164,7 +194,7 @@ public class SchemaConversionUtils {
 
   @Nonnull
   private List<Map<String,String>> getStatusConditions(Map<String, Object> domain) {
-    return (List<Map<String,String>>) Optional.ofNullable((Map<String, Object>) domain.get("status"))
+    return (List<Map<String,String>>) Optional.ofNullable(getStatus(domain))
           .map(status -> status.get("conditions"))
           .orElse(Collections.emptyList());
   }
@@ -336,11 +366,15 @@ public class SchemaConversionUtils {
   }
 
   Map<String, Object> getSpec(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("spec");
+    return (Map<String, Object>) domain.get(SPEC);
+  }
+
+  Map<String, Object> getStatus(Map<String, Object> domain) {
+    return (Map<String, Object>) domain.get(STATUS);
   }
 
   Map<String, Object> getMetadata(Map<String, Object> domain) {
-    return (Map<String, Object>) domain.get("metadata");
+    return (Map<String, Object>) domain.get(METADATA);
   }
 
   private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,
@@ -391,7 +425,7 @@ public class SchemaConversionUtils {
             .orElse(new ArrayList<>());
     if (Optional.of(existingVolumes).map(volumes -> (volumes).stream().noneMatch(
           volume -> podHasMatchingVolumeName((Map<String, Object>)volume, auxiliaryImageVolume))).orElse(true)) {
-      existingVolumes.addAll(Collections.singletonList(createEmptyDirVolume(auxiliaryImageVolume)));
+      existingVolumes.add(createEmptyDirVolume(auxiliaryImageVolume));
     }
     serverPod.put("volumes", existingVolumes);
   }
@@ -512,7 +546,14 @@ public class SchemaConversionUtils {
     }
   }
 
-  private void convertServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+  private void removeWebLogicCredentialsSecretNamespace(Map<String, Object> spec, String apiVersion) {
+    if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
+      Optional.ofNullable((Map<String, Object>) spec.get("webLogicCredentialsSecret"))
+              .ifPresent(wcs -> wcs.remove("namespace"));
+    }
+  }
+
+  private void removeAndPreserveServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     removeAndPreserveServerStartState(spec, toBePreserved, "$.spec");
     Optional.ofNullable(getAdminServer(spec)).ifPresent(
         as -> removeAndPreserveServerStartState(as, toBePreserved, "$.spec.adminServer"));
@@ -520,6 +561,14 @@ public class SchemaConversionUtils {
         removeAndPreserveServerStartStateForCluster((Map<String, Object>) cluster, toBePreserved)));
     Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
         removeAndPreserveServerStartStateForManagedServer((Map<String, Object>) managedServer, toBePreserved)));
+  }
+
+  private void removeAndPreserveServerStartState(Map<String, Object> spec,
+                                                 Map<String, Object> toBePreserved, String scope) {
+    Object existing = spec.remove("serverStartState");
+    if (existing != null) {
+      toBePreserved.put(scope, Map.of("serverStartState", existing));
+    }
   }
 
   private void removeAndPreserveServerStartStateForCluster(Map<String, Object> cluster,
@@ -539,20 +588,13 @@ public class SchemaConversionUtils {
     }
   }
 
-  private void removeAndPreserveServerStartState(Map<String, Object> spec,
-                                                 Map<String, Object> toBePreserved, String scope) {
-    Object existing = spec.remove("serverStartState");
-    if (existing != null) {
-      toBePreserved.put(scope, Map.of("serverStartState", existing));
-    }
-  }
-
   private void preserve(Map<String, Object> domain, Map<String, Object> toBePreserved, String apiVersion)
       throws IOException {
     if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion) && !API_VERSION_V8.equals(targetAPIVersion)) {
       Map<String, Object> meta = getMetadata(domain);
-      Map<String, Object> labels = (Map<String, Object>) meta.computeIfAbsent("labels", k -> new LinkedHashMap<>());
-      labels.put("weblogic.v8.preserved", new ObjectMapper().writeValueAsString(toBePreserved));
+      Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
+          "annotations", k -> new LinkedHashMap<>());
+      annotations.put("weblogic.v8.preserved", new ObjectMapper().writeValueAsString(toBePreserved));
     }
   }
 
@@ -560,7 +602,7 @@ public class SchemaConversionUtils {
   private void restore(Map<String, Object> domain) {
     if (API_VERSION_V8.equals(targetAPIVersion)) {
       Optional.ofNullable(getMetadata(domain))
-          .map(meta -> (Map<String, Object>) meta.get("labels"))
+          .map(meta -> (Map<String, Object>) meta.get("annotations"))
           .map(meta -> (String) meta.remove("weblogic.v8.preserved"))
           .ifPresent(labelValue -> {
             try {
@@ -575,10 +617,10 @@ public class SchemaConversionUtils {
   private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored) {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
       ReadContext context = JsonPath.parse(domain);
-      toBeRestored.entrySet().forEach(entry -> {
-        JsonPath path = JsonPath.compile(entry.getKey());
-        Optional.ofNullable(read(context, path)).map(List::stream)
-            .ifPresent(stream -> stream.forEach(item -> item.putAll((Map<String, Object>) entry.getValue())));
+      toBeRestored.forEach((key, value) -> {
+        JsonPath path = JsonPath.compile(key);
+        Optional.of(read(context, path)).map(List::stream)
+                .ifPresent(stream -> stream.forEach(item -> item.putAll((Map<String, Object>) value)));
       });
     }
   }
