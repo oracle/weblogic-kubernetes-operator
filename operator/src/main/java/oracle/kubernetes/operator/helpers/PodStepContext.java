@@ -1288,24 +1288,19 @@ public abstract class PodStepContext extends BasePodStepContext {
                 .findFirst();
 
             // reset the readiness port since new recipe no longer use the istio.readinessProbe from the istio sidecar
-            V1Probe probe = new V1Probe();
             Integer port = (Integer)httpGet.get("port");
             String scheme = (String)httpGet.get("scheme");
 
-            // Set this from the current probe, these are not set in the ISTIO_KUBE_APP_PROBERS
-            probe.setFailureThreshold(currentProbe.getFailureThreshold());
-            probe.setPeriodSeconds(currentProbe.getPeriodSeconds());
-            probe.setTerminationGracePeriodSeconds(currentProbe.getTerminationGracePeriodSeconds());
-            probe.setInitialDelaySeconds(currentProbe.getInitialDelaySeconds());
-            probe.setTimeoutSeconds(currentProbe.getTimeoutSeconds());
+            recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet().path(READINESS_PATH)
+                .port(new IntOrString(port)));
 
-            V1HTTPGetAction httpGetAction = new V1HTTPGetAction().port(new IntOrString(port)).path(READINESS_PATH);
             if (scheme.equals("HTTPS")) {
-              httpGetAction.setScheme(V1HTTPGetAction.SchemeEnum.HTTPS);
+              recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet()
+                  .setScheme(V1HTTPGetAction.SchemeEnum.HTTPS));
+            } else if (scheme.equals("HTTP")) {
+              recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet()
+                  .setScheme(null));
             }
-            probe.setHttpGet(httpGetAction);
-
-            recipeContainer.ifPresent(c -> c.setReadinessProbe(probe));
 
             // copy the ports over for calculating hash
             Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
@@ -1336,13 +1331,13 @@ public abstract class PodStepContext extends BasePodStepContext {
           this::convertAuxImagesInitContainerVolumeAndMounts,
           this::restoreLegacyIstioPortsConfig,
           this::restoreAffinityContent);
-
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
+
       return (isLegacyPod(currentPod)
               && canAdjustLegacyHashToMatch(currentPod, AnnotationHelper.getHash(currentPod)))
           || (isPodFromRecentOperator(currentPod)
