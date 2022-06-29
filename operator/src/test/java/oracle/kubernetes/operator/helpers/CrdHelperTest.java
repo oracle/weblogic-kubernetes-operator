@@ -49,6 +49,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.WebhookMainTest.getCertificates;
+import static oracle.kubernetes.operator.helpers.CrdHelperTest.TestSubject.CLUSTER;
 import static oracle.kubernetes.operator.helpers.CrdHelperTest.TestSubject.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static org.hamcrest.Matchers.containsString;
@@ -298,8 +299,8 @@ class CrdHelperTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = TestSubject.class)
-  void whenExistingCrdHasNoneConversionStrategy_replaceIt(TestSubject testSubject) {
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenExistingDomainCrdHasNoneConversionStrategy_replaceIt(TestSubject testSubject) {
     final V1CustomResourceDefinition crd = testSubject.createCrd(getCertificates());
     crd
         .getSpec()
@@ -313,6 +314,23 @@ class CrdHelperTest {
     testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingClusterCrdHasNoneConversionStrategy_dontReplaceIt() {
+    final V1CustomResourceDefinition crd = CLUSTER.createCrd(getCertificates());
+    crd
+        .getSpec()
+        .addVersionsItem(
+            new V1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(CLUSTER.getLatestCrdVersion()))
+        .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(crd);
+
+    testSupport.runSteps(CLUSTER.createCrdStep(PRODUCT_VERSION));
+
+    assertThat(crd.getSpec().getConversion().getStrategy(), is("None"));
   }
 
   @ParameterizedTest
@@ -372,8 +390,8 @@ class CrdHelperTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = TestSubject.class)
-  void whenExistingCrdHasOldVersionAndNoneConversionStrategy_replaceIt(TestSubject testSubject) {
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenExistingDomainCrdHasOldVersionAndNoneConversionStrategy_replaceIt(TestSubject testSubject) {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_OLD, testSubject.getExpectedCrdName());
     existing
             .getSpec()
@@ -387,6 +405,23 @@ class CrdHelperTest {
     testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingClusterCrdHasOldVersionAndNoneConversionStrategy_dontReplaceIt() {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE, CLUSTER.getExpectedCrdName());
+    existing
+        .getSpec()
+        .addVersionsItem(
+            new V1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(CLUSTER.getLatestCrdVersion()))
+        .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CLUSTER.createCrdStep(PRODUCT_VERSION));
+
+    assertThat(existing.getSpec().getConversion().getStrategy(), is("None"));
   }
 
   @SuppressWarnings("ConstantConditions")
@@ -407,6 +442,24 @@ class CrdHelperTest {
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(existing.getSpec().getConversion().getStrategy(), is(WEBHOOK));
+  }
+
+  @Test
+  void whenExistingClusterCrdHasHasFutureVersionButNoneConversionStrategy_dontReplaceIt() {
+    final V1CustomResourceDefinition existing = CLUSTER.createCrd(getCertificates());
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    existing
+        .getSpec()
+        .addVersionsItem(
+            new V1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(DOMAIN.getLatestCrdVersion()))
+        .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CLUSTER.createCrdStep(PRODUCT_VERSION, getCertificates()));
+
+    assertThat(existing.getSpec().getConversion().getStrategy(), is("None"));
   }
 
   @ParameterizedTest

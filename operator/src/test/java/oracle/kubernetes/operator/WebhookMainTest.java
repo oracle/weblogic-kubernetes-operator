@@ -97,6 +97,7 @@ import static oracle.kubernetes.operator.helpers.WebhookHelper.UPDATE;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_NAME;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
+import static oracle.kubernetes.operator.tuning.TuningParameters.CALL_MAX_RETRY_COUNT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -252,6 +253,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   @ParameterizedTest
   @ValueSource(strings = {DOMAIN, CLUSTER})
   void whenNoCRD_logReasonForFailure(String resourceType) {
+    TuningParametersStub.setParameter(CALL_MAX_RETRY_COUNT, "0");
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
     simulateMissingCRD(resourceType);
 
@@ -276,6 +278,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   @ParameterizedTest
   @ValueSource(strings = {DOMAIN, CLUSTER})
   void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure(String resourceType) {
+    TuningParametersStub.setParameter(CALL_MAX_RETRY_COUNT, "0");
     simulateMissingCRD(resourceType);
     recheckCRD();
     testSupport.cancelFailures();
