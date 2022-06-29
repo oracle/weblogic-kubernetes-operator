@@ -1264,6 +1264,8 @@ public abstract class PodStepContext extends BasePodStepContext {
           currentPod.getSpec().getContainers().stream().filter(c -> "weblogic-server".equals(c.getName()))
           .findFirst();
 
+      // Get the istio side car env list
+
       Optional<List<V1EnvVar>> envVars =
           currentPod.getSpec().getContainers().stream().filter(c -> "istio-proxy".equals(c.getName()))
               .findFirst().map(V1Container::getEnv);
@@ -1271,55 +1273,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (!envVars.isEmpty()) {
         V1Probe currentProbe = weblogicContainer.map(V1Container::getReadinessProbe).get();
 
-        for (V1EnvVar var : envVars.get()) {
-          if ("ISTIO_KUBE_APP_PROBERS".equals(var.getName())) {
-            try {
-              Map<String, LinkedHashMap> readinessValue =
-                  new ObjectMapper().readValue(var.getValue(), HashMap.class);
-
-              LinkedHashMap readyProbe = readinessValue.get("/app-health/weblogic-server/readyz");
-              LinkedHashMap httpGet = (LinkedHashMap) readyProbe.get("httpGet");
-
-              Optional<V1Container> recipeContainer = recipePodSpec.getContainers().stream()
-                  .filter(c -> "weblogic-server".equals(c.getName()))
-                  .findFirst();
-
-              // reset the readiness port since new recipe no longer use the istio.readinessProbe from the istio sidecar
-              V1Probe probe = new V1Probe();
-              Integer port = (Integer)httpGet.get("port");
-              String scheme = (String)httpGet.get("scheme");
-
-              // Set this from the current probe
-              probe.setFailureThreshold(currentProbe.getFailureThreshold());
-              //probe.setSuccessThreshold(currentProbe.getSuccessThreshold());
-              probe.setPeriodSeconds(currentProbe.getPeriodSeconds());
-              probe.setTerminationGracePeriodSeconds(currentProbe.getTerminationGracePeriodSeconds());
-              probe.setInitialDelaySeconds(currentProbe.getInitialDelaySeconds());
-              probe.setTimeoutSeconds(currentProbe.getTimeoutSeconds());
-
-              V1HTTPGetAction httpGetAction = new V1HTTPGetAction().port(new IntOrString(port)).path("/weblogic/ready");
-              if (scheme.equals("HTTPS")) {
-                httpGetAction.setScheme(V1HTTPGetAction.SchemeEnum.HTTPS);
-              }
-              probe.setHttpGet(httpGetAction);
-
-              recipeContainer.ifPresent(c -> c.setReadinessProbe(probe));
-
-              // copy the ports over for calculating hash
-              Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
-              if (currentContainerPorts.isEmpty()) {
-                recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
-              } else {
-                recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
-              }
-              recipePodSpec.setAffinity(null);
-              Yaml.dump(recipePod);
-            } catch (JsonProcessingException e) {
-              throw new RuntimeException(e);
-            }
-            break;
-          }
-        }
+        resetIstioPodRecipeAfterUpgrade(recipePodSpec, weblogicContainer, envVars, currentProbe);
       }
     }
 
@@ -1379,6 +1333,58 @@ public abstract class PodStepContext extends BasePodStepContext {
       } else {
         logPodExists();
         return doNext(packet);
+      }
+    }
+  }
+
+  private void resetIstioPodRecipeAfterUpgrade(V1PodSpec recipePodSpec, Optional<V1Container> weblogicContainer,
+                                               Optional<List<V1EnvVar>> envVars, V1Probe currentProbe) {
+
+    for (V1EnvVar var : envVars.get()) {
+      if ("ISTIO_KUBE_APP_PROBERS".equals(var.getName())) {
+        try {
+          Map<String, LinkedHashMap> readinessValue =
+              new ObjectMapper().readValue(var.getValue(), HashMap.class);
+
+          LinkedHashMap readyProbe = readinessValue.get("/app-health/weblogic-server/readyz");
+          LinkedHashMap httpGet = (LinkedHashMap) readyProbe.get("httpGet");
+
+          Optional<V1Container> recipeContainer = recipePodSpec.getContainers().stream()
+              .filter(c -> "weblogic-server".equals(c.getName()))
+              .findFirst();
+
+          // reset the readiness port since new recipe no longer use the istio.readinessProbe from the istio sidecar
+          V1Probe probe = new V1Probe();
+          Integer port = (Integer)httpGet.get("port");
+          String scheme = (String)httpGet.get("scheme");
+
+          // Set this from the current probe, these are not set in the ISTIO_KUBE_APP_PROBERS
+          probe.setFailureThreshold(currentProbe.getFailureThreshold());
+          //probe.setSuccessThreshold(currentProbe.getSuccessThreshold());
+          probe.setPeriodSeconds(currentProbe.getPeriodSeconds());
+          probe.setTerminationGracePeriodSeconds(currentProbe.getTerminationGracePeriodSeconds());
+          probe.setInitialDelaySeconds(currentProbe.getInitialDelaySeconds());
+          probe.setTimeoutSeconds(currentProbe.getTimeoutSeconds());
+
+          V1HTTPGetAction httpGetAction = new V1HTTPGetAction().port(new IntOrString(port)).path("/weblogic/ready");
+          if (scheme.equals("HTTPS")) {
+            httpGetAction.setScheme(V1HTTPGetAction.SchemeEnum.HTTPS);
+          }
+          probe.setHttpGet(httpGetAction);
+
+          recipeContainer.ifPresent(c -> c.setReadinessProbe(probe));
+
+          // copy the ports over for calculating hash
+          Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
+          if (currentContainerPorts.isEmpty()) {
+            recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
+          } else {
+            recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
+          }
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        }
+        break;
       }
     }
   }
