@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -1166,6 +1167,34 @@ public class CommonTestUtils {
         "Could not modify DOMAIN_NAME in " + destModelYamlFile);
 
     return destModelYamlFile;
+  }
+
+  /**
+   * Create testwebapp.war.
+   *
+   * @param domainNamespace domain namespace
+   *
+   * @return location of testwebapp.war
+   */
+  public static String createTestWebAppWarFile(String domainNamespace) {
+    LoggingFacade logger = getLogger();
+
+    // create testwebapp.war
+    String sourceTestWebAppWarLoc = APP_DIR + "/testwebapp";
+    String destTestWebAppWarLoc = RESULTS_ROOT + "/" + domainNamespace;
+    String createWarCmd = new StringBuffer("sh ")
+        .append(APP_DIR)
+        .append("/../bash-scripts/build-war-app.sh")
+        .append(" -s ")
+        .append(sourceTestWebAppWarLoc)
+        .append(" -d ")
+        .append(destTestWebAppWarLoc).toString();
+    logger.info("command to build testwebapp.war {0}", createWarCmd);
+
+    ExecResult execResult = assertDoesNotThrow(() -> exec(createWarCmd, true));
+    assertEquals(0, execResult.exitValue(), "Could not create testwebapp.war");
+
+    return destTestWebAppWarLoc + "/testwebapp.war";
   }
 
   /**
