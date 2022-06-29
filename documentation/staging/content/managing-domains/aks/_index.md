@@ -182,6 +182,16 @@ In this section, you can create an Azure Application Gateway instance as the ing
 
 Select **Yes** or **No** for the option **Connect to Azure Application Gateway?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : DNS Configuration >**. If you select **Yes**, you must specify the details required for the Application Gateway integration by entering the values for the fields as described next.
 
+You can specify virtual network for the application gateway. To do this, enter the values for the fields listed in the following tables.
+
+**Configure virtual networks**
+
+| Field | Description |
+|-------|-------------|
+| Virtual network | Select a virtual network in which to place the application gateway. Make sure your virtual network meets the requirements in [Application Gateway virtual network and dedicated subnet](https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#virtual-network-and-dedicated-subnet). |
+| Subnet | An application gateway is a dedicated deployment in your virtual network. Within your virtual network, a dedicated subnet is required for the application gateway. See [Application Gateway virtual network and dedicated subnet](https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#virtual-network-and-dedicated-subnet). |
+| Configure frontend IP with private IP address | If set to **Yes**, the Azure Marketplace offer will pick one of available IP address from the application gateway subnet to be private frontend IP. For more information, see [Application Gateway front-end IP address configuration](https://docs.microsoft.com/en-us/azure/application-gateway/configuration-front-end-ip). |
+
 You must select one of the following three options, each described in turn.
 
 * Upload a TLS/SSL certificate: Upload the pre-signed certificate now.
