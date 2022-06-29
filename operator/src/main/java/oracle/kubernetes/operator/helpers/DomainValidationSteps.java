@@ -29,6 +29,7 @@ import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 
 public class DomainValidationSteps {
@@ -55,15 +56,11 @@ public class DomainValidationSteps {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
-  public static Step createAfterIntrospectValidationSteps() {
-    return new DomainAfterIntrospectValidationStep();
-  }
-
   private static Step createListSecretsStep(String domainNamespace) {
     return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
 
-  static Step createValidateDomainTopologyStep(Step next) {
+  static Step createValidateDomainTopologySteps(Step next) {
     return new ValidateDomainTopologyStep(next);
   }
 
@@ -167,17 +164,29 @@ public class DomainValidationSteps {
 
     @Override
     public NextAction apply(Packet packet) {
-      List<String> failures = new WlsConfigValidator(packet).loggingTo(LOGGER).getFailures();
-      if (failures.isEmpty()) {
-        return doNext(createRemoveSelectedFailuresStep(getNext(), TOPOLOGY_MISMATCH), packet);
-      } else {
+      final WlsConfigValidator validator = new WlsConfigValidator(packet).loggingTo(LOGGER);
+      final List<String> failures = validator.getTopologyFailures();
+      final List<String> replicasTooHigh = validator.getReplicaTooHighFailures();
+      if (!failures.isEmpty()) {
         return doNext(createTopologyMismatchFailureSteps(getNext(), failures), packet);
+      } else if (!replicasTooHigh.isEmpty()) {
+        return doNext(createReplicasTooHighFailureSteps(getNext(), replicasTooHigh), packet);
+      } else {
+        return doNext(createRemoveSelectedFailuresStep(getNext(), TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH), packet);
       }
     }
 
     private Step createTopologyMismatchFailureSteps(Step next, List<String> failures) {
       final String failureString = String.join(lineSeparator(), failures);
       return DomainStatusUpdater.createTopologyMismatchFailureSteps(failureString, next);
+    }
+
+    private Step createReplicasTooHighFailureSteps(Step next, List<String> failures) {
+      final String failureString = String.join(lineSeparator(), failures);
+      return Step.chain(
+          createRemoveSelectedFailuresStep(null, TOPOLOGY_MISMATCH),
+          DomainStatusUpdater.createReplicasTooHighFailureSteps(failureString, next)
+      );
     }
   }
 
@@ -224,25 +233,4 @@ public class DomainValidationSteps {
     }
   }
 
-  private static class DomainAfterIntrospectValidationStep extends Step {
-
-    @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      List<String> validationFailures = new WlsConfigValidator(packet).getFailures();
-
-      if (validationFailures.isEmpty()) {
-        return doNext(packet);
-      }
-
-      LOGGER.severe(DOMAIN_VALIDATION_FAILED, info.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
-      return doNext(step, packet);
-    }
-
-    private String perLine(List<String> validationFailures) {
-      return String.join(lineSeparator(), validationFailures);
-    }
-
-  }
 }

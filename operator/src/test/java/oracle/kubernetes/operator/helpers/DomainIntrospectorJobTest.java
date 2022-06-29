@@ -30,17 +30,18 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.FluentdUtils;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -203,6 +204,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
     mementos.add(SystemClockTestSupport.installClock());
+    mementos.add(UnitTestHash.install());
+
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
@@ -249,7 +252,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     DomainSpec spec =
         new DomainSpec()
             .withDomainUid(UID)
-            .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+            .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
             .withConfiguration(new Configuration()
                 .withOverridesConfigMap(OVERRIDES_CM).withSecrets(List.of(OVERRIDE_SECRET_1, OVERRIDE_SECRET_2)))
             .withCluster(new ClusterSpec()
@@ -622,7 +625,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain).withFluentdConfiguration(true, "elastic-cred", null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
+    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
     testSupport.defineResources(jobPod);
     defineFailedFluentdContainerInIntrospection();
 
@@ -645,8 +648,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, "elastic-cred", null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
-        true, false);
+    FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, false);
     testSupport.defineResources(jobPod);
     defineNormalFluentdContainerInIntrospection();
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));

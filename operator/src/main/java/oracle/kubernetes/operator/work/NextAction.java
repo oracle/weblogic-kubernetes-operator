@@ -25,8 +25,8 @@ public final class NextAction implements BreadCrumbFactory {
   private static String commentPrefix;
 
   Kind kind;
-  Step next;
-  Packet packet;
+  private Step next;
+  private Packet packet;
   Consumer<AsyncFiber> onExit;
   Throwable throwable;
   private String comment;
@@ -99,6 +99,14 @@ public final class NextAction implements BreadCrumbFactory {
     return next;
   }
 
+  void setPacket(Packet packet) {
+    this.packet = packet;
+  }
+
+  public Packet getPacket() {
+    return packet;
+  }
+
   @Override
   public BreadCrumb createBreadCrumb() {
     return new NextActionBreadCrumb(this);
@@ -168,7 +176,7 @@ public final class NextAction implements BreadCrumbFactory {
               sb.append(", ");
             }
             sb.append(na.next.getResourceName());
-            dumper.dump(sb, na.packet);
+            dumper.dump(sb, na.getPacket());
           }
           break;
         case SUSPEND:

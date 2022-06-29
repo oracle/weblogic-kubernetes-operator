@@ -274,11 +274,15 @@ public class MonitoringExporterSteps {
     }
 
     private boolean isExporterPort(V1ServicePort servicePort) {
-      return "metrics".equals(servicePort.getName());
+      return getMetricsPortName().equals(servicePort.getName());
     }
 
     DomainResource getDomain() {
       return info.getDomain();
+    }
+
+    private String getMetricsPortName() {
+      return "metrics";
     }
 
     private HttpRequest createConfigurationQueryRequest() {

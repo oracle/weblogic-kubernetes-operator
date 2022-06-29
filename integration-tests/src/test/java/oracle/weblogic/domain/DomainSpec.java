@@ -9,7 +9,6 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -43,7 +42,7 @@ public class DomainSpec {
       "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
           + " the username and password needed to boot WebLogic Server under the 'username' and "
           + "'password' fields.")
-  private V1SecretReference webLogicCredentialsSecret;
+  private V1LocalObjectReference webLogicCredentialsSecret;
 
   @ApiModelProperty(
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
@@ -284,20 +283,20 @@ public class DomainSpec {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  public DomainSpec webLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  public DomainSpec webLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
   }
 
-  public V1SecretReference webLogicCredentialsSecret() {
+  public V1LocalObjectReference webLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
-  public V1SecretReference getWebLogicCredentialsSecret() {
+  public V1LocalObjectReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
-  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  public void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 

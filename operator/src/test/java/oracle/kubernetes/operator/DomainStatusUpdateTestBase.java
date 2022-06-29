@@ -51,7 +51,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -85,7 +84,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
@@ -144,7 +142,7 @@ abstract class DomainStatusUpdateTestBase {
 
   void initializeDomainStatus(WlsDomainConfig domainConfig) {
     final DomainStatusUpdater.DomainStatusFactory domainStatusFactory
-          = new DomainStatusUpdater.DomainStatusFactory(info, getRecordedDomain(), domainConfig,
+          = new DomainStatusUpdater.DomainStatusFactory(info, domainConfig,
               this::isConfiguredToRun);
 
     domainStatusFactory.setStatusDetails(info.getDomain().getOrCreateStatus());
@@ -946,50 +944,6 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
-  }
-
-  @Test
-  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_removeOldReplicasTooHighFailure() {
-    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH));
-    info.setReplicaCount("cluster1", 4);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
-  }
-
-  @Test
-  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {
-    info.setReplicaCount("cluster1", 4);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
-  }
-
-  @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
-    info.setReplicaCount("cluster1", 5);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), hasCondition(FAILED)
-        .withReason(REPLICAS_TOO_HIGH).withMessageContaining("cluster1"));
-    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
-  }
-
-  @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_generateFailedEvent() {
-    info.setReplicaCount("cluster1", 5);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR)));
   }
 
   @Test

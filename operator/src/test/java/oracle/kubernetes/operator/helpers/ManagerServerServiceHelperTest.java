@@ -79,7 +79,7 @@ class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
   @Test
   void whenDomainHasMonitoringExporterConfigurationAndIstio_serviceHasExporterPort() {
-    configureDomain().withMonitoringExporterConfiguration("queries:\n").withIstio();
+    configureDomain().withMonitoringExporterConfiguration("queries:\n");
 
     V1Service service = createService();
 

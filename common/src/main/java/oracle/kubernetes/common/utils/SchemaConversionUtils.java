@@ -104,9 +104,11 @@ public class SchemaConversionUtils {
     moveConfigOverrideSecrets(domain);
     constantsToCamelCase(spec);
     adjustReplicasDefault(spec, apiVersion);
+    removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
 
     Map<String, Object> toBePreserved = new HashMap<>();
     removeAndPreserveServerStartState(spec, toBePreserved);
+    removeAndPreserveIstio(spec, toBePreserved);
 
     try {
       preserve(domain, toBePreserved, apiVersion);
@@ -424,7 +426,7 @@ public class SchemaConversionUtils {
             .orElse(new ArrayList<>());
     if (Optional.of(existingVolumes).map(volumes -> (volumes).stream().noneMatch(
           volume -> podHasMatchingVolumeName((Map<String, Object>)volume, auxiliaryImageVolume))).orElse(true)) {
-      existingVolumes.addAll(Collections.singletonList(createEmptyDirVolume(auxiliaryImageVolume)));
+      existingVolumes.add(createEmptyDirVolume(auxiliaryImageVolume));
     }
     serverPod.put("volumes", existingVolumes);
   }
@@ -545,6 +547,23 @@ public class SchemaConversionUtils {
     }
   }
 
+
+  private void removeAndPreserveIstio(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+    Optional.ofNullable(getConfiguration(spec)).ifPresent(configuration -> {
+      Object existing = configuration.remove("istio");
+      if (existing != null) {
+        toBePreserved.put("$.spec.configuration", Map.of("istio", existing));
+      }
+    });
+  }
+  
+  private void removeWebLogicCredentialsSecretNamespace(Map<String, Object> spec, String apiVersion) {
+    if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
+      Optional.ofNullable((Map<String, Object>) spec.get("webLogicCredentialsSecret"))
+          .ifPresent(wcs -> wcs.remove("namespace"));
+    }
+  }
+
   private void removeAndPreserveServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     removeAndPreserveServerStartState(spec, toBePreserved, "$.spec");
     Optional.ofNullable(getAdminServer(spec)).ifPresent(
@@ -609,10 +628,10 @@ public class SchemaConversionUtils {
   private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored) {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
       ReadContext context = JsonPath.parse(domain);
-      toBeRestored.entrySet().forEach(entry -> {
-        JsonPath path = JsonPath.compile(entry.getKey());
-        Optional.ofNullable(read(context, path)).map(List::stream)
-            .ifPresent(stream -> stream.forEach(item -> item.putAll((Map<String, Object>) entry.getValue())));
+      toBeRestored.forEach((key, value) -> {
+        JsonPath path = JsonPath.compile(key);
+        Optional.of(read(context, path)).map(List::stream)
+                .ifPresent(stream -> stream.forEach(item -> item.putAll((Map<String, Object>) value)));
       });
     }
   }

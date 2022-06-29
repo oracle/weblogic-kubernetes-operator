@@ -92,8 +92,3 @@ kubernetes:
     - clusterName: %CLUSTER_NAME%
       replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
 
-    # Istio service mesh support is experimental.
-    %ISTIO_PREFIX%configuration:
-    %ISTIO_PREFIX%  istio:
-    %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
-    %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%

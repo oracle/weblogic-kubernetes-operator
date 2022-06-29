@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: e95b0224af894664c76646ffbc3082481ecac49716b147cbd089b8c9fe7258fd
+    weblogic.sha256: 07910b6d253a5c4b120544c1b28f86adf6ce62346427a04e70b6bdcd4a0fc501
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -298,44 +298,6 @@ spec:
                     items:
                       type: string
                     type: array
-                  istio:
-                    description: The Istio service mesh integration settings.
-                    properties:
-                      replicationChannelPort:
-                        description: The operator will create a `T3` protocol WebLogic
-                          network access point on each WebLogic Server that is part
-                          of a cluster with this port to handle EJB and servlet session
-                          state replication traffic between servers. This setting
-                          is ignored for clusters where the WebLogic cluster configuration
-                          already defines a `replication-channel` attribute. Defaults
-                          to 4564.
-                        type: integer
-                      localhostBindingsEnabled:
-                        description: 'This setting was added in operator version 3.3.3,
-                          defaults to the `istioLocalhostBindingsEnabled` Helm install
-                          value which in turn defaults to `true`, and is ignored in
-                          version 4.0 and later. In version 3.x, when `true`, the
-                          operator creates a WebLogic network access point with a
-                          `localhost` binding for each existing channel and protocol.  In
-                          version 3.x, use `true` for Istio versions prior to 1.10
-                          and set to `false` for version 1.10 and later.  Version
-                          4.0 and later requires Istio 1.10 and later, will not create
-                          localhost bindings, and ignores this attribute. More info:
-                          https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#istiolocalhostbindingsenabled'
-                        type: boolean
-                      readinessPort:
-                        description: The operator will create WebLogic network access
-                          points with this port on each WebLogic Server. The readiness
-                          probe on each pod will use these network access points to
-                          verify that the pod is ready for application traffic. Defaults
-                          to 8888.
-                        type: integer
-                      enabled:
-                        description: True, if this domain is deployed under an Istio
-                          service mesh. Defaults to true when the `istio` field is
-                          specified.
-                        type: boolean
-                    type: object
                   overridesConfigMap:
                     description: The name of the ConfigMap for WebLogic configuration
                       overrides.
@@ -575,8 +537,6 @@ spec:
                   and `password` fields.
                 properties:
                   name:
-                    type: string
-                  namespace:
                     type: string
                 type: object
               adminServer:

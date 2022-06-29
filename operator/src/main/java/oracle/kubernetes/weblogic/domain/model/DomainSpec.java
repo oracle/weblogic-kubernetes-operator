@@ -15,7 +15,6 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
@@ -101,7 +100,7 @@ public class DomainSpec extends BaseConfiguration {
           + "`password` fields.")
   @Valid
   @NotNull
-  private V1SecretReference webLogicCredentialsSecret;
+  private V1LocalObjectReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, Node Manager, server logs, server
@@ -547,13 +546,12 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  // NOTE: we ignore the namespace, which could be confusing. We should change it with the next schema update.
-  V1SecretReference getWebLogicCredentialsSecret() {
+  V1LocalObjectReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
@@ -564,7 +562,7 @@ public class DomainSpec extends BaseConfiguration {
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
    * @return this
    */
-  public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  public DomainSpec withWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
   }
@@ -835,55 +833,6 @@ public class DomainSpec extends BaseConfiguration {
         .map(Model::getOnlineUpdate)
         .map(OnlineUpdate::getEnabled)
         .orElse(false);
-  }
-
-  /**
-   * Test if the domain is deployed under Istio environment.
-   *
-   * @return istioEnabled
-   */
-  boolean isIstioEnabled() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getEnabled)
-        .orElse(false);
-  }
-
-  /**
-   * The WebLogic readiness port used under Istio environment.
-   *
-   * @return readinessPort
-   */
-  int getIstioReadinessPort() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getReadinessPort)
-        .orElse(8888);
-  }
-
-  /**
-   * The WebLogic replication channel port used under Istio environment.
-   *
-   * @return replicationPort
-   */
-  int getIstioReplicationPort() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getReplicationChannelPort)
-        .orElse(Istio.DEFAULT_REPLICATION_PORT);
-  }
-
-  /**
-   * Indicates if Istio proxy redirects traffic to localhost.
-   *
-   * @return null if not defined in spec. true if Istio proxy redirects traffic to localhost or
-   *          false otherwise.
-   */
-  Boolean isLocalhostBindingsEnabled() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getLocalhostBindingsEnabled)
-        .orElse(null);
   }
 
   ModelInImageDomainType getWdtDomainType() {

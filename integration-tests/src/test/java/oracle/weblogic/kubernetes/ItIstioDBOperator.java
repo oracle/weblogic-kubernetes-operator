@@ -18,14 +18,12 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
@@ -74,6 +72,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabase
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
@@ -103,7 +102,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -164,6 +162,8 @@ class ItIstioDBOperator {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
+  private static String testWebAppWarLoc = null;
+
   private static String hostHeader;
 
   /**
@@ -222,6 +222,9 @@ class ItIstioDBOperator {
         + " dbNamespace: {3}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX, dbUrl, dbNamespace);
     assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX,
         dbUrl, dbNamespace));
+
+    // create testwebapp.war
+    testWebAppWarLoc = createTestWebAppWarFile(wlsDomainNamespace);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, fmwDomainNamespace, wlsDomainNamespace);
@@ -362,7 +365,7 @@ class ItIstioDBOperator {
             + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
     }
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(testWebAppWarLoc);
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
@@ -794,9 +797,8 @@ class ItIstioDBOperator {
         .image(imageName)
         .addImagePullSecretsItem(new V1LocalObjectReference()
             .name(repoSecretName))
-        .webLogicCredentialsSecret(new V1SecretReference()
-            .name(adminSecretName)
-            .namespace(domNamespace))
+        .webLogicCredentialsSecret(new V1LocalObjectReference()
+            .name(adminSecretName))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(Boolean.TRUE)
         .logHome("/shared/logs")
@@ -819,10 +821,6 @@ class ItIstioDBOperator {
             .clusterName(clusterName)
             .replicas(replicaCount))
         .configuration(new Configuration()
-            .istio(new Istio()
-                .enabled(Boolean.TRUE)
-                .readinessPort(8888)
-                .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
             .secrets(securityList)
             .model(new Model()
                 .domainType("WLS")

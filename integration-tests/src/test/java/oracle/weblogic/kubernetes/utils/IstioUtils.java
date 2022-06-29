@@ -14,13 +14,11 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -371,9 +369,8 @@ public class IstioUtils {
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
@@ -387,10 +384,6 @@ public class IstioUtils {
                 .clusterName(clusterName)
                 .replicas(replicaCount))
             .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888)
-                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .model(new Model()
                     .domainType("WLS")
                     .configMap(configmapName)
