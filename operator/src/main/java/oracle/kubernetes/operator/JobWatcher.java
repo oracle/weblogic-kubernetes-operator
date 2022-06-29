@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -42,6 +43,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
@@ -296,61 +299,46 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     @Override
     Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Job> responseStep) {
-      return checkPodContainerInNamespace(namespace, name,
+      return setIntrospectorTerminationState(namespace, name,
               new CallBuilder().readJobAsync(name, namespace, domainUid, responseStep));
     }
 
-    private Step checkPodContainerInNamespace(String namespace, String jobName, Step next) {
+    private Step setIntrospectorTerminationState(String namespace, String jobName, Step next) {
       return new CallBuilder()
               .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-              .listPodAsync(namespace, new PodContainerCheckResponseStep(jobName, next));
+              .listPodAsync(namespace, new TerminationStateResponseStep(jobName, next));
     }
 
-    private class PodContainerCheckResponseStep extends ResponseStep<V1PodList> {
+    private class TerminationStateResponseStep extends ResponseStep<V1PodList> {
+      private final String jobName;
 
-      private String jobName;
-
-      PodContainerCheckResponseStep(String jobName, Step next) {
+      TerminationStateResponseStep(String jobName, Step next) {
         super(next);
         this.jobName = jobName;
       }
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-        final V1Pod jobPod
-                = Optional.ofNullable(callResponse.getResult())
-                .map(V1PodList::getItems)
-                .orElseGet(Collections::emptyList)
-                .stream()
+        final IntrospectorTerminationState terminationState = new IntrospectorTerminationState(jobName, packet);
+        final V1Pod jobPod = getJobPod(callResponse.getResult());
+
+        if (jobPod == null) {
+          terminationState.remove(packet);
+          return doContinueListOrNext(callResponse, packet, getNext());
+        } else {
+          terminationState.setFromPod(jobPod);
+          return doNext(getNext(), packet);
+        }
+
+      }
+
+      @Nullable
+      private V1Pod getJobPod(V1PodList podList) {
+        return Optional.ofNullable(podList)
+                .map(V1PodList::getItems).orElseGet(Collections::emptyList).stream()
                 .filter(this::isJobPod)
                 .findFirst()
                 .orElse(null);
-
-        if (jobPod == null) {
-          packet.remove(JOB_POD_INTROSPECT_CONTAINER_TERMINATED);
-          return doContinueListOrNext(callResponse, packet, getNext());
-        } else {
-          addContainerTerminatedMarkerToPacket(jobPod, jobName, packet);
-        }
-
-        return doNext(getNext(), packet);
-      }
-
-      private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
-        // if the job container (<domin uid>-introspecto) exited, then the check for pod container finished is done
-
-        Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
-                .map(V1Pod::getStatus)
-                .map(V1PodStatus::getContainerStatuses)
-                .orElseGet(Collections::emptyList)
-                .stream().filter(v -> v.getState().getTerminated() != null)
-                .filter(c -> jobName.equals(c.getName()))
-                .findFirst();
-
-        if (!containerStatus.isEmpty()) {
-          packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
-        }
-
       }
 
       private String getName(V1Pod pod) {
@@ -361,6 +349,38 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         return getName(pod).startsWith(jobName);
       }
 
+      private class IntrospectorTerminationState {
+
+        private final String jobName;
+        private final Packet packet;
+
+        IntrospectorTerminationState(String jobName, Packet packet) {
+          this.jobName = jobName;
+          this.packet = packet;
+        }
+
+        private void remove(Packet packet) {
+          packet.remove(JOB_POD_INTROSPECT_CONTAINER_TERMINATED);
+        }
+
+        private void setFromPod(@Nonnull V1Pod jobPod) {
+          if (isJobTerminated(jobPod)) {
+            packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
+          }
+        }
+
+        private boolean isJobTerminated(@NotNull V1Pod jobPod) {
+          return Optional.of(jobPod)
+              .map(V1Pod::getStatus)
+              .map(V1PodStatus::getContainerStatuses).orElseGet(Collections::emptyList).stream()
+              .anyMatch(this::isJobTerminated);
+        }
+
+        private boolean isJobTerminated(@Nonnull V1ContainerStatus status) {
+          final V1ContainerState state = status.getState();
+          return state != null && state.getTerminated() != null && jobName.equals(status.getName());
+        }
+      }
     }
 
     // When we detect a job as ready, we add it to the packet for downstream processing.
