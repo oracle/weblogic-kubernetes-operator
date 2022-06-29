@@ -533,9 +533,6 @@ createFiles() {
     sed -i -e "s:%FRONTEND_HOST%:${frontEndHost}:g" ${createJobOutput}
     sed -i -e "s:%FRONTEND_PORT%:${frontEndPort}:g" ${createJobOutput}
     # entries for Istio
-    sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
-    sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
-    sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
     sed -i -e "s|%DOMAIN_TYPE%|${domain_type}|g" ${createJobOutput}
     sed -i -e "s|%PROXY_VAL%|${httpsProxy}|g" ${createJobOutput}
@@ -616,9 +613,6 @@ createFiles() {
     sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
     sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
-    sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
-    sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
-    sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
     # MII settings are used for model-in-image integration testing
     sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
     sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
@@ -695,9 +689,6 @@ updateModelFile() {
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${modelFile}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${modelFile}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${modelFile}
-  sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${modelFile}
-  sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${modelFile}
-  sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${modelFile}
   # MII settings are used for model-in-image integration testing
   sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${modelFile}
   sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${modelFile}
