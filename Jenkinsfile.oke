@@ -68,8 +68,12 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.23.4'
+               defaultValue: '1.21.5'
         )
+        string(name: 'IMAGE_ID',
+                       description: 'oci image id for node pool',
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaagfkjmrd3s6wkzq6vuokfmcwyr74hcgn7yex3jvueme3767ajnonq'
+                )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
                        defaultValue: '1.21.5'
@@ -198,7 +202,8 @@ pipeline {
                         VCN_CIDR_PREFIX="10.1"
                         OKE_CLUSTER_NAME="mtcluster"
                         NODE_SHAPE="VM.Standard2.4"
-                        LINUX_VER="Oracle-Linux-7.4"
+                        #LINUX_VER="Oracle-Linux-7.4"
+                        IMAGE_ID=${IMAGE_ID}
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
                         OCIPK_FILE = credentials("${ocipk_file}")
@@ -231,7 +236,8 @@ pipeline {
 
                         export OKE_CLUSTER_NAME=${OKE_CLUSTER_NAME}
                         export NODE_SHAPE=${NODE_SHAPE}
-                        export LINUX_VER=${LINUX_VER}
+                        #export LINUX_VER=${LINUX_VER}
+                        export IMAGE_ID=${IMAGE_ID}
 
                         export OCI_PROP_FILE=${OCI_PROP_FILE}
 
@@ -255,7 +261,8 @@ pipeline {
                         vcn.cidr.prefix=${VCN_CIDR_PREFIX}
                         vcn.cidr=${VCN_CIDR_PREFIX}.0.0/16
                         nodepool.shape=${NODE_SHAPE}
-                        nodepool.imagename=${LINUX_VER}
+                        #nodepool.imagename=${LINUX_VER}
+                        nodepool.imagename=${IMAGE_ID}
                         k8s.version=v${KUBE_VERSION}
                         nodepool.ssh.pubkey=${WKOBUILD_PUBLIC_CERT}
                         terraform.installdir=${WORKSPACE}/terraform/terraforminstall
