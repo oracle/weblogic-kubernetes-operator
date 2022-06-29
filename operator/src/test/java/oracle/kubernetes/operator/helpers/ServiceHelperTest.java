@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -406,12 +407,31 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   void verifyPortNamesAreNormalizedWithAppProtocolSet() {
     consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
     setUpServicePortPatterns();
+    List<String> portNames = new ArrayList<>(Arrays.asList("nap-1", "nap-2", "nap-3", "default"));
 
     runServiceHelper();
     List<V1ServicePort> ports = testFacade.getRecordedService(domainPresenceInfo).getSpec().getPorts();
     for (V1ServicePort port: ports) {
       assertThat(port.getAppProtocol(), notNullValue());
+      if (port.getName().equals("default-admin")) {
+        assertThat(port.getAppProtocol(), equalTo("tls"));
+      } else if (portNames.contains(port.getName())) {
+        assertThat(port.getAppProtocol(), equalTo("tcp"));
+      }
     }
+  }
+
+  @Test
+  void testGetAppProtocol() {
+    assertThat(ServiceHelper.getAppProtocol("unknown"), equalTo("tcp"));
+    assertThat(ServiceHelper.getAppProtocol("http"), equalTo("http"));
+    assertThat(ServiceHelper.getAppProtocol("https"), equalTo("https"));
+    assertThat(ServiceHelper.getAppProtocol("t3s"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("ldaps"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("iiops"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("cbts"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("sips"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("admin"), equalTo("tls"));
   }
 
   @Test
