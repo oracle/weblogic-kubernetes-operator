@@ -6,17 +6,18 @@ package oracle.kubernetes.operator;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.http.rest.RestConfig;
 import oracle.kubernetes.operator.http.rest.RestConfigImpl;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -40,7 +41,7 @@ public class WebhookMain extends BaseMain {
 
   private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
-  private int crdRecheckCount;
+  private AtomicInteger crdPresenceCheckCount = new AtomicInteger(0);
   private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
@@ -165,26 +166,28 @@ public class WebhookMain extends BaseMain {
   }
 
   // on failure, aborts the processing.
-  private class  CrdPresenceResponseStep<L extends KubernetesListObject> extends ResponseStep<L> {
+  private class  CrdPresenceResponseStep<L extends KubernetesListObject> extends DefaultResponseStep<L> {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
       warnedOfCrdAbsence = false;
-      return doNext(packet);
+      return super.onSuccess(packet, callResponse);
     }
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<L> callResponse) {
-      if (crdRecheckCount < TuningParameters.getInstance().getCallBuilderTuning().getCallMaxRetryCount()) {
-        crdRecheckCount++;
+      if (crdPresenceCheckCount.getAndIncrement() < getCrdPresenceFailureRetryMaxCount()) {
         return doNext(this, packet);
-      } else {
-        if (!warnedOfCrdAbsence) {
-          LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
-          warnedOfCrdAbsence = true;
-        }
-        return doNext(null, packet);
       }
+      if (!warnedOfCrdAbsence) {
+        LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
+        warnedOfCrdAbsence = true;
+      }
+      return doNext(null, packet);
+    }
+
+    private int getCrdPresenceFailureRetryMaxCount() {
+      return TuningParameters.getInstance().getCrdPresenceFailureRetryMaxCount();
     }
   }
 

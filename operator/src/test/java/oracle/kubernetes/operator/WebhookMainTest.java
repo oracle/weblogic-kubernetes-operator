@@ -97,7 +97,7 @@ import static oracle.kubernetes.operator.helpers.WebhookHelper.UPDATE;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_NAME;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
-import static oracle.kubernetes.operator.tuning.TuningParameters.CALL_MAX_RETRY_COUNT;
+import static oracle.kubernetes.operator.tuning.TuningParameters.CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -253,13 +253,27 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   @ParameterizedTest
   @ValueSource(strings = {DOMAIN, CLUSTER})
   void whenNoCRD_logReasonForFailure(String resourceType) {
-    TuningParametersStub.setParameter(CALL_MAX_RETRY_COUNT, "0");
+    TuningParametersStub.setParameter(CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT, "0");
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
     simulateMissingCRD(resourceType);
 
     recheckCRD();
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {DOMAIN, CLUSTER})
+  void whenNoCRDOnFirstAttempt_severeMessageNotLoggedOnRerty(String resourceType) {
+    TuningParametersStub.setParameter(CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT, "1");
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    simulateMissingCRD(resourceType);
+
+    recheckCRD();
+
+    recheckCRD();
+
+    assertThat(logRecords, not(containsSevere(CRD_NOT_INSTALLED)));
   }
 
   @ParameterizedTest
@@ -278,7 +292,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   @ParameterizedTest
   @ValueSource(strings = {DOMAIN, CLUSTER})
   void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure(String resourceType) {
-    TuningParametersStub.setParameter(CALL_MAX_RETRY_COUNT, "0");
+    TuningParametersStub.setParameter(CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT, "0");
     simulateMissingCRD(resourceType);
     recheckCRD();
     testSupport.cancelFailures();
