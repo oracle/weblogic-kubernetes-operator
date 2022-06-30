@@ -162,12 +162,13 @@ class ItLiftAndShiftFromOnPremDomain {
     final String clusterService = domainUid + "-cluster-cluster-1";
 
     // As of WDT v2.3.1, the discovery tool will not put the replica count 
-    // in genererated domain resource yaml file. So the Operator will start 
-    // only one managed server (default replica count)  
+    // in genererated domain resource yaml file. So the Operator will not 
+    // start any managed server (default replica count is zero)  
+    //https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/documentation/domains/Domain.md
     // To add custom replica count, need to create a wdt model file with 
     // kubernates section with custom repilca count
     // final int replicaCount = 5;
-    final int replicaCount = 1;
+    final int replicaCount = 0;
 
     assertDoesNotThrow(() -> {
       logger.info("Deleting and recreating {0}", LIFT_AND_SHIFT_WORK_DIR);
