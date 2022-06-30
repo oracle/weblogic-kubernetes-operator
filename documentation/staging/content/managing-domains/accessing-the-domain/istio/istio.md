@@ -12,7 +12,6 @@ description: "Run the operator and WebLogic domains managed by the operator when
 - [Determining the Istio version](#determining-the-istio-version)
 - [Setting up an operator with Istio support](#setting-up-an-operator-with-istio-support)
 - [Creating a domain with Istio support](#creating-a-domain-with-istio-support)
-  - [Setting up the domain namespace](#setting-up-the-domain-namespace)
   - [Configuring the domain resource](#configuring-the-domain-resource)
   - [Applying a Domain YAML file](#applying-a-domain-yaml-file)
   - [Exposing applications in Istio-enabled domains](#exposing-applications-in-istio-enabled-domains)
@@ -98,7 +97,8 @@ $ kubectl label namespace weblogic-operator istio-injection=enabled
 After the namespace is labeled, you can [install the operator]({{< relref "/managing-operators/installation.md" >}}).
 
 When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
-annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, with the `--set` option, as follows:
+annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, 
+with the `--set` option, as follows:
 
 `--set "annotations.sidecar\.istio\.io/inject=true"`
 
@@ -119,9 +119,7 @@ In the second command, change `weblogic-operator-xxx-xxx` to the name of your po
 
 #### Creating a domain with Istio support
 
-Setting up Istio support for a domain requires labeling its namespace or the annotation level in the server pod.
-
-##### Setting up the domain namespace
+Setting up Istio support for a domain only requires labeling its namespace for automatic sidecar injection.
 
 To allow your domains to run with Istio automatic sidecar injection enabled,
 create the namespace in which you want to run the domain
@@ -130,15 +128,30 @@ and label it for automatic injection before deploying your domain.
 ```shell
 $ kubectl create namespace domain1
 ```
+
+For non-OpenShift environment 
+
 ```shell
 $ kubectl label namespace domain1 istio-injection=enabled
+```
+For OpenShift environment, You do need to label the namespace for istio sidecar injection, instead add the istio 
+sidecar injection annotation at the pod level in the domain resource.  
+
+```
+...
+spec:
+  ...
+  serverPod:
+     annotations:
+        sidecar.istio.io/inject=true
+  ...
 ```
 
 ##### Configuring the domain resource
 
-Since Operator release 4.0, you longer have to provide `domain.spec.configuration.istio` section to enable Istio 
-support for a domain.  Enabling the sidecar injection at namespace or annotation of at server pod level alone 
-is sufficient.
+Beginning with WebLogic Operator release 4.0, you longer have to provide `domain.spec.configuration.istio` section to 
+enable Istio support for a domain.  Enabling the sidecar injection at namespace level alone or annotation at `serverPod` 
+level for OpenShift is sufficient.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
 
 ##### Applying a Domain YAML file
 
