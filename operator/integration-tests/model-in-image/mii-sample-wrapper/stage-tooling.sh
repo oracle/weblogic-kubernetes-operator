@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 20219, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -83,6 +83,7 @@ download_zip() {
       echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
     fi
   else
+    echo "@@ Info: The location URL does not matched regex 'https://github.com.*/latest$' "
     echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/$ZIPFILE' "
     if [ ! "$dry_run" = "true" ]; then
       rm -f $ZIPFILE
@@ -97,7 +98,7 @@ download_zip() {
 
 if [ "$dry_run" = "true" ]; then
   echo "dryrun:#!/bin/bash"
-  echo "dryrun:# Copyright (c) 2019, 2021, Oracle and/or its affiliates."
+  echo "dryrun:# Copyright (c) 2019, 2022, Oracle and/or its affiliates."
   echo "dryrun:# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl."
   echo "dryrun:"
   echo "dryrun:set -eux"
