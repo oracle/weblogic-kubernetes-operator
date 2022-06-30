@@ -202,7 +202,7 @@ pipeline {
                         VCN_CIDR_PREFIX="10.1"
                         OKE_CLUSTER_NAME="mtcluster"
                         NODE_SHAPE="VM.Standard2.4"
-                        IMAGE_ID="${IMAGE_ID}""
+                        IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
                         OCIPK_FILE = credentials("${ocipk_file}")
