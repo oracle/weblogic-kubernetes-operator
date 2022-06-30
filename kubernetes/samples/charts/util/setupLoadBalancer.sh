@@ -13,6 +13,7 @@ UTILDIR="$(dirname "$(readlink -f "$0")")"
 #Kubernetes command line interface. 
 #Default is 'kubectl' if KUBERNETES_CLI env variable is not set.  
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
+#Env variable to set if run in OKE cluster, default is 'false' if OKE_CLUSTER env variable is not set.
 okecluster=${OKE_CLUSTER:-false}
 if [ "${okecluster}" = "true" ]; then
   image_pull_policy="Always"
