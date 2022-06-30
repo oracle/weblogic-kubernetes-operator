@@ -5,8 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -23,6 +25,8 @@ import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -35,6 +39,7 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private final Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+  private ClusterList activeClusterResources;
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
@@ -69,12 +74,29 @@ class DomainResourcesValidation {
       }
 
       @Override
+      public Consumer<ClusterList> getClusterListProcessing() {
+        return DomainResourcesValidation.this::addClusterList;
+      }
+
+      @Override
       public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
+            .forEach(info -> removeInactiveClusterResources(c, info)));
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
+  }
+
+  private void removeInactiveClusterResources(ClusterList clusters, DomainPresenceInfo info) {
+    Set<String> clusterNames = clusters.getItems().stream().filter(c -> isForDomain(c, info))
+        .map(c -> c.getSpec().getClusterName()).collect(Collectors.toSet());
+    info.removeInactiveClusterResources(clusterNames);
+  }
+
+  private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
+    return clusterResource.getDomainUid().equals(info.getDomainUid());
   }
 
   private void addPodList(V1PodList list) {
@@ -131,8 +153,19 @@ class DomainResourcesValidation {
     getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
+  private void addClusterList(ClusterList list) {
+    activeClusterResources = list;
+    list.getItems().forEach(this::addCluster);
+  }
+
+  private void addCluster(ClusterResource clusterResource) {
+    getDomainPresenceInfo(clusterResource.getDomainUid()).addClusterResource(clusterResource);
+  }
+
+
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
-    return Stream.concat(domainPresenceInfoMap.values().stream().filter(this::isStranded),
+    return Stream.concat(
+        domainPresenceInfoMap.values().stream().filter(this::isStranded),
         dp.findStrandedDomainPresenceInfos(namespace, domainPresenceInfoMap.keySet()));
   }
 

@@ -25,6 +25,8 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.Processors;
+import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
@@ -33,6 +35,7 @@ import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.MonitoringExporterSteps;
@@ -40,6 +43,8 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
@@ -110,6 +115,17 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    */
   public MakeRightDomainOperation withEventData(EventHelper.EventItem eventItem, String message) {
     this.eventData = new EventHelper.EventData(eventItem, message);
+    return this;
+  }
+
+  /**
+   * Set the event data that is associated with this operation.
+   *
+   * @param eventData event data
+   * @return the updated factory
+   */
+  public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+    this.eventData = eventData;
     return this;
   }
 
@@ -250,11 +266,33 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     if (deleting) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
+      result.add(createListClusterResourcesStep(getNamespace()));
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
     }
 
     return Step.chain(result);
+  }
+
+  private static Step createListClusterResourcesStep(String domainNamespace) {
+    return new CallBuilder().listClusterAsync(domainNamespace, new ListClusterResourcesResponseStep());
+  }
+
+
+  static class ListClusterResourcesResponseStep extends DefaultResponseStep<ClusterList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      callResponse.getResult().getItems().stream().filter(c -> isForDomain(c, info))
+          .forEach(info::addClusterResource);
+
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
+      return clusterResource.getDomainUid().equals(info.getDomainUid());
+    }
   }
 
   private Step createDomainDownPlan() {

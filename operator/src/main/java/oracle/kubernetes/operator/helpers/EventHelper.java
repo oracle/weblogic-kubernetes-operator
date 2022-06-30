@@ -30,6 +30,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_CHANGED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_CREATED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_DELETED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_AVAILABLE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CHANGED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_COMPLETED_EVENT_PATTERN;
@@ -50,6 +53,9 @@ import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESP
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_CHANGED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_CREATED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -337,6 +343,39 @@ public class EventHelper {
   }
 
   public enum EventItem {
+    CLUSTER_CREATED {
+      @Override
+      public String getReason() {
+        return CLUSTER_CREATED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_CREATED_EVENT_PATTERN;
+      }
+    },
+    CLUSTER_DELETED {
+      @Override
+      public String getReason() {
+        return CLUSTER_DELETED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_DELETED_EVENT_PATTERN;
+      }
+    },
+    CLUSTER_CHANGED {
+      @Override
+      public String getReason() {
+        return CLUSTER_CHANGED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_CHANGED_EVENT_PATTERN;
+      }
+    },
     DOMAIN_AVAILABLE {
       @Override
       public String getReason() {
