@@ -42,6 +42,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.INVALID_DOMAIN_UID;
@@ -179,9 +180,21 @@ public class RestBackendImpl implements RestBackend {
     return domainNamespaces.get().stream().map(this::getDomains).flatMap(Collection::stream);
   }
 
+  private Stream<ClusterResource> getClusterStream() {
+    return domainNamespaces.get().stream().map(this::getClusterResources).flatMap(Collection::stream);
+  }
+
   private List<DomainResource> getDomains(String ns) {
     try {
       return callBuilder.listDomain(ns).getItems();
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  private List<ClusterResource> getClusterResources(String ns) {
+    try {
+      return callBuilder.listCluster(ns).getItems();
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -256,6 +269,18 @@ public class RestBackendImpl implements RestBackend {
     getDomain(domainUid).ifPresentOrElse(consumer, () -> reportNotFound(domainUid));
   }
 
+  private void forClusterDo(String domainUid, String clusterName, Consumer<ClusterResource> consumer) {
+    if (clusterName == null) {
+      throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_CLUSTER_NAME));
+    }
+
+    getClusterResource(domainUid, clusterName).ifPresentOrElse(consumer, () -> reportClusterNotFound(clusterName));
+  }
+
+  private void reportClusterNotFound(String clusterName) {
+    throw createWebApplicationException(Status.NOT_FOUND, MessageKeys.MATCHING_CLUSTER_NOT_FOUND, clusterName);
+  }
+
   private void reportNotFound(String domainUid) {
     throw createWebApplicationException(Status.NOT_FOUND, MessageKeys.MATCHING_DOMAIN_NOT_FOUND, domainUid);
   }
@@ -264,6 +289,13 @@ public class RestBackendImpl implements RestBackend {
     authorize(null, Operation.LIST);
     
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
+  }
+
+  private Optional<ClusterResource> getClusterResource(String domainUid, String clusterName) {
+    authorize(null, Operation.LIST);
+
+    return getClusterStream().filter(c -> (clusterName.equals(c.getClusterName())
+            && domainUid.equals(c.getDomainUid()))).findFirst();
   }
 
   @Override
@@ -299,8 +331,16 @@ public class RestBackendImpl implements RestBackend {
     }
 
     authorize(domainUid, Operation.UPDATE);
-    forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
+    getClusterResource(domainUid, cluster)
+        .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
+          () ->  forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount)));
+
     LOGGER.exiting();
+  }
+
+  private void performScaling(String domainUid, ClusterResource cluster, int managedServerCount) {
+    verifyWlsConfiguredClusterCapacity(domainUid, cluster, managedServerCount);
+    patchClusterResourceReplicas(cluster, managedServerCount);
   }
 
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
@@ -324,6 +364,27 @@ public class RestBackendImpl implements RestBackend {
     patchDomain(domain, patchBuilder);
   }
 
+  private void patchClusterResourceReplicas(ClusterResource cluster, int replicas) {
+    if (replicas == cluster.getSpec().getReplicas()) {
+      return;
+    }
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.replace("/spec/replicas", replicas);
+    patchCluster(cluster, patchBuilder);
+  }
+
+  private void patchCluster(ClusterResource cluster, JsonPatchBuilder patchBuilder) {
+    try {
+      callBuilder
+              .patchCluster(
+                      cluster.getMetadata().getName(), cluster.getMetadata().getNamespace(),
+                      new V1Patch(patchBuilder.build().toString()));
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
   private void patchDomain(DomainResource domain, JsonPatchBuilder patchBuilder) {
     try {
       callBuilder
@@ -343,6 +404,25 @@ public class RestBackendImpl implements RestBackend {
     }
 
     return -1;
+  }
+
+  private void verifyWlsConfiguredClusterCapacity(
+          String domainUid, ClusterResource cluster, int requestedSize) {
+    // Query WebLogic Admin Server for current configured WebLogic Cluster size
+    // and verify we have enough configured managed servers to auto-scale
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domainUid, cluster.getClusterName());
+
+    // Verify the current configured cluster size
+    int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
+    if (requestedSize > maxClusterSize) {
+      throw createWebApplicationException(
+              Status.BAD_REQUEST,
+              MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
+              requestedSize,
+              maxClusterSize,
+              cluster,
+              cluster);
+    }
   }
 
   private void verifyWlsConfiguredClusterCapacity(

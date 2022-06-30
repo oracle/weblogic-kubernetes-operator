@@ -37,6 +37,8 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
@@ -74,6 +77,7 @@ class RestBackendImplTest {
   private final DomainResource domain2 = createDomain(NS, DOMAIN2);
   private final Collection<String> namespaces = new ArrayList<>(Collections.singletonList(NS));
   private DomainResource updatedDomain;
+  private ClusterResource updatedClusterResource;
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain1);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private WlsDomainConfig config;
@@ -100,6 +104,7 @@ class RestBackendImplTest {
     testSupport.doOnCreate(TOKEN_REVIEW, r -> authenticate((V1TokenReview) r));
     testSupport.doOnCreate(SUBJECT_ACCESS_REVIEW, s -> allow((V1SubjectAccessReview) s));
     testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (DomainResource) d);
+    testSupport.doOnUpdate(CLUSTER, c -> updatedClusterResource = (ClusterResource) c);
     domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
 
@@ -304,6 +309,40 @@ class RestBackendImplTest {
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
     assertThat(new DomainPresenceInfo(getUpdatedDomain()).getReplicaCount("cluster1"), equalTo(5));
+  }
+
+  @Test
+  void whenPerClusterResourceReplicaSetting_scaleClusterUpdatesClusterResource() {
+    final String cluster1 = "cluster1";
+    final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, cluster1)
+            .withReplicas(1);
+    testSupport.defineResources(clusterResource);
+
+    restBackend.scaleCluster(DOMAIN1, cluster1, 5);
+
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
+  void whenPerClusterResourceReplicaSettingMatchesScaleRequest_doNothing() {
+    final String cluster1 = "cluster1";
+    final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, cluster1)
+            .withReplicas(1);
+    testSupport.defineResources(clusterResource);
+
+    restBackend.scaleCluster(DOMAIN1, cluster1, 1);
+
+    assertThat(getUpdatedClusterResource(), nullValue());
+  }
+
+  private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
+    return new ClusterResource()
+            .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
+            .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
+  }
+
+  private ClusterResource getUpdatedClusterResource() {
+    return updatedClusterResource;
   }
 
   @Test
