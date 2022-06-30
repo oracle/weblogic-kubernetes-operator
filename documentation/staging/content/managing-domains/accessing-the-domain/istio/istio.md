@@ -119,7 +119,7 @@ In the second command, change `weblogic-operator-xxx-xxx` to the name of your po
 
 #### Creating a domain with Istio support
 
-Setting up Istio support for a domain only requires labeling its namespace for automatic sidecar injection.
+Setting up Istio support for a domain only requires enabling Istio automatic sidecar injection.
 
 To allow your domains to run with Istio automatic sidecar injection enabled,
 create the namespace in which you want to run the domain
@@ -134,8 +134,9 @@ For non-OpenShift environment
 ```shell
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
-For OpenShift environment, You do need to label the namespace for istio sidecar injection, instead add the istio 
-sidecar injection annotation at the pod level in the domain resource.  
+
+For OpenShift environment, You do need to label the namespace for Istio sidecar injection, instead add the following
+annotation at the pod level in the domain resource.  
 
 ```
 ...
