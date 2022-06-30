@@ -31,9 +31,12 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +44,14 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -60,11 +65,15 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   // Call builder tuning
   public static final int CALL_REQUEST_LIMIT = 10;
   private static final int LAST_DOMAIN_NUM = 2 * CALL_REQUEST_LIMIT - 1;
+  public static final String CLUSTER_1 = "cluster1";
+  public static final String CLUSTER_2 = "cluster2";
+  public static final String CLUSTER_3 = "cluster3";
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
+  DomainResource domain = createDomain(UID1, NS);
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -137,6 +146,80 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
                 .resourceVersion("1")
                 .creationTimestamp(SystemClock.now()))
         .withStatus(new DomainStatus());
+  }
+
+  @Test
+  void whenClustersMatchDomain_addToDomainPresenceInfo() {
+    DomainResource domain = createDomain(UID1, NS);
+    ClusterResource cluster1 = createClusterResource(UID1, NS, CLUSTER_1);
+    ClusterResource cluster2 = createClusterResource(UID1, NS, CLUSTER_2);
+    ClusterResource cluster3 = createClusterResource(UID1, "ns2", CLUSTER_3);
+    testSupport.defineResources(domain, cluster1, cluster2, cluster3);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), nullValue());
+  }
+
+  @Test
+  void whenClusterResourceDeletedButAlreadyInPresence_deleteFromPresenceMap() {
+    testSupport.defineResources(domain);
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
+      testSupport.defineResources(createClusterResource(UID1, NS, clusterName));
+    }
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.deleteResources(
+        testSupport.<ClusterResource>getResourceWithName(CLUSTER, UID1 + '-' + CLUSTER_2));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), nullValue());
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+  }
+
+  @Test
+  void whenMultipleClustersMatchTwoDomains_addToDomainPresenceInfo() {
+    for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
+      testSupport.defineResources(createClusterResource(UID1, NS, clusterName));
+    }
+    testSupport.defineResources(domain, createDomain(UID2, NS),
+        createClusterResource(UID2, NS, CLUSTER_2));
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
+    MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), notNullValue());
+    MatcherAssert.assertThat(getDomainPresenceInfo(dp, UID2).getClusterResource(CLUSTER_2), notNullValue());
+  }
+
+  // todo examine the recheck logic to see if we need to handle events
+  // todo when cluster added, add to info
+  // todo when cluster removed, remove from info
+  // todo when cluster modified, update info
+
+  // todo domain validation should use cluster resources, not cluster from domain spec
+  // todo unit tests should create cluster resources, not cluster in domain spec
+  // todo when upgrading from v8 domain, create cluster resource (WebHook) and tag as operator-created
+  // todo when deleting domain, also delete any operator-created clusters
+
+  // tell dp - here are the actual clusters that exist.
+  // dp goes through its active domains, remove clusters no longer present?
+
+  private ClusterResource createClusterResource(String uid, String namespace,
+      String clusterName) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
+        .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
   }
 
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap(DomainProcessorStub dp) {

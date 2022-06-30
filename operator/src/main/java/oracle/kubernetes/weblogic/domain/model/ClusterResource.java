@@ -70,7 +70,7 @@ public class ClusterResource implements KubernetesObject {
   @Description("The current status of the operation of the WebLogic cluster. Updated automatically by the operator.")
   private ClusterStatus status;
 
-  String getClusterName() {
+  public String getClusterName() {
     return Optional.ofNullable(spec.getClusterName()).orElse(getMetadata().getName());
   }
 
@@ -223,6 +223,15 @@ public class ClusterResource implements KubernetesObject {
   }
 
   /**
+   * Sets the status for this resource and returns the updated resource.
+   * @param status the new status
+   */
+  public ClusterResource withStatus(ClusterStatus status) {
+    setStatus(status);
+    return this;
+  }
+
+  /**
    * Returns the domain unique identifier.
    *
    * @return domain UID
@@ -244,5 +253,9 @@ public class ClusterResource implements KubernetesObject {
   public ClusterResource withKind(String kind) {
     setKind(kind);
     return this;
+  }
+
+  public String getNamespace() {
+    return getMetadata().getNamespace();
   }
 }

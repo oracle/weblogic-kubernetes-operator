@@ -2044,30 +2044,101 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceAdded_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
-    ClusterResource clusterResource = new ClusterResource().spec(new ClusterSpec()
-        .withClusterName(CLUSTER).withDomainUid(UID));
-    Response<ClusterResource> item = new Response<>("ADDED", clusterResource);
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(UID, NS, CLUSTER));
+
     processor.dispatchClusterWatch(item);
+
     assertThat(logRecords, containsInfo(WATCH_CLUSTER));
+  }
+
+  @Test
+  void whenClusterResourceAdded_noDomainPresenceInfoExists_dontDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
+    final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(UID, NS, CLUSTER));
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, not(containsInfo(WATCH_CLUSTER)));
+  }
+
+  @Test
+  void whenClusterResourceAdded_listClusterResources() {
+    final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.registerDomainPresenceInfo(info);
+    final String CLUSTER3 = "Cluster-3";
+    for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
+      testSupport.defineResources(createClusterResource(UID, NS, clusterName));
+    }
+    final Response<ClusterResource> item = new Response<>("ADDED", testSupport
+        .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, UID + '-' + CLUSTER3));
+
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(info.getClusterResource(CLUSTER), notNullValue());
+    assertThat(info.getClusterResource(CLUSTER2), notNullValue());
+    assertThat(info.getClusterResource(CLUSTER3), notNullValue());
   }
 
   @Test
   void whenClusterResourceModified_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
-    ClusterResource clusterResource = new ClusterResource().spec(new ClusterSpec()
-        .withClusterName(CLUSTER).withDomainUid(UID));
-    Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource);
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(UID, NS, CLUSTER));
+
     processor.dispatchClusterWatch(item);
+
     assertThat(logRecords, containsFine(WATCH_CLUSTER));
+  }
+
+  @Test
+  void whenClusterResourceModified_noDomainPresenceInfoExists_dontDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(UID, NS, CLUSTER));
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, not(containsInfo(WATCH_CLUSTER)));
   }
 
   @Test
   void whenClusterResourceDeleted_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
-    ClusterResource clusterResource = new ClusterResource().spec(new ClusterSpec()
-        .withClusterName(CLUSTER).withDomainUid(UID));
-    Response<ClusterResource> item = new Response<>("DELETED", clusterResource);
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(UID, NS, CLUSTER));
+
     processor.dispatchClusterWatch(item);
+
     assertThat(logRecords, containsInfo(WATCH_CLUSTER_DELETED));
+  }
+
+  @Test
+  void whenClusterResourceDeleted_noDomainPresenceInfoExists_dontDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
+    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(UID, NS, CLUSTER));
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, not(containsInfo(WATCH_CLUSTER_DELETED)));
+  }
+
+  @Test
+  void verifyClusterResourceDeleted() {
+    final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.registerDomainPresenceInfo(info);
+    testSupport.defineResources(createClusterResource(UID, NS, CLUSTER2));
+    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(UID, NS, CLUSTER));
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(info.getClusterResource(CLUSTER), nullValue());
+    assertThat(info.getClusterResource(CLUSTER2), notNullValue());
+  }
+
+  private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
+        .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
   }
 }
