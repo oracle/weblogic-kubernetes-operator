@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1656530014" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1656530014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1656604732" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1656604732" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1656530014"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1656604732"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1656530014"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1656530014"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1656604732"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1656604732"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1656530014"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1656604732"></script>
 
     
   </div>
@@ -3597,6 +3597,30 @@
 <h5 id="application-gateway-ingress-controller">Application Gateway Ingress Controller</h5>
 <p>In this section, you can create an Azure Application Gateway instance as the ingress controller of your WebLogic Server. This Application Gateway is pre-configured for end-to-end-SSL with TLS termination at the gateway using the provided SSL certificate and load balances across your cluster.</p>
 <p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Connect to Azure Application Gateway?</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next : DNS Configuration &gt;</strong>. If you select <strong>Yes</strong>, you must specify the details required for the Application Gateway integration by entering the values for the fields as described next.</p>
+<p>You can specify a virtual network for the application gateway. To do this, enter the values for the fields listed in the following tables.</p>
+<p><strong>Configure virtual networks</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Virtual network</td>
+<td>Select a virtual network in which to place the application gateway. Make sure your virtual network meets the requirements in <a href="https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#virtual-network-and-dedicated-subnet">Application Gateway virtual network and dedicated subnet</a>.</td>
+</tr>
+<tr>
+<td>Subnet</td>
+<td>An application gateway is a dedicated deployment in your virtual network. Within your virtual network, a dedicated subnet is required for the application gateway. See <a href="https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#virtual-network-and-dedicated-subnet">Application Gateway virtual network and dedicated subnet</a>.</td>
+</tr>
+<tr>
+<td>Configure frontend IP with private IP address</td>
+<td>If set to <strong>Yes</strong>, the Azure Marketplace offer will pick one of the available IP addresses from the application gateway subnet to be the private front-end IP address. For more information, see <a href="https://docs.microsoft.com/en-us/azure/application-gateway/configuration-front-end-ip">Application Gateway front-end IP address configuration</a>.</td>
+</tr>
+</tbody>
+</table>
 <p>You must select one of the following three options, each described in turn.</p>
 <ul>
 <li>Upload a TLS/SSL certificate: Upload the pre-signed certificate now.</li>
@@ -5973,19 +5997,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1656530014"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1656604732"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1656530014"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1656530014"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1656604732"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1656604732"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1656530014"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1656604732"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
