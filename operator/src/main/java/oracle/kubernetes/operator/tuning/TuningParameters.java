@@ -75,6 +75,7 @@ public class TuningParameters {
   public static final String KUBERNETES_PLATFORM_NAME = "kubernetesPlatform";
   public static final String FEATURE_GATES = "featureGates";
   public static final String SERVICE_ACCOUNT_NAME = "serviceaccount";
+  public static final String CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT = "crdPresenceFailureRetryMaxCount";
 
   public static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
@@ -217,6 +218,10 @@ public class TuningParameters {
 
   public long getActiveDeadlineMaxNumIncrements() {
     return getParameter(INTROSPECTOR_JOB_MAX_NUM_INCREMENTS, 5);
+  }
+
+  public int getCrdPresenceFailureRetryMaxCount() {
+    return getParameter(CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT, 3);
   }
 
   /**

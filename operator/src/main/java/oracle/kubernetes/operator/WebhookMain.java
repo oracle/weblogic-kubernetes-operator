@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -40,6 +41,7 @@ public class WebhookMain extends BaseMain {
 
   private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
+  private AtomicInteger crdPresenceCheckCount = new AtomicInteger(0);
   private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
@@ -169,16 +171,24 @@ public class WebhookMain extends BaseMain {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<L> callResponse) {
       warnedOfCrdAbsence = false;
+      crdPresenceCheckCount.set(0);
       return super.onSuccess(packet, callResponse);
     }
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<L> callResponse) {
+      if (crdPresenceCheckCount.getAndIncrement() < getCrdPresenceFailureRetryMaxCount()) {
+        return doNext(this, packet);
+      }
       if (!warnedOfCrdAbsence) {
         LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
         warnedOfCrdAbsence = true;
       }
       return doNext(null, packet);
+    }
+
+    private int getCrdPresenceFailureRetryMaxCount() {
+      return TuningParameters.getInstance().getCrdPresenceFailureRetryMaxCount();
     }
   }
 

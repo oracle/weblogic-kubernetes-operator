@@ -63,6 +63,7 @@ import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
@@ -482,8 +483,12 @@ public class CrdHelper {
       }
 
       private boolean existingCrdContainsCompatibleConversionWebhook(V1CustomResourceDefinition existingCrd) {
-        return hasConversionWebhookStrategy(existingCrd)
-            && webhookIsCompatible(existingCrd);
+        return isClusterCrd(existingCrd)
+            || (hasConversionWebhookStrategy(existingCrd) && webhookIsCompatible(existingCrd));
+      }
+
+      private boolean isClusterCrd(V1CustomResourceDefinition existingCrd) {
+        return existingCrd.getMetadata().getName().equals(CLUSTER_CRD_NAME);
       }
 
       private Boolean hasConversionWebhookStrategy(V1CustomResourceDefinition existingCrd) {
@@ -714,7 +719,7 @@ public class CrdHelper {
 
     @Override
     protected String getCrdName() {
-      return KubernetesConstants.CLUSTER_CRD_NAME;
+      return CLUSTER_CRD_NAME;
     }
 
     @Override
