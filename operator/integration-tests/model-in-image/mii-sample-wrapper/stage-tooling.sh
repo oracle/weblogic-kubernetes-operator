@@ -83,7 +83,7 @@ download_zip() {
       echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
     fi
   else
-    echo "@@ Info: The location URL does not matched regex 'https://github.com.*/latest$' "
+    echo "@@ Info: The location URL does not match regex 'https://github.com.*/latest$' "
     echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/$ZIPFILE' "
     if [ ! "$dry_run" = "true" ]; then
       rm -f $ZIPFILE
