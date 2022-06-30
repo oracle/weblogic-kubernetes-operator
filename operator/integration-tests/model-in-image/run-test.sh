@@ -292,10 +292,10 @@ fi
 # Deploy pre-reqs (db, rcu schema, traefik, operator)
 #
 
-if [ "$OKE_CLUSTER" = "true" ]; then
-  IMAGE_PULL_POLICY="Always"
-  doCommand -c "export IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY}"
-fi
+#if [ "$OKE_CLUSTER" = "true" ]; then
+#  IMAGE_PULL_POLICY="Always"
+#  doCommand -c "export IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY}"
+#fi
 
 if [ "$DO_DB" = "true" ]; then
   doCommand -c "echo ====== DB DEPLOY ======"

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.nio.file.Paths.get;
+//import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -33,7 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+//import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -270,10 +270,10 @@ public class ItFmwDiiSample {
 
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
-      if (OKE_CLUSTER) {
-        replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
-      }
+      //if (OKE_CLUSTER) {
+      //  replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+      //          "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      //}
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "mode: wdt", "mode: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -367,7 +367,8 @@ public class ItFmwDiiSample {
     Path rcuSamplePathBase = Paths.get(tempSamplePath.toString(), "/scripts/create-rcu-schema");
     String script = Paths.get(rcuSamplePathBase.toString(), "create-rcu-schema.sh").toString();
     String outputPath = Paths.get(rcuSamplePathBase.toString(), "rcuoutput").toString();
-    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
+    //String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
+    String imagePullPolicy = "IfNotPresent";
     logger.info("Script for createRcuSchema: {0}", script);
     String command = script
         + " -i " + fmwBaseImageName
