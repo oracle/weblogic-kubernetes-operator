@@ -42,6 +42,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
@@ -426,6 +429,26 @@ class KubernetesTestSupportTest {
 
     V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
     assertThat(Objects.requireNonNull(pod2.getMetadata()).getLabels(), hasEntry("k1", "v2"));
+  }
+
+  @Test
+  void listClusterResource_returnsAllInNamespace() {
+    ClusterResource cluster1 = createCluster("ns1", "cluster1");
+    ClusterResource cluster2 = createCluster("ns1", "cluster2");
+    ClusterResource cluster3 = createCluster("ns2", "cluster3");
+    testSupport.defineResources(cluster1, cluster2, cluster3);
+
+    TestResponseStep<ClusterList> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().listClusterAsync("ns1", responseStep));
+
+    assertThat(responseStep.callResponse.getResult().getItems(),
+               containsInAnyOrder(cluster1, cluster2));
+  }
+
+  private ClusterResource createCluster(String namespace, String name) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name(name).namespace(namespace))
+        .withStatus(new ClusterStatus());
   }
 
   @Test

@@ -33,6 +33,7 @@ import oracle.kubernetes.common.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -613,18 +614,46 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
-    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getSpec().getClusterName(),
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
+    if (info == null) {
+      return;
+    }
+    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
         cluster.getDomainUid());
+    createMakeRightOperation(info)
+        .interrupt()
+        .withExplicitRecheck()
+        .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
+        .execute();
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
-    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getSpec().getClusterName(),
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
+    if (info == null) {
+      return;
+    }
+    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
         cluster.getDomainUid());
+    createMakeRightOperation(info)
+        .interrupt()
+        .withExplicitRecheck()
+        .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
+        .execute();
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
-    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getSpec().getClusterName(),
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
+    if (info == null) {
+      return;
+    }
+    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(),
         cluster.getDomainUid());
+    info.removeClusterResource(cluster.getClusterName());
+    createMakeRightOperation(info)
+        .interrupt()
+        .withExplicitRecheck()
+        .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
+        .execute();
   }
 
 
@@ -703,13 +732,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private V1ObjectMeta getDomainMeta(DomainPresenceInfo info) {
     return Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(DomainResource::getMetadata).orElse(null);
-  }
-
-  @Override
-  public Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info) {
-    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
-    resources.addProcessing(processors);
-    return resources.createListSteps();
   }
 
   public static class PopulatePacketServerMapsStep extends Step {

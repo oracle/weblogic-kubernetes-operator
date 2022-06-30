@@ -178,25 +178,29 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusterSpecsHaveUniqueNames_dontReportError() {
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster2"));
+    addClusterWithName("cluster1");
+    addClusterWithName("cluster2");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenClusterSpecsHaveDuplicateNames_reportError() {
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
+    addClusterWithName("cluster1");
+    addClusterWithName("cluster1");
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("clusters", "cluster1")));
   }
 
+  private void addClusterWithName(String clusterName) {
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName(clusterName));
+  }
+
   @Test
   void whenClusterSpecsHaveDns1123DuplicateNames_reportError() {
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("Cluster-1"));
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster_1"));
+    addClusterWithName("Cluster-1");
+    addClusterWithName("cluster_1");
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("clusters", "cluster-1")));
@@ -351,7 +355,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenClusterServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+  void whenClusteredServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
     configureDomain(domain)
           .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
 
@@ -360,7 +364,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenClusterServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+  void whenClusteredServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
     configureDomain(domain)
           .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
@@ -368,7 +372,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+  void whenClusteredServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
     configureDomain(domain)
           .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
           .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
@@ -377,7 +381,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenClusterServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+  void whenClusteredServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
           .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 

@@ -240,6 +240,9 @@ public class MessageKeys {
   public static final String DOMAIN_INVALID_ERROR_EVENT_SUGGESTION = "WLSEO-0028";
   public static final String TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION = "WLSEO-0029";
   public static final String REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION = "WLSEO-0030";
+  public static final String CLUSTER_CREATED_EVENT_PATTERN = "WLSEO-0031";
+  public static final String CLUSTER_DELETED_EVENT_PATTERN = "WLSEO-0032";
+  public static final String CLUSTER_CHANGED_EVENT_PATTERN = "WLSEO-0033";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";

@@ -9,6 +9,9 @@ public interface EventConstants {
   String DOMAIN_CHANGED_EVENT = "Changed";
   String DOMAIN_CREATED_EVENT = "Created";
   String DOMAIN_DELETED_EVENT = "Deleted";
+  String CLUSTER_CHANGED_EVENT = DOMAIN_CHANGED_EVENT;
+  String CLUSTER_CREATED_EVENT = DOMAIN_CREATED_EVENT;
+  String CLUSTER_DELETED_EVENT = DOMAIN_DELETED_EVENT;
   String DOMAIN_AVAILABLE_EVENT = "Available";
   String DOMAIN_COMPLETED_EVENT = "Completed";
   String DOMAIN_FAILED_EVENT = "Failed";
