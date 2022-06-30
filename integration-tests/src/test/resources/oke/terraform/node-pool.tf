@@ -25,8 +25,6 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   # Using image Oracle-Linux-7.x-<date>
   # Find image OCID for your region from https://docs.oracle.com/iaas/images/
   node_source_details {
-       #image_id = "ocid1.image.oc1.phx.aaaaaaaagfkjmrd3s6wkzq6vuokfmcwyr74hcgn7yex3jvueme3767ajnonq"
-       #image_id = "ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va"
        image_id = var.node_pool_node_image_name
        source_type = "image"
   }
