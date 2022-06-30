@@ -406,19 +406,19 @@ class ItLiftAndShiftFromOnPremDomain {
 
   private static void updateDomainYamlFile() {
     try {
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "apiVersion: \"weblogic.oracle/v8\"", "apiVersion: \"weblogic.oracle/" + DOMAIN_VERSION + "\"");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      String filePath = LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML;
+
+      replaceStringInFile(filePath,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
           "\\{\\{\\{domainHome\\}\\}\\}", "/u01/domains/" + domainUid);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
           "\\{\\{\\{domainHomeSourceType\\}\\}\\}", "FromModel");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
           "\\{\\{\\{imageName\\}\\}\\}", imageName);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
           "name: ocir", "name: " + TEST_IMAGES_REPO_SECRET_NAME);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");

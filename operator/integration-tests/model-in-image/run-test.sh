@@ -12,7 +12,7 @@
 
 set -eu
 set -o pipefail
-trap '[ -z "$(jobs -pr)" ] || kill $(jobs -pr)' SIGINT SIGTERM EXIT
+trap 'status=$? ; set +eu ; set +o pipefail ; kill $(jobs -pr) > /dev/null 2>&1 ; exit $status' SIGINT SIGTERM EXIT
 
 TESTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 

@@ -98,7 +98,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `introspectorJobActiveDeadlineSeconds` | integer | The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds. |
-| `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
 | `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are `Dynamic`, which means that the operator will distribute updated configuration overrides dynamically to running servers, and `OnRestart`, which means that servers will use updated configuration overrides only after the server's next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to `Dynamic`. |
@@ -226,15 +225,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `sessionAffinity` | string | Supports "ClientIP" and "None". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies |
-
-### Istio
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified. |
-| `localhostBindingsEnabled` | Boolean | This setting was added in operator version 3.3.3, defaults to the `istioLocalhostBindingsEnabled` Helm install value which in turn defaults to `true`, and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio 1.10 and later, will not create localhost bindings, and ignores this attribute. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#istiolocalhostbindingsenabled |
-| `readinessPort` | integer | The operator will create WebLogic network access points with this port on each WebLogic Server. The readiness probe on each pod will use these network access points to verify that the pod is ready for application traffic. Defaults to 8888. |
-| `replicationChannelPort` | integer | The operator will create a `T3` protocol WebLogic network access point on each WebLogic Server that is part of a cluster with this port to handle EJB and servlet session state replication traffic between servers. This setting is ignored for clusters where the WebLogic cluster configuration already defines a `replication-channel` attribute. Defaults to 4564. |
 
 ### Model
 

@@ -44,6 +44,8 @@ import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_C
 import static oracle.kubernetes.common.logging.MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -59,6 +61,7 @@ import static oracle.kubernetes.operator.helpers.WlsConfigValidator.CLUSTER_SIZE
 import static oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DEFAULT_LISTEN_PORT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -222,7 +225,12 @@ class TopologyValidationStepTest {
       void buildFor(TopologyScenario scenario) {
         scenario.buildExporterScenario();
       }
-
+    },
+    REPLICAS {
+      @Override
+      void buildFor(TopologyScenario scenario) {
+        scenario.buildReplicasScenario();
+      }
     };
 
     void setName(WlsDomainConfig domainConfig, String name, Integer clusterSize) {
@@ -266,6 +274,7 @@ class TopologyValidationStepTest {
     private String unknownClusterName;
     private String unknownServerName;
     private int exportPortNum;
+    private final List<ClusterCase> clusterCases = new ArrayList<>();
 
     public TopologyScenario(TopologyCase topologyCase) {
       this.topologyCase = topologyCase;
@@ -305,6 +314,15 @@ class TopologyValidationStepTest {
       return this;
     }
 
+    ClusterCase withStaticCluster(int numServers) {
+      return addClusterCase(new StaticClusterCase(numServers));
+    }
+
+    private ClusterCase addClusterCase(ClusterCase clusterCase) {
+      clusterCases.add(clusterCase);
+      return clusterCase;
+    }
+
     @SuppressWarnings("SameParameterValue")
     TopologyScenario withClusterConfiguration(String unknownClusterName) {
       this.unknownClusterName = unknownClusterName;
@@ -341,7 +359,7 @@ class TopologyValidationStepTest {
       }
     }
 
-    public void buildExporterScenario() {
+    void buildExporterScenario() {
       configureDomain(domain)
             .withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(exportPortNum);
       WlsServerConfig serverConfig = new WlsServerConfig(MANAGED_SERVER1, "here", PLAIN_PORT_NUM);
@@ -351,8 +369,17 @@ class TopologyValidationStepTest {
       domainConfig.withServer(serverConfig, false);
     }
 
+    void buildReplicasScenario() {
+      final DomainConfigurator domainConfigurator = configureDomain(domain);
+      for (ClusterCase cluster : clusterCases) {
+        domainConfigurator.configureCluster(cluster.clusterName).withReplicas(cluster.numReplicas);
+        cluster.addCluster(domainConfig);
+      }
+    }
+
     void build() {
       topologyCase.buildFor(this);
+      ensureNoClustersAreEmpty();
     }
 
     @NotNull
@@ -362,6 +389,57 @@ class TopologyValidationStepTest {
 
     private String createNameWithLength(int length) {
       return StringUtils.repeat(ALPHABET, (1 + length / ALPHABET.length())).substring(0, length);
+    }
+
+    abstract class ClusterCase {
+      private final String clusterName;
+      private final int maxNumServers;
+      private int numReplicas;
+
+      ClusterCase(String clusterName, int maxNumServers) {
+        this.clusterName = clusterName;
+        this.maxNumServers = maxNumServers;
+      }
+
+      TopologyScenario withReplicas(int numReplicas) {
+        this.numReplicas = numReplicas;
+        return TopologyScenario.this;
+      }
+
+      String getClusterName() {
+        return clusterName;
+      }
+
+      int getMaxNumServers() {
+        return maxNumServers;
+      }
+
+      abstract void addCluster(WlsDomainConfig domainConfig);
+    }
+
+    class StaticClusterCase extends ClusterCase {
+
+      StaticClusterCase(int maxNumServers) {
+        super(CLUSTER1, maxNumServers);
+      }
+
+      @Override
+      void addCluster(WlsDomainConfig domainConfig) {
+        final WlsClusterConfig clusterConfig = domainConfig.getClusterConfig(getClusterName());
+
+        for (int i = 1; i <= getMaxNumServers(); i++) {
+          clusterConfig.addWlsServer("static-" + i, "static-port-" + i, 8001);
+        }
+      }
+    }
+  }
+
+  private void ensureNoClustersAreEmpty() {
+    for (String clusterName : domainConfig.getClusterNames()) {
+      final WlsClusterConfig clusterConfig = domainConfig.getClusterConfig(clusterName);
+      if (clusterConfig.getMaxClusterSize() <= 0) {
+        clusterConfig.addWlsServer(clusterName + "-0", "here", 1);
+      }
     }
   }
 
@@ -381,7 +459,7 @@ class TopologyValidationStepTest {
   }
 
   private void runTopologyValidationStep() {
-    testSupport.runSteps(DomainValidationSteps.createValidateDomainTopologyStep(terminalStep));
+    testSupport.runSteps(DomainValidationSteps.createValidateDomainTopologySteps(terminalStep));
   }
 
   private void assertTopologyMismatchReported(String messageKey, Object... parameters) {
@@ -413,6 +491,16 @@ class TopologyValidationStepTest {
     runTopologyValidationStep();
 
     assertThat(domain, not(hasCondition(FAILED).withReason(TOPOLOGY_MISMATCH)));
+  }
+
+  @Test
+  void removeOldReplicasTooHighFailures() {
+    ensureNoClustersAreEmpty();
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH));
+
+    runTopologyValidationStep();
+
+    assertThat(domain, not(hasCondition(FAILED).withReason(REPLICAS_TOO_HIGH)));
   }
 
   @Test
@@ -706,6 +794,7 @@ class TopologyValidationStepTest {
 
   @Test
   void whenDomainUidPlusClusterNameExceedMaxAllowed_reportError() {
+    consoleControl.ignoreMessage(ILLEGAL_SERVER_SERVICE_NAME_LENGTH);
     defineScenario(TopologyCase.CLUSTER_NAME)
           .withLengthIncludingUid(CLUSTER_SERVICE_MAX_CHARS + 1)
           .build();
@@ -930,8 +1019,55 @@ class TopologyValidationStepTest {
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
 
+  @Test
+  void whenConfiguredStaticReplicasInTopologyRange_dontReportReplicasTooHigh() {
+    consoleControl.trackMessage(TOO_MANY_REPLICAS_FAILURE);
+    defineScenario(TopologyCase.REPLICAS)
+        .withStaticCluster(10).withReplicas(5).build();
+
+    runTopologyValidationStep();
+
+    assertNoTopologyMismatchReported();
+  }
+
+  @Test
+  void whenConfiguredStaticReplicasAboveLimit_reportReplicasTooHigh() {
+    consoleControl.trackMessage(TOO_MANY_REPLICAS_FAILURE);
+    defineScenario(TopologyCase.REPLICAS)
+        .withStaticCluster(5).withReplicas(10).build();
+
+    runTopologyValidationStep();
+
+    assertReplicasTooHighReported(10, CLUSTER1, 5);
+  }
+
+  private void assertReplicasTooHighReported(Object... parameters) {
+    final String message = getFormattedMessage(TOO_MANY_REPLICAS_FAILURE, parameters);
+
+    assertThat(domain, hasCondition(FAILED).withReason(REPLICAS_TOO_HIGH).withMessageContaining(message));
+    assertThat(logRecords, containsWarning(TOO_MANY_REPLICAS_FAILURE).withParams(parameters));
+    assertThat(testSupport,
+        hasEvent(DOMAIN_FAILED_EVENT)
+            .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), message));
+  }
+
   // todo compute ReplicasTooHigh
   // todo remove ReplicasTooHigh
+
+  /*
+
+  @Test
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
+    info.setReplicaCount("cluster1", 5);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(FAILED)
+        .withReason(REPLICAS_TOO_HIGH).withMessageContaining("cluster1"));
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+  }
+   */
 
   private String getFormattedMessage(String msgId, Object... params) {
     LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");

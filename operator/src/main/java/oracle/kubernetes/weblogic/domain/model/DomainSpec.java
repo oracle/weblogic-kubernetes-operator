@@ -835,55 +835,6 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(false);
   }
 
-  /**
-   * Test if the domain is deployed under Istio environment.
-   *
-   * @return istioEnabled
-   */
-  boolean isIstioEnabled() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getEnabled)
-        .orElse(false);
-  }
-
-  /**
-   * The WebLogic readiness port used under Istio environment.
-   *
-   * @return readinessPort
-   */
-  int getIstioReadinessPort() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getReadinessPort)
-        .orElse(8888);
-  }
-
-  /**
-   * The WebLogic replication channel port used under Istio environment.
-   *
-   * @return replicationPort
-   */
-  int getIstioReplicationPort() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getReplicationChannelPort)
-        .orElse(Istio.DEFAULT_REPLICATION_PORT);
-  }
-
-  /**
-   * Indicates if Istio proxy redirects traffic to localhost.
-   *
-   * @return null if not defined in spec. true if Istio proxy redirects traffic to localhost or
-   *          false otherwise.
-   */
-  Boolean isLocalhostBindingsEnabled() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getLocalhostBindingsEnabled)
-        .orElse(null);
-  }
-
   ModelInImageDomainType getWdtDomainType() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)

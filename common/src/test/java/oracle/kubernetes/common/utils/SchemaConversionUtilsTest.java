@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -416,6 +417,40 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void testV8DomainIstio_preserved() {
+    // Simplify domain to focus on Istio
+    getDomainSpec(v8Domain).remove("adminServer");
+    getDomainSpec(v8Domain).remove("clusters");
+
+    // Add Istio configuration
+    Map<String, Object> istio = new LinkedHashMap<>();
+    istio.put("enabled", true);
+    istio.put("readinessPort", 9000);
+    getMapAtPath(v8Domain, "spec.configuration").put("istio", istio);
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.configuration.istio"));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
+        equalTo("{\"$.spec.configuration\":{\"istio\":{\"enabled\":true,\"readinessPort\":9000}}}")));
+  }
+
+  @Test
+  void testV9DomainIstio_restored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "metadata.annotations")
+        .put("weblogic.v8.preserved",
+            "{\"$.spec.configuration\":{\"istio\":{\"enabled\":true,\"readinessPort\":9000}}}");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.enabled",
+        equalTo(true)));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.readinessPort",
+        equalTo(9000)));
+  }
+  
   @SuppressWarnings("unchecked")
   void testV8DomainWebLogicCredentialsSecretWithNamespace_remove() {
     ((Map<String, Object>) getDomainSpec(v8Domain).get("webLogicCredentialsSecret")).put("namespace", "my-ns");
