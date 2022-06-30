@@ -19,9 +19,8 @@ description: "Run the operator and WebLogic domains managed by the operator when
 - [Traffic management](#traffic-management)
 - [Distributed tracing](#distributed-tracing)
 - [Automatically added network channels](#automatically-added-network-channels)
-  - [Added network channels for Istio versions prior to v1.10](#added-network-channels-for-istio-versions-prior-to-v110)
   - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
-  - [Added network channel for WebLogic EJB and servlet session state replication traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
+  - [Network channel for WebLogic EJB and servlet session state replication traffic](#network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
 - [Security](#security)
   - [Mutual TLS](#mutual-tls)
   - [Authorization policy](#authorization-policy)
@@ -50,9 +49,9 @@ see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).
 
 The current support for Istio has these limitations:
 
-* The operator supports Istio versions 1.7 and higher,
+* The operator supports Istio versions 1.10 and higher,
   and has been tested with single and multicluster
-  Istio installations from 1.7.3 up to 1.13.2.
+  Istio installations from 1.10 up to 1.13.2.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
@@ -80,8 +79,7 @@ data plane version: 1.11.1 (1 proxies)
 
 Istio support requires labeling the operator namespace and
 your domain namespaces to enable Istio automatic
-sidecar injection, plus modifying your domain resource
-configuration. In this section, we describe
+sidecar injection. In this section, we describe
 the steps for the operator namespace; we will describe
 the steps for the domain in later sections.
 
@@ -121,8 +119,7 @@ In the second command, change `weblogic-operator-xxx-xxx` to the name of your po
 
 #### Creating a domain with Istio support
 
-Setting up Istio support for a domain requires labeling
-its namespace and defining `domain.spec.configuration.istio` attributes.
+Setting up Istio support for a domain requires labeling its namespace or the annotation level in the server pod.
 
 ##### Setting up the domain namespace
 
@@ -139,140 +136,13 @@ $ kubectl label namespace domain1 istio-injection=enabled
 
 ##### Configuring the domain resource
 
-To enable Istio support for a domain, you need to add a
-`domain.spec.configuration.istio` section to your domain custom resource YAML file,
-as shown in the following example:  
-
-```yaml
-apiVersion: "weblogic.oracle/v9"
-kind: Domain
-metadata:
-  name: domain2
-  namespace: domain1
-  labels:
-    weblogic.domainUID: domain2
-spec:
-  ... other content ...
-  configuration:
-    istio:
-      enabled: true
-      readinessPort: 8888
-      replicationChannelPort: 4564
-      localhostBindingsEnabled: false
-```
-
-See the following description of each `spec.configuration.istio` attribute:
-
-* `enabled`: To enable Istio support, you must include the `istio` section
-  and set `enabled: true` as shown.
-* `readinessPort`: This attribute is optional
-   and defaults to `8888` if not provided; it is used for a readiness health check.
-* `replicationChannelPort`: This attribute is optional and defaults to `4564` if not provided;
-  the operator will create a `T3` protocol WebLogic network access point on each WebLogic
-  Server that is part of a cluster with this port to handle EJB and servlet session state
-  replication traffic between servers.
-
-  This setting is ignored for clusters
-  where the WebLogic cluster configuration already defines a `replication-channel` attribute.
-* `localhostBindingsEnabled`:
-   This setting was added in operator version 3.3.3,
-   defaults to the `istioLocalhostBindingsEnabled` [Operator Helm value]({{< relref "/managing-operators/using-helm.md" >}})
-   which in turn defaults to `true`,
-   and is ignored in version 4.0 and later.
-   * In version 3.x, when `true`, the operator
-   creates a WebLogic
-   network access point with a `localhost` binding for each existing channel and protocol.
-   * In version 3.x, use `true` for Istio versions prior to 1.10
-   and set to `false` for version 1.10 and later.
-   * Version 4.0 and later requires Istio 1.10 and later,
-   will not create local bindings, and ignores
-   this attribute.
-
-   |Istio version|Operator Version|localhostBindingsEnabled|notes|
-   |----|----|---|---|
-   |Pre-1.10|3.x|`true`|Supported. Note that `true` is the default in 3.x.|
-   |Pre-1.10|3.x|`false`|Not supported.|
-   |Pre-1.10|4.x|N/A|Not supported. 4.x supports only Istio 1.10 and later.|
-   |1.10 and later|3.x|`true`|Not supported.|
-   |1.10 and later|3.x|`false`|Supported.|
-   |1.10 and later|4.x|N/A|Supported. Operator will not create localhost bindings because Istio 1.10 does not need them.|
-
-__Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
-then:
-
-- The Managed WebLogic Servers that are running in the managed server pods
-  may not be able to contact the WebLogic Administration Server.
-  They will consequently log networking messages about failures communicating
-  with the Administration Server and likely, also a `Boot identity not valid` error.
-
-- The `weblogic-server` container in the managed server pods will
-  fail to reach a `ready` state due to readiness probe failures.
-  For example, if the `localhostBindingsEnabled` is set to
-  `true` in operator version 3.x when running Istio versions 1.10 and later,
-  then a `kubectl get pods` will have output like this:
-
-  ```text
-  $ kubectl -n sample-domain1-ns get pods
-  ```
-  ```text
-  NAME                             READY   STATUS    RESTARTS   AGE
-  sample-domain1-admin-server      1/2     Running   0          2m
-  ```
-
-  The `kubectl describe pod` command will show a readiness probe event failure:
-
-  ```text
-  $ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
-  ```
-  ```text
-  Events:
-     Type     Reason       Age                  From      Message
-     ----     ------       ----                 ----      -------
-
-    Warning  Unhealthy    60s (x10 over 105s)  kubelet   Readiness probe failed: HTTP probe failed with statuscode: 500
-  ```
-
-  Also, viewing the logging output of the `istio-proxy` container in a managed server pod
-  will show that the
-  readiness probe was unable to successfully establish
-  a connection to the endpoint of the managed server:
-
-  ```text
-  $ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
-  ```
-  ```text
-  2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
-  app URL path = /weblogic/ready
-  ```
-
-__Note:__ When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must
-set the annotation for pod-level sidecar injection in the domain resource, as follows:
-
-- ```yaml
-  apiVersion: "weblogic.oracle/v9"
-  kind: Domain
-  metadata:
-   name: domain2
-   namespace: domain1
-   labels:
-     weblogic.domainUID: domain2
-  spec:
-   ... other content ...
-   serverPod:
-      ...
-      annotations:
-        sidecar.istio.io/inject: "true"
-   configuration:
-     istio:
-       enabled: true
-       readinessPort: 8888
-       replicationChannelPort: 4564
-       localhostBindingsEnabled: false
-  ```
+Since Operator release 4.0, you longer have to provide `domain.spec.configuration.istio` section to enable Istio 
+support for a domain.  Enabling the sidecar injection at namespace or annotation of at server pod level alone 
+is sufficient.
 
 ##### Applying a Domain YAML file
 
-After a Domain YAML file is modified, apply it by:
+After a Domain YAML file by:
 
 ```shell
 $ kubectl apply -f domain.yaml
@@ -410,39 +280,6 @@ The operator will automatically
 add network channels to each WebLogic Server
 when Istio is enabled for a domain.
 
-##### Added network channels for Istio versions prior to v1.10
-
-When deploying a domain that is configured to support Istio versions prior to 1.10,
-the operator automatically adds the following network channels
-(also known as Network Access Points) to your
-WebLogic configuration so that Istio is able to route traffic:
-
-For non-SSL traffic:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|`http-probe`|From configuration Istio `readinessPort` |`http`| No |
-|`tcp-default`|Server listening port|`t3`| Yes |
-|`http-default`|Server listening port|`http`| Yes |
-|`tcp-snmp`|Server listening port|`snmp`| Yes |
-|`tcp-cbt`|server listening port|`CLUSTER-BROADCAST`| No |
-|`tcp-iiop`|Server listening port|`http`| No |
-
-For SSL traffic, if SSL is enabled on the server:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|`tls-default`|Server SSL listening port|`t3s`| Yes |
-|`https-secure`|Server SSL listening port|`https`| Yes |
-|`tls-iiops`|Server SSL listening port|`iiops`| No |
-|`tls-ldaps`|Server SSL listening port|`ldaps`| No |
-|`tls-cbts`|Server listening port|`CLUSTER-BROADCAST-SECURE`| No |
-
-If the WebLogic administration port is enabled on the Administration Server:
-
-|Name|Port|Protocol|Exposed in the container port|
-|----|----|--------|-----|
-|`https-admin`|WebLogic administration port|`https`| Yes |
 
 ##### Added network channel for Istio versions v1.10 and later
 
@@ -474,32 +311,10 @@ readiness probe is bound to the server pod's network interface:
 |----|----|----|--------|-----|
 |`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP address | `http`| No |
 
-##### Added network channel for WebLogic EJB and servlet session state replication traffic
+##### Network channel for WebLogic EJB and servlet session state replication traffic
 
-To support WebLogic EJB and servlet session state replication traffic in an Istio service mesh,
-operator versions 3.3.3 and later will automatically create a channel (network access point)
-using the `domain.spec.configuration.istio.replicationChannelPort`
-in the domain resource:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|`istiorepl`|From configuration Istio `replicationChannelPort` |`t3`| No |
-
-The operator will also set up the `replication-channel` attribute
-in each WebLogic cluster configuration:
-
-```text
-<cluster>
-   <name>cluster-1</name>
-   <replication-channel>istiorepl</replication-channel>
-<cluster>
-```
-{{% notice note %}}
-The operator will not create a replication channel or
-alter a cluster's `replication-channel` configuration
-if such a channel is already configured for a WebLogic cluster.
-(This is unnecessary when the channel already exists.)
-{{% /notice %}}
+WebLogic Operator versions 4.0 and above support WebLogic EJB and servlet session state replication traffic in 
+an Istio service mesh, it uses the default channel of the domain for replication.
 
 #### Security
 
