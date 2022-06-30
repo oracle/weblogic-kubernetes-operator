@@ -137,7 +137,7 @@ public class ItMiiSampleHelper {
     }
 
     if (WIT_DOWNLOAD_URL != null) {
-      envMap.put("WIT_INSTALLER_URL", WDT_DOWNLOAD_URL);
+      envMap.put("WIT_INSTALLER_URL", WIT_DOWNLOAD_URL);
     }
 
     if (WDT_DOWNLOAD_URL != null) {
