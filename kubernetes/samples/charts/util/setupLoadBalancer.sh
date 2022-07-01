@@ -14,10 +14,6 @@ UTILDIR="$(dirname "$(readlink -f "$0")")"
 #Default is 'kubectl' if KUBERNETES_CLI env variable is not set.  
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 image_pull_policy="IfNotPresent"
-#Env variable to set if run in OKE cluster, default is 'false' if OKE_CLUSTER env variable is not set.
-#okecluster=${OKE_CLUSTER:-false}
-#if [ "${okecluster}" = "true" ]; then
-#  image_pull_policy="Always"
 
 # https://github.com/containous/traefik/releases
 DefaultTraefikVersion=2.6.0

@@ -305,7 +305,6 @@ public interface TestConstants {
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
   public static final ImagePullPolicyEnum IMAGE_PULL_POLICY = ImagePullPolicyEnum.IFNOTPRESENT;
-  //OKE_CLUSTER ? ImagePullPolicyEnum.ALWAYS : ImagePullPolicyEnum.IFNOTPRESENT;
 
   //OKD constants
   public static final boolean OKD =

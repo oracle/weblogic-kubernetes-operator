@@ -78,8 +78,10 @@ class ItMiiCreateAuxImageWithImageTool {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  private static String miiAuxiliaryImageTag = "new" + MII_BASIC_IMAGE_TAG;
-  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
+  //private static String miiAuxiliaryImageTag = "new" + MII_BASIC_IMAGE_TAG;
+  //private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
+  private static String miiImageTag = "new" + MII_BASIC_IMAGE_TAG;
+  private static String miiImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiImageTag;
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -134,6 +136,8 @@ class ItMiiCreateAuxImageWithImageTool {
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
+    String miiAuxiliaryImage = miiImage + "1";
+    String miiAuxiliaryImageTag = miiImageTag + "1";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -205,7 +209,8 @@ class ItMiiCreateAuxImageWithImageTool {
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath2 = "/auxiliary2";
-
+    String miiAuxiliaryImage = miiImage + "2";
+    String miiAuxiliaryImageTag = miiImageTag + "2";
     // create a new auxiliary image with oraclelinux base image
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
@@ -227,6 +232,7 @@ class ItMiiCreateAuxImageWithImageTool {
     if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
+    
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ",
         MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag);
     testUntil(
@@ -288,6 +294,8 @@ class ItMiiCreateAuxImageWithImageTool {
 
     String customWdtHome = "/customwdthome";
     String customWdtModelHome = "/customwdtmodelhome/models";
+    String miiAuxiliaryImage = miiImage + "3";
+    String miiAuxiliaryImageTag = miiImageTag + "3";
     WitParams witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
@@ -412,6 +420,9 @@ class ItMiiCreateAuxImageWithImageTool {
         .pull(true)
         .modelFiles(Collections.singletonList(MODEL_DIR + "/model.update.wm.yaml"));
 
+    if (dockerImageExists(auxImageName, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(auxImageName + ":" + MII_BASIC_IMAGE_TAG);
+    }
     // create auxiliary image
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
     assertEquals(0, result.exitValue());
@@ -479,8 +490,10 @@ class ItMiiCreateAuxImageWithImageTool {
   public void tearDownAll() {
     if (!SKIP_CLEANUP) {
       // delete images
-      if (miiAuxiliaryImage != null) {
-        deleteImage(miiAuxiliaryImage);
+      for (int i = 1; i < 4; i++) {
+        if (miiImage + i != null) {
+          deleteImage(miiImage + i);
+        }
       }
     }
   }
