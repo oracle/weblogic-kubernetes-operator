@@ -94,7 +94,6 @@ download_zip() {
       echo "dryrun:curl $curl_parms -fL $LOCATION -o $ZIPFILE"
     fi
   fi
-
   
 }
 
