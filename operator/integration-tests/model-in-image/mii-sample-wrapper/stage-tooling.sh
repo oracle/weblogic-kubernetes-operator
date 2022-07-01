@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -73,21 +73,34 @@ download_zip() {
     fi
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
     echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+
+    if [ ! "$dry_run" = "true" ]; then
+      rm -f $ZIPFILE
+      echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE'"
+      curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE
+    else
+      echo "dryrun:rm -f $ZIPFILE"
+      echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
+    fi
+  else
+    echo "@@ Info: The location URL does not match regex 'https://github.com.*/latest$' "
+    echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/$ZIPFILE' "
+    if [ ! "$dry_run" = "true" ]; then
+      rm -f $ZIPFILE
+      echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $ZIPFILE'"
+      curl $curl_parms -fL $LOCATION -o $ZIPFILE
+    else
+      echo "dryrun:rm -f $ZIPFILE"
+      echo "dryrun:curl $curl_parms -fL $LOCATION -o $ZIPFILE"
+    fi
   fi
 
-  if [ ! "$dry_run" = "true" ]; then
-    rm -f $ZIPFILE
-    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE'"
-    curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE
-  else
-    echo "dryrun:rm -f $ZIPFILE"
-    echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
-  fi
+  
 }
 
 if [ "$dry_run" = "true" ]; then
   echo "dryrun:#!/bin/bash"
-  echo "dryrun:# Copyright (c) 2019, 2021, Oracle and/or its affiliates."
+  echo "dryrun:# Copyright (c) 2019, 2022, Oracle and/or its affiliates."
   echo "dryrun:# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl."
   echo "dryrun:"
   echo "dryrun:set -eux"
