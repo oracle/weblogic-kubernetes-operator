@@ -78,8 +78,6 @@ class ItMiiCreateAuxImageWithImageTool {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  //private static String miiAuxiliaryImageTag = "new" + MII_BASIC_IMAGE_TAG;
-  //private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
   private static String miiImageTag = "new" + MII_BASIC_IMAGE_TAG;
   private static String miiImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiImageTag;
   private final int replicaCount = 2;
