@@ -71,8 +71,7 @@ public class ShutdownManagedServerStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    V1Service service = info.getServerService(serverName);
+    V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
     if (service == null) {
       return doNext(packet);
@@ -128,8 +127,7 @@ public class ShutdownManagedServerStep extends Step {
       String clusterName = getClusterNameFromServiceLabel();
       List<V1EnvVar> envVarList = getV1EnvVars();
 
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Shutdown shutdown = Optional.ofNullable(info.getServer(serverName, clusterName))
+      Shutdown shutdown = Optional.ofNullable(getDomainPresenceInfo(packet).getServer(serverName, clusterName))
           .map(EffectiveServerSpec::getShutdown).orElse(null);
 
       isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
@@ -270,7 +268,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private WlsDomainConfig getWlsDomainConfig() {
-      DomainPresenceInfo info = getPacket().getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = getDomainPresenceInfo(getPacket());
       WlsDomainConfig domainConfig =
           (WlsDomainConfig) getPacket().get(ProcessingConstants.DOMAIN_TOPOLOGY);
       if (domainConfig == null) {
@@ -302,8 +300,7 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      info.setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
+      getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
           new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
@@ -312,6 +309,10 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(requestStep, packet);
     }
 
+  }
+
+  private static DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class);
   }
 
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {

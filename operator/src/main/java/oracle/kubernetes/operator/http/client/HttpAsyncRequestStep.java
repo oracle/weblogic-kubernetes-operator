@@ -133,8 +133,7 @@ public class HttpAsyncRequestStep extends Step {
         } else if (response != null) {
           recordResponse(response);
         } else if (throwable != null) {
-          String serverName = packet.getValue(ProcessingConstants.SERVER_NAME);
-          if (!isServerShuttingDown(info, serverName) && failureCountExceedsThreshold(serverName)) {
+          if (!isServerShuttingDown() && failureCountExceedsThreshold()) {
             recordThrowableResponse(throwable);
           }
         }
@@ -143,12 +142,17 @@ public class HttpAsyncRequestStep extends Step {
       fiber.resume(packet);
     }
 
-    private boolean isServerShuttingDown(DomainPresenceInfo info, String serverName) {
-      return info.isServerPodBeingDeleted(serverName) || podHasDeletionTimestamp(info.getServerPod(serverName));
+    private String getServerName() {
+      return packet.getValue(ProcessingConstants.SERVER_NAME);
     }
 
-    private boolean failureCountExceedsThreshold(String serverName) {
-      return getDomainPresenceInfo().getHttpRequestFailureCount(serverName) > getHttpRequestFailureThreshold();
+    private boolean isServerShuttingDown() {
+      return getDomainPresenceInfo().isServerPodBeingDeleted(getServerName())
+          || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(getServerName()));
+    }
+
+    private boolean failureCountExceedsThreshold() {
+      return getDomainPresenceInfo().getHttpRequestFailureCount(getServerName()) > getHttpRequestFailureThreshold();
     }
 
     private DomainPresenceInfo getDomainPresenceInfo() {

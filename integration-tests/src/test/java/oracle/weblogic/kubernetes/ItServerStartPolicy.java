@@ -499,6 +499,7 @@ class ItServerStartPolicy {
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a domain that doesn't exist");
   }
 
+
   /**
    * Once the admin server is stopped, operator can not start a new managed
    * server from scratch if it has never been started earlier with
