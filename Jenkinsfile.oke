@@ -474,9 +474,9 @@ EOF
                               NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
                             fi
                             if [ "${MAVEN_PROFILE}" = 'oke-parallel' ]; then
-                               availability_domain = "VPGL:PHX-AD-1"
+                               availability_domain="VPGL:PHX-AD-1"
                             else
-                               availability_domain = "VPGL:PHX-AD-2"
+                               availability_domain="VPGL:PHX-AD-2"
                             fi
                             export K8S_NODEPORT_HOST=${NODE_IP}
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
