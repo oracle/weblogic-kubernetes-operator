@@ -142,9 +142,12 @@ echo "creating storage class to setup OFSS ..."
 echo "getting MountTarget ID"
 compartment_ocid=$(prop 'compartment.ocid')
 mount_target_id=`oci fs mount-target  list --compartment-id=$compartment_ocid  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
+echo "getting MountTarget private IP ID for ${mount_target_id}"
 mt_privateip_id=`oci fs mount-target  list --compartment-id=$compartment_ocid  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
-mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
+echo "getting MountTarget IP for MountTarget private ip id ${mt_privateip_id} "
+mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
 
+echo "MountTarget private ip id ${mt_private_ip} "
 export NFS_SERVER=$mt_private_ip
 echo "Using NFS Server ${NFS_SERVER}"
 echo "Creating Storage Class to mount OFSS"
