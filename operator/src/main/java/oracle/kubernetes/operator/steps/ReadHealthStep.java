@@ -339,7 +339,6 @@ public class ReadHealthStep extends Step {
         Pair<String, ServerHealth> pair = parseServerHealthJson(getResponse().body());
         String state = emptyToNull(Optional.ofNullable(pair).map(Pair::getLeft).orElse(null));
         ServerHealth health = Optional.ofNullable(pair).map(Pair::getRight).orElse(null);
-
         recordStateAndHealth(state, health);
       }
 
