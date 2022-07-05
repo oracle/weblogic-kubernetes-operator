@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.google.gson.annotations.Expose;
@@ -36,6 +37,11 @@ public class ServerHealth {
   @Expose
   @Valid
   private List<SubsystemHealth> subsystems = new ArrayList<>();
+
+  @Description(
+      "Non-zero if the HTTP request to get the server's health fails for any reason. "
+          + "The HTTP request might fail when the server is in the process of shutting down.")
+  private AtomicInteger httpRequestFailureCount = new AtomicInteger(0);
 
   public ServerHealth() {
   }
@@ -107,6 +113,15 @@ public class ServerHealth {
    */
   public ServerHealth addSubsystem(SubsystemHealth subsystem) {
     subsystems.add(subsystem);
+    return this;
+  }
+
+  public AtomicInteger getHttpRequestFailureCount() {
+    return httpRequestFailureCount;
+  }
+
+  public ServerHealth withFailureCount(AtomicInteger failureCount) {
+    this.httpRequestFailureCount = failureCount;
     return this;
   }
 

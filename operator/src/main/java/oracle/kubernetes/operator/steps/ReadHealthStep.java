@@ -264,7 +264,15 @@ public class ReadHealthStep extends Step {
       }
 
       void recordFailedStateAndHealth() {
-        recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
+        recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth())
+            .withFailureCount(new AtomicInteger(incrementAndGetFailureCount())));
+      }
+
+      private int incrementAndGetFailureCount() {
+        return Optional.ofNullable(getServerHealthMap())
+            .map(m -> m.get(serverName)).map(ServerHealth::getHttpRequestFailureCount)
+            .map(AtomicInteger::incrementAndGet)
+            .orElse(0);
       }
 
       private String getFailedHealth() {
@@ -337,6 +345,7 @@ public class ReadHealthStep extends Step {
         Pair<String, ServerHealth> pair = parseServerHealthJson(getResponse().body());
         String state = emptyToNull(Optional.ofNullable(pair).map(Pair::getLeft).orElse(null));
         ServerHealth health = Optional.ofNullable(pair).map(Pair::getRight).orElse(null);
+        health.withFailureCount(new AtomicInteger(0));
         recordStateAndHealth(state, health);
       }
 

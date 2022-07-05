@@ -24,6 +24,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -492,6 +493,21 @@ class ItServerStartPolicy {
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a domain that doesn't exist");
   }
 
+  /**
+   * Verify Operator infrastructure log warning message, when the sample script
+   * tries to start a server that exceeds the max cluster size.
+   */
+  @Order(7)
+  @Test
+  @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
+  void testOperatorLogWarningMsg() {
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name: {0}", operatorPodName);
+    checkPodLogContainsString(opNamespace, operatorPodName, "WARNING");
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException");
+  }
 
   /**
    * Once the admin server is stopped, operator can not start a new managed

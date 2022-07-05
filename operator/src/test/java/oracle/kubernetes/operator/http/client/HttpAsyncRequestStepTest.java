@@ -6,22 +6,32 @@ package oracle.kubernetes.operator.http.client;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +43,10 @@ import static oracle.kubernetes.common.logging.MessageKeys.HTTP_REQUEST_GOT_THRO
 import static oracle.kubernetes.common.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.typeCompatibleWith;
@@ -63,6 +75,7 @@ class HttpAsyncRequestStepTest {
           .withLogLevel(Level.FINE)
           .ignoringLoggedExceptions(HttpAsyncRequestStep.HttpTimeoutException.class));
     mementos.add(StaticStubSupport.install(HttpAsyncRequestStep.class, "factory", futureFactory));
+    mementos.add(TuningParametersStub.install());
 
     requestStep = createStep();
   }
@@ -127,15 +140,77 @@ class HttpAsyncRequestStepTest {
   }
 
   @Test
-  void whenThrowableResponseReceived_logMessage() {
+  void whenThrowableResponseReceivedServerNotShuttingDownAndFailureCountExceedsThreshold_logMessage() {
     consoleMemento
         .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
         .withLogLevel(Level.WARNING);
+    packet.put(ProcessingConstants.SERVER_NAME, "ms1");
+    packet.put(SERVER_HEALTH_MAP, createServerHealthMap(11));
+    DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
+    info.setServerPod("ms1", new V1Pod().metadata(new V1ObjectMeta()));
+    info.addToPacket(packet);
     final NextAction nextAction = requestStep.apply(packet);
 
     completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
 
     assertThat(logRecords, containsWarning(HTTP_REQUEST_GOT_THROWABLE));
+  }
+
+  private Object createServerHealthMap(int failureCount) {
+    Map<String, ServerHealth> serverHealthMap = new ConcurrentHashMap<>();
+    serverHealthMap.put("ms1", new ServerHealth().withFailureCount(new AtomicInteger(failureCount)));
+    return serverHealthMap;
+  }
+
+  @Test
+  void whenThrowableResponseReceivedServerNotShuttingDownAndFailureCountLowerThanThreshold_dontLogMessage() {
+    consoleMemento
+        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
+        .withLogLevel(Level.WARNING);
+    packet.put(ProcessingConstants.SERVER_NAME, "ms1");
+    packet.put(SERVER_HEALTH_MAP, createServerHealthMap(1));
+    DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
+    info.setServerPod("ms1", new V1Pod().metadata(new V1ObjectMeta()));
+    info.addToPacket(packet);
+    final NextAction nextAction = requestStep.apply(packet);
+
+    completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
+
+    assertThat(logRecords, not(containsWarning(HTTP_REQUEST_GOT_THROWABLE)));
+  }
+
+  @Test
+  void whenThrowableResponseReceivedAndPodHasDeletionTimestamp_dontLogMessage() {
+    consoleMemento
+        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
+        .withLogLevel(Level.WARNING);
+    packet.put(ProcessingConstants.SERVER_NAME, "ms1");
+    DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
+    info.setServerPod("ms1", new V1Pod()
+        .metadata(new V1ObjectMeta().deletionTimestamp(OffsetDateTime.now())));
+    info.addToPacket(packet);
+    final NextAction nextAction = requestStep.apply(packet);
+
+    completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
+
+    assertThat(logRecords, not(containsWarning(HTTP_REQUEST_GOT_THROWABLE)));
+  }
+
+  @Test
+  void whenThrowableResponseReceivedAndPodBeingDeletedByOperator_logMessage() {
+    consoleMemento
+        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
+        .withLogLevel(Level.WARNING);
+    packet.put(ProcessingConstants.SERVER_NAME, "ms1");
+    DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
+    info.setServerPod("ms1", new V1Pod().metadata(new V1ObjectMeta()));
+    info.setServerPodBeingDeleted("ms1", true);
+    info.addToPacket(packet);
+    final NextAction nextAction = requestStep.apply(packet);
+
+    completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
+
+    assertThat(logRecords, not(containsWarning(HTTP_REQUEST_GOT_THROWABLE)));
   }
 
   @Test

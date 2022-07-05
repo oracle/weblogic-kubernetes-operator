@@ -7,21 +7,27 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.http.client.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
@@ -130,11 +136,33 @@ public class HttpAsyncRequestStep extends Step {
         } else if (response != null) {
           recordResponse(response);
         } else if (throwable != null) {
-          recordThrowableResponse(throwable);
+          String serverName = packet.getValue(ProcessingConstants.SERVER_NAME);
+          if (!isServerShuttingDown(info, serverName) && failureCountExceedsThreshold(serverName)) {
+            recordThrowableResponse(throwable);
+          }
         }
       }
 
       fiber.resume(packet);
+    }
+
+    private boolean isServerShuttingDown(DomainPresenceInfo info, String serverName) {
+      return info.isServerPodBeingDeleted(serverName) || podHasDeletionTimestamp(info.getServerPod(serverName));
+    }
+
+    private boolean failureCountExceedsThreshold(String serverName) {
+      Map<String, ServerHealth> serverHealthMap = packet.getValue(SERVER_HEALTH_MAP);
+      return  serverHealthMap.get(serverName).getHttpRequestFailureCount().get() > getHttpRequestFailureThreshold();
+    }
+
+    private int getHttpRequestFailureThreshold() {
+      return TuningParameters.getInstance().getHttpRequestFailureCountThreshold();
+    }
+
+    private boolean podHasDeletionTimestamp(V1Pod serverPod) {
+      return Optional.ofNullable(serverPod).map(V1Pod::getMetadata)
+          .map(m -> m.getDeletionTimestamp() != null)
+          .orElse(false);
     }
 
     private void recordResponse(HttpResponse<String> response) {

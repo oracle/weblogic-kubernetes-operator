@@ -302,6 +302,8 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      info.setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
           new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),

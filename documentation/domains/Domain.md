@@ -272,6 +272,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `activationTime` | DateTime | RFC 3339 date and time at which the server started. |
+| `httpRequestFailureCount` | integer | Non-zero if the HTTP request to get the server's health fails for any reason. The HTTP request failure could be because the server is in the process of shutting down. |
 | `overallHealth` | string | Server health of this WebLogic Server instance. If the value is "Not available", the operator has failed to read the health. If the value is "Not available (possibly overloaded)", the operator has failed to read the health of the server possibly due to the server is in the overloaded state. |
 | `subsystems` | Array of [Subsystem Health](#subsystem-health) | Status of unhealthy subsystems, if any. |
 
