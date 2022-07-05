@@ -38,11 +38,6 @@ public class ServerHealth {
   @Valid
   private List<SubsystemHealth> subsystems = new ArrayList<>();
 
-  @Description(
-      "Non-zero if the HTTP request to get the server's health fails for any reason. "
-          + "The HTTP request might fail when the server is in the process of shutting down.")
-  private AtomicInteger httpRequestFailureCount = new AtomicInteger(0);
-
   public ServerHealth() {
   }
 
@@ -113,15 +108,6 @@ public class ServerHealth {
    */
   public ServerHealth addSubsystem(SubsystemHealth subsystem) {
     subsystems.add(subsystem);
-    return this;
-  }
-
-  public AtomicInteger getHttpRequestFailureCount() {
-    return httpRequestFailureCount;
-  }
-
-  public ServerHealth withFailureCount(AtomicInteger failureCount) {
-    this.httpRequestFailureCount = failureCount;
     return this;
   }
 

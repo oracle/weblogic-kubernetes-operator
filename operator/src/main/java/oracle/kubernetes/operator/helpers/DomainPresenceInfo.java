@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -359,6 +360,18 @@ public class DomainPresenceInfo implements PacketComponent {
 
   public void setServerPodBeingDeleted(String serverName, Boolean isBeingDeleted) {
     getSko(serverName).isPodBeingDeleted().set(isBeingDeleted);
+  }
+
+  public int getHttpRequestFailureCount(String serverName) {
+    return getSko(serverName).getHttpRequestFailureCount().get();
+  }
+
+  public void setHttpRequestFailureCount(String serverName, int failureCount) {
+    getSko(serverName).getHttpRequestFailureCount().set(failureCount);
+  }
+
+  public void incerementHttpRequestFailureCount(String serverName) {
+    getSko(serverName).getHttpRequestFailureCount().getAndIncrement();
   }
 
   /**

@@ -128,7 +128,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = getDomainPresenceInfo();
       try (ThreadLoggingContext ignored =
                setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
         if (throwable instanceof HttpTimeoutException) {
@@ -151,8 +151,11 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private boolean failureCountExceedsThreshold(String serverName) {
-      Map<String, ServerHealth> serverHealthMap = packet.getValue(SERVER_HEALTH_MAP);
-      return  serverHealthMap.get(serverName).getHttpRequestFailureCount().get() > getHttpRequestFailureThreshold();
+      return getDomainPresenceInfo().getHttpRequestFailureCount(serverName) > getHttpRequestFailureThreshold();
+    }
+
+    private DomainPresenceInfo getDomainPresenceInfo() {
+      return packet.getSpi(DomainPresenceInfo.class);
     }
 
     private int getHttpRequestFailureThreshold() {

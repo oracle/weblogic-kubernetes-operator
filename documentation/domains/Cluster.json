@@ -800,10 +800,6 @@
           "description": "Server health of this WebLogic Server instance. If the value is \"Not available\", the operator has failed to read the health. If the value is \"Not available (possibly overloaded)\", the operator has failed to read the health of the server possibly due to the server is in the overloaded state.",
           "type": "string"
         },
-        "httpRequestFailureCount": {
-          "description": "Non-zero if the HTTP request to get the server\u0027s health fails for any reason. The HTTP request might fail when the server is in the process of shutting down.",
-          "type": "integer"
-        },
         "activationTime": {
           "description": "RFC 3339 date and time at which the server started.",
           "$ref": "#/definitions/DateTime"

@@ -145,9 +145,9 @@ class HttpAsyncRequestStepTest {
         .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
         .withLogLevel(Level.WARNING);
     packet.put(ProcessingConstants.SERVER_NAME, "ms1");
-    packet.put(SERVER_HEALTH_MAP, createServerHealthMap(11));
     DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
     info.setServerPod("ms1", new V1Pod().metadata(new V1ObjectMeta()));
+    info.setHttpRequestFailureCount("ms1", 11);
     info.addToPacket(packet);
     final NextAction nextAction = requestStep.apply(packet);
 
@@ -156,19 +156,12 @@ class HttpAsyncRequestStepTest {
     assertThat(logRecords, containsWarning(HTTP_REQUEST_GOT_THROWABLE));
   }
 
-  private Object createServerHealthMap(int failureCount) {
-    Map<String, ServerHealth> serverHealthMap = new ConcurrentHashMap<>();
-    serverHealthMap.put("ms1", new ServerHealth().withFailureCount(new AtomicInteger(failureCount)));
-    return serverHealthMap;
-  }
-
   @Test
   void whenThrowableResponseReceivedServerNotShuttingDownAndFailureCountLowerThanThreshold_dontLogMessage() {
     consoleMemento
         .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
         .withLogLevel(Level.WARNING);
     packet.put(ProcessingConstants.SERVER_NAME, "ms1");
-    packet.put(SERVER_HEALTH_MAP, createServerHealthMap(1));
     DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
     info.setServerPod("ms1", new V1Pod().metadata(new V1ObjectMeta()));
     info.addToPacket(packet);

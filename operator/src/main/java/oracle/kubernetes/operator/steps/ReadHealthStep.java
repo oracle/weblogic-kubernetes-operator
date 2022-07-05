@@ -217,7 +217,9 @@ public class ReadHealthStep extends Step {
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       try {
-        new HealthResponseProcessing(packet, response).recordStateAndHealth();
+        HealthResponseProcessing responseProcessing = new HealthResponseProcessing(packet, response);
+        responseProcessing.recordStateAndHealth();
+        responseProcessing.resetHttpRequestFailureCount();
         decrementIntegerInPacketAtomically(packet, REMAINING_SERVERS_HEALTH_TO_READ);
 
         return doNext(packet);
@@ -246,7 +248,6 @@ public class ReadHealthStep extends Step {
       return doNext(packet);
     }
 
-
     static class HealthResponseProcessing {
       private final String serverName;
       private final Packet packet;
@@ -264,15 +265,8 @@ public class ReadHealthStep extends Step {
       }
 
       void recordFailedStateAndHealth() {
-        recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth())
-            .withFailureCount(new AtomicInteger(incrementAndGetFailureCount())));
-      }
-
-      private int incrementAndGetFailureCount() {
-        return Optional.ofNullable(getServerHealthMap())
-            .map(m -> m.get(serverName)).map(ServerHealth::getHttpRequestFailureCount)
-            .map(AtomicInteger::incrementAndGet)
-            .orElse(0);
+        getDomainPresenceInfo().incerementHttpRequestFailureCount(getServerName());
+        recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
       }
 
       private String getFailedHealth() {
@@ -345,7 +339,7 @@ public class ReadHealthStep extends Step {
         Pair<String, ServerHealth> pair = parseServerHealthJson(getResponse().body());
         String state = emptyToNull(Optional.ofNullable(pair).map(Pair::getLeft).orElse(null));
         ServerHealth health = Optional.ofNullable(pair).map(Pair::getRight).orElse(null);
-        health.withFailureCount(new AtomicInteger(0));
+
         recordStateAndHealth(state, health);
       }
 
@@ -390,6 +384,10 @@ public class ReadHealthStep extends Step {
 
       Packet getPacket() {
         return packet;
+      }
+
+      public void resetHttpRequestFailureCount() {
+        getDomainPresenceInfo().setHttpRequestFailureCount(getServerName(), 0);
       }
     }
   }
