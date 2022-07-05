@@ -24,7 +24,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.doesPodLogContainString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -205,6 +205,12 @@ class ItServerStartPolicy {
             domainNamespace, cfgTs));
     assertFalse(assertDoesNotThrow(isCfgRestarted::call),
         "Configured managed server pod must not be restated");
+
+    // verify warning message is not logged in operator pod when admin server is shutdown
+    logger.info("operator pod name: {0}", operatorPodName);
+    assertFalse(doesPodLogContainString(opNamespace, operatorPodName, "WARNING"));
+    assertFalse(doesPodLogContainString(opNamespace, operatorPodName,
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
 
     // verify that the sample script can start admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,
@@ -491,22 +497,6 @@ class ItServerStartPolicy {
                 START_DOMAIN_SCRIPT, DOMAIN, null, "", false, domainName),
         String.format("Failed to run %s", START_DOMAIN_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a domain that doesn't exist");
-  }
-
-  /**
-   * Verify Operator infrastructure log warning message, when the sample script
-   * tries to start a server that exceeds the max cluster size.
-   */
-  @Order(7)
-  @Test
-  @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
-  void testOperatorLogWarningMsg() {
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("operator pod name: {0}", operatorPodName);
-    checkPodLogContainsString(opNamespace, operatorPodName, "WARNING");
-    checkPodLogContainsString(opNamespace, operatorPodName,
-        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException");
   }
 
   /**
