@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: da6b97385818b4962387abcdd698e8801da5f9ede7a6e8c4820d8d539cb673ce
+    weblogic.sha256: 9e5908d413c4e2ae1595d398ed48056b0feda3bbd11b1fa11109b3a347048add
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -12595,9 +12595,8 @@ spec:
                           type: string
                         httpRequestFailureCount:
                           description: Non-zero if the HTTP request to get the server's
-                            health fails for any reason. The HTTP request failure
-                            could be because the server is in the process of shutting
-                            down.
+                            health fails for any reason. The HTTP request might fail
+                            when the server is in the process of shutting down.
                           type: integer
                         activationTime:
                           format: date-time
