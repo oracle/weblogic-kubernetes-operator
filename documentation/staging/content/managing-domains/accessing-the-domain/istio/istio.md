@@ -18,7 +18,7 @@ description: "Run the operator and WebLogic domains managed by the operator when
 - [Traffic management](#traffic-management)
 - [Distributed tracing](#distributed-tracing)
 - [Automatically added network channels](#automatically-added-network-channels)
-  - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
+  - [Network channel for Istio versions v1.10 and later](#network-channel-for-istio-versions-v110-and-later)
   - [Network channel for WebLogic EJB and servlet session state replication traffic](#network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
 - [Security](#security)
   - [Mutual TLS](#mutual-tls)
@@ -48,7 +48,7 @@ see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).
 
 The current support for Istio has these limitations:
 
-* The operator supports Istio versions 1.10 and higher,
+* The operator supports Istio versions 1.10 and later,
   and has been tested with single and multicluster
   Istio installations from 1.10 up to 1.13.2.
 
@@ -88,7 +88,7 @@ create the namespace in which you want to run the operator and label it.
 ```shell
 $ kubectl create namespace weblogic-operator
 ```
-For non-OpenShift service mesh, label the namespace as follows:
+For a non-OpenShift service mesh, label the namespace as follows:
 
 ```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
@@ -96,8 +96,8 @@ $ kubectl label namespace weblogic-operator istio-injection=enabled
 
 After the namespace is labeled, you can [install the operator]({{< relref "/managing-operators/installation.md" >}}).
 
-When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
-annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, 
+When using an OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
+annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm,
 with the `--set` option, as follows:
 
 `--set "annotations.sidecar\.istio\.io/inject=true"`
@@ -119,7 +119,7 @@ In the second command, change `weblogic-operator-xxx-xxx` to the name of your po
 
 #### Creating a domain with Istio support
 
-Setting up Istio support for a domain only requires enabling Istio automatic sidecar injection.
+Setting up Istio support for a domain requires only enabling Istio automatic sidecar injection.
 
 To allow your domains to run with Istio automatic sidecar injection enabled,
 create the namespace in which you want to run the domain
@@ -129,13 +129,13 @@ and label it for automatic injection before deploying your domain.
 $ kubectl create namespace domain1
 ```
 
-For non-OpenShift environment 
+For a non-OpenShift environment:
 
 ```shell
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-For OpenShift environment, You do need to label the namespace for Istio sidecar injection, instead add the following
+For an OpenShift environment, you do need to label the namespace for Istio sidecar injection, instead add the following
 annotation at the pod level in the domain resource.  
 
 ```
@@ -150,13 +150,13 @@ spec:
 
 ##### Configuring the domain resource
 
-Beginning with WebLogic Operator release 4.0, you longer have to provide `domain.spec.configuration.istio` section to 
-enable Istio support for a domain.  Enabling the sidecar injection at namespace level alone or annotation at `serverPod` 
+Beginning with WebLogic Kubernetes Operator release 4.0, you longer have to provide the `domain.spec.configuration.istio` section to
+enable Istio support for a domain.  Enabling the sidecar injection at the namespace level alone or annotation at `serverPod`
 level for OpenShift is sufficient.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
 
 ##### Applying a Domain YAML file
 
-After a Domain YAML file by:
+Apply a Domain YAML file by:
 
 ```shell
 $ kubectl apply -f domain.yaml
@@ -295,7 +295,7 @@ add network channels to each WebLogic Server
 when Istio is enabled for a domain.
 
 
-##### Added network channel for Istio versions v1.10 and later
+##### Network channel for Istio versions v1.10 and later
 
 _Background_:
 
@@ -305,10 +305,10 @@ so that the Istio network proxy that runs in each Istio sidecar
 (the Envoy proxy) no longer redirects
 network traffic to the current pod's localhost interface,
 but instead directly forwards it to the network interface associated
-with the pod's IP. This means that the operator
+with the pod's IP address. This means that the operator
 does not need to create additional localhost network
 channels on each WebLogic pod except to enable
-readiness probe.
+the readiness probe.
 
 To learn more about changes to Istio networking beginning with Istio 1.10,
 see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
@@ -327,8 +327,8 @@ readiness probe is bound to the server pod's network interface:
 
 ##### Network channel for WebLogic EJB and servlet session state replication traffic
 
-WebLogic Operator versions 4.0 and above support WebLogic EJB and servlet session state replication traffic in 
-an Istio service mesh, it uses the default channel of the domain for replication.
+WebLogic Kubernetes Operator versions 4.0 and later support WebLogic EJB and servlet session state replication traffic in
+an Istio service mesh; it uses the default channel of the domain for replication.
 
 #### Security
 
