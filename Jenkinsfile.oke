@@ -4,9 +4,7 @@
 
 pipeline {
     agent { label 'VM.Standard2.8' }
-    triggers {
-        cron('H 5 * * *')
-    }
+
     options {
         timeout(time: 800, unit: 'MINUTES')
         disableConcurrentBuilds()
@@ -61,6 +59,14 @@ pipeline {
                         'integration-tests'
                 ]
         )
+        choice(name: 'CLUSTER_NAME',
+                        description: 'Name for OKE cluster to create.  Possible values are mtcluster for oke-parallel run, mkcluster for oke-sequential run. ',
+                        choices: [
+                                'mtcluster',
+                                'mkcluster'
+                        ]
+                )
+
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
@@ -199,8 +205,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         FSS_DIR="/oketest"
-                        VCN_CIDR_PREFIX="10.1"
-                        OKE_CLUSTER_NAME="mtcluster"
+                        OKE_CLUSTER_NAME="${CLUSTER_NAME}"
                         NODE_SHAPE="VM.Standard2.4"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
@@ -230,7 +235,11 @@ pipeline {
 
                         export OKE_CLUSTER="true"
                         export FSS_DIR="/oketest"
-
+                        if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
+                           VCN_CIDR_PREFIX="10.1"
+                        else
+                           VCN_CIDR_PREFIX="10.3"
+                        fi
                         export VCN_CIDR_PREFIX=${VCN_CIDR_PREFIX}
 
                         export OKE_CLUSTER_NAME=${OKE_CLUSTER_NAME}
@@ -350,7 +359,7 @@ EOF
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
-                        KUBECONFIG ="${WORKSPACE}/terraform/mtcluster_kubeconfig"
+                        KUBECONFIG ="${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
                     }
@@ -364,11 +373,13 @@ EOF
                             sed -i -e "s:@WORKSPACE@:${WORKSPACE}:g" ${WORKSPACE}/oci/config
                             export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                             export OCI_CLI_PROFILE=WKOBUILD
-                            echo 'Create a OKE cluster'
+                            echo 'Create a OKE cluster ${CLUSTER_NAME}'
 
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
-                            cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
-                            cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
+                            if [ "${MAVEN_PROFILE}" = 'oke-parallel' ]; then
+                                cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
+                                cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
+                            fi
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh
@@ -383,9 +394,9 @@ EOF
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:${WORKSPACE}/terraform/terraforminstall"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
-                                        clusterName = "mtcluster"
+                                        clusterName = "${CLUSTER_NAME}"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
-                                        availability_domain = "VPGL:PHX-AD-1"
+
 
                                     }
                                     steps {
@@ -395,7 +406,11 @@ EOF
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
-
+                                        if [ "${MAVEN_PROFILE}" = 'oke-parallel' ]; then
+                                           availability_domain="VPGL:PHX-AD-1"
+                                        else
+                                           availability_domain="VPGL:PHX-AD-2"
+                                        fi
                                         echo "creating storage class to setup OFSS ..."
                                         echo "getting MountTarget ID"
                                         mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
@@ -437,11 +452,10 @@ EOF
                         DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
                         DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
-                        availability_domain = "VPGL:PHX-AD-1"
                         DOMAIN_IMAGES_REPO = "phx.ocir.io"
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
-                        clusterName = "mtcluster"
+                        clusterName = "${CLUSTER_NAME}"
                         FSS_DIR = "/oketest"
 
                     }
@@ -459,7 +473,11 @@ EOF
                               sleep 15;
                               NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
                             fi
-
+                            if [ "${MAVEN_PROFILE}" = 'oke-parallel' ]; then
+                               availability_domain = "VPGL:PHX-AD-1"
+                            else
+                               availability_domain = "VPGL:PHX-AD-2"
+                            fi
                             export K8S_NODEPORT_HOST=${NODE_IP}
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
                             mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
