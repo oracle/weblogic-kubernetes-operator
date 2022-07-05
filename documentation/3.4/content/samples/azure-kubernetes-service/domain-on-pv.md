@@ -524,7 +524,36 @@ The script will print the Administration Server address after a successful deplo
 
 #### Deploy sample application
 
-Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository:
+Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository.
+
+Firstly, you must package the application with the following command:
+
+```bash
+cd integration-tests/src/test/resources/bash-scripts
+bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
+```
+
+Successful output will look like the following:
+
+```text
+Found source at ../apps/testwebapp/
+build /tmp/testwebapp/testwebapp.war with command jar -cvf /tmp/testwebapp/testwebapp.war *
+added manifest
+ignoring entry META-INF/
+ignoring entry META-INF/MANIFEST.MF
+adding: META-INF/maven/(in = 0) (out= 0)(stored 0%)
+adding: META-INF/maven/com.oracle.weblogic/(in = 0) (out= 0)(stored 0%)
+adding: META-INF/maven/com.oracle.weblogic/testwebapp/(in = 0) (out= 0)(stored 0%)
+adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.properties(in = 117) (out= 113)(deflated 3%)
+adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.xml(in = 1210) (out= 443)(deflated 63%)
+adding: WEB-INF/(in = 0) (out= 0)(stored 0%)
+adding: WEB-INF/web.xml(in = 951) (out= 428)(deflated 54%)
+adding: WEB-INF/weblogic.xml(in = 1140) (out= 468)(deflated 58%)
+adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
+-rw-r--r-- 1 user user 3528 Jul  5 14:25 /tmp/testwebapp/testwebapp.war
+```
+
+Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster:
 
 1. Go to the WebLogic Server Administration Console, Select "Lock & Edit".
 1. Select Deployments.
