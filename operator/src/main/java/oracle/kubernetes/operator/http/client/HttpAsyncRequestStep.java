@@ -133,9 +133,7 @@ public class HttpAsyncRequestStep extends Step {
         } else if (response != null) {
           recordResponse(response);
         } else if (throwable != null) {
-          if (!isServerShuttingDown() && failureCountExceedsThreshold()) {
-            recordThrowableResponse(throwable);
-          }
+          recordThrowableResponse(throwable);
         }
       }
 
@@ -147,19 +145,11 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private boolean isServerShuttingDown() {
-      LOGGER.info("DEBUG: getServerName() is " + getServerName());
-      LOGGER.info("DEBUG: getDomainPresenceInfo().isServerPodBeingDeleted(getServerName()) is "
-          + getDomainPresenceInfo().isServerPodBeingDeleted(getServerName()));
-      LOGGER.info("DEBUG: podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(getServerName()) is "
-              + podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(getServerName())));
       return Optional.ofNullable(getServerName()).map(s -> getDomainPresenceInfo().isServerPodBeingDeleted(s)
           || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(s))).orElse(false);
     }
 
     private boolean failureCountExceedsThreshold() {
-      LOGGER.info("DEBUG: getDomainPresenceInfo().getHttpRequestFailureCount(getServerName()) is "
-          + getDomainPresenceInfo().getHttpRequestFailureCount(getServerName()));
-      LOGGER.info("DEBUG: getHttpRequestFailureThreshold() is " + getHttpRequestFailureThreshold());
       return Optional.ofNullable(getServerName())
           .map(s -> getDomainPresenceInfo().getHttpRequestFailureCount(s) > getHttpRequestFailureThreshold())
           .orElse(false);
@@ -187,7 +177,9 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void recordThrowableResponse(Throwable throwable) {
-      LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
+      if (!isServerShuttingDown() && failureCountExceedsThreshold()) {
+        LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
+      }
       HttpResponseStep.addToPacket(packet, throwable);
     }
   }

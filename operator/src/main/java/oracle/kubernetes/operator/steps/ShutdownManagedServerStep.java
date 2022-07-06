@@ -300,8 +300,7 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      //getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
-      LOGGER.info("DEBUG: Shutting down managed server with HTTP step.. next step is " + getNext());
+      getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
           new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
@@ -330,7 +329,6 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
-      LOGGER.info("DEBUG: deleted server " + serverName + "with http request. calling next step " + getNext());
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
       return doNext(packet);
@@ -338,18 +336,12 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      LOGGER.info("DEBUG: In onFailure method of ShutdownManagedServerResponseStep");
       if (getThrowableResponse(packet) != null) {
-        LOGGER.info("DEBUG: In onFailure method of ShutdownManagedServerResponseStep, getThrowableResponse "
-            + getThrowableResponse(packet));
         Throwable throwable = getThrowableResponse(packet);
-        LOGGER.info("DEBUG: In onFailure method of ShutdownManagedServerResponseStep, getThrowableResponse "
-            + throwable);
         if (getShutdownRequestRetryCount(packet) == null) {
           addShutdownRequestRetryCountToPacket(packet, 1);
           if (requestStep != null) {
             // Retry request
-            LOGGER.info("DEBUG: In onFailure method of ShutdownManagedServerResponseStep, retying request.. ");
             LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
             return doNext(requestStep, packet);
           }
@@ -357,16 +349,12 @@ public class ShutdownManagedServerStep extends Step {
         LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
       } else if (getResponse(packet) == null) {
         // Request timed out
-        LOGGER.info("DEBUG: In onFailure method of ShutdownManagedServerResponseStep, Request timed out.. ");
         LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
       } else {
-        LOGGER.info("DEBUG: In onFailure method of ShutdownManagedServerResponseStep, response is.. " + response);
         LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
 
       removeShutdownRequestRetryCount(packet);
-      LOGGER.info("DEBUG: Failed to delete server " + serverName
-          + "with http request. calling next step " + getNext());
       return doNext(packet);
     }
 
