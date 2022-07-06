@@ -62,7 +62,6 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -108,6 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItElasticLoggingFluentd {
 
   // constants for creating domain image using model in image
@@ -377,7 +377,7 @@ class ItElasticLoggingFluentd {
     final String volumeName = "weblogic-domain-storage-volume";
     final String logHomeRootPath = "/scratch";
     // create the domain CR
-    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
+    String imagePullPolicy = "IfNotPresent";
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
     fluentdSpecification.setImage(FLUENTD_IMAGE);
     fluentdSpecification.setWatchIntrospectorLogs(true);

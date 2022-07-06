@@ -72,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test server's pod init container feature")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-sequential")
 class ItInitContainers {
 
   private static String opNamespace = null;
@@ -335,6 +336,7 @@ class ItInitContainers {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1LocalObjectReference()

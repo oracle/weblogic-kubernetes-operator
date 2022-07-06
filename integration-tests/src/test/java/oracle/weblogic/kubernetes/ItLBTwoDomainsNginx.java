@@ -56,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify Nginx load balancer handles traffic to two background WebLogic domains")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItLBTwoDomainsNginx {
 
   private static final int numberOfDomains = 2;

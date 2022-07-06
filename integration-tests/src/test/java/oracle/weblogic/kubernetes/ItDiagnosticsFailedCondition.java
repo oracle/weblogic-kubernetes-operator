@@ -93,6 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the domain status failed conditions for domain lifecycle")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
@@ -364,7 +365,7 @@ class ItDiagnosticsFailedCondition {
               .namespace(domainNamespace))
           .spec(new DomainSpec()
               .domainUid(domainName)
-              .domainHome("/shared/domains/" + domainName) // point to domain home in pv
+              .domainHome("/shared/" + domainNamespace + "/domains/" + domainName) // point to domain home in pv
               .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
               .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
               .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -690,6 +691,7 @@ class ItDiagnosticsFailedCondition {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1LocalObjectReference()
@@ -738,6 +740,7 @@ class ItDiagnosticsFailedCondition {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1LocalObjectReference()

@@ -793,7 +793,7 @@ class ItKubernetesDomainEvents {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", uniquePath + "/logs");
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid + "/");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
                     -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -827,7 +827,7 @@ class ItKubernetesDomainEvents {
                             .name(wlSecretName))
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
-                    .logHome(uniquePath + "/logs/" + domainUid)
+                    .logHome("/shared/" + domainNamespace + "/logs/" + domainUid + "/")
                     .dataHome("")
                     .serverStartPolicy(serverStartupPolicy)
                     .serverPod(new ServerPod() //serverpod

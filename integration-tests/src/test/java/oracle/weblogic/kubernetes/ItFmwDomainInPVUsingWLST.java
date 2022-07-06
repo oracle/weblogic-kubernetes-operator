@@ -187,7 +187,7 @@ class ItFmwDomainInPVUsingWLST {
     java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
     logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
     
-    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/";
+    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/" + domainUid + "/";
 
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME

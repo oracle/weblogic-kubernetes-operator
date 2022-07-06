@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
     + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItMultiDomainModels {
 
   // domain constants

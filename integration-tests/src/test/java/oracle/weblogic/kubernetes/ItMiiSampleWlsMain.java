@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @DisplayName("Test model in image sample with WLS domain")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
+@Tag("oke-parallel")
 @Tag("samples")
 @Tag("olcne")
 class ItMiiSampleWlsMain {

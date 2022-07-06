@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-sequential")
 class ItFmwDynamicDomainInPV {
 
   private static String opNamespace = null;
@@ -203,7 +204,7 @@ class ItFmwDynamicDomainInPV {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -214,7 +215,7 @@ class ItFmwDynamicDomainInPV {
                 .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
@@ -295,7 +296,7 @@ class ItFmwDynamicDomainInPV {
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/domains/");
+    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/" + domainUid + "/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);

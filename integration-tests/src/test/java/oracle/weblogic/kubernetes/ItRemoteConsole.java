@@ -77,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItRemoteConsole {
 
   private static String domainNamespace = null;

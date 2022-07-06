@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -588,7 +589,8 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
-        "/u01/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+        "/u01/" + domainNamespace + "/domains/"
+                + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
     waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
@@ -597,14 +599,15 @@ class ItMultiDomainModelsWithLoadBalancer {
         String managedServerPodName = domainUid + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i;
         String customDataFile = "/u01/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
         assertFalse(assertDoesNotThrow(() ->
-                doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
-            String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-                customDataFile, managedServerPodName, domainNamespace)),
-            String.format("found file %s in pod %s in namespace %s, expect not exist",
-                customDataFile, managedServerPodName, domainNamespace));
+                        doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
+                String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+                        customDataFile, managedServerPodName, domainNamespace)),
+                String.format("found file %s in pod %s in namespace %s, expect not exist",
+                        customDataFile, managedServerPodName, domainNamespace));
 
-        String defaultMSDataFile = "/u01/domains/" + domainUid + "/servers/cluster-" + j + "-managed-server" + i
-            + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
+        String defaultMSDataFile = "/u01/" + domainNamespace + "/domains/"
+                + domainUid + "/servers/cluster-" + j + "-managed-server" + i
+                + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
         waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
       }
     }
@@ -784,9 +787,10 @@ class ItMultiDomainModelsWithLoadBalancer {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(miiDomainUid)
-            .domainHome("/u01/domains/" + miiDomainUid)
+            .domainHome("/u01/" + domainNamespace + "/domains/" + miiDomainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1LocalObjectReference()
@@ -1045,9 +1049,10 @@ class ItMultiDomainModelsWithLoadBalancer {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/u01/domains/" + domainUid)
+            .domainHome("/u01/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1LocalObjectReference()

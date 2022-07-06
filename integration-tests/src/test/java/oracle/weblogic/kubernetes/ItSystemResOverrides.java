@@ -93,6 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItSystemResOverrides {
 
   private static String opNamespace = null;
@@ -337,7 +338,7 @@ class ItSystemResOverrides {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", uniquePath + "/logs");
+    p.setProperty("domain_logs", uniquePath + "/logs/" + domainUid);
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
         -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
