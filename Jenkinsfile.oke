@@ -392,11 +392,7 @@ EOF
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
-                                        if [ "${MAVEN_PROFILE_NAME}" = 'oke-parallel' ]; then
-                                           availability_domain="VPGL:PHX-AD-1"
-                                        else
-                                           availability_domain="VPGL:PHX-AD-2"
-                                        fi
+
                                         echo "creating storage class to setup OFSS ..."
                                         echo "getting MountTarget ID"
                                         mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
@@ -459,11 +455,7 @@ EOF
                               sleep 15;
                               NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
                             fi
-                            if [ "${MAVEN_PROFILE_NAME}" = 'oke-parallel' ]; then
-                               availability_domain="VPGL:PHX-AD-1"
-                            else
-                               availability_domain="VPGL:PHX-AD-2"
-                            fi
+
                             export K8S_NODEPORT_HOST=${NODE_IP}
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
                             mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
@@ -539,9 +531,6 @@ EOF
 
                             if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
                                 echo "integration-tests failed"
-                            fi
-                            if [ "${MAVEN_PROFILE_NAME}" = "integration-test" ]; then
-                                mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter*, !ItPodRestart, !ItResilience"  -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"
                             fi
                         '''
                     }
