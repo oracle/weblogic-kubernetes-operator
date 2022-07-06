@@ -331,7 +331,7 @@ public class ShutdownManagedServerStep extends Step {
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.info("DEBUG: deleted server " + serverName + "with http request. calling next step " + getNext());
-      LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
+      LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
       return doNext(packet);
     }
