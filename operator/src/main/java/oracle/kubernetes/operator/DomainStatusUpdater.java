@@ -204,7 +204,7 @@ public class DomainStatusUpdater {
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep(Step next) {
-    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
+    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH, INTROSPECTION);
   }
 
   /**
@@ -291,7 +291,8 @@ public class DomainStatusUpdater {
    * @param domainIntrospectorJob Domain introspector job
    */
   public static Step createIntrospectionFailureSteps(String message, V1Job domainIntrospectorJob) {
-    return new FailureStep(INTROSPECTION, message).forIntrospection(domainIntrospectorJob);
+    return new FailureStep(INTROSPECTION, message)
+        .forIntrospection(domainIntrospectorJob).removingOldFailures(INTROSPECTION);
   }
 
   /**

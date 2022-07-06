@@ -1,7 +1,7 @@
 // Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.introspection;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +13,11 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.JobHelper;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -43,9 +46,6 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class IntrospectionLoggingTest {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final int MAX_RETRY_COUNT = 2;
-
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -53,6 +53,8 @@ class IntrospectionLoggingTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private final TerminalStep terminalStep = new TerminalStep();
+  private final V1Job introspectorJob
+      = new V1Job().metadata(new V1ObjectMeta().uid(UID)); //.status(IntrospectionTestUtils.createCompletedStatus());
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -62,7 +64,7 @@ class IntrospectionLoggingTest {
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, new V1Job().metadata(new V1ObjectMeta().uid("123")));
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, introspectorJob);
     testSupport.defineResources(domain);
   }
 
@@ -95,6 +97,7 @@ class IntrospectionLoggingTest {
 
   @Test
   void whenIntrospectorMessageContainsAdditionalLines_logThem() {
+    introspectorJob.status(IntrospectionTestUtils.createCompletedStatus());
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
     IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, extendedInfoMessage);
 

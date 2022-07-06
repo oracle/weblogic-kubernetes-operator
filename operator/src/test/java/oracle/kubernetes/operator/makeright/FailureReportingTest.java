@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -21,10 +22,10 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.Processors;
 import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.IntrospectionTestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.introspection.IntrospectionTestUtils;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Fiber;
@@ -61,10 +62,11 @@ import static org.hamcrest.Matchers.nullValue;
 class FailureReportingTest {
 
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
-  private static final String SEVERE_MESSAGE = "@[SEVERE] really bad";
-  public static final String CLUSTER_1 = "cluster1";
-  public static final int MAXIMUM_CLUSTER_SIZE = 5;
-  public static final int TOO_HIGH_REPLICA_COUNT = MAXIMUM_CLUSTER_SIZE + 1;
+  private static final String SEVERE_MESSAGE = "really bad";
+  private static final String SEVERE_INTROSPECTION_ENTRY = "@[SEVERE] " + SEVERE_MESSAGE;
+  private static final String CLUSTER_1 = "cluster1";
+  private static final int MAXIMUM_CLUSTER_SIZE = 5;
+  private static final int TOO_HIGH_REPLICA_COUNT = MAXIMUM_CLUSTER_SIZE + 1;
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -116,7 +118,7 @@ class FailureReportingTest {
 
   @ParameterizedTest
   @EnumSource(
-      value = TestCase.class, names = "DOMAIN_VALIDATION_FAILURE"
+      value = TestCase.class, names = {"DOMAIN_VALIDATION_FAILURE", "SEVERE_INTROSPECTION_FAILURE"}
   )
   void abortMakeRightAfterFailureDetected(TestCase testCase) {
     executeMakeRight(testCase.getStepToAvoid(), testCase.getMutator());
@@ -148,12 +150,14 @@ class FailureReportingTest {
   }
 
   private void defineSevereIntrospectionFailure() {
-    introspectionString = SEVERE_MESSAGE;
+    introspectionString = SEVERE_INTROSPECTION_ENTRY;
   }
 
   @ParameterizedTest
   @EnumSource(
-      value = TestCase.class, names = {"DOMAIN_VALIDATION_FAILURE", "REPLICAS_TOO_HIGH_FAILURE"}
+      value = TestCase.class, names = {
+          "DOMAIN_VALIDATION_FAILURE", "REPLICAS_TOO_HIGH_FAILURE", "SEVERE_INTROSPECTION_FAILURE"
+      }
   )
   void whenMakeWithExistingFailureFails_failuresDoNotFlicker(TestCase testCase) throws NoSuchFieldException {
     final DomainCondition domainCondition = createDomainConditionFor(testCase);
@@ -193,6 +197,7 @@ class FailureReportingTest {
       }
 
       @Override
+      @Nonnull
       String getExpectedMessage() {
         return DomainValidationMessages.noSuchSecret("no-such-secret", NS, SecretType.WEBLOGIC_CREDENTIALS);
       }
@@ -214,8 +219,9 @@ class FailureReportingTest {
       }
 
       @Override
+      @Nonnull
       String getExpectedMessage() {
-        return null;
+        return SEVERE_MESSAGE;
       }
     },
     REPLICAS_TOO_HIGH_FAILURE {
@@ -235,6 +241,7 @@ class FailureReportingTest {
       }
 
       @Override
+      @Nonnull
       String getExpectedMessage() {
         return createReplicaFailureMessage(CLUSTER_1, TOO_HIGH_REPLICA_COUNT, MAXIMUM_CLUSTER_SIZE);
       }
@@ -246,7 +253,7 @@ class FailureReportingTest {
 
     abstract String getStepToAvoid();
 
-    abstract String getExpectedMessage();
+    @Nonnull abstract String getExpectedMessage();
   }
 
 

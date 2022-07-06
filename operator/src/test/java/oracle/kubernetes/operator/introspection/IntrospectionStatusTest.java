@@ -1,7 +1,7 @@
 // Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.introspection;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +26,11 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.operator.helpers.AnnotationHelper;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
+import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -41,9 +46,9 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
-import static oracle.kubernetes.operator.helpers.IntrospectionStatusTest.IntrospectorJobPodBuilder.createPodAddedEvent;
-import static oracle.kubernetes.operator.helpers.IntrospectionStatusTest.IntrospectorJobPodBuilder.createPodModifiedEvent;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static oracle.kubernetes.operator.introspection.IntrospectionStatusTest.IntrospectorJobPodBuilder.createPodAddedEvent;
+import static oracle.kubernetes.operator.introspection.IntrospectionStatusTest.IntrospectorJobPodBuilder.createPodModifiedEvent;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
