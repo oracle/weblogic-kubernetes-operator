@@ -20,6 +20,9 @@ DOMAIN_UID ::: Domain UID
 DOMAIN_NAMESPACE ::: Domain Namespace
   Default is 'sample-domain1-ns'.
 
+IMAGE_PULL_POLICY ::: Image Pull Policy
+  Default is 'IfNotPresent'.
+
 CUSTOM_DOMAIN_NAME ::: WebLogic Domain Name
   This is the configured WebLogic domain name (not the domain UID). The domain
   name is set at runtime using an '@@ENV:CUSTOM_DOMAIN_NAME@@' model macro in
