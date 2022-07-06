@@ -94,6 +94,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify MII domain can be created from model file in PV location and custom wdtModelHome")
 @IntegrationTest
+@Tag("oke-parallel")
 public class ItMiiDomainModelInPV {
 
   private static String domainNamespace = null;

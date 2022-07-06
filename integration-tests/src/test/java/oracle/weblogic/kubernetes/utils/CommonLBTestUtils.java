@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -241,7 +242,8 @@ public class CommonLBTestUtils {
     getLogger().info("Creating WebLogic domain properties file");
     Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
     createDomainProperties(
-        domainPropertiesFile, domainUid, clusterName, adminServerPort, managedServerPort, t3ChannelPort);
+            domainPropertiesFile, domainUid, domainNamespace,
+            clusterName, adminServerPort, managedServerPort, t3ChannelPort);
 
     getLogger().info("Adding files to a ConfigMap for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -331,9 +333,10 @@ public class CommonLBTestUtils {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET_NAME)))  // this secret is used only for non-kind cluster
@@ -341,7 +344,7 @@ public class CommonLBTestUtils {
                 .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
@@ -447,6 +450,7 @@ public class CommonLBTestUtils {
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
+   * @param domainNamespace the WebLogic domain namespace
    * @param clusterName cluster name of the domain
    * @param adminServerPort admin server port
    * @param managedServerPort managed server port
@@ -454,6 +458,7 @@ public class CommonLBTestUtils {
    */
   private static void createDomainProperties(Path wlstPropertiesFile,
                                              String domainUid,
+                                             String domainNamespace,
                                              String clusterName,
                                              int adminServerPort,
                                              int managedServerPort,
@@ -461,7 +466,7 @@ public class CommonLBTestUtils {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
@@ -473,7 +478,7 @@ public class CommonLBTestUtils {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
-    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
     p.setProperty("production_mode_enabled", "true");
 
     FileOutputStream fileOutputStream =

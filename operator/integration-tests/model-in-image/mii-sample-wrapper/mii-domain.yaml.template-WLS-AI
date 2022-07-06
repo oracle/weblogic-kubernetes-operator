@@ -23,7 +23,7 @@ spec:
   image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: "@@IMAGE_PULL_POLICY@@"
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
