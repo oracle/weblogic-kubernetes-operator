@@ -679,10 +679,12 @@ public class PodHelper {
 
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Pod oldPod = info.getServerPod(serverName);
+      LOGGER.info("DEBUG: deleting old pod for server " + serverName);
 
       long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
       String clusterName = null;
       if (oldPod != null) {
+        LOGGER.info("DEBUG: deleting old pod for server " + serverName + " , old pod is not null");
         Map<String, String> labels = oldPod.getMetadata().getLabels();
         if (labels != null) {
           clusterName = labels.get(CLUSTERNAME_LABEL);
@@ -706,6 +708,7 @@ public class PodHelper {
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
             packet);
       } else {
+        LOGGER.info("DEBUG: deleting old pod for server " + serverName + " , old pod is null");
         return doNext(packet);
       }
     }
