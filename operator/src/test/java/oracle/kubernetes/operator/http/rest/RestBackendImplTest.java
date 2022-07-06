@@ -106,6 +106,7 @@ class RestBackendImplTest {
     testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (DomainResource) d);
     testSupport.doOnUpdate(CLUSTER, c -> updatedClusterResource = (ClusterResource) c);
     domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
+    domain1ConfigSupport.addWlsCluster("cluster2", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
 
     setupScanCache();
@@ -294,6 +295,17 @@ class RestBackendImplTest {
     assertThat(getUpdatedDomain(), nullValue());
   }
 
+  @Test
+  void whenPerClusterReplicaSettingGreaterThanMax_throwsException() {
+    final String cluster1 = "cluster1";
+    configureCluster(cluster1);
+    domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
+            .withClusterLimits(0, 5));
+
+    assertThrows(WebApplicationException.class,
+            () -> restBackend.scaleCluster(DOMAIN1, cluster1, 10));
+  }
+
   private DomainResource getUpdatedDomain() {
     return updatedDomain;
   }
@@ -333,6 +345,33 @@ class RestBackendImplTest {
     restBackend.scaleCluster(DOMAIN1, cluster1, 1);
 
     assertThat(getUpdatedClusterResource(), nullValue());
+  }
+
+  @Test
+  void whenPerClusterResourceNotFound_updateClusterSpecOfDomain() {
+    final String cluster1 = "cluster1";
+    configureCluster(cluster1).withReplicas(2);
+
+    restBackend.scaleCluster(DOMAIN1, cluster1, 4);
+
+    DomainResource updatedDomain = getUpdatedDomain();
+    assertThat(updatedDomain, notNullValue());
+    ClusterSpec cluster = updatedDomain.getSpec().getCluster(cluster1);
+    assertThat(cluster, notNullValue());
+    assertThat(cluster.getReplicas(), equalTo(4));
+  }
+
+  @Test
+  void whenPerClusterResourceReplicaSettingGreaterThanMax_throwsException() {
+    final String cluster1 = "cluster1";
+    final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, cluster1)
+            .withReplicas(1);
+    testSupport.defineResources(clusterResource);
+    domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
+            .withClusterLimits(0, 5));
+
+    assertThrows(WebApplicationException.class,
+            () -> restBackend.scaleCluster(DOMAIN1, cluster1, 10));
   }
 
   private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {

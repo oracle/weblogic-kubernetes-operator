@@ -269,18 +269,6 @@ public class RestBackendImpl implements RestBackend {
     getDomain(domainUid).ifPresentOrElse(consumer, () -> reportNotFound(domainUid));
   }
 
-  private void forClusterDo(String domainUid, String clusterName, Consumer<ClusterResource> consumer) {
-    if (clusterName == null) {
-      throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_CLUSTER_NAME));
-    }
-
-    getClusterResource(domainUid, clusterName).ifPresentOrElse(consumer, () -> reportClusterNotFound(clusterName));
-  }
-
-  private void reportClusterNotFound(String clusterName) {
-    throw createWebApplicationException(Status.NOT_FOUND, MessageKeys.MATCHING_CLUSTER_NOT_FOUND, clusterName);
-  }
-
   private void reportNotFound(String domainUid) {
     throw createWebApplicationException(Status.NOT_FOUND, MessageKeys.MATCHING_DOMAIN_NOT_FOUND, domainUid);
   }
