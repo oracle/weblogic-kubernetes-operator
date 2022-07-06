@@ -457,8 +457,14 @@ EOF
 
                             export K8S_NODEPORT_HOST=${NODE_IP}
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
-                            mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
+                           
+                            mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
 
+                            if [ -z "${mt_private_ip}" ]; then
+                               echo "Mount Target was not setup properly , clean up Kubernetes cluster"
+                               sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+                               exit -1
+                            fi
                             export NFS_SERVER=$mt_private_ip
                             export FSS_DIR=${FSS_DIR}
                             echo "Using NFS Server ${NFS_SERVER}"
