@@ -57,7 +57,7 @@ public class RestBackendImpl implements RestBackend {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String NEW_CLUSTER_REPLICAS =
-      "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
+      "{'clusterName':'%s','replicas':%d}".replace("'", "\"");
   private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test

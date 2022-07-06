@@ -351,6 +351,9 @@ class RestBackendImplTest {
   void whenPerClusterResourceNotFound_updateClusterSpecOfDomain() {
     final String cluster1 = "cluster1";
     configureCluster(cluster1).withReplicas(2);
+    for (String name : new String[]{"cluster2", "cluster3", "cluster4"}) {
+      testSupport.defineResources(createClusterResource(DOMAIN2, NS, name));
+    }
 
     restBackend.scaleCluster(DOMAIN1, cluster1, 4);
 
@@ -372,6 +375,12 @@ class RestBackendImplTest {
 
     assertThrows(WebApplicationException.class,
             () -> restBackend.scaleCluster(DOMAIN1, cluster1, 10));
+  }
+
+  @Test
+  void whenScalingAndDomainNotFound_throwException() {
+    assertThrows(WebApplicationException.class,
+            () -> restBackend.scaleCluster(DOMAIN3, "cluster1", 4));
   }
 
   private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
