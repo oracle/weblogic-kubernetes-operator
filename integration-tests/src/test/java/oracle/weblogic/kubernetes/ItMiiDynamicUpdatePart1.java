@@ -67,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part1")
 @IntegrationTest
+@Tag("oke-sequential")
 class ItMiiDynamicUpdatePart1 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();

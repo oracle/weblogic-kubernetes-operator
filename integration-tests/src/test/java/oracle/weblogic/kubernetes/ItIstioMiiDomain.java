@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -78,6 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItIstioMiiDomain {
 
   private static String opNamespace = null;
@@ -346,6 +348,7 @@ class ItIstioMiiDomain {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1LocalObjectReference()

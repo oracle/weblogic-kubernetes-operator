@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static java.nio.file.Files.createDirectories;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -289,6 +290,7 @@ public class PersistentVolumeUtils {
     V1Container container = new V1Container()
         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
         .addCommandItem("/bin/sh")
         .addArgsItem("-c")
         .addArgsItem(argCommand)

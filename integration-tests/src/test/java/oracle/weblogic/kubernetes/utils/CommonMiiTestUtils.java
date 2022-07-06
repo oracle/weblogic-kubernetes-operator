@@ -60,7 +60,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -273,6 +272,7 @@ public class CommonMiiTestUtils {
             .domainUid(domainResourceName)
             .domainHomeSourceType("FromModel")
             .image(imageName)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
@@ -516,6 +516,7 @@ public class CommonMiiTestUtils {
                     .domainUid(domainResourceName)
                     .domainHomeSourceType("FromModel")
                     .image(imageName)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .webLogicCredentialsSecret(new V1LocalObjectReference()
                             .name(adminSecretName))
                     .includeServerOutInPodLog(true)
@@ -682,6 +683,7 @@ public class CommonMiiTestUtils {
         .domainHomeSourceType("FromModel")
         .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
             .name(repoSecretName))
         .webLogicCredentialsSecret(new V1LocalObjectReference()
@@ -1411,7 +1413,7 @@ public class CommonMiiTestUtils {
           String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
           managedServerPodName, domainNamespace)));
     }
-    String imagePullPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
+    String imagePullPolicy = "IfNotPresent";
     // create patch string
     StringBuffer patchStr = new StringBuffer("[")
         .append("{\"op\":  \"" + addOrReplace + "\",")
@@ -1616,6 +1618,7 @@ public class CommonMiiTestUtils {
             .domainHome("/u01/domains/" + domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1LocalObjectReference()
@@ -1728,6 +1731,7 @@ public class CommonMiiTestUtils {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1LocalObjectReference()

@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -60,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to Create a FMW Dynamic Domain with Dynamic Cluster using model in image")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItFmwDynamicClusterMiiDomain {
 
   private static String dbNamespace = null;

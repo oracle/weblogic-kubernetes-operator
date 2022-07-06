@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -82,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test sticky sessions management with Traefik and ClusterService")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItStickySession {
 
   // constants for creating domain image using model in image
@@ -336,6 +339,7 @@ class ItStickySession {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1LocalObjectReference()

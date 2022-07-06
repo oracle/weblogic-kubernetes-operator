@@ -17,6 +17,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify the sample-app app can be accessed from "
     + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItOCILoadBalancer {
   // domain constants
   private static final int replicaCount = 2;
