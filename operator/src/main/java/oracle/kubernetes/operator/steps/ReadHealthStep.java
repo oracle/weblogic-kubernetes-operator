@@ -218,9 +218,13 @@ public class ReadHealthStep extends Step {
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       try {
         HealthResponseProcessing responseProcessing = new HealthResponseProcessing(packet, response);
+        LOGGER.info("DEBUG: Before responseProcessing.recordStateAndHealth");
         responseProcessing.recordStateAndHealth();
+        LOGGER.info("DEBUG: After responseProcessing.recordStateAndHealth");
         responseProcessing.resetHttpRequestFailureCount();
+        LOGGER.info("DEBUG: After responseProcessing.resetHttpRequestFailureCount");
         decrementIntegerInPacketAtomically(packet, REMAINING_SERVERS_HEALTH_TO_READ);
+        LOGGER.info("DEBUG: After responseProcessing.decrementIntegerInPacketAtomically");
 
         return doNext(packet);
       } catch (Throwable t) {
@@ -265,7 +269,11 @@ public class ReadHealthStep extends Step {
       }
 
       void recordFailedStateAndHealth() {
+        LOGGER.info("DEBUG: In recordFailedStateAndHealth, before increment, getServerName() is "
+            + getServerName());
         getDomainPresenceInfo().incerementHttpRequestFailureCount(getServerName());
+        LOGGER.info("DEBUG: In recordFailedStateAndHealth, after increment, getServerName() is "
+            + getServerName());
         recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
       }
 
@@ -386,6 +394,7 @@ public class ReadHealthStep extends Step {
       }
 
       public void resetHttpRequestFailureCount() {
+        LOGGER.info("DEBUG: In resetHttpRequestFailureCount, getServerName() is " + getServerName());
         getDomainPresenceInfo().setHttpRequestFailureCount(getServerName(), 0);
       }
     }
