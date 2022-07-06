@@ -47,25 +47,16 @@ pipeline {
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
+
+        MASTER_DEPLOY_ENV = "TEST" // Likely set as a pipeline parameter
+        RELEASE_DEPLOY_ENV = "PROD" // Likely set as a pipeline parameter
+        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mtcluster' : 'mkcluster'}
+        MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}
+        availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'
+        PARALLEL_RUN = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? true : false
     }
 
     parameters {
-        choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are oke-parallel (the default), integration-tests, oke-cert, and oke-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                choices: [
-                        'oke-parallel',
-                        'oke-cert',
-                        'oke-sequential',
-                        'integration-tests'
-                ]
-        )
-        choice(name: 'CLUSTER_NAME',
-                        description: 'Name for OKE cluster to create.  Possible values are mtcluster for oke-parallel run, mkcluster for oke-sequential run. ',
-                        choices: [
-                                'mtcluster',
-                                'mkcluster'
-                        ]
-                )
 
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
@@ -92,10 +83,7 @@ pipeline {
                description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
                defaultValue: '1.10.4'
         )
-        booleanParam(name: 'PARALLEL_RUN',
-                     description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
-                     defaultValue: true
-        )
+
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
                defaultValue: "3"

@@ -147,6 +147,11 @@ mt_privateip_id=`oci fs mount-target  list --compartment-id=$compartment_ocid  -
 echo "getting MountTarget IP for MountTarget private ip id ${mt_privateip_id} "
 mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
 
+if [ -z ${mt_private_ip} ]; then
+   echo "Mount Target was not setup properly , clean up Kubernetes cluster"
+   sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+   exit -1
+fi
 echo "MountTarget private ip id ${mt_private_ip} "
 export NFS_SERVER=$mt_private_ip
 echo "Using NFS Server ${NFS_SERVER}"
