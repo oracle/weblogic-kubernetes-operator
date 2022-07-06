@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -75,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test implicit upgrade of auximage domain resource with api version v8")
 @IntegrationTest
+@Tag("oke-sequential")
 class ItAuxV8DomainImplicitUpgrade {
   private static String opNamespace = null;
   private static String domainNamespace = null;

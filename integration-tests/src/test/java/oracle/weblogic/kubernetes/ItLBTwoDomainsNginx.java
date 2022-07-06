@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -54,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify Nginx load balancer handles traffic to two background WebLogic domains")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItLBTwoDomainsNginx {
 
   private static final int numberOfDomains = 2;
