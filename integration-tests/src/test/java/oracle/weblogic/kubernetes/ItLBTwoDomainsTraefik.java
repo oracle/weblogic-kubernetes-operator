@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -45,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify a single operator manages multiple WebLogic domains with a single Traefik fronted loadbalancer")
 @IntegrationTest
+@Tag("olcne")
 class ItLBTwoDomainsTraefik {
 
   private static final int numberOfDomains = 2;

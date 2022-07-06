@@ -80,6 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
+@Tag("olcne")
 class ItMiiMultiModel {
 
   private static String domainNamespace = null;

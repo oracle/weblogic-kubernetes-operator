@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -70,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
+@Tag("olcne")
 class ItSessionMigration {
 
   // constants for creating domain image using model in image

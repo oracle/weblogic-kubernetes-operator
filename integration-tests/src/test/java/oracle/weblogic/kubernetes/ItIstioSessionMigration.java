@@ -16,6 +16,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -38,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("Test WLS Session Migration via istio enabled")
 @IntegrationTest
+@Tag("olcne")
 class ItIstioSessionMigration {
 
   private static String opNamespace = null;

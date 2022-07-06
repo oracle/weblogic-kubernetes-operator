@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
@@ -75,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 @DisabledOnSlimImage
+@Tag("olcne")
 class ItRemoteConsole {
 
   private static String domainNamespace = null;

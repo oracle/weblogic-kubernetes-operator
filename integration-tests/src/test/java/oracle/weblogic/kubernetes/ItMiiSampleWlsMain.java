@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("samples")
+@Tag("olcne")
 class ItMiiSampleWlsMain {
 
   private static ItMiiSampleHelper myItMiiSampleHelper = null;

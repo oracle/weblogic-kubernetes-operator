@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -105,6 +106,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test external RMI access through loadbalncer tunneling")
 @IntegrationTest
 @DisabledOnSlimImage
+@Tag("olcne")
 class ItExternalLbTunneling {
 
   private static String opNamespace = null;

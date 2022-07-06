@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
+@Tag("olcne")
 class ItMiiDynamicUpdatePart2 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();

@@ -82,6 +82,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
+@Tag("olcne")
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];

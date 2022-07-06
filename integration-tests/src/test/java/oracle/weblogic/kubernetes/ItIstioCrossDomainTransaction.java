@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -82,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
+@Tag("olcne")
 class ItIstioCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";

@@ -39,6 +39,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -92,6 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
+@Tag("olcne")
 class ItOperatorFmwUpgrade {
 
   private static String opNamespace = null;
