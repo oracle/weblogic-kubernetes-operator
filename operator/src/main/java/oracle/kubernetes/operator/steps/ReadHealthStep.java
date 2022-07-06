@@ -271,7 +271,8 @@ public class ReadHealthStep extends Step {
       void recordFailedStateAndHealth() {
         LOGGER.info("DEBUG: In recordFailedStateAndHealth, before increment, getServerName() is "
             + getServerName());
-        getDomainPresenceInfo().incerementHttpRequestFailureCount(getServerName());
+        Optional.ofNullable(getServerName())
+            .ifPresent(s -> getDomainPresenceInfo().incerementHttpRequestFailureCount(s));
         LOGGER.info("DEBUG: In recordFailedStateAndHealth, after increment, getServerName() is "
             + getServerName());
         recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
@@ -395,7 +396,8 @@ public class ReadHealthStep extends Step {
 
       public void resetHttpRequestFailureCount() {
         LOGGER.info("DEBUG: In resetHttpRequestFailureCount, getServerName() is " + getServerName());
-        getDomainPresenceInfo().setHttpRequestFailureCount(getServerName(), 0);
+        Optional.ofNullable(getServerName())
+            .ifPresent(s -> getDomainPresenceInfo().setHttpRequestFailureCount(s, 0));
       }
     }
   }

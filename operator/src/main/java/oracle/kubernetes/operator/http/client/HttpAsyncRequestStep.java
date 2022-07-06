@@ -152,15 +152,17 @@ public class HttpAsyncRequestStep extends Step {
           + getDomainPresenceInfo().isServerPodBeingDeleted(getServerName()));
       LOGGER.info("DEBUG: podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(getServerName()) is "
               + podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(getServerName())));
-      return getDomainPresenceInfo().isServerPodBeingDeleted(getServerName())
-          || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(getServerName()));
+      return Optional.ofNullable(getServerName()).map(s -> getDomainPresenceInfo().isServerPodBeingDeleted(s)
+          || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(s))).orElse(false);
     }
 
     private boolean failureCountExceedsThreshold() {
       LOGGER.info("DEBUG: getDomainPresenceInfo().getHttpRequestFailureCount(getServerName()) is "
           + getDomainPresenceInfo().getHttpRequestFailureCount(getServerName()));
       LOGGER.info("DEBUG: getHttpRequestFailureThreshold() is " + getHttpRequestFailureThreshold());
-      return getDomainPresenceInfo().getHttpRequestFailureCount(getServerName()) > getHttpRequestFailureThreshold();
+      return Optional.ofNullable(getServerName())
+          .map(s -> getDomainPresenceInfo().getHttpRequestFailureCount(s) > getHttpRequestFailureThreshold())
+          .orElse(false);
     }
 
     private DomainPresenceInfo getDomainPresenceInfo() {
