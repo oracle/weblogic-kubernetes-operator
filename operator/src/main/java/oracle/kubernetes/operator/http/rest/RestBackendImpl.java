@@ -282,8 +282,11 @@ public class RestBackendImpl implements RestBackend {
   private Optional<ClusterResource> getClusterResource(String domainUid, String clusterName) {
     authorize(null, Operation.LIST);
 
-    return getClusterStream().filter(c -> (clusterName.equals(c.getClusterName())
-            && domainUid.equals(c.getDomainUid()))).findFirst();
+    return getClusterStream().filter(c -> isMatchingClusterResource(domainUid, clusterName, c)).findFirst();
+  }
+
+  private boolean isMatchingClusterResource(String domainUid, String clusterName, ClusterResource c) {
+    return clusterName.equals(c.getClusterName()) && domainUid.equals(c.getDomainUid());
   }
 
   @Override

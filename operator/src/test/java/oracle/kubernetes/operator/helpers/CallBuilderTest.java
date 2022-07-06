@@ -91,6 +91,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -331,6 +332,14 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void listClusters_returnsNull() throws ApiException {
+    defineHttpGetResponse(CLUSTER_RESOURCE, (Object) null);
+
+    assertThat(callBuilder.listCluster(NAMESPACE), nullValue());
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void listClusterAsync_returnsClusters() throws InterruptedException {
     ClusterResource cluster1 = new ClusterResource();
     ClusterResource cluster2 = new ClusterResource();
@@ -394,19 +403,38 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void patchClusterResource_returnsResource() throws ApiException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
+    String resourceName = UID + "-cluster1";
     ClusterResource resource = new ClusterResource()
-            .withMetadata(createMetadata().name(UID + "-cluster1"))
+            .withMetadata(createMetadata().name(resourceName))
             .withReplicas(5);
     defineHttpPatchResponse(
-            CLUSTER_RESOURCE, UID, resource, requestBody::set);
+            CLUSTER_RESOURCE, resourceName, resource, requestBody::set);
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     patchBuilder.add("/spec/replicas", 5);
 
-    ClusterResource received = callBuilder.patchCluster(UID, NAMESPACE, new V1Patch(patchBuilder.build().toString()));
+    ClusterResource received = callBuilder.patchCluster(resourceName, NAMESPACE,
+            new V1Patch(patchBuilder.build().toString()));
 
     assertThat(received, equalTo(resource));
   }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchMissingClusterResource_returnsNull() throws ApiException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    defineHttpPatchResponse(
+            CLUSTER_RESOURCE, UID + "-cluster1", null, requestBody::set);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+
+    ClusterResource received = callBuilder.patchCluster(UID + "-cluster1", NAMESPACE,
+            new V1Patch(patchBuilder.build().toString()));
+
+    assertThat(received, nullValue());
+  }
+
 
   @Test
   @ResourceLock(value = "server")

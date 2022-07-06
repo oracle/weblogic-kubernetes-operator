@@ -426,13 +426,6 @@ public class WeblogicApi extends CustomObjectsApi {
     public void onDownloadProgress(long l, long l1, boolean b) {
       clusterListApiCallback.onDownloadProgress(l, l1, b);
     }
-
-    private ClusterList toClusterList(Object o) {
-      if (o == null) {
-        return null;
-      }
-      return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterList.class);
-    }
   }
 
   private class DomainListApiCallbackWrapper implements ApiCallback<Object> {
