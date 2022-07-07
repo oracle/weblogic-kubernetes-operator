@@ -169,8 +169,6 @@ public class MessageKeys {
   public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
   public static final String WATCH_CLUSTER = "WLSKO-0228";
   public static final String WATCH_CLUSTER_DELETED = "WLSKO-0229";
-  public static final String NULL_CLUSTER_NAME = "WLSKO-0230";
-  public static final String MATCHING_CLUSTER_NOT_FOUND = "WLSKO-0231";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
