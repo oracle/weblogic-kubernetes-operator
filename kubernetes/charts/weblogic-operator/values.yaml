@@ -127,7 +127,7 @@ createLogStashConfigMap: true
 # javaLoggingLevel specifies the Java logging level for the operator. This affects the operator pod's
 # log output and the contents of log files in the container's /logs/ directory.
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
-javaLoggingLevel: "FINE"
+javaLoggingLevel: "INFO"
 
 # javaLoggingFileSizeLimit specifies the maximum size in bytes for an individual Java logging file in the operator container's
 # /logs/ directory.
