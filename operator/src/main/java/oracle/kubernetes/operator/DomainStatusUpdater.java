@@ -259,7 +259,7 @@ public class DomainStatusUpdater {
    * @param next the next step to run. May be null.
    */
   public static Step createTopologyMismatchFailureSteps(String message, Step next) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
   }
 
   /**
@@ -1295,6 +1295,7 @@ public class DomainStatusUpdater {
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
         addFailure(status, status.createAdjustedFailedCondition(reason, message));
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
       }
