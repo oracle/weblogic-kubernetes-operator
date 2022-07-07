@@ -135,7 +135,7 @@ For a non-OpenShift environment:
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-For an OpenShift environment, you do need to label the namespace for Istio sidecar injection, instead add the following
+For an OpenShift environment, you do not need to label the namespace for Istio sidecar injection, instead add the following
 annotation at the pod level in the domain resource.  
 
 ```
@@ -150,7 +150,7 @@ spec:
 
 ##### Configuring the domain resource
 
-Beginning with WebLogic Kubernetes Operator release 4.0, you longer have to provide the `domain.spec.configuration.istio` section to
+Beginning with WebLogic Kubernetes Operator release 4.0, you no longer have to provide the `domain.spec.configuration.istio` section to
 enable Istio support for a domain.  Enabling the sidecar injection at the namespace level alone or annotation at `serverPod`
 level for OpenShift is sufficient.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
 
