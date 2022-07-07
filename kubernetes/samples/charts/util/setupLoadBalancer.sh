@@ -292,7 +292,6 @@ createNginx() {
       $(cat ${ingressPropFile} 2>&- || false ) \
       --set "controller.admissionWebhooks.enabled=false" \
       --namespace ${ns} --version ${release} \
-      --set "controller.image.pullPolicy=IfNotPresent" \
       --set "controller.image.tag=v1.2.0" 
     if [ $? != 0 ]; then
      printError "Helm installation of the Nginx ingress controller failed."

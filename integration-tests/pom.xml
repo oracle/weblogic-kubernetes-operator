@@ -410,66 +410,14 @@
             <id>oke-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItT3Channel,
-                    **/ItAuxV8DomainImplicitUpgrade,
-                    **/ItOperatorFmwUpgrade,
-                    **/ItOperatorWlsUpgrade,
-                    **/ItFmwDynamicDomainInPV,
-                    **/ItFmwDomainInPVUsingWDT,
-                    **/ItIntrospectVersion,
-                    **/ItIstioDBOperator,
-                    **/ItDBOperator,
-                    **/ItMiiDynamicUpdatePart1,
-                    **/ItMiiDynamicUpdatePart2,
-                    **/ItMiiDynamicUpdatePart3,
-                    **/ItInitContainers,
-                    **/ItMiiSampleFmwMain
-                </includes-failsafe>
+                <groups>oke-sequential</groups>
             </properties>
         </profile>
         <profile>
             <id>oke-parallel</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItMultiDomainModels,
-                    **/ItServerStartPolicy,
-                    **/ItServiceStartPolicyDynamicCluster,
-                    **/ItServerStartPolicyConfigCluster,
-                    **/ItMiiUpdateDomainConfig,
-                    **/ItStickySession,
-                    **/ItSessionMigration,
-                    **/ItIstioTwoDomainsInImage,
-                    **/ItPodsRestart,
-                    **/ItUsabilityOperatorHelmChart,
-                    **/ItOperatorRestart,
-                    **/ItPodsShutdownOption,
-                    **/ItOCILoadBalancer,
-                    **/ItManageNameSpace,
-                    **/ItMiiDomainModelInPV,
-                    **/ItMiiSampleFmwAux,
-                    **/ItMiiCreateAuxImageWithImageTool,
-                    **/ItMiiDomain,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiMultiModel,
-                    **/ItLivenessProbeCustomization,
-                    **/ItLogHomeFlatStructure,
-                    **/ItSystemResOverrides,
-                    **/ItManagedCoherence,
-                    **/ItFmwDynamicClusterMiiDomain,
-                    **/ItIstioProductionSecureMode,
-                    **/ItIstioDomainInImage,
-                    **/ItDiagnosticsCompleteAvailableCondition,
-                    **/ItIstioCoherenceTests,
-                    **/ItIstioMiiDomain,
-                    **/ItIstioGatewaySessionMigration,
-                    **/ItElasticLogging,
-                    **/ItRemoteConsole,
-                    **/ItKubernetesNameSpaceWatchingEvents,
-                    **/ItIstioSessionMigration,
-                    **/ItIstioDomainInPV
-                </includes-failsafe>
+                <groups>oke-parallel</groups>
             </properties>
         </profile>
         <profile>

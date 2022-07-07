@@ -39,6 +39,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -92,6 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
+@Tag("oke-sequential")
 class ItOperatorFmwUpgrade {
 
   private static String opNamespace = null;
@@ -420,7 +422,7 @@ class ItOperatorFmwUpgrade {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)
+            .domainHome("/shared/" + domainNamespace + "domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -431,7 +433,7 @@ class ItOperatorFmwUpgrade {
                 .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("v8".equals(domainVersion) ? "IF_NEEDED" : "IfNeeded")
             .serverPod(new ServerPod()
@@ -512,7 +514,7 @@ class ItOperatorFmwUpgrade {
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/domains/");
+    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/" + domainUid + "/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
