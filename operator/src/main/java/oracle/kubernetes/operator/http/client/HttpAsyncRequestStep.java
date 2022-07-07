@@ -145,8 +145,12 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private boolean isServerShuttingDown() {
-      return Optional.ofNullable(getServerName()).map(s -> getDomainPresenceInfo().isServerPodBeingDeleted(s)
-          || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(s))).orElse(false);
+      return Optional.ofNullable(getServerName()).map(serverName -> isShuttingDown(serverName)).orElse(false);
+    }
+
+    private boolean isShuttingDown(String serverName) {
+      return getDomainPresenceInfo().isServerPodBeingDeleted(serverName)
+          || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(serverName));
     }
 
     private boolean failureCountExceedsThreshold() {
