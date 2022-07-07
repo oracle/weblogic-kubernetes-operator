@@ -108,10 +108,9 @@ install_wdt() {
     count=`expr $count + 1`
     for proxy in "${https_proxy}" "${https_proxy2}"; do
 	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
-	  echo @@ "Info: calling curl: curl --silent --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE"
+	  echo @@ "Info: calling curl: curl --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE"
 	  https_proxy="${proxy}" \
-	    #curl --silent --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
-	    curl --show-error --connect-timeout 5 -L $WDT_INSTALL_ZIP_URL --output $WDT_INSTALL_ZIP_FILE
+	    curl --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
 	  curl_res=$?
 	  [ $curl_res -eq 0 ] && break
 	done
