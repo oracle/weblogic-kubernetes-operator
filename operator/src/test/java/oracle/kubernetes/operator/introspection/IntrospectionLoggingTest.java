@@ -54,7 +54,7 @@ class IntrospectionLoggingTest {
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private final TerminalStep terminalStep = new TerminalStep();
   private final V1Job introspectorJob
-      = new V1Job().metadata(new V1ObjectMeta().uid(UID)); //.status(IntrospectionTestUtils.createCompletedStatus());
+      = new V1Job().metadata(new V1ObjectMeta().uid(UID)).status(IntrospectionTestUtils.createCompletedStatus());
 
   @BeforeEach
   public void setUp() throws Exception {
