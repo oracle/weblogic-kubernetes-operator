@@ -145,7 +145,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private boolean isServerShuttingDown() {
-      return Optional.ofNullable(getServerName()).map(serverName -> isShuttingDown(serverName)).orElse(false);
+      return Optional.ofNullable(getServerName()).map(this::isShuttingDown).orElse(false);
     }
 
     private boolean isShuttingDown(String serverName) {
