@@ -251,6 +251,10 @@ class ItOperatorWlsUpgrade {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
       Command
+              .withParams(new CommandParams()
+                      .command("kubectl patch crd/domains.weblogic.oracle -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+              .execute();
+      Command
           .withParams(new CommandParams()
               .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
           .execute();
