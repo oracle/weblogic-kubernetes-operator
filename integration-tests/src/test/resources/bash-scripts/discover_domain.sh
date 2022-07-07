@@ -81,33 +81,7 @@ export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 WDT_DIR=${WDT_DIR:-/u01/wdt}
-if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
-  curl_res=1
-  max=20
-  count=0
-  while [ $curl_res -ne 0 -a $count -lt $max ] ; do
-    sleep 1
-    for proxy in "${https_proxy2}" "${https_proxy}"; do
-      echo @@ "Info: Getting latest release WDT url with https_proxy=\"$proxy\""
-      https_proxy="${proxy}" \
-        curl -Ls -w %{url_effective} --connect-timeout 30 -o /dev/null \
-          https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
-      curl_res=$?
-      if [ $curl_res -eq 0 ]; then
-        echo "Got URL $(cat out)"
-        WDT_BASE_URL=$(cat out | sed -e "s/tag/download/g")
-        rm out
-        break
-      fi
-    done
-  done
-else
-WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION"
-fi
-
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"$WDT_BASE_URL/$WDT_INSTALL_ZIP_FILE"}
-
 DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 TARGET_TYPE="${TARGET_TYPE:-wko}"
 
@@ -134,8 +108,10 @@ install_wdt() {
     count=`expr $count + 1`
     for proxy in "${https_proxy}" "${https_proxy2}"; do
 	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
+	  echo @@ "Info: calling curl: curl --silent --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE"
 	  https_proxy="${proxy}" \
-	    curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
+	    #curl --silent --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
+	    curl --show-error --connect-timeout 5 -L $WDT_INSTALL_ZIP_URL --output $WDT_INSTALL_ZIP_FILE
 	  curl_res=$?
 	  [ $curl_res -eq 0 ] && break
 	done
