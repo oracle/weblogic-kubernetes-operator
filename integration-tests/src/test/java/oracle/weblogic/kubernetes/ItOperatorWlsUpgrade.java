@@ -252,7 +252,8 @@ class ItOperatorWlsUpgrade {
       CleanupUtil.cleanup(namespaces);
       Command
               .withParams(new CommandParams()
-                      .command("kubectl patch crd/domains.weblogic.oracle -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+                      .command("kubectl patch crd/domains.weblogic.oracle"
+                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
               .execute();
       Command
           .withParams(new CommandParams()
