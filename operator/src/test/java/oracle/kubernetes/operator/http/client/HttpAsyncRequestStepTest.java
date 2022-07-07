@@ -39,6 +39,8 @@ import static oracle.kubernetes.common.logging.MessageKeys.HTTP_REQUEST_GOT_THRO
 import static oracle.kubernetes.common.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -53,8 +55,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class HttpAsyncRequestStepTest {
 
   public static final String MANAGED_SERVER1 = "ms1";
-  public static final String NS = "test";
-  public static final String DOMAIN_UID = "test";
   private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
   private final Packet packet = new Packet();
   private final List<Memento> mementos = new ArrayList<>();
@@ -139,14 +139,9 @@ class HttpAsyncRequestStepTest {
 
   @Test
   void whenThrowableResponseReceivedAndServerNotShuttingDownAndFailureCountExceedsThreshold_logMessage() {
-    consoleMemento
-        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
-        .withLogLevel(Level.WARNING);
-    packet.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
-    DomainPresenceInfo info = new DomainPresenceInfo("test", "test");
-    info.setServerPod(MANAGED_SERVER1, new V1Pod().metadata(new V1ObjectMeta()));
-    info.setHttpRequestFailureCount(MANAGED_SERVER1, 11);
-    info.addToPacket(packet);
+    collectHttpWarningMessage();
+    createDomainPresenceInfo(new V1Pod().metadata(new V1ObjectMeta()), 11).addToPacket(packet);
+
     final NextAction nextAction = requestStep.apply(packet);
 
     completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
@@ -154,14 +149,24 @@ class HttpAsyncRequestStepTest {
     assertThat(logRecords, containsWarning(HTTP_REQUEST_GOT_THROWABLE));
   }
 
-  @Test
-  void whenThrowableResponseReceivedAndPodBeingDeletedByOperator_dontLogMessage() {
+  private DomainPresenceInfo createDomainPresenceInfo(V1Pod msPod, int httpRequestFailureCount) {
+    packet.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
+    DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
+    info.setServerPod(MANAGED_SERVER1, msPod);
+    info.setHttpRequestFailureCount(MANAGED_SERVER1, httpRequestFailureCount);
+    return info;
+  }
+
+  private void collectHttpWarningMessage() {
     consoleMemento
         .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
         .withLogLevel(Level.WARNING);
-    packet.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
-    DomainPresenceInfo info = new DomainPresenceInfo(NS, DOMAIN_UID);
-    info.setServerPod(MANAGED_SERVER1, new V1Pod().metadata(new V1ObjectMeta()));
+  }
+
+  @Test
+  void whenThrowableResponseReceivedAndPodBeingDeletedByOperator_dontLogMessage() {
+    collectHttpWarningMessage();
+    DomainPresenceInfo info = createDomainPresenceInfo(new V1Pod().metadata(new V1ObjectMeta()), 0);
     info.setServerPodBeingDeleted(MANAGED_SERVER1, true);
     info.addToPacket(packet);
     final NextAction nextAction = requestStep.apply(packet);
@@ -173,14 +178,9 @@ class HttpAsyncRequestStepTest {
 
   @Test
   void whenThrowableResponseReceivedAndPodHasDeletionTimestamp_dontLogMessage() {
-    consoleMemento
-        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
-        .withLogLevel(Level.WARNING);
-    packet.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
-    DomainPresenceInfo info = new DomainPresenceInfo(NS, DOMAIN_UID);
-    info.setServerPod(MANAGED_SERVER1, new V1Pod()
-        .metadata(new V1ObjectMeta().deletionTimestamp(OffsetDateTime.now())));
-    info.addToPacket(packet);
+    collectHttpWarningMessage();
+    createDomainPresenceInfo(new V1Pod()
+        .metadata(new V1ObjectMeta().deletionTimestamp(OffsetDateTime.now())), 0).addToPacket(packet);
     final NextAction nextAction = requestStep.apply(packet);
 
     completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
@@ -190,13 +190,8 @@ class HttpAsyncRequestStepTest {
 
   @Test
   void whenThrowableResponseReceivedServerNotShuttingDownAndFailureCountLowerThanThreshold_dontLogMessage() {
-    consoleMemento
-        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
-        .withLogLevel(Level.WARNING);
-    packet.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
-    DomainPresenceInfo info = new DomainPresenceInfo(NS, DOMAIN_UID);
-    info.setServerPod(MANAGED_SERVER1, new V1Pod().metadata(new V1ObjectMeta()));
-    info.addToPacket(packet);
+    collectHttpWarningMessage();
+    createDomainPresenceInfo(new V1Pod().metadata(new V1ObjectMeta()), 0).addToPacket(packet);
     final NextAction nextAction = requestStep.apply(packet);
 
     completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));

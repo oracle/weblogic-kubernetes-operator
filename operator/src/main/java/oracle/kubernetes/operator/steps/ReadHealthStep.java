@@ -266,7 +266,7 @@ public class ReadHealthStep extends Step {
 
       void recordFailedStateAndHealth() {
         Optional.ofNullable(getServerName())
-            .ifPresent(s -> getDomainPresenceInfo().incerementHttpRequestFailureCount(s));
+            .ifPresent(s -> getDomainPresenceInfo().incrementHttpRequestFailureCount(s));
         recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
       }
 
