@@ -217,7 +217,9 @@ public class ReadHealthStep extends Step {
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       try {
-        new HealthResponseProcessing(packet, response).recordStateAndHealth();
+        HealthResponseProcessing responseProcessing = new HealthResponseProcessing(packet, response);
+        responseProcessing.recordStateAndHealth();
+        responseProcessing.resetHttpRequestFailureCount();
         decrementIntegerInPacketAtomically(packet, REMAINING_SERVERS_HEALTH_TO_READ);
 
         return doNext(packet);
@@ -246,7 +248,6 @@ public class ReadHealthStep extends Step {
       return doNext(packet);
     }
 
-
     static class HealthResponseProcessing {
       private final String serverName;
       private final Packet packet;
@@ -264,6 +265,8 @@ public class ReadHealthStep extends Step {
       }
 
       void recordFailedStateAndHealth() {
+        Optional.ofNullable(getServerName())
+            .ifPresent(s -> getDomainPresenceInfo().incrementHttpRequestFailureCount(s));
         recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
       }
 
@@ -381,6 +384,11 @@ public class ReadHealthStep extends Step {
 
       Packet getPacket() {
         return packet;
+      }
+
+      public void resetHttpRequestFailureCount() {
+        Optional.ofNullable(getServerName())
+            .ifPresent(s -> getDomainPresenceInfo().setHttpRequestFailureCount(s, 0));
       }
     }
   }
