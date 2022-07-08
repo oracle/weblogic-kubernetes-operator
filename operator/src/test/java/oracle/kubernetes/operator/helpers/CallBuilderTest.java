@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -90,6 +91,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -304,7 +306,7 @@ class CallBuilderTest {
     DomainResource domain
         = new DomainResource().withMetadata(createMetadata()).withSpec(new DomainSpec().withReplicas(5));
     defineHttpPatchResponse(
-        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(json));
+        DOMAIN_RESOURCE, UID, domain, requestBody::set);
 
     KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -317,6 +319,23 @@ class CallBuilderTest {
     DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listClusters_returnsList() throws ApiException {
+    ClusterList list = new ClusterList().withItems(Arrays.asList(new ClusterResource(), new ClusterResource()));
+    defineHttpGetResponse(CLUSTER_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    assertThat(callBuilder.withFieldSelector("xxx").listCluster(NAMESPACE), equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listClusters_returnsNull() throws ApiException {
+    defineHttpGetResponse(CLUSTER_RESOURCE, (Object) null);
+
+    assertThat(callBuilder.listCluster(NAMESPACE), nullValue());
   }
 
   @Test
@@ -362,7 +381,7 @@ class CallBuilderTest {
     cluster1.setKind(myKind);
     cluster1.setApiVersion(apiVersion);
 
-    ClusterList list = new ClusterList().withItems(Arrays.asList(cluster1));
+    ClusterList list = new ClusterList().withItems(List.of(cluster1));
 
     defineHttpGetResponse(CLUSTER_RESOURCE, list);
 
@@ -379,6 +398,43 @@ class CallBuilderTest {
     assertThat(received.hashCode(), equalTo(cluster1.hashCode()));
     assertThat(received.getStatus(), equalTo(status));
   }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchClusterResource_returnsResource() throws ApiException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    String resourceName = UID + "-cluster1";
+    ClusterResource resource = new ClusterResource()
+            .withMetadata(createMetadata().name(resourceName))
+            .withReplicas(5);
+    defineHttpPatchResponse(
+            CLUSTER_RESOURCE, resourceName, resource, requestBody::set);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+
+    ClusterResource received = callBuilder.patchCluster(resourceName, NAMESPACE,
+            new V1Patch(patchBuilder.build().toString()));
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchMissingClusterResource_returnsNull() throws ApiException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    defineHttpPatchResponse(
+            CLUSTER_RESOURCE, UID + "-cluster1", null, requestBody::set);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+
+    ClusterResource received = callBuilder.patchCluster(UID + "-cluster1", NAMESPACE,
+            new V1Patch(patchBuilder.build().toString()));
+
+    assertThat(received, nullValue());
+  }
+
 
   @Test
   @ResourceLock(value = "server")
@@ -466,7 +522,8 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1Service> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .deleteServiceAsync(service.getMetadata().getName(), NAMESPACE, UID, new DeleteOptions(), responseStep));
+        .deleteServiceAsync(Objects.requireNonNull(service.getMetadata()).getName(),
+                NAMESPACE, UID, new DeleteOptions(), responseStep));
 
     V1Service received = responseStep.waitForAndGetCallResponse().getResult();
 
@@ -529,7 +586,7 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1Secret> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .replaceSecretAsync(secret.getMetadata().getName(), NAMESPACE, secret, responseStep));
+        .replaceSecretAsync(Objects.requireNonNull(secret.getMetadata()).getName(), NAMESPACE, secret, responseStep));
 
     V1Secret received = responseStep.waitForAndGetCallResponse().getResult();
 
@@ -606,7 +663,7 @@ class CallBuilderTest {
     AtomicReference<Object> requestBody = new AtomicReference<>();
     V1Pod resource = new V1Pod().metadata(createMetadata());
     defineHttpPatchResponse(
-        POD_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+        POD_RESOURCE, UID, resource, requestBody::set);
 
     KubernetesTestSupportTest.TestResponseStep<V1Pod> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -627,7 +684,7 @@ class CallBuilderTest {
     AtomicReference<Object> requestBody = new AtomicReference<>();
     V1Pod resource = new V1Pod().metadata(createMetadata());
     defineHttpPatchResponse(
-        POD_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+        POD_RESOURCE, UID, resource, requestBody::set);
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     patchBuilder.add("/spec/replicas", 5);
@@ -647,7 +704,7 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<Object> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .deletePodAsync(resource.getMetadata().getName(),
+        .deletePodAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
             NAMESPACE, UID, new DeleteOptions(), responseStep));
 
     Object received = responseStep.waitForAndGetCallResponse().getResult();
@@ -729,7 +786,7 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .deleteJobAsync(resource.getMetadata().getName(),
+        .deleteJobAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
             NAMESPACE, UID, new DeleteOptions(), responseStep));
 
     V1Status received = responseStep.waitForAndGetCallResponse().getResult();
@@ -791,7 +848,7 @@ class CallBuilderTest {
     AtomicReference<Object> requestBody = new AtomicReference<>();
     V1PodDisruptionBudget resource = new V1PodDisruptionBudget().metadata(createMetadata());
     defineHttpPatchResponse(
-        PDB_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+        PDB_RESOURCE, UID, resource, requestBody::set);
 
     KubernetesTestSupportTest.TestResponseStep<V1PodDisruptionBudget> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -816,7 +873,7 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .deletePodDisruptionBudgetAsync(resource.getMetadata().getName(),
+        .deletePodDisruptionBudgetAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
             NAMESPACE, UID, new DeleteOptions(), responseStep));
 
     V1Status received = responseStep.waitForAndGetCallResponse().getResult();
@@ -913,7 +970,8 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1CustomResourceDefinition> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .replaceCustomResourceDefinitionAsync(resource.getMetadata().getName(), resource, responseStep));
+        .replaceCustomResourceDefinitionAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
+                resource, responseStep));
 
     V1CustomResourceDefinition received = responseStep.waitForAndGetCallResponse().getResult();
 
@@ -976,7 +1034,8 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1ConfigMap> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
-        .replaceConfigMapAsync(resource.getMetadata().getName(), NAMESPACE, resource, responseStep));
+        .replaceConfigMapAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
+                NAMESPACE, resource, responseStep));
 
     V1ConfigMap received = responseStep.waitForAndGetCallResponse().getResult();
 
@@ -989,7 +1048,7 @@ class CallBuilderTest {
     AtomicReference<Object> requestBody = new AtomicReference<>();
     V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
     defineHttpPatchResponse(
-        CM_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+        CM_RESOURCE, UID, resource, requestBody::set);
 
     KubernetesTestSupportTest.TestResponseStep<V1ConfigMap> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -1015,7 +1074,7 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().withGracePeriodSeconds(5)
-        .deleteConfigMapAsync(resource.getMetadata().getName(),
+        .deleteConfigMapAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
             NAMESPACE, UID, new DeleteOptions(), responseStep));
 
     V1Status received = responseStep.waitForAndGetCallResponse().getResult();
@@ -1184,7 +1243,8 @@ class CallBuilderTest {
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder()
         .replaceValidatingWebhookConfigurationAsync(
-            validatingWebhookConfig.getMetadata().getName(), validatingWebhookConfig, responseStep));
+            Objects.requireNonNull(validatingWebhookConfig.getMetadata()).getName(),
+                validatingWebhookConfig, responseStep));
 
     V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
 
@@ -1201,7 +1261,7 @@ class CallBuilderTest {
             .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
     defineHttpPatchResponse(
         VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME,
-        resource, (json) -> requestBody.set(json));
+        resource, requestBody::set);
 
     KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -1229,7 +1289,7 @@ class CallBuilderTest {
     KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().withGracePeriodSeconds(5)
-        .deleteValidatingWebhookConfigurationAsync(resource.getMetadata().getName(),
+        .deleteValidatingWebhookConfigurationAsync(Objects.requireNonNull(resource.getMetadata()).getName(),
             new DeleteOptions(), responseStep));
 
     V1Status received = responseStep.waitForAndGetCallResponse().getResult();
@@ -1285,11 +1345,6 @@ class CallBuilderTest {
   private void defineHttpPostResponse(
       String resourceName, Object response, Consumer<String> bodyValidation) {
     defineResource(resourceName, new JsonPostServlet(response, bodyValidation));
-  }
-
-  private void defineHttpPostResponse(
-      String resourceName, String name, Object response, Consumer<String> bodyValidation) {
-    defineResource(resourceName + "/" + name, new JsonPostServlet(response, bodyValidation));
   }
 
   @SuppressWarnings("unused")
