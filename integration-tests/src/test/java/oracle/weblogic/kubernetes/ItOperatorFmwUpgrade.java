@@ -514,7 +514,7 @@ class ItOperatorFmwUpgrade {
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/" + domainUid + "/");
+    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
