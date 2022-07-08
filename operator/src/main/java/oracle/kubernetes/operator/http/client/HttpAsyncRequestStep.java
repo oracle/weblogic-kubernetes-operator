@@ -11,11 +11,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -122,7 +125,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = getDomainPresenceInfo();
       try (ThreadLoggingContext ignored =
                setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
         if (throwable instanceof HttpTimeoutException) {
@@ -137,6 +140,39 @@ public class HttpAsyncRequestStep extends Step {
       fiber.resume(packet);
     }
 
+    private String getServerName() {
+      return packet.getValue(ProcessingConstants.SERVER_NAME);
+    }
+
+    private boolean isServerShuttingDown() {
+      return Optional.ofNullable(getServerName()).map(this::isShuttingDown).orElse(false);
+    }
+
+    private boolean isShuttingDown(String serverName) {
+      return getDomainPresenceInfo().isServerPodBeingDeleted(serverName)
+          || podHasDeletionTimestamp(getDomainPresenceInfo().getServerPod(serverName));
+    }
+
+    private boolean failureCountExceedsThreshold() {
+      return Optional.ofNullable(getServerName())
+          .map(s -> getDomainPresenceInfo().getHttpRequestFailureCount(s) > getHttpRequestFailureThreshold())
+          .orElse(false);
+    }
+
+    private DomainPresenceInfo getDomainPresenceInfo() {
+      return packet.getSpi(DomainPresenceInfo.class);
+    }
+
+    private int getHttpRequestFailureThreshold() {
+      return TuningParameters.getInstance().getHttpRequestFailureCountThreshold();
+    }
+
+    private boolean podHasDeletionTimestamp(V1Pod serverPod) {
+      return Optional.ofNullable(serverPod).map(V1Pod::getMetadata)
+          .map(m -> m.getDeletionTimestamp() != null)
+          .orElse(false);
+    }
+
     private void recordResponse(HttpResponse<String> response) {
       if (response.statusCode() != HTTP_OK) {
         LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, request.method(), request.uri(), response.statusCode());
@@ -145,7 +181,9 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void recordThrowableResponse(Throwable throwable) {
-      LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
+      if (!isServerShuttingDown() && failureCountExceedsThreshold()) {
+        LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
+      }
       HttpResponseStep.addToPacket(packet, throwable);
     }
   }
