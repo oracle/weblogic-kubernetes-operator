@@ -255,8 +255,14 @@ class ItOperatorWlsUpgrade {
     }
   }
 
-  private void cleanUpCRD() throws io.kubernetes.client.openapi.ApiException {
-    if (doesCrdExist()) {
+  private void cleanUpCRD() {
+    boolean doesCrdExist = false;
+    try {
+      doesCrdExist = doesCrdExist();
+    } catch (io.kubernetes.client.openapi.ApiException ex) {
+      //ignore
+    }
+    if (doesCrdExist) {
       Command
               .withParams(new CommandParams()
                       .command("kubectl patch crd/domains.weblogic.oracle"
