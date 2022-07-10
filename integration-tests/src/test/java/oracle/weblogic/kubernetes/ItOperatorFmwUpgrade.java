@@ -189,7 +189,7 @@ class ItOperatorFmwUpgrade {
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
       CleanupUtil.cleanup(namespaces);
-      assertDoesNotThrow(() -> cleanUpCRD(), "Failed to clean up domains.weblogic.oracle CRD");
+      cleanUpCRD();
     }
   }
 
@@ -254,7 +254,7 @@ class ItOperatorFmwUpgrade {
 
   private HelmParams installOperator(String operatorVersion) {
     // delete existing CRD if any
-    assertDoesNotThrow(() -> cleanUpCRD(), "Failed to clean up domains.weblogic.oracle CRD");
+    cleanUpCRD();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
@@ -585,12 +585,7 @@ class ItOperatorFmwUpgrade {
   }
 
   private void cleanUpCRD() {
-    boolean doesCrdExist = false;
-    try {
-      doesCrdExist = doesCrdExist();
-    } catch (io.kubernetes.client.openapi.ApiException ex) {
-      //ignore
-    }
+    boolean doesCrdExist = doesCrdExist();
     if (doesCrdExist) {
       Command
               .withParams(new CommandParams()

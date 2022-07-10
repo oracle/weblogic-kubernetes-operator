@@ -251,17 +251,13 @@ class ItOperatorWlsUpgrade {
   public void tearDown() {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
-      assertDoesNotThrow(() -> cleanUpCRD(), "Failed to clean up domains.weblogic.oracle CRD");
+      cleanUpCRD();
     }
   }
 
   private void cleanUpCRD() {
-    boolean doesCrdExist = false;
-    try {
-      doesCrdExist = doesCrdExist();
-    } catch (io.kubernetes.client.openapi.ApiException ex) {
-      //ignore
-    }
+    boolean doesCrdExist = doesCrdExist();
+
     if (doesCrdExist) {
       Command
               .withParams(new CommandParams()
@@ -572,7 +568,7 @@ class ItOperatorWlsUpgrade {
   private HelmParams installOperator(String operatorVersion,
       String opNamespace, String domainNamespace) {
     // delete existing CRD if any
-    assertDoesNotThrow(() -> cleanUpCRD(), "Failed to clean up domains.weblogic.oracle CRD");
+    cleanUpCRD();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
