@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1657216332" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1657216332" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1657574516" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1657574516" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1657216332"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1657574516"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1657216332"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1657216332"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1657574516"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1657574516"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1657216332"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1657574516"></script>
 
     
   </div>
@@ -3547,7 +3547,7 @@
 <p>Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.</p>
 </li>
 <li>
-<p>In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/samples/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</p>
+<p>In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/samples/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</p>
 </li>
 <li>
 <p>Create the Kubernetes Secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes Namespace as the domain.</p>
@@ -4024,8 +4024,8 @@ The most likely cause is related to the value of <code>persistentVolumeClaimName
 To determine if this is the problem:</p>
 <pre><code>* Execute `kubectl get all --all-namespaces` to find the name of the `create-weblogic-sample-domain-job`.
 * Execute  `kubectl describe pod &lt;name-of-create-weblogic-sample-domain-job&gt;` to see if there is an event that has text similar to `persistentvolumeclaim &quot;domain1-weblogic-sample-pvc&quot; not found`.
-* Find the name of the PVC that was created by executing [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`.
-* Change the value of `persistentVolumeClaimName` to match the name created when you executed [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh).
+* Find the name of the PVC that was created by executing [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`.
+* Change the value of `persistentVolumeClaimName` to match the name created when you executed [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh).
 * Rerun the `create-domain.sh` script with the same arguments as you did before.
 * Verify that the operator is deployed. Use the command:
 </code></pre>
@@ -6381,19 +6381,19 @@ You will see this message if the directory <code>domains/domain1</code> exists i
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1657216332"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1657574516"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1657216332"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1657216332"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1657574516"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1657574516"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1657216332"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1657574516"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

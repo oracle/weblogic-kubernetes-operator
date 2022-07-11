@@ -12,20 +12,20 @@
     <title>Using OCI File Storage (FSS) for persistent volumes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1657216330" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1657216330" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1657574514" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1657574514" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1657216330"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1657574514"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1657216330"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1657216330"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1657574514"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1657574514"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1657216330"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1657574514"></script>
 
     
   </div>
@@ -3537,7 +3537,7 @@ see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent
 </div>
 
 <h4 id="failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</h4>
-<p>The existing sample for <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv">creation of a domain home on persistent volume</a>
+<p>The existing sample for <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/release/3.4/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv">creation of a domain home on persistent volume</a>
 uses a Kubernetes Job to create the domain. The sample uses an
 <code>initContainers</code> section to change the file ownership which will
 fail for OCI FSS created volumes used with an OKE cluster.</p>
@@ -3565,7 +3565,7 @@ description of the Kubernetes Job pod:</p>
     Restart Count:  0
     Environment:    &lt;none&gt;
 </code></pre><h4 id="updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</h4>
-<p>In the following snippet of the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml">create-domain-job-template.yaml</a>,
+<p>In the following snippet of the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml">create-domain-job-template.yaml</a>,
 you can see the updated <code>command</code> for the init container:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">batch/v1</span>
 <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Job</span>
@@ -5912,19 +5912,19 @@ domain is created on the persistent volume.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1657216330"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1657574514"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1657216330"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1657216330"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1657574514"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1657574514"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1657216330"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1657574514"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

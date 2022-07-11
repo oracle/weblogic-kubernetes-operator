@@ -12,20 +12,20 @@
     <title>Auxiliary images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1657216331" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1657216331" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1657574515" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1657574515" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1657216331"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1657574515"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1657216331"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1657216331"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1657574515"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1657574515"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1657216331"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1657574515"></script>
 
     
   </div>
@@ -3602,7 +3602,7 @@ and <code>kubectl explain domain.spec.serverPod.auxiliaryImages</code> commands.
 <li>
 <p>See the <code>spec.auxiliaryImageVolumes</code> and <code>serverPod.auxiliaryImages</code> sections
 in the domain resource
-<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">schema</a>
+<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/documentation/domains/Domain.md">schema</a>
 and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">documentation</a>.</p>
 </li>
 </ul>
@@ -3612,7 +3612,7 @@ Model in Image use case.</p>
 <h4 id="auxiliary-volumes-and-paths">Auxiliary volumes and paths</h4>
 <p>A domain resource <code>domain.spec.auxiliaryImageVolumes</code>
 auxiliary image volume defines a <code>mountPath</code>, <code>name</code>, plus
-<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image-volume">additional optional fields</a>.
+<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/documentation/domains/Domain.md#auxiliary-image-volume">additional optional fields</a>.
 The <code>mountPath</code> field is the location of a directory in an auxiliary image, and
 is also the location in the main pod container (which will automatically contain
 a recursive copy of the auxiliary image directory). The <code>name</code> field is
@@ -3639,7 +3639,7 @@ the command that is used to merge (copy) the auxiliary image&rsquo;s files
 into the auxiliary image volume during pod startup (this is rarely
 needed, see <a href="#performing-replaces-instead-of-merges">Performing replaces instead of merges</a> for an example).
 For details
-about each field, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image">schema</a>.</p>
+about each field, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/documentation/domains/Domain.md#auxiliary-image">schema</a>.</p>
 <p>A <code>serverPod</code> can be defined at the domain scope, which applies to every pod in
 the domain, plus the introspector job&rsquo;s pod, at a specific WebLogic cluster&rsquo;s scope,
 or at a specific WebLogic Server pod&rsquo;s scope.
@@ -6666,19 +6666,19 @@ section of the initial use case.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1657216331"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1657574515"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1657216331"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1657216331"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1657574515"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1657574515"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1657216331"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1657574515"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
