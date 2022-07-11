@@ -17,7 +17,7 @@ $ kubectl label nodes name=weblogic-pods
 
 In the Domain CR, set a `nodeSelector`: a selector which must match a node's labels for the pod to be scheduled on that node. See `kubectl explain pods.spec.nodeSelector`.
 
-You can set `nodeSelector` labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain. `nodeSelector` is a field under the `serverPod` element, which occurs at several points in the Domain CR [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md):
+You can set `nodeSelector` labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain. `nodeSelector` is a field under the `serverPod` element, which occurs at several points in the Domain CR [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md):
 
 - At the top-level `spec.severPod` for the entire domain
 - At `spec.adminServer.serverPod` for the Administration Server

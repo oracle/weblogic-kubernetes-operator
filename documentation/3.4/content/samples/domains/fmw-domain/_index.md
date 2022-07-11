@@ -33,13 +33,13 @@ The following prerequisites must be met prior to running the create domain scrip
   By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1`
   and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create
   `domain1-weblogic-sample-pvc` using
-  [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh)
+  [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh)
   with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:  
   * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
-  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
+  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
 

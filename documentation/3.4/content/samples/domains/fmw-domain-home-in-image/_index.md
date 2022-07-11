@@ -29,7 +29,7 @@ The following prerequisites must be met prior to running the create domain scrip
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:
   * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
-  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
+  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
 

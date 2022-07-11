@@ -33,13 +33,13 @@ The following prerequisites must be met prior to running the create domain scrip
   By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1`
   and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create
   `domain1-weblogic-sample-pvc` using
-  [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh)
+  [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh)
   with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:  
   * Configure access to your database. For details, see [here]({{< relref "/managing-domains/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
-  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
+  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
 
@@ -70,7 +70,7 @@ The script will perform the following steps:
    * Or, use built-in WDT scripts to create the domain.
 
    **NOTE**: Alternatively, you can use WDT to introspect an already existing domain, such as an on-premises domain,
-   and then create the same domain in a Persistent Volume (PV). For details, see this [Domain in PV sample using WebLogic Deploy Tooling](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README).
+   and then create the same domain in a Persistent Volume (PV). For details, see this [Domain in PV sample using WebLogic Deploy Tooling](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README).
 * Run and wait for the job to finish.
 * Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
