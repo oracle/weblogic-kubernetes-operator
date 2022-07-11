@@ -63,7 +63,7 @@ from additional images.
 
 - See the `spec.auxiliaryImageVolumes` and `serverPod.auxiliaryImages` sections
   in the domain resource
-  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md)
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md)
   and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
 ### Configuration
@@ -75,7 +75,7 @@ Model in Image use case.
 
 A domain resource `domain.spec.auxiliaryImageVolumes`
 auxiliary image volume defines a `mountPath`, `name`, plus
-[additional optional fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image-volume).
+[additional optional fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#auxiliary-image-volume).
 The `mountPath` field is the location of a directory in an auxiliary image, and
 is also the location in the main pod container (which will automatically contain
 a recursive copy of the auxiliary image directory). The `name` field is
@@ -108,7 +108,7 @@ the command that is used to merge (copy) the auxiliary image's files
 into the auxiliary image volume during pod startup (this is rarely
 needed, see [Performing replaces instead of merges](#performing-replaces-instead-of-merges) for an example).
 For details
-about each field, see the [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
+about each field, see the [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#auxiliary-image).
 
 A `serverPod` can be defined at the domain scope, which applies to every pod in
 the domain, plus the introspector job's pod, at a specific WebLogic cluster's scope,
