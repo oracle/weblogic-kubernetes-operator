@@ -86,11 +86,11 @@ public class Model {
     this.runtimeEncryptionSecret = runtimeEncryptionSecret;
   }
 
-  String getModelHome() {
+  public String getModelHome() {
     return modelHome;
   }
 
-  void setModelHome(String modelHome) {
+  public void setModelHome(String modelHome) {
     this.modelHome = modelHome;
   }
 
@@ -99,11 +99,11 @@ public class Model {
     return this;
   }
 
-  String getWdtInstallHome() {
+  public String getWdtInstallHome() {
     return wdtInstallHome;
   }
 
-  void setWdtInstallHome(String wdtInstallHome) {
+  public void setWdtInstallHome(String wdtInstallHome) {
     this.wdtInstallHome = wdtInstallHome;
   }
 
