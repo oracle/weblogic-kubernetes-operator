@@ -80,6 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContaine
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
@@ -250,10 +251,23 @@ class ItOperatorWlsUpgrade {
   public void tearDown() {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
+      cleanUpCRD();
+    }
+  }
+
+  private void cleanUpCRD() {
+    boolean doesCrdExist = doesCrdExist();
+
+    if (doesCrdExist) {
       Command
-          .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
+              .withParams(new CommandParams()
+                      .command("kubectl patch crd/domains.weblogic.oracle"
+                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+              .execute();
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+              .execute();
     }
   }
 
@@ -554,10 +568,7 @@ class ItOperatorWlsUpgrade {
   private HelmParams installOperator(String operatorVersion,
       String opNamespace, String domainNamespace) {
     // delete existing CRD if any
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+    cleanUpCRD();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
