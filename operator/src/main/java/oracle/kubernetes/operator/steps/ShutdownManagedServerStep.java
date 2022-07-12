@@ -44,9 +44,11 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 public class ShutdownManagedServerStep extends Step {
@@ -332,16 +334,22 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      Boolean shutdownFailed = (Boolean) packet.get("SHUTDOWN_FAILED");
+      Boolean shutdownCallSucceeded = (Boolean) packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED);
       String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
-      if ((serverState != null && !isShutdown(serverState)) || !shutdownFailed) {
+      if (serverNotShutdown(serverState) || shutdownAttemptSucceeded(shutdownCallSucceeded)) {
         return doDelay(this, packet, 3, TimeUnit.SECONDS);
       }
       return doNext(packet);
     }
 
-    private boolean isShutdown(String serverState) {
-      return serverState.equals(SHUTDOWN_STATE);
+    @NotNull
+    private Boolean shutdownAttemptSucceeded(Boolean shutdownCallSucceeded) {
+      return Optional.ofNullable(shutdownCallSucceeded).orElse(false);
+    }
+
+    @NotNull
+    private Boolean serverNotShutdown(String serverState) {
+      return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
     }
 
     private String getServerState(DomainResource domain) {
@@ -383,6 +391,7 @@ public class ShutdownManagedServerStep extends Step {
       LOGGER.info("DEBUG: In onSuccess.. requestTimeout is " + requestTimeout);
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
+      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.TRUE);
       return doNext(packet);
     }
 
@@ -411,7 +420,7 @@ public class ShutdownManagedServerStep extends Step {
 
       LOGGER.info("DEBUG: In onFailure, calling removeShutdownRequestRetryCount and next step.");
       removeShutdownRequestRetryCount(packet);
-      packet.put("SHUTDOWN_FAILED", Boolean.TRUE);
+      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.FALSE);
       return doNext(packet);
     }
 
