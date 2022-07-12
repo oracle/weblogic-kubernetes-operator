@@ -344,7 +344,7 @@ EOF
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
-                        KUBECONFIG ="${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
+                        
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
                     }
@@ -386,7 +386,7 @@ EOF
                                     }
                                     steps {
                                         sh '''
-                                        cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
+
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
