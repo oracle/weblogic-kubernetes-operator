@@ -50,7 +50,10 @@ public abstract class HttpResponseStep extends Step {
   }
 
   private NextAction wrapOnFailure(Packet packet, HttpResponse<String> response) {
-    System.out.println("DEBUG: wrapOnFailure response is " + response + ", status is " + response.statusCode());
+    System.out.println("DEBUG: wrapOnFailure response is " + response);
+    if (response != null) {
+      System.out.println("DEBUG: wrapOnFailure response is not null, code is " + response.statusCode());
+    }
     if (response != null && (response.statusCode() == HTTP_FORBIDDEN || response.statusCode() == HTTP_UNAUTHORIZED)) {
       Optional.ofNullable(SecretHelper.getAuthorizationSource(packet)).ifPresent(AuthorizationSource::onFailure);
     }
