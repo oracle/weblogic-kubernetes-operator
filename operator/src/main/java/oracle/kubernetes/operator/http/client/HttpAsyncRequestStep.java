@@ -130,6 +130,7 @@ public class HttpAsyncRequestStep extends Step {
                setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
         if (throwable instanceof HttpTimeoutException) {
           LOGGER.info("DEBUG: Got HttpTimeoutException " + throwable);
+          HttpResponseStep.addToPacket(packet, throwable);
           LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
         } else if (response != null) {
           LOGGER.info("DEBUG: For server " + getServerName() + " got response " + response + ", status code is "

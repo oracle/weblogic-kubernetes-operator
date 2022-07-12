@@ -35,6 +35,8 @@ public abstract class HttpResponseStep extends Step {
   }
 
   private NextAction handlePossibleThrowableOrContinue(Packet packet) {
+    System.out.println("DEBUG: In HttpResponseStep. getThrowableResponse is " + getThrowableResponse(packet)
+        + ", and server is " + packet.get(SERVER_NAME));
     return Optional.ofNullable(getThrowableResponse(packet))
         .map(t -> wrapOnFailure(packet, null))
         .orElse(doNext(packet));
