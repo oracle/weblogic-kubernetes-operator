@@ -69,17 +69,23 @@ download_zip() {
   local iurl="$LOCATION"
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
     echo "@@ The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
-    local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
-    curl -fL $LOCATION -o $tempfile
-    LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
-    rm -f $tempfile
-    echo "@@ The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
-    echo "@@ Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+    if [ "$DOWNLOAD_VAR_NAME" == "DOWNLOAD_WDT" ]; then
+      LOCATION=https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download
+    fi
+    if [ "$DOWNLOAD_VAR_NAME" == "DOWNLOAD_WIT" ]; then
+      LOCATION=https://github.com/oracle/weblogic-image-tool/releases/latest/download
+    fi
+    #local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
+    #curl -fL $LOCATION -o $tempfile
+    #LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
+    #rm -f $tempfile
+    #echo "@@ The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
+    echo "@@ Now downloading '$LOCATION/$ZIPFILE' to '$WORKDIR/$ZIPFILE'."
   fi
 
   rm -f $ZIPFILE
-  curl -fL $LOCATION -o $ZIPFILE
+  curl -fL $LOCATION/$ZIPFILE -o $ZIPFILE
 }
 
-download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
-download_zip weblogic-image-tool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
+download_zip weblogic-deploy.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
+download_zip imagetool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
