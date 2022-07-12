@@ -27,7 +27,7 @@
 /JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS,PasswordEncrypted,*,!
 /JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS/Properties/mysqlDS/Properties/user,Value,invalid-user,root
 
-# no longer adding NAPs for ISTIO from introspectDomain.py (owls-98870)
+# no longer adding NAPs for ISTIO from introspectDomain.py (see owls-98870, PR #3218)
 #/Servers/${ADMIN_NAME}/NetworkAccessPoints/http-probe,ListenAddress,127.0.0.1,127.0.0.1
 #/Servers/${ADMIN_NAME}/NetworkAccessPoints/http-probe,ListenPort,${ISTIO_READINESS_PORT},${ISTIO_READINESS_PORT}
 #/Servers/${ADMIN_NAME}/NetworkAccessPoints/http-probe,Protocol,http,http

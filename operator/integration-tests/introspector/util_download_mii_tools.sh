@@ -75,11 +75,6 @@ download_zip() {
     if [ "$DOWNLOAD_VAR_NAME" == "DOWNLOAD_WIT" ]; then
       LOCATION=https://github.com/oracle/weblogic-image-tool/releases/latest/download
     fi
-    #local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
-    #curl -fL $LOCATION -o $tempfile
-    #LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
-    #rm -f $tempfile
-    #echo "@@ The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
     echo "@@ Now downloading '$LOCATION/$ZIPFILE' to '$WORKDIR/$ZIPFILE'."
   fi
 

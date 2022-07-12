@@ -4,7 +4,6 @@
 set -o pipefail
 
 UTILSSCRIPTPATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-#SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${UTILSSCRIPTPATH}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${UTILSSCRIPTPATH}/utils_base.sh" && exit 1
 
