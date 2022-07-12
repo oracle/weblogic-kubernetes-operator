@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
+import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -188,10 +189,7 @@ class ItOperatorFmwUpgrade {
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
       CleanupUtil.cleanup(namespaces);
-      Command
-          .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
+      cleanUpCRD();
     }
   }
 
@@ -256,10 +254,7 @@ class ItOperatorFmwUpgrade {
 
   private HelmParams installOperator(String operatorVersion) {
     // delete existing CRD if any
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+    cleanUpCRD();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
@@ -586,6 +581,21 @@ class ItOperatorFmwUpgrade {
       logger.info("Checking that managed server pod {0} doesn't exists in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
+    }
+  }
+
+  private void cleanUpCRD() {
+    boolean doesCrdExist = doesCrdExist();
+    if (doesCrdExist) {
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl patch crd/domains.weblogic.oracle"
+                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+              .execute();
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+              .execute();
     }
   }
 }
