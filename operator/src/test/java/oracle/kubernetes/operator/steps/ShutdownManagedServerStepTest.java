@@ -56,6 +56,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -247,7 +248,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
-    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
   }
 
   @Test
@@ -269,7 +270,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
-    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
   }
 
   @Test
@@ -291,7 +292,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
-    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
   }
 
   @Test
@@ -323,7 +324,7 @@ class ShutdownManagedServerStepTest {
 
     // Null HTTP response and no response recorded in packet implies HTTP request timed out
     responseStep.onFailure(testSupport.getPacket(), null);
-    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_TIMEOUT));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_TIMEOUT));
   }
 
   @Test
@@ -343,12 +344,12 @@ class ShutdownManagedServerStepTest {
     // Assert that we will retry due to exception
     responseStep.onFailure(p, null);
     assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
-    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_RETRY));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_RETRY));
 
     // Assert we only retry once
     responseStep.onFailure(p, null);
     assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), is(nullValue()));
-    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_THROWABLE));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_THROWABLE));
   }
 
   private void setForcedShutdownType(String serverName) {

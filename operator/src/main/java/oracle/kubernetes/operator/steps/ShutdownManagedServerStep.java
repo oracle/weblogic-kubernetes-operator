@@ -387,24 +387,34 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
-        if (getShutdownRequestRetryCount(packet) == null) {
-          addShutdownRequestRetryCountToPacket(packet, 1);
-          if (requestStep != null) {
-            // Retry request
-            LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
-            return doNext(requestStep, packet);
-          }
+        if (retryRequest(packet)) {
+          return doNext(requestStep, packet);
         }
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
+        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
       } else if (getResponse(packet) == null) {
         // Request timed out
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
+        if (retryRequest(packet)) {
+          return doNext(requestStep, packet);
+        }
+        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
       } else {
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
+        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
 
       removeShutdownRequestRetryCount(packet);
       return doNext(packet);
+    }
+
+    private boolean retryRequest(Packet packet) {
+      if (getShutdownRequestRetryCount(packet) == null) {
+        addShutdownRequestRetryCountToPacket(packet, 1);
+        if (requestStep != null) {
+          // Retry request
+          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
+          return true;
+        }
+      }
+      return false;
     }
 
     private static Integer getShutdownRequestRetryCount(Packet packet) {
