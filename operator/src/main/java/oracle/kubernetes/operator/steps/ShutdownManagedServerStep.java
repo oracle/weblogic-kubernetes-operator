@@ -378,6 +378,8 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
+      LOGGER.info("DEBUG: In onSuccess.. response is " + response + ", and getResponse is " + getResponse(packet));
+      LOGGER.info("DEBUG: In onSuccess.. requestTimeout is " + requestTimeout);
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
       return doNext(packet);
@@ -385,22 +387,28 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+      LOGGER.info("DEBUG: In onFailure.. response is " + response + ", and getResponse is " + getResponse(packet));
+      LOGGER.info("DEBUG: In onFailure.. requestTimeout is " + requestTimeout);
       if (getThrowableResponse(packet) != null) {
+        LOGGER.info("DEBUG: In onFailure.. getThrowableResponse is " + getThrowableResponse(packet));
         Throwable throwable = getThrowableResponse(packet);
         if (retryRequest(packet)) {
           return doNext(requestStep, packet);
         }
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
       } else if (getResponse(packet) == null) {
+        LOGGER.info("DEBUG: In onFailure.. getThrowableResponse is " + getResponse(packet));
         // Request timed out
         if (retryRequest(packet)) {
           return doNext(requestStep, packet);
         }
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
       } else {
+        LOGGER.info("DEBUG: In onFailure, third else");
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
 
+      LOGGER.info("DEBUG: In onFailure, calling removeShutdownRequestRetryCount and next step.");
       removeShutdownRequestRetryCount(packet);
       return doNext(packet);
     }
