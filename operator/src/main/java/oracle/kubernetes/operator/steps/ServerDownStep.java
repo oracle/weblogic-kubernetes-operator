@@ -13,6 +13,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.steps.ShutdownManagedServerStep.createWaitForServerShutdownStep;
+
 public class ServerDownStep extends Step {
   private final String serverName;
   private final boolean isPreserveServices;
@@ -50,6 +52,7 @@ public class ServerDownStep extends Step {
   @NotNull
   private Step createShutdownManagedServerStep(V1Pod oldPod, Step next) {
     return ShutdownManagedServerStep
-        .createShutdownManagedServerStep(PodHelper.deletePodStep(serverName, next), serverName, oldPod);
+        .createShutdownManagedServerStep(createWaitForServerShutdownStep(
+            (PodHelper.deletePodStep(serverName, next)), serverName), serverName, oldPod);
   }
 }

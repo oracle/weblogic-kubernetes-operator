@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -39,10 +40,14 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 public class ShutdownManagedServerStep extends Step {
 
@@ -82,6 +87,11 @@ public class ShutdownManagedServerStep extends Step {
                 new ShutdownManagedServerWithHttpStep(service, pod, getNext())),
             packet);
     }
+  }
+
+
+  static Step createWaitForServerShutdownStep(Step next, String serverName) {
+    return new WaitForServerShutdownStep(next, serverName);
   }
 
   static final class ShutdownManagedServerProcessing extends HttpRequestProcessing {
@@ -307,6 +317,45 @@ public class ShutdownManagedServerStep extends Step {
           processing.getRequestTimeoutSeconds(), getNext());
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
+    }
+
+  }
+
+  static final class WaitForServerShutdownStep extends Step {
+    @Nonnull
+    private final String serverName;
+
+    WaitForServerShutdownStep(Step next, @Nonnull String serverName) {
+      super(next);
+      this.serverName = serverName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
+      if (serverState != null && !isShutdown(serverState)) {
+        return doDelay(this, packet, 3, TimeUnit.SECONDS);
+      }
+      return doNext(packet);
+    }
+
+    private boolean isShutdown(String serverState) {
+      return serverState.equals(SHUTDOWN_STATE);
+    }
+
+    private String getServerState(DomainResource domain) {
+      return Optional.ofNullable(domain)
+          .map(DomainResource::getStatus)
+          .map(this::getServerStatus)
+          .map(ServerStatus::getState).orElse(null);
+    }
+
+    private ServerStatus getServerStatus(DomainStatus domainStatus) {
+      return domainStatus.getServers().stream().filter(this::matchingServerName).findAny().orElse(null);
+    }
+
+    private boolean matchingServerName(ServerStatus serverStatus) {
+      return serverStatus.getServerName().equals(serverName);
     }
 
   }

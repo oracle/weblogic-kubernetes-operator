@@ -118,6 +118,7 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -438,6 +439,44 @@ class DomainProcessorTest {
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  @Test
+  void afterMakeRightAndChangeServerToNever_serverPodNotDeletedWhenServerIsSuspending() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+    DomainStatus status = new DomainPresenceInfo(newDomain).getDomain().getStatus();
+    setAdminServerStatus(status, SUSPENDING_STATE);
+    setManagedServerState(status, SUSPENDING_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+
+    assertThat(getRunningPods().size(), equalTo(4));
+    setAdminServerStatus(status, SHUTDOWN_STATE);
+    setManagedServerState(status, SHUTDOWN_STATE);
+    testSupport.setTime(100, TimeUnit.SECONDS);
+    assertThat(getRunningPods().size(), equalTo(1));
+    assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  private void setManagedServerState(DomainStatus status, String suspendingState) {
+    IntStream.range(1, 3).forEach(idx -> getManagedServerStatus(status, idx).setState(suspendingState));
+  }
+
+  private void setAdminServerStatus(DomainStatus status, String state) {
+    status.getServers().stream().filter(s -> matchingServerName(s, ADMIN_NAME)).findAny().orElse(null)
+        .setState(state);
+  }
+
+  private ServerStatus getManagedServerStatus(DomainStatus status, int idx) {
+    return status.getServers().stream()
+        .filter(s -> matchingServerName(s, getManagedServerName(idx))).findAny().orElse(null);
+  }
+
+  private boolean matchingServerName(ServerStatus serverStatus, String serverName) {
+    return serverStatus.getServerName().equals(serverName);
   }
 
   @Test

@@ -136,6 +136,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     info.getServerPods().filter(pod -> podShouldNotBeRunning(pod, factory))
+            .filter(pod -> podNotAlreadyMarkedForShutdown(pod, factory))
             .filter(pod -> !getPodServerName(pod).equals(wlsDomainConfig.getAdminServerName()))
             .forEach(pod -> shutdownServersNotPresentInDomainConfig(factory, pod));
   }
@@ -144,9 +145,13 @@ public class ManagedServersUpStep extends Step {
     return !factory.getServers().contains(getPodServerName(pod));
   }
 
+  private boolean podNotAlreadyMarkedForShutdown(V1Pod pod, ServersUpStepFactory factory) {
+    return !factory.getShutdownInfos().stream().anyMatch(ssi -> ssi.getServerName().equals(getPodServerName(pod)));
+  }
+
   private void shutdownServersNotPresentInDomainConfig(ServersUpStepFactory factory, V1Pod pod) {
     WlsServerConfig serverConfig = new WlsServerConfig(getPodServerName(pod), PodHelper.getPodName(pod), 0);
-    factory.addShutdownInfo(new ServerShutdownInfo(serverConfig, pod.getMetadata().getClusterName(), null, false));
+    factory.addShutdownInfo(new ServerShutdownInfo(serverConfig, PodHelper.getPodClusterName(pod), null, false));
   }
 
   private void addClusteredServersToFactory(
@@ -205,8 +210,10 @@ public class ManagedServersUpStep extends Step {
       if (adminServerOrDone(serverName)) {
         return;
       }
-
       String clusterName = getClusterName(clusterConfig);
+      LOGGER.info("DEBUG: In addServerIfNeeded.. serverName is " + serverName
+          + ", and cluster name is " + clusterName);
+
       EffectiveServerSpec server = info.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
