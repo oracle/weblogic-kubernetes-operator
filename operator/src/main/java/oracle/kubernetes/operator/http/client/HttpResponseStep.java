@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.work.Step;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 
 public abstract class HttpResponseStep extends Step {
   private static final String RESPONSE = "httpResponse";
@@ -26,6 +27,8 @@ public abstract class HttpResponseStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
+    System.out.println("DEBUG: In HttpResponseStep. response is " + getResponse(packet) + ", and server is "
+        + packet.get(SERVER_NAME));
     return Optional.ofNullable(getResponse(packet))
         .map(r -> doApply(packet, r))
         .orElse(handlePossibleThrowableOrContinue(packet));
@@ -42,10 +45,12 @@ public abstract class HttpResponseStep extends Step {
   }
 
   private NextAction doApply(Packet packet, HttpResponse<String> response) {
+    System.out.println("DEBUG: doApply. response is " + response + ", isSuccess(response) is " + isSuccess(response));
     return isSuccess(response) ? onSuccess(packet, response) : wrapOnFailure(packet, response);
   }
 
   private NextAction wrapOnFailure(Packet packet, HttpResponse<String> response) {
+    System.out.println("DEBUG: wrapOnFailure response is " + response + ", status is " + response.statusCode());
     if (response != null && (response.statusCode() == HTTP_FORBIDDEN || response.statusCode() == HTTP_UNAUTHORIZED)) {
       Optional.ofNullable(SecretHelper.getAuthorizationSource(packet)).ifPresent(AuthorizationSource::onFailure);
     }

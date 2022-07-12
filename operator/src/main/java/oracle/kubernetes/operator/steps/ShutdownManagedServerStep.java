@@ -397,7 +397,7 @@ public class ShutdownManagedServerStep extends Step {
         }
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
       } else if (getResponse(packet) == null) {
-        LOGGER.info("DEBUG: In onFailure.. getThrowableResponse is " + getResponse(packet));
+        LOGGER.info("DEBUG: In onFailure.. getResponse is " + getResponse(packet));
         // Request timed out
         if (retryRequest(packet)) {
           return doNext(requestStep, packet);
@@ -416,6 +416,7 @@ public class ShutdownManagedServerStep extends Step {
     private boolean retryRequest(Packet packet) {
       if (getShutdownRequestRetryCount(packet) == null) {
         addShutdownRequestRetryCountToPacket(packet, 1);
+        LOGGER.info("DEBUG: in retryRequest .. ");
         if (requestStep != null) {
           // Retry request
           LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
