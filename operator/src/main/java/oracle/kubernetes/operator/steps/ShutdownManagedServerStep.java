@@ -90,10 +90,6 @@ public class ShutdownManagedServerStep extends Step {
   }
 
 
-  static Step createWaitForServerShutdownStep(Step next, String serverName) {
-    return new WaitForServerShutdownStep(next, serverName);
-  }
-
   static final class ShutdownManagedServerProcessing extends HttpRequestProcessing {
     private Boolean isGracefulShutdown;
     private Long timeout;
@@ -321,19 +317,24 @@ public class ShutdownManagedServerStep extends Step {
 
   }
 
-  static final class WaitForServerShutdownStep extends Step {
+  static Step createWaitForServerShutdownWithHttpStep(Step next, String serverName) {
+    return new WaitForServerShutdownWithHttpStep(next, serverName);
+  }
+
+  static final class WaitForServerShutdownWithHttpStep extends Step {
     @Nonnull
     private final String serverName;
 
-    WaitForServerShutdownStep(Step next, @Nonnull String serverName) {
+    WaitForServerShutdownWithHttpStep(Step next, @Nonnull String serverName) {
       super(next);
       this.serverName = serverName;
     }
 
     @Override
     public NextAction apply(Packet packet) {
+      Boolean shutdownFailed = (Boolean) packet.get("SHUTDOWN_FAILED");
       String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
-      if (serverState != null && !isShutdown(serverState)) {
+      if ((serverState != null && !isShutdown(serverState)) || !shutdownFailed) {
         return doDelay(this, packet, 3, TimeUnit.SECONDS);
       }
       return doNext(packet);
@@ -410,6 +411,7 @@ public class ShutdownManagedServerStep extends Step {
 
       LOGGER.info("DEBUG: In onFailure, calling removeShutdownRequestRetryCount and next step.");
       removeShutdownRequestRetryCount(packet);
+      packet.put("SHUTDOWN_FAILED", Boolean.TRUE);
       return doNext(packet);
     }
 

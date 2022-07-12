@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.operator.steps.ShutdownManagedServerStep.createWaitForServerShutdownStep;
+import static oracle.kubernetes.operator.steps.ShutdownManagedServerStep.createWaitForServerShutdownWithHttpStep;
 
 public class ServerDownStep extends Step {
   private final String serverName;
@@ -52,7 +52,7 @@ public class ServerDownStep extends Step {
   @NotNull
   private Step createShutdownManagedServerStep(V1Pod oldPod, Step next) {
     return ShutdownManagedServerStep
-        .createShutdownManagedServerStep(createWaitForServerShutdownStep(
+        .createShutdownManagedServerStep(createWaitForServerShutdownWithHttpStep(
             (PodHelper.deletePodStep(serverName, next)), serverName), serverName, oldPod);
   }
 }
