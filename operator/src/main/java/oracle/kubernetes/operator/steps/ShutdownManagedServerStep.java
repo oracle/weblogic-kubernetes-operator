@@ -311,12 +311,14 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
+      String serverName = PodHelper.getPodServerName(pod);
       getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
-          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
+          new ShutdownManagedServerResponseStep(serverName,
           processing.getRequestTimeoutSeconds(), getNext());
-      LOGGER.info("DEBUG: In ShutdownManagedServerWithHttpStep for server " + packet.getValue(SERVER_NAME));
+      LOGGER.info("DEBUG: In ShutdownManagedServerWithHttpStep for server " + serverName
+          + ", server name from packet is " + packet.getValue(SERVER_NAME));
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
     }
@@ -339,10 +341,14 @@ public class ShutdownManagedServerStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       Boolean shutdownCallSucceeded = (Boolean) packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED);
+      LOGGER.info("DEBUG: shutdownCallSucceeded for server " + serverName + " is "
+          + shutdownCallSucceeded);
       String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
       if (serverNotShutdown(serverState) || shutdownAttemptSucceeded(shutdownCallSucceeded)) {
+        LOGGER.info("DEBUG: serverNotShutdown and shutdownAttemptSucceeded.. for " + serverName + ", waiting");
         return doDelay(this, packet, 3, TimeUnit.SECONDS);
       }
+      LOGGER.info("DEBUG: Proceeding to next step for " + serverName);
       return doNext(packet);
     }
 
@@ -387,11 +393,13 @@ public class ShutdownManagedServerStep extends Step {
       super(next);
       this.serverName = serverName;
       this.requestTimeout = requestTimeout;
+      LOGGER.info("DEBUG: created ShutdownManagedServerResponseStep for " + serverName);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
-      LOGGER.info("DEBUG: In onSuccess.. response is " + response + ", and getResponse is " + getResponse(packet));
+      LOGGER.info("DEBUG: In onSuccess.. for " + serverName + ", response is " + response
+          + ", and getResponse is " + getResponse(packet));
       LOGGER.info("DEBUG: In onSuccess.. requestTimeout is " + requestTimeout);
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
@@ -401,7 +409,8 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      LOGGER.info("DEBUG: In onFailure.. response is " + response + ", and getResponse is " + getResponse(packet));
+      LOGGER.info("DEBUG: In onFailure.. for " + serverName + ", response is " + response
+          + ", and getResponse is " + getResponse(packet));
       LOGGER.info("DEBUG: In onFailure.. requestTimeout is " + requestTimeout);
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
