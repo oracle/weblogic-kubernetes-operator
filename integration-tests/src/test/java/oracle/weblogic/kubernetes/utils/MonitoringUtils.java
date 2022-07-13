@@ -307,9 +307,31 @@ public class MonitoringUtils {
    * @return the prometheus Helm installation parameters
    */
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
+                                                            String promNamespace,
+                                                            String promVersion,
+                                                            String prometheusRegexValue) {
+    return installAndVerifyPrometheus(promReleaseSuffix,
+            promNamespace,
+            promVersion,
+            prometheusRegexValue, null);
+  }
+
+  /**
+   * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
+   *
+   * @param promReleaseSuffix the prometheus release name unigue suffix
+   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promVersion the version of the prometheus helm chart
+   * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
+   *                            default is regex: default;domain1
+   * @param webhookNS namespace for webhook namespace
+   * @return the prometheus Helm installation parameters
+   */
+  public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
                                                       String promNamespace,
                                                       String promVersion,
-                                                      String prometheusRegexValue) {
+                                                      String prometheusRegexValue,
+                                                      String webhookNS) {
     LoggingFacade logger = getLogger();
     String prometheusReleaseName = "prometheus" + promReleaseSuffix;
     logger.info("create a staging location for monitoring creation scripts");
@@ -333,6 +355,12 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "pvc-prometheus",
         "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    if (webhookNS != null) {
+      //replace with webhook ns
+      assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+              "webhook.webhook.svc.cluster.local",
+              String.format("webhook.%s.svc.cluster.local", webhookNS)), "Failed to replace String ");
+    }
     if (OKD) {
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
           "65534",

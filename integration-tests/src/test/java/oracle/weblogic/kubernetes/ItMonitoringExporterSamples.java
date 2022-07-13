@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -177,7 +176,7 @@ class ItMonitoringExporterSamples {
   public static void initAll(@Namespaces(6) List<String> namespaces) {
 
     logger = getLogger();
-    monitoringExporterDir = monitoringExporterDir = Paths.get(RESULTS_ROOT,
+    monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterSamples", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
     monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end/").toString();
@@ -357,21 +356,15 @@ class ItMonitoringExporterSamples {
                                         String grafanaChartVersion,
                                         String domainNS,
                                         String domainUid
-  ) throws IOException, ApiException {
+  ) throws ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
-
-      //replace with webhook ns
-      replaceStringInFile(srcPromFile.toString(),
-          "webhook.webhook.svc.cluster.local",
-          String.format("webhook.%s.svc.cluster.local", webhookNS));
-
       cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
       promHelmParams = installAndVerifyPrometheus(releaseSuffix,
           monitoringNS,
           promChartVersion,
-          prometheusRegexValue);
+          prometheusRegexValue,
+          webhookNS);
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
@@ -391,10 +384,11 @@ class ItMonitoringExporterSamples {
     logger.info("Prometheus is running");
 
     if (grafanaHelmParams == null) {
+      Path grafanaHelmValuesFile = Paths.get(RESOURCE_DIR, "exporter", "grafanavalues.yaml");
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
-          monitoringNS,
-          monitoringExporterEndToEndDir + "/grafana/values.yaml",
-          grafanaChartVersion);
+              monitoringNS,
+              grafanaHelmValuesFile.toString(),
+              grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
