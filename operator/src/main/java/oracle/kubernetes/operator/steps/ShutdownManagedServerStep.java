@@ -49,7 +49,6 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
