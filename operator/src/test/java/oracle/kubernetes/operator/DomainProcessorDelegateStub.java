@@ -137,7 +137,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
         };
       } else {
         waitedForIntrospection = true;
-        return next;
+        return null;
       }
     }
   }

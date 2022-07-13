@@ -1,7 +1,7 @@
 // Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.introspection;
 
 import java.util.function.Supplier;
 
@@ -13,6 +13,8 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -65,7 +67,7 @@ public class IntrospectionTestUtils {
    * @param domainConfig the configuration from which the topology should be computed
    * @throws JsonProcessingException if an error occurs in creating the topology
    */
-  static void defineIntrospectionTopology(KubernetesTestSupport testSupport, WlsDomainConfig domainConfig)
+  public static void defineIntrospectionTopology(KubernetesTestSupport testSupport, WlsDomainConfig domainConfig)
       throws JsonProcessingException {
     defineIntrospectionTopology(testSupport, domainConfig, IntrospectionTestUtils::createCompletedStatus);
   }
@@ -100,7 +102,7 @@ public class IntrospectionTestUtils {
                     .namespace(NS)));
   }
 
-  private static V1JobStatus createCompletedStatus() {
+  public static V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
           .addConditionsItem(new V1JobCondition().type(V1JobCondition.TypeEnum.COMPLETE).status("True"));
   }

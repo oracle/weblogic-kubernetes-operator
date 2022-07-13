@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -19,12 +20,15 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.Processors;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.IntrospectionTestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.introspection.IntrospectionTestUtils;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Fiber;
@@ -39,6 +43,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,13 +51,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.operator.DomainFailureMessages.createReplicaFailureMessage;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -60,11 +69,14 @@ import static org.hamcrest.Matchers.nullValue;
 
 class FailureReportingTest {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
-  private static final String SEVERE_MESSAGE = "@[SEVERE] really bad";
-  public static final String CLUSTER_1 = "cluster1";
-  public static final int MAXIMUM_CLUSTER_SIZE = 5;
-  public static final int TOO_HIGH_REPLICA_COUNT = MAXIMUM_CLUSTER_SIZE + 1;
+  private static final String SEVERE_MESSAGE = "really bad";
+  private static final String SEVERE_INTROSPECTION_ENTRY = "@[SEVERE] " + SEVERE_MESSAGE;
+  private static final String CLUSTER_1 = "cluster1";
+  private static final int MAXIMUM_CLUSTER_SIZE = 5;
+  private static final int TOO_HIGH_REPLICA_COUNT = MAXIMUM_CLUSTER_SIZE + 1;
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -96,9 +108,9 @@ class FailureReportingTest {
     configSupport.addWlsServer("admin", 8045);
     configSupport.setAdminServerName("admin");
     configSupport.addWlsCluster(
-          new WlsDomainConfigSupport.DynamicClusterConfigBuilder(CLUSTER_1)
-                .withClusterLimits(0, MAXIMUM_CLUSTER_SIZE)
-                .withServerNames("ms1", "ms2", "ms3", "ms4", "ms5"));
+        new WlsDomainConfigSupport.DynamicClusterConfigBuilder(CLUSTER_1)
+            .withClusterLimits(0, MAXIMUM_CLUSTER_SIZE)
+            .withServerNames("ms1", "ms2", "ms3", "ms4", "ms5"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
   }
 
@@ -109,23 +121,34 @@ class FailureReportingTest {
 
   @Test
   void withNoProblems_reachEndOfFiber() {
-    executeMakeRight(null, test -> {});
+    executeMakeRight(test -> {});
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenReplicasTooHighDetected_reachEndOfFiber() {
+    executeMakeRight(TestCase.REPLICAS_TOO_HIGH_FAILURE.getMutator());
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @ParameterizedTest
   @EnumSource(
-      value = TestCase.class, names = "DOMAIN_VALIDATION_FAILURE"
+      value = TestCase.class, names = {
+          "DOMAIN_VALIDATION_FAILURE", "SEVERE_INTROSPECTION_FAILURE", "TOPOLOGY_MISMATCH_FAILURE"
+      }
   )
-  void abortMakeRightAfterFailureDetected(TestCase testCase) {
-    executeMakeRight(testCase.getStepToAvoid(), testCase.getMutator());
+  void abortMakeRightAfterFailureDetected(TestCase testCase) throws NoSuchFieldException {
+    final AbortMakeRightDetector abortMakeRightDetector = new AbortMakeRightDetector(testCase.getStepToAvoid());
+    mementos.add(abortMakeRightDetector.install());
 
-    assertThat(terminalStep.wasRun(), is(false));
+    executeMakeRight(testCase.getMutator());
+
+    assertThat(abortMakeRightDetector.reachedBannedStep, nullValue());
   }
 
-  private void executeMakeRight(String stepClassName, Consumer<FailureReportingTest> mutator) {
-    steps.insertBefore(terminalStep, stepClassName);
+  private void executeMakeRight(Consumer<FailureReportingTest> mutator) {
     mutator.accept(this);
     executeMakeRight();
   }
@@ -134,7 +157,7 @@ class FailureReportingTest {
     copyFrom(testSupport.getPacket(), makeRight.createPacket());
     IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, introspectionString);
 
-    testSupport.runSteps(steps);
+    testSupport.runSteps(steps, terminalStep);
   }
 
   private void removeCredentialsSecret() {
@@ -148,13 +171,11 @@ class FailureReportingTest {
   }
 
   private void defineSevereIntrospectionFailure() {
-    introspectionString = SEVERE_MESSAGE;
+    introspectionString = SEVERE_INTROSPECTION_ENTRY;
   }
 
   @ParameterizedTest
-  @EnumSource(
-      value = TestCase.class, names = {"DOMAIN_VALIDATION_FAILURE", "REPLICAS_TOO_HIGH_FAILURE"}
-  )
+  @EnumSource(TestCase.class)
   void whenMakeWithExistingFailureFails_failuresDoNotFlicker(TestCase testCase) throws NoSuchFieldException {
     final DomainCondition domainCondition = createDomainConditionFor(testCase);
     final FlickerDetector detector = new FlickerDetector(testCase.getReason(), domainCondition);
@@ -171,8 +192,25 @@ class FailureReportingTest {
     return new DomainCondition(FAILED).withReason(testCase.getReason()).withMessage(testCase.getExpectedMessage());
   }
 
+  @ParameterizedTest
+  @EnumSource(TestCase.class)
+  void whenFailureReported_setCompletedFalse(TestCase testCase) {
+    domain.getStatus().addCondition(new DomainCondition(COMPLETED).withStatus(true));
+    testCase.getMutator().accept(this);
+
+    executeMakeRight();
+
+    assertThat(domain, hasCondition(COMPLETED).withStatus("False"));
+  }
+
   private void setReplicasTooHigh() {
     domain.getSpec().setReplicas(TOO_HIGH_REPLICA_COUNT);
+  }
+
+  private void configureUnknownServer() {
+    final ManagedServer managedServer = new ManagedServer().withServerName("No-such-server");
+    managedServer.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    domain.getSpec().getManagedServers().add(managedServer);
   }
 
   enum TestCase {
@@ -193,6 +231,7 @@ class FailureReportingTest {
       }
 
       @Override
+      @Nonnull
       String getExpectedMessage() {
         return DomainValidationMessages.noSuchSecret("no-such-secret", NS, SecretType.WEBLOGIC_CREDENTIALS);
       }
@@ -214,8 +253,9 @@ class FailureReportingTest {
       }
 
       @Override
+      @Nonnull
       String getExpectedMessage() {
-        return null;
+        return SEVERE_MESSAGE;
       }
     },
     REPLICAS_TOO_HIGH_FAILURE {
@@ -235,22 +275,46 @@ class FailureReportingTest {
       }
 
       @Override
+      @Nonnull
       String getExpectedMessage() {
         return createReplicaFailureMessage(CLUSTER_1, TOO_HIGH_REPLICA_COUNT, MAXIMUM_CLUSTER_SIZE);
+      }
+    },
+    TOPOLOGY_MISMATCH_FAILURE {
+      @Override
+      Consumer<FailureReportingTest> getMutator() {
+        return FailureReportingTest::configureUnknownServer;
+      }
+
+      @Override
+      DomainFailureReason getReason() {
+        return TOPOLOGY_MISMATCH;
+      }
+
+      @Override
+      String getStepToAvoid() {
+        return "BeforeAdminService";
+      }
+
+      @Override
+      @Nonnull
+      String getExpectedMessage() {
+        return LOGGER.formatMessage(NO_MANAGED_SERVER_IN_DOMAIN, "No-such-server");
       }
     };
 
     abstract DomainFailureReason getReason();
-    
+
     abstract Consumer<FailureReportingTest> getMutator();
 
     abstract String getStepToAvoid();
 
+    @Nonnull
     abstract String getExpectedMessage();
   }
 
-
   static class FlickerDetector {
+
     private final DomainFailureReason reason;
     private final Set<DomainCondition> expectedConditions;
     private Step currentStep;
@@ -262,7 +326,7 @@ class FailureReportingTest {
     }
 
     Memento install() throws NoSuchFieldException {
-      final BiConsumer<NextAction,String> detector = this::detectFlicker;
+      final BiConsumer<NextAction, String> detector = this::detectFlicker;
       return StaticStubSupport.install(Fiber.class, "preApplyReport", detector);
     }
 
@@ -304,11 +368,39 @@ class FailureReportingTest {
     }
   }
 
+  static class AbortMakeRightDetector {
+    final String stepClassName;
+    Step reachedBannedStep;
+
+    AbortMakeRightDetector(String stepClassName) {
+      this.stepClassName = stepClassName;
+    }
+
+    Memento install() throws NoSuchFieldException {
+      final BiConsumer<NextAction, String> detector = this::detectBannedStep;
+      return StaticStubSupport.install(Fiber.class, "preApplyReport", detector);
+    }
+
+    void detectBannedStep(NextAction nextAction, String fiberName) {
+      if (reachedBannedStep == null && isSpecifiedStep(nextAction.getNext())) {
+        reachedBannedStep = nextAction.getNext();
+      }
+    }
+
+    private boolean isSpecifiedStep(Step step) {
+      return stepClassName != null && hasSpecifiedClassName(step.getClass().getName());
+    }
+
+    private boolean hasSpecifiedClassName(String name) {
+      return name.endsWith("." + stepClassName) || name.endsWith("$" + stepClassName);
+    }
+  }
+
   abstract static class MakeRightExecutorStub implements MakeRightExecutor {
 
     @Override
     public void registerDomainPresenceInfo(DomainPresenceInfo info) {
-      
+
     }
 
     @Override

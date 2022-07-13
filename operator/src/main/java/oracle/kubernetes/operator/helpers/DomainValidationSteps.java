@@ -168,7 +168,7 @@ public class DomainValidationSteps {
       final List<String> failures = validator.getTopologyFailures();
       final List<String> replicasTooHigh = validator.getReplicaTooHighFailures();
       if (!failures.isEmpty()) {
-        return doNext(createTopologyMismatchFailureSteps(getNext(), failures), packet);
+        return doNext(createTopologyMismatchFailureSteps(failures), packet);
       } else if (!replicasTooHigh.isEmpty()) {
         return doNext(createReplicasTooHighFailureSteps(getNext(), replicasTooHigh), packet);
       } else {
@@ -176,9 +176,9 @@ public class DomainValidationSteps {
       }
     }
 
-    private Step createTopologyMismatchFailureSteps(Step next, List<String> failures) {
+    private Step createTopologyMismatchFailureSteps(List<String> failures) {
       final String failureString = String.join(lineSeparator(), failures);
-      return DomainStatusUpdater.createTopologyMismatchFailureSteps(failureString, next);
+      return DomainStatusUpdater.createTopologyMismatchFailureSteps(failureString, null);
     }
 
     private Step createReplicasTooHighFailureSteps(Step next, List<String> failures) {
