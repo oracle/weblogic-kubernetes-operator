@@ -59,7 +59,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAP
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -309,11 +308,14 @@ public class MonitoringUtils {
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
                                                             String promNamespace,
                                                             String promVersion,
-                                                            String prometheusRegexValue) {
+                                                            String prometheusRegexValue,
+                                                            String promHelmValuesFile) {
     return installAndVerifyPrometheus(promReleaseSuffix,
             promNamespace,
             promVersion,
-            prometheusRegexValue, null);
+            prometheusRegexValue,
+            promHelmValuesFile,
+            null);
   }
 
   /**
@@ -324,6 +326,7 @@ public class MonitoringUtils {
    * @param promVersion the version of the prometheus helm chart
    * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
    *                            default is regex: default;domain1
+   * @param promHelmValuesFileDir path to prometheus helm values file directory
    * @param webhookNS namespace for webhook namespace
    * @return the prometheus Helm installation parameters
    */
@@ -331,16 +334,17 @@ public class MonitoringUtils {
                                                       String promNamespace,
                                                       String promVersion,
                                                       String prometheusRegexValue,
+                                                      String promHelmValuesFileDir,
                                                       String webhookNS) {
     LoggingFacade logger = getLogger();
     String prometheusReleaseName = "prometheus" + promReleaseSuffix;
-    logger.info("create a staging location for monitoring creation scripts");
-    Path fileTemp = Paths.get(RESULTS_ROOT, "prometheus" + promReleaseSuffix, "createTempValueFile");
+    logger.info("create a staging location for prometheus scripts");
+    Path fileTemp = Paths.get(promHelmValuesFileDir);
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for prometheus");
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for prometheus");
 
-    logger.info("copy the promvalue.yaml to staging location");
+    logger.info("copy the promvalues.yaml to staging location");
     Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
     Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
@@ -426,15 +430,28 @@ public class MonitoringUtils {
    *
    * @param grafanaReleaseName the grafana release name
    * @param grafanaNamespace the grafana namespace in which the operator will be installed
-   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaHelmValuesFileDir the grafana helm values.yaml file directory
    * @param grafanaVersion the version of the grafana helm chart
    * @return the grafana Helm installation parameters
    */
   public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
                                                       String grafanaNamespace,
-                                                      String grafanaValueFile,
+                                                      String grafanaHelmValuesFileDir,
                                                       String grafanaVersion) {
     LoggingFacade logger = getLogger();
+    logger.info("create a staging location for prometheus scripts");
+    Path fileTemp = Paths.get(grafanaHelmValuesFileDir);
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for grafana");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for grafana");
+
+    logger.info("copy the grafanavalues.yaml to staging location");
+    Path srcGrafanaFile = Paths.get(RESOURCE_DIR, "exporter", "grafanavalues.yaml");
+    Path targetGrafanaFile = Paths.get(fileTemp.toString(), "grafanavalues.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcGrafanaFile, targetGrafanaFile,
+            StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+            "pvc-grafana", "pvc-" + grafanaReleaseName));
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
@@ -442,7 +459,7 @@ public class MonitoringUtils {
         .repoUrl(GRAFANA_REPO_URL)
         .repoName(GRAFANA_REPO_NAME)
         .chartName("grafana")
-        .chartValuesFile(grafanaValueFile);
+        .chartValuesFile(targetGrafanaFile.toString());
 
     if (grafanaVersion != null) {
       grafanaHelmParams.chartVersion(grafanaVersion);
