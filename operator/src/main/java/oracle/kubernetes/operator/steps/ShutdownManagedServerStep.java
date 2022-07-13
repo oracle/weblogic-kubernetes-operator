@@ -344,7 +344,7 @@ public class ShutdownManagedServerStep extends Step {
       LOGGER.info("DEBUG: shutdownCallSucceeded for server " + serverName + " is "
           + shutdownCallSucceeded);
       String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
-      if (serverNotShutdown(serverState) || shutdownAttemptSucceeded(shutdownCallSucceeded)) {
+      if (shutdownAttemptSucceeded(shutdownCallSucceeded) && serverNotShutdown(serverState)) {
         LOGGER.info("DEBUG: serverNotShutdown and shutdownAttemptSucceeded.. for " + serverName + ", waiting");
         return doDelay(this, packet, 3, TimeUnit.SECONDS);
       }
