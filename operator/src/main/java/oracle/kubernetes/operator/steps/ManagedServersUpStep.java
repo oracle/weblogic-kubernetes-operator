@@ -146,7 +146,7 @@ public class ManagedServersUpStep extends Step {
   }
 
   private boolean podNotAlreadyMarkedForShutdown(V1Pod pod, ServersUpStepFactory factory) {
-    return !factory.getShutdownInfos().stream().anyMatch(ssi -> ssi.getServerName().equals(getPodServerName(pod)));
+    return factory.getShutdownInfos().stream().noneMatch(ssi -> ssi.getServerName().equals(getPodServerName(pod)));
   }
 
   private void shutdownServersNotPresentInDomainConfig(ServersUpStepFactory factory, V1Pod pod) {
