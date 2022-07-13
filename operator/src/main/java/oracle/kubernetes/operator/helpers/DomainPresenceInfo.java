@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
@@ -861,6 +861,17 @@ public class DomainPresenceInfo implements PacketComponent {
         .orElse(null);
   }
 
+  public List<ClusterResource> getReferencedClusters() {
+    return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList())
+        .stream().map(this::findCluster).filter(Objects::nonNull).collect(Collectors.toList());
+  }
+
+  private ClusterResource findCluster(V1LocalObjectReference reference) {
+    return Optional.ofNullable(reference.getName())
+        .flatMap(name -> clusters.values().stream().filter(cluster -> name.equals(cluster.getMetadata().getName()))
+            .findFirst()).orElse(null);
+  }
+
   /**
    * Add a ClusterResource resource.
    * @param clusterResource ClusterResource object.
@@ -890,11 +901,8 @@ public class DomainPresenceInfo implements PacketComponent {
   /**
    * Returns all clusters associated with this domain presence.
    */
-  public List<ClusterSpec> getClusters() {
-    final Map<String, ClusterSpec> result = new HashMap<>();
-    getDomain().getSpec().getClusters().forEach(c -> result.put(c.getClusterName(), c));
-    clusters.values().stream().map(ClusterResource::getSpec).forEach(c -> result.put(c.getClusterName(), c));
-    return new ArrayList<>(result.values());
+  public List<V1LocalObjectReference> getClusters() {
+    return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList());
   }
 
   /**
@@ -926,7 +934,7 @@ public class DomainPresenceInfo implements PacketComponent {
   private ClusterSpec getClusterSpecFromClusterResource(@Nullable String clusterName) {
     return Optional.ofNullable(getClusterResource(clusterName))
         .map(ClusterResource::getSpec)
-        .orElse(getDomain().getSpec().getCluster(clusterName));
+        .orElse(null);
   }
 
   public int getReplicaCount(@Nonnull String clusterName) {

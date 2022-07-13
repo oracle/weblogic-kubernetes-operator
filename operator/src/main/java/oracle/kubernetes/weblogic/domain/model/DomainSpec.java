@@ -424,20 +424,20 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, "
-      + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
-      + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
-      + "WebLogic domain configuration.")
-  protected final List<ClusterSpec> clusters = new ArrayList<>();
+  @Description("References to Cluster resources that describe the lifecycle options for all of the Managed Server "
+      + "members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and "
+      + "the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a "
+      + "cluster that already exists in the WebLogic domain configuration.")
+  protected final List<V1LocalObjectReference> clusters = new ArrayList<>();
 
   /**
-   * Adds a Cluster to the DomainSpec.
+   * Adds a Cluster resource reference to the DomainSpec.
    *
-   * @param clusterSpec The cluster to be added to this DomainSpec
+   * @param reference The cluster reference to be added to this DomainSpec
    * @return this object
    */
-  public DomainSpec withCluster(ClusterSpec clusterSpec) {
-    clusters.add(clusterSpec);
+  public DomainSpec withCluster(V1LocalObjectReference reference) {
+    clusters.add(reference);
     return this;
   }
 
@@ -1068,22 +1068,6 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  /**
-   * Get Cluster configuration.
-   * @param clusterName name of cluster.
-   * @return cluster configuration or null, if not defined.
-   */
-  public ClusterSpec getCluster(String clusterName) {
-    if (clusterName != null) {
-      for (ClusterSpec c : clusters) {
-        if (clusterName.equals(c.getClusterName())) {
-          return c;
-        }
-      }
-    }
-    return null;
-  }
-
   public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
     this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
@@ -1108,7 +1092,7 @@ public class DomainSpec extends BaseConfiguration {
     return managedServers;
   }
 
-  public List<ClusterSpec> getClusters() {
+  public List<V1LocalObjectReference> getClusters() {
     return clusters;
   }
 
@@ -1202,8 +1186,7 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount) {
-      Optional.ofNullable(clusterSpec).ifPresentOrElse(c -> c.setReplicas(replicaCount),
-          () -> getOrCreateCluster(clusterName).setReplicas(replicaCount));
+      clusterSpec.setReplicas(replicaCount);
     }
 
     @Override
@@ -1229,21 +1212,6 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public int getMaxConcurrentShutdown(ClusterSpec clusterSpec) {
       return getMaxConcurrentShutdownFor(clusterSpec);
-    }
-
-    private ClusterSpec getOrCreateCluster(String clusterName) {
-      ClusterSpec clusterSpec = getCluster(clusterName);
-      if (clusterSpec != null) {
-        return clusterSpec;
-      }
-
-      return createClusterWithName(clusterName);
-    }
-
-    private ClusterSpec createClusterWithName(String clusterName) {
-      ClusterSpec clusterSpec = new ClusterSpec().withClusterName(clusterName);
-      clusters.add(clusterSpec);
-      return clusterSpec;
     }
   }
 }

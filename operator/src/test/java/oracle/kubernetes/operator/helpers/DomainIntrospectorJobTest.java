@@ -64,6 +64,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -174,6 +175,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final DomainResource domain = createDomain();
+  private final ClusterResource cluster = createCluster();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -209,6 +211,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
+    testSupport.defineResources(cluster);
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
 
     TuningParametersStub.setParameter(DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS, "2");
@@ -244,6 +247,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         .withSpec(createDomainSpec());
   }
 
+  private ClusterResource createCluster() {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name("cluster-1").namespace(NS))
+        .spec(createClusterSpec());
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
   }
@@ -255,13 +264,19 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
             .withConfiguration(new Configuration()
                 .withOverridesConfigMap(OVERRIDES_CM).withSecrets(List.of(OVERRIDE_SECRET_1, OVERRIDE_SECRET_2)))
-            .withCluster(new ClusterSpec()
-                .withClusterName("cluster-1").withReplicas(1).withServerStartPolicy(ServerStartPolicy.IF_NEEDED))
+            .withCluster(new V1LocalObjectReference().name("cluster-1"))
             .withImage(LATEST_IMAGE)
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
     spec.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     return spec;
+  }
+
+  private ClusterSpec createClusterSpec() {
+    return new ClusterSpec()
+        .withClusterName("cluster-1")
+        .withReplicas(1)
+        .withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
   private String getJobCreatedMessageKey() {
@@ -1217,7 +1232,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     IntrospectionTestUtils.defineIntrospectionTopology(testSupport, wlsDomainConfig);
 
     // make JobHelper.runIntrospector() return false
-    getCluster("cluster-1").setServerStartPolicy(ServerStartPolicy.NEVER);
+    cluster.getSpec().setServerStartPolicy(ServerStartPolicy.NEVER);
     domain.getSpec().setServerStartPolicy(ServerStartPolicy.NEVER);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, wlsDomainConfig);
 
@@ -1551,12 +1566,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
-  }
-
-  private ClusterSpec getCluster(String clusterName) {
-    return domain.getSpec().getClusters().stream()
-          .filter(c -> clusterName.equals(c.getClusterName()))
-          .findFirst().orElse(new ClusterSpec());
   }
 
   private String getDomainHome() {

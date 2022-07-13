@@ -324,7 +324,9 @@ public class RestBackendImpl implements RestBackend {
     authorize(domainUid, Operation.UPDATE);
     getClusterResource(domainUid, cluster)
         .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
-          () ->  forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount)));
+            // FIXME: Do we need to create missing Cluster resource here?
+            () -> { throw new IllegalStateException(); }
+          /*() ->  forDomainDo(domainUid, d -> performScaling(d, cr, cluster, managedServerCount)) */);
 
     LOGGER.exiting();
   }
@@ -334,25 +336,21 @@ public class RestBackendImpl implements RestBackend {
     patchClusterResourceReplicas(cluster, managedServerCount);
   }
 
-  private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
-    verifyWlsConfiguredClusterCapacity(domain, cluster, managedServerCount);
-    patchClusterReplicas(domain, cluster, managedServerCount);
+  private void performScaling(DomainResource domain, ClusterResource cluster,
+                              String clusterName, int managedServerCount) {
+    verifyWlsConfiguredClusterCapacity(domain, clusterName, managedServerCount);
+    patchClusterReplicas(domain, cluster, clusterName, managedServerCount);
   }
 
-  private void patchClusterReplicas(DomainResource domain, String cluster, int replicas) {
-    if (replicas == new DomainPresenceInfo(domain).getReplicaCount(cluster)) {
+  private void patchClusterReplicas(DomainResource domain, ClusterResource cluster, String clusterName, int replicas) {
+    if (replicas == new DomainPresenceInfo(domain).getReplicaCount(clusterName)) {
       return;
     }
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    int index = getClusterIndex(domain, cluster);
-    if (index < 0) {
-      patchBuilder.add("/spec/clusters/0", String.format(NEW_CLUSTER_REPLICAS, cluster, replicas));
-    } else {
-      patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
-    }
+    patchBuilder.replace("/spec/replicas", replicas);
 
-    patchDomain(domain, patchBuilder);
+    patchCluster(cluster, patchBuilder);
   }
 
   private void patchClusterResourceReplicas(ClusterResource cluster, int replicas) {
@@ -385,16 +383,6 @@ public class RestBackendImpl implements RestBackend {
     } catch (ApiException e) {
       throw handleApiException(e);
     }
-  }
-
-  private int getClusterIndex(DomainResource domain, String cluster) {
-    for (int i = 0; i < domain.getSpec().getClusters().size(); i++) {
-      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) {
-        return i;
-      }
-    }
-
-    return -1;
   }
 
   private void verifyWlsConfiguredClusterCapacity(

@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+
 /**
  * An object to check the presence of required Kubernetes resources.
  */
@@ -25,4 +27,11 @@ public interface KubernetesResourceLookup {
    * @return true if such a configmap exists
    */
   boolean isConfigMapExists(String name, String namespace);
+
+  /**
+   * Finds a Cluster resource from a reference.
+   * @param reference Local reference
+   * @return Cluster resource or null, if cluster resource is not found
+   */
+  ClusterResource findCluster(V1LocalObjectReference reference);
 }

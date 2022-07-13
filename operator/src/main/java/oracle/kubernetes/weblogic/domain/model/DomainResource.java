@@ -866,20 +866,20 @@ public class DomainResource implements KubernetesObject {
     private final Set<String> serverNames = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
-      addDuplicateNames();
-      addInvalidMountPaths();
+      addDuplicateNames(kubernetesResources);
+      addInvalidMountPaths(kubernetesResources);
       addUnmappedLogHome();
-      addReservedEnvironmentVariables();
+      addReservedEnvironmentVariables(kubernetesResources);
       addMissingSecrets(kubernetesResources);
       addIllegalSitConfigForMii();
       addMissingModelConfigMap(kubernetesResources);
       verifyIntrospectorJobName();
-      verifyLivenessProbeSuccessThreshold();
-      verifyContainerNameValidInPodSpec();
-      verifyContainerPortNameValidInPodSpec();
+      verifyLivenessProbeSuccessThreshold(kubernetesResources);
+      verifyContainerNameValidInPodSpec(kubernetesResources);
+      verifyContainerPortNameValidInPodSpec(kubernetesResources);
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
-      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse();
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse(kubernetesResources);
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       return failures;
     }
@@ -914,7 +914,7 @@ public class DomainResource implements KubernetesObject {
       return failures;
     }
 
-    private void addDuplicateNames() {
+    private void addDuplicateNames(KubernetesResourceLookup kubernetesResources) {
       getSpec().getManagedServers()
           .stream()
           .map(ManagedServer::getServerName)
@@ -922,6 +922,9 @@ public class DomainResource implements KubernetesObject {
           .forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
+          .map(kubernetesResources::findCluster)
+          .filter(Objects::nonNull)
+          .map(ClusterResource::getSpec)
           .map(ClusterSpec::getClusterName)
           .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
@@ -943,14 +946,16 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private void addInvalidMountPaths() {
+    private void addInvalidMountPaths(KubernetesResourceLookup kubernetesResources) {
       getSpec().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
       if (getSpec().getAdminServer() != null) {
         getSpec().getAdminServer().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
       }
       if (getSpec().getClusters() != null) {
         getSpec().getClusters().forEach(
-            cluster -> cluster.getAdditionalVolumeMounts().forEach(this::checkValidMountPath));
+            cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
+                .map(ClusterResource::getSpec).map(ClusterSpec::getAdditionalVolumeMounts)
+                .ifPresent(mounts -> mounts.forEach(this::checkValidMountPath)));
       }
     }
 
@@ -985,10 +990,12 @@ public class DomainResource implements KubernetesObject {
       return true;
     }
 
-    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse() {
+    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse(KubernetesResourceLookup kubernetesResources) {
       getAdminServerSpec().getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed);
       getSpec().getClusters().forEach(cluster ->
-              cluster.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
+              Optional.ofNullable(kubernetesResources.findCluster(cluster))
+                  .map(ClusterResource::getSpec).map(ClusterSpec::getAdditionalVolumeMounts)
+                  .ifPresent(mounts -> mounts.forEach(this::verifyMountPathForAuxiliaryImagesNotUsed)));
       getSpec().getManagedServers().forEach(managedServer ->
               managedServer.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
     }
@@ -1017,18 +1024,18 @@ public class DomainResource implements KubernetesObject {
       return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
     }
 
-    private void verifyLivenessProbeSuccessThreshold() {
+    private void verifyLivenessProbeSuccessThreshold(KubernetesResourceLookup kubernetesResources) {
       Optional.of(getAdminServerSpec().getLivenessProbe())
-              .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
-                      + ".livenessProbe.successThreshold"));
-      getSpec().getClusters().forEach(cluster ->
-              Optional.ofNullable(cluster.getLivenessProbe())
-                      .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
-                              + cluster.getClusterName() + "].serverPod.livenessProbe.successThreshold")));
+          .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
+              + ".livenessProbe.successThreshold"));
+      getSpec().getClusters().forEach(cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
+          .map(ClusterResource::getSpec).ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
+                  + clusterSpec.getClusterName() + "].serverPod.livenessProbe.successThreshold"))));
       getSpec().getManagedServers().forEach(managedServer ->
-              Optional.ofNullable(managedServer.getLivenessProbe())
-                      .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
-                              + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
+          Optional.ofNullable(managedServer.getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
+                  + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
     }
 
     private void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
@@ -1038,17 +1045,19 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private void verifyContainerNameValidInPodSpec() {
+    private void verifyContainerNameValidInPodSpec(KubernetesResourceLookup kubernetesResources) {
       getAdminServerSpec().getContainers().forEach(container ->
-              isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+          isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
       getSpec().getClusters().forEach(cluster ->
-              cluster.getContainers().forEach(container ->
-                      isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
-                              + SERVER_POD_CONTAINERS)));
+          Optional.ofNullable(kubernetesResources.findCluster(cluster)).map(ClusterResource::getSpec)
+              .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers())
+                  .ifPresent(containers -> containers.forEach(container ->
+                      isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + clusterSpec.getClusterName()
+                          + SERVER_POD_CONTAINERS)))));
       getSpec().getManagedServers().forEach(managedServer ->
-              managedServer.getContainers().forEach(container ->
-                      isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
-                              + SERVER_POD_CONTAINERS)));
+          managedServer.getContainers().forEach(container ->
+              isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                  + SERVER_POD_CONTAINERS)));
     }
 
     private void isContainerNameReserved(V1Container container, String prefix) {
@@ -1057,17 +1066,19 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private void verifyContainerPortNameValidInPodSpec() {
+    private void verifyContainerPortNameValidInPodSpec(KubernetesResourceLookup kubernetesResources) {
       getAdminServerSpec().getContainers().forEach(container ->
-              areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+          areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
       getSpec().getClusters().forEach(cluster ->
-              cluster.getContainers().forEach(container ->
-                      areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
-                              + SERVER_POD_CONTAINERS)));
+          Optional.ofNullable(kubernetesResources.findCluster(cluster)).map(ClusterResource::getSpec)
+              .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers())
+                  .ifPresent(containers -> containers.forEach(container ->
+                      areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + clusterSpec.getClusterName()
+                          + SERVER_POD_CONTAINERS)))));
       getSpec().getManagedServers().forEach(managedServer ->
-              managedServer.getContainers().forEach(container ->
-                      areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
-                              + SERVER_POD_CONTAINERS)));
+          managedServer.getContainers().forEach(container ->
+              areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                  + SERVER_POD_CONTAINERS)));
     }
 
     private void areContainerPortNamesValid(V1Container container, String prefix) {
@@ -1133,7 +1144,7 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private void addReservedEnvironmentVariables() {
+    private void addReservedEnvironmentVariables(KubernetesResourceLookup kubernetesResources) {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
           .ifPresent(a -> checkReservedIntrospectorVariables(a, "spec.adminServer"));
@@ -1141,7 +1152,10 @@ public class DomainResource implements KubernetesObject {
       spec.getManagedServers()
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
       spec.getClusters()
-          .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
+          .forEach(reference -> Optional.ofNullable(kubernetesResources.findCluster(reference))
+              .map(ClusterResource::getSpec)
+              .ifPresent(clusterSpec -> checkReservedEnvironmentVariables(clusterSpec, "spec.clusters["
+                  + clusterSpec.getClusterName() + "]")));
     }
 
     class EnvironmentVariableCheck {

@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.DomainFailureMessages;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -21,7 +22,9 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import org.jetbrains.annotations.NotNull;
@@ -113,9 +116,9 @@ public class WlsConfigValidator {
    *
    * @return a list of strings that describe the failures.
    */
-  List<String> getTopologyFailures() {
+  List<String> getTopologyFailures(KubernetesResourceLookup kubernetesResources) {
     if (domainConfig != null) {
-      verifyDomainResourceReferences();
+      verifyDomainResourceReferences(kubernetesResources);
       verifyGeneratedResourceNames();
       verifyServerPorts();
       reportIfExporterPortConflicts();
@@ -124,10 +127,10 @@ public class WlsConfigValidator {
   }
 
   // Ensure that all clusters and servers configured by the domain resource actually exist in the topology.
-  private void verifyDomainResourceReferences() {
+  private void verifyDomainResourceReferences(KubernetesResourceLookup kubernetesResources) {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
-    getClusters().stream()
+    getClusters().stream().map(kubernetesResources::findCluster).filter(Objects::nonNull).map(ClusterResource::getSpec)
           .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
   }
 
@@ -150,7 +153,7 @@ public class WlsConfigValidator {
     }
   }
 
-  private List<ClusterSpec> getClusters() {
+  private List<V1LocalObjectReference> getClusters() {
     return info.getClusters();
   }
 

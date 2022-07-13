@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
@@ -25,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
@@ -281,9 +283,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariables_createManagedPodWithSubstitutions() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(GOOD_MY_ENV_VALUE);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
@@ -303,9 +305,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
@@ -324,9 +326,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_createFailedEvent() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));

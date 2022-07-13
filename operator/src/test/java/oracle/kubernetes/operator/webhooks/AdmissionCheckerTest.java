@@ -28,7 +28,6 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
@@ -116,69 +115,6 @@ class AdmissionCheckerTest {
   void whenLogHomeChangedAndDomainReplicasInvalid_returnFalse() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome("/home/dir");
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenOneClusterReplicasChangedAloneAndValid_returnTrue() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenOneClusterReplicasChangedAloneAndInvalid_returnFalse() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenIntrospectionVersionChangedAndOneClusterReplicasInvalid_returnTrue() {
-    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenImageChangedAndOneClusterReplicasInvalid_returnTrue() {
-    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenLogHomeChangedAndOneClusterReplicasChangedInvalid_returnFalse() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenDomainReplicasChangedInvalidAndOneClusterReplicasChangedValid_returnFalse() {
-    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(1);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenDomainReplicasChangedInvalidAndBothClusterReplicasChangedValid_returnTrue() {
-    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(1).withReplicas(GOOD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenDomainReplicasChangedValidAndOneClusterReplicasChangedInvalid_returnFalse() {
-    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }

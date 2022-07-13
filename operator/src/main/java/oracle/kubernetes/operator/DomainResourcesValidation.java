@@ -84,6 +84,9 @@ class DomainResourcesValidation {
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> removeInactiveClusterResources(c, info)));
+
+        // HERE, MAYBE dpi gets reference to cluster resources
+
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };

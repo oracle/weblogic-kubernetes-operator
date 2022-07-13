@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -22,6 +23,8 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
@@ -37,6 +40,7 @@ public class DomainValidationSteps {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
+  private static final String CLUSTERS = "clusters";
 
   private DomainValidationSteps() {
   }
@@ -49,6 +53,7 @@ public class DomainValidationSteps {
     return Step.chain(
           createListSecretsStep(namespace),
           createListConfigMapsStep(namespace),
+          createListClustersStep(namespace),
           new DomainValidationStep());
   }
 
@@ -56,12 +61,12 @@ public class DomainValidationSteps {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
-  private static Step createListSecretsStep(String domainNamespace) {
-    return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
-  }
-
   static Step createValidateDomainTopologySteps(Step next) {
     return new ValidateDomainTopologyStep(next);
+  }
+
+  private static Step createListSecretsStep(String domainNamespace) {
+    return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {
@@ -97,6 +102,26 @@ public class DomainValidationSteps {
 
     static List<V1ConfigMap> getConfigMaps(Packet packet) {
       return Optional.ofNullable(packet.<List<V1ConfigMap>>getValue(CONFIGMAPS)).orElse(new ArrayList<>());
+    }
+  }
+
+  private static Step createListClustersStep(String domainNamespace) {
+    return new CallBuilder().listClusterAsync(domainNamespace, new ListClustersResponseStep());
+  }
+
+  static class ListClustersResponseStep extends DefaultResponseStep<ClusterList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
+      List<ClusterResource> list = getClusters(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(SECRETS, list);
+
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    static List<ClusterResource> getClusters(Packet packet) {
+      return Optional.ofNullable(packet.<List<ClusterResource>>getValue(CLUSTERS)).orElse(new ArrayList<>());
     }
   }
 
@@ -165,7 +190,7 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       final WlsConfigValidator validator = new WlsConfigValidator(packet).loggingTo(LOGGER);
-      final List<String> failures = validator.getTopologyFailures();
+      final List<String> failures = validator.getTopologyFailures(new KubernetesResourceLookupImpl(packet));
       final List<String> replicasTooHigh = validator.getReplicaTooHighFailures();
       if (!failures.isEmpty()) {
         return doNext(createTopologyMismatchFailureSteps(getNext(), failures), packet);
@@ -215,6 +240,17 @@ public class DomainValidationSteps {
     @Override
     public boolean isConfigMapExists(String name, String namespace) {
       return getConfigMaps(packet).stream().anyMatch(s -> isSpecifiedConfigMap(s, name, namespace));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ClusterResource> getClusters(Packet packet) {
+      return (List<ClusterResource>) packet.get(CLUSTERS);
+    }
+
+    @Override
+    public ClusterResource findCluster(V1LocalObjectReference reference) {
+      return Optional.ofNullable(reference.getName()).flatMap(name -> getClusters(packet).stream()
+          .filter(cluster -> name.equals(cluster.getClusterName())).findFirst()).orElse(null);
     }
 
     boolean isSpecifiedConfigMap(V1ConfigMap configmap, String name, String namespace) {
