@@ -48,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
@@ -83,6 +84,7 @@ public class ShutdownManagedServerStep extends Step {
     if (service == null) {
       return doNext(packet);
     } else {
+      LOGGER.info("DEBUG: In ShutdownManagedServerStep for server " + packet.getValue(SERVER_NAME));
       return doNext(
             Step.chain(
                 SecretHelper.createAuthorizationSourceStep(),
@@ -288,6 +290,7 @@ public class ShutdownManagedServerStep extends Step {
 
     HttpAsyncRequestStep createRequestStep(
         ShutdownManagedServerResponseStep shutdownManagedServerResponseStep) {
+      LOGGER.info("DEBUG: creating request step for server " + packet.getValue(SERVER_NAME));
       HttpAsyncRequestStep requestStep = HttpAsyncRequestStep.create(createRequest(),
           shutdownManagedServerResponseStep).withTimeoutSeconds(getRequestTimeoutSeconds());
       shutdownManagedServerResponseStep.requestStep = requestStep;
@@ -313,6 +316,7 @@ public class ShutdownManagedServerStep extends Step {
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
           new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
           processing.getRequestTimeoutSeconds(), getNext());
+      LOGGER.info("DEBUG: In ShutdownManagedServerWithHttpStep for server " + packet.getValue(SERVER_NAME));
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
     }
@@ -400,8 +404,15 @@ public class ShutdownManagedServerStep extends Step {
       LOGGER.info("DEBUG: In onFailure.. response is " + response + ", and getResponse is " + getResponse(packet));
       LOGGER.info("DEBUG: In onFailure.. requestTimeout is " + requestTimeout);
       if (getThrowableResponse(packet) != null) {
-        LOGGER.info("DEBUG: In onFailure.. getThrowableResponse is " + getThrowableResponse(packet));
         Throwable throwable = getThrowableResponse(packet);
+        LOGGER.info("DEBUG: In onFailure.. throwable is " + throwable + ", message is " + throwable.getMessage()
+                + ", cause is" + throwable.getCause() + ", string is " + throwable.toString()
+                + ", response is " + response);
+
+        if (throwable.toString() != null && throwable.toString().contains("header parser received no bytes")) {
+          packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.TRUE);
+          return doNext(packet);
+        }
         if (retryRequest(packet)) {
           return doNext(requestStep, packet);
         }

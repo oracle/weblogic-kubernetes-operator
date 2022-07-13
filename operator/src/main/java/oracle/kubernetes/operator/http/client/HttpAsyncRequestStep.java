@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.http.client.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
@@ -92,6 +93,7 @@ public class HttpAsyncRequestStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     AsyncProcessing processing = new AsyncProcessing(packet);
+    LOGGER.info("DEBUG: suspending processing for server " + packet.getValue(SERVER_NAME));
     return doSuspend(processing::process);
   }
 
@@ -147,7 +149,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private String getServerName() {
-      return packet.getValue(ProcessingConstants.SERVER_NAME);
+      return packet.getValue(SERVER_NAME);
     }
 
     private boolean isServerShuttingDown() {

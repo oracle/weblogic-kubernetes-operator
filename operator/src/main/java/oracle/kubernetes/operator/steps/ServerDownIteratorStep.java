@@ -25,6 +25,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+
 public class ServerDownIteratorStep extends Step {
   private final List<ServerShutdownInfo> serverShutdownInfos;
 
@@ -83,9 +85,13 @@ public class ServerDownIteratorStep extends Step {
 
     private StepAndPacket createManagedServerDownDetails(Packet packet, ServerShutdownInfo ssi) {
       if (ssi.isServiceOnly()) {
+        System.out.println("DEBUG: In createManagedServerDownDetails for server " + packet.getValue(SERVER_NAME));
         return new StepAndPacket(createServiceStep(ssi), createPacketForServer(packet, ssi));
       } else {
-        return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
+        System.out.println("DEBUG: In createManagedServerDownDetails for server " + packet.getValue(SERVER_NAME));
+        System.out.println("DEBUG: In createManagedServerDownDetails for server " + ssi.getName());
+        //return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
+        return new StepAndPacket(new ServerDownStep(ssi.getName(), null), createPacketForServer(packet, ssi));
       }
     }
 
