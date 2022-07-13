@@ -334,8 +334,8 @@ public class PersistentVolumeUtils {
         .metadata(new V1ObjectMeta()
             .name("pv-test" + nameSuffix)
             .namespace(namespace));
-    setVolumeSource(pvHostPath, v1pv);
     v1pv.getSpec().storageClassName(nameSuffix);
+    setVolumeSource(pvHostPath, v1pv);
     boolean hasLabels = false;
     String labelSelector = null;
     if (labels != null || !labels.isEmpty()) {
