@@ -54,7 +54,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_RETRY;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE;
-import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -72,7 +71,7 @@ class ShutdownManagedServerStepTest {
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
       SERVER_SHUTDOWN_REST_SUCCESS, SERVER_SHUTDOWN_REST_FAILURE,
-      SERVER_SHUTDOWN_REST_TIMEOUT, SERVER_SHUTDOWN_REST_RETRY,
+      SERVER_SHUTDOWN_REST_RETRY,
       SERVER_SHUTDOWN_REST_THROWABLE
   };
   private static final String UID = "test-domain";
@@ -318,19 +317,9 @@ class ShutdownManagedServerStepTest {
   }
 
   @Test
-  void whenShutdownResponseTimesOut_logTimeout() {
-    ShutdownManagedServerResponseStep responseStep = new ShutdownManagedServerResponseStep(MANAGED_SERVER1,
-        30L, terminalStep);
-
-    // Null HTTP response and no response recorded in packet implies HTTP request timed out
-    responseStep.onFailure(testSupport.getPacket(), null);
-    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_TIMEOUT));
-  }
-
-  @Test
   void whenShutdownResponseThrowsException_logRetry() {
-    ShutdownManagedServerResponseStep responseStep = new ShutdownManagedServerResponseStep(MANAGED_SERVER1,
-        30L, terminalStep);
+    ShutdownManagedServerResponseStep responseStep =
+        new ShutdownManagedServerResponseStep(MANAGED_SERVER1, terminalStep);
     Packet p = testSupport.getPacket();
 
     // Setup Throwable exception

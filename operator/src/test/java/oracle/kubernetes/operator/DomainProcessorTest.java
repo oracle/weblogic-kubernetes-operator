@@ -444,13 +444,13 @@ class DomainProcessorTest {
   }
 
   @Test
-  void afterMakeRightAndChangeServerToNever_serverPodNotDeletedWhenServerIsSuspending() {
+  void afterMakeRightAndChangeServerToNever_serverPodsWaitForShutdownWithHttpToCompleteBeforeTerminating() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     DomainStatus status = new DomainPresenceInfo(newDomain).getDomain().getStatus();
-    invokeServerShutdownWithHttp();
+    defineServerShutdownWithHttpOkResponse();
     setAdminServerStatus(status, SUSPENDING_STATE);
     setManagedServerState(status, SUSPENDING_STATE);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
@@ -464,7 +464,7 @@ class DomainProcessorTest {
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
   }
 
-  private void invokeServerShutdownWithHttp() {
+  private void defineServerShutdownWithHttpOkResponse() {
     httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, 7001),
         createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
     IntStream.range(1, 3).forEach(idx -> httpSupport.defineResponse(

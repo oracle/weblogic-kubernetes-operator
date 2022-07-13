@@ -92,7 +92,6 @@ public class ShutdownManagedServerStep extends Step {
     }
   }
 
-
   static final class ShutdownManagedServerProcessing extends HttpRequestProcessing {
     private Boolean isGracefulShutdown;
     private Long timeout;
@@ -312,8 +311,7 @@ public class ShutdownManagedServerStep extends Step {
       getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
-          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
-          processing.getRequestTimeoutSeconds(), getNext());
+          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
     }
@@ -368,9 +366,8 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private int getPollingInterval() {
-      return TuningParameters.getInstance().getHttpShutdownPollingInterval();
+      return TuningParameters.getInstance().getShutdownWithHttpPollingInterval();
     }
-
   }
 
   private static DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
@@ -380,13 +377,11 @@ public class ShutdownManagedServerStep extends Step {
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
     private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
     private String serverName;
-    private Long requestTimeout;
     private HttpAsyncRequestStep requestStep;
 
-    ShutdownManagedServerResponseStep(String serverName, Long requestTimeout, Step next) {
+    ShutdownManagedServerResponseStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
-      this.requestTimeout = requestTimeout;
     }
 
     @Override
@@ -405,12 +400,6 @@ public class ShutdownManagedServerStep extends Step {
           return doNext(requestStep, packet);
         }
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
-      } else if (getResponse(packet) == null) {
-        // Request timed out
-        if (retryRequest(packet)) {
-          return doNext(requestStep, packet);
-        }
-        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
       } else {
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
