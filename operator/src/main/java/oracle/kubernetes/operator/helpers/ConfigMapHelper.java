@@ -579,7 +579,8 @@ public class ConfigMapHelper {
     }
 
     private Step createIntrospectionVersionUpdateStep() {
-      return createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext());
+      return DomainValidationSteps.createValidateDomainTopologySteps(
+            createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext()));
     }
 
     private Step createValidationStep() {
