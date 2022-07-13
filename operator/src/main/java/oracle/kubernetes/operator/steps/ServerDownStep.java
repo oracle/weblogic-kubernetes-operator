@@ -13,7 +13,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.steps.ShutdownManagedServerStep.createWaitForServerShutdownWithHttpStep;
 
 public class ServerDownStep extends Step {

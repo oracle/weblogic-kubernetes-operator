@@ -25,8 +25,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-
 public class ServerDownIteratorStep extends Step {
   private final List<ServerShutdownInfo> serverShutdownInfos;
 

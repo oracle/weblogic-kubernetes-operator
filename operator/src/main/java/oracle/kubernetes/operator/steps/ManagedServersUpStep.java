@@ -210,6 +210,7 @@ public class ManagedServersUpStep extends Step {
       if (adminServerOrDone(serverName)) {
         return;
       }
+
       String clusterName = getClusterName(clusterConfig);
       EffectiveServerSpec server = info.getServer(serverName, clusterName);
 

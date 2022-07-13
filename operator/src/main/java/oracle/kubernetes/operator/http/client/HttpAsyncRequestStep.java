@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -24,7 +25,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.http.client.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
@@ -142,7 +142,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private String getServerName() {
-      return packet.getValue(SERVER_NAME);
+      return packet.getValue(ProcessingConstants.SERVER_NAME);
     }
 
     private boolean isServerShuttingDown() {
