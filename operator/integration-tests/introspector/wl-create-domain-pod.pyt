@@ -43,6 +43,8 @@ setOption('DomainName', '${DOMAIN_NAME}')
 #set('FileMinSize', 1)
 #set('FileCount', 2)
 #set('RotateLogOnStartup', 'true')
+set('AdministrationPortEnabled', 'true')
+set('AdministrationPort', ${ADMINISTRATION_PORT})
 
 # Configure the Administration Server
 # ===================================
@@ -52,8 +54,6 @@ cd('/Servers/AdminServer')
 #set('ListenAddress', 'junk')                         # an invalid value, unesolvable as a DNS name
 set('ListenPort', ${ADMIN_PORT})
 set('Name', '${ADMIN_NAME}')
-set('AdministrationPort', ${ADMINISTRATION_PORT})
-set('AdministrationPortEnabled', 'true')
 
 cd('/Servers/${ADMIN_NAME}')
 set('MaxMessageSize',999999)

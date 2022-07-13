@@ -187,12 +187,13 @@ public class FiberTestSupport {
   }
 
   /**
-   * Starts a unit-test fiber with the specified step.
+   * Starts a unit-test fiber with the specified steps.
    *
    * @param step the first step to run
    */
-  public Packet runSteps(Step step) {
-    return runSteps(packet, step);
+  public Packet runSteps(Step... step) {
+    final Step stepList = (step.length == 1 ? step[0] : Step.chain(step));
+    return runSteps(packet, stepList);
   }
 
   /**
