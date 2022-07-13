@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -448,6 +450,7 @@ class DomainProcessorTest {
 
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     DomainStatus status = new DomainPresenceInfo(newDomain).getDomain().getStatus();
+    invokeServerShutdownWithHttp();
     setAdminServerStatus(status, SUSPENDING_STATE);
     setManagedServerState(status, SUSPENDING_STATE);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
@@ -459,6 +462,22 @@ class DomainProcessorTest {
     testSupport.setTime(100, TimeUnit.SECONDS);
     assertThat(getRunningPods().size(), equalTo(1));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  private void invokeServerShutdownWithHttp() {
+    httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, 7001),
+        createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
+    IntStream.range(1, 3).forEach(idx -> httpSupport.defineResponse(
+        createShutdownRequest("cluster-managed-server" + idx, 8001),
+        createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE)));
+  }
+
+  private HttpRequest createShutdownRequest(String serverName, int portNumber) {
+    String url = "http://test-domain-" + serverName + ".namespace:" + portNumber;
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
   }
 
   private void setManagedServerState(DomainStatus status, String suspendingState) {
