@@ -8,6 +8,8 @@ domainInfo:
 topology:
     Name: base_domain
     AdminServerName: 'admin-server'
+    AdministrationPortEnabled: true
+    AdministrationPort: 7099
     ProductionModeEnabled: true
     Cluster:
         mycluster:
@@ -19,8 +21,6 @@ topology:
                 DynamicClusterSize: 2
     Server:
         'admin-server':
-            AdministrationPortEnabled: true
-            AdministrationPort: 7099
             MaxMessageSize: 999999
             NetworkAccessPoint:
                 T3Channel1:
