@@ -85,12 +85,8 @@ public class ServerDownIteratorStep extends Step {
 
     private StepAndPacket createManagedServerDownDetails(Packet packet, ServerShutdownInfo ssi) {
       if (ssi.isServiceOnly()) {
-        System.out.println("DEBUG: In createManagedServerDownDetails for server " + packet.getValue(SERVER_NAME));
         return new StepAndPacket(createServiceStep(ssi), createPacketForServer(packet, ssi));
       } else {
-        System.out.println("DEBUG: In createManagedServerDownDetails for server " + packet.getValue(SERVER_NAME));
-        System.out.println("DEBUG: In createManagedServerDownDetails for server " + ssi.getName());
-        //return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
         return new StepAndPacket(new ServerDownStep(ssi.getName(), null), createPacketForServer(packet, ssi));
       }
     }

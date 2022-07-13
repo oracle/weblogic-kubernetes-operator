@@ -92,7 +92,6 @@ public class HttpAsyncRequestStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     AsyncProcessing processing = new AsyncProcessing(packet);
-    LOGGER.info("DEBUG: suspending processing for server " + packet.getValue(SERVER_NAME));
     return doSuspend(processing::process);
   }
 
@@ -130,16 +129,11 @@ public class HttpAsyncRequestStep extends Step {
       try (ThreadLoggingContext ignored =
                setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
         if (throwable instanceof HttpTimeoutException) {
-          LOGGER.info("DEBUG: Got HttpTimeoutException " + throwable);
           HttpResponseStep.addToPacket(packet, throwable);
           LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
         } else if (response != null) {
-          LOGGER.info("DEBUG: For server " + getServerName() + " got response " + response + ", status code is "
-              + response.statusCode() + ", response.body is " + response.body() + ", request is " 
-              + response.request() + ", headers is " + response.headers());
           recordResponse(response);
         } else if (throwable != null) {
-          LOGGER.info("DEBUG: Got throwable " + throwable);
           recordThrowableResponse(throwable);
         }
       }

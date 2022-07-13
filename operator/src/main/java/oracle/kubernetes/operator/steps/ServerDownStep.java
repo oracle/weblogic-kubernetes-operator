@@ -46,7 +46,6 @@ public class ServerDownStep extends Step {
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
       next = pw.waitForDelete(oldPod, new DomainPresenceInfoUpdateStep(serverName, next));
     }
-    System.out.println("DEBUG: In ServerDownStep for server " + packet.getValue(SERVER_NAME));
 
     return doNext(oldPod != null ? createShutdownManagedServerStep(oldPod, next) : next, packet);
   }

@@ -211,9 +211,6 @@ public class ManagedServersUpStep extends Step {
         return;
       }
       String clusterName = getClusterName(clusterConfig);
-      LOGGER.info("DEBUG: In addServerIfNeeded.. serverName is " + serverName
-          + ", and cluster name is " + clusterName);
-
       EffectiveServerSpec server = info.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
