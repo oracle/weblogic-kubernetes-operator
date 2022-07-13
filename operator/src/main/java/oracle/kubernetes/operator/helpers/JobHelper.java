@@ -357,6 +357,10 @@ public class JobHelper {
           sb.append("domain topology is null");
         } else if (isBringingUpNewDomain(packet)) {
           sb.append("bringing up new domain");
+        } else if (isIntrospectionRequested(packet)) {
+          sb.append("introspection was requested");
+        } else if (isIntrospectVersionChanged(packet)) {
+          sb.append("introspection version was changed");
         } else {
           sb.append("something else");
         }
