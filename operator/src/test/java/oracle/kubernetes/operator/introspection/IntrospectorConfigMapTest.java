@@ -1,7 +1,7 @@
 // Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.helpers;
+package oracle.kubernetes.operator.introspection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +22,11 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
+import oracle.kubernetes.operator.helpers.ConfigMapSplitter;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainTopology;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.http.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;

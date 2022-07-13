@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -250,6 +251,7 @@ public class WlsDomainConfig implements WlsDomain {
     return false;
   }
 
+  @JsonIgnore
   @Nonnull
   public String[] getClusterNames() {
     return getClusterConfigs().keySet().toArray(new String[0]);
