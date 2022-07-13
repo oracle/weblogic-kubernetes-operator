@@ -111,15 +111,12 @@ public class WlsServerConfig {
     this.sslListenPort = listenPort;
   }
 
-  public PortDetails getSslListenPortDetails() {
-    return sslListenPort == null ? null : new PortDetails(sslListenPort, true);
-  }
-
   /**
    * Return whether the SSL listen port is configured to be enabled or not.
    *
    * @return True if the SSL listen port should be enabled, false otherwise
    */
+  @JsonIgnore
   public boolean isSslPortEnabled() {
     return sslListenPort != null;
   }
@@ -181,6 +178,7 @@ public class WlsServerConfig {
     return clusterName;
   }
 
+  @JsonIgnore
   public boolean isAdminPortEnabled() {
     return adminPort != null;
   }
@@ -245,6 +243,7 @@ public class WlsServerConfig {
    * Check if the admin protocol channel is using a secure protocol like T3S or HTTPS.
    * @return true is a secure protocol is being used
    */
+  @JsonIgnore
   public boolean isLocalAdminProtocolChannelSecure() {
     boolean adminProtocolPortSecure = false;
     boolean adminProtocolPortFound = false;
@@ -274,6 +273,7 @@ public class WlsServerConfig {
    *
    * @return True if this server is a dynamic server, false if this server is configured statically
    */
+  @JsonIgnore
   public boolean isDynamicServer() {
     return false;
   }

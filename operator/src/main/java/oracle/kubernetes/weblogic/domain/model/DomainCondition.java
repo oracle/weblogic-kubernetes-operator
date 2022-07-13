@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -145,7 +146,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @param message message
    * @return this
    */
-  public DomainCondition withMessage(String message) {
+  public DomainCondition withMessage(@Nonnull String message) {
     lastTransitionTime = SystemClock.now();
     this.message = message;
     if (reason != null && DomainFailureReason.isFatalError(reason, message)) {

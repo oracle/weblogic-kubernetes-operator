@@ -204,7 +204,7 @@ public class DomainStatusUpdater {
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep(Step next) {
-    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
+    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH, INTROSPECTION);
   }
 
   /**
@@ -259,7 +259,7 @@ public class DomainStatusUpdater {
    * @param next the next step to run. May be null.
    */
   public static Step createTopologyMismatchFailureSteps(String message, Step next) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
   }
 
   /**
@@ -291,7 +291,8 @@ public class DomainStatusUpdater {
    * @param domainIntrospectorJob Domain introspector job
    */
   public static Step createIntrospectionFailureSteps(String message, V1Job domainIntrospectorJob) {
-    return new FailureStep(INTROSPECTION, message).forIntrospection(domainIntrospectorJob);
+    return new FailureStep(INTROSPECTION, message)
+        .forIntrospection(domainIntrospectorJob).removingOldFailures(INTROSPECTION);
   }
 
   /**
@@ -1294,6 +1295,7 @@ public class DomainStatusUpdater {
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
         addFailure(status, status.createAdjustedFailedCondition(reason, message));
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
       }
