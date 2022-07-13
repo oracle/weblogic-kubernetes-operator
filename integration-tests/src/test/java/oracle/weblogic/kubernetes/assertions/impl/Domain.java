@@ -53,9 +53,8 @@ public class Domain {
    * Check if the Domain CRD exists.
    *
    * @return true if domains.weblogic.oracle CRD exists otherwise false
-   * @throws ApiException when Domain CRD doesn't exist
    */
-  public static boolean doesCrdExist() throws ApiException {
+  public static boolean doesCrdExist() {
     try {
       V1CustomResourceDefinition domainCrd
           = apiextensionsV1Api.readCustomResourceDefinition(
@@ -63,13 +62,9 @@ public class Domain {
       assertNotNull(domainCrd, "Domain CRD is null");
       return true;
     } catch (ApiException aex) {
-      if (aex.getCode() == 404) {
-        assertTrue(false, "CRD domains.weblogic.oracle not found");
-      } else {
-        throw aex;
-      }
+      getLogger().info(aex.getMessage());
+      return false;
     }
-    return false;
   }
 
   /**
