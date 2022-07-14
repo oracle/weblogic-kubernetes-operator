@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -89,6 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter WebApp via Prometheus and Grafana")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItMonitoringExporterWebApp {
 
   // domain constants
