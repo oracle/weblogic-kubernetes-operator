@@ -677,37 +677,41 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      V1Pod oldPod = info.getServerPod(serverName);
+      final DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      final V1Pod oldPod = info.getServerPod(serverName);
 
-      long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
-      String clusterName = null;
-      if (oldPod != null) {
-        Map<String, String> labels = oldPod.getMetadata().getLabels();
-        if (labels != null) {
-          clusterName = labels.get(CLUSTERNAME_LABEL);
-        }
-
-        EffectiveServerSpec effectiveServerSpec = info.getServer(serverName, clusterName);
-        if (effectiveServerSpec != null) {
-          // We add a 10 second fudge factor here to account for the fact that WLST takes
-          // ~6 seconds to start, so along with any other delay in connecting and issuing
-          // the shutdown, the actual server instance has the full configured timeout to
-          // gracefully shutdown before the container is destroyed by this timeout.
-          // We will remove this fudge factor when the operator connects via REST to shutdown
-          // the server instance.
-          gracePeriodSeconds =
-              effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
-        }
-
-        String name = oldPod.getMetadata().getName();
+      if (oldPod == null || info.getDomain() == null) {
+        return doNext(packet);
+      } else {
         info.setServerPodBeingDeleted(serverName, Boolean.TRUE);
+        final String clusterName = getClusterName(oldPod);
+        final String name = oldPod.getMetadata().getName();
+        final long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
             packet);
-      } else {
-        return doNext(packet);
       }
+    }
+
+    @Nullable
+    private String getClusterName(V1Pod oldPod) {
+      return Optional.ofNullable(oldPod.getMetadata().getLabels()).map(l -> l.get(CLUSTERNAME_LABEL)).orElse(null);
+    }
+
+    private long getGracePeriodSeconds(DomainPresenceInfo info, String clusterName) {
+      return Optional.ofNullable(info.getServer(serverName, clusterName))
+          .map(this::getConfiguredGracePeriodSeconds)
+          .orElse(Shutdown.DEFAULT_TIMEOUT);
+    }
+
+    // We add a 10 second fudge factor here to account for the fact that WLST takes
+    // ~6 seconds to start, so along with any other delay in connecting and issuing
+    // the shutdown, the actual server instance has the full configured timeout to
+    // gracefully shutdown before the container is destroyed by this timeout.
+    // We will remove this fudge factor when the operator connects via REST to shutdown
+    // the server instance.
+    private long getConfiguredGracePeriodSeconds(EffectiveServerSpec effectiveServerSpec) {
+      return effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
     }
 
     private Step deletePod(String name, String namespace, String domainUid, long gracePeriodSeconds, Step next) {

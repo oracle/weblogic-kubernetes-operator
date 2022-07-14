@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class PodHelperTest {
   private static final String UID = "uid1";
@@ -110,6 +111,17 @@ class PodHelperTest {
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
     MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenInfoHasPodNoDomain_deletePodStepDoesNotThrowException() {
+    final DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
+    info.setServerPod(SERVER_NAME, pod);
+    testSupport.addDomainPresenceInfo(info);
+
+    assertDoesNotThrow(
+        () -> testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep)));
+
   }
 
   @Test
