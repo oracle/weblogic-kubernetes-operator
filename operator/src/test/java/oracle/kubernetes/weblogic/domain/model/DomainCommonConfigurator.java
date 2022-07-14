@@ -297,14 +297,15 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   private ClusterSpec getOrCreateCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
-    return Optional.ofNullable(info.getClusterResource(clusterName)).orElse(createCluster(clusterName)).getSpec();
+    return Optional.ofNullable(info.getClusterResource(clusterName)).orElse(createCluster(info, clusterName)).getSpec();
   }
 
-  private ClusterResource createCluster(@Nonnull String clusterName) {
+  private ClusterResource createCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
     ClusterResource cluster = new ClusterResource()
         .withMetadata(new V1ObjectMeta().name(clusterName))
         .spec(new ClusterSpec().withClusterName(clusterName));
     getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
+    info.addClusterResource(cluster);
     return cluster;
   }
 

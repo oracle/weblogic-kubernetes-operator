@@ -18,15 +18,12 @@ import com.google.gson.GsonBuilder;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.util.ModelMapper;
 import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-
-import static oracle.kubernetes.operator.KubernetesConstants.*;
 
 public abstract class DomainTestBase {
   static final String CLUSTER_NAME = "cluster1";
@@ -74,7 +71,8 @@ public abstract class DomainTestBase {
   protected DomainPresenceInfo readDomainPresence(String resourceName) throws IOException {
     List<KubernetesObject> data = readFromYaml(resourceName);
     DomainPresenceInfo info = new DomainPresenceInfo((DomainResource) data.get(0));
-    data.stream().filter(ClusterResource.class::isInstance).forEach(cr -> info.addClusterResource((ClusterResource) cr));
+    data.stream().filter(ClusterResource.class::isInstance)
+        .forEach(cr -> info.addClusterResource((ClusterResource) cr));
     return info;
   }
 
@@ -91,7 +89,7 @@ public abstract class DomainTestBase {
         ObjectMapper jsonWriter = new ObjectMapper();
         String ko = jsonWriter.writeValueAsString(json);
         String kind = (String) ((Map) obj).get("kind");
-        switch(kind) {
+        switch (kind) {
           case "Domain":
             results.add(gson.fromJson(ko, DomainResource.class));
             break;
@@ -104,9 +102,5 @@ public abstract class DomainTestBase {
       }
       return results;
     }
-
-
-
-
   }
 }
