@@ -249,8 +249,8 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void statusStep_definesClusterReplicaGoalFromDomain() {
-    configureDomain().configureCluster("clusterA").withReplicas(3);
-    configureDomain().configureCluster("clusterB").withReplicas(5);
+    configureDomain().configureCluster(info, "clusterA").withReplicas(3);
+    configureDomain().configureCluster(info,"clusterB").withReplicas(5);
     domain.getSpec().setAllowReplicasBelowMinDynClusterSize(false);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
@@ -948,7 +948,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_domainIsNotCompleted() {
-    configureDomain().configureCluster("cluster1").withReplicas(5);
+    configureDomain().configureCluster(info,"cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -983,7 +983,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountWithinMaxUnavailableOfReplicas_domainIsAvailable() {
-    configureDomain().configureCluster("cluster1").withReplicas(5).withMaxUnavailable(1);
+    configureDomain().configureCluster(info,"cluster1").withReplicas(5).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -993,7 +993,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountNotWithinMaxUnavailableOfReplicas_domainIsNotAvailable() {
-    configureDomain().configureCluster("cluster1").withReplicas(20).withMaxUnavailable(1);
+    configureDomain().configureCluster(info,"cluster1").withReplicas(20).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -1097,7 +1097,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenNoMoreThanMaxUnavailableServersNotRunningInACluster_domainIsAvailable() {
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server3", "server4")
@@ -1111,7 +1111,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenTooManyServersNotRunningInACluster_domainIsNotAvailable() {
-    configureDomain().configureCluster("clusterA").withReplicas(4).withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withReplicas(4).withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server2", "server3", "server4")
@@ -1125,7 +1125,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenNoServersReadyInCluster_domainIsNotAvailable() {
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
           .build();
@@ -1141,7 +1141,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenDomainWasAvailableAndNoLongerIs_domainAvailableConditionIsChangedToFalse() {
     domain.getStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(TRUE));
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
           .build();

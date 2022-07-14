@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -370,10 +371,11 @@ public abstract class DomainConfigurator {
   /**
    * Adds a default cluster configuration to the domain, if not already present.
    *
+   * @param info Domain processor info
    * @param clusterName the name of the server to add
    * @return an object to add additional configurations
    */
-  public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
+  public abstract ClusterConfigurator configureCluster(DomainPresenceInfo info, @Nonnull String clusterName);
 
   public abstract void setShuttingDown(boolean start);
 

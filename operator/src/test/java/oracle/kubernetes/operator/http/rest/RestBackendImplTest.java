@@ -289,7 +289,8 @@ class RestBackendImplTest {
 
   @Test
   void whenPerClusterReplicaSettingMatchesScaleRequest_doNothing() {
-    configureCluster("cluster1").withReplicas(5);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain1);
+    configureCluster(info,"cluster1").withReplicas(5);
 
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
@@ -299,7 +300,8 @@ class RestBackendImplTest {
   @Test
   void whenPerClusterReplicaSettingGreaterThanMax_throwsException() {
     final String cluster1 = "cluster1";
-    configureCluster(cluster1);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain1);
+    configureCluster(info, cluster1);
     domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
             .withClusterLimits(0, 5));
 
@@ -311,17 +313,18 @@ class RestBackendImplTest {
     return updatedDomain;
   }
 
-  private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
+  private ClusterConfigurator configureCluster(DomainPresenceInfo info, String clusterName) {
+    return configureDomain().configureCluster(info, clusterName);
   }
 
   @Test
   void whenPerClusterReplicaSetting_scaleClusterUpdatesSetting() {
-    configureCluster("cluster1").withReplicas(1);
+    DomainPresenceInfo info = new DomainPresenceInfo(getUpdatedDomain());
+    configureCluster(info, "cluster1").withReplicas(1);
 
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
-    assertThat(new DomainPresenceInfo(getUpdatedDomain()).getReplicaCount("cluster1"), equalTo(5));
+    assertThat(info.getReplicaCount("cluster1"), equalTo(5));
   }
 
   @Test
@@ -344,22 +347,6 @@ class RestBackendImplTest {
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 1);
 
     assertThat(getUpdatedClusterResource(), nullValue());
-  }
-
-  @Test
-  void whenPerClusterResourceNotFound_updateClusterSpecOfDomain() {
-    configureCluster(CLUSTER_1).withReplicas(2);
-    for (String name : new String[]{"cluster2", "cluster3", "cluster4"}) {
-      testSupport.defineResources(createClusterResource(DOMAIN2, NS, name));
-    }
-
-    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 4);
-
-    DomainResource updatedDomain = getUpdatedDomain();
-    assertThat(updatedDomain, notNullValue());
-    ClusterSpec cluster = updatedDomain.getSpec().getCluster(CLUSTER_1);
-    assertThat(cluster, notNullValue());
-    assertThat(cluster.getReplicas(), equalTo(4));
   }
 
   @Test
@@ -403,7 +390,8 @@ class RestBackendImplTest {
   void whenReplaceDomainReturnsError_scaleClusterThrowsException() {
     testSupport.failOnResource(DOMAIN, DOMAIN2, NS, HTTP_CONFLICT);
 
-    DomainConfiguratorFactory.forDomain(domain2).configureCluster("cluster1").withReplicas(2);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain2);
+    DomainConfiguratorFactory.forDomain(domain2).configureCluster(info,"cluster1").withReplicas(2);
 
     assertThrows(WebApplicationException.class,
               () -> restBackend.scaleCluster(DOMAIN2, "cluster1", 3));

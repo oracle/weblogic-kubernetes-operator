@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.webhooks;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -50,8 +51,8 @@ class AdmissionWebhookTestSetUp {
         .withImage(ORIGINAL_IMAGE_NAME)
         .setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
     domain.getSpec()
-        .withCluster(createClusterSpec(CLUSTER_NAME_1))
-        .withCluster(createClusterSpec(CLUSTER_NAME_2));
+        .withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_1))
+        .withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_2));
     return domain;
   }
 

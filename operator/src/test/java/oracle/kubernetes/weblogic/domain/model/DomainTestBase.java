@@ -49,7 +49,7 @@ public abstract class DomainTestBase {
   }
 
   final ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain(domain).configureCluster(clusterName);
+    return configureDomain(domain).configureCluster(info, clusterName);
   }
 
   final ServerConfigurator configureServer(String serverName) {

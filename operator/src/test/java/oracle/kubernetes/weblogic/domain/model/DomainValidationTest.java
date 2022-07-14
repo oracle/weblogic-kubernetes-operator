@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
@@ -196,7 +197,8 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   private void addClusterWithName(String clusterName) {
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName(clusterName));
+    resourceLookup.defineResource(clusterName, ClusterResource.class, NS);
+    domain.getSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
   }
 
   @Test
@@ -358,8 +360,9 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+          .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
@@ -367,25 +370,28 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+          .configureCluster(info,"Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
           .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+          .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+          .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
@@ -432,8 +438,9 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenReservedEnvironmentVariablesSpecifiedAtClusterLevel_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster1")
+          .configureCluster(info,"cluster1")
           .withEnvironmentVariable("DOMAIN_HOME", "testValue");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -464,8 +471,9 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenLivenessProbeSuccessThresholdValueInvalidForCluster_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster-1")
+          .configureCluster(info, "cluster-1")
           .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -496,8 +504,9 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenReservedContainerNameUsedForCluster_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster-1")
+          .configureCluster(info,"cluster-1")
           .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -529,8 +538,9 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenContainerPortNameExceedsMaxLength_ForClusteredServerContainer_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster-1")
+          .configureCluster(info,"cluster-1")
           .withContainer(new V1Container().name("Test")
                 .ports(List.of(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
 

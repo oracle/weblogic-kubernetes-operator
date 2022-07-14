@@ -5,12 +5,14 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -22,6 +24,7 @@ import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -289,23 +292,20 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public ClusterConfigurator configureCluster(@Nonnull String clusterName) {
-    return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
+  public ClusterConfigurator configureCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
+    return new ClusterConfiguratorImpl(getOrCreateCluster(info, clusterName));
   }
 
-  private ClusterSpec getOrCreateCluster(@Nonnull String clusterName) {
-    ClusterSpec clusterSpec = getDomainSpec().getCluster(clusterName);
-    if (clusterSpec != null) {
-      return clusterSpec;
-    }
-
-    return createCluster(clusterName);
+  private ClusterSpec getOrCreateCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
+    return Optional.ofNullable(info.getClusterResource(clusterName)).orElse(createCluster(clusterName)).getSpec();
   }
 
-  private ClusterSpec createCluster(@Nonnull String clusterName) {
-    ClusterSpec clusterSpec = new ClusterSpec().withClusterName(clusterName);
-    getDomainSpec().getClusters().add(clusterSpec);
-    return clusterSpec;
+  private ClusterResource createCluster(@Nonnull String clusterName) {
+    ClusterResource cluster = new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name(clusterName))
+        .spec(new ClusterSpec().withClusterName(clusterName));
+    getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
+    return cluster;
   }
 
 

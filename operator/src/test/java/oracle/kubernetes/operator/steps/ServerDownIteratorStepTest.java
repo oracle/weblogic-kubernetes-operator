@@ -312,7 +312,7 @@ class ServerDownIteratorStepTest {
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName);
+    return configurator.configureCluster(domainPresenceInfo, clusterName);
   }
 
   private void addWlsServers(String... serverNames) {

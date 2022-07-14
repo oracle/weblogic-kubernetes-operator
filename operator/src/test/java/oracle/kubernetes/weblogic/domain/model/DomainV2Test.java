@@ -379,8 +379,8 @@ class DomainV2Test extends DomainTestBase {
   void whenDomainsAreConfiguredAlike_objectsAreEqual() {
     DomainResource domain1 = createDomain();
 
-    configureDomain(domain).configureCluster("cls1");
-    configureDomain(domain1).configureCluster("cls1");
+    configureDomain(domain).configureCluster(info, "cls1");
+    configureDomain(domain1).configureCluster(info, "cls1");
 
     assertThat(domain, equalTo(domain1));
   }
@@ -705,8 +705,8 @@ class DomainV2Test extends DomainTestBase {
   void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
     DomainResource domain1 = createDomain();
 
-    configureDomain(domain).configureCluster("cls1").withReplicas(2);
-    configureDomain(domain1).configureCluster("cls1").withReplicas(3);
+    configureDomain(domain).configureCluster(info, "cls1").withReplicas(2);
+    configureDomain(domain1).configureCluster(info, "cls1").withReplicas(3);
 
     assertThat(domain, not(equalTo(domain1)));
   }

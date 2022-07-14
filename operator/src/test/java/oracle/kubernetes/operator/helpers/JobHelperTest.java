@@ -1398,7 +1398,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @SuppressWarnings("SameParameterValue")
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
+    return configureDomain().configureCluster(domainPresenceInfo, clusterName);
   }
 
   @SuppressWarnings("SameParameterValue")

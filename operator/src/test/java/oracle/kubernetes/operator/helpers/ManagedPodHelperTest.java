@@ -257,7 +257,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
         .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
 
@@ -363,7 +363,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withLogHomeEnabled(true)
         .withContainer(container)
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPodLabel("myCluster", "my-$(CLUSTER_NAME)")
         .withPodLabel("logHome", "$(LOG_HOME)");
 
@@ -449,7 +449,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasAdditionalVolumes_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAdditionalVolume("volume1", "/source-path1")
         .withAdditionalVolume("volume2", "/source-path2");
 
@@ -462,7 +462,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasAdditionalVolumeMounts_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAdditionalVolumeMount("volume1", "/destination-path1")
         .withAdditionalVolumeMount("volume2", "/destination-path2");
 
@@ -508,7 +508,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAdditionalVolume("volume2", "/cluster-path");
 
     assertThat(
@@ -530,7 +530,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAdditionalVolumeMount("volume2", "/cluster-path");
 
     assertThat(
@@ -659,7 +659,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasInitContainers_createPodWithThem() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withInitContainer(
             createContainer(
                 "container1", "busybox",  "sh", "-c", "echo managed server && sleep 120"))
@@ -683,7 +683,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         .configureServer(SERVER_NAME)
         .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withInitContainer(
             createContainer("container1", "busybox", "sh", "-c", "echo cluster && sleep 120"))
         .withInitContainer(createContainer("container3", "oraclelinux", "ls /cluster"));
@@ -748,7 +748,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasContainers_createPodWithThem() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withContainer(
             createContainer(
                 "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
@@ -772,7 +772,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         .configureServer(SERVER_NAME)
         .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withContainer(
             createContainer("container1", "busybox", "sh", "-c", "echo cluster && sleep 120"))
         .withContainer(createContainer("container3", "oraclelinux", "ls /cluster"));
@@ -811,7 +811,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasLabels_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPodLabel("label1", "cluster-label-value1")
         .withPodLabel("label2", "cluster-label-value2");
 
@@ -823,7 +823,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasRestartVersion_createManagedPodWithRestartVersionLabel() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-    getConfigurator().configureCluster(CLUSTER_NAME).withRestartVersion("clusterRestartV1");
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withRestartVersion("clusterRestartV1");
 
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.CLUSTERRESTARTVERSION_LABEL, "clusterRestartV1"));
@@ -846,7 +846,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasAnnotations_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPodAnnotation("annotation1", "cluster-annotation-value1")
         .withPodAnnotation("annotation2", "cluster-annotation-value2");
 
@@ -888,7 +888,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPodLabel("label2", "cluster-label-value1")
         .withPodLabel("label3", "cluster-label-value2");
 
@@ -909,7 +909,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPodAnnotation("annotation2", "cluster-annotation-value1")
         .withPodAnnotation("annotation3", "cluster-annotation-value2");
 
@@ -931,7 +931,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenClusterHasNoAffinity_createdPodHasDefaultAntiAffinity() {
-    getConfigurator().configureCluster(CLUSTER_NAME);
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME);
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -944,7 +944,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenClusterHasAffinity_createPodWithIt() {
-    getConfigurator().configureCluster(CLUSTER_NAME).withAffinity(affinity);
+    getConfigurator().configureCluster(domainPresenceInfo, CLUSTER_NAME).withAffinity(affinity);
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(getCreatePodAffinity(), is(affinity));
@@ -953,7 +953,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasNodeSelector_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withNodeSelector("os_arch", "x86_64");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -965,7 +965,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasNodeName_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withNodeName("kube-01");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -977,7 +977,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasSchedulerName_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withSchedulerName("my-scheduler");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -989,7 +989,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasRuntimeClassName_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withRuntimeClassName("RuntimeClassName");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -1001,7 +1001,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasPriorityClassName_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPriorityClassName("PriorityClassName");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -1013,7 +1013,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasRestartPolicy_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -1025,7 +1025,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasPodSecurityContext_createPodWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withPodSecurityContext(podSecurityContext);
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -1037,7 +1037,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasContainerSecurityContext_createContainersWithIt() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withContainerSecurityContext(containerSecurityContext);
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -1050,7 +1050,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   void whenClusterHasResources_createContainersWithThem() {
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withLimitRequirement("cpu", "1Gi")
         .withRequestRequirement("memory", "250m");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
@@ -1174,7 +1174,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasAffinityWithVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAffinity(
             new V1Affinity().podAntiAffinity(
                 new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
@@ -1200,7 +1200,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasEmptyAffinity_createClusteredManagedPodWithEmptyAffinity() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
            .withAffinity(new V1Affinity());
 
     assertThat(getCreatePodAffinity(), is(new V1Affinity()));
@@ -1215,7 +1215,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                 new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
                     Collections.singletonList(
                           createWeightedPodAffinityTerm("weblogic.domainUID", "$(DOMAIN_UID)")))))
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
           .withAffinity(new V1Affinity());
 
     assertThat(getCreatePodAffinity(), is(new V1Affinity()));
@@ -1230,7 +1230,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                 new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
                     Collections.singletonList(
                         createWeightedPodAffinityTerm("weblogic.domainUID", "$(DOMAIN_UID)")))))
-        .configureCluster(CLUSTER_NAME);
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME);
 
     V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
         new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
@@ -1249,7 +1249,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                 new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
                     Collections.singletonList(
                         createWeightedPodAffinityTerm("weblogic.domainUID", "$(DOMAIN_UID)")))))
-        .configureCluster(CLUSTER_NAME)
+        .configureCluster(domainPresenceInfo, CLUSTER_NAME)
         .withAffinity(
             new V1Affinity().podAntiAffinity(
                 new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
