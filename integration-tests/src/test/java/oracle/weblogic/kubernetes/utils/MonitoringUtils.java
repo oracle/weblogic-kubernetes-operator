@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -452,6 +453,10 @@ public class MonitoringUtils {
             StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
             "pvc-grafana", "pvc-" + grafanaReleaseName));
+    if (!OKE_CLUSTER) {
+      assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+              "enabled: false", "enabled: true"));
+    }
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
