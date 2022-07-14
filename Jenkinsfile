@@ -453,10 +453,11 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        BASE_IMAGES_REPO_USERNAME = credentials("${ocr_username_creds}")
-                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocr_password_creds}")
-                        BASE_IMAGES_REPO_EMAIL = credentials("${ocr_username_creds}")
-                        TEST_IMAGES_REPO_REGISTRY = credentials("${ocir_registry_creds}")
+                        BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO = credentials("${ocir_registry_creds}")
                         TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
                         TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
                         TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
@@ -486,9 +487,9 @@ EOF
                             echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                                                                      >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.base.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
