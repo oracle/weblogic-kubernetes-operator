@@ -81,13 +81,25 @@ public class DomainAdmissionChecker extends AdmissionChecker {
    */
   @Override
   public boolean isProposedChangeAllowed() {
-    return isUnchanged()
-        || areAllClusterReplicaCountsValid(proposedDomain)
-        || shouldIntrospect();
+    return isUnchanged() || areChangesAllowed();
+  }
+
+  private boolean areChangesAllowed() {
+    return hasNoPreIntrospectionValidationErrors(proposedDomain) && isProposedReplicaCountValid();
+  }
+
+  private boolean isProposedReplicaCountValid() {
+    return areAllClusterReplicaCountsValid(proposedDomain) || shouldIntrospect();
+  }
+
+  private boolean hasNoPreIntrospectionValidationErrors(DomainResource proposedDomain) {
+    List<String> failures = proposedDomain.getSimpleValidationFailures();
+    messages.addAll(failures);
+    return failures.isEmpty();
   }
 
   private boolean isUnchanged() {
-    return isSpecUnchanged();
+    return existingDomain.getSpec() == proposedDomain.getSpec() || isSpecUnchanged();
   }
 
   private boolean isSpecUnchanged() {
