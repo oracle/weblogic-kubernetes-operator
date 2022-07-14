@@ -81,7 +81,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
    */
   @Override
   public boolean isProposedChangeAllowed() {
-    return isUnchanged() || areChangesAllowed();
+    return isSpecUnchanged() || areChangesAllowed();
   }
 
   private boolean areChangesAllowed() {
@@ -98,15 +98,15 @@ public class DomainAdmissionChecker extends AdmissionChecker {
     return failures.isEmpty();
   }
 
-  private boolean isUnchanged() {
-    return existingDomain.getSpec() == proposedDomain.getSpec() || isSpecUnchanged();
-  }
-
   private boolean isSpecUnchanged() {
     return Optional.of(existingDomain)
         .map(DomainResource::getSpec)
         .map(this::isProposedSpecUnchanged)
-        .orElse(false);
+        .orElse(isProposedDomainSpecNull());
+  }
+
+  private boolean isProposedDomainSpecNull() {
+    return proposedDomain.getSpec() == null;
   }
 
   private boolean isProposedSpecUnchanged(@NotNull DomainSpec existingSpec) {

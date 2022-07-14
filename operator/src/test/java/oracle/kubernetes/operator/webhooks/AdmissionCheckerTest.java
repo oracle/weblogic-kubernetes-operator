@@ -47,6 +47,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.crea
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.LOG_HOME;
 import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.SERVER_NAME;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -65,6 +66,7 @@ class AdmissionCheckerTest {
   private static final String WDT_INSTALL_HOME_1 = "/u01/modelhome/wdtinstall";
   private static final String MODEL_HOME_2 = "/u01/wdtinstall/modelhome";
   private static final String WDT_INSTALL_HOME_2 = "/u01/wdtinstall";
+  public static final String MOUNT_PATH = "/" + LOG_HOME + "/valume";
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
@@ -238,12 +240,16 @@ class AdmissionCheckerTest {
 
   @Test
   void whenDomainSourceTypePVAndDomainImageChangedReplicasInvalid_returnFalse() {
-    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
-    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
-    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS).withImage(NEW_IMAGE_NAME).setLogHome(MOUNT_PATH);
+    setPVDomainSourceTypeWithAdditionalVolume(existingDomain);
+    setPVDomainSourceTypeWithAdditionalVolume(proposedDomain);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  private void setPVDomainSourceTypeWithAdditionalVolume(DomainResource domain) {
+    domain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .getAdditionalVolumeMounts().add(new V1VolumeMount().mountPath(MOUNT_PATH));
   }
 
   @Test
