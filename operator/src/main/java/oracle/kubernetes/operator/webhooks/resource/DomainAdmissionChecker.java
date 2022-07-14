@@ -102,11 +102,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
     return Optional.of(existingDomain)
         .map(DomainResource::getSpec)
         .map(this::isProposedSpecUnchanged)
-        .orElse(isProposedDomainSpecNull());
-  }
-
-  private boolean isProposedDomainSpecNull() {
-    return proposedDomain.getSpec() == null;
+        .orElse(false);
   }
 
   private boolean isProposedSpecUnchanged(@NotNull DomainSpec existingSpec) {
