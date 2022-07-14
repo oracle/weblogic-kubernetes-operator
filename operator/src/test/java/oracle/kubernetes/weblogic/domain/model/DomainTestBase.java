@@ -4,19 +4,29 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.ModelMapper;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+
+import static oracle.kubernetes.operator.KubernetesConstants.*;
 
 public abstract class DomainTestBase {
   static final String CLUSTER_NAME = "cluster1";
@@ -61,23 +71,42 @@ public abstract class DomainTestBase {
   }
 
   @SuppressWarnings("SameParameterValue")
-  protected DomainResource readDomain(String resourceName) throws IOException {
-    String json = jsonFromYaml(resourceName);
-    Gson gson = new GsonBuilder().create();
-    return gson.fromJson(json, DomainResource.class);
-  }
-
-  @SuppressWarnings("SameParameterValue")
   protected DomainPresenceInfo readDomainPresence(String resourceName) throws IOException {
-    return new DomainPresenceInfo(readDomain(resourceName));
+    List<KubernetesObject> data = readFromYaml(resourceName);
+    DomainPresenceInfo info = new DomainPresenceInfo((DomainResource) data.get(0));
+    data.stream().filter(ClusterResource.class::isInstance).forEach(cr -> info.addClusterResource((ClusterResource) cr));
+    return info;
   }
 
-  private String jsonFromYaml(String resourceName) throws IOException {
+  List<KubernetesObject> readFromYaml(String resourceName) throws IOException {
+    List<KubernetesObject> results = new ArrayList<>();
     URL resource = DomainTestBase.class.getResource(resourceName);
-    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    Object obj = yamlReader.readValue(resource, Object.class);
+    Gson gson = new GsonBuilder().create();
+    try (Reader reader = new InputStreamReader(resource.openStream())) {
+      Iterable<Object> iterable = Yaml.getSnakeYaml(null).loadAll(reader);
+      for (Object obj : iterable) {
+        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+        Object json = yamlReader.readValue(Yaml.getSnakeYaml(null).dump(obj), Object.class);
 
-    ObjectMapper jsonWriter = new ObjectMapper();
-    return jsonWriter.writeValueAsString(obj);
+        ObjectMapper jsonWriter = new ObjectMapper();
+        String ko = jsonWriter.writeValueAsString(json);
+        String kind = (String) ((Map) obj).get("kind");
+        switch(kind) {
+          case "Domain":
+            results.add(gson.fromJson(ko, DomainResource.class));
+            break;
+          case "Cluster":
+            results.add(gson.fromJson(ko, ClusterResource.class));
+            break;
+          default:
+            throw new IllegalStateException();
+        }
+      }
+      return results;
+    }
+
+
+
+
   }
 }

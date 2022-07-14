@@ -136,6 +136,7 @@ metadata:
   name: domain1-cluster2
   namespace: domain_ns
 spec:
+  clusterName: cluster2
   replicas: 5
   serverPod:
     containers:

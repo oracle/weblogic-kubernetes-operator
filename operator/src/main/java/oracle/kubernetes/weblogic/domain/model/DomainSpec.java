@@ -546,12 +546,12 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  V1LocalObjectReference getWebLogicCredentialsSecret() {
+  public V1LocalObjectReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
+  public void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 

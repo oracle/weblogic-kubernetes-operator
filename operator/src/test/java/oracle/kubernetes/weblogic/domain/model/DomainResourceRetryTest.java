@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesObject;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import org.junit.jupiter.api.AfterEach;
@@ -58,7 +59,8 @@ class DomainResourceRetryTest extends DomainTestBase {
 
   @Test
   void readFailureRetryParametersFromYaml() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(90L));
     assertThat(domain.getFailureRetryLimitMinutes(), equalTo(1000L));

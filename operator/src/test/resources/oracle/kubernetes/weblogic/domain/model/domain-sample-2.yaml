@@ -85,6 +85,7 @@ metadata:
   name: domain2-cluster1
   namespace: domain_ns
 spec:
+  clusterName: cluster1
   clusterService:
     sessionAffinity: ClientIP
   serverPod:
