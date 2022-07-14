@@ -325,7 +325,9 @@ public class RestBackendImpl implements RestBackend {
     getClusterResource(domainUid, cluster)
         .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
             // FIXME: Do we need to create missing Cluster resource here?
-            () -> { throw new IllegalStateException(); }
+            () -> {
+            throw new IllegalStateException();
+          }
           /*() ->  forDomainDo(domainUid, d -> performScaling(d, cr, cluster, managedServerCount)) */);
 
     LOGGER.exiting();

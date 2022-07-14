@@ -1,6 +1,7 @@
 # Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+apiVersion: weblogic.oracle/v9
 kind: Domain
 metadata:
   name: domain1
@@ -98,13 +99,21 @@ spec:
       
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-  - clusterName: cluster2
-    desiredState: "RUNNING"
-    replicas: 5
-    serverPod:
-      env:
+  - name: domain1-cluster2
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: domain1-cluster2
+  namespace: domain_ns
+spec:
+  replicas: 5
+  serverPod:
+    env:
       - name: JAVA_OPTIONS
         value: "-verbose"
       - name: USER_MEM_ARGS
         value: "-Xms64m -Xmx256m "
-    restartVersion: "2"
+  restartVersion: "2"

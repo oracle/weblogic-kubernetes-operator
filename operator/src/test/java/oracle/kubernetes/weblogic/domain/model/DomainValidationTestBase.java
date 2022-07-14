@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1EndpointConditions;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -34,7 +32,8 @@ public class DomainValidationTestBase extends DomainTestUtils {
 
   @SuppressWarnings("SameParameterValue")
   protected static class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private final Map<Class<? extends KubernetesObject>, List<? extends KubernetesObject>> definedResources = new ConcurrentHashMap<>();
+    private final Map<Class<? extends KubernetesObject>, List<? extends KubernetesObject>> definedResources
+        = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
     <T extends KubernetesObject> List<T> getResourceList(Class<T> type) {
@@ -81,7 +80,8 @@ public class DomainValidationTestBase extends DomainTestUtils {
       String name = reference.getName();
       if (name != null) {
         List<ClusterResource> clusters = getResourceList(ClusterResource.class);
-        return clusters.stream().filter(cluster -> name.equals(cluster.getMetadata().getName())).findFirst().orElse(null);
+        return clusters.stream().filter(cluster -> name.equals(cluster.getMetadata().getName()))
+            .findFirst().orElse(null);
       }
       return null;
     }

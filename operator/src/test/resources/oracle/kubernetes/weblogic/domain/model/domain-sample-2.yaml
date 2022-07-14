@@ -1,6 +1,7 @@
 # Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+apiVersion: weblogic.oracle/v9
 kind: Domain
 metadata:
   name: domain2
@@ -52,46 +53,7 @@ spec:
         user: weblogic
   
   clusters:
-  - clusterName: cluster1
-    clusterService:
-      sessionAffinity: ClientIP
-    serverPod:
-      readinessProbe:
-        initialDelaySeconds: 10
-        timeoutSeconds: 15
-        periodSeconds: 20
-      livenessProbe:
-        initialDelaySeconds: 20
-        timeoutSeconds: 5
-        periodSeconds: 20
-      nodeSelector:
-        os: linux
-      podSecurityContext:
-        runAsGroup: 421
-        runAsNonRoot: true
-        seLinuxOptions:
-          level: cluster
-          role: admin
-          type: admin
-          user: weblogic
-        sysctls:
-        - name: kernel.shm_rmid_forced
-          value: '0'
-      containerSecurityContext:
-        capabilities:
-          add:
-          - SYS_TIME
-        runAsGroup: 421
-        runAsNonRoot: true
-        seLinuxOptions:
-          level: cluster
-          role: admin
-          type: admin
-          user: weblogic
-    serverService:
-      labels:
-        testKey1: testValue1
-        testKey2: testValue2
+  - name: domain2-cluster1
 
   managedServers:
   - serverName: server2
@@ -114,3 +76,51 @@ spec:
       annotations:
         testKey3: testValue3
         testKey4: testValue4
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: domain2-cluster1
+  namespace: domain_ns
+spec:
+  clusterService:
+    sessionAffinity: ClientIP
+  serverPod:
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 15
+      periodSeconds: 20
+    livenessProbe:
+      initialDelaySeconds: 20
+      timeoutSeconds: 5
+      periodSeconds: 20
+    nodeSelector:
+      os: linux
+    podSecurityContext:
+      runAsGroup: 421
+      runAsNonRoot: true
+      seLinuxOptions:
+        level: cluster
+        role: admin
+        type: admin
+        user: weblogic
+      sysctls:
+        - name: kernel.shm_rmid_forced
+          value: '0'
+    containerSecurityContext:
+      capabilities:
+        add:
+          - SYS_TIME
+      runAsGroup: 421
+      runAsNonRoot: true
+      seLinuxOptions:
+        level: cluster
+        role: admin
+        type: admin
+        user: weblogic
+  serverService:
+    labels:
+      testKey1: testValue1
+      testKey2: testValue2
