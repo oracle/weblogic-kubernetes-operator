@@ -17,3 +17,8 @@ admin:
 
 initChownData:
   enabled: false
+  
+securityContext:
+  fsGroup: 0
+  runAsGroup: 0
+  runAsUser: 0
