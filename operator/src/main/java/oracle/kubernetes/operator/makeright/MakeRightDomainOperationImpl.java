@@ -338,7 +338,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
         DomainPresenceStep.createDomainPresenceStep(domainUpStrategy, managedServerStrategy));
   }
 
-  private static Step domainIntrospectionSteps() {
+  static Step domainIntrospectionSteps() {
     return Step.chain(
         ConfigMapHelper.readIntrospectionVersionStep(),
         new IntrospectionRequestStep(),

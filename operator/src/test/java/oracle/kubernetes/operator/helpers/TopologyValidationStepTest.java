@@ -65,7 +65,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLIC
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -470,18 +469,6 @@ class TopologyValidationStepTest {
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
             .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
-  }
-
-  @Test
-  void afterFailingValidation_runNextStep() {
-    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
-    defineScenario(TopologyCase.CONFIGURATION)
-          .withClusterConfiguration("no-such-cluster")
-          .build();
-
-    runTopologyValidationStep();
-
-    assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test

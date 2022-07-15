@@ -2,10 +2,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 topology:
+    AdminServerName: "admin-server"
+    AdministrationPortEnabled: true
+    AdministrationPort: 7099
+
     Server:
         'admin-server':
-            AdministrationPortEnabled: true
-            AdministrationPort: 7099
             MaxMessageSize: 78787878
             NetworkAccessPoint:
                 T3Channel1:

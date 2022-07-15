@@ -62,7 +62,7 @@ from additional images.
 
 - See the `model.auxiliaryImages` section
   in the domain resource
-  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
 
 ### Configuration
 
@@ -79,7 +79,7 @@ and installation files in the auxiliary image using the `sourceModelHome` and `s
 [section](#source-locations).  
 
 - For details about each field, see the
-[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
+[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#auxiliary-image).
 
 - For a basic configuration example, see [Configuration example 1](#configuration-example-1-basic-configuration).
 

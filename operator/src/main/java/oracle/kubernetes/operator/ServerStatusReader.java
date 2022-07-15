@@ -196,7 +196,7 @@ public class ServerStatusReader {
                   LOGGER.fine("readState exit: " + exitValue + ", readState for " + pod.getMetadata().getName());
                   if (exitValue == 1 || exitValue == 2) {
                     state =
-                        PodHelper.isDeleting(pod)
+                        isPodBeingDeleted()
                             ? WebLogicConstants.SHUTDOWN_STATE
                             : WebLogicConstants.STARTING_STATE;
                   } else if (exitValue != 0) {
@@ -226,6 +226,10 @@ public class ServerStatusReader {
             }
             fiber.resume(packet);
           });
+    }
+
+    private boolean isPodBeingDeleted() {
+      return PodHelper.isDeleting(pod) || info.isServerPodBeingDeleted(PodHelper.getPodServerName(pod));
     }
 
     private String getNamespace(@Nonnull V1Pod pod) {
