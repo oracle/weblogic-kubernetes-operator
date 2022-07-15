@@ -1201,7 +1201,7 @@ class DomainProcessorTest {
       domainSetup.accept(domain);
       domainSetup.accept(newDomain);
     }
-    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     domainConfigurator.configureCluster(info, CLUSTER)
         .withReplicas(MIN_REPLICAS).withAffinity(getDefaultAntiAffinity());
     configureDomain(domain).configureCluster(info, CLUSTER)
