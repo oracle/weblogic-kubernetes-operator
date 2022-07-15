@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,9 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -67,6 +71,11 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
 
   private V1Pod createPod(String serverName) {
     return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
+  }
+
+  private V1Pod createPodWithDeletionTimestamp(String serverName) {
+    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS).deletionTimestamp(OffsetDateTime.now()),
+        serverName));
   }
 
   private V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
@@ -147,6 +156,63 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
     assertThat(serverStates, hasEntry("server1", "still not ready yet"));
   }
 
+  @Test
+  void whenWebLogicServerProcessExitedAndPodBeingDeleted_recordInStateMap() {
+    info.setServerPod("server1", createPod("server1"));
+    info.updateLastKnownServerStatus("server1", "not ready yet");
+    info.setServerPodBeingDeleted("server1", true);
+
+    execFactory.defineResponse("server1", "Shutdown", 1);
+
+    Packet packet =
+        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
+
+    Map<String, String> serverStates = getServerStates(packet);
+    assertThat(serverStates, hasEntry("server1", SHUTDOWN_STATE));
+  }
+
+  @Test
+  void whenWebLogicServerProcessExitedAndPodHasDeletionTimestamp_recordInStateMap() {
+    info.setServerPod("server1", createPodWithDeletionTimestamp("server1"));
+    info.updateLastKnownServerStatus("server1", "not ready yet");
+
+    execFactory.defineResponse("server1", "Shutdown", 1);
+
+    Packet packet =
+        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
+
+    Map<String, String> serverStates = getServerStates(packet);
+    assertThat(serverStates, hasEntry("server1", SHUTDOWN_STATE));
+  }
+
+  @Test
+  void whenWebLogicServerStateFileNotFoundAndPodNotBeingDeleted_recordInStateMap() {
+    info.setServerPod("server1", createPod("server1"));
+    info.updateLastKnownServerStatus("server1", "not ready yet");
+
+    execFactory.defineResponse("server1", "Shutdown", 2);
+
+    Packet packet =
+        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
+
+    Map<String, String> serverStates = getServerStates(packet);
+    assertThat(serverStates, hasEntry("server1", STARTING_STATE));
+  }
+
+  @Test
+  void whenReadStateFailedWithOutOfMemoryAndPodNotBeingDeleted_recordInStateMap() {
+    info.setServerPod("server1", createPod("server1"));
+    info.updateLastKnownServerStatus("server1", "not ready yet");
+
+    execFactory.defineResponse("server1", "Shutdown", 137);
+
+    Packet packet =
+        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
+
+    Map<String, String> serverStates = getServerStates(packet);
+    assertThat(serverStates, hasEntry("server1", UNKNOWN_STATE));
+  }
+
   private void setReadyStatus(V1Pod pod) {
     pod.setStatus(
         new V1PodStatus()
@@ -183,9 +249,11 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
 
   abstract static class ProcessStub extends Process {
     private final String response;
+    private final Integer exitCode;
 
-    public ProcessStub(String response) {
+    public ProcessStub(String response, Integer exitCode) {
       this.response = response;
+      this.exitCode = exitCode;
     }
 
     @Override
@@ -195,7 +263,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
 
     @Override
     public int exitValue() {
-      return 0;
+      return exitCode;
     }
 
     @Override

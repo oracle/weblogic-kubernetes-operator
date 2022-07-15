@@ -21,6 +21,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 
 class KubernetesExecFactoryFake implements KubernetesExecFactory {
   private final Map<String, String> responses = new HashMap<>();
+  private final Map<String, Integer> exitCodes = new HashMap<>();
 
   @NotNull
   public Memento install() throws NoSuchFieldException {
@@ -28,7 +29,12 @@ class KubernetesExecFactoryFake implements KubernetesExecFactory {
   }
 
   void defineResponse(String serverName, String response) {
+    defineResponse(serverName, response, 0);
+  }
+
+  void defineResponse(String serverName, String response, Integer exitCode) {
     responses.put(LegalNames.toPodName(UID, serverName), response);
+    exitCodes.put(LegalNames.toPodName(UID, serverName), exitCode);
   }
 
   @Override
@@ -36,11 +42,16 @@ class KubernetesExecFactoryFake implements KubernetesExecFactory {
     return new KubernetesExec() {
       @Override
       public Process exec(String... command) {
-        return createStub(ServerStatusReaderTest.ProcessStub.class, getResponse(pod.getMetadata().getName()));
+        return createStub(ServerStatusReaderTest.ProcessStub.class, getResponse(pod.getMetadata().getName()),
+            getExitCode(pod.getMetadata().getName()));
       }
 
       private String getResponse(String name) {
         return Optional.ofNullable(responses.get(name)).orElse("** unknown pod **");
+      }
+
+      private Integer getExitCode(String name) {
+        return Optional.ofNullable(exitCodes.get(name)).orElse(0);
       }
     };
   }
