@@ -7,7 +7,7 @@ metadata:
     weblogic.domainUID: DOMAIN_UID
 spec:
   domainHomeSourceType: FromModel
-  image: "BASE_IMAGE"
+  image: "MII_IMAGE"
   imagePullPolicy: IfNotPresent
   webLogicCredentialsSecret: 
     name: weblogic-credentials
@@ -15,9 +15,6 @@ spec:
   - name: base-images-repo-secret
   - name: test-images-repo-secret
   includeServerOutInPodLog: true
-  auxiliaryImageVolumes:
-  - name: auxiliaryImageVolume
-    mountPath: "/auxiliary"
   serverPod:
     env:
     - name: CUSTOM_DOMAIN_NAME
@@ -30,10 +27,6 @@ spec:
       requests:
         cpu: "250m"
         memory: "768Mi"
-    auxiliaryImages:
-    - image: "AUX_IMAGE"
-      imagePullPolicy: IfNotPresent
-      volume: auxiliaryImageVolume
   adminServer:
     serverStartState: RUNNING
   replicas: 2
@@ -59,8 +52,7 @@ spec:
        localhostBindingsEnabled: false
     introspectorJobActiveDeadlineSeconds: 600
     model:
+      configMap: istio-upgrade-configmap
       domainType: WLS
-      modelHome: "/auxiliary/models"
-      wdtInstallHome: "/auxiliary/weblogic-deploy"
       runtimeEncryptionSecret: encryptionsecret
 
