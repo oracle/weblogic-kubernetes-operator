@@ -77,7 +77,9 @@ public class TuningParameters {
   public static final String SERVICE_ACCOUNT_NAME = "serviceaccount";
   public static final String CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT = "crdPresenceFailureRetryMaxCount";
   public static final String HTTP_REQUEST_FAILURE_COUNT_THRESHOLD = "httpRequestFailureCountThreshold";
+  public static final String SHUTDOWN_WITH_HTTP_POLLING_INTERVAL = "shutdownWithHttpPollingInterval";
   public static final int DEFAULT_HTTP_REQUEST_FAILURE_COUNT_THRESHOLD = 10;
+  public static final int DEFAULT_SHUTDOWN_WITH_HTTP_POLLING_INTERVAL = 3;
 
   public static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
@@ -228,6 +230,10 @@ public class TuningParameters {
 
   public int getHttpRequestFailureCountThreshold() {
     return getParameter(HTTP_REQUEST_FAILURE_COUNT_THRESHOLD, DEFAULT_HTTP_REQUEST_FAILURE_COUNT_THRESHOLD);
+  }
+
+  public int getShutdownWithHttpPollingInterval() {
+    return getParameter(SHUTDOWN_WITH_HTTP_POLLING_INTERVAL, DEFAULT_SHUTDOWN_WITH_HTTP_POLLING_INTERVAL);
   }
 
   /**

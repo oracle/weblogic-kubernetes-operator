@@ -266,17 +266,29 @@ public class PodHelper {
   }
 
   /**
+   * Returns the pod's cluster-name.
+   * The cluster-name is the value of the weblogic.clusterName label in the given pod.
+   *
+   * @param pod the pod
+   * @return cluster name.
+   */
+  public static String getPodClusterName(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(CLUSTERNAME_LABEL)).orElse(null);
+  }
+
+  /**
    * get pod's server name.
    * @param pod pod
    * @return server name
    */
   public static String getPodServerName(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.SERVERNAME_LABEL);
-    }
-    return null;
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(SERVERNAME_LABEL)).orElse(null);
   }
 
   /**
