@@ -12,18 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -41,7 +29,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
@@ -50,34 +37,26 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.cleanUpCRD;
@@ -102,6 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItOperatorIstioUpgrade {
 
   public static final String OLD_DOMAIN_VERSION = "v8";
+  private final String clusterName = "cluster-1"; // do not modify
   private static LoggingFacade logger = null;
   private String domainUid = "istio-upg-domain";
   private String adminServerPodName = domainUid + "-admin-server";
@@ -112,6 +92,7 @@ class ItOperatorIstioUpgrade {
   private String adminSecretName = "weblogic-credentials";
   private String opNamespace;
   private String domainNamespace;
+  private int istioIngressPort;
   private static String miiAuxiliaryImageTag = "istio-v8-upgrade";
   private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
 
@@ -220,9 +201,62 @@ class ItOperatorIstioUpgrade {
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
+    createIstioService();
+    checkIstioService();
     upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
+    // Re check the istio Service After Upgrade
+    checkIstioService();
   }
+
+  private void checkIstioService() {
+    // We can not verify Rest Management console thru Adminstration NodePort
+    // in istio, as we can not enable Adminstration NodePort
+    logger.info("Verifying Istio Service @IngressPort [{0}]", istioIngressPort);
+    if (!WEBLOGIC_SLIM) {
+      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole =
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console");
+      logger.info("WebLogic console is accessible");
+    } else {
+      logger.info("Skipping WebLogic console in WebLogic slim image");
+    }
+  }
+
+  private void createIstioService() {
+
+    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
+
+    Map<String, String> templateMap  = new HashMap<>();
+    templateMap.put("NAMESPACE", domainNamespace);
+    templateMap.put("DUID", domainUid);
+    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("CLUSTER_SERVICE", clusterService);
+
+    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
+    Path targetHttpFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
+
+    boolean deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+
+    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
+    Path targetDrFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
+
+    deployRes = assertDoesNotThrow(
+        () -> deployIstioDestinationRule(targetDrFile));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+
+    istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+  }
+
+
 
   private void createSecrets() {
     // Create the repo secret to pull the domain image
@@ -238,32 +272,6 @@ class ItOperatorIstioUpgrade {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
-  }
-
-  private void createWlsDomainAndVerify(String domainType,
-        String domainNamespace, String domainVersion,
-        String externalServiceNameSuffix) {
-
-    createSecrets();
-
-    String domainImage = "";
-    if (domainType.equalsIgnoreCase("Image")) {
-      domainImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-    } else {
-      domainImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    }
-
-    // create domain
-    createDomainResource(domainNamespace, domainVersion,
-                         domainType, domainImage);
-    checkDomainStarted(domainUid, domainNamespace);
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-    logger.info("Validating WebLogic admin server access by login to console");
-    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST,
-           String.valueOf(serviceNodePort), false);
   }
 
   private void checkDomainStarted(String domainUid, String domainNamespace) {
@@ -297,146 +305,6 @@ class ItOperatorIstioUpgrade {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodDeleted(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
-  }
-
-  private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
-    for (Integer count : appAvailability) {
-      if (count == 0) {
-        logger.warning("Application was not available during operator upgrade.");
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Restart the domain after upgrade by changing serverStartPolicy.
-   */
-  private void restartDomain(String domainUid, String domainNamespace) {
-    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "Never"),
-         "Failed to patch Domain's serverStartPolicy to Never");
-    logger.info("Domain is patched to shutdown");
-    checkDomainStopped(domainUid, domainNamespace);
-
-    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/serverStartPolicy", "IfNeeded"),
-         "Failed to patch Domain's serverStartPolicy to IfNeeded");
-    logger.info("Domain is patched to re start");
-    checkDomainStarted(domainUid, domainNamespace);
-  }
-
-  private void createDomainResource(
-      String domainNamespace,
-      String domVersion,
-      String domainHomeSourceType,
-      String domainImage) {
-
-    String domApiVersion = "weblogic.oracle/" + domVersion;
-    logger.info("Default Domain API version {0}", DOMAIN_API_VERSION);
-    logger.info("Domain API version selected {0}", domApiVersion);
-    logger.info("Domain Image name selected {0}", domainImage);
-    logger.info("Create domain resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-                      "weblogicenc", "weblogicenc");
-
-    Domain domain = new Domain()
-            .apiVersion(domApiVersion)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHomeSourceType(domainHomeSourceType)
-                    .image(domainImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(TEST_IMAGES_REPO_SECRET_NAME))
-                    .webLogicCredentialsSecret(new V1LocalObjectReference()
-                            .name(adminSecretName))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("weblogic.oracle/v8".equals(domApiVersion) ? "IF_NEEDED" : "IfNeeded")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value(SSL_PROPERTIES))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                        .adminService(new AdminService()
-                        .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount))
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                .runtimeEncryptionSecret(encryptionSecretName)
-                                .domainType("WLS"))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
-          String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-          domainUid, domainNamespace));
-    assertTrue(domCreated,
-         String.format("Create domain custom resource failed with ApiException "
-             + "for %s in namespace %s", domainUid, domainNamespace));
-    setPodAntiAffinity(domain);
-    removePortForwardingAttribute(domainNamespace,domainUid);
-  }
-
-  // Remove the artifact adminChannelPortForwardingEnabled from domain resource
-  // if exist, so that the Operator release default will be effective.
-  // e.g. in Release 3.3.x the default is false, but 4.x.x onward it is true
-  // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
-  // so the patch command to remove this attribute fails. So we do not assert
-  // the result of patch command
-  // assertTrue(result, "Failed to remove PortForwardingAttribute");
-  private void removePortForwardingAttribute(
-      String domainNamespace, String  domainUid) {
-
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"remove\",")
-        .append(" \"path\": \"/spec/adminServer/adminChannelPortForwardingEnabled\"")
-        .append("}]");
-    logger.info("The patch String {0}", patchStr);
-    StringBuffer commandStr = new StringBuffer("kubectl patch domain ");
-    commandStr.append(domainUid)
-              .append(" -n " + domainNamespace)
-              .append(" --type 'json' -p='")
-              .append(patchStr)
-              .append("'");
-    logger.info("The Command String: {0}", commandStr);
-    CommandParams params = new CommandParams().defaults();
-
-    params.command(new String(commandStr));
-    boolean result = Command.withParams(params).execute();
-  }
-
-  private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {
-
-    logger.info("Checking port forwarding [{0}]", successExpected);
-    String forwardPort =
-           startPortForwardProcess("localhost", domainNamespace,
-           domainUid, 7001);
-    assertNotNull(forwardPort, "port-forward fails to assign local port");
-    logger.info("Forwarded admin-port is {0}", forwardPort);
-    if (successExpected) {
-      verifyAdminConsoleAccessible(domainNamespace, "localhost",
-           forwardPort, false);
-      logger.info("WebLogic console is accessible thru port forwarding");
-    } else {
-      verifyAdminConsoleAccessible(domainNamespace, "localhost",
-           forwardPort, false, false);
-      logger.info("WebLogic console shouldn't accessible thru port forwarding");
-    }
-    stopPortForwardProcess(domainNamespace);
   }
 
 }
