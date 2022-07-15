@@ -129,6 +129,7 @@ public class HttpAsyncRequestStep extends Step {
       try (ThreadLoggingContext ignored =
                setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
         if (throwable instanceof HttpTimeoutException) {
+          HttpResponseStep.addToPacket(packet, throwable);
           LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
         } else if (response != null) {
           recordResponse(response);
