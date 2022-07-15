@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -32,6 +33,7 @@ import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -39,10 +41,16 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 public class ShutdownManagedServerStep extends Step {
 
@@ -303,12 +311,63 @@ public class ShutdownManagedServerStep extends Step {
       getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
-          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
-          processing.getRequestTimeoutSeconds(), getNext());
+          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
     }
 
+  }
+
+  static Step createWaitForServerShutdownWithHttpStep(Step next, String serverName) {
+    return new WaitForServerShutdownWithHttpStep(next, serverName);
+  }
+
+  static final class WaitForServerShutdownWithHttpStep extends Step {
+    @Nonnull
+    private final String serverName;
+
+    WaitForServerShutdownWithHttpStep(Step next, @Nonnull String serverName) {
+      super(next);
+      this.serverName = serverName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
+      if (shutdownAttemptSucceeded(packet) && serverNotShutdown(serverState)) {
+        return doDelay(this, packet, getPollingInterval(), TimeUnit.SECONDS);
+      }
+      return doNext(packet);
+    }
+
+    private String getServerState(DomainResource domain) {
+      return Optional.ofNullable(domain)
+          .map(DomainResource::getStatus)
+          .map(this::getServerStatus)
+          .map(ServerStatus::getState).orElse(null);
+    }
+
+    @NotNull
+    private Boolean shutdownAttemptSucceeded(Packet packet) {
+      return Optional.ofNullable((Boolean)packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED)).orElse(false);
+    }
+
+    @NotNull
+    private Boolean serverNotShutdown(String serverState) {
+      return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
+    }
+
+    private ServerStatus getServerStatus(DomainStatus domainStatus) {
+      return domainStatus.getServers().stream().filter(this::matchingServerName).findAny().orElse(null);
+    }
+
+    private boolean matchingServerName(ServerStatus serverStatus) {
+      return serverStatus.getServerName().equals(serverName);
+    }
+
+    private int getPollingInterval() {
+      return TuningParameters.getInstance().getShutdownWithHttpPollingInterval();
+    }
   }
 
   private static DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
@@ -318,19 +377,18 @@ public class ShutdownManagedServerStep extends Step {
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
     private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
     private String serverName;
-    private Long requestTimeout;
     private HttpAsyncRequestStep requestStep;
 
-    ShutdownManagedServerResponseStep(String serverName, Long requestTimeout, Step next) {
+    ShutdownManagedServerResponseStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
-      this.requestTimeout = requestTimeout;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
+      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.TRUE);
       return doNext(packet);
     }
 
@@ -338,24 +396,29 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
-        if (getShutdownRequestRetryCount(packet) == null) {
-          addShutdownRequestRetryCountToPacket(packet, 1);
-          if (requestStep != null) {
-            // Retry request
-            LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
-            return doNext(requestStep, packet);
-          }
+        if (retryRequest(packet)) {
+          return doNext(requestStep, packet);
         }
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
-      } else if (getResponse(packet) == null) {
-        // Request timed out
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
+        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
       } else {
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
+        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
 
       removeShutdownRequestRetryCount(packet);
+      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.FALSE);
       return doNext(packet);
+    }
+
+    private boolean retryRequest(Packet packet) {
+      if (getShutdownRequestRetryCount(packet) == null) {
+        addShutdownRequestRetryCountToPacket(packet, 1);
+        if (requestStep != null) {
+          // Retry request
+          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
+          return true;
+        }
+      }
+      return false;
     }
 
     private static Integer getShutdownRequestRetryCount(Packet packet) {

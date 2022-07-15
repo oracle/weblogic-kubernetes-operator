@@ -150,7 +150,6 @@ public class MessageKeys {
   public static final String BEGIN_SERVER_SHUTDOWN_REST = "WLSKO-0199";
   public static final String SERVER_SHUTDOWN_REST_SUCCESS = "WLSKO-0200";
   public static final String SERVER_SHUTDOWN_REST_FAILURE = "WLSKO-0201";
-  public static final String SERVER_SHUTDOWN_REST_TIMEOUT = "WLSKO-0202";
   public static final String SERVER_SHUTDOWN_REST_THROWABLE = "WLSKO-0203";
   public static final String SERVER_SHUTDOWN_REST_RETRY = "WLSKO-0204";
   public static final String INPUT_FILE_NON_EXISTENT = "WLSKO-0213";
