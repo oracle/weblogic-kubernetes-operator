@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -115,7 +116,7 @@ public class DomainValidationSteps {
     public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
       List<ClusterResource> list = getClusters(packet);
       list.addAll(callResponse.getResult().getItems());
-      packet.put(SECRETS, list);
+      packet.put(CLUSTERS, list);
 
       return doContinueListOrNext(callResponse, packet);
     }
@@ -244,7 +245,9 @@ public class DomainValidationSteps {
 
     @SuppressWarnings("unchecked")
     private List<ClusterResource> getClusters(Packet packet) {
-      return (List<ClusterResource>) packet.get(CLUSTERS);
+      return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getReferencedClusters)
+          .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
     }
 
     @Override
