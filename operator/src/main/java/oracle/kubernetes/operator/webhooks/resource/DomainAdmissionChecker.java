@@ -79,6 +79,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
   @Override
   public boolean isProposedChangeAllowed() {
     return isUnchanged()
+        || areAllClusterReplicaCountsValid(proposedDomain)
         || shouldIntrospect();
   }
 
@@ -107,6 +108,10 @@ public class DomainAdmissionChecker extends AdmissionChecker {
       warnings.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_TRIGGER_CHANGED, DOMAIN_INTROSPECT_VERSION));
     }
     return changed;
+  }
+
+  boolean areAllClusterReplicaCountsValid(DomainResource domain) {
+    return true; // FIXME: Do we have any validations?
   }
 
   @NotNull

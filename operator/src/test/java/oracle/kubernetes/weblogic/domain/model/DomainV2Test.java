@@ -703,16 +703,6 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
-    DomainResource domain1 = createDomain();
-
-    configureDomain(domain).configureCluster(info, "cls1").withReplicas(2);
-    configureDomain(domain1).configureCluster(info, "cls1").withReplicas(3);
-
-    assertThat(domain, not(equalTo(domain1)));
-  }
-
-  @Test
   void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
     EffectiveServerSpec effectiveServerSpec = info.getServer("server0", null);
@@ -739,7 +729,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_domainHomeSourceTypePersistentVolume() throws IOException {
-    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
     DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.PERSISTENT_VOLUME));
@@ -755,7 +745,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_serverOutInPodLogIsSet() throws IOException {
-    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
     DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.isIncludeServerOutInPodLog(), is(false));
@@ -1030,7 +1020,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_AdminServerInheritContainerSecurityContextFromDomain()
       throws IOException {
-    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
     DomainResource domain = (DomainResource) resources.get(0);
 
     V1SecurityContext asContainerSecCtx = domain.getAdminServerSpec().getContainerSecurityContext();
@@ -1075,7 +1065,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_AdminServerInheritPodSecurityContextFromDomain()
       throws IOException {
-    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
     DomainResource domain = (DomainResource) resources.get(0);
     V1PodSecurityContext asPodSecCtx = domain.getAdminServerSpec().getPodSecurityContext();
     assertThat(asPodSecCtx.getRunAsGroup(), is(420L));

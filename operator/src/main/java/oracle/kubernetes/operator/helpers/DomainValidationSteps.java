@@ -190,7 +190,7 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       final WlsConfigValidator validator = new WlsConfigValidator(packet).loggingTo(LOGGER);
-      final List<String> failures = validator.getTopologyFailures(new KubernetesResourceLookupImpl(packet));
+      final List<String> failures = validator.getTopologyFailures();
       final List<String> replicasTooHigh = validator.getReplicaTooHighFailures();
       if (!failures.isEmpty()) {
         return doNext(createTopologyMismatchFailureSteps(getNext(), failures), packet);

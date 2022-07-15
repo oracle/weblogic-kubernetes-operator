@@ -116,9 +116,9 @@ public class WlsConfigValidator {
    *
    * @return a list of strings that describe the failures.
    */
-  List<String> getTopologyFailures(KubernetesResourceLookup kubernetesResources) {
+  List<String> getTopologyFailures() {
     if (domainConfig != null) {
-      verifyDomainResourceReferences(kubernetesResources);
+      verifyDomainResourceReferences();
       verifyGeneratedResourceNames();
       verifyServerPorts();
       reportIfExporterPortConflicts();
@@ -127,10 +127,10 @@ public class WlsConfigValidator {
   }
 
   // Ensure that all clusters and servers configured by the domain resource actually exist in the topology.
-  private void verifyDomainResourceReferences(KubernetesResourceLookup kubernetesResources) {
+  private void verifyDomainResourceReferences() {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
-    getClusters().stream().map(kubernetesResources::findCluster).filter(Objects::nonNull).map(ClusterResource::getSpec)
+    info.getReferencedClusters().stream().map(ClusterResource::getSpec)
           .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
   }
 
@@ -151,10 +151,6 @@ public class WlsConfigValidator {
     if (loggingFacade != null) {
       loggingFacade.warning(messageKey, params);
     }
-  }
-
-  private List<V1LocalObjectReference> getClusters() {
-    return info.getClusters();
   }
 
   private boolean isUnknownCluster(String clusterName) {
