@@ -127,6 +127,15 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
                   callback));
+  private final CallFactory<ClusterResource> replaceClusterStatus =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceClusterStatusAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (ClusterResource) requestParams.body,
+                  callback));
   private final CallFactory<DomainResource> replaceDomainStatus =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -351,6 +360,9 @@ public class CallBuilder {
   private final CallFactory<V1ConfigMapList> listConfigMaps =
       (requestParams, usage, cont, callback) ->
           wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
+  private final CallFactory<ClusterResource> readCluster =
+      (requestParams, usage, cont, callback) ->
+          wrap(readClusterAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<DomainResource> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
@@ -723,6 +735,25 @@ public class CallBuilder {
     return executeSynchronousCall(requestParams, patchClusterCall);
   }
 
+  /**
+   * Asynchronous step for reading cluster.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readClusterAsync(String name, String namespace, ResponseStep<ClusterResource> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readCluster", namespace, name, null, name), readCluster);
+  }
+
+  private Call readClusterAsync(
+      ApiClient client, String name, String namespace, ApiCallback<ClusterResource> callback)
+      throws ApiException {
+    return new WeblogicApi(client).getNamespacedClusterAsync(name, namespace, callback);
+  }
+
 
   /**
    * List domains.
@@ -885,6 +916,30 @@ public class CallBuilder {
         responseStep,
         new RequestParams("patchDomain", namespace, name, patchBody, name),
         patchDomain);
+  }
+
+  private Call replaceClusterStatusAsync(
+      ApiClient client, String name, String namespace, ClusterResource body, ApiCallback<ClusterResource> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .replaceNamespacedClusterStatusAsync(name, namespace, body, callback);
+  }
+
+  /**
+   * Asynchronous step for replacing cluster status.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceClusterStatusAsync(
+      String name, String namespace, ClusterResource body, ResponseStep<ClusterResource> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceClusterStatus", namespace, name, body, name),
+        replaceClusterStatus);
   }
 
   private Call replaceDomainStatusAsync(

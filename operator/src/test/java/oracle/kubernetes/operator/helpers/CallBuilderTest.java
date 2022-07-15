@@ -435,6 +435,21 @@ class CallBuilderTest {
     assertThat(received, nullValue());
   }
 
+  @Test
+  @ResourceLock(value = "server")
+  void readCluster_returnsResource() throws InterruptedException {
+    ClusterResource resource = new ClusterResource().withMetadata(createMetadata());
+    defineHttpGetResponse(CLUSTER_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<ClusterResource> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readClusterAsync(UID, NAMESPACE, responseStep));
+
+    ClusterResource received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
 
   @Test
   @ResourceLock(value = "server")
