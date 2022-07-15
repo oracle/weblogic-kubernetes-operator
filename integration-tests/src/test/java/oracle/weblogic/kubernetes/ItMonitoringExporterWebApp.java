@@ -34,6 +34,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -90,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter WebApp via Prometheus and Grafana")
 @IntegrationTest
-@Tag("oke-parallel")
+@Tag("oke-sequential")
 class ItMonitoringExporterWebApp {
 
   // domain constants
@@ -304,7 +305,7 @@ class ItMonitoringExporterWebApp {
    * Create Model in Image with admin port and ssl enabled.
    * Check generated monitoring exporter WebLogic metrics via https request.
    */
-  //@Disabled("Disabled the test due to oracle/weblogic-monitoring-exporter#138")
+  @Disabled("Disabled the test due to oracle/weblogic-monitoring-exporter#138")
   @Test
   @DisplayName("Test Accesability of Monitoring Exporter dashboard and metrics if admin port is enabled.")
   void testAdminPortEnabled() throws Exception {

@@ -105,7 +105,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via Prometheus
  */
 @DisplayName("Verify end to end sample, provided in the Monitoring Exporter github project")
-@Tag("oke-parallel")
+@Tag("oke-sequential")
 @IntegrationTest
 class ItMonitoringExporterSamples {
 
