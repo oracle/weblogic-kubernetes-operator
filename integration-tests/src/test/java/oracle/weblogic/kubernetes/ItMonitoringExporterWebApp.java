@@ -332,7 +332,7 @@ class ItMonitoringExporterWebApp {
           true, null),
           "monitoring exporter metrics page can't be accessed via https");
     } finally {
-      shutdownDomain(domain2Uid, domain2Namespace);
+      //shutdownDomain(domain2Uid, domain2Namespace);
     }
   }
 
