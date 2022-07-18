@@ -1,3 +1,4 @@
+#
 # Copyright (c) 2022, Oracle and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
@@ -8,33 +9,36 @@ metadata:
   namespace: default
 spec:
   
-  ## Use only alphanumeric characters for sid
+  ## Use only alphanumeric characters for sid up to a maximum of 8 characters
   sid: ORCL1
   
-  ## A source database ref to clone from, leave empty to create a fresh database
+  ## Specify a source database ref to copy/clone from any SIDB in current K8s cluster instead of creating a fresh one
+  ## If cloning from an external containerized DB which could be either standalone or in any K8s cluster,
+  ## specify connect string as `<host>:<port>/<service_name>` instead of source database ref
   cloneFrom: ""
 
-  ## NA if cloning from a SourceDB (cloneFrom is set)
+  ## DB edition. N/A if cloning from a Source DB in current K8s cluster (if cloneFrom is set to a database ref)
+  ## Valid values for edition are enterprise, standard or express
   edition: enterprise
   
-  ## Should refer to SourceDB secret if cloning from a SourceDB (cloneFrom is set)
-  ## Secret containing SIDB password mapped to secretKey
-  ## This secret will be deleted after creation of the database unless keepSecret is set to true
+  ## Secret containing SIDB password mapped to secretKey. secretKey defaults to oracle_pwd
+  ## Should refer to adminPassword of Source DB if cloning from a Source DB (i.e if cloneFrom is set)
+  ## This secret will be deleted after creation of the database unless keepSecret is set to true which is the default
   adminPassword:
     secretName: 
     secretKey:
     keepSecret: true
 
-  ## NA if cloning from a SourceDB (cloneFrom is set)
+  ## DB character set. N/A if cloning from a Source DB (if cloneFrom is set)
   charset: AL32UTF8
 
-  ## NA if cloning from a SourceDB (cloneFrom is set)
+  ## PDB name. N/A if cloning from a Source DB (if cloneFrom is set)
   pdbName: orclpdb1
 
   ## Enable/Disable Flashback
   flashBack: false
 
-  ## Enable/Disable ArchiveLog
+  ## Enable/Disable ArchiveLog. Should be true to allow DB cloning
   archiveLog: false
 
   ## Enable/Disable ForceLogging
@@ -43,6 +47,7 @@ spec:
   ## NA if cloning from a SourceDB (cloneFrom is set)
   ## Specify both sgaSize and pgaSize (in MB) or dont specify both
   ## Specify Non-Zero value to use
+  ## You cannot change these initParams for Oracle Database Express (XE) edition
   initParams:
     cpuCount: 0
     processes: 0
@@ -50,30 +55,46 @@ spec:
     pgaAggregateTarget: 0
 
   ## Database image details
-  ## Database can be patched by updating the RU version/image
-  ## Major version changes are not supported
+  ## Base DB images are available at container-registry.oracle.com or build from https://github.com/oracle/docker-images/tree/main/OracleDatabase/SingleInstance
+  ## Build patched DB images from https://github.com/oracle/docker-images/tree/main/OracleDatabase/SingleInstance/extensions/patching
+  ## Prebuilt DB support (https://github.com/oracle/docker-images/tree/main/OracleDatabase/SingleInstance/extensions/prebuiltdb)
+  ## Specify prebuiltDB as true if the image includes a prebuilt DB
+  ## If cloning specify an image that is of same major version as the source DB at same or different patch levels
   image:
     pullFrom:
     pullSecrets:
+    prebuiltDB: false
 
-  ## size : Minimum size of pvc | class : PVC storage Class
-  ## AccessMode can only accept one of ReadWriteOnce, ReadWriteMany
-  ## Below mentioned storageClass/accessMode applies to OCI block volumes. Update appropriately for other types of persistent volumes.
+  ## size is the required minimum size of the persistent volume
+  ## storageClass is specified for automatic volume provisioning
+  ## accessMode can only accept one of ReadWriteOnce, ReadWriteMany
+  ## volumeName is optional. Specify for binding to a specific PV and set storageClass to an empty string to disable automatic volume provisioning
   persistence:
     size: 100Gi
-    storageClass: "oci"
+    ## oci-bv applies to OCI block volumes. Use "standard" storageClass for dynamic provisioning in Minikube. Update as appropriate for other cloud service providers
+    storageClass: "oci-bv"
     accessMode: "ReadWriteOnce"
+    volumeName: ""
 
   ## Type of service . Applicable on cloud enviroments only
-  ## if loadBalService : false, service type = "NodePort". else "LoadBalancer"
+  ## if loadBalService : false, service type = "NodePort" else "LoadBalancer"
   loadBalancer: false
+  ## Service Annotations (Cloud provider specific), for configuring the service (e.g. private LoadBalancer service)
+  #serviceAnnotations:
+  #  service.beta.kubernetes.io/oci-load-balancer-internal: "true"
 
-  ## Deploy only on nodes having required labels. Format label_name : label_value
-  ## Leave empty if there is no such requirement.
-  ## Uncomment to use
-  # nodeSelector: 
-  #   failure-domain.beta.kubernetes.io/zone: bVCG:PHX-AD-1
-  #   pool: sidb
+  ## Deploy only on nodes having required labels. Format label_name: label_value
+  ## For instance if the pods need to be restricted to a particular AD
+  ## Leave commented if there is no such requirement.
+  # nodeSelector:
+  #   topology.kubernetes.io/zone: PHX-AD-1
 
-  ## Count of Database Pods. Applicable only for "ReadWriteMany" AccessMode
+  ## If deploying on OpenShift, change service account name to 'sidb-sa' after you run `$ oc apply -f openshift_rbac.yaml`
+  serviceAccountName: default
+
+  ## Count of Database Pods. Only one pod will have the DB mounted and open.
+  ## The other replica pods will have instance up and will mount and open the DB if the primary pod dies
+  ## For "ReadWriteOnce" AccessMode, all the replicas will schedule on the same node that has the storage attached
+  ## For minimal downtime during patching set the count of replicas > 1
+  ## Express edition can only have one replica and does not support patching
   replicas: 1
