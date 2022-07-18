@@ -444,15 +444,15 @@ class DomainProcessorTest {
 
   @Test
   void afterMakeRightAndChangeServerToNever_serverPodsWaitForShutdownWithHttpToCompleteBeforeTerminating() {
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    processor.createMakeRightOperation(newInfo).execute();
 
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
-    DomainStatus status = new DomainPresenceInfo(newDomain).getDomain().getStatus();
+    DomainStatus status = newInfo.getDomain().getStatus();
     defineServerShutdownWithHttpOkResponse();
     setAdminServerStatus(status, SUSPENDING_STATE);
     setManagedServerState(status, SUSPENDING_STATE);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
     assertThat(getRunningPods().size(), equalTo(4));
