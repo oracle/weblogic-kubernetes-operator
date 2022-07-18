@@ -371,7 +371,7 @@ public class Kubernetes {
     boolean status = false;
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
-    if (pod != null) {
+    if (pod != null && pod.getStatus() != null && pod.getStatus().getConditions() != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
           .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
