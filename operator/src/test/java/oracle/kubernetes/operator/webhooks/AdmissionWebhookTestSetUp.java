@@ -26,7 +26,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
  * related test cases such as WebhookRestTest and ValidationUtilsTest.
  */
 class AdmissionWebhookTestSetUp {
-  private static final String CLUSTER_NAME_1 = "C1";
+  static final String CLUSTER_NAME_1 = "C1";
   private static final String CLUSTER_NAME_2 = "C2";
   public static final String ORIGINAL_IMAGE_NAME = "abcd";
   public static final int ORIGINAL_REPLICAS = 2;
