@@ -1,12 +1,361 @@
-# Copyright (c) 2022, Oracle and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-#
 apiVersion: v1
 kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
   name: oracle-database-operator-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: autonomouscontainerdatabases.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: AutonomousContainerDatabase
+    listKind: AutonomousContainerDatabaseList
+    plural: autonomouscontainerdatabases
+    shortNames:
+    - acd
+    - acds
+    singular: autonomouscontainerdatabase
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.displayName
+      name: DisplayName
+      type: string
+    - jsonPath: .status.lifecycleState
+      name: State
+      type: string
+    - jsonPath: .status.timeCreated
+      name: Created
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AutonomousContainerDatabase is the Schema for the autonomouscontainerdatabases API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AutonomousContainerDatabaseSpec defines the desired state of AutonomousContainerDatabase
+            properties:
+              action:
+                enum:
+                - SYNC
+                - RESTART
+                - TERMINATE
+                type: string
+              autonomousContainerDatabaseOCID:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
+                type: string
+              autonomousExadataVMClusterOCID:
+                type: string
+              compartmentOCID:
+                type: string
+              displayName:
+                type: string
+              freeformTags:
+                additionalProperties:
+                  type: string
+                type: object
+              hardLink:
+                default: false
+                type: boolean
+              ociConfig:
+                description: "*********************** *\tOCI config ***********************"
+                properties:
+                  configMapName:
+                    type: string
+                  secretName:
+                    type: string
+                type: object
+              patchModel:
+                description: 'AutonomousContainerDatabasePatchModelEnum Enum with underlying type: string'
+                enum:
+                - RELEASE_UPDATES
+                - RELEASE_UPDATE_REVISIONS
+                type: string
+            type: object
+          status:
+            description: AutonomousContainerDatabaseStatus defines the observed state of AutonomousContainerDatabase
+            properties:
+              lifecycleState:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
+                type: string
+              timeCreated:
+                type: string
+            required:
+            - lifecycleState
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: autonomousdatabasebackups.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: AutonomousDatabaseBackup
+    listKind: AutonomousDatabaseBackupList
+    plural: autonomousdatabasebackups
+    shortNames:
+    - adbbu
+    - adbbus
+    singular: autonomousdatabasebackup
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.lifecycleState
+      name: State
+      type: string
+    - jsonPath: .status.dbDisplayName
+      name: DB DisplayName
+      type: string
+    - jsonPath: .status.type
+      name: Type
+      type: string
+    - jsonPath: .status.timeStarted
+      name: Started
+      type: string
+    - jsonPath: .status.timeEnded
+      name: Ended
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AutonomousDatabaseBackup is the Schema for the autonomousdatabasebackups API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AutonomousDatabaseBackupSpec defines the desired state of AutonomousDatabaseBackup
+            properties:
+              autonomousDatabaseBackupOCID:
+                type: string
+              displayName:
+                type: string
+              ociConfig:
+                description: "*********************** *\tOCI config ***********************"
+                properties:
+                  configMapName:
+                    type: string
+                  secretName:
+                    type: string
+                type: object
+              target:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
+                properties:
+                  k8sADB:
+                    description: "*********************** *\tADB spec ***********************"
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  ociADB:
+                    properties:
+                      ocid:
+                        type: string
+                    type: object
+                type: object
+            type: object
+          status:
+            description: AutonomousDatabaseBackupStatus defines the observed state of AutonomousDatabaseBackup
+            properties:
+              autonomousDatabaseOCID:
+                type: string
+              compartmentOCID:
+                type: string
+              dbDisplayName:
+                type: string
+              dbName:
+                type: string
+              isAutomatic:
+                type: boolean
+              lifecycleState:
+                description: 'AutonomousDatabaseBackupLifecycleStateEnum Enum with underlying type: string'
+                type: string
+              timeEnded:
+                type: string
+              timeStarted:
+                type: string
+              type:
+                description: 'AutonomousDatabaseBackupTypeEnum Enum with underlying type: string'
+                type: string
+            required:
+            - autonomousDatabaseOCID
+            - compartmentOCID
+            - dbDisplayName
+            - dbName
+            - isAutomatic
+            - lifecycleState
+            - type
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: autonomousdatabaserestores.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: AutonomousDatabaseRestore
+    listKind: AutonomousDatabaseRestoreList
+    plural: autonomousdatabaserestores
+    shortNames:
+    - adbr
+    - adbrs
+    singular: autonomousdatabaserestore
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.status
+      name: Status
+      type: string
+    - jsonPath: .status.displayName
+      name: DbDisplayName
+      type: string
+    - jsonPath: .status.dbName
+      name: DbName
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AutonomousDatabaseRestore is the Schema for the autonomousdatabaserestores API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AutonomousDatabaseRestoreSpec defines the desired state of AutonomousDatabaseRestore
+            properties:
+              ociConfig:
+                description: "*********************** *\tOCI config ***********************"
+                properties:
+                  configMapName:
+                    type: string
+                  secretName:
+                    type: string
+                type: object
+              source:
+                properties:
+                  k8sADBBackup:
+                    description: 'EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN! NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.'
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  pointInTime:
+                    properties:
+                      timestamp:
+                        description: 'The timestamp must follow this format: YYYY-MM-DD HH:MM:SS GMT'
+                        type: string
+                    type: object
+                type: object
+              target:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
+                properties:
+                  k8sADB:
+                    description: "*********************** *\tADB spec ***********************"
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  ociADB:
+                    properties:
+                      ocid:
+                        type: string
+                    type: object
+                type: object
+            required:
+            - source
+            - target
+            type: object
+          status:
+            description: AutonomousDatabaseRestoreStatus defines the observed state of AutonomousDatabaseRestore
+            properties:
+              dbName:
+                type: string
+              displayName:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
+                type: string
+              status:
+                description: 'WorkRequestStatusEnum Enum with underlying type: string'
+                type: string
+              timeAccepted:
+                type: string
+              timeEnded:
+                type: string
+              timeStarted:
+                type: string
+              workRequestOCID:
+                type: string
+            required:
+            - dbName
+            - displayName
+            - status
+            - workRequestOCID
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -28,22 +377,25 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.displayName
+    - jsonPath: .spec.details.displayName
       name: Display Name
+      type: string
+    - jsonPath: .spec.details.dbName
+      name: Db Name
       type: string
     - jsonPath: .status.lifecycleState
       name: State
       type: string
-    - jsonPath: .status.isDedicated
+    - jsonPath: .spec.details.isDedicated
       name: Dedicated
       type: string
-    - jsonPath: .status.cpuCoreCount
+    - jsonPath: .spec.details.cpuCoreCount
       name: OCPUs
       type: integer
-    - jsonPath: .status.dataStorageSizeInTBs
+    - jsonPath: .spec.details.dataStorageSizeInTBs
       name: Storage (TB)
       type: integer
-    - jsonPath: .status.dbWorkload
+    - jsonPath: .spec.details.dbWorkload
       name: Workload Type
       type: string
     - jsonPath: .status.timeCreated
@@ -70,10 +422,32 @@ spec:
                 properties:
                   adminPassword:
                     properties:
-                      k8sSecretName:
-                        type: string
-                      ociSecretOCID:
-                        type: string
+                      k8sSecret:
+                        description: "*********************** *\tSecret specs ***********************"
+                        properties:
+                          name:
+                            type: string
+                        type: object
+                      ociSecret:
+                        properties:
+                          ocid:
+                            type: string
+                        type: object
+                    type: object
+                  autonomousContainerDatabase:
+                    description: ACDSpec defines the spec of the target for backup/restore runs. The name could be the name of an AutonomousDatabase or an AutonomousDatabaseBackup
+                    properties:
+                      k8sACD:
+                        description: "*********************** *\tACD specs ***********************"
+                        properties:
+                          name:
+                            type: string
+                        type: object
+                      ociACD:
+                        properties:
+                          ocid:
+                            type: string
+                        type: object
                     type: object
                   autonomousDatabaseOCID:
                     type: string
@@ -105,31 +479,61 @@ spec:
                     type: boolean
                   isDedicated:
                     type: boolean
+                  licenseModel:
+                    description: 'AutonomousDatabaseLicenseModelEnum Enum with underlying type: string'
+                    enum:
+                    - LICENSE_INCLUDED
+                    - BRING_YOUR_OWN_LICENSE
+                    type: string
                   lifecycleState:
                     description: 'AutonomousDatabaseLifecycleStateEnum Enum with underlying type: string'
                     type: string
-                  nsgOCIDs:
-                    items:
-                      type: string
-                    type: array
-                  privateEndpoint:
-                    type: string
-                  privateEndpointIP:
-                    type: string
-                  privateEndpointLabel:
-                    type: string
-                  subnetOCID:
-                    type: string
+                  networkAccess:
+                    properties:
+                      accessControlList:
+                        items:
+                          type: string
+                        type: array
+                      accessType:
+                        enum:
+                        - ""
+                        - PUBLIC
+                        - RESTRICTED
+                        - PRIVATE
+                        type: string
+                      isAccessControlEnabled:
+                        type: boolean
+                      isMTLSConnectionRequired:
+                        type: boolean
+                      privateEndpoint:
+                        properties:
+                          hostnamePrefix:
+                            type: string
+                          nsgOCIDs:
+                            items:
+                              type: string
+                            type: array
+                          subnetOCID:
+                            type: string
+                        type: object
+                    type: object
                   wallet:
                     properties:
                       name:
                         type: string
                       password:
                         properties:
-                          k8sSecretName:
-                            type: string
-                          ociSecretOCID:
-                            type: string
+                          k8sSecret:
+                            description: "*********************** *\tSecret specs ***********************"
+                            properties:
+                              name:
+                                type: string
+                            type: object
+                          ociSecret:
+                            properties:
+                              ocid:
+                                type: string
+                            type: object
                         type: object
                     type: object
                 type: object
@@ -137,6 +541,7 @@ spec:
                 default: false
                 type: boolean
               ociConfig:
+                description: "*********************** *\tOCI config ***********************"
                 properties:
                   configMapName:
                     type: string
@@ -149,23 +554,968 @@ spec:
           status:
             description: AutonomousDatabaseStatus defines the observed state of AutonomousDatabase
             properties:
-              cpuCoreCount:
-                type: integer
-              dataStorageSizeInTBs:
-                type: integer
-              dbWorkload:
-                description: 'AutonomousDatabaseDbWorkloadEnum Enum with underlying type: string'
-                type: string
-              displayName:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
-                type: string
-              isDedicated:
-                type: string
+              allConnectionStrings:
+                items:
+                  properties:
+                    connectionStrings:
+                      items:
+                        properties:
+                          connectionString:
+                            type: string
+                          tnsName:
+                            type: string
+                        type: object
+                      type: array
+                    tlsAuthentication:
+                      type: string
+                  required:
+                  - connectionStrings
+                  type: object
+                type: array
               lifecycleState:
-                description: 'AutonomousDatabaseLifecycleStateEnum Enum with underlying type: string'
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
                 type: string
               timeCreated:
                 type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: oracle-database-operator-system/oracle-database-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.6.1
+  name: cdbs.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: CDB
+    listKind: CDBList
+    plural: cdbs
+    singular: cdb
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Name of the CDB
+      jsonPath: .spec.cdbName
+      name: CDB Name
+      type: string
+    - description: ' Name of the DB Server'
+      jsonPath: .spec.dbServer
+      name: DB Server
+      type: string
+    - description: DB server port
+      jsonPath: .spec.dbPort
+      name: DB Port
+      type: integer
+    - description: SCAN Name
+      jsonPath: .spec.scanName
+      name: SCAN Name
+      type: string
+    - description: Replicas
+      jsonPath: .spec.replicas
+      name: Replicas
+      type: integer
+    - description: Status of the CDB Resource
+      jsonPath: .status.phase
+      name: Status
+      type: string
+    - description: Error message, if any
+      jsonPath: .status.msg
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CDB is the Schema for the cdbs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CDBSpec defines the desired state of CDB
+            properties:
+              cdbAdminPwd:
+                description: Password for the CDB Administrator to manage PDB lifecycle
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              cdbAdminUser:
+                description: User in the root container with sysdba priviledges to manage PDB lifecycle
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              cdbName:
+                description: Name of the CDB
+                type: string
+              dbPort:
+                description: DB server port
+                type: integer
+              dbServer:
+                description: Name of the DB server
+                type: string
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: Node Selector for running the Pod
+                type: object
+              ordsImage:
+                description: ORDS Image Name
+                type: string
+              ordsImagePullPolicy:
+                description: ORDS Image Pull Policy
+                enum:
+                - Always
+                - Never
+                type: string
+              ordsImagePullSecret:
+                description: The name of the image pull secret in case of a private docker repository.
+                type: string
+              ordsPort:
+                description: ORDS server port. For now, keep it as 8888. TO BE USED IN FUTURE RELEASE.
+                type: integer
+              ordsPwd:
+                description: Password for user ORDS_PUBLIC_USER
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              replicas:
+                description: Number of ORDS Containers to create
+                type: integer
+              scanName:
+                description: SCAN Name
+                type: string
+              serviceName:
+                description: Name of the CDB Service
+                type: string
+              sysAdminPwd:
+                description: Password for the CDB System Administrator
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              webServerPwd:
+                description: Password for the Web Server User
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              webServerUser:
+                description: Web Server User with SQL Administrator role to allow us to authenticate to the PDB Lifecycle Management REST endpoints
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+            type: object
+          status:
+            description: CDBStatus defines the observed state of CDB
+            properties:
+              msg:
+                description: Message
+                type: string
+              phase:
+                description: Phase of the CDB Resource
+                type: string
+              status:
+                description: CDB Resource Status
+                type: boolean
+            required:
+            - phase
+            - status
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: dbcssystems.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: DbcsSystem
+    listKind: DbcsSystemList
+    plural: dbcssystems
+    singular: dbcssystem
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DbcsSystem is the Schema for the dbcssystems API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DbcsSystemSpec defines the desired state of DbcsSystem
+            properties:
+              dbSystem:
+                properties:
+                  availabilityDomain:
+                    type: string
+                  backupSubnetId:
+                    type: string
+                  clusterName:
+                    type: string
+                  compartmentId:
+                    type: string
+                  cpuCoreCount:
+                    type: integer
+                  dbAdminPaswordSecret:
+                    type: string
+                  dbBackupConfig:
+                    description: DB Backup COnfig Network Struct
+                    properties:
+                      autoBackupEnabled:
+                        type: boolean
+                      autoBackupWindow:
+                        type: string
+                      backupDestinationDetails:
+                        type: string
+                      recoveryWindowsInDays:
+                        type: integer
+                    type: object
+                  dbDomain:
+                    type: string
+                  dbEdition:
+                    type: string
+                  dbName:
+                    type: string
+                  dbUniqueName:
+                    type: string
+                  dbVersion:
+                    type: string
+                  dbWorkload:
+                    type: string
+                  diskRedundancy:
+                    type: string
+                  displayName:
+                    type: string
+                  domain:
+                    type: string
+                  faultDomains:
+                    items:
+                      type: string
+                    type: array
+                  hostName:
+                    type: string
+                  initialDataStorageSizeInGB:
+                    type: integer
+                  kmsKeyId:
+                    type: string
+                  kmsKeyVersionId:
+                    type: string
+                  licenseModel:
+                    type: string
+                  nodeCount:
+                    type: integer
+                  pdbName:
+                    type: string
+                  privateIp:
+                    type: string
+                  shape:
+                    type: string
+                  sshPublicKeys:
+                    items:
+                      type: string
+                    type: array
+                  storageManagement:
+                    type: string
+                  subnetId:
+                    type: string
+                  tags:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  tdeWalletPasswordSecret:
+                    type: string
+                  timeZone:
+                    type: string
+                required:
+                - availabilityDomain
+                - compartmentId
+                - dbAdminPaswordSecret
+                - hostName
+                - shape
+                - sshPublicKeys
+                - subnetId
+                type: object
+              hardLink:
+                type: boolean
+              id:
+                type: string
+              ociConfigMap:
+                type: string
+              ociSecret:
+                type: string
+            required:
+            - ociConfigMap
+            type: object
+          status:
+            description: DbcsSystemStatus defines the observed state of DbcsSystem
+            properties:
+              availabilityDomain:
+                type: string
+              cpuCoreCount:
+                type: integer
+              dataStoragePercentage:
+                type: integer
+              dataStorageSizeInGBs:
+                type: integer
+              dbEdition:
+                type: string
+              dbInfo:
+                items:
+                  description: DbcsSystemStatus defines the observed state of DbcsSystem
+                  properties:
+                    dbHomeId:
+                      type: string
+                    dbName:
+                      type: string
+                    dbUniqueName:
+                      type: string
+                    dbWorkload:
+                      type: string
+                    id:
+                      type: string
+                  type: object
+                type: array
+              displayName:
+                type: string
+              id:
+                type: string
+              licenseModel:
+                type: string
+              network:
+                properties:
+                  clientSubnet:
+                    type: string
+                  domainName:
+                    type: string
+                  hostName:
+                    type: string
+                  listenerPort:
+                    type: integer
+                  networkSG:
+                    type: string
+                  scanDnsName:
+                    type: string
+                  vcnName:
+                    type: string
+                type: object
+              nodeCount:
+                type: integer
+              recoStorageSizeInGB:
+                type: integer
+              shape:
+                type: string
+              state:
+                type: string
+              storageManagement:
+                type: string
+              subnetId:
+                type: string
+              timeZone:
+                type: string
+              workRequests:
+                items:
+                  properties:
+                    operationId:
+                      type: string
+                    operationType:
+                      type: string
+                    percentComplete:
+                      type: string
+                    timeAccepted:
+                      type: string
+                    timeFinished:
+                      type: string
+                    timeStarted:
+                      type: string
+                  required:
+                  - operationId
+                  - operationType
+                  type: object
+                type: array
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: oraclerestdataservices.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: OracleRestDataService
+    listKind: OracleRestDataServiceList
+    plural: oraclerestdataservices
+    singular: oraclerestdataservice
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.status
+      name: Status
+      type: string
+    - jsonPath: .spec.databaseRef
+      name: Database
+      type: string
+    - jsonPath: .status.databaseApiUrl
+      name: Database API URL
+      type: string
+    - jsonPath: .status.databaseActionsUrl
+      name: Database Actions URL
+      type: string
+    - jsonPath: .status.apexUrl
+      name: Apex URL
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: OracleRestDataService is the Schema for the oraclerestdataservices API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OracleRestDataServiceSpec defines the desired state of OracleRestDataService
+            properties:
+              adminPassword:
+                description: OracleRestDataServicePassword defines the secret containing Password mapped to secretKey
+                properties:
+                  keepSecret:
+                    type: boolean
+                  secretKey:
+                    default: oracle_pwd
+                    type: string
+                  secretName:
+                    type: string
+                required:
+                - secretName
+                type: object
+              apexPassword:
+                description: OracleRestDataServicePassword defines the secret containing Password mapped to secretKey
+                properties:
+                  keepSecret:
+                    type: boolean
+                  secretKey:
+                    default: oracle_pwd
+                    type: string
+                  secretName:
+                    type: string
+                required:
+                - secretName
+                type: object
+              databaseRef:
+                type: string
+              image:
+                description: OracleRestDataServiceImage defines the Image source and pullSecrets for POD
+                properties:
+                  pullFrom:
+                    type: string
+                  pullSecrets:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - pullFrom
+                type: object
+              loadBalancer:
+                type: boolean
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                type: object
+              oracleService:
+                type: string
+              ordsPassword:
+                description: OracleRestDataServicePassword defines the secret containing Password mapped to secretKey
+                properties:
+                  keepSecret:
+                    type: boolean
+                  secretKey:
+                    default: oracle_pwd
+                    type: string
+                  secretName:
+                    type: string
+                required:
+                - secretName
+                type: object
+              ordsUser:
+                type: string
+              persistence:
+                description: OracleRestDataServicePersistence defines the storage releated params
+                properties:
+                  accessMode:
+                    enum:
+                    - ReadWriteOnce
+                    - ReadWriteMany
+                    type: string
+                  size:
+                    type: string
+                  storageClass:
+                    type: string
+                  volumeName:
+                    type: string
+                type: object
+              replicas:
+                minimum: 1
+                type: integer
+              restEnableSchemas:
+                items:
+                  description: OracleRestDataServicePDBSchemas defines the PDB Schemas to be ORDS Enabled
+                  properties:
+                    enable:
+                      type: boolean
+                    pdbName:
+                      type: string
+                    schemaName:
+                      type: string
+                    urlMapping:
+                      type: string
+                  required:
+                  - enable
+                  - schemaName
+                  type: object
+                type: array
+              serviceAccountName:
+                type: string
+              serviceAnnotations:
+                additionalProperties:
+                  type: string
+                type: object
+            required:
+            - adminPassword
+            - databaseRef
+            - ordsPassword
+            type: object
+          status:
+            description: OracleRestDataServiceStatus defines the observed state of OracleRestDataService
+            properties:
+              apexConfigured:
+                type: boolean
+              apexUrl:
+                type: string
+              commonUsersCreated:
+                type: boolean
+              databaseActionsUrl:
+                type: string
+              databaseApiUrl:
+                type: string
+              databaseRef:
+                type: string
+              image:
+                description: OracleRestDataServiceImage defines the Image source and pullSecrets for POD
+                properties:
+                  pullFrom:
+                    type: string
+                  pullSecrets:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - pullFrom
+                type: object
+              loadBalancer:
+                type: string
+              ordsInstalled:
+                type: boolean
+              replicas:
+                type: integer
+              serviceIP:
+                type: string
+              status:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: oracle-database-operator-system/oracle-database-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.6.1
+  name: pdbs.database.oracle.com
+spec:
+  group: database.oracle.com
+  names:
+    kind: PDB
+    listKind: PDBList
+    plural: pdbs
+    singular: pdb
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The connect string to be used
+      jsonPath: .status.connString
+      name: Connect String
+      type: string
+    - description: Name of the CDB
+      jsonPath: .spec.cdbName
+      name: CDB Name
+      type: string
+    - description: Name of the PDB
+      jsonPath: .spec.pdbName
+      name: PDB Name
+      type: string
+    - description: PDB Open Mode
+      jsonPath: .status.openMode
+      name: PDB State
+      type: string
+    - description: Total Size of the PDB
+      jsonPath: .status.totalSize
+      name: PDB Size
+      type: string
+    - description: Status of the PDB Resource
+      jsonPath: .status.phase
+      name: Status
+      type: string
+    - description: Error message, if any
+      jsonPath: .status.msg
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PDB is the Schema for the pdbs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PDBSpec defines the desired state of PDB
+            properties:
+              action:
+                description: 'Action to be taken: Create/Clone/Plug/Unplug/Delete/Modify/Status/Map. Map is used to map a Databse PDB to a Kubernetes PDB CR.'
+                enum:
+                - Create
+                - Clone
+                - Plug
+                - Unplug
+                - Delete
+                - Modify
+                - Status
+                - Map
+                type: string
+              adminName:
+                description: The administrator username for the new PDB. This property is required when the Action property is Create.
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              adminPwd:
+                description: The administrator password for the new PDB. This property is required when the Action property is Create.
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              asClone:
+                description: Indicate if 'AS CLONE' option should be used in the command to plug in a PDB. This property is applicable when the Action property is PLUG but not required.
+                type: boolean
+              cdbName:
+                description: Name of the CDB
+                type: string
+              cdbResName:
+                description: Name of the CDB Custom Resource that runs the ORDS container
+                type: string
+              copyAction:
+                description: To copy files or not while cloning a PDB
+                enum:
+                - COPY
+                - NOCOPY
+                - MOVE
+                type: string
+              dropAction:
+                description: Specify if datafiles should be removed or not. The value can be INCLUDING or KEEP (default).
+                enum:
+                - INCLUDING
+                - KEEP
+                type: string
+              fileNameConversions:
+                description: Relevant for Create and Plug operations. As defined in the  Oracle Multitenant Database documentation. Values can be a filename convert pattern or NONE.
+                type: string
+              getScript:
+                description: Whether you need the script only or execute the script
+                type: boolean
+              modifyOption:
+                description: Extra options for opening and closing a PDB
+                enum:
+                - IMMEDIATE
+                - NORMAL
+                - READ ONLY
+                - READ WRITE
+                - RESTRICTED
+                type: string
+              pdbName:
+                description: The name of the new PDB. Relevant for both Create and Plug Actions.
+                type: string
+              pdbState:
+                description: The target state of the PDB
+                enum:
+                - OPEN
+                - CLOSE
+                type: string
+              reuseTempFile:
+                description: Whether to reuse temp file
+                type: boolean
+              sourceFileNameConversions:
+                description: This property is required when the Action property is Plug. As defined in the Oracle Multitenant Database documentation. Values can be a source filename convert pattern or NONE.
+                type: string
+              sparseClonePath:
+                description: A Path specified for sparse clone snapshot copy. (Optional)
+                type: string
+              srcPdbName:
+                description: Name of the Source PDB from which to clone
+                type: string
+              tdeExport:
+                description: TDE export for unplug operations
+                type: boolean
+              tdeImport:
+                description: TDE import for plug operations
+                type: boolean
+              tdeKeystorePath:
+                description: TDE keystore path is required if the tdeImport or tdeExport flag is set to true. Can be used in plug or unplug operations.
+                type: string
+              tdePassword:
+                description: TDE password if the tdeImport or tdeExport flag is set to true. Can be used in create, plug or unplug operations
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              tdeSecret:
+                description: TDE secret is required if the tdeImport or tdeExport flag is set to true. Can be used in plug or unplug operations.
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              tempSize:
+                description: Relevant for Create and Clone operations. Total size for temporary tablespace as defined in the Oracle Multitenant Database documentation. See size_clause description in Database SQL Language Reference documentation.
+                type: string
+              totalSize:
+                description: Relevant for create and plug operations. Total size as defined in the Oracle Multitenant Database documentation. See size_clause description in Database SQL Language Reference documentation.
+                type: string
+              unlimitedStorage:
+                description: Relevant for Create and Plug operations. True for unlimited storage. Even when set to true, totalSize and tempSize MUST be specified in the request if Action is Create.
+                type: boolean
+              xmlFileName:
+                description: XML metadata filename to be used for Plug or Unplug operations
+                type: string
+            required:
+            - action
+            type: object
+          status:
+            description: PDBStatus defines the observed state of PDB
+            properties:
+              action:
+                description: Last Completed Action
+                type: string
+              connString:
+                description: PDB Connect String
+                type: string
+              modifyOption:
+                description: Modify Option of the PDB
+                type: string
+              msg:
+                description: Message
+                type: string
+              openMode:
+                description: Open mode of the PDB
+                type: string
+              phase:
+                description: Phase of the PDB Resource
+                type: string
+              status:
+                description: PDB Resource Status
+                type: boolean
+              totalSize:
+                description: Total size of the PDB
+                type: string
+            required:
+            - phase
+            - status
             type: object
         type: object
     served: true
@@ -628,11 +1978,11 @@ spec:
                   keepSecret:
                     type: boolean
                   secretKey:
+                    default: oracle_pwd
                     type: string
                   secretName:
                     type: string
                 required:
-                - secretKey
                 - secretName
                 type: object
               archiveLog:
@@ -645,6 +1995,7 @@ spec:
                 enum:
                 - standard
                 - enterprise
+                - express
                 type: string
               flashBack:
                 type: boolean
@@ -653,6 +2004,8 @@ spec:
               image:
                 description: SingleInstanceDatabaseImage defines the Image source and pullSecrets for POD
                 properties:
+                  prebuiltDB:
+                    type: boolean
                   pullFrom:
                     type: string
                   pullSecrets:
@@ -674,8 +2027,6 @@ spec:
                   sgaTarget:
                     type: integer
                 type: object
-              installApex:
-                type: boolean
               loadBalancer:
                 type: boolean
               nodeSelector:
@@ -696,25 +2047,28 @@ spec:
                     type: string
                   storageClass:
                     type: string
-                required:
-                - accessMode
-                - size
-                - storageClass
+                  volumeClaimAnnotation:
+                    type: string
+                  volumeName:
+                    type: string
                 type: object
               readinessCheckPeriod:
                 type: integer
               replicas:
-                minimum: 1
                 type: integer
+              serviceAccountName:
+                type: string
+              serviceAnnotations:
+                additionalProperties:
+                  type: string
+                type: object
               sid:
-                description: SID can only have a-z , A-Z, 0-9 . It cant have any special characters
+                description: SID must be alphanumeric (no special characters, only a-z, A-Z, 0-9), and no longer than 12 characters.
+                maxLength: 12
                 pattern: ^[a-zA-Z0-9]+$
                 type: string
             required:
-            - adminPassword
             - image
-            - persistence
-            - replicas
             type: object
           status:
             description: SingleInstanceDatabaseStatus defines the observed state of SingleInstanceDatabase
@@ -778,8 +2132,10 @@ spec:
               connectString:
                 type: string
               datafilesCreated:
+                default: "false"
                 type: string
               datafilesPatched:
+                default: "false"
                 type: string
               edition:
                 type: string
@@ -827,11 +2183,13 @@ spec:
                     type: string
                   storageClass:
                     type: string
-                required:
-                - accessMode
-                - size
-                - storageClass
+                  volumeClaimAnnotation:
+                    type: string
+                  volumeName:
+                    type: string
                 type: object
+              prebuiltDB:
+                type: boolean
               releaseUpdate:
                 type: string
               replicas:
@@ -848,7 +2206,6 @@ spec:
                 type: string
             required:
             - persistence
-            - replicas
             type: object
         type: object
     served: true
@@ -921,6 +2278,38 @@ rules:
   - ""
   resources:
   - configmaps
+  - events
+  - pods
+  - pods/exec
+  - pods/log
+  - replicasets
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - namespaces
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
   - secrets
   verbs:
   - create
@@ -952,6 +2341,18 @@ rules:
   - ''''''
   resources:
   - statefulsets/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
   verbs:
   - create
   - delete
@@ -1005,9 +2406,83 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  - namespaces
+  - pods
+  - secrets
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - pods/exec
   verbs:
   - create
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - autonomouscontainerdatabases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - autonomouscontainerdatabases/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - autonomousdatabasebackups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - autonomousdatabasebackups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - autonomousdatabaserestores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - autonomousdatabaserestores/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - database.oracle.com
   resources:
@@ -1025,6 +2500,118 @@ rules:
   resources:
   - autonomousdatabases/status
   verbs:
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - cdbs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - cdbs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - cdbs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - dbcssystems
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - dbcssystems/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - dbcssystems/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - oraclerestdataservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - oraclerestdataservices/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - oraclerestdataservices/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - pdbs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - pdbs/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - database.oracle.com
+  resources:
+  - pdbs/status
+  verbs:
+  - get
   - patch
   - update
 - apiGroups:
@@ -1180,55 +2767,6 @@ spec:
   selector:
     control-plane: controller-manager
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    control-plane: controller-manager
-  name: oracle-database-operator-controller-manager
-  namespace: oracle-database-operator-system
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      control-plane: controller-manager
-  template:
-    metadata:
-      labels:
-        control-plane: controller-manager
-    spec:
-      containers:
-      - args:
-        - --enable-leader-election
-        command:
-        - /manager
-        image: container-registry.oracle.com/database/operator:0.1.0
-        imagePullPolicy: Always
-        name: manager
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 400m
-            memory: 400Mi
-          requests:
-            cpu: 400m
-            memory: 400Mi
-        volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
-      imagePullSecrets:
-      - name: container-registry-secret
-      terminationGracePeriodSeconds: 10
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-cert
----
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -1260,6 +2798,109 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /mutate-database-oracle-com-v1alpha1-autonomousdatabase
+  failurePolicy: Fail
+  name: mautonomousdatabase.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autonomousdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /mutate-database-oracle-com-v1alpha1-autonomousdatabasebackup
+  failurePolicy: Fail
+  name: mautonomousdatabasebackup.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autonomousdatabasebackups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /mutate-database-oracle-com-v1alpha1-cdb
+  failurePolicy: Fail
+  name: mcdb.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cdbs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /mutate-database-oracle-com-v1alpha1-oraclerestdataservice
+  failurePolicy: Fail
+  name: moraclerestdataservice.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oraclerestdataservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /mutate-database-oracle-com-v1alpha1-pdb
+  failurePolicy: Fail
+  name: mpdb.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pdbs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
   - v1beta1
   clientConfig:
     service:
@@ -1289,6 +2930,149 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-autonomouscontainerdatabase
+  failurePolicy: Fail
+  name: vautonomouscontainerdatabase.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autonomouscontainerdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-autonomousdatabase
+  failurePolicy: Fail
+  name: vautonomousdatabase.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autonomousdatabases
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-autonomousdatabasebackup
+  failurePolicy: Fail
+  name: vautonomousdatabasebackup.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autonomousdatabasebackups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-autonomousdatabaserestore
+  failurePolicy: Fail
+  name: vautonomousdatabaserestore.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - autonomousdatabaserestores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-cdb
+  failurePolicy: Fail
+  name: vcdb.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cdbs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-oraclerestdataservice
+  failurePolicy: Fail
+  name: voraclerestdataservice.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - oraclerestdataservices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: oracle-database-operator-webhook-service
+      namespace: oracle-database-operator-system
+      path: /validate-database-oracle-com-v1alpha1-pdb
+  failurePolicy: Fail
+  name: vpdb.kb.io
+  rules:
+  - apiGroups:
+    - database.oracle.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pdbs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
   - v1beta1
   clientConfig:
     service:
@@ -1309,3 +3093,51 @@ webhooks:
     resources:
     - singleinstancedatabases
   sideEffects: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: oracle-database-operator-controller-manager
+  namespace: oracle-database-operator-system
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --enable-leader-election
+        command:
+        - /manager
+        image: container-registry.oracle.com/database/operator:0.2.0
+        imagePullPolicy: Always
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 400m
+            memory: 400Mi
+          requests:
+            cpu: 400m
+            memory: 400Mi
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
