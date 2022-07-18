@@ -41,7 +41,6 @@ import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 
-import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
@@ -306,7 +305,7 @@ public class ServerStatusReader {
     private Step getNextStep(DomainPresenceInfo info) {
       return Optional.ofNullable(info)
           .map(i -> createDomainStatusReaderStep(i, timeoutSeconds,
-              DomainStatusUpdater.createStatusUpdateStep(createClusterResourceStatusUpdaterStep(getNext()))))
+              DomainStatusUpdater.createStatusUpdateStep(getNext())))
           .orElse(getNext());
     }
   }

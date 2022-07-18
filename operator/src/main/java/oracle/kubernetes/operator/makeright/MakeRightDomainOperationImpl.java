@@ -47,7 +47,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
-import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -322,7 +321,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     Step managedServerStrategy = Step.chain(
         new ManagedServersUpStep(null),
         MonitoringExporterSteps.updateExporterSidecars(),
-        createStatusUpdateStep(createClusterResourceStatusUpdaterStep(new TailStep())));
+        createStatusUpdateStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(

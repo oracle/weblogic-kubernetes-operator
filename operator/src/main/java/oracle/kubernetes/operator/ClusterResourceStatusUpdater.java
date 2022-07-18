@@ -133,18 +133,18 @@ public class ClusterResourceStatusUpdater {
   }
 
   static class RunInParallelStep extends Step {
-    final Collection<StepAndPacket> statusUpdater;
+    final Collection<StepAndPacket> statusUpdateSteps;
 
-    RunInParallelStep(Collection<StepAndPacket> statusUpdater) {
-      this.statusUpdater = statusUpdater;
+    RunInParallelStep(Collection<StepAndPacket> statusUpdateSteps) {
+      this.statusUpdateSteps = statusUpdateSteps;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      if (statusUpdater.isEmpty()) {
+      if (statusUpdateSteps.isEmpty()) {
         return doNext(getNext(), packet);
       } else {
-        return doForkJoin(getNext(), packet, statusUpdater);
+        return doForkJoin(getNext(), packet, statusUpdateSteps);
       }
     }
   }

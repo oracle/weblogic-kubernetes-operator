@@ -17,7 +17,6 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
@@ -58,7 +57,6 @@ class ClusterResourceStatusUpdaterTest {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(ClientFactoryStub.install());
-    mementos.add(SystemClockTestSupport.installClock());
 
     domain.setStatus(new DomainStatus());
     testSupport.addDomainPresenceInfo(info);
@@ -175,11 +173,6 @@ class ClusterResourceStatusUpdaterTest {
         .getResourceWithName(KubernetesTestSupport.CLUSTER, NAME + '-' + CLUSTER);
     assertThat(clusterResource,  notNullValue());
     assertThat(clusterResource.getStatus(), equalTo(newStatus));
-  }
-
-  private void addStaticClusterToTopology(String clusterName, String... servers) {
-    configSupport.addWlsCluster(clusterName, servers);
-    addTopologyToPacket(configSupport.createDomainConfig());
   }
 
   private ClusterResource createClusterResource(String clusterName) {

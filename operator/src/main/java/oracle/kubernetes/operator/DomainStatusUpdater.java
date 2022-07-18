@@ -69,6 +69,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
+import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -123,7 +124,7 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(next);
+    return new StatusUpdateStep(createClusterResourceStatusUpdaterStep(next));
   }
 
 
