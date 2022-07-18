@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -84,6 +85,7 @@ public class ClusterResourceStatusUpdater {
   }
 
   static StepAndPacket createReplaceClusterResourceStatusStep(ReplaceClusterStatusContext context) {
+    LOGGER.fine(MessageKeys.CLUSTER_STATUS, context.getClusterResourceName(), context.getNewStatus());
     return new StepAndPacket(createReplaceClusterStatusAsyncStep(context), context.getPacket().copy());
   }
 
