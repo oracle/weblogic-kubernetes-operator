@@ -53,8 +53,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class AdmissionCheckerTest {
-  private static final String BAD_SERVER_NAME_1 = "bad-ms1";
-  private static final String BAD_CLUSTER_NAME_1 = "bad-cluster1";
+  private static final String DUPLICATE_SERVER_NAME = "duplicate-ms";
+  private static final String DUPLICATE_CLUSTER_NAME = "duplicate-cluster";
   private static final String MOUNT_NAME = "bad-mount";
   private static final String BAD_MOUNT_PATH = "mydir/mount";
   private static final String GOOD_MOUNT_PATH = "/mydir/mount";
@@ -342,17 +342,17 @@ class AdmissionCheckerTest {
 
   @Test
   void whenDomainHasDuplicateServerNames_returnFalse() {
-    proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(BAD_SERVER_NAME_1));
-    proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(BAD_SERVER_NAME_1));
-    proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(BAD_SERVER_NAME_1));
+    proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(DUPLICATE_SERVER_NAME));
+    proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(DUPLICATE_SERVER_NAME));
+    proposedDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName(DUPLICATE_SERVER_NAME));
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @Test
   void whenDomainHasDuplicateClusterNames_returnFalse() {
-    proposedDomain.getSpec().getClusters().add(new ClusterSpec().withClusterName(BAD_CLUSTER_NAME_1));
-    proposedDomain.getSpec().getClusters().add(new ClusterSpec().withClusterName(BAD_CLUSTER_NAME_1));
+    proposedDomain.getSpec().getClusters().add(new ClusterSpec().withClusterName(DUPLICATE_CLUSTER_NAME));
+    proposedDomain.getSpec().getClusters().add(new ClusterSpec().withClusterName(DUPLICATE_CLUSTER_NAME));
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }
