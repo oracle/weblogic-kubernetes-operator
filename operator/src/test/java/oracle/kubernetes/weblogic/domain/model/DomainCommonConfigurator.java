@@ -297,7 +297,11 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   private ClusterSpec getOrCreateCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
-    return Optional.ofNullable(info.getClusterResource(clusterName)).orElse(createCluster(info, clusterName)).getSpec();
+    ClusterResource resource = info.getClusterResource(clusterName);
+    if (resource == null) {
+      resource = createCluster(info, clusterName);
+    }
+    return resource.getSpec();
   }
 
   private ClusterResource createCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
