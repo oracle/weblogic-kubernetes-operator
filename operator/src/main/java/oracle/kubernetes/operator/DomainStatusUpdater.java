@@ -39,8 +39,6 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.http.rest.Scan;
-import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
@@ -1029,13 +1027,7 @@ public class DomainStatusUpdater {
       }
 
       private Optional<WlsDomainConfig> getDomainConfig() {
-        return Optional.ofNullable(config).or(this::getScanCacheDomainConfig);
-      }
-
-      private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
-        DomainPresenceInfo info = getInfo();
-        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
+        return Optional.ofNullable(config);
       }
 
       private boolean isServerReady(@Nonnull String serverName) {
