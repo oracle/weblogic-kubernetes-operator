@@ -709,7 +709,7 @@ public class DbUtils {
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
     replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
-        "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
+        "container-registry.oracle.com/database/operator:0.2.0", DB_OPERATOR_IMAGE);
     createTestRepoSecret(namespace);
     createBaseRepoSecret(namespace);
 
@@ -792,7 +792,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
     replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
-    replaceStringInFile(dbYaml.toString(), "storageClass: \"oci\"", "storageClass: dboperatorsc");
+    replaceStringInFile(dbYaml.toString(), "storageClass: \"oci-bv\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
     CommandParams params = new CommandParams().defaults();
