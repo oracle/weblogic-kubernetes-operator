@@ -33,7 +33,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_C
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -93,8 +92,6 @@ class ItOperatorIstioUpgrade {
   private String opNamespace;
   private String domainNamespace;
   private int istioIngressPort;
-  private static String miiAuxiliaryImageTag = "istio-v8-upgrade";
-  private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
 
   /**
    * For each test:
@@ -127,13 +124,23 @@ class ItOperatorIstioUpgrade {
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator v3.4.1 to current.
+   * Istio Domain upgrade from Operator v3.4.1 to current.
    */
   @Test
-  @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8) with Istio to current")
+  @DisplayName("Upgrade 3.4.1 Istio Domain(v8) with Istio to current")
   void testOperatorWlsIstioDomainUpgradeFrom341ToCurrent() {
-    logger.info("Starting test to upgrade Auxiliary Image Domain with Istio with v8 schema to current");
+    logger.info("Starting test to upgrade Istio Image Domain with Istio with v8 schema to current");
     upgradeWlsIstioDomain("3.4.1");
+  }
+
+  /**
+   * Istio Domain upgrade from Operator v3.3.8 to current.
+   */
+  @Test
+  @DisplayName("Upgrade 3.3.8 Istio Domain(v8) with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom338ToCurrent() {
+    logger.info("Starting test to upgrade Istio Image Domain with Istio with v8 schema to current");
+    upgradeWlsIstioDomain("3.3.8");
   }
 
   /**
@@ -210,8 +217,8 @@ class ItOperatorIstioUpgrade {
   }
 
   private void checkIstioService() {
-    // We can not verify Rest Management console thru Adminstration NodePort
-    // in istio, as we can not enable Adminstration NodePort
+    // We can not verify Rest Management console thru Administration NodePort
+    // in istio, as we can not enable Administration NodePort
     logger.info("Verifying Istio Service @IngressPort [{0}]", istioIngressPort);
     if (!WEBLOGIC_SLIM) {
       String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
@@ -256,8 +263,6 @@ class ItOperatorIstioUpgrade {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
   }
 
-
-
   private void createSecrets() {
     // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
@@ -283,14 +288,14 @@ class ItOperatorIstioUpgrade {
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+      logger.info("Waiting for managed pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
+      logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
@@ -301,7 +306,7 @@ class ItOperatorIstioUpgrade {
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     // verify managed server pods are deleted
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be deleted in namespace {1}",
+      logger.info("Waiting for managed pod {0} to be deleted in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodDeleted(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
