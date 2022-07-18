@@ -30,10 +30,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
@@ -68,6 +64,11 @@ public class DomainStatus {
   @Description("The generation observed by the WebLogic operator.")
   private Long observedGeneration;
 
+  /**
+   * The number of introspector job failures since the last success.
+   *
+   * @deprecated
+   **/
   @SuppressWarnings("unused")
   @Description(
       "Non-zero if the introspector job fails for any reason. "
@@ -186,7 +187,7 @@ public class DomainStatus {
   private void setStatusSummary() {
     final DomainCondition selected = getSummaryCondition();
     reason = Optional.ofNullable(selected.getReason()).map(DomainFailureReason::toString).orElse(null);
-    message = failedIntrospectionUid != null ? createDomainStatusMessage(selected.getMessage()) : selected.getMessage();
+    message = selected.getMessage();
     if (isRetriableFailure(selected)) {
       initialFailureTime = Optional.ofNullable(initialFailureTime).orElse(selected.getLastTransitionTime());
     } else {
@@ -346,11 +347,6 @@ public class DomainStatus {
 
   public void setObservedGeneration(Long observedGeneration) {
     this.observedGeneration = observedGeneration;
-  }
-
-  public DomainStatus withObservedGeneration(Long observedGeneration) {
-    this.observedGeneration = observedGeneration;
-    return this;
   }
 
   /**
@@ -682,32 +678,6 @@ public class DomainStatus {
     statusPatch.createPatch(builder, "/status", oldStatus, this);
   }
 
-  public String createDomainStatusMessage(String message) {
-    return LOGGER.formatMessage(getMessageKey(failedIntrospectionUid, message), message);
-  }
-
-  @NotNull
-  private String getMessageKey(String jobUid, String message) {
-    return getFailureLevel(jobUid, message).getMessageKey();
-  }
-
-  @NotNull
-  private FailureLevel getFailureLevel(String jobUid, String message) {
-    if (jobUid == null) {
-      return FailureLevel.NON_INTROSPECTION;
-    } else if (isAborted()) {
-      return FailureLevel.RETRIES_EXCEEDED;
-    } else if (isFatalError(message)) {
-      return FailureLevel.FATAL;
-    } else {
-      return FailureLevel.WILL_RETRY;
-    }
-  }
-
-  private boolean isFatalError(String message) {
-    return Optional.ofNullable(message).map(m -> m.contains(FATAL_INTROSPECTOR_ERROR)).orElse(false);
-  }
-
   /**
    * Returns true if the failure count in the status is equal to or greater than the configured maximum.
    */
@@ -746,33 +716,4 @@ public class DomainStatus {
     return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
   }
 
-  private enum FailureLevel {
-    NON_INTROSPECTION,
-    FATAL {
-      @NotNull
-      @Override
-      String getMessageKey() {
-        return DOMAIN_FATAL_ERROR;
-      }
-    },
-    WILL_RETRY {
-      @NotNull
-      @Override
-      String getMessageKey() {
-        return NON_FATAL_INTROSPECTOR_ERROR;
-      }
-    },
-    RETRIES_EXCEEDED {
-      @NotNull
-      @Override
-      String getMessageKey() {
-        return INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-      }
-    };
-
-    @NotNull
-    String getMessageKey() {
-      return NO_FORMATTING;
-    }
-  }
 }

@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -52,6 +53,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Server;
+import org.jetbrains.annotations.NotNull;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
@@ -59,6 +61,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAIL
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -73,7 +76,7 @@ public class JobHelper {
 
   private static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String INTROSPECTOR_LOG_PREFIX = "Introspector Job Log: ";
+  public static final String INTROSPECTOR_LOG_PREFIX = "Introspector Job Log: ";
   private static final String EOL_PATTERN = "\\r?\\n";
 
   private JobHelper() {
@@ -90,7 +93,7 @@ public class JobHelper {
     return UnitTestAdaptor.create(IntrospectorJobStepContext::deleteIntrospectorJob, next);
   }
 
-  static Step readDomainIntrospectorPodLog(Step next) {
+  public static Step readDomainIntrospectorPodLog(Step next) {
     return UnitTestAdaptor.create(IntrospectorJobStepContext::readNamedPodLog, next);
   }
 
@@ -188,18 +191,10 @@ public class JobHelper {
     return new IntrospectionStartStep();
   }
 
-  public static Step createIntrospectionStartStep(Step next) {
-    return new IntrospectionStartStep(next);
-  }
-
   private static class IntrospectionStartStep extends Step {
 
     IntrospectionStartStep() {
       super();
-    }
-
-    IntrospectionStartStep(Step next) {
-      super(next);
     }
 
     @Override
@@ -243,7 +238,7 @@ public class JobHelper {
         if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
-          return doNext(processIntrospectionResults(getNext()), packet).withDebugComment(job, this::jobDescription);
+          return doNext(processExistingIntrospectorJob(getNext()), packet).withDebugComment(job, this::jobDescription);
         } else if (isIntrospectionNeeded(packet)) {
           return doNext(createIntrospectionSteps(getNext()), packet).withDebugComment(packet, this::introspectReason);
         } else {
@@ -367,6 +362,10 @@ public class JobHelper {
           sb.append("domain topology is null");
         } else if (isBringingUpNewDomain(packet)) {
           sb.append("bringing up new domain");
+        } else if (isIntrospectionRequested(packet)) {
+          sb.append("introspection was requested");
+        } else if (isIntrospectVersionChanged(packet)) {
+          sb.append("introspection version was changed");
         } else {
           sb.append("something else");
         }
@@ -451,24 +450,20 @@ public class JobHelper {
     private Step createIntrospectionSteps(Step next) {
       return Step.chain(
               readExistingIntrospectorConfigMap(),
-              startNewIntrospection(next));
-    }
-
-    @Nonnull
-    private Step startNewIntrospection(Step next) {
-      return Step.chain(createNewJob(), processIntrospectionResults(next));
+              createNewJob(),
+              processExistingIntrospectorJob(next));
     }
 
     // Returns a chain of steps which read the job pod and decide how to handle it.
-    private Step processIntrospectionResults(Step next) {
-      return Step.chain(waitForIntrospectionToComplete(), verifyJobPod(), next);
+    private Step processExistingIntrospectorJob(Step next) {
+      return Step.chain(waitForIntrospectionToComplete(), readIntrospectorResults(), next);
     }
 
     private Step waitForIntrospectionToComplete() {
       return new WatchDomainIntrospectorJobReadyStep();
     }
 
-    private Step verifyJobPod() {
+    private Step readIntrospectorResults() {
       return new ReadDomainIntrospectorPodStep();
     }
 
@@ -524,22 +519,27 @@ public class JobHelper {
       public NextAction onSuccess(Packet packet, CallResponse<String> callResponse) {
         Optional.ofNullable(callResponse.getResult()).ifPresent(result -> processIntrospectionResult(packet, result));
 
+        addFluentdContainerLogAsSevereStatus(packet);
+
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
-        if (JobWatcher.isComplete(domainIntrospectorJob)
-                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
-                .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
-          return doNext(packet);
+        if (severeStatuses.isEmpty()) {
+          return doNext(createRemoveSelectedFailuresStep(getNext(), INTROSPECTION), packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
         }
       }
 
+      // Note: fluentd container log can be huge, may not be a good idea to read the container log.
+      //  Just set a flag and let the user know they can check the container log to determine unlikely
+      //  starting error, most likely a very bad formatted configuration.
+      private void addFluentdContainerLogAsSevereStatus(Packet packet) {
+        Optional.ofNullable(packet.<String>getValue(JOB_POD_FLUENTD_CONTAINER_TERMINATED))
+            .ifPresent(severeStatuses::add);
+      }
+
       private void processIntrospectionResult(Packet packet, String result) {
         LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
         convertJobLogsToOperatorLogs(result);
-        if (!severeStatuses.isEmpty()) {
-          updateStatusSynchronously();
-        }
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
         MakeRightDomainOperation.recordInspection(packet);
       }
@@ -547,33 +547,9 @@ public class JobHelper {
       private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
-        // Note: fluentd container log can be huge, may not be a good idea to read the container log.
-        //  Just set a flag and let the user know they can check the container log to determine unlikely
-        //  starting error, most likely a very bad formatted configuration.
-        if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
-          severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
-        }
-        if (!severeStatuses.isEmpty()) {
-          return doNext(Step.chain(
-              createIntrospectionFailureSteps(
-                  onSeparateLines(severeStatuses), domainIntrospectorJob),
-              getNextStep(packet, domainIntrospectorJob), null), packet);
-        } else {
-          return doNext(Step.chain(
-              createIntrospectionFailureSteps(
-                  createFailureMessage(packet, domainIntrospectorJob)),
-              getNextStep(packet, domainIntrospectorJob), null), packet);
-        }
-      }
-
-      private String createFailureMessage(Packet packet, @Nullable V1Job job) {
-        String jobName = Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getName).orElse("");
-        String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-        return LOGGER.formatMessage(INTROSPECTOR_JOB_FAILED,
-            Objects.requireNonNull(jobName),
-            Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getNamespace).orElse(""),
-            Optional.ofNullable(job).map(V1Job::getStatus).orElse(null),
-            jobPodName);
+        return doNext(Step.chain(
+            createIntrospectionFailureSteps(onSeparateLines(severeStatuses), domainIntrospectorJob),
+            getNextStep(packet, domainIntrospectorJob), null), packet);
       }
 
       @Nullable
@@ -662,10 +638,6 @@ public class JobHelper {
         return logMsg.split(EOL_PATTERN)[0];
       }
 
-      private void updateStatusSynchronously() {
-        DomainStatusPatch.updateSynchronously(getDomain(), INTROSPECTION, onSeparateLines(severeStatuses));
-      }
-
       private String onSeparateLines(List<String> lines) {
         return String.join(System.lineSeparator(), lines);
       }
@@ -694,46 +666,88 @@ public class JobHelper {
       }
 
       private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
-
-        Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
-            .map(V1Pod::getStatus)
-            .map(V1PodStatus::getContainerStatuses)
-            .orElseGet(Collections::emptyList)
-            .stream().filter(v -> v.getState().getTerminated() != null)
-            .filter(c -> FLUENTD_CONTAINER_NAME.equals(c.getName()))
-            .findFirst();
-
-        if (!containerStatus.isEmpty()) {
-          LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-              jobPod.getMetadata().getNamespace(),
-              containerStatus.get().getState().getTerminated().getExitCode(),
-              containerStatus.get().getState().getTerminated().getReason(),
-              containerStatus.get().getState().getTerminated().getMessage());
-
-          packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
-              LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-                  jobPod.getMetadata().getNamespace(),
-                  containerStatus.get().getState().getTerminated().getExitCode(),
-                  containerStatus.get().getState().getTerminated().getReason(),
-                  containerStatus.get().getState().getTerminated().getMessage()));
-
-          return;
-
-        }
-
-        containerStatus = Optional.ofNullable(jobPod)
-            .map(V1Pod::getStatus)
-            .map(V1PodStatus::getContainerStatuses)
-            .orElseGet(Collections::emptyList)
-            .stream().filter(v -> v.getState().getTerminated() != null)
-            .filter(c -> jobName.equals(c.getName()))
-            .filter(c -> c.getState().getTerminated().getExitCode() == 0)
-            .findFirst();
-
-        if (!containerStatus.isEmpty()) {
+        final FluentdContainer fluentdContainer = new FluentdContainer(jobPod);
+        if (fluentdContainer.isTerminated()) {
+          fluentdContainer.logAndAddToPacket(packet);
+        } else if (new JobPodContainer(jobPod, jobName).isTerminatedWithoutError()) {
           packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
         }
+      }
 
+      private class FluentdContainer {
+        private final V1Pod jobPod;
+        private final V1ContainerStatus matchingStatus;
+
+        FluentdContainer(V1Pod jobPod) {
+          this.matchingStatus = Optional.ofNullable(jobPod)
+              .map(V1Pod::getStatus)
+              .map(V1PodStatus::getContainerStatuses).orElseGet(Collections::emptyList).stream()
+              .filter(this::isTerminatedFluentdContainerStatus)
+              .findFirst()
+              .orElse(null);
+          this.jobPod = jobPod;
+        }
+
+        private boolean isTerminatedFluentdContainerStatus(V1ContainerStatus containerStatus) {
+          return FLUENTD_CONTAINER_NAME.equals(containerStatus.getName())
+              && containerStatus.getState() != null
+              && containerStatus.getState().getTerminated() != null;
+        }
+
+        boolean isTerminated() {
+          return matchingStatus != null;
+        }
+
+        private void logAndAddToPacket(Packet packet) {
+          LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, getParameters());
+          packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+              LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, getParameters()));
+        }
+
+        private Object[] getParameters() {
+          return new Object[] {
+              jobPod.getMetadata().getName(),
+              jobPod.getMetadata().getNamespace(),
+              matchingStatus.getState().getTerminated().getExitCode(),
+              matchingStatus.getState().getTerminated().getReason(),
+              matchingStatus.getState().getTerminated().getMessage()
+          };
+        }
+      }
+
+      class JobPodContainer {
+        private final V1Pod jobPod;
+        private final String jobName;
+
+        JobPodContainer(V1Pod jobPod, String jobName) {
+          this.jobPod = jobPod;
+          this.jobName = jobName;
+        }
+
+        boolean isTerminatedWithoutError() {
+          return getMatchingStatus() != null;
+        }
+
+        private V1ContainerStatus getMatchingStatus() {
+          return Optional.ofNullable(jobPod)
+              .map(V1Pod::getStatus)
+              .map(V1PodStatus::getContainerStatuses).orElseGet(Collections::emptyList).stream()
+              .filter(this::isTerminatedJobContainerStatus)
+              .findFirst()
+              .orElse(null);
+        }
+
+        private boolean isTerminatedJobContainerStatus(V1ContainerStatus status) {
+          return jobName.equals(status.getName()) && getTerminatedExitCode(status) == 0;
+        }
+
+        @NotNull
+        private Integer getTerminatedExitCode(V1ContainerStatus status) {
+          return Optional.ofNullable(status.getState())
+              .map(V1ContainerState::getTerminated)
+              .map(V1ContainerStateTerminated::getExitCode)
+              .orElse(-1);
+        }
       }
 
       @Override
@@ -809,7 +823,7 @@ public class JobHelper {
       private boolean initContainersHaveImagePullError(V1Pod pod) {
         return Optional.ofNullable(getInitContainerStatuses(pod))
                 .map(statuses -> statuses.stream()
-                        .map(V1ContainerStatus::getState)
+                        .map(V1ContainerStatus::getState).filter(Objects::nonNull)
                         .map(V1ContainerState::getWaiting).filter(Objects::nonNull)
                         .map(V1ContainerStateWaiting::getReason)
                         .anyMatch(IntrospectionStatus::isImagePullError))

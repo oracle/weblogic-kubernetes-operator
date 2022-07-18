@@ -1213,7 +1213,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   private void runCreateJob() {
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
-    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
   }
 
   @Test

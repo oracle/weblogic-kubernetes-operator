@@ -90,7 +90,7 @@ echo @@ Info: Setting up imagetool and populating its caches
 echo @@
 
 mkdir -p cache
-unzip -o weblogic-image-tool.zip
+unzip -o imagetool.zip
 
 IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
 
@@ -100,7 +100,7 @@ export WLSIMG_BLDDIR=${WORKDIR}
 
 ${IMGTOOL_BIN} cache deleteEntry --key wdt_myversion
 ${IMGTOOL_BIN} cache addInstaller \
-  --type wdt --version myversion --path ${WORKDIR}/weblogic-deploy-tooling.zip
+  --type wdt --version myversion --path ${WORKDIR}/weblogic-deploy.zip
 
 echo "@@"
 echo "@@ Info: Starting model image build for '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'"
