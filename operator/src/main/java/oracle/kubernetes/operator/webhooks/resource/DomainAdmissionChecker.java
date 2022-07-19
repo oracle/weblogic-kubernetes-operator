@@ -47,7 +47,6 @@ public class DomainAdmissionChecker extends AdmissionChecker {
 
   /** Construct a DomainAdmissionChecker. */
   public DomainAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
-    super(existingDomain.getDomainUid());
     this.existingDomain = existingDomain;
     this.proposedDomain = proposedDomain;
   }

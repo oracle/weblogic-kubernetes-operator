@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.DomainFailureMessages;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -24,7 +23,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import org.jetbrains.annotations.NotNull;

@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;

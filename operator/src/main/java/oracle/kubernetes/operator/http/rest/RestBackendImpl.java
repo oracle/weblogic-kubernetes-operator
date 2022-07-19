@@ -279,14 +279,14 @@ public class RestBackendImpl implements RestBackend {
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
   }
 
-  private Optional<ClusterResource> getClusterResource(String domainUid, String clusterName) {
+  private Optional<ClusterResource> getClusterResource(String clusterName) {
     authorize(null, Operation.LIST);
 
-    return getClusterStream().filter(c -> isMatchingClusterResource(domainUid, clusterName, c)).findFirst();
+    return getClusterStream().filter(c -> isMatchingClusterResource(clusterName, c)).findFirst();
   }
 
-  private boolean isMatchingClusterResource(String domainUid, String clusterName, ClusterResource c) {
-    return clusterName.equals(c.getClusterName()) && domainUid.equals(c.getDomainUid());
+  private boolean isMatchingClusterResource(String clusterName, ClusterResource c) {
+    return clusterName.equals(c.getClusterName());
   }
 
   @Override
@@ -322,7 +322,7 @@ public class RestBackendImpl implements RestBackend {
     }
 
     authorize(domainUid, Operation.UPDATE);
-    getClusterResource(domainUid, cluster)
+    getClusterResource(cluster)
         .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
             // FIXME: Do we need to create missing Cluster resource here?
             () -> {

@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -868,12 +869,27 @@ public class DomainPresenceInfo implements PacketComponent {
     this.serversToRoll = serversToRoll;
   }
 
+  /**
+   * Looks up cluster resource for the given cluster name.
+   * @param clusterName Cluster name
+   * @return Cluster resource, if found
+   */
   public ClusterResource getClusterResource(String clusterName) {
     if (clusterName != null) {
       return clusters.get(clusterName);
     }
     return null;
   }
+
+  public boolean doesReferenceCluster(String cluster) {
+    return Optional.ofNullable(getDomain()).map(DomainResource::getSpec).map(DomainSpec::getClusters)
+        .map(list -> doesReferenceCluster(list, cluster)).orElse(false);
+  }
+
+  private boolean doesReferenceCluster(List<V1LocalObjectReference> refs, String cluster) {
+    return refs.stream().anyMatch(ref -> cluster.equals(ref.getName()));
+  }
+
 
   public List<ClusterResource> getReferencedClusters() {
     return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList())
@@ -905,11 +921,14 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
-   * Removes references to any cluster resources whose names are not in the active list.
-   * @param activeClusterNames list of active cluster resource names.
+   * Updates cluster references.
+   * @param resources list of cluster resources.
    */
-  public void removeInactiveClusterResources(Set<String> activeClusterNames) {
-    clusters.entrySet().removeIf(e -> !activeClusterNames.contains(e.getKey()));
+  public void adjustClusterResources(Collection<ClusterResource> resources) {
+    Map<String, ClusterResource> updated = new HashMap<>();
+    resources.forEach(cr -> updated.put(cr.getClusterName(), cr));
+    clusters.keySet().retainAll(updated.keySet());
+    clusters.putAll(updated);
   }
 
   /**

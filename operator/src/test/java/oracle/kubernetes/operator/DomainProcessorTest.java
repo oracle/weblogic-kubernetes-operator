@@ -2182,6 +2182,6 @@ class DomainProcessorTest {
   private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
     return new ClusterResource()
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
-        .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
+        .spec(new ClusterSpec().withClusterName(clusterName));
   }
 }

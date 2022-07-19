@@ -377,16 +377,6 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainsAreConfiguredAlike_objectsAreEqual() {
-    DomainResource domain1 = createDomain();
-
-    configureDomain(domain).configureCluster(info, "cls1");
-    configureDomain(domain1).configureCluster(info, "cls1");
-
-    assertThat(domain, equalTo(domain1));
-  }
-
-  @Test
   void whenNodeSelectorConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain)
         .withNodeSelector("key1", "domain")

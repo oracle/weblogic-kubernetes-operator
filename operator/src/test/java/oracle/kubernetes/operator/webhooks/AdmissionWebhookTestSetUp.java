@@ -19,7 +19,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 
 /**
@@ -63,7 +62,7 @@ class AdmissionWebhookTestSetUp {
   public static ClusterResource createCluster() {
     ClusterResource clusterResource =
         new ClusterResource().withMetadata(new V1ObjectMeta().name(CLUSTER_NAME_1).namespace(NS))
-            .spec(createClusterSpec(CLUSTER_NAME_1).withDomainUid(UID));
+            .spec(createClusterSpec(CLUSTER_NAME_1));
     clusterResource.setApiVersion((KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION));
     clusterResource.setStatus(createClusterStatus(CLUSTER_NAME_1));
     return clusterResource;

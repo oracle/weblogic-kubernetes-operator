@@ -31,13 +31,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   @NotNull
   private String clusterName;
 
-  /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
-  @Description(
-          "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster "
-                  + "is associated with.")
-  @SerializedName("domainUID")
-  private String domainUid;
-
   /** The number of replicas to run in the cluster, if specified. */
   @Description(
       "The number of cluster member Managed Server instances to start for this WebLogic cluster. "
@@ -123,15 +116,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
 
   public ClusterSpec withClusterName(@Nonnull String clusterName) {
     setClusterName(clusterName);
-    return this;
-  }
-
-  public String getDomainUid() {
-    return domainUid;
-  }
-
-  public ClusterSpec withDomainUid(String domainUid) {
-    this.domainUid = domainUid;
     return this;
   }
 
@@ -249,7 +233,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("clusterName", clusterName)
-        .append("domainUid", domainUid)
         .append("replicas", replicas)
         .append("serverStartPolicy", serverStartPolicy)
         .append("clusterService", clusterService)
@@ -275,7 +258,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(clusterName, clusterSpec.clusterName)
-        .append(domainUid, clusterSpec.domainUid)
         .append(replicas, clusterSpec.replicas)
         .append(serverStartPolicy, clusterSpec.serverStartPolicy)
         .append(clusterService, clusterSpec.clusterService)
@@ -291,7 +273,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(clusterName)
-        .append(domainUid)
         .append(replicas)
         .append(serverStartPolicy)
         .append(clusterService)

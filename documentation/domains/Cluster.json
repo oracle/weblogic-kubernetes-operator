@@ -160,10 +160,6 @@
           "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
         },
-        "domainUID": {
-          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
-          "type": "string"
-        },
         "clusterService": {
           "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
           "$ref": "#/definitions/ClusterService"

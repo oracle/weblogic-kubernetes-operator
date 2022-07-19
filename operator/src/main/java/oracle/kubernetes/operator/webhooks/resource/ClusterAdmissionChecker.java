@@ -37,7 +37,6 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
 
   /** Construct a ClusterAdmissionChecker. */
   public ClusterAdmissionChecker(@NotNull ClusterResource existingCluster, @NotNull ClusterResource proposedCluster) {
-    super(existingCluster.getDomainUid());
     this.existingCluster = existingCluster;
     this.proposedCluster = proposedCluster;
   }

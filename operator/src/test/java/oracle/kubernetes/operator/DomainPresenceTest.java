@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -167,11 +168,12 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenClusterResourceDeletedButAlreadyInPresence_deleteFromPresenceMap() {
-    testSupport.defineResources(domain);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
       testSupport.defineResources(createClusterResource(UID1, NS, clusterName));
+      domain.getSpec().getClusters().add(new V1LocalObjectReference().name(UID1 + "-" + clusterName));
     }
+    testSupport.defineResources(domain);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
     testSupport.deleteResources(
@@ -188,8 +190,12 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   void whenMultipleClustersMatchTwoDomains_addToDomainPresenceInfo() {
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
       testSupport.defineResources(createClusterResource(UID1, NS, clusterName));
+      domain.getSpec().getClusters().add(new V1LocalObjectReference().name(UID1 + "-" + clusterName));
     }
-    testSupport.defineResources(domain, createDomain(UID2, NS),
+
+    DomainResource domain2 = createDomain(UID2, NS);
+    domain2.getSpec().getClusters().add(new V1LocalObjectReference().name(UID2 + "-" + CLUSTER_2));
+    testSupport.defineResources(domain, domain2,
         createClusterResource(UID2, NS, CLUSTER_2));
     testSupport.addComponent("DP", DomainProcessor.class, dp);
 
@@ -219,7 +225,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       String clusterName) {
     return new ClusterResource()
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
-        .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
+        .spec(new ClusterSpec().withClusterName(clusterName));
   }
 
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap(DomainProcessorStub dp) {

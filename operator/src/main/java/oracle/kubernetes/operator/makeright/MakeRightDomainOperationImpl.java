@@ -291,7 +291,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     }
 
     private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
-      return clusterResource.getDomainUid().equals(info.getDomainUid());
+      return info.doesReferenceCluster(clusterResource.getClusterName());
     }
   }
 
