@@ -106,9 +106,9 @@ public class CallBuilder {
   private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
   private static AsyncRequestStepFactory stepFactory = DEFAULT_STEP_FACTORY;
   private ClientPool helper;
-  private final Boolean allowWatchBookmarks = false;
-  private final String dryRun = null;
-  private final String pretty = null;
+  private static final Boolean allowWatchBookmarks = false;
+  private static final String dryRun = null;
+  private static final String pretty = null;
   private final CallFactory<DomainResource> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -328,10 +328,10 @@ public class CallBuilder {
   private Integer timeoutSeconds = 5;
   private final CallParamsImpl callParams = new CallParamsImpl();
 
-  private final String resourceVersion = "";
+  private static final String resourceVersion = "";
 
   private Integer maxRetryCount = 10;
-  private final Boolean watch = null;
+  private static final Boolean watch = null;
   private final CallFactory<ClusterList> listCluster =
       (requestParams, usage, cont, callback) ->
           wrap(listClusterAsync(usage, requestParams.namespace, cont, callback));
@@ -386,8 +386,8 @@ public class CallBuilder {
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   private Integer gracePeriodSeconds = null;
-  private final Boolean orphanDependents = null;
-  private final String propagationPolicy = null;
+  private static final Boolean orphanDependents = null;
+  private static final String propagationPolicy = null;
 
   /* Custom Resource Definitions */
   private final CallFactory<V1Status> deleteConfigMap =
@@ -1400,9 +1400,8 @@ public class CallBuilder {
     } else if (namespace == null) {
       throw new ApiException("Missing the required parameter 'namespace' when calling deleteNamespacedPod(Async)");
     } else {
-      Call localVarCall = this.deleteNamespacedPodCall(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
+      return this.deleteNamespacedPodCall(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
           orphanDependents, propagationPolicy, body, callback);
-      return localVarCall;
     }
   }
 

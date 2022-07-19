@@ -450,6 +450,24 @@ class CallBuilderTest {
     assertThat(received, equalTo(resource));
   }
 
+  @Test
+  @ResourceLock(value = "server")
+  void replaceClusterStatusAsync_returnsUpdatedClusterResource() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    ClusterResource clusterResource = new ClusterResource().withMetadata(createMetadata());
+    defineHttpPutResponse(
+        CLUSTER_RESOURCE, UID + "/status", clusterResource, (json) ->
+            requestBody.set(fromJson(json, ClusterResource.class)));
+
+    KubernetesTestSupportTest.TestResponseStep<ClusterResource> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().replaceClusterStatusAsync(UID, NAMESPACE, clusterResource, responseStep));
+
+    ClusterResource received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(clusterResource));
+  }
+
 
   @Test
   @ResourceLock(value = "server")
