@@ -105,6 +105,10 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
+# elasticSearchProtocl specifics the protocol used for communicating with elasticsearch.
+# This parameter is ignored if 'elkIntegrationEnabled' is false.
+elasticSearchProtocol: http
+
 # createlogStashConfigMap specifies whether a ConfigMap named
 # weblogic-operator-logstash-cm should be created during helm install.
 # The ConfigMap contains the Logstash pipeline configuration for the Logstash

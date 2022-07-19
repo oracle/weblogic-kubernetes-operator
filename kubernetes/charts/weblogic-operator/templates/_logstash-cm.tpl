@@ -7,6 +7,8 @@ apiVersion: "v1"
 data:
   logstash.conf: |
 {{ .Files.Get "logstash.conf" | indent 4 }}
+  logstash.yml: |
+{{ .Files.Get "logstash.yml" | indent 4 }}
 kind: "ConfigMap"
 metadata:
   labels:
