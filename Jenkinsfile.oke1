@@ -63,7 +63,7 @@ pipeline {
                description: 'kube version for oke cluster',
                defaultValue: '1.23.4'
         )
-        string(name: 'PARALLEL_RUN',
+        booleanParam(name: 'PARALLEL_RUN',
                description: 'true if parallel',
                defaultValue: true
         )
