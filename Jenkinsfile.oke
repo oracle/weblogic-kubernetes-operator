@@ -62,15 +62,15 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.21.5'
+               defaultValue: '1.23.4'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaagfkjmrd3s6wkzq6vuokfmcwyr74hcgn7yex3jvueme3767ajnonq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.21.5'
+                       defaultValue: '1.23.4'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -87,11 +87,11 @@ pipeline {
         )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
-               defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
+               defaultValue: 'https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/weblogic-deploy-main.zip'
         )
         string(name: 'WIT_DOWNLOAD_URL',
                description: 'URL to download WIT.',
-               defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
+               defaultValue: 'https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/imagetool-main.zip'
         )
         string(name: 'REPO_REGISTRY',
                description: '',
@@ -399,7 +399,7 @@ EOF
                                         echo "Creating Storage Class to mount OFSS"
                                         cat << EOF | kubectl apply -f -
 kind: StorageClass
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 metadata:
   name: oci-fss
 provisioner: oracle.com/oci-fss

@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
+import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -188,10 +189,7 @@ class ItOperatorFmwUpgrade {
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
       CleanupUtil.cleanup(namespaces);
-      Command
-          .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
+      cleanUpCRD();
     }
   }
 
@@ -256,10 +254,7 @@ class ItOperatorFmwUpgrade {
 
   private HelmParams installOperator(String operatorVersion) {
     // delete existing CRD if any
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+    cleanUpCRD();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
@@ -422,7 +417,7 @@ class ItOperatorFmwUpgrade {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/" + domainNamespace + "domains/" + domainUid)
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -433,7 +428,7 @@ class ItOperatorFmwUpgrade {
                 .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/" + domainNamespace + "logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("v8".equals(domainVersion) ? "IF_NEEDED" : "IfNeeded")
             .serverPod(new ServerPod()
@@ -514,7 +509,7 @@ class ItOperatorFmwUpgrade {
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/" + domainUid + "/");
+    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
@@ -586,6 +581,21 @@ class ItOperatorFmwUpgrade {
       logger.info("Checking that managed server pod {0} doesn't exists in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
+    }
+  }
+
+  private void cleanUpCRD() {
+    boolean doesCrdExist = doesCrdExist();
+    if (doesCrdExist) {
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl patch crd/domains.weblogic.oracle"
+                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+              .execute();
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+              .execute();
     }
   }
 }

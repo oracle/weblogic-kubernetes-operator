@@ -58,6 +58,20 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -65,6 +79,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -107,6 +122,9 @@ public class CommonTestUtils {
   public static ConditionFactory withStandardRetryPolicyIgnoringExceptions =
       createStandardRetryPolicyWithAtMost(5).ignoreExceptions();
   public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+
+  private static final String TMP_FILE_NAME = "temp-download-file.out";
+
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
@@ -1590,5 +1608,123 @@ public class CommonTestUtils {
         "{0} is evicted and regex {1} found in Operator log",
         podName,
         regex);
+  }
+
+  /**
+   * If we use actual URL of WDT or WIT return it. If we use the "latest" release figure out the
+   * actual version number and construct the complete URL
+   * @return the actual download URL
+   * @throws RuntimeException if the operation failed for any reason
+   */
+  public static String getActualLocationIfNeeded(
+      String location,
+      String type,
+      String downloadDir
+  ) throws RuntimeException {
+    String actualLocation = location;
+    if (needToGetActualLocation(location, type)) {
+      String version = "";
+      String command = String.format(
+          "curl -fL %s -o %s/%s-%s",
+          location,
+          downloadDir,
+          type,
+          TMP_FILE_NAME);
+
+      CommandParams params =
+          defaultCommandParams()
+              .command(command)
+              .saveResults(true);
+      if (!Command.withParams(params).execute()) {
+        RuntimeException exception =
+            new RuntimeException(String.format("Failed to get the latest %s release information.", type));
+        getLogger().severe(
+            String.format(
+                "Failed to get the latest %s release information. The stderr is %s",
+                type,
+                params.stderr()),
+            exception);
+        throw exception;
+      }
+
+      command = String.format(
+          "cat %s/%s-%s | grep 'releases/download' | awk '{ split($0,a,/href=\"/);%s | %s",
+          downloadDir,
+          type,
+          TMP_FILE_NAME,
+          " print a[2] }'",
+          " cut -d/ -f 6");
+
+      params =
+          defaultCommandParams()
+          .command(command)
+          .saveResults(true)
+          .redirect(true);
+
+      // the command is considered successful only if we have got back a real version number in params.stdout()
+      if (Command.withParams(params).execute()
+          && params.stdout() != null
+          && params.stdout().length() != 0) {
+        // Because I've updated the name of the logging exporter to remove the version number in the name, but
+        // also preserved the original, there will be two entries located. Take the first.
+        version = params.stdout().lines().findFirst().get().trim();
+      } else {
+        RuntimeException exception =
+            new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
+        getLogger().severe(
+            String.format(
+                "Failed to get the version number of the requested %s release. The stderr is %s",
+                type,
+                params.stderr()),
+            exception);
+        throw exception;
+      }
+
+      if (version != null) {
+        actualLocation = location.replace("latest",
+            String.format("download/%s/%s", version, getInstallerFileName(type)));
+      }
+    }
+    getLogger().info("The actual download location for {0} is {1}", type, actualLocation);
+    return actualLocation;
+  }
+
+  private static boolean needToGetActualLocation(
+      String location,
+      String type) {
+    switch (type) {
+      case WDT:
+        return WDT_DOWNLOAD_URL_DEFAULT.equals(location);
+      case WIT:
+        return WIT_DOWNLOAD_URL_DEFAULT.equals(location);
+      case WLE:
+        return WLE_DOWNLOAD_URL_DEFAULT.equals(location);
+      case REMOTECONSOLE:
+        return REMOTECONSOLE_DOWNLOAD_URL_DEFAULT.equals(location);
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Get the installer download filename.
+   * @return the download filename
+   */
+  public static String getInstallerFileName(
+      String type) {
+    switch (type) {
+      case WDT:
+        return WDT_DOWNLOAD_FILENAME_DEFAULT;
+      case WIT:
+        return WIT_DOWNLOAD_FILENAME_DEFAULT;
+      case WLE:
+        return WLE_DOWNLOAD_FILENAME_DEFAULT;
+      case SNAKE:
+        return SNAKE_DOWNLOADED_FILENAME;
+      case REMOTECONSOLE:
+        return REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
+      default:
+        return "";
+    }
   }
 }

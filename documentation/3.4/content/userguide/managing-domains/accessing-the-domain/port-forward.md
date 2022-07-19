@@ -60,7 +60,7 @@ This behavior depends on your version and domain resource configuration:
   For details about this attribute, run the
   `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled`
   command or see the domain resource
-  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
   
 * If WLST access is required for Istio-enabled domains running Istio versions prior to 1.10,
   you must add an additional network channel to the WebLogic Administration Server 

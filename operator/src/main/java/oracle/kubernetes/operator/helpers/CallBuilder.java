@@ -72,6 +72,7 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -427,6 +428,19 @@ public class CallBuilder {
                   null,
                   null,
                   null);
+  private final SynchronousCallFactory<ClusterList> listClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .listNamespacedCluster(
+                  requestParams.namespace,
+                  pretty,
+                  null,
+                  fieldSelector,
+                  labelSelector,
+                  limit,
+                  resourceVersion,
+                  timeoutSeconds,
+                  watch);
   private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -461,6 +475,11 @@ public class CallBuilder {
                   requestParams.name,
                   requestParams.namespace,
                   (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<ClusterResource> patchClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .patchNamespacedCluster(
+                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
   private final SynchronousCallFactory<DomainResource> patchDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -652,6 +671,18 @@ public class CallBuilder {
   }
 
   /**
+   * List clusters.
+   *
+   * @param namespace Namespace
+   * @return Cluster list
+   * @throws ApiException API exception
+   */
+  public @Nonnull ClusterList listCluster(String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("listCluster", namespace, null, null, callParams);
+    return executeSynchronousCall(requestParams, listClusterCall);
+  }
+
+  /**
    * Asynchronous step for listing clusters.
    *
    * @param namespace Namespace
@@ -676,6 +707,22 @@ public class CallBuilder {
             timeoutSeconds,
             callback);
   }
+
+  /**
+   * Patch cluster.
+   *
+   * @param name the domain uid (unique within the k8s cluster)
+   * @param namespace the namespace containing the domain
+   * @param patchBody the patch to apply
+   * @return Updated cluster
+   * @throws ApiException APIException
+   */
+  public ClusterResource patchCluster(String name, String namespace, V1Patch patchBody) throws ApiException {
+    RequestParams requestParams =
+            new RequestParams("patchCluster", namespace, name, patchBody, name);
+    return executeSynchronousCall(requestParams, patchClusterCall);
+  }
+
 
   /**
    * List domains.

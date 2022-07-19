@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -113,6 +114,37 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * List clusters.
+   *
+   * @param namespace       namespace
+   * @param pretty          pretty flag
+   * @param cont            continuation
+   * @param fieldSelector   field selector
+   * @param labelSelector   label selector
+   * @param limit           limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds  timeout
+   * @param watch           if watch
+   * @return cluster list
+   * @throws ApiException on failure
+   */
+  public ClusterList listNamespacedCluster(
+          String namespace,
+          String pretty,
+          String cont,
+          String fieldSelector,
+          String labelSelector,
+          Integer limit,
+          String resourceVersion,
+          Integer timeoutSeconds,
+          Boolean watch)
+          throws ApiException {
+    return toClusterList(listNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL, pretty,
+            null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
+            timeoutSeconds, watch));
+  }
+
+  /**
    * List domains.
    *
    * @param namespace       namespace
@@ -201,6 +233,21 @@ public class WeblogicApi extends CustomObjectsApi {
     return listNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
         timeoutSeconds, watch, wrapForDomainList(callback));
+  }
+
+  /**
+   * Patch Cluster Resource.
+   *
+   * @param name      name
+   * @param namespace namespace
+   * @param body      patch
+   * @return Cluster Resource
+   * @throws ApiException on failure
+   */
+  public ClusterResource patchNamespacedCluster(String name, String namespace, V1Patch body)
+          throws ApiException {
+    return toCluster(patchNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+            name, body, null, null, null));
   }
 
   /**
@@ -379,13 +426,6 @@ public class WeblogicApi extends CustomObjectsApi {
     public void onDownloadProgress(long l, long l1, boolean b) {
       clusterListApiCallback.onDownloadProgress(l, l1, b);
     }
-
-    private ClusterList toClusterList(Object o) {
-      if (o == null) {
-        return null;
-      }
-      return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterList.class);
-    }
   }
 
   private class DomainListApiCallbackWrapper implements ApiCallback<Object> {
@@ -421,11 +461,25 @@ public class WeblogicApi extends CustomObjectsApi {
     return gson.toJsonTree(o);
   }
 
+  private ClusterResource toCluster(Object o) {
+    if (o == null) {
+      return null;
+    }
+    return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterResource.class);
+  }
+
   private DomainResource toDomain(Object o) {
     if (o == null) {
       return null;
     }
     return getApiClient().getJSON().getGson().fromJson(convertToJson(o), DomainResource.class);
+  }
+
+  private ClusterList toClusterList(Object o) {
+    if (o == null) {
+      return null;
+    }
+    return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterList.class);
   }
 
   private DomainList toDomainList(Object o) {

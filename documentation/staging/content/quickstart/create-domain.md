@@ -33,15 +33,15 @@ weight: 3
    - Use the following command to apply the sample domain resource.
 
      ```shell
-     $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml
+     $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml
      ```
 
-   - **NOTE**: If you want to view or need to modify it, you can download the [sample domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`.
+   - **NOTE**: If you want to view or need to modify it, you can download the [sample domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`.
 
 
    This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
 
-     - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/domain-resource.yaml).
+     - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml).
      - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).
 
    {{% notice note %}}
@@ -83,7 +83,7 @@ weight: 3
 
 1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
 
-    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar.
+    a. Download the [ingress route YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/ingress-route.yaml) to a file called `/tmp/quickstart/ingress-route.yaml` or similar.
 
     b. Then apply the file using the following command.
     ```shell

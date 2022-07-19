@@ -579,14 +579,14 @@ public class ConfigMapHelper {
     }
 
     private Step createIntrospectionVersionUpdateStep() {
-      return DomainValidationSteps.createValidateDomainTopologySteps(
-            createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext()));
+      return createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext());
     }
 
     private Step createValidationStep() {
       return Step.chain(
-            DomainValidationSteps.createValidateDomainTopologySteps(null),
-            new IntrospectionConfigMapStep(data, conflictStep.getNext()));
+            new IntrospectionConfigMapStep(data, conflictStep.getNext()),
+            DomainValidationSteps.createValidateDomainTopologySteps(null)
+            );
     }
 
     private class IntrospectionConfigMapStep extends Step {
@@ -895,10 +895,8 @@ public class ConfigMapHelper {
       if (domainTopology != null) {
         recordTopology(packet, packet.getSpi(DomainPresenceInfo.class), domainTopology);
         recordIntrospectVersionAndGeneration(result, packet);
-        return doNext(DomainValidationSteps.createValidateDomainTopologySteps(getNext()), packet);
-      } else {
-        return doNext(packet);
       }
+      return doNext(packet);
     }
 
     private void recordIntrospectVersionAndGeneration(V1ConfigMap result, Packet packet) {

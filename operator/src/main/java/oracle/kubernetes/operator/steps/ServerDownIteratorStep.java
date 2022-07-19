@@ -85,7 +85,7 @@ public class ServerDownIteratorStep extends Step {
       if (ssi.isServiceOnly()) {
         return new StepAndPacket(createServiceStep(ssi), createPacketForServer(packet, ssi));
       } else {
-        return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
+        return new StepAndPacket(new ServerDownStep(ssi.getName(), null), createPacketForServer(packet, ssi));
       }
     }
 
