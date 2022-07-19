@@ -134,7 +134,6 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -197,16 +196,16 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @BeforeEach
   public void setUp() throws Exception {
-    mementos.add(
-        consoleHandlerMemento = TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, getMessageKeys())
-            .withLogLevel(Level.FINE)
-            .ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
     mementos.add(SystemClockTestSupport.installClock());
     mementos.add(UnitTestHash.install());
+    mementos.add(
+        consoleHandlerMemento = TestUtils.silenceOperatorLogger()
+            .collectLogMessages(logRecords, getMessageKeys())
+            .withLogLevel(Level.FINE)
+            .ignoringLoggedExceptions(ApiException.class));
 
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
@@ -1222,7 +1221,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenIntrospectorJobNotNeeded_doesNotValidateDomainTopology() throws JsonProcessingException {
+  void whenIntrospectorJobNotNeeded_validateDomainAgainstPreviousTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
     WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
     IntrospectionTestUtils.defineIntrospectionTopology(testSupport, wlsDomainConfig);
@@ -1234,7 +1233,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep());
 
-    assertThat(logRecords, empty());
+    assertThat(logRecords, containsWarning(NO_CLUSTER_IN_DOMAIN));
   }
 
   @Test

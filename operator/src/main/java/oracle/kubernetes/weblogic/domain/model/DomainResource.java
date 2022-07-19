@@ -140,7 +140,7 @@ public class DomainResource implements KubernetesObject {
       Arrays.sort(a, c);
       return Arrays.asList(a);
     }
-    return Arrays.asList();
+    return List.of();
   }
 
   /**
@@ -795,6 +795,12 @@ public class DomainResource implements KubernetesObject {
         .isEquals();
   }
 
+  // used by the validating webhook
+  public List<String> getSimpleValidationFailures() {
+    return new Validator().getSimpleValidationFailures();
+  }
+
+  // used by the operator
   public List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
     return new Validator().getValidationFailures(kubernetesResources);
   }
@@ -866,20 +872,29 @@ public class DomainResource implements KubernetesObject {
     private final Set<String> serverNames = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+      getSimpleValidationFailures();
+      getCrossReferenceValidationFailures(kubernetesResources);
+      return failures;
+    }
+
+    private void getCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
+      addMissingSecrets(kubernetesResources);
+      addMissingModelConfigMap(kubernetesResources);
       addDuplicateNames(kubernetesResources);
       addInvalidMountPaths(kubernetesResources);
-      addUnmappedLogHome();
       addReservedEnvironmentVariables(kubernetesResources);
-      addMissingSecrets(kubernetesResources);
-      addIllegalSitConfigForMii();
-      addMissingModelConfigMap(kubernetesResources);
-      verifyIntrospectorJobName();
       verifyLivenessProbeSuccessThreshold(kubernetesResources);
       verifyContainerNameValidInPodSpec(kubernetesResources);
       verifyContainerPortNameValidInPodSpec(kubernetesResources);
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse(kubernetesResources);
+    }
+
+    List<String> getSimpleValidationFailures() {
+      addUnmappedLogHome();
+      addIllegalSitConfigForMii();
+      verifyIntrospectorJobName();
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
-      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse(kubernetesResources);
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       return failures;
     }
@@ -915,22 +930,17 @@ public class DomainResource implements KubernetesObject {
     }
 
     private void addDuplicateNames(KubernetesResourceLookup kubernetesResources) {
-      getSpec().getManagedServers()
-          .stream()
-          .map(ManagedServer::getServerName)
-          .map(LegalNames::toDns1123LegalName)
-          .forEach(this::checkDuplicateServerName);
+      getSpec().getManagedServers().forEach(this::checkDuplicateServerName);
       getSpec().getClusters()
           .stream()
           .map(kubernetesResources::findCluster)
           .filter(Objects::nonNull)
           .map(ClusterResource::getSpec)
-          .map(ClusterSpec::getClusterName)
-          .map(LegalNames::toDns1123LegalName)
           .forEach(this::checkDuplicateClusterName);
     }
 
-    private void checkDuplicateServerName(String serverName) {
+    private void checkDuplicateServerName(ManagedServer ms) {
+      String serverName = getServerLegalName(ms);
       if (serverNames.contains(serverName)) {
         failures.add(DomainValidationMessages.duplicateServerName(serverName));
       } else {
@@ -938,12 +948,21 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private void checkDuplicateClusterName(String clusterName) {
+    private String getServerLegalName(ManagedServer ms) {
+      return LegalNames.toDns1123LegalName(ms.getServerName());
+    }
+
+    private void checkDuplicateClusterName(ClusterSpec cluster) {
+      String clusterName = getClusterLegalName(cluster);
       if (clusterNames.contains(clusterName)) {
         failures.add(DomainValidationMessages.duplicateClusterName(clusterName));
       } else {
         clusterNames.add(clusterName);
       }
+    }
+
+    private String getClusterLegalName(ClusterSpec cluster) {
+      return LegalNames.toDns1123LegalName(cluster.getClusterName());
     }
 
     private void addInvalidMountPaths(KubernetesResourceLookup kubernetesResources) {
