@@ -209,7 +209,7 @@ public class JobHelper {
       return Step.chain(
             DomainValidationSteps.createAdditionalDomainValidationSteps(getJobModelPodSpec()),
             verifyIntrospectorJob(),
-            next);
+            DomainValidationSteps.createValidateDomainTopologySteps(next));
     }
 
     private Step verifyIntrospectorJob() {

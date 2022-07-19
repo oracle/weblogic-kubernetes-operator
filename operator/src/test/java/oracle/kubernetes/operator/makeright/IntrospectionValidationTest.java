@@ -24,12 +24,13 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -39,6 +40,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.DomainType.ONE_CLUSTER_REF;
+import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.DomainType.TWO_CLUSTER_REFS;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.TopologyType.ONE_CLUSTER;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.TopologyType.TWO_CLUSTERS;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -71,7 +73,6 @@ class IntrospectionValidationTest {
     mementos.forEach(Memento::revert);
   }
 
-  @Disabled("Still working getting this to work")
   @ParameterizedTest
   @EnumSource(Scenario.class)
   void introspectionRespondsToNewConditions(Scenario scenario) throws JsonProcessingException {
@@ -125,20 +126,32 @@ class IntrospectionValidationTest {
       boolean isCompatibleWith(TopologyType topologyType) {
         return topologyType == TWO_CLUSTERS;
       }
+
+      @Override
+      DomainConfigurator configureDomain(DomainResource domainResource) {
+        final DomainConfigurator domainConfigurator = super.configureDomain(domainResource);
+        domainConfigurator.configureCluster("cluster-2");
+        return domainConfigurator;
+      }
     };
 
     abstract boolean isCompatibleWith(TopologyType topologyType);
+
+    DomainConfigurator configureDomain(DomainResource domainResource) {
+      final DomainConfigurator domainConfigurator = DomainConfiguratorFactory.forDomain(domainResource);
+      domainConfigurator.configureCluster("cluster-1");
+      return domainConfigurator;
+    }
   }
 
   enum Scenario {
     INITIAL_TOPOLOGY_PASS(ONE_CLUSTER_REF, ONE_CLUSTER_REF, null, ONE_CLUSTER),
-//    INITIAL_TOPOLOGY_FAIL(ONE_CLUSTER_REF, ONE_CLUSTER_REF, null, TWO_CLUSTERS),
-//    NO_CHANGE_FAIL_AGAIN(TWO_CLUSTER_REFS, TWO_CLUSTER_REFS, ONE_CLUSTER, ONE_CLUSTER),
-//    NEW_DOMAIN_RECOVER(TWO_CLUSTER_REFS, ONE_CLUSTER_REF, ONE_CLUSTER, ONE_CLUSTER),
-//    NEW_DOMAIN_FAIL(ONE_CLUSTER_REF, TWO_CLUSTER_REFS, ONE_CLUSTER, ONE_CLUSTER),
-//    NEW_INTROSPECTION_RECOVER(TWO_CLUSTER_REFS, TWO_CLUSTER_REFS, ONE_CLUSTER, TWO_CLUSTERS),
-//    NEW_INTROSPECTION_FAIL(TWO_CLUSTER_REFS, TWO_CLUSTER_REFS, TWO_CLUSTERS, ONE_CLUSTER)
-;
+    INITIAL_TOPOLOGY_FAIL(ONE_CLUSTER_REF, ONE_CLUSTER_REF, null, TWO_CLUSTERS),
+    NO_CHANGE_FAIL_AGAIN(TWO_CLUSTER_REFS, TWO_CLUSTER_REFS, ONE_CLUSTER, ONE_CLUSTER),
+    NEW_DOMAIN_RECOVER(TWO_CLUSTER_REFS, ONE_CLUSTER_REF, ONE_CLUSTER, ONE_CLUSTER),
+    NEW_DOMAIN_FAIL(ONE_CLUSTER_REF, TWO_CLUSTER_REFS, ONE_CLUSTER, ONE_CLUSTER),
+    NEW_INTROSPECTION_RECOVER(TWO_CLUSTER_REFS, TWO_CLUSTER_REFS, ONE_CLUSTER, TWO_CLUSTERS),
+    NEW_INTROSPECTION_FAIL(TWO_CLUSTER_REFS, TWO_CLUSTER_REFS, TWO_CLUSTERS, ONE_CLUSTER);
 
     private final DomainType initialDomain;
     private final DomainType finalDomain;
@@ -168,6 +181,7 @@ class IntrospectionValidationTest {
                 .withReason(DomainFailureReason.TOPOLOGY_MISMATCH)
                 .withMessage("preset for test"));
       }
+      finalDomain.configureDomain(getDomain(testSupport));
     }
 
     private DomainResource getDomain(KubernetesTestSupport testSupport) {
