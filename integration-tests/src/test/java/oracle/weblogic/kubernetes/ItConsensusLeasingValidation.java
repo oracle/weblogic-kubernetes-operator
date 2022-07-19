@@ -49,7 +49,7 @@ class ItConsensusLeasingValidation {
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   * JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
