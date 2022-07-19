@@ -19,7 +19,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -32,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAUL
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -63,16 +63,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Install a released version of Operator from GitHub chart repository.
  * Create a domain using Model-In-Image model with a dynamic cluster.
  * Configure Itsio on the domain resource with v8 schema
- * Make sure the console is acessible thru istio ingress port
+ * Make sure the console is accessible thru istio ingress port
  * Upgrade operator with current Operator image build from current branch.
- * Make sure the console is acessible thru istio ingress port
+ * Make sure the console is accessible thru istio ingress port
  */
 @DisplayName("Operator upgrade tests with Istio")
 @IntegrationTest
 @Tag("oke-sequential")
 class ItOperatorIstioUpgrade {
 
-  public static final String OLD_DOMAIN_VERSION = "v8";
   private final String clusterName = "cluster-1"; // do not modify
   private static LoggingFacade logger = null;
   private String domainUid = "istio-upg-domain";
@@ -93,6 +92,7 @@ class ItOperatorIstioUpgrade {
    */
   @BeforeEach
   public void beforeEach(@Namespaces(2) List<String> namespaces) {
+    logger = getLogger();
     this.namespaces = namespaces;
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
@@ -108,16 +108,7 @@ class ItOperatorIstioUpgrade {
   }
 
   /**
-   * Does some initialization of logger, conditionfactory, etc common
-   * to all test methods.
-   */
-  @BeforeAll
-  public static void init() {
-    logger = getLogger();
-  }
-
-  /**
-   * Istio Domain upgrade from Operator v3.4.1 to current.
+   * Upgrade from Operator v3.4.1 to current with Istio enabled domain.
    */
   @Test
   @DisplayName("Upgrade 3.4.1 Istio Domain(v8) with Istio to current")
@@ -127,7 +118,7 @@ class ItOperatorIstioUpgrade {
   }
 
   /**
-   * Istio Domain upgrade from Operator v3.3.8 to current.
+   * Upgrade from Operator v3.3.8 to current with Istio enabled domain.
    */
   @Test
   @DisplayName("Upgrade 3.3.8 Istio Domain(v8) with Istio to current")

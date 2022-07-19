@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -118,7 +119,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-sequential")
 class ItOperatorWlsUpgrade {
 
-  public static final String OLD_DOMAIN_VERSION = "v8";
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
   private String adminServerPodName = domainUid + "-admin-server";
