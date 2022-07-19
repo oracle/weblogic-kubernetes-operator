@@ -22,26 +22,21 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -50,9 +45,8 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusCon
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.checkIstioService;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioService;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -73,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Upgrade operator with current Operator image build from current branch.
  * Make sure the console is acessible thru istio ingress port
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests with Istio")
 @IntegrationTest
 @Tag("oke-sequential")
@@ -208,59 +201,13 @@ class ItOperatorIstioUpgrade {
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-    createIstioService();
-    checkIstioService();
+    istioIngressPort = 
+       createIstioService(domainUid,clusterName,adminServerPodName,domainNamespace);
+    checkIstioService(istioIngressPort,domainNamespace);
     upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
     // Re check the istio Service After Upgrade
-    checkIstioService();
-  }
-
-  private void checkIstioService() {
-    // We can not verify Rest Management console thru Administration NodePort
-    // in istio, as we can not enable Administration NodePort
-    logger.info("Verifying Istio Service @IngressPort [{0}]", istioIngressPort);
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-      assertTrue(checkConsole, "Failed to access WebLogic console");
-      logger.info("WebLogic console is accessible");
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
-  }
-
-  private void createIstioService() {
-
-    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-
-    Map<String, String> templateMap  = new HashMap<>();
-    templateMap.put("NAMESPACE", domainNamespace);
-    templateMap.put("DUID", domainUid);
-    templateMap.put("ADMIN_SERVICE",adminServerPodName);
-    templateMap.put("CLUSTER_SERVICE", clusterService);
-
-    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
-    Path targetHttpFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
-    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-
-    boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
-    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
-
-    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
-    Path targetDrFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
-    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
-
-    deployRes = assertDoesNotThrow(
-        () -> deployIstioDestinationRule(targetDrFile));
-    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
-
-    istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    checkIstioService(istioIngressPort,domainNamespace);
   }
 
   private void createSecrets() {
