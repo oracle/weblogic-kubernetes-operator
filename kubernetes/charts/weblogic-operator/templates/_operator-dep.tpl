@@ -140,6 +140,8 @@ spec:
           mountPath: "/logs"
         - name: "logstash-config-cm-volume"
           mountPath: "/usr/share/logstash/pipeline"
+        - name: "logstash-certs-secret-volume"
+          mountPath: "/usr/share/logstash/config/certs"
         env:
         - name: "ELASTICSEARCH_HOST"
           value: {{ .elasticSearchHost | quote }}
@@ -171,6 +173,10 @@ spec:
           items:
           - key: logstash.conf
             path: logstash.conf
+      - name: "logstash-certs-secret-volume"
+        secret:
+          secretName: "logstash-certs-secret"
+          optional: true
       {{- end }}
 {{- end }}
 ---
@@ -319,6 +325,8 @@ spec:
               mountPath: "/logs"
             - name: "logstash-config-cm-volume"
               mountPath: "/usr/share/logstash/pipeline"
+            - name: "logstash-certs-secret-volume"
+              mountPath: "/usr/share/logstash/config/certs"
             env:
             - name: "ELASTICSEARCH_HOST"
               value: {{ .elasticSearchHost | quote }}
@@ -346,6 +354,10 @@ spec:
               items:
               - key: logstash.conf
                 path: logstash.conf
+          - name: "logstash-certs-secret-volume"
+            secret:
+              secretName: "logstash-certs-secret"
+              optional: true
           {{- end }}
   {{- end }}
 {{- end }}
