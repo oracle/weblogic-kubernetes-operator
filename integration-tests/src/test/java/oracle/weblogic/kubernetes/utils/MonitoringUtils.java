@@ -299,8 +299,8 @@ public class MonitoringUtils {
   /**
    * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
    *
-   * @param promReleaseSuffix the prometheus release name unigue suffix
-   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promReleaseSuffix the prometheus release name unique suffix
+   * @param promNamespace the prometheus namespace in which the prometheus will be installed
    * @param promVersion the version of the prometheus helm chart
    * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
    *                            default is regex: default;domain1
