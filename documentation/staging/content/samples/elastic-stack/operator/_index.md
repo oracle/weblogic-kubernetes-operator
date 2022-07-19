@@ -17,7 +17,7 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 * Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.8.23`).
 * Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
 * Set `createLogStashConfigMap` to `true` to use the default Logstash configuration, or set it to `false` and create a ConfigMap named `weblogic-operator-logstash-cm` in the operator's namespace with your own Logstash pipeline configuration.
-* Optionally create a secret named `logstash-certs-secret` containing certificates for communicating with secured Elasticsearch. The certificates will be placed under the `/usr/share/logstash/config/certs/` directory in the Logstash container.
+* Optionally create a secret named `logstash-certs-secret` in the same namespace as the operator containing certificates for communicating with secured Elasticsearch. The certificates will be placed under the `/usr/share/logstash/config/certs/` directory in the Logstash container.
 
 For additional details, see [Elastic Stack integration]({{< relref "/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
 
