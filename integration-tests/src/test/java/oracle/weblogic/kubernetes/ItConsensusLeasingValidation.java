@@ -23,6 +23,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.verifyIntrospectorPodLogContainsExpectedErrorMsg;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -105,14 +106,18 @@ class ItConsensusLeasingValidation {
   void testConsensusLeasingValidation() {
     // create image with consensus leasing model file
     String modelfile = "model-consensus-leasing-clusterdomain-sampleapp.yaml";
-    String imageName = createMiiImageAndVerify("consensus-leasing-image", modelfile, MII_BASIC_APP_NAME);
+    String consensusLeasingImageName =
+        createMiiImageAndVerify("consensus-leasing-image", modelfile, MII_BASIC_APP_NAME);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(consensusLeasingImageName);
 
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
     Domain domain = createDomainResource(domainUid,
         domainNamespace,
-        imageName,
+        consensusLeasingImageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName,
@@ -137,14 +142,17 @@ class ItConsensusLeasingValidation {
   void testDatabaseLeasingNoDatasourceValidation() {
     // create image with database leasing model file
     String modelfile = "model-database-leasing-clusterdomain-sampleapp.yaml";
-    String imageName = createMiiImageAndVerify("database-leasing-image", modelfile, MII_BASIC_APP_NAME);
+    String databaseLeasingImageName = createMiiImageAndVerify("database-leasing-image", modelfile, MII_BASIC_APP_NAME);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(databaseLeasingImageName);
 
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
     Domain domain = createDomainResource(domainUid,
         domainNamespace,
-        imageName,
+        databaseLeasingImageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName,
