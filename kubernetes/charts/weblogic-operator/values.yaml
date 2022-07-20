@@ -105,7 +105,7 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
-# elasticSearchProtocl specifics the protocol used for communicating with elasticsearch.
+# elasticSearchProtocol specifies the protocol to be used for communication with elasticsearch.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchProtocol: http
 
