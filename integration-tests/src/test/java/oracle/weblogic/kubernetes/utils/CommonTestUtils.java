@@ -57,10 +57,10 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
@@ -1169,7 +1169,7 @@ public class CommonTestUtils {
    * @param istioIngressPort istio ingress port
    * @return generated local forward port
    */
-  public static int portForwardingTests(String domainUid,
+  public static int testPortForwarding(String domainUid,
                                         String domainNamespace,
                                         int istioIngressPort) {
     LoggingFacade logger = getLogger();
@@ -1206,7 +1206,9 @@ public class CommonTestUtils {
   }
 
   /**
-   * Access WLS vis WLST using the forwarded port.
+   * Connect to WLS running on local machine vis WLST using the forwarded port.
+   * e.g. forwarded port is 32001, in the docker container, WLST script runs command
+   * connect('admin_username','admin_password','t3://localhost:32001').
    *
    * @param domainUid domain uid
    * @param domainNamespace domain namespace
@@ -1245,7 +1247,7 @@ public class CommonTestUtils {
       File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
           "Creating WLST properties file failed");
 
-      String localhost = "localhost";//"host.docker.internal";
+      String localhost = "localhost";
       Properties p1 = new Properties();
       p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
       p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
