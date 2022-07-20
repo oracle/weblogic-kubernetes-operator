@@ -41,6 +41,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`logStashImage`](#logstashimage)
     - [`elasticSearchHost`](#elasticsearchhost)
     - [`elasticSearchPort`](#elasticsearchport)
+    - [`elasticSearchProtocol`](#elasticsearchprotocol)
     - [`createLogStashConfigMap`](#createlogstashconfigmap)
   - [REST interface configuration](#rest-interface-configuration)
     - [`externalRestEnabled`](#externalrestenabled)
@@ -522,6 +523,18 @@ Example:
 ```yaml
 elasticSearchPort: 9201
 ```
+
+##### `elasticSearchProtocol`
+Specifies the protocol to be use for communication with Elasticsearch. This parameter is ignored if `elkIntegrationEnabled` is `false`.
+
+Defaults to `http`.
+
+Example:
+
+```yaml
+elasticSearchProtocol: https
+```
+
 
 ##### `createLogStashConfigMap`
 Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`.
