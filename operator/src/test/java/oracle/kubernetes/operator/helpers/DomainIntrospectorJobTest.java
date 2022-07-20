@@ -175,7 +175,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private final TerminalStep terminalStep = new TerminalStep();
   private final DomainResource domain = createDomain();
   private final ClusterResource cluster = createCluster();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain, cluster);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
@@ -252,8 +252,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         .spec(createClusterSpec());
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
-    return new DomainPresenceInfo(domain);
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain, ClusterResource cluster) {
+    DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
+    dpi.addClusterResource(cluster);
+    return dpi;
   }
 
   private DomainSpec createDomainSpec() {
