@@ -146,6 +146,8 @@ class ItElasticLogging {
 
   private static String sourceConfigFile = ITTESTS_DIR + "/../kubernetes/charts/weblogic-operator/logstash.conf";
   private static String destConfigFile = WORK_DIR + "/logstash.conf";
+  private static String sourceYmlFile = ITTESTS_DIR + "/../kubernetes/charts/weblogic-operator/logstash.yml";
+  private static String destYmlFile = WORK_DIR + "/logstash.yml";
 
   /**
    * Install Elasticsearch, Kibana and Operator.
@@ -421,9 +423,12 @@ class ItElasticLogging {
 
     assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(destConfigFile)),
         "copy logstash.conf failed");
+    assertDoesNotThrow(() -> copy(Paths.get(sourceYmlFile), Paths.get(destYmlFile)),
+        "copy logstash.yml failed");
 
     List<Path> logstashConfigFiles = new ArrayList<>();
     logstashConfigFiles.add(Paths.get(destConfigFile));
+    logstashConfigFiles.add(Paths.get(destYmlFile));
 
     //create config map for logstash config
     createConfigMapFromFiles(configMapName, logstashConfigFiles, opNamespace2);
