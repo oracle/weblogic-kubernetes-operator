@@ -1193,7 +1193,7 @@ public class CommonTestUtils {
     logger.info("WebLogic console is accessible thru port forwarding");
 
     // test accessing WLS vis WLST using the forwarded port.
-    ExecResult result = accesseWLSViaWLSUsingForwardedPort(domainUid, domainNamespace, forwardedPort);
+    ExecResult result = accesseWLSViaWLSTUsingForwardedPort(domainUid, domainNamespace, forwardedPort);
     assertNotNull(result, "Connecting to WebLogic failed");
     logger.info("Connecting to Weblogic via WLST using forwarded port {0} returned {1}", result.toString());
     assertTrue(result.stdout().contains("Successfully connected to Admin Server"),
@@ -1215,7 +1215,7 @@ public class CommonTestUtils {
    * @param forwardedPort forwarded local port number to access WebLogic
    * @return ExecResult output of executing WLST script
    */
-  public static ExecResult accesseWLSViaWLSUsingForwardedPort(String domainUid,
+  public static ExecResult accesseWLSViaWLSTUsingForwardedPort(String domainUid,
                                                               String domainNamespace,
                                                               String forwardedPort) {
     LoggingFacade logger = getLogger();
