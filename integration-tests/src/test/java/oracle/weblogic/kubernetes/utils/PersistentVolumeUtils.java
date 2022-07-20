@@ -193,25 +193,29 @@ public class PersistentVolumeUtils {
   }
 
   private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
+    setVolumeSource(pvHostPath,v1pv, "weblogic-domain-storage-class");
+  }
+
+  private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv, String storageClassName) {
     if (OKE_CLUSTER) {
       v1pv.getSpec()
-          .storageClassName("oci-fss")
-          .nfs(new V1NFSVolumeSource()
-              .path(FSS_DIR)
-              .server(NFS_SERVER)
-              .readOnly(false));
+              .storageClassName("oci-fss")
+              .nfs(new V1NFSVolumeSource()
+                      .path(FSS_DIR)
+                      .server(NFS_SERVER)
+                      .readOnly(false));
     } else if (OKD) {
       v1pv.getSpec()
-          .storageClassName("okd-nfsmnt")
-          .nfs(new V1NFSVolumeSource()
-              .path(PV_ROOT)
-              .server(NFS_SERVER)
-              .readOnly(false));
+              .storageClassName("okd-nfsmnt")
+              .nfs(new V1NFSVolumeSource()
+                      .path(PV_ROOT)
+                      .server(NFS_SERVER)
+                      .readOnly(false));
     } else {
       v1pv.getSpec()
-          .storageClassName("weblogic-domain-storage-class")
-          .hostPath(new V1HostPathVolumeSource()
-              .path(pvHostPath.toString()));
+              .storageClassName(storageClassName)
+              .hostPath(new V1HostPathVolumeSource()
+                      .path(pvHostPath.toString()));
     }
   }
 
@@ -334,8 +338,8 @@ public class PersistentVolumeUtils {
         .metadata(new V1ObjectMeta()
             .name("pv-test" + nameSuffix)
             .namespace(namespace));
-    setVolumeSource(pvHostPath, v1pv);
-    v1pv.getSpec().storageClassName(nameSuffix);
+
+    setVolumeSource(pvHostPath, v1pv, nameSuffix);
     boolean hasLabels = false;
     String labelSelector = null;
     if (labels != null || !labels.isEmpty()) {
