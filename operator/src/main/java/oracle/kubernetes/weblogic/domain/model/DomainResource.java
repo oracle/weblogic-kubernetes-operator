@@ -935,7 +935,6 @@ public class DomainResource implements KubernetesObject {
           .stream()
           .map(kubernetesResources::findCluster)
           .filter(Objects::nonNull)
-          .map(ClusterResource::getSpec)
           .forEach(this::checkDuplicateClusterName);
     }
 
@@ -952,7 +951,7 @@ public class DomainResource implements KubernetesObject {
       return LegalNames.toDns1123LegalName(ms.getServerName());
     }
 
-    private void checkDuplicateClusterName(ClusterSpec cluster) {
+    private void checkDuplicateClusterName(ClusterResource cluster) {
       String clusterName = getClusterLegalName(cluster);
       if (clusterNames.contains(clusterName)) {
         failures.add(DomainValidationMessages.duplicateClusterName(clusterName));
@@ -961,7 +960,7 @@ public class DomainResource implements KubernetesObject {
       }
     }
 
-    private String getClusterLegalName(ClusterSpec cluster) {
+    private String getClusterLegalName(ClusterResource cluster) {
       return LegalNames.toDns1123LegalName(cluster.getClusterName());
     }
 

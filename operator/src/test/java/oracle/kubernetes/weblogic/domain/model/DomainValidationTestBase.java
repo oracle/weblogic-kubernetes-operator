@@ -50,6 +50,11 @@ public class DomainValidationTestBase extends DomainTestUtils {
     }
 
     @SuppressWarnings("unchecked")
+    public void defineResource(KubernetesObject resource) {
+      ((List) Optional.ofNullable(getResourceList(resource.getClass())).orElse(new ArrayList<>())).add(resource);
+    }
+
+    @SuppressWarnings("unchecked")
     <T extends KubernetesObject> T getPlaceholder(String name,
                                                   Class<? extends KubernetesObject> type, String namespace) {
       V1ObjectMeta meta = new V1ObjectMeta().name(name).namespace(namespace);

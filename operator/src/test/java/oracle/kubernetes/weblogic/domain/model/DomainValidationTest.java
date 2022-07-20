@@ -363,6 +363,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
@@ -392,6 +393,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
@@ -442,6 +444,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .configureCluster(info,"cluster1")
           .withEnvironmentVariable("DOMAIN_HOME", "testValue");
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("variable", "DOMAIN_HOME", "spec.clusters[cluster1].serverPod.env", "is")));
@@ -475,6 +478,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .configureCluster(info, "cluster-1")
           .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
@@ -508,6 +512,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .configureCluster(info,"cluster-1")
           .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "cluster-1",
@@ -543,6 +548,7 @@ class DomainValidationTest extends DomainValidationTestBase {
           .configureCluster(info,"cluster-1")
           .withContainer(new V1Container().name("Test")
                 .ports(List.of(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
           "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "cluster-1", "Test",
