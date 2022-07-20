@@ -653,7 +653,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenRollInProcessAndReplicasTooHighAndAllServersRunning_removeRollingCondition() {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
-    info.setReplicaCount("cluster1", 5);
+    configureDomain().configureCluster(info, "cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
@@ -664,7 +664,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenRollInProcessAndReplicasTooHighAndAllServersRunning_generateDomainRollCompletedEvent() {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
-    info.setReplicaCount("cluster1", 5);
+    configureDomain().configureCluster(info, "cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();

@@ -621,7 +621,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
-    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getClusterName()).forEach(info -> {
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
       LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
       createMakeRightOperation(info)
           .interrupt()
@@ -632,7 +632,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
-    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getClusterName()).forEach(info -> {
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
       LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
       createMakeRightOperation(info)
           .interrupt()
@@ -643,7 +643,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
-    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getClusterName()).forEach(info -> {
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(), info.getDomainUid());
       info.removeClusterResource(cluster.getClusterName());
       createMakeRightOperation(info)

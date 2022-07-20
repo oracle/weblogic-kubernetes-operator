@@ -766,8 +766,8 @@ class DomainProcessorTest {
       assertServerPodNotPresent(newInfo, getManagedServerName(i));
     }
 
-    assertThat(originalInfo.getClusterService(CLUSTER), notNullValue());
-    assertThat(originalInfo.getPodDisruptionBudget(CLUSTER), notNullValue());
+    assertThat(newInfo.getClusterService(CLUSTER), notNullValue());
+    assertThat(newInfo.getPodDisruptionBudget(CLUSTER), notNullValue());
   }
 
   @Test
@@ -2089,8 +2089,9 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceAdded_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
+    configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
-    final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(UID, NS, CLUSTER));
+    final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2100,7 +2101,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceAdded_noDomainPresenceInfoExists_dontDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
-    final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(UID, NS, CLUSTER));
+    final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2112,10 +2113,11 @@ class DomainProcessorTest {
     processor.registerDomainPresenceInfo(originalInfo);
     final String CLUSTER3 = "Cluster-3";
     for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
-      testSupport.defineResources(createClusterResource(UID, NS, clusterName));
+      configureDomain(domain).configureCluster(originalInfo, clusterName);
+      testSupport.defineResources(createClusterResource(NS, clusterName));
     }
     final Response<ClusterResource> item = new Response<>("ADDED", testSupport
-        .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, UID + '-' + CLUSTER3));
+        .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
 
 
     processor.dispatchClusterWatch(item);
@@ -2128,8 +2130,9 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceModified_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
-    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(UID, NS, CLUSTER));
+    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2139,7 +2142,8 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceModified_noDomainPresenceInfoExists_dontDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
-    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(UID, NS, CLUSTER));
+    processor.registerDomainPresenceInfo(originalInfo);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2149,8 +2153,9 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceDeleted_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
+    configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
-    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(UID, NS, CLUSTER));
+    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2160,7 +2165,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceDeleted_noDomainPresenceInfoExists_dontDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
-    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(UID, NS, CLUSTER));
+    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2169,9 +2174,12 @@ class DomainProcessorTest {
 
   @Test
   void verifyClusterResourceDeleted() {
+    DomainConfigurator configurator = configureDomain(domain);
+    configurator.configureCluster(originalInfo, CLUSTER);
+    configurator.configureCluster(originalInfo, CLUSTER2);
     processor.registerDomainPresenceInfo(originalInfo);
-    testSupport.defineResources(createClusterResource(UID, NS, CLUSTER2));
-    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(UID, NS, CLUSTER));
+    testSupport.defineResources(createClusterResource(NS, CLUSTER2));
+    final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
 
@@ -2179,9 +2187,9 @@ class DomainProcessorTest {
     assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
   }
 
-  private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
+  private ClusterResource createClusterResource(String namespace, String clusterName) {
     return new ClusterResource()
-        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterName))
         .spec(new ClusterSpec().withClusterName(clusterName));
   }
 }

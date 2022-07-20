@@ -96,7 +96,7 @@ class DomainResourcesValidation {
   }
 
   private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
-    return info.doesReferenceCluster(clusterResource.getClusterName());
+    return info.doesReferenceCluster(clusterResource.getMetadata().getName());
   }
 
   private void addPodList(V1PodList list) {
