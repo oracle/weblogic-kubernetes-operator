@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -50,6 +52,49 @@ public class ClusterResourceStatusUpdater {
     return new ClusterResourceStatusUpdaterStep(next);
   }
 
+  private static StepAndPacket createReplaceClusterResourceStatusStep(ReplaceClusterStatusContext context) {
+    LOGGER.fine(MessageKeys.CLUSTER_STATUS, context.getClusterResourceName(),
+        getNewStatus(context.getDomain(), context.getClusterName()));
+    return new StepAndPacket(createReplaceClusterStatusAsyncStep(context), context.getPacket());
+  }
+
+  private static Step createUpdateClusterResourceStatusSteps(Packet packet,
+      Collection<ClusterResource> clusterResources) {
+    DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+    final List<StepAndPacket> result = clusterResources.stream()
+        .filter(res -> isClusterResourceStatusChanged(getNewStatus(info.getDomain(), res.getClusterName()),
+            res.getStatus()))
+        .map(res -> createReplaceClusterResourceStatusStep(createContext(packet, res))).collect(Collectors.toList());
+    return result.isEmpty() ? null : new RunInParallelStep(result);
+  }
+
+  private static ClusterStatus getNewStatus(DomainResource domain, String clusterName) {
+    return Optional.ofNullable(domain)
+        .map(dom -> findClusterStatus(dom.getOrCreateStatus().getClusters(), clusterName))
+        .orElse(null);
+  }
+
+  private static boolean isClusterResourceStatusChanged(ClusterStatus newStatus, ClusterStatus currentStatus) {
+    return !Objects.equals(newStatus, currentStatus);
+  }
+
+  private static ClusterStatus findClusterStatus(List<ClusterStatus> clusterStatuses, String clusterName) {
+    return clusterStatuses.stream().filter(cs -> clusterName.equals(cs.getClusterName())).findFirst().orElse(null);
+  }
+
+  private static Step createReplaceClusterStatusAsyncStep(ReplaceClusterStatusContext context) {
+    return new CallBuilder()
+        .replaceClusterStatusAsync(
+            context.getClusterResourceName(),
+            context.getNamespace(),
+            context.createReplacementClusterResource(),
+            new ClusterResourceStatusReplaceResponseStep(context));
+  }
+
+  private static ReplaceClusterStatusContext createContext(Packet packet, ClusterResource resource) {
+    return new ReplaceClusterStatusContext(packet, resource);
+  }
+
   private static class ClusterResourceStatusUpdaterStep extends Step {
 
     ClusterResourceStatusUpdaterStep(Step next) {
@@ -66,39 +111,13 @@ public class ClusterResourceStatusUpdater {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       Step step = Optional.ofNullable(info.getDomain())
-          .map(domain -> createUpdateClusterResourceStatusSteps(packet, info))
+          .map(domain -> createUpdateClusterResourceStatusSteps(packet, info.getClusterResources()))
           .orElse(null);
       return doNext(step != null ? step : getNext(), packet);
     }
-
-    private Step createUpdateClusterResourceStatusSteps(Packet packet, DomainPresenceInfo info) {
-      final List<StepAndPacket> result = info.getClusterResources().stream()
-          .filter(res -> isClusterResourceStatusChanged(packet, res))
-          .map(res -> createReplaceClusterResourceStatusStep(createContext(packet, res))).collect(Collectors.toList());
-      return result.isEmpty() ? null : new RunInParallelStep(result);
-    }
-
-    private boolean isClusterResourceStatusChanged(Packet packet, ClusterResource resource) {
-      ReplaceClusterStatusContext context = createContext(packet, resource);
-      return !Objects.equals(context.getNewStatus(), context.getResource().getStatus());
-    }
   }
 
-  static StepAndPacket createReplaceClusterResourceStatusStep(ReplaceClusterStatusContext context) {
-    LOGGER.fine(MessageKeys.CLUSTER_STATUS, context.getClusterResourceName(), context.getNewStatus());
-    return new StepAndPacket(createReplaceClusterStatusAsyncStep(context), context.getPacket().copy());
-  }
-
-  private static Step createReplaceClusterStatusAsyncStep(ReplaceClusterStatusContext context) {
-    return new CallBuilder()
-        .replaceClusterStatusAsync(
-            context.getClusterResourceName(),
-            context.getNamespace(),
-            context.createReplacementClusterResource(),
-            new ClusterResourceStatusReplaceResponseStep(context));
-  }
-
-  static class ClusterResourceStatusReplaceResponseStep extends DefaultResponseStep<ClusterResource> {
+  private static class ClusterResourceStatusReplaceResponseStep extends DefaultResponseStep<ClusterResource> {
     private final ReplaceClusterStatusContext context;
 
     ClusterResourceStatusReplaceResponseStep(ReplaceClusterStatusContext context) {
@@ -134,7 +153,7 @@ public class ClusterResourceStatusUpdater {
     }
   }
 
-  static class RunInParallelStep extends Step {
+  private static class RunInParallelStep extends Step {
     final Collection<StepAndPacket> statusUpdateSteps;
 
     RunInParallelStep(Collection<StepAndPacket> statusUpdateSteps) {
@@ -151,31 +170,24 @@ public class ClusterResourceStatusUpdater {
     }
   }
 
-  static ReplaceClusterStatusContext createContext(Packet packet, ClusterResource resource) {
-    return new ReplaceClusterStatusContext(packet, resource);
-  }
-
-  static class ReplaceClusterStatusContext {
+  private static class ReplaceClusterStatusContext {
     private final Packet packet;
-    private final DomainPresenceInfo info;
+    private final DomainResource domain;
     private final ClusterResource resource;
 
     private ReplaceClusterStatusContext(@Nonnull Packet packet, @Nonnull ClusterResource resource) {
       this.packet = packet;
-      this.info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      this.domain = info.getDomain();
       this.resource = resource;
-    }
-
-    ClusterStatus getNewStatus() {
-      return getClusterStatus(info.getDomain().getOrCreateStatus().getClusters(), resource.getClusterName());
-    }
-
-    ClusterResource getResource() {
-      return resource;
     }
 
     Packet getPacket() {
       return packet;
+    }
+
+    DomainResource getDomain() {
+      return domain;
     }
 
     String getClusterName() {
@@ -195,20 +207,11 @@ public class ClusterResourceStatusUpdater {
           .withKind(CLUSTER)
           .withMetadata(resource.getMetadata())
           .spec(null)
-          .withStatus(getNewStatus());
-    }
-
-    private ClusterStatus getClusterStatus(List<ClusterStatus> clusterStatuses, String clusterName) {
-      for (ClusterStatus clusterStatus : clusterStatuses) {
-        if (clusterName.equals(clusterStatus.getClusterName())) {
-          return clusterStatus;
-        }
-      }
-      return null;
+          .withStatus(getNewStatus(domain, getClusterName()));
     }
   }
 
-  static class ReadClusterResponseStep extends ResponseStep<ClusterResource> {
+  private static class ReadClusterResponseStep extends ResponseStep<ClusterResource> {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<ClusterResource> callResponse) {
       if (callResponse.getResult() != null) {
@@ -225,7 +228,7 @@ public class ClusterResourceStatusUpdater {
     }
   }
 
-  static class SingleClusterResourceStatusUpdateStep extends Step {
+  private static class SingleClusterResourceStatusUpdateStep extends Step {
     private final String clusterName;
 
     SingleClusterResourceStatusUpdateStep(String clusterName) {
@@ -234,9 +237,10 @@ public class ClusterResourceStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
+      // Get the ClusterResource, that was refreshed, from DomainPresenceInfo.
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       ClusterResource res = info.getClusterResource(clusterName);
-      return doNext(createReplaceClusterStatusAsyncStep(createContext(packet, res)), packet);
+      return doNext(createUpdateClusterResourceStatusSteps(packet, Collections.singletonList(res)), packet);
     }
   }
 }
