@@ -424,16 +424,7 @@
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                  **/ItT3Channel,
-                  **/ItAuxV8DomainImplicitUpgrade,
-                  **/ItDedicatedMode,
-                  **/ItOperatorFmwUpgrade,
-                  **/ItOperatorWlsUpgrade,
-                  **/ItFmwDynamicDomainInPV,
-                  **/ItFmwDomainInPVUsingWDT,
-                  **/ItMiiSampleFmwMain
-                </includes-failsafe>
+                <groups>kind-sequential</groups>
             </properties>
         </profile>
         <profile>

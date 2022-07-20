@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @IntegrationTest
 @Tag("samples")
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItMiiSampleFmwMain {
 
   private static ItMiiSampleHelper myItMiiSampleHelper = null;

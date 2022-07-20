@@ -127,6 +127,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItOperatorWlsUpgrade {
 
   public static final String OLD_DOMAIN_VERSION = "v8";
