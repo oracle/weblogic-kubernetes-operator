@@ -29,6 +29,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -221,6 +222,16 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
+      Domain domainCR = assertDoesNotThrow(()->TestActions.getDomainCustomResource(domainUid, domainNamespace));
+      String patchStr = "[{\"op\": \"replace\", "
+              + "\"path\": \"/spec/webLogicCredentialsSecret\", \"value\": \"weblogic-credentials-foo\"}}]";
+      logger.info("PatchStr for domainHome: {0}", patchStr);
+
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+              "patchDomainCustomResource failed");
+      
+      
       testPassed = true;
 
     } finally {
