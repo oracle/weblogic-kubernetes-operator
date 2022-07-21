@@ -489,13 +489,13 @@ public class LoggingUtil {
    * @return true if pod log contains expected string, false otherwise
    */
   public static boolean doesPodLogContainStringInTimeRange(String namespace, String podName, String expectedString,
-                                                           OffsetDateTime startTimestamp,
-                                                           OffsetDateTime endTimestamp) {
+                                                           String startTimestamp,
+                                                           String endTimestamp) {
     String rangePodLog;
     try {
       String podLog = getPodLog(podName, namespace);
-      rangePodLog = podLog.substring(podLog.indexOf(startTimestamp.toString()),
-              podLog.lastIndexOf(endTimestamp.toString()));
+      rangePodLog = podLog.substring(podLog.indexOf(startTimestamp),
+              podLog.lastIndexOf(endTimestamp));
       getLogger().info("pod log for pod {0} in namespace {1} for timestamps {2} to {3}: {4}", podName,
               namespace, startTimestamp,
               endTimestamp, rangePodLog);

@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -23,7 +25,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.doesPodLogContainStringInTimeRange;
@@ -190,7 +191,12 @@ class ItServerStartPolicy {
     OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
     OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    OffsetDateTime startTime = now();
+    OffsetDateTime startTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
+    String testStartTime = startTime.toString().replace("Z", "");
+
+    //{"timestamp":"2022-07-21T01:55:45.742677224Z
+    //2022-07-21T18:11:18Z
+
     // verify that the sample script can shutdown admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,STOP_SERVER_SCRIPT,
         SERVER_LIFECYCLE, "admin-server", "", true);
@@ -211,12 +217,14 @@ class ItServerStartPolicy {
         "Configured managed server pod must not be restated");
 
     // verify warning message is not logged in operator pod when admin server is shutdown
-    OffsetDateTime endTime = now();
+
+    OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
+    String testEndTime = endTime.toString().replace("Z", "");
     logger.info("operator pod name: {0}", operatorPodName);
-    assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName, "WARNING", startTime, endTime));
+    assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName, "WARNING", testStartTime, testEndTime));
     assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
         "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException",
-            startTime, endTime));
+            testStartTime, testEndTime));
     
     // verify that the sample script can start admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,
