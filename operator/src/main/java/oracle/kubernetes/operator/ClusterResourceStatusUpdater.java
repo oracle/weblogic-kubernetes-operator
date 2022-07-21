@@ -52,43 +52,13 @@ public class ClusterResourceStatusUpdater {
     return new ClusterResourceStatusUpdaterStep(next);
   }
 
-  private static StepAndPacket createReplaceClusterResourceStatusStep(ReplaceClusterStatusContext context) {
-    LOGGER.fine(MessageKeys.CLUSTER_STATUS, context.getClusterResourceName(),
-        getNewStatus(context.getDomain(), context.getClusterName()));
-    return new StepAndPacket(createReplaceClusterStatusAsyncStep(context), context.getPacket());
-  }
-
   private static Step createUpdateClusterResourceStatusSteps(Packet packet,
       Collection<ClusterResource> clusterResources) {
-    DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
-    final List<StepAndPacket> result = clusterResources.stream()
-        .filter(res -> isClusterResourceStatusChanged(getNewStatus(info.getDomain(), res.getClusterName()),
-            res.getStatus()))
-        .map(res -> createReplaceClusterResourceStatusStep(createContext(packet, res))).collect(Collectors.toList());
+    List<StepAndPacket> result = clusterResources.stream()
+        .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
+        .map(res -> createContext(packet, res).createReplaceClusterResourceStatusStep()).collect(
+        Collectors.toList());
     return result.isEmpty() ? null : new RunInParallelStep(result);
-  }
-
-  private static ClusterStatus getNewStatus(DomainResource domain, String clusterName) {
-    return Optional.ofNullable(domain)
-        .map(dom -> findClusterStatus(dom.getOrCreateStatus().getClusters(), clusterName))
-        .orElse(null);
-  }
-
-  private static boolean isClusterResourceStatusChanged(ClusterStatus newStatus, ClusterStatus currentStatus) {
-    return !Objects.equals(newStatus, currentStatus);
-  }
-
-  private static ClusterStatus findClusterStatus(List<ClusterStatus> clusterStatuses, String clusterName) {
-    return clusterStatuses.stream().filter(cs -> clusterName.equals(cs.getClusterName())).findFirst().orElse(null);
-  }
-
-  private static Step createReplaceClusterStatusAsyncStep(ReplaceClusterStatusContext context) {
-    return new CallBuilder()
-        .replaceClusterStatusAsync(
-            context.getClusterResourceName(),
-            context.getNamespace(),
-            context.createReplacementClusterResource(),
-            new ClusterResourceStatusReplaceResponseStep(context));
   }
 
   private static ReplaceClusterStatusContext createContext(Packet packet, ClusterResource resource) {
@@ -148,8 +118,8 @@ public class ClusterResourceStatusUpdater {
     }
 
     private Step createClusterResourceRefreshStep() {
-      return new CallBuilder().readClusterAsync(this.context.getClusterResourceName(),
-          this.context.getNamespace(), new ReadClusterResponseStep());
+      return new CallBuilder().readClusterAsync(context.getClusterResourceName(),
+          context.getNamespace(), new ReadClusterResponseStep());
     }
   }
 
@@ -182,14 +152,6 @@ public class ClusterResourceStatusUpdater {
       this.resource = resource;
     }
 
-    Packet getPacket() {
-      return packet;
-    }
-
-    DomainResource getDomain() {
-      return domain;
-    }
-
     String getClusterName() {
       return resource.getClusterName();
     }
@@ -207,7 +169,36 @@ public class ClusterResourceStatusUpdater {
           .withKind(CLUSTER)
           .withMetadata(resource.getMetadata())
           .spec(null)
-          .withStatus(getNewStatus(domain, getClusterName()));
+          .withStatus(getNewStatus());
+    }
+
+    private ClusterStatus getNewStatus() {
+      return Optional.ofNullable(domain)
+          .map(dom -> findClusterStatus(dom.getOrCreateStatus().getClusters(), getClusterName()))
+          .orElse(null);
+    }
+
+    boolean isClusterResourceStatusChanged() {
+      return !Objects.equals(getNewStatus(), resource.getStatus());
+    }
+
+    private StepAndPacket createReplaceClusterResourceStatusStep() {
+      LOGGER.fine(MessageKeys.CLUSTER_STATUS, getClusterResourceName(),
+          getNewStatus());
+      return new StepAndPacket(createReplaceClusterStatusAsyncStep(), packet);
+    }
+
+    private static ClusterStatus findClusterStatus(List<ClusterStatus> clusterStatuses, String clusterName) {
+      return clusterStatuses.stream().filter(cs -> clusterName.equals(cs.getClusterName())).findFirst().orElse(null);
+    }
+
+    private Step createReplaceClusterStatusAsyncStep() {
+      return new CallBuilder()
+          .replaceClusterStatusAsync(
+              getClusterResourceName(),
+              getNamespace(),
+              createReplacementClusterResource(),
+              new ClusterResourceStatusReplaceResponseStep(this));
     }
   }
 
