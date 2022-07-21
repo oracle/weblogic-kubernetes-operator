@@ -52,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("toolkits-srg")
 class ItMultiDomainModels {
 
   // domain constants

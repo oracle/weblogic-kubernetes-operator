@@ -175,6 +175,7 @@ class ItWlsSamples {
   @DisplayName("Test samples using domain in image")
   @Tag("samples-gate")
   @Tag("kind-parallel")
+  @Tag("toolkits-srg")
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];

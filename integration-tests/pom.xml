@@ -397,15 +397,16 @@
                   **/ItPodsShutdownOption,
                   **/ItOCILoadBalancer,
                   **/ItManageNameSpace,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiCreateAuxImageWithImageTool,
-                    **/ItMiiSampleWlsAux,
-                    **/ItMiiServiceMigration,
-                    **/ItMiiDomain,
-                    **/ItLivenessProbeCustomization
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiCreateAuxImageWithImageTool,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiServiceMigration,
+                  **/ItMiiDomain,
+                  **/ItLivenessProbeCustomization
                </includes-failsafe>
             </properties>
         </profile>
+
         <profile>
             <id>oke-sequential</id>
             <properties>
@@ -413,6 +414,7 @@
                 <groups>oke-sequential</groups>
             </properties>
         </profile>
+
         <profile>
             <id>oke-parallel</id>
             <properties>
@@ -420,23 +422,23 @@
                 <groups>oke-parallel</groups>
             </properties>
         </profile>
+
         <profile>
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                  **/ItT3Channel,
-                  **/ItAuxV8DomainImplicitUpgrade,
-                  **/ItDedicatedMode,
-                  **/ItOperatorFmwUpgrade,
-                  **/ItOperatorWlsUpgrade,
-                  **/ItFmwDynamicDomainInPV,
-                  **/ItFmwDomainInPVUsingWDT,
-                  **/ItMiiSampleFmwMain,
-                  **/ItOperatorIstioUpgrade
-                </includes-failsafe>
+                <groups>kind-sequential</groups>
             </properties>
         </profile>
+
+        <profile>
+            <id>kind-parallel</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>kind-parallel</groups>
+            </properties>
+        </profile>
+
         <profile>
             <id>wko-olcne-cert</id>
             <properties>
@@ -468,6 +470,7 @@
                 </includes-failsafe>
             </properties>
         </profile>
+
         <profile>
             <id>wko-okd-wls-srg</id>
             <properties>
@@ -489,6 +492,7 @@
                 </includes-failsafe>
             </properties>
         </profile>
+
         <profile>
             <id>wko-okd-wls-mrg</id>
             <properties>
@@ -532,6 +536,7 @@
                 </includes-failsafe>
             </properties>
         </profile>
+
         <profile>
             <id>wko-okd-fmw-cert</id>
             <properties>
@@ -548,6 +553,7 @@
                 </includes-failsafe>
             </properties>
         </profile>
+
         <profile>
             <id>wls-srg</id>
             <properties>
@@ -555,6 +561,7 @@
                 <groups>gate,samples-gate</groups>
             </properties>
         </profile>
+
         <profile>
             <id>crio-pipeline</id>
             <properties>
@@ -562,24 +569,12 @@
                 <groups>crio</groups>
             </properties>
         </profile>
+
         <profile>
             <id>toolkits-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItMultiDomainModels,
-                    **/ItMiiUpdateDomainConfig,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiCreateAuxImageWithImageTool,
-                    **/ItMiiDynamicUpdate*,
-                    **/ItMiiSampleWlsMain,
-                    **/ItMiiSampleWlsAux,
-                    **/ItMiiSampleFmwAux,
-                    **/ItFmwSample,
-                    **/ItWlsSamples,
-                    **/ItMiiMultiModel,
-                    **/ItLiftAndShiftFromOnPremDomain
-                </includes-failsafe>
+                <groups>toolkits-srg</groups>
             </properties>
         </profile>
     </profiles>
