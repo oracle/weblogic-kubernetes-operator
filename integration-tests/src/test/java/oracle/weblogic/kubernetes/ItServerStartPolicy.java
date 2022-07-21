@@ -3,9 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.time.temporal.ChronoUnit;
-import java.time.ZoneId;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -221,7 +221,8 @@ class ItServerStartPolicy {
     OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
     String testEndTime = endTime.toString().replace("Z", "");
     logger.info("operator pod name: {0}", operatorPodName);
-    assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName, "WARNING", testStartTime, testEndTime));
+    assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
+            "WARNING", testStartTime, testEndTime));
     assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
         "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException",
             testStartTime, testEndTime));
