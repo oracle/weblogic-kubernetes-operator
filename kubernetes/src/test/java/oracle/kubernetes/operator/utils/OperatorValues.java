@@ -42,6 +42,7 @@ public class OperatorValues {
   private String logStashImage = "";
   private String elasticSearchHost = "";
   private String elasticSearchPort = "";
+  private String elasticSearchProtocol = "";
 
   /**
    * build with test defaults.
@@ -57,7 +58,8 @@ public class OperatorValues {
         .javaLoggingLevel("FINEST")
         .logStashImage("test-logstash-image")
         .elasticSearchHost("test-elastic-search_host")
-        .elasticSearchPort("9200");
+        .elasticSearchPort("9200")
+        .elasticSearchProtocol("http");
   }
 
   /**
@@ -397,6 +399,19 @@ public class OperatorValues {
 
   public OperatorValues elasticSearchPort(String val) {
     setElasticSearchPort(val);
+    return this;
+  }
+
+  public String getElasticSearchProtocol() {
+    return elasticSearchProtocol;
+  }
+
+  public void setElasticSearchProtocol(String val) {
+    elasticSearchProtocol = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues elasticSearchProtocol(String val) {
+    setElasticSearchProtocol(val);
     return this;
   }
 
