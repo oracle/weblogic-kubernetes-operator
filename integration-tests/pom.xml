@@ -424,14 +424,17 @@
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>kind-sequential</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>kind-parallel</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <groups>kind-parallel</groups>
+                <includes-failsafe>
+                  **/ItT3Channel,
+                  **/ItAuxV8DomainImplicitUpgrade,
+                  **/ItDedicatedMode,
+                  **/ItOperatorFmwUpgrade,
+                  **/ItOperatorWlsUpgrade,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItMiiSampleFmwMain,
+                  **/ItOperatorIstioUpgrade
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
