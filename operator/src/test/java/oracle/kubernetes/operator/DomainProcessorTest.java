@@ -412,6 +412,21 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenMakeRightRun_updateClusterResourceStatus() {
+    ClusterResource clusterResource = createClusterResource(UID, NS, CLUSTER);
+    testSupport.defineResources(clusterResource);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    ClusterResource updatedClusterResource = testSupport
+        .getResourceWithName(KubernetesTestSupport.CLUSTER, UID + '-' + CLUSTER);
+    assertThat(updatedClusterResource.getStatus(), notNullValue());
+    assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
+    assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
+  }
+
+  @Test
   void whenMakeRightRunFailsEarly_populateAvailableAndCompletedConditions() {
     consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
