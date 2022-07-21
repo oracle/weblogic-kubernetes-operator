@@ -66,6 +66,21 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * Asynchronously read cluster.
+   *
+   * @param name      name
+   * @param namespace namespace
+   * @param callback  callback
+   * @return call
+   * @throws ApiException on failure
+   */
+  public Call getNamespacedClusterAsync(String name, String namespace, ApiCallback<ClusterResource> callback)
+      throws ApiException {
+    return getNamespacedCustomObjectAsync(DOMAIN_GROUP, CLUSTER_VERSION, namespace,
+        CLUSTER_PLURAL, name, wrapForCluster(callback));
+  }
+
+  /**
    * Asynchronously read domain.
    *
    * @param name      name
@@ -200,6 +215,24 @@ public class WeblogicApi extends CustomObjectsApi {
     return listNamespacedCustomObjectAsync(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
         null, null, cont, fieldSelector, labelSelector, limit, "", null,
         timeoutSeconds, null, wrapForClusterList(callback));
+  }
+
+  /**
+   * Asynchronously replace cluster status.
+   *
+   * @param name      name
+   * @param namespace namespace
+   * @param body      domain
+   * @param callback  callback
+   * @return call
+   * @throws ApiException on failure
+   */
+  public Call replaceNamespacedClusterStatusAsync(
+      String name, String namespace, ClusterResource body, ApiCallback<ClusterResource> callback)
+      throws ApiException {
+
+    return replaceNamespacedCustomObjectStatusAsync(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        name, body, null, null, wrapForCluster(callback));
   }
 
   /**
@@ -360,6 +393,10 @@ public class WeblogicApi extends CustomObjectsApi {
         name, body, null, null, wrapForDomain(callback));
   }
 
+  private ApiCallback<Object> wrapForCluster(ApiCallback<ClusterResource> inner) {
+    return Optional.ofNullable(inner).map(ClusterApiCallbackWrapper::new).orElse(null);
+  }
+
   private ApiCallback<Object> wrapForDomain(ApiCallback<DomainResource> inner) {
     return Optional.ofNullable(inner).map(DomainApiCallbackWrapper::new).orElse(null);
   }
@@ -389,6 +426,34 @@ public class WeblogicApi extends CustomObjectsApi {
     @Override
     public void onDownloadProgress(long l, long l1, boolean b) {
       domainApiCallback.onDownloadProgress(l, l1, b);
+    }
+  }
+
+  private class ClusterApiCallbackWrapper implements ApiCallback<Object> {
+    private final ApiCallback<ClusterResource> clusterApiCallback;
+
+    public ClusterApiCallbackWrapper(ApiCallback<ClusterResource> clusterApiCallback) {
+      this.clusterApiCallback = clusterApiCallback;
+    }
+
+    @Override
+    public void onFailure(ApiException e, int i, Map<String, List<String>> map) {
+      clusterApiCallback.onFailure(e, i, map);
+    }
+
+    @Override
+    public void onSuccess(Object o, int i, Map<String, List<String>> map) {
+      clusterApiCallback.onSuccess(toCluster(o), i, map);
+    }
+
+    @Override
+    public void onUploadProgress(long l, long l1, boolean b) {
+      clusterApiCallback.onUploadProgress(l, l1, b);
+    }
+
+    @Override
+    public void onDownloadProgress(long l, long l1, boolean b) {
+      clusterApiCallback.onDownloadProgress(l, l1, b);
     }
   }
 
