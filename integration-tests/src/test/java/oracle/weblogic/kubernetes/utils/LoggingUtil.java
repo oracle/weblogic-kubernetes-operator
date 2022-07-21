@@ -493,6 +493,9 @@ public class LoggingUtil {
     String rangePodLog;
     try {
       String podLog = getPodLog(podName, namespace);
+      getLogger().info("pod log for pod {0} in namespace {1} for timestamps {2} to {3}: {4}", podName,
+              namespace, startTimestamp,
+              endTimestamp, podLog);
       rangePodLog = podLog.substring(podLog.indexOf(startTimestamp),
               podLog.lastIndexOf(endTimestamp));
       getLogger().info("pod log for pod {0} in namespace {1} for timestamps {2} to {3}: {4}", podName,

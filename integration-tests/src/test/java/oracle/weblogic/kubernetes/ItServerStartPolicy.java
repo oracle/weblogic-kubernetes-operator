@@ -97,7 +97,14 @@ class ItServerStartPolicy {
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-  }
+
+    //TOREMOVE
+    OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
+    String testEndTime = endTime.toString().replace("Z", "");
+    logger.info("timestamp1: {0} and without Z {1}", endTime.toString(), testEndTime);
+    endTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    logger.info("timestamp2: {0} and without Z {1}", endTime.toString(), testEndTime);
+  
 
   /**
    * Verify all server pods are running.
