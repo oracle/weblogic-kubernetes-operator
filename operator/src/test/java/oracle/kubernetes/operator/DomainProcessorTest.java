@@ -619,6 +619,54 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainScaledDown_withoutPreCreateServerService_removeService() {
+    final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3).withPrecreateServerService(false);
+
+    createMakeRight(newDomain).execute();
+    assertThat(isHeadlessService(SERVER3), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+        .withExplicitRecheck().execute();
+
+    assertThat(getServerService(SERVER3).isPresent(), is(false));
+  }
+
+  @Test
+  void whenDomainScaledDown_withPreCreateServerService_createNonHeadlessService() {
+    final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3).withPrecreateServerService(true);
+
+    createMakeRight(newDomain).execute();
+    assertThat(isHeadlessService(SERVER3), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+        .withExplicitRecheck().execute();
+
+    assertThat(isNonHeadlessClusterIPService(SERVER3), is(true));
+  }
+
+  @Test
+  void whenDomainScaledUp_withPreCreateServerService_createHeadlessService() {
+    final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2).withPrecreateServerService(true);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(isNonHeadlessClusterIPService(SERVER3), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+        .withExplicitRecheck().execute();
+
+    assertThat(isHeadlessService(SERVER3), is(true));
+  }
+
+  @Test
   void whenStrandedResourcesExist_removeThem() {
     V1Service service1 = createServerService("admin");
     V1Service service2 = createServerService("ms1");
@@ -1890,6 +1938,37 @@ class DomainProcessorTest {
 
   private Stream<V1Service> getServerServices() {
     return getRunningServices().stream().filter(ServiceHelper::isServerService);
+  }
+
+  private boolean isHeadlessService(String serverName) {
+    return getServerService(serverName)
+        .map(V1Service::getSpec)
+        .map(this::isHeadless)
+        .orElse(false);
+  }
+
+  private boolean isNonHeadlessClusterIPService(String serverName) {
+    return getServerService(serverName)
+        .map(V1Service::getSpec)
+        .map(this::isNullClusterIP)
+        .orElse(false);
+  }
+
+  private Optional<V1Service> getServerService(String serverName) {
+    return getRunningServices().stream()
+        .filter(ServiceHelper::isServerService)
+        .filter(s -> ServiceHelper.getServerName(s).equals(serverName))
+        .findFirst();
+  }
+
+  private boolean isHeadless(V1ServiceSpec serviceSpec) {
+    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+        && "None".equals(serviceSpec.getClusterIP());
+  }
+
+  private boolean isNullClusterIP(V1ServiceSpec serviceSpec) {
+    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+        && serviceSpec.getClusterIP() == null;
   }
 
   private List<V1Service> getRunningServices() {
