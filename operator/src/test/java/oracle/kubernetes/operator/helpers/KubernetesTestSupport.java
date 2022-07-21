@@ -102,6 +102,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String NAMESPACE = "Namespace";
   public static final String CLUSTER = "Cluster";
+  public static final String CLUSTER_STATUS = "ClusterStatus";
   public static final String DOMAIN = "Domain";
   public static final String EVENT = "Event";
   public static final String JOB = "Job";
@@ -405,6 +406,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public void failOnReplace(String resourceType, String name, String namespace, int httpStatus) {
     failure = new Failure(Operation.replace, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnReplaceStatus(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.replaceStatus, resourceType, name, namespace, httpStatus);
   }
 
   /**

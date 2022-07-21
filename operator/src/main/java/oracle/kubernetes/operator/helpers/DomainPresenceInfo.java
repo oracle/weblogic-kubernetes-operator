@@ -1011,6 +1011,10 @@ public class DomainPresenceInfo implements PacketComponent {
     return getDomainApi().getMaxConcurrentShutdown(clusterSpec);
   }
 
+  public Collection<ClusterResource> getClusterResources() {
+    return clusters.values();
+  }
+
   /** Details about a specific managed server. */
   public static class ServerInfo {
     public final WlsServerConfig serverConfig;

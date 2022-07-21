@@ -8,7 +8,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-abstract class RetryStrategyStub implements RetryStrategy {
+public abstract class RetryStrategyStub implements RetryStrategy {
   private Step conflictStep;
   private int numRetriesLeft = 0;
 
@@ -17,7 +17,7 @@ abstract class RetryStrategyStub implements RetryStrategy {
   }
 
   @SuppressWarnings("SameParameterValue")
-  void setNumRetriesLeft(int retriesLeft) {
+  public void setNumRetriesLeft(int retriesLeft) {
     this.numRetriesLeft = retriesLeft;
   }
 

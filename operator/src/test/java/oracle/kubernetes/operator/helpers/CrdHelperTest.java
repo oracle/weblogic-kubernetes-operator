@@ -567,8 +567,7 @@ class CrdHelperTest {
   @Test
   void whenClusterCrdCreated_statusContainsExpectedFields() {
     V1CustomResourceDefinition crd = defineClusterCrd();
-    assertThat(getPropertiesType(crd, "status", "replicas"), equalTo("integer"));
-    assertThat(getPropertiesType(crd, "status", "readyReplicas"), equalTo("integer"));
+    assertThat(getPropertiesType(crd, "status", "minimumReplicas"), equalTo("integer"));
     assertThat(getPropertiesType(crd, "status", "maximumReplicas"), equalTo("integer"));
   }
 

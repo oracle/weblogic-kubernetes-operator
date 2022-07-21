@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
+  public static final String OLD_DOMAIN_VERSION = "v8";
   public static final Boolean SKIP_CLEANUP =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.cleanup", "false"));
   public static final Boolean COLLECT_LOGS_ON_SUCCESS =
