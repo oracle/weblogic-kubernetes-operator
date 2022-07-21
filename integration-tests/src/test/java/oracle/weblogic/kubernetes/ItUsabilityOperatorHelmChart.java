@@ -113,6 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test operator usability using Helm chart installation")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItUsabilityOperatorHelmChart {
 
   private static final String LIST_STRATEGY = "List";

@@ -89,6 +89,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItPodsRestart {
 
   private static String miiImage;

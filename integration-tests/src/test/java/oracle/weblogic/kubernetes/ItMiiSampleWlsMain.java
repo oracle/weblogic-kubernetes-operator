@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 @Tag("samples")
 class ItMiiSampleWlsMain {
 

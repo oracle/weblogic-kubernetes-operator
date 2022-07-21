@@ -174,6 +174,7 @@ class ItWlsSamples {
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
   @Tag("samples-gate")
+  @Tag("kind-parallel")
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];

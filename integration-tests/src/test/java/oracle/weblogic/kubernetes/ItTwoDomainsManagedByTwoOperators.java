@@ -110,6 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItTwoDomainsManagedByTwoOperators {
 
   private static final int numberOfDomains = 2;

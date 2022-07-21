@@ -428,6 +428,13 @@
             </properties>
         </profile>
         <profile>
+            <id>kind-parallel</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>kind-parallel</groups>
+            </properties>
+        </profile>
+        <profile>
             <id>wko-olcne-cert</id>
             <properties>
                 <skipITs>false</skipITs>

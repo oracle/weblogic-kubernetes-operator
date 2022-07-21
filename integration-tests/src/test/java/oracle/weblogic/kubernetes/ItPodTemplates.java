@@ -53,14 +53,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-
 /**
  * This test is used for creating Operator(s) and domain which uses pod templates.
  */
 @DisplayName("Test to verify domain pod templates.")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItPodTemplates {
 
 

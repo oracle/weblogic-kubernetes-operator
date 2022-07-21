@@ -106,6 +106,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItMiiAuxiliaryImage {
 
   private static String domainNamespace = null;

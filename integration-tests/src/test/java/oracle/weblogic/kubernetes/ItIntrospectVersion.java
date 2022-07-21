@@ -137,6 +137,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-parallel")
 class ItIntrospectVersion {
 
   private static String opNamespace = null;

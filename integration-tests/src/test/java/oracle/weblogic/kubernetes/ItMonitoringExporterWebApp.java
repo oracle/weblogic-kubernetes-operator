@@ -92,6 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter WebApp via Prometheus and Grafana")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-parallel")
 class ItMonitoringExporterWebApp {
 
   // domain constants
