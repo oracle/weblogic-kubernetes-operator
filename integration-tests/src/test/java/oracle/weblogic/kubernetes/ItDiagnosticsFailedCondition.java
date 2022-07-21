@@ -29,7 +29,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -63,9 +62,11 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
@@ -222,18 +223,40 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      Domain domainCR = assertDoesNotThrow(()->TestActions.getDomainCustomResource(domainUid, domainNamespace));
       String patchStr = "[{\"op\": \"replace\", "
-              + "\"path\": \"/spec/webLogicCredentialsSecret\", \"value\": \"weblogic-credentials-foo\"}}]";
+          + "\"path\": \"/spec/webLogicCredentialsSecret\", \"value\": \"weblogic-credentials-foo\"}}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "patchDomainCustomResource failed");
-      
-      
+          "patchDomainCustomResource failed");
+      testUntil(
+          domainStatusReasonMatches(domain, "DomainInvalid"),
+          getLogger(),
+          "waiting for domain status condition type {0} exists"
+      );
+      testUntil(
+          domainStatusReasonMatches(domain, "ReplicasTooHigh"),
+          getLogger(),
+          "waiting for domain status condition type {0} exists"
+      );
+      patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
+          + "]";
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "patchDomainCustomResource failed");
+      testUntil(
+          domainStatusReasonMatches(domain, "DomainInvalid"),
+          getLogger(),
+          "waiting for domain status condition type {0} exists"
+      );
+      testUntil(
+          domainStatusReasonMatches(domain, "ReplicasTooHigh"),
+          getLogger(),
+          "waiting for domain status condition type {0} exists"
+      );
       testPassed = true;
-
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
