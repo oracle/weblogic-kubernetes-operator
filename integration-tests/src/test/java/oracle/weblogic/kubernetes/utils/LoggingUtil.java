@@ -4,12 +4,12 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -494,7 +494,8 @@ public class LoggingUtil {
     String rangePodLog;
     try {
       String podLog = getPodLog(podName, namespace);
-      rangePodLog = podLog.substring(podLog.indexOf(startTimestamp.toString()),podLog.lastIndexOf(endTimestamp.toString()));
+      rangePodLog = podLog.substring(podLog.indexOf(startTimestamp.toString()),
+              podLog.lastIndexOf(endTimestamp.toString()));
       getLogger().info("pod log for pod {0} in namespace {1} for timestamps {2} to {3}: {4}", podName,
               namespace, startTimestamp,
               endTimestamp, rangePodLog);
