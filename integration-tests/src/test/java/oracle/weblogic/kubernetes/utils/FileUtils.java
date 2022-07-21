@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -38,6 +39,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FI
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.installWdtParams;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.cleanDirectory;
@@ -296,6 +299,114 @@ public class FileUtils {
     getLogger().finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
     if (!dest.toFile().isDirectory()) {
       Files.copy(source, dest, REPLACE_EXISTING);
+    }
+  }
+
+  /**
+   * Copy file from source directory to destination directory.
+   *
+   * @param source path of source file
+   * @param dest path of target file
+   * @return ExecResult containing the content of the given file
+   */
+  public static ExecResult copyFileToDockerContainer(String containerName, String source, String dest) {
+    LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // create a WebLogic docker container
+    String cpToContainerCmd = new StringBuffer("docker cp ")
+        .append(source)
+        .append(" ")
+        .append(containerName)
+        .append(":")
+        .append(dest).toString();
+    logger.info("Command to copy from {0} to {1} is {2}", source, dest, cpToContainerCmd);
+
+    try {
+      result = exec(cpToContainerCmd, true);
+    } catch (Exception ex) {
+      logger.info("Command to copy file to container: caught unexpected exception {0}", ex);
+      return null;
+    }
+
+    readFileCopiedInDockerContainer(containerName, dest);
+
+    // check if file copied to docker container
+    logger.info("Wait for docker container {0} starting", containerName);
+    testUntil(
+        withStandardRetryPolicy,
+        isFileCopiedToDockerContainer(containerName, dest),
+        logger,
+        "{0} is copied to container {1}",
+        dest,
+        containerName);
+
+    return result;
+  }
+
+  /**
+   * Check if the file copied to destination directory successfully.
+   *
+   * @param containerName docker container name to check
+   * @param dest path of target file
+   * @return true if file copied successfully, otherwise false
+   */
+  public static Callable<Boolean> isFileCopiedToDockerContainer(String containerName, String dest) {
+    return () -> checkFileCopiedToDockerContainer(containerName, dest);
+  }
+
+  /**
+   * Check if the file copied to destination directory successfully.
+   *
+   * @param containerName docker container name to check
+   * @param dest path of target file
+   * @return true if file copied successfully, otherwise false
+   */
+  public static boolean checkFileCopiedToDockerContainer(String containerName, String dest) {
+    LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // check the file is copied over successfully
+    //String checkCmd = new StringBuffer("docker exec -it ")
+    String checkCmd = new StringBuffer("docker exec ")
+        .append(containerName)
+        .append(" /bin/sh -c \"find ")
+        .append(dest)
+        .append("\"").toString();
+    logger.info("Command to check file {0} copied: {1}", dest, checkCmd);
+
+    try {
+      result = exec(checkCmd, true);
+    } catch (Exception ex) {
+      logger.info("checkCmd: caught unexpected exception {0}", ex.getMessage());
+    }
+
+    return result.stdout().contains(dest);
+  }
+
+  /**
+   * Check if the file copied to destination directory successfully.
+   *
+   * @param containerName docker container name to check
+   * @param dest path of target file
+   */
+  public static void readFileCopiedInDockerContainer(String containerName, String dest) {
+    LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // check the file is copied over successfully
+    //String readCmd = new StringBuffer("docker exec -it "
+    String readCmd = new StringBuffer("docker exec ")
+        .append(containerName)
+        .append(" /bin/sh -c \"cat ")
+        .append(dest)
+        .append("\"").toString();
+    logger.info("Command to cat file {0}: ", dest, readCmd);
+
+    try {
+      result = exec(readCmd, true);
+    } catch (Exception ex) {
+      logger.info("checkCmd: caught unexpected exception {0}", ex.getMessage());
     }
   }
 
