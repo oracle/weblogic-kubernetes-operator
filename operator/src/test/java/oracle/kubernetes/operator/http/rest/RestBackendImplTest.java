@@ -291,6 +291,7 @@ class RestBackendImplTest {
   void whenPerClusterReplicaSettingMatchesScaleRequest_doNothing() {
     DomainPresenceInfo info = new DomainPresenceInfo(domain1);
     configureCluster(info,"cluster1").withReplicas(5);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
@@ -304,6 +305,7 @@ class RestBackendImplTest {
     configureCluster(info, cluster1);
     domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
             .withClusterLimits(0, 5));
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     assertThrows(WebApplicationException.class,
             () -> restBackend.scaleCluster(DOMAIN1, cluster1, 10));
@@ -321,6 +323,7 @@ class RestBackendImplTest {
   void whenPerClusterReplicaSetting_scaleClusterUpdatesSetting() {
     DomainPresenceInfo info = new DomainPresenceInfo(getUpdatedDomain());
     configureCluster(info, "cluster1").withReplicas(1);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
@@ -392,6 +395,7 @@ class RestBackendImplTest {
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain2);
     DomainConfiguratorFactory.forDomain(domain2).configureCluster(info,"cluster1").withReplicas(2);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     assertThrows(WebApplicationException.class,
               () -> restBackend.scaleCluster(DOMAIN2, "cluster1", 3));

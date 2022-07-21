@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -305,11 +306,16 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   private ClusterResource createCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
     ClusterResource cluster = new ClusterResource()
-        .withMetadata(new V1ObjectMeta().name(clusterName))
+        .withMetadata(new V1ObjectMeta().name(clusterName).namespace(getNamespace(info)))
         .spec(new ClusterSpec().withClusterName(clusterName));
     getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
     info.addClusterResource(cluster);
     return cluster;
+  }
+
+  private String getNamespace(DomainPresenceInfo info) {
+    return Optional.ofNullable(info.getDomain())
+        .map(DomainResource::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
 

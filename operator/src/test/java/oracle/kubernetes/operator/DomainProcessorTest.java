@@ -381,6 +381,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainConfiguredForMaxServers_establishMatchingPresence() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MAX_SERVERS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -396,6 +397,7 @@ class DomainProcessorTest {
   @Test
   void whenMakeRightRun_updateDomainStatus() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -412,14 +414,15 @@ class DomainProcessorTest {
 
   @Test
   void whenMakeRightRun_updateClusterResourceStatus() {
-    ClusterResource clusterResource = createClusterResource(UID, NS, CLUSTER);
+    ClusterResource clusterResource = createClusterResource(NS, CLUSTER);
     testSupport.defineResources(clusterResource);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
     ClusterResource updatedClusterResource = testSupport
-        .getResourceWithName(KubernetesTestSupport.CLUSTER, UID + '-' + CLUSTER);
+        .getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER);
     assertThat(updatedClusterResource.getStatus(), notNullValue());
     assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
     assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
@@ -442,6 +445,8 @@ class DomainProcessorTest {
   @Test
   void afterMakeRightAndChangeServerToNever_desiredStateIsShutdown() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
 
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
@@ -460,6 +465,8 @@ class DomainProcessorTest {
   @Test
   void afterMakeRightAndChangeServerToNever_serverPodsWaitForShutdownWithHttpToCompleteBeforeTerminating() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
 
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
@@ -467,6 +474,7 @@ class DomainProcessorTest {
     defineServerShutdownWithHttpOkResponse();
     setAdminServerStatus(status, SUSPENDING_STATE);
     setManagedServerState(status, SUSPENDING_STATE);
+
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
@@ -515,6 +523,8 @@ class DomainProcessorTest {
   @Test
   void afterServersUpdated_updateDomainStatus() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
     newInfo.setWebLogicCredentialsSecret(createCredentialsSecret());
     makePodsReady();
@@ -528,13 +538,17 @@ class DomainProcessorTest {
   @Test
   void afterChangeToNever_statusUpdateRetainsDesiredState() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     newInfo.setWebLogicCredentialsSecret(createCredentialsSecret());
     makePodsReady();
     makePodsHealthy();
+
     triggerStatusUpdate();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
@@ -597,6 +611,8 @@ class DomainProcessorTest {
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
@@ -608,6 +624,7 @@ class DomainProcessorTest {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     createMakeRight(newInfo).execute();
 
@@ -657,6 +674,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 2));
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
@@ -673,6 +691,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
@@ -720,6 +739,7 @@ class DomainProcessorTest {
   void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -744,6 +764,7 @@ class DomainProcessorTest {
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3);
     domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -766,6 +787,7 @@ class DomainProcessorTest {
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(1);
     domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -792,6 +814,7 @@ class DomainProcessorTest {
     for (Integer i : Arrays.asList(3,4)) {
       domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -818,6 +841,7 @@ class DomainProcessorTest {
     }
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(4);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -840,6 +864,7 @@ class DomainProcessorTest {
     for (Integer i : Arrays.asList(1,2,3)) {
       domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -866,6 +891,7 @@ class DomainProcessorTest {
     for (Integer i : Arrays.asList(1,2,3)) {
       domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
     logRecords.clear();
@@ -885,6 +911,8 @@ class DomainProcessorTest {
   void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(ServerStartPolicy.NEVER);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
 
     List<V1Pod> runningPods = getRunningPods();
@@ -908,6 +936,8 @@ class DomainProcessorTest {
         domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.NEVER);
       }
     }
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
 
     List<V1Pod> runningPods = getRunningPods();
@@ -1011,6 +1041,8 @@ class DomainProcessorTest {
 
     domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     makeRightOperation.execute();
 
     assertThat(makeRightOperation.wasInspectionRun(), is(false));
@@ -1019,6 +1051,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainHasIntrospectVersionDifferentFromOldDomain_runIntrospectionJob() throws Exception {
     establishPreviousIntrospection(null);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     createMakeRight(newInfo).execute();
@@ -1033,6 +1066,7 @@ class DomainProcessorTest {
   @Test
   void whenIntrospectionJobRun_recordIt() throws Exception {
     establishPreviousIntrospection(null);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     MakeRightDomainOperation makeRight = createMakeRight(newInfo);
@@ -1088,6 +1122,7 @@ class DomainProcessorTest {
             .withFluentdConfiguration(true, "fluentd-cred",
                     null)
             .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -1105,6 +1140,7 @@ class DomainProcessorTest {
             .withFluentdConfiguration(true, "fluentd-cred",
                     "<match>me</match>")
             .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
 
@@ -1141,6 +1177,8 @@ class DomainProcessorTest {
     testSupport.doOnDelete(JOB, j -> deletePod());
     testSupport.doOnCreate(JOB, j -> createJobPodAndSetCompletedStatus(job));
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).interrupt().execute();
 
     assertThat(isDomainConditionFailed(), is(false));
@@ -1200,6 +1238,8 @@ class DomainProcessorTest {
     testSupport.doOnDelete(JOB, j -> deletePod());
     testSupport.doOnCreate(JOB, j -> createJobPodAndSetCompletedStatus(job));
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).interrupt().execute();
 
     assertThat(isDomainConditionFailed(), is(false));
@@ -1292,6 +1332,7 @@ class DomainProcessorTest {
   @Test
   void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
     establishPreviousIntrospection(null);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     processor.createMakeRightOperation(newInfo).interrupt().execute();
@@ -1319,6 +1360,8 @@ class DomainProcessorTest {
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo).withExplicitRecheck();
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     makeRightOperation.execute();
 
     List<V1Pod> runningPods = getRunningPods();
@@ -1340,6 +1383,8 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     List<V1Pod> runningPods = getRunningPods();
@@ -1358,6 +1403,8 @@ class DomainProcessorTest {
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3);
     domainConfigurator.withIntrospectVersion("after-scaleup");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     List<V1Pod> runningPods = getRunningPods();
@@ -1376,6 +1423,8 @@ class DomainProcessorTest {
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(1);
     domainConfigurator.withIntrospectVersion("after-scaledown");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
     List<V1Pod> runningPods = getRunningPods();
@@ -1423,6 +1472,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainTypeIsDomainInImage_dontRerunIntrospectionJob() throws Exception {
     establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(IMAGE));
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     makeRightOperation.execute();
@@ -1434,6 +1484,7 @@ class DomainProcessorTest {
   void whenDomainTypeIsFromModelDomainAndNoChanges_dontRerunIntrospectionJob() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     makeRightOperation.execute();
@@ -1459,6 +1510,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     cacheChangedDomainInputsHash();
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     makeRightOperation.execute();
@@ -1482,10 +1534,12 @@ class DomainProcessorTest {
   void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     domainConfigurator.configureServer(getManagedServerName(1)).withAdditionalVolume("vol1", "/path");
     domainConfigurator.configureServer(getManagedServerName(2)).withAdditionalVolume("vol2", "/path");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     makeRightOperation.execute();
 
@@ -1540,6 +1594,8 @@ class DomainProcessorTest {
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
         String.format(introspectorResult, defineTopology(), updateResult));
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     makeRightOperation.execute();
     boolean found = false;
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
@@ -1593,6 +1649,7 @@ class DomainProcessorTest {
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     configureDomain(newDomain).configureCluster(newInfo, CLUSTER).withReplicas(3);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     makeRightOperation.execute();
     assertThat(introspectionRunBeforeUpdates, hasEntry(getManagedPodName(3), false));
@@ -1605,6 +1662,7 @@ class DomainProcessorTest {
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     makeRightOperation.execute();
 
@@ -1618,6 +1676,8 @@ class DomainProcessorTest {
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     makeRightOperation.execute();
     job = null;
 
@@ -1633,6 +1693,8 @@ class DomainProcessorTest {
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     makeRightOperation.execute();
     assertThat(job, notNullValue());
     job = null;
@@ -1651,6 +1713,8 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
           List.of(INDEPENDENT_SERVER));
     domainConfigurator.withDefaultReplicaCount(2);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     processor.createMakeRightOperation(newInfo).execute();
 
     //one introspector pod, one admin server pod, one independent server and two managed server pods for each cluster
@@ -1729,6 +1793,7 @@ class DomainProcessorTest {
 
     //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo, "cluster-1").withReplicas(2);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
@@ -1818,6 +1883,7 @@ class DomainProcessorTest {
 
     //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo,"cluster-1").withReplicas(2);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
@@ -2148,6 +2214,7 @@ class DomainProcessorTest {
     configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
     final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(NS, CLUSTER));
+    originalInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.dispatchClusterWatch(item);
 

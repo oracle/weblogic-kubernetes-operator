@@ -256,6 +256,7 @@ abstract class DomainStatusUpdateTestBase {
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withDynamicCluster("clusterB", 2, 8)
           .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -655,6 +656,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
     configureDomain().configureCluster(info, "cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -666,6 +668,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
     configureDomain().configureCluster(info, "cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -950,6 +953,7 @@ abstract class DomainStatusUpdateTestBase {
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_domainIsNotCompleted() {
     configureDomain().configureCluster(info,"cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -985,6 +989,7 @@ abstract class DomainStatusUpdateTestBase {
   void whenReplicaCountWithinMaxUnavailableOfReplicas_domainIsAvailable() {
     configureDomain().configureCluster(info,"cluster1").withReplicas(5).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -995,6 +1000,7 @@ abstract class DomainStatusUpdateTestBase {
   void whenReplicaCountNotWithinMaxUnavailableOfReplicas_domainIsNotAvailable() {
     configureDomain().configureCluster(info,"cluster1").withReplicas(20).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1102,6 +1108,7 @@ abstract class DomainStatusUpdateTestBase {
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server3", "server4")
           .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1116,6 +1123,7 @@ abstract class DomainStatusUpdateTestBase {
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server2", "server3", "server4")
           .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1131,6 +1139,7 @@ abstract class DomainStatusUpdateTestBase {
           .build();
     deactivateServer("server1");
     deactivateServer("server2");
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1147,6 +1156,7 @@ abstract class DomainStatusUpdateTestBase {
           .build();
     deactivateServer("server1");
     deactivateServer("server2");
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
