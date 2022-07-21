@@ -560,13 +560,13 @@ class ItPodsRestart {
     String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
-    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Always
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/imagePullPolicy\",")
         .append("\"value\": \"")
-        .append("Never")
+        .append("Always")
         .append("\"}]");
     logger.info("PatchStr for imagePullPolicy: {0}", patchStr.toString());
 
@@ -582,7 +582,7 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertTrue(imagePullPolicy.equalsIgnoreCase("Never"), "imagePullPolicy was not updated"
+    assertTrue(imagePullPolicy.equalsIgnoreCase("Always"), "imagePullPolicy was not updated"
         + " in the new patched domain");
 
     //get current timestamp before domain rolling restart to verify domain roll events
