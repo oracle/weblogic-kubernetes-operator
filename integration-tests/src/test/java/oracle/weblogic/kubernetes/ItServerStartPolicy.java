@@ -104,7 +104,8 @@ class ItServerStartPolicy {
     logger.info("timestamp1: {0} and without Z {1}", endTime.toString(), testEndTime);
     endTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     logger.info("timestamp2: {0} and without Z {1}", endTime.toString(), testEndTime);
-  
+  }
+
 
   /**
    * Verify all server pods are running.
