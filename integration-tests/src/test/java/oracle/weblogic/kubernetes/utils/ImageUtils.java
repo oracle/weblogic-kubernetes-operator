@@ -176,6 +176,36 @@ public class ImageUtils {
   }
 
   /**
+   * Create a Docker image for a domain-in-image domain.
+   *
+   * @param domainUid domain uid
+   * @param domainNamespace domain namespace
+   * @param imageNameBase the base image name used in local or to construct the image name in repository
+   * @param modelFile the model file used to build the Docker image
+   * @param modelPropFile property file to be used with the model file above
+   * @param appName - application source directories used to build app ear files
+   * @return image name with tag
+   */
+  public static String createDiiImageAndVerify(String domainUid,
+                                               String domainNamespace,
+                                               String imageNameBase,
+                                               String modelFile,
+                                               String modelPropFile,
+                                               String appName) {
+    // create image with model files
+    String domImage = createImageAndVerify(imageNameBase, modelFile, appName, modelPropFile, domainUid);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(domImage);
+
+    // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(domainNamespace);
+
+    return domImage;
+  }
+
+  /**
    * Create an image with modelfile, application archive and property file. If the property file
    * is needed to be updated with a property that has been created by the framework, it is copied
    * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.

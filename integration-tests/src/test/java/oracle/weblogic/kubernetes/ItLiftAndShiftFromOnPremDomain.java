@@ -418,7 +418,7 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(filePath,
           "\\{\\{\\{imageName\\}\\}\\}", imageName);
       replaceStringInFile(filePath,
-          "name: ocir", "name: " + TEST_IMAGES_REPO_SECRET_NAME);
+          "imagePullSecrets: \\[\\]", "imagePullSecrets:\n    - name: " + TEST_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(filePath,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
       replaceStringInFile(filePath,
