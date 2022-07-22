@@ -702,7 +702,7 @@ checkAuxiliaryImage() {
   fi
 
   trace FINE "Auxiliary Image: AUXILIARY_IMAGE_MOUNT_PATH is '$AUXILIARY_IMAGE_MOUNT_PATH'."
-  traceDirs before $AUXILIARY_IMAGE_MOUNT_PATH
+  traceDirs before AUXILIARY_IMAGE_MOUNT_PATH
   touch ${AUXILIARY_IMAGE_MOUNT_PATH}/testaccess.tmp
   if [ $? -ne 0 ]; then
     trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_MOUNT_PATH '${AUXILIARY_IMAGE_MOUNT_PATH}'. " \
