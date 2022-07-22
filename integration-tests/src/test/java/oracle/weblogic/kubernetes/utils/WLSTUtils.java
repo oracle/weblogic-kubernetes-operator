@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.utils;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -22,7 +23,10 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -33,6 +37,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -158,5 +163,102 @@ public class WLSTUtils {
     }
   }
 
+  /**
+   * Build application.
+   * @param appSrcPath path of the application source folder
+   * @param antParams ant parameters
+   * @param antTargets ant targets to call
+   * @param archiveDistDir location of the archive built inside source directory
+   * @param namespace name of the namespace to create the pod in
+   * @param targetPath the target path where the application will be archived
+   */
+  public static void buildApplication(Path appSrcPath, Map<String, String> antParams,
+                                      String antTargets, String archiveDistDir,
+                                      String namespace, Path targetPath) {
 
+    final LoggingFacade logger = getLogger();
+
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(namespace);
+
+    // add ant properties as env variable in pod
+    V1Container buildContainer = new V1Container();
+  }
+
+  /**
+   * Execute WLST script in local.
+   *
+   * @param wlstScriptFile WLST script file path
+   * @param t3Url t3 URL
+   * @return ExecResult output of executing WLST script
+   */
+  public static ExecResult executeWLSTScriptInLocal(String wlstScriptFile,
+                                                    String t3Url) {
+    final LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // create a V1Container with specific scripts and properties for running WLST script
+    StringBuffer cmdRunWlstScript = new StringBuffer("java weblogic.WLST ")
+        .append(wlstScriptFile)
+        .append(" -username ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(" -password ")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" -url ")
+        .append(t3Url);
+
+    logger.info("execute WLST script in local: command {0}", cmdRunWlstScript.toString());
+    try {
+      result = exec(cmdRunWlstScript.toString(), true);
+    } catch (Exception ex) {
+      logger.info("cmdRunWlstScript: caught unexpected exception {0}", ex);
+      return null;
+    }
+
+    return result;
+  }
+
+  /**
+   * Start a port-forward process and tests using forwarded port.
+   * @param containerName docker container name
+   * @param wlstScriptFile WLST script file path
+   * @param wlstPropertiesFile WLST property file path
+   * @return ExecResult output of executing WLST script
+   */
+  public static ExecResult executeWLSTScriptInDockerContainer(String containerName,
+                                                              String wlstScriptFile,
+                                                              String wlstPropertiesFile) {
+    final LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    String checkDockerVersion = "docker version";
+    try {
+      result = exec(checkDockerVersion, true);
+      logger.info("Docker version: {0}", result.stdout());
+    } catch (Exception ex) {
+      logger.info("docker version failed error {0} and {1}", result.stderr(), ex.getMessage());
+      ex.printStackTrace();
+    }
+
+    // execute WLST script in a docker container
+    logger.info("Preparing to run WLST script");
+    //StringBuffer cmdRunWlstScript = new StringBuffer(" docker exec -it ")
+    StringBuffer cmdRunWlstScript = new StringBuffer("docker exec ")
+        .append(containerName)
+        .append(" sh /u01/oracle/oracle_common/common/bin/wlst.sh ")
+        .append(wlstScriptFile)
+        .append(" -skipWLSModuleScanning ")
+        .append(" -loadProperties ")
+        .append(wlstPropertiesFile);
+
+    logger.info("execute WLST script in a docker container: command {0}", cmdRunWlstScript.toString());
+    try {
+      result = exec(cmdRunWlstScript.toString(), true);
+    } catch (Exception ex) {
+      logger.info("cmdRunWlstScript: caught unexpected exception {0}", ex);
+      return null;
+    }
+
+    return result;
+  }
 }
