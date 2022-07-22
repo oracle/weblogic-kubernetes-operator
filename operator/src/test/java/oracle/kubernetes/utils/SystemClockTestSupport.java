@@ -37,6 +37,14 @@ public class SystemClockTestSupport {
     clock.increment(1L);
   }
 
+  /**
+   * Sets the new time on the system clock.
+   * @param time the new time
+   */
+  public static void setCurrentTime(OffsetDateTime time) {
+    clock.setCurrentTime(time);
+  }
+
   static class TestSystemClock extends SystemClock {
     private final OffsetDateTime testStartTime = SystemClock.now();
     private OffsetDateTime currentTime = testStartTime;
@@ -48,6 +56,10 @@ public class SystemClockTestSupport {
 
     void increment(long numSeconds) {
       currentTime = currentTime.plusSeconds(numSeconds);
+    }
+
+    void setCurrentTime(OffsetDateTime time) {
+      currentTime = time;
     }
   }
 
