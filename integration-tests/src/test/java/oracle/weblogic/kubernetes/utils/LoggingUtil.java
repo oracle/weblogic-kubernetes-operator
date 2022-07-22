@@ -494,10 +494,6 @@ public class LoggingUtil {
     try {
       String podLog = getPodLog(podName, namespace);
       String startTimestamp = timestamp.toString().replace("Z", "");
-      getLogger().info("pod log for pod {0} in namespace {1} up to timestamp {2} : {3}", podName,
-              namespace,
-              startTimestamp,
-              podLog);
       int begin = -1;
       int count = 0;
 
@@ -506,8 +502,8 @@ public class LoggingUtil {
         startTimestamp = timestamp.toString().replace("Z", "");
         begin = podLog.indexOf(startTimestamp);
         getLogger().info("Index of  timestamp {0} in the pod log is : {1}, count {2}",
-                begin,
                 startTimestamp,
+                begin,
                 count);
         timestamp = timestamp.plusSeconds(1);
         count++;
