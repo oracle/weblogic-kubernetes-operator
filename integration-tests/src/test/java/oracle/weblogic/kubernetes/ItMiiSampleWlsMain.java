@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
+@Tag("okd-wls-mrg")
 @Tag("samples")
 class ItMiiSampleWlsMain {
 

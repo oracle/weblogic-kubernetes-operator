@@ -68,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 @IntegrationTest
 class ItFmwDomainInPVUsingWLST {
 

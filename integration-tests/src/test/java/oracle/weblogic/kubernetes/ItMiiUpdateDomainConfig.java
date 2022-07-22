@@ -117,6 +117,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
+@Tag("okd-wls-srg")
 class ItMiiUpdateDomainConfig {
 
   private static String opNamespace = null;

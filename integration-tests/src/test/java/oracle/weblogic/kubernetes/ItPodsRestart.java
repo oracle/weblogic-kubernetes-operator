@@ -90,6 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("okd-wls-srg")
 class ItPodsRestart {
 
   private static String miiImage;

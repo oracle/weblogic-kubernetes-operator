@@ -223,6 +223,7 @@ class ItKubernetesDomainEvents {
   @Tag("gate")
   @Tag("crio")
   @Tag("kind-parallel")
+  @Tag("okd-wls-srg")
   void testK8SEventsSuccess() {
     try {
       OffsetDateTime timestamp = now();

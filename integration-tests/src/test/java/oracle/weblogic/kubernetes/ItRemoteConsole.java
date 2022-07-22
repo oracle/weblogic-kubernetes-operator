@@ -78,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisabledOnSlimImage
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItRemoteConsole {
 
   private static String domainNamespace = null;

@@ -106,6 +106,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test external RMI access through loadbalncer tunneling")
 @Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 @DisabledOnSlimImage
 class ItExternalLbTunneling {
