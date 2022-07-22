@@ -228,7 +228,7 @@ class ItDiagnosticsFailedCondition {
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
       testUntil(
           domainStatusReasonMatches(domain, "DomainInvalid"),
@@ -244,7 +244,7 @@ class ItDiagnosticsFailedCondition {
           = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
           + "]";
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
       testUntil(
           domainStatusReasonMatches(domain, "DomainInvalid"),
