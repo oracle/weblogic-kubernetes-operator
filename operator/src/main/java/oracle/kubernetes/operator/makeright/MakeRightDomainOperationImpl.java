@@ -51,7 +51,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitial
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
@@ -235,8 +234,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   @Override
   @Nonnull
   public Packet createPacket() {
-    Packet packet = new Packet().with(delegate).with(liveInfo);
-    packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
+    Packet packet = new Packet().with(delegate).with(liveInfo).with(this);
     packet
         .getComponents()
         .put(

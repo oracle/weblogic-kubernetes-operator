@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -25,7 +24,6 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -58,12 +56,10 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.PodStepContext;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
@@ -188,11 +184,6 @@ class DomainProcessorTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
-  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
-  private final Map<String, KubernetesEventObjects> makeRightFiberGates = new ConcurrentHashMap<>();
-  private final Map<String, KubernetesEventObjects> statusFiberGates = new ConcurrentHashMap<>();
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
@@ -201,6 +192,7 @@ class DomainProcessorTest {
   private final DomainPresenceInfo newInfo = new DomainPresenceInfo(newDomain);
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
   private final WlsDomainConfig domainConfig = createDomainConfig();
+  private final DomainProcessorTestSupport domainProcessorTestSupport = new DomainProcessorTestSupport();
 
   private final JobStatusSupplier jobStatusSupplier = new JobStatusSupplier(createCompletedStatus());
 
@@ -258,12 +250,7 @@ class DomainProcessorTest {
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
     mementos.add(execFactoryFake.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", presenceInfoMap));
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "makeRightFiberGates", makeRightFiberGates));
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "statusFiberGates", statusFiberGates));
-    mementos.add(StaticStubSupport.install(PodStepContext.class, "productVersion", "unit-test"));
+    mementos.add(domainProcessorTestSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(UnitTestHash.install());
@@ -1116,6 +1103,10 @@ class DomainProcessorTest {
         Optional.ofNullable(getJob().getSpec()).map(V1JobSpec::getActiveDeadlineSeconds).orElse(0L), is(240L));
   }
 
+  private void executeScheduledRetry() {
+    testSupport.setTime(domain.getFailureRetryIntervalSeconds(), TimeUnit.SECONDS);
+  }
+
   @Test
   void whenFluentdSpecified_verifyConfigMap() {
     domainConfigurator
@@ -1150,10 +1141,6 @@ class DomainProcessorTest {
             .map(V1ConfigMap::getData)
             .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
             .orElse(null), equalTo("<match>me</match>"));
-  }
-
-  private void executeScheduledRetry() {
-    testSupport.setTime(10, TimeUnit.SECONDS);
   }
 
 
@@ -1610,7 +1597,7 @@ class DomainProcessorTest {
     }
     assertThat(found, is(true));
 
-    presenceInfoMap.get("namespace").get("test-domain").getServerPods()
+    domainProcessorTestSupport.getCachedPresenceInfo("namespace", "test-domain").getServerPods()
         .forEach(p -> {
           Map<String, String> labels = Optional.ofNullable(p)
                 .map(V1Pod::getMetadata)
