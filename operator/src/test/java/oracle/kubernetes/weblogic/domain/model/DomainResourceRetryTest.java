@@ -76,6 +76,13 @@ class DomainResourceRetryTest extends DomainTestBase {
     assertThat(domain.shouldRetry(), is(true));
   }
 
+  @Test
+  void whenDomainHasAbortedFailure_noRetryNeeded() {
+    addFailureCondition(ABORTED);
+
+    assertThat(domain.shouldRetry(), is(false));
+  }
+
   private void addFailureCondition(DomainFailureReason reason) {
     domain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(reason).withMessage("oops"));
   }
