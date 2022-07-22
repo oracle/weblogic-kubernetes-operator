@@ -180,6 +180,12 @@ public class PodHelper {
         .filter(PodHelper::isReadyNotTrueCondition).findFirst().orElse(null);
   }
 
+  /**
+   * Get the server state From the domain resource.
+   * @param domain domain resource.
+   * @param serverName Name of the server.
+   * @return server state, if exists, otherwise null.
+   */
   public static String getServerState(DomainResource domain, String serverName) {
     return Optional.ofNullable(domain)
         .map(DomainResource::getStatus)
