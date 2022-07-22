@@ -419,14 +419,16 @@ public class TestAssertions {
 
   /**
    * Check the status reason of the domain matches the given reason.
-   * @param domain  oracle.weblogic.domain.Domain object
+   * @param domainUid  domain uid
+   * @param namespace namespace in which the domain resource exists
    * @param statusReason the expected status reason of the domain
    * @return true if the status reason matches, false otherwise
    */
-  public static Callable<Boolean> domainStatusReasonMatches(oracle.weblogic.domain.Domain domain,
+  public static Callable<Boolean> domainStatusReasonMatches(String domainUid, String namespace,
       String statusReason) {
     LoggingFacade logger = getLogger();
     return () -> {
+      oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
       if (domain != null && domain.getStatus() != null && !domain.getStatus().getConditions().isEmpty()) {
         boolean match = domain.getStatus().getConditions().stream()
             .anyMatch(condition -> condition.getReason().contains(statusReason));
