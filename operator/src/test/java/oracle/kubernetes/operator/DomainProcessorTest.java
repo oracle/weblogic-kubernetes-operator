@@ -1536,10 +1536,11 @@ class DomainProcessorTest {
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
 
     MakeRightDomainOperation makeRightOperation = processor.createMakeRightOperation(newInfo);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
     testSupport.doOnCreate(POD, p -> recordPodCreation(makeRightOperation, (V1Pod) p));
     domainConfigurator.configureServer(getManagedServerName(1)).withAdditionalVolume("vol1", "/path");
     domainConfigurator.configureServer(getManagedServerName(2)).withAdditionalVolume("vol2", "/path");
-    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     makeRightOperation.execute();
 
