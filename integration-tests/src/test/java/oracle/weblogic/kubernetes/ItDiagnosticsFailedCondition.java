@@ -224,7 +224,7 @@ class ItDiagnosticsFailedCondition {
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
       String patchStr = "[{\"op\": \"replace\", "
-          + "\"path\": \"/spec/webLogicCredentialsSecret\", \"value\": \"weblogic-credentials-foo\"}]";
+          + "\"path\": \"/spec/webLogicCredentialsSecret/name\", \"value\": \"weblogic-credentials-foo\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       V1Patch patch = new V1Patch(patchStr);
