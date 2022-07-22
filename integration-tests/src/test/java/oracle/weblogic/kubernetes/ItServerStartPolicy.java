@@ -97,14 +97,6 @@ class ItServerStartPolicy {
     prepare(domainNamespace, domainUid, opNamespace, samplePath);
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-
-    //TOREMOVE
-    OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault())
-            .truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
-    String testEndTime = endTime.toString().replace("Z", "");
-    logger.info("timestamp1: {0} and without Z {1}", endTime.toString(), testEndTime);
-    endTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MINUTES);
-    logger.info("timestamp2: {0} and without Z {1}", endTime.toString(), testEndTime);
   }
 
 
@@ -200,14 +192,13 @@ class ItServerStartPolicy {
     OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
     OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    OffsetDateTime startTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
-
     // verify that the sample script can shutdown admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,STOP_SERVER_SCRIPT,
         SERVER_LIFECYCLE, "admin-server", "", true);
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
 
+    OffsetDateTime startTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
     logger.info("Check managed server pods are not affected");
     Callable<Boolean> isDynRestarted =
         assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,

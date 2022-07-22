@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.time.OffsetDateTime;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -480,31 +481,26 @@ public class LoggingUtil {
 
   /**
    * Check whether pod log contains expected string in time range.
-   * @param namespace - namespace where pod exists
-   * @param podName - pod name of the log
+   *
+   * @param namespace      - namespace where pod exists
+   * @param podName        - pod name of the log
    * @param expectedString - expected string in the pod log
-   * @param timestamp - start time
+   * @param timestamp      - start time to check the log
    * @return true if pod log contains expected string, false otherwise
    */
   public static boolean doesPodLogContainStringInTimeRange(String namespace, String podName, String expectedString,
-                                                           java.time.OffsetDateTime timestamp) {
+                                                           OffsetDateTime timestamp) {
     String rangePodLog;
     try {
       String podLog = getPodLog(podName, namespace);
-      getLogger().info("pod log for pod {0} in namespace {1} from timestamp {2} }: {3}", podName,
-              namespace,
-              timestamp.toString(),
-              podLog);
       int begin = -1;
       String startTimestamp = null;
       while (begin == (-1)) {
         startTimestamp = timestamp.toString().replace("Z", "");
         begin = podLog.indexOf(startTimestamp);
         timestamp = timestamp.plusSeconds(1);
-
       }
       rangePodLog = podLog.substring(begin);
-
       getLogger().info("pod log for pod {0} in namespace {1} starting from timestamp {2} : {3}", podName,
               namespace,
               startTimestamp,
@@ -513,7 +509,6 @@ public class LoggingUtil {
       getLogger().severe("got ApiException while getting pod log: ", apiEx);
       return false;
     }
-
     return rangePodLog.contains(expectedString);
   }
 
