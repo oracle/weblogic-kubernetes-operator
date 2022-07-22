@@ -607,13 +607,13 @@ class ItPodsRestart {
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the 'imagePullPolicy' "
         + "changed from 'IfNotPresent' to '" + pullPolicy + "' message is logged");
-    assertTrue(event.getMessage().contains("Always"));
+    assertTrue(event.getMessage().contains(pullPolicy));
 
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the 'imagePullPolicy' "
-        + "changed from 'IfNotPresent' to 'Always' message is logged");
+        + "changed from 'IfNotPresent' to '" + pullPolicy + "' message is logged");
     assertTrue(event.getMessage().contains(pullPolicy));
 
     logger.info("verify domain roll completed event is logged");
