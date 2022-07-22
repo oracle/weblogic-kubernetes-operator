@@ -493,10 +493,15 @@ public class LoggingUtil {
     String rangePodLog;
     try {
       String podLog = getPodLog(podName, namespace);
+      String startTimestamp = timestamp.toString().replace("Z", "");
+      getLogger().info("pod log for pod {0} in namespace {1} up to timestamp {2} : {3}", podName,
+              namespace,
+              startTimestamp,
+              podLog);
       int begin = -1;
       int count = 0;
-      String startTimestamp = null;
-      //search log for timestamp plus up to 5 seconds if pod log does not have it
+
+      //search log for timestamp plus up to 5 seconds if pod log does not have it matching timestamp
       while (begin == (-1) && count < 5) {
         startTimestamp = timestamp.toString().replace("Z", "");
         begin = podLog.indexOf(startTimestamp);
