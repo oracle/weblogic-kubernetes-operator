@@ -8,6 +8,8 @@
 # before its pod is deleted.  It requires the SERVER_NAME env var.
 #
 
+echo "Stopping container now...">/proc/1/fd/1 && touch /shared/logs/debug2_stop && touch /tmp/debug2_stop
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
@@ -15,7 +17,7 @@ source ${SCRIPTPATH}/utils.sh
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
 if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
-  serverLogHome="${serverLogHome/servers/${SERVER_NAME}/logs"
+  serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
 fi
 STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"
 SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"

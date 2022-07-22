@@ -251,8 +251,9 @@ while (stayInConnectLoop):
       waitUntilCoherenceSafe()
       cohSafe = True
 
-    print('Shutdown: Calling server shutdown with force = ' + force)
-    shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), force=force, block='true', properties=None, waitForAllSessions=wait_for_all_sessions)
+    print('Shutdown: Calling server shutdown with force = ' + force + ', timeout = ' + timeout)
+    print('Shutdown: Calling server shutdown with wait_for_all_sessions = ' + wait_for_all_sessions)
+    shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), force=force, block='true', waitForAllSessions=wait_for_all_sessions)
     print('Shutdown: Successfully shutdown the server')
 
   except Exception, e:
