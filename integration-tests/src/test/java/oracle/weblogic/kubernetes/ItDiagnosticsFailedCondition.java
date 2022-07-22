@@ -231,14 +231,14 @@ class ItDiagnosticsFailedCondition {
       assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
       testUntil(
-          domainStatusReasonMatches(domain, "DomainInvalid"),
+          domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
           getLogger(),
-          "waiting for domain status condition type {0} exists"
+          "waiting for domain status condition reason DomainInvalid exists"
       );
       testUntil(
-          domainStatusReasonMatches(domain, "ReplicasTooHigh"),
+          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
           getLogger(),
-          "waiting for domain status condition type {0} exists"
+          "waiting for domain status condition reason ReplicasTooHigh exists"
       );
       patchStr
           = "["
@@ -247,14 +247,14 @@ class ItDiagnosticsFailedCondition {
       assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
       testUntil(
-          domainStatusReasonMatches(domain, "DomainInvalid"),
+          domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
           getLogger(),
-          "waiting for domain status condition type {0} exists"
+          "waiting for domain status condition reason DomainInvalid exists"
       );
       testUntil(
-          domainStatusReasonMatches(domain, "ReplicasTooHigh"),
+          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
           getLogger(),
-          "waiting for domain status condition type {0} exists"
+          "waiting for domain status condition reason ReplicasTooHigh exists"
       );
       testPassed = true;
     } finally {
