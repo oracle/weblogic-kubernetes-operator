@@ -99,7 +99,8 @@ class ItServerStartPolicy {
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
 
     //TOREMOVE
-    OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
+    OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault())
+            .truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
     String testEndTime = endTime.toString().replace("Z", "");
     logger.info("timestamp1: {0} and without Z {1}", endTime.toString(), testEndTime);
     endTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MINUTES);
@@ -200,10 +201,6 @@ class ItServerStartPolicy {
     OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
     OffsetDateTime startTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
-    String testStartTime = startTime.toString().replace("Z", "");
-
-    //{"timestamp":"2022-07-21T01:55:45.742677224Z
-    //2022-07-21T18:11:18Z
 
     // verify that the sample script can shutdown admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,STOP_SERVER_SCRIPT,
@@ -225,15 +222,12 @@ class ItServerStartPolicy {
         "Configured managed server pod must not be restated");
 
     // verify warning message is not logged in operator pod when admin server is shutdown
-
-    OffsetDateTime endTime = OffsetDateTime.now(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS);
-    String testEndTime = endTime.toString().replace("Z", "");
     logger.info("operator pod name: {0}", operatorPodName);
     assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
-            "WARNING", testStartTime, testEndTime));
+            "WARNING", startTime));
     assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
         "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException",
-            testStartTime, testEndTime));
+            startTime));
     
     // verify that the sample script can start admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,

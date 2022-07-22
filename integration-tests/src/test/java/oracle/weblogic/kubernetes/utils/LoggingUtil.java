@@ -483,24 +483,32 @@ public class LoggingUtil {
    * @param namespace - namespace where pod exists
    * @param podName - pod name of the log
    * @param expectedString - expected string in the pod log
-   * @param startTimestamp - start time
-   * @param endTimestamp - end time
+   * @param timestamp - start time
    * @return true if pod log contains expected string, false otherwise
    */
   public static boolean doesPodLogContainStringInTimeRange(String namespace, String podName, String expectedString,
-                                                           String startTimestamp,
-                                                           String endTimestamp) {
+                                                           java.time.OffsetDateTime timestamp) {
     String rangePodLog;
     try {
       String podLog = getPodLog(podName, namespace);
-      getLogger().info("pod log for pod {0} in namespace {1} for timestamps {2} to {3}: {4}", podName,
-              namespace, startTimestamp,
-              endTimestamp, podLog);
-      rangePodLog = podLog.substring(podLog.indexOf(startTimestamp),
-              podLog.lastIndexOf(endTimestamp));
-      getLogger().info("pod log for pod {0} in namespace {1} for timestamps {2} to {3}: {4}", podName,
-              namespace, startTimestamp,
-              endTimestamp, rangePodLog);
+      getLogger().info("pod log for pod {0} in namespace {1} from timestamp {2} }: {3}", podName,
+              namespace,
+              timestamp.toString(),
+              podLog);
+      int begin = -1;
+      String startTimestamp = null;
+      while (begin == (-1)) {
+        startTimestamp = timestamp.toString().replace("Z", "");
+        begin = podLog.indexOf(startTimestamp);
+        timestamp = timestamp.plusSeconds(1);
+
+      }
+      rangePodLog = podLog.substring(begin);
+
+      getLogger().info("pod log for pod {0} in namespace {1} starting from timestamp {2} : {3}", podName,
+              namespace,
+              startTimestamp,
+              rangePodLog);
     } catch (ApiException apiEx) {
       getLogger().severe("got ApiException while getting pod log: ", apiEx);
       return false;
