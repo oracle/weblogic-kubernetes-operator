@@ -234,6 +234,11 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.severity = severity;
   }
 
+  public DomainCondition withSeverity(DomainFailureSeverity severity) {
+    setSeverity(severity);
+    return this;
+  }
+
   public DomainFailureSeverity getSeverity() {
     return severity;
   }
