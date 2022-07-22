@@ -59,4 +59,6 @@ public interface ProcessingConstants {
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
 
   String WEBHOOK = "Webhook";
+
+  String SHUTDOWN_WITH_HTTP_SUCCEEDED = "SHUTDOWN_WITH_HTTP_SUCCEEDED";
 }

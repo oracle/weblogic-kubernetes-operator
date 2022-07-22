@@ -35,6 +35,7 @@ spec:
       imagePullPolicy: IfNotPresent
       volume: auxiliaryImageVolume
   adminServer:
+    serverStartState: RUNNING
     adminService:
       channels:
        - channelName: default

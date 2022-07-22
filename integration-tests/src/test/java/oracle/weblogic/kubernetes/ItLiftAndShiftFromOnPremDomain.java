@@ -45,7 +45,8 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -54,6 +55,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
@@ -161,13 +163,7 @@ class ItLiftAndShiftFromOnPremDomain {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final String clusterService = domainUid + "-cluster-cluster-1";
-    // As of WDT v2.3.1, the discovery tool will not put the replica count 
-    // in genererated domain resource yaml file. So the Operator will start 
-    // only one managed servers (default replica count)  
-    // To add custom replica count, need to create a wdt model file with 
-    // kubernates section with custom repilca count
-    // final int replicaCount = 5;
-    final int replicaCount = 1;
+    final int replicaCount = 5;
 
     assertDoesNotThrow(() -> {
       logger.info("Deleting and recreating {0}", LIFT_AND_SHIFT_WORK_DIR);
@@ -360,11 +356,14 @@ class ItLiftAndShiftFromOnPremDomain {
   }
 
   private static V1Pod callSetupWebLogicPod(String namespace) {
+    getLogger().info("The input WDT_DOWNLOAD_URL is: {0}", WDT_DOWNLOAD_URL);
+    String wdtDownloadurl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT, LIFT_AND_SHIFT_WORK_DIR);
+    getLogger().info("The actual download location for lifeAndShift is {0}", wdtDownloadurl);
     // create a V1Container with specific scripts and properties for creating domain
     V1Container container = new V1Container()
         .addEnvItem(new V1EnvVar()
-            .name("WDT_VERSION")
-            .value(WDT_VERSION))
+            .name("WDT_INSTALL_ZIP_URL")
+            .value(wdtDownloadurl))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_SRC")
             .value("onpremdomain"))
@@ -417,9 +416,11 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(filePath,
           "\\{\\{\\{imageName\\}\\}\\}", imageName);
       replaceStringInFile(filePath,
-          "name: ocir", "name: " + TEST_IMAGES_REPO_SECRET_NAME);
+          "imagePullSecrets: \\[\\]", "imagePullSecrets:\n    - name: " + TEST_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(filePath,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
+      replaceStringInFile(filePath,
+          "# replicas: 99", "replicas: 5");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");
     }
@@ -449,6 +450,7 @@ class ItLiftAndShiftFromOnPremDomain {
       logger.severe(ex.getMessage());
     }
   }
+
 
 }
 

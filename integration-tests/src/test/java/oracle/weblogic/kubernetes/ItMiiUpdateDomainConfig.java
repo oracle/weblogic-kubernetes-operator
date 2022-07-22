@@ -289,7 +289,7 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Check the server logs are written to PersistentVolume")
   void testMiiServerLogsAreOnPV() {
     // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV("grep RUNNING /shared/logs/servers/" + adminServerName + "/logs/"
+    checkLogsOnPV("grep RUNNING /shared/" + domainNamespace + "/logs/servers/" + adminServerName + "/logs/"
         + adminServerName + ".log", adminServerPodName);
   }
 
@@ -320,7 +320,7 @@ class ItMiiUpdateDomainConfig {
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
       logger.info("Checking HTTP server logs are written on PV and look for string sample-war/index.jsp in log");
-      checkLogsOnPV("grep sample-war/index.jsp /shared/logs/servers/" + server + "/logs/"
+      checkLogsOnPV("grep sample-war/index.jsp /shared/" + domainNamespace + "/logs/servers/" + server + "/logs/"
           + server + "_access.log",  adminServerPodName);
     }
   }
@@ -493,7 +493,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Found the JMSSystemResource configuration");
 
     // check JMS logs are written on PV
-    checkLogsOnPV("ls -ltr /shared/logs/*jms_messages.log", managedServerPrefix + "1");
+    checkLogsOnPV("ls -ltr /shared/" + domainNamespace + "/logs/*jms_messages.log", managedServerPrefix + "1");
   }
 
   /**
@@ -838,7 +838,7 @@ class ItMiiUpdateDomainConfig {
                             .name(adminSecretName))
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/logs")
+                    .logHome("/shared/" + domainNamespace + "/logs")
                     .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()

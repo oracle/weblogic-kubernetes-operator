@@ -78,7 +78,7 @@ The operator automatically updates the `status` section of a deployed domain res
 Here are some references you can use for the fields in these sections:
 
 - See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
-- See the Domain Custom Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+- See the Domain Custom Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
 - Use [kubectl explain](#using-kubectl-explain) from the command line.
 
 #### Using `kubectl explain`

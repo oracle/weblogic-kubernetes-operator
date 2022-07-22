@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,7 +58,6 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.IntrospectionTestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -70,6 +71,7 @@ import oracle.kubernetes.operator.http.client.HttpResponseStub;
 import oracle.kubernetes.operator.http.rest.Scan;
 import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.http.rest.ScanCacheStub;
+import oracle.kubernetes.operator.introspection.IntrospectionTestUtils;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -118,6 +120,7 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -409,6 +412,21 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenMakeRightRun_updateClusterResourceStatus() {
+    ClusterResource clusterResource = createClusterResource(UID, NS, CLUSTER);
+    testSupport.defineResources(clusterResource);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    ClusterResource updatedClusterResource = testSupport
+        .getResourceWithName(KubernetesTestSupport.CLUSTER, UID + '-' + CLUSTER);
+    assertThat(updatedClusterResource.getStatus(), notNullValue());
+    assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
+    assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
+  }
+
+  @Test
   void whenMakeRightRunFailsEarly_populateAvailableAndCompletedConditions() {
     consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
@@ -438,6 +456,61 @@ class DomainProcessorTest {
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  @Test
+  void afterMakeRightAndChangeServerToNever_serverPodsWaitForShutdownWithHttpToCompleteBeforeTerminating() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+    DomainStatus status = new DomainPresenceInfo(newDomain).getDomain().getStatus();
+    defineServerShutdownWithHttpOkResponse();
+    setAdminServerStatus(status, SUSPENDING_STATE);
+    setManagedServerState(status, SUSPENDING_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+
+    assertThat(getRunningPods().size(), equalTo(4));
+    setAdminServerStatus(status, SHUTDOWN_STATE);
+    setManagedServerState(status, SHUTDOWN_STATE);
+    testSupport.setTime(100, TimeUnit.SECONDS);
+    assertThat(getRunningPods().size(), equalTo(1));
+    assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  private void defineServerShutdownWithHttpOkResponse() {
+    httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, 7001),
+        createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
+    IntStream.range(1, 3).forEach(idx -> httpSupport.defineResponse(
+        createShutdownRequest("cluster-managed-server" + idx, 8001),
+        createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE)));
+  }
+
+  private HttpRequest createShutdownRequest(String serverName, int portNumber) {
+    String url = "http://test-domain-" + serverName + ".namespace:" + portNumber;
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
+  }
+
+  private void setManagedServerState(DomainStatus status, String suspendingState) {
+    IntStream.range(1, 3).forEach(idx -> getManagedServerStatus(status, idx).setState(suspendingState));
+  }
+
+  private void setAdminServerStatus(DomainStatus status, String state) {
+    status.getServers().stream().filter(s -> matchingServerName(s, ADMIN_NAME)).findAny().orElse(null)
+        .setState(state);
+  }
+
+  private ServerStatus getManagedServerStatus(DomainStatus status, int idx) {
+    return status.getServers().stream()
+        .filter(s -> matchingServerName(s, getManagedServerName(idx))).findAny().orElse(null);
+  }
+
+  private boolean matchingServerName(ServerStatus serverStatus, String serverName) {
+    return serverStatus.getServerName().equals(serverName);
   }
 
   @Test

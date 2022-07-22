@@ -39,8 +39,6 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.http.rest.Scan;
-import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
@@ -69,6 +67,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
+import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -123,7 +122,7 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(next);
+    return new StatusUpdateStep(createClusterResourceStatusUpdaterStep(next));
   }
 
 
@@ -204,7 +203,7 @@ public class DomainStatusUpdater {
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep(Step next) {
-    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
+    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH, INTROSPECTION);
   }
 
   /**
@@ -259,7 +258,7 @@ public class DomainStatusUpdater {
    * @param next the next step to run. May be null.
    */
   public static Step createTopologyMismatchFailureSteps(String message, Step next) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
   }
 
   /**
@@ -291,7 +290,8 @@ public class DomainStatusUpdater {
    * @param domainIntrospectorJob Domain introspector job
    */
   public static Step createIntrospectionFailureSteps(String message, V1Job domainIntrospectorJob) {
-    return new FailureStep(INTROSPECTION, message).forIntrospection(domainIntrospectorJob);
+    return new FailureStep(INTROSPECTION, message)
+        .forIntrospection(domainIntrospectorJob).removingOldFailures(INTROSPECTION);
   }
 
   /**
@@ -1027,13 +1027,7 @@ public class DomainStatusUpdater {
       }
 
       private Optional<WlsDomainConfig> getDomainConfig() {
-        return Optional.ofNullable(config).or(this::getScanCacheDomainConfig);
-      }
-
-      private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
-        DomainPresenceInfo info = getInfo();
-        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
+        return Optional.ofNullable(config);
       }
 
       private boolean isServerReady(@Nonnull String serverName) {
@@ -1294,6 +1288,7 @@ public class DomainStatusUpdater {
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
         addFailure(status, status.createAdjustedFailedCondition(reason, message));
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
       }

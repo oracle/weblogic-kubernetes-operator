@@ -362,6 +362,38 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
+   * Returns a count of HTTP request failures for an operator-managed server.
+   * The failures during a REST HTTP call could be timing related such as when
+   * the server is shutting down. We shouldn't log warning message for such
+   * failures until there have been a sufficient number of failures.
+   *
+   * @param serverName the name of the server
+   * @return HTTP request failure count for the given server.
+   */
+  public int getHttpRequestFailureCount(String serverName) {
+    return getSko(serverName).getHttpRequestFailureCount().get();
+  }
+
+  /**
+   * Sets the HTTP request failure count for an operator-managed server.
+   *
+   * @param serverName the name of the server
+   * @param failureCount the failure count
+   */
+  public void setHttpRequestFailureCount(String serverName, int failureCount) {
+    getSko(serverName).getHttpRequestFailureCount().set(failureCount);
+  }
+
+  /**
+   * Increments the HTTP request failure count for an operator-managed server.
+   *
+   * @param serverName the name of the server
+   */
+  public void incrementHttpRequestFailureCount(String serverName) {
+    getSko(serverName).getHttpRequestFailureCount().getAndIncrement();
+  }
+
+  /**
    * Returns a collection of the names of the active servers.
    */
   public Collection<String> getServerNames() {
@@ -936,6 +968,10 @@ public class DomainPresenceInfo implements PacketComponent {
   public int getMaxConcurrentShutdown(@Nonnull String clusterName) {
     ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
     return getDomainApi().getMaxConcurrentShutdown(clusterSpec);
+  }
+
+  public Collection<ClusterResource> getClusterResources() {
+    return clusters.values();
   }
 
   /** Details about a specific managed server. */

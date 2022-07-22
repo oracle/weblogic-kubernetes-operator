@@ -1,0 +1,58 @@
+apiVersion: "weblogic.oracle/API_VERSION"
+kind: Domain
+metadata:
+  name: DOMAIN_UID
+  namespace: DOMAIN_NS
+  labels:
+    weblogic.domainUID: DOMAIN_UID
+spec:
+  domainHomeSourceType: FromModel
+  image: "MII_IMAGE"
+  imagePullPolicy: IfNotPresent
+  webLogicCredentialsSecret: 
+    name: weblogic-credentials
+  imagePullSecrets:
+  - name: base-images-repo-secret
+  - name: test-images-repo-secret
+  includeServerOutInPodLog: true
+  serverPod:
+    env:
+    - name: CUSTOM_DOMAIN_NAME
+      value: "DOMAIN_UID"
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "768Mi"
+  adminServer:
+    serverStartState: RUNNING
+  replicas: 2
+  clusters:
+  - clusterName: cluster-1
+    serverPod:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
+    replicas: 2
+  configuration:
+    istio:
+       enabled: true
+       localhostBindingsEnabled: false
+    introspectorJobActiveDeadlineSeconds: 600
+    model:
+      configMap: istio-upgrade-configmap
+      domainType: WLS
+      runtimeEncryptionSecret: encryptionsecret
+

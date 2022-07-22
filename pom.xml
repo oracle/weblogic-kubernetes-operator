@@ -609,8 +609,8 @@
     <maven-enforcer-plugin-version>3.1.0</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.2.0</maven-clean-plugin-version>
     <maven-compiler-plugin-version>3.10.1</maven-compiler-plugin-version>
-    <maven-deploy-plugin-version>3.0.0-M2</maven-deploy-plugin-version>
-    <maven-install-plugin-version>3.0.0-M1</maven-install-plugin-version>
+    <maven-deploy-plugin-version>3.0.0</maven-deploy-plugin-version>
+    <maven-install-plugin-version>3.0.0</maven-install-plugin-version>
     <maven-jar-plugin-version>3.2.2</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.2.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.0</maven-site-plugin-version>
@@ -621,18 +621,18 @@
     <maven-failsafe-plugin-version>3.0.0-M7</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.3.0</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.3.0</maven-shade-plugin-version>
-    <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
+    <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
     <checkstyle-version>10.3.1</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.2.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
     <hamcrest-junit-version>2.0.0.0</hamcrest-junit-version>
-    <simplestub-version>1.3.0</simplestub-version>
+    <simplestub-version>1.3.1</simplestub-version>
     <jakarta-json-version>2.0.1</jakarta-json-version>
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.5.0</commons-cli-version>
-    <networknt-jsonschmema-validator-version>1.0.71</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.0.72</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.3</commons-exec-version>
     <commons-codec-version>1.15</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -668,7 +668,7 @@
     <skip.dependency-check>false</skip.dependency-check>
     <jacoco.version>0.8.8</jacoco.version>
     <git-commit-id-plugin-version>4.9.10</git-commit-id-plugin-version>
-    <htmlunit-version>2.62.0</htmlunit-version>
+    <htmlunit-version>2.63.0</htmlunit-version>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
     <no-reports>false</no-reports>
   </properties>
