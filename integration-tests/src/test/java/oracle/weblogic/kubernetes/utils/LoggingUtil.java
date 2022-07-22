@@ -507,6 +507,10 @@ public class LoggingUtil {
         timestamp = timestamp.plusSeconds(1);
         count++;
       }
+      if (begin == (-1)) {
+        getLogger().info("Could not find any messages after timestamp {0}", startTimestamp);
+        return false;
+      }
       rangePodLog = podLog.substring(begin);
       getLogger().info("pod log for pod {0} in namespace {1} starting from timestamp {2} : {3}", podName,
               namespace,
