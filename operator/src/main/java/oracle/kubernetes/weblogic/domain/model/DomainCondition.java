@@ -127,7 +127,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this
    */
   public DomainCondition withLastTransitionTime(OffsetDateTime lastTransitionTime) {
-    this.lastTransitionTime = lastTransitionTime;
+    setLastTransitionTime(lastTransitionTime);
     return this;
   }
 
@@ -147,7 +147,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this
    */
   public DomainCondition withMessage(@Nonnull String message) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.message = message;
     if (reason != null && DomainFailureReason.isFatalError(reason, message)) {
       severity = FATAL;
@@ -175,7 +175,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
       throw new IllegalStateException("May not set reason after message");
     }
     
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.reason = reason;
     this.severity = Optional.ofNullable(reason).map(DomainFailureReason::getDefaultSeverity).orElseThrow();
     return this;
@@ -197,7 +197,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(String status) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.status = status;
     return this;
   }
@@ -208,7 +208,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(boolean status) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.status = status ? TRUE : FALSE;
     return this;
   }

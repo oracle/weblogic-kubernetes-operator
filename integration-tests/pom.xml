@@ -432,7 +432,8 @@
                   **/ItOperatorWlsUpgrade,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwDomainInPVUsingWDT,
-                  **/ItMiiSampleFmwMain
+                  **/ItMiiSampleFmwMain,
+                  **/ItOperatorIstioUpgrade
                 </includes-failsafe>
             </properties>
         </profile>
