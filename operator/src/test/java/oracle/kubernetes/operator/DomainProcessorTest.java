@@ -38,6 +38,7 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -404,7 +405,7 @@ class DomainProcessorTest {
     ClusterResource clusterResource = createClusterResource(NS, CLUSTER);
     testSupport.defineResources(clusterResource);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
-    info.getReferencedClusters().forEach(testSupport::defineResources);
+    info.getDomain().getSpec().getClusters().add(new V1LocalObjectReference().name(CLUSTER));
 
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 

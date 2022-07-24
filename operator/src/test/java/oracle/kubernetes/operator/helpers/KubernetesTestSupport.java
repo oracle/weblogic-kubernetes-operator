@@ -372,6 +372,18 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   /**
+   * Specifies that a list operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnList(String resourceType, String namespace, int httpStatus) {
+    failure = new Failure(Operation.list, resourceType, null, namespace, httpStatus);
+  }
+
+  /**
    * Specifies that a create operation should fail if it matches the specified conditions. Applies to
    * namespaced resources and replaces any existing failure checks.
    *
