@@ -54,6 +54,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.operator.DomainFailureMessages.createReplicaFailureMessage;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -211,6 +212,16 @@ class FailureReportingTest {
     final ManagedServer managedServer = new ManagedServer().withServerName("No-such-server");
     managedServer.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     domain.getSpec().getManagedServers().add(managedServer);
+  }
+
+  @ParameterizedTest
+  @EnumSource(TestCase.class)
+  void whenMakeWithExistingFailureFails_createFailedEvent(TestCase testCase) throws NoSuchFieldException {
+    testCase.getMutator().accept(this);
+
+    executeMakeRight();
+
+    assertThat(testSupport, hasEvent("Failed").withMessageContaining(testCase.getExpectedMessage()));
   }
 
   enum TestCase {

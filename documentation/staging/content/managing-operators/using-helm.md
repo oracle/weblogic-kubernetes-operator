@@ -41,6 +41,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`logStashImage`](#logstashimage)
     - [`elasticSearchHost`](#elasticsearchhost)
     - [`elasticSearchPort`](#elasticsearchport)
+    - [`elasticSearchProtocol`](#elasticsearchprotocol)
     - [`createLogStashConfigMap`](#createlogstashconfigmap)
   - [REST interface configuration](#rest-interface-configuration)
     - [`externalRestEnabled`](#externalrestenabled)
@@ -523,11 +524,23 @@ Example:
 elasticSearchPort: 9201
 ```
 
+##### `elasticSearchProtocol`
+Specifies the protocol to be use for communication with Elasticsearch. This parameter is ignored if `elkIntegrationEnabled` is `false`.
+
+Defaults to `http`.
+
+Example:
+
+```yaml
+elasticSearchProtocol: https
+```
+
+
 ##### `createLogStashConfigMap`
 Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`.
-The ConfigMap contains the Logstash pipeline configuration for the Logstash container running in the operator pod.
-If set to `true`, a ConfigMap will be created during `helm install` using the `logstash.conf` file in the `kubernetes/samples/charts/weblogic-operator` directory.
-Set `createLogStashConfigMap` to `false` if the ConfigMap already exists in the operator's namespace with the Logstash configuration provided by the customer.
+The ConfigMap contains the Logstash pipeline configuration file `logstash.conf` and the Logstash settings file `logstash.yml` for the Logstash container running in the operator pod.
+If set to `true`, a ConfigMap will be created during `helm install` using the `logstash.conf` and `logstash.yml` files in the `kubernetes/samples/charts/weblogic-operator` directory.
+Set `createLogStashConfigMap` to `false` if the ConfigMap already exists in the operator's namespace with the Logstash configuration files.
 This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
 Defaults to `true`.

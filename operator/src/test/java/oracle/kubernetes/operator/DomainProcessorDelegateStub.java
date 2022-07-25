@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.VersionInfo;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.Component;
@@ -18,7 +17,6 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.jetbrains.annotations.NotNull;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.JobWatcher.getFailedReason;
@@ -75,11 +73,6 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public FiberGate createFiberGate() {
     return testSupport.createFiberGate();
-  }
-
-  @Override
-  public boolean mayRetry(@NotNull DomainPresenceInfo domainPresenceInfo) {
-    return mayRetry;
   }
 
   @Override
