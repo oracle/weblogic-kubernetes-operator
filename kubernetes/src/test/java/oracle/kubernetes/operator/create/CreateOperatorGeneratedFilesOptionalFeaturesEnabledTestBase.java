@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1KeyToPath;
+import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
@@ -83,6 +84,10 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
             newEnvVar()
                 .name("ELASTICSEARCH_PORT")
                 .value(getInputs().getElasticSearchPort()))
+        .addEnvItem(
+            newEnvVar()
+                .name("ELASTICSEARCH_PROTOCOL")
+                .value(getInputs().getElasticSearchProtocol()))
         .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs"));
 
     expected.getSpec().getTemplate().getSpec().addContainersItem(logstashContainer);
@@ -90,13 +95,29 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
     if (isElkIntegrationEnabled) {
       expected.getSpec().getTemplate().getSpec()
           .addVolumesItem(newVolume()
-              .name("logstash-config-cm-volume")
+              .name("logstash-pipeline-volume")
               .configMap(new V1ConfigMapVolumeSource()
                   .name("weblogic-operator-logstash-cm")
-                  .addItemsItem(new V1KeyToPath().key("logstash.conf").path("logstash.conf"))));
+                  .addItemsItem(new V1KeyToPath().key("logstash.conf").path("logstash.conf"))))
+          .addVolumesItem(newVolume()
+            .name("logstash-config-volume")
+            .configMap(new V1ConfigMapVolumeSource()
+                .name("weblogic-operator-logstash-cm")
+                .addItemsItem(new V1KeyToPath().key("logstash.yml").path("logstash.yml"))))
+          .addVolumesItem(newVolume()
+              .name("logstash-certs-secret-volume")
+              .secret(new V1SecretVolumeSource()
+                  .secretName("logstash-certs-secret")
+                  .optional(true)));
 
       logstashContainer.addVolumeMountsItem(
-          newVolumeMount().name("logstash-config-cm-volume").mountPath("/usr/share/logstash/pipeline"));
+          newVolumeMount().name("logstash-pipeline-volume").mountPath("/usr/share/logstash/pipeline"));
+      logstashContainer.addVolumeMountsItem(
+          newVolumeMount().name("logstash-config-volume")
+              .mountPath("/usr/share/logstash/config/logstash.yml")
+              .subPath("logstash.yml"));
+      logstashContainer.addVolumeMountsItem(
+          newVolumeMount().name("logstash-certs-secret-volume").mountPath("/usr/share/logstash/config/certs"));
     }
     return expected;
   }

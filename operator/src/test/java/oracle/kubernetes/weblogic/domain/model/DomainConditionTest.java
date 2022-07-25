@@ -23,8 +23,10 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLIC
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.FATAL;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.WARNING;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,6 +48,19 @@ class DomainConditionTest {
   @Test
   void whenCreated_conditionHasLastTransitionTime() {
     assertThat(new DomainCondition(AVAILABLE).getLastTransitionTime(), SystemClockTestSupport.isDuringTest());
+  }
+
+  @Test
+  void mayNotSetMessageOnNonFailures() {
+    final DomainCondition domainCondition = new DomainCondition(FAILED).withMessage("bad order");
+    assertThrows(IllegalStateException.class, () -> domainCondition.withReason(INTROSPECTION));
+  }
+
+  @Test
+  void comparisonToNonCondition_returnsFalse() {
+    final DomainCondition domainCondition = new DomainCondition(FAILED).withMessage("bad order");
+
+    assertThat(domainCondition, not(equalTo("bad order")));
   }
 
   @Test

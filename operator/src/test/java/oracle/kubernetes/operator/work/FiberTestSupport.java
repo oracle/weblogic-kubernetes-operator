@@ -113,7 +113,7 @@ public class FiberTestSupport {
    * @param time the time, in units
    * @param unit the unit associated with the time
    */
-  public void setTime(int time, TimeUnit unit) {
+  public void setTime(long time, TimeUnit unit) {
     schedule.setTime(time, unit);
   }
 

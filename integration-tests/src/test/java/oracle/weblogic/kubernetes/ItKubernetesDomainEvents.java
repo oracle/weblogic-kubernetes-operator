@@ -244,34 +244,39 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain Failed event with TopologyMismatch for non-existing managed server")
   void testDomainK8sEventsNonExistingManagedServer() {
-    OffsetDateTime timestamp = now();
-    logger.info("patch the domain resource with non-existing managed server");
-    String patchStr
-        = "[{\"op\": \"add\",\"path\": \""
+    OffsetDateTime timestamp;
+    String patchStr;
+    V1Patch patch;
+    try {
+      timestamp = now();
+      logger.info("patch the domain resource with non-existing managed server");
+      patchStr = "[{\"op\": \"add\",\"path\": \""
         + "/spec/managedServers/-\", \"value\": "
         + "{\"serverName\" : \"nonexisting-ms\", "
         + "\"serverStartPolicy\": \"IfNeeded\"}"
         + "}]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-    logger.info("verify the Failed event is generated");
-    checkFailedEvent(opNamespace, domainNamespace3, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+      logger.info("verify the Failed event is generated");
+      checkFailedEvent(opNamespace, domainNamespace3, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
+    } finally {
+      // remove the managed server from domain resource
+      timestamp = now();
+      patchStr
+          = "[{\"op\": \"remove\",\"path\": \""
+          + "/spec/managedServers\""
+          + "}]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
 
-    // remove the managed server from domain resource
-    timestamp = now();
-    patchStr
-        = "[{\"op\": \"remove\",\"path\": \""
-        + "/spec/managedServers\""
-        + "}]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
+      logger.info("verify the Changed event is generated");
+      checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+    }
 
-    logger.info("verify the Changed event is generated");
-    checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
   }
 
   /**
