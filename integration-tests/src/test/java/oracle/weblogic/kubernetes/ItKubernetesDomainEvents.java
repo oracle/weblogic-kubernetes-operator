@@ -125,6 +125,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * and finally deletes it to generate all the domain related events.
  */
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
+@Tag("kind-parallel")
+@Tag("okd-wls-srg")
 @IntegrationTest
 class ItKubernetesDomainEvents {
 
@@ -222,8 +224,6 @@ class ItKubernetesDomainEvents {
   @DisplayName("Test domain events for various successful domain life cycle changes")
   @Tag("gate")
   @Tag("crio")
-  @Tag("kind-parallel")
-  @Tag("okd-wls-srg")
   void testK8SEventsSuccess() {
     try {
       OffsetDateTime timestamp = now();

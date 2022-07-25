@@ -95,6 +95,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
 @IntegrationTest
 class ItWlsSamples {
 
@@ -174,8 +176,6 @@ class ItWlsSamples {
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
   @Tag("samples-gate")
-  @Tag("kind-parallel")
-  @Tag("toolkits-srg")
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
