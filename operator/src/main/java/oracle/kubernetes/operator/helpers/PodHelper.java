@@ -726,8 +726,7 @@ public class PodHelper {
         final String clusterName = getClusterName(oldPod);
         final String name = oldPod.getMetadata().getName();
         long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
-        String serverState = getServerState(info.getDomain(), serverName);
-        if (serverIsShutdown(serverState)) {
+        if (isServerShutdown(getServerState(info.getDomain(), serverName))) {
           gracePeriodSeconds = 0;
         }
         return doNext(
@@ -737,8 +736,8 @@ public class PodHelper {
     }
 
     @NotNull
-    private Boolean serverIsShutdown(String serverState) {
-      return Optional.ofNullable(serverState).map(s -> s.equals(SHUTDOWN_STATE)).orElse(false);
+    private Boolean isServerShutdown(String serverState) {
+      return Optional.ofNullable(serverState).map(s -> SHUTDOWN_STATE.equals(s)).orElse(false);
     }
 
     @Nullable
