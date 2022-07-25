@@ -136,7 +136,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILA
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -1626,24 +1625,6 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst2() throws Exception {
-    establishPreviousIntrospection(this::configureForModelInImage);
-    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
-    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
-    configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
-    makeRightOperation.execute();
-    assertThat(job, notNullValue());
-    job = null;
-    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(newDomain);
-    domainPresenceInfo.getDomain().getStatus().setMessage("FatalIntrospectorError: ECCC");
-    domainPresenceInfo.getDomain().getSpec().setIntrospectVersion("NEWVERSION");
-    MakeRightDomainOperation mk = processor.createMakeRightOperation(domainPresenceInfo).withExplicitRecheck();
-    mk.execute();
-    assertThat(job, nullValue());
-    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
-  }
-
-  @Test
   void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
@@ -2044,41 +2025,6 @@ class DomainProcessorTest {
   private void defineDuplicateServerNames() {
     newDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     newDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
-  }
-
-  @Test
-  void whenExceptionDuringProcessing_reportInDomainStatus() {
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.registerDomainPresenceInfo(info);
-    forceExceptionDuringProcessing();
-
-    testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
-    processor.createMakeRightOperation(info).withExplicitRecheck().throwNPE().execute();
-
-    assertThat(
-        getRecordedDomain(),
-        hasCondition(FAILED).withStatus("True").withReason(INTERNAL));
-  }
-
-  private DomainResource getRecordedDomain() {
-    return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-  }
-
-  @Test
-  void whenExceptionDuringProcessing_createFailedEvent() {
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
-    processor.registerDomainPresenceInfo(info);
-    forceExceptionDuringProcessing();
-
-    testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
-    processor.createMakeRightOperation(info).withExplicitRecheck().throwNPE().execute();
-
-    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainInternalFailedEvent), is(true));
-  }
-
-  private void forceExceptionDuringProcessing() {
-    consoleHandlerMemento.ignoringLoggedExceptions(NullPointerException.class);
-    domain.getSpec().withWebLogicCredentialsSecret(null);
   }
 
   @Test

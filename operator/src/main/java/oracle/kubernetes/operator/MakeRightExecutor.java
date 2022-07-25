@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.function.Predicate;
-
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.Step;
 
@@ -16,9 +14,9 @@ public interface MakeRightExecutor {
   /**
    * Runs the specified make-right if the shouldProceed callback returns true.
    * @param operation a defined make-right operation
-   * @param shouldProceed a predicate run against the cached presence info to decide if the operation should be run
+   *
    */
-  void runMakeRight(MakeRightDomainOperation operation, Predicate<DomainPresenceInfo> shouldProceed);
+  void runMakeRight(MakeRightDomainOperation operation);
 
   /**
    * Creates steps to process namespaced Kubernetes resources.

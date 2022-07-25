@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 07910b6d253a5c4b120544c1b28f86adf6ce62346427a04e70b6bdcd4a0fc501
+    weblogic.sha256: 95ba0952cbd5f2e0bca8dc55307e57cc1e0155a74774d2b1963f33f5b6d19b20
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -12702,14 +12702,13 @@ spec:
                       description: Human-readable message indicating details about
                         last transition.
                       type: string
-                    lastProbeTime:
-                      format: date-time
-                      description: Last time we probed the condition.
-                      type: string
                     status:
                       description: The status of the condition. Can be True, False,
                         Unknown.
                       type: string
+                  required:
+                  - type
+                  - status
                 type: array
               message:
                 description: A human readable message indicating details about why

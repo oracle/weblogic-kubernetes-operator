@@ -43,9 +43,6 @@ public interface MakeRightDomainOperation extends PacketComponent {
 
   boolean isExplicitRecheck();
 
-  // for unit testing only
-  MakeRightDomainOperation throwNPE();
-
   void execute();
 
   @Nonnull
