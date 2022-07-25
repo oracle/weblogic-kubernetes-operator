@@ -8,8 +8,6 @@
 # before its pod is deleted.  It requires the SERVER_NAME env var.
 #
 
-echo "Stopping container now...">/proc/1/fd/1 && touch /shared/logs/debug2_stop && touch /tmp/debug2_stop
-
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
@@ -115,3 +113,7 @@ if [ -f ${SERVER_PID_FILE} ]; then
 fi
 
 trace "Exit script"  &>> ${STOP_OUT_FILE}
+
+trace "stopServer.sh: Contents of ${STOP_OUT_FILE}:"
+cat ${STOP_OUT_FILE} >> /proc/1/fd/1
+trace "stopServer.sh: End of ${STOP_OUT_FILE} contents."
