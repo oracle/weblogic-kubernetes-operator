@@ -99,7 +99,6 @@ class ItServerStartPolicy {
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
   }
 
-
   /**
    * Verify all server pods are running.
    * Verify k8s services for all servers are created.
