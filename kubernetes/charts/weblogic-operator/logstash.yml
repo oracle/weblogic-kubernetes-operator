@@ -1,0 +1,8 @@
+http.host: "0.0.0.0"
+xpack.monitoring.elasticsearch.hosts: [ "${ELASTICSEARCH_PROTOCOL}://${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}" ]
+# Example configuration if ElasticSearch instance requires authentication and SSL:
+#xpack.monitoring.elasticsearch.ssl.certificate_authority: "/usr/share/logstash/config/certs/ca.crt"
+#xpack.monitoring.elasticsearch.ssl.verification_mode: certificate
+#xpack.monitoring.elasticsearch.username: "<username>"
+#xpack.monitoring.elasticsearch.password: "<password>"
+
