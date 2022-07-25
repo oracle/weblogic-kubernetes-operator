@@ -25,7 +25,6 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -43,7 +42,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -152,11 +150,6 @@ public class OperatorMain extends BaseMain {
     @Override
     public FiberGate createFiberGate() {
       return new FiberGate(engine);
-    }
-
-    @Override
-    public boolean mayRetry(@NotNull DomainPresenceInfo domainPresenceInfo) {
-      return true;
     }
 
     @Override
