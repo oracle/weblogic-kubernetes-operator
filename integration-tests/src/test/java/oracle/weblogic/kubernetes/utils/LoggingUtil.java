@@ -480,12 +480,12 @@ public class LoggingUtil {
   }
 
   /**
-   * Check whether pod log contains expected string in time range.
+   * Check whether pod log contains expected string in time range from provided start time to the current moment.
    *
    * @param namespace      - namespace where pod exists
    * @param podName        - pod name of the log
    * @param expectedString - expected string in the pod log
-   * @param timestamp      - start time to check the log
+   * @param timestamp      - starting time to check the log
    * @return true if pod log contains expected string, false otherwise
    */
   public static boolean doesPodLogContainStringInTimeRange(String namespace, String podName, String expectedString,
