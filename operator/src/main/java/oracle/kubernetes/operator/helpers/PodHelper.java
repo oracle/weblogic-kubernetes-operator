@@ -737,7 +737,7 @@ public class PodHelper {
 
     @NotNull
     private Boolean isServerShutdown(String serverState) {
-      return Optional.ofNullable(serverState).map(s -> SHUTDOWN_STATE.equals(s)).orElse(false);
+      return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
     }
 
     @Nullable
