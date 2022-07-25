@@ -51,6 +51,7 @@ fi
 set +e
 
 kubectl create namespace $DOMAIN_NAMESPACE
+kubectl label ns $DOMAIN_NAMESPACE weblogic-operator=enabled
 kubectl create namespace $OPER_NAMESPACE
 kubectl create serviceaccount -n $OPER_NAMESPACE $OPER_SA
 
