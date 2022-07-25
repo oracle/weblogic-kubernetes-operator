@@ -622,7 +622,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainScaledDown_withPreCreateServerService_createNonHeadlessService() {
+  void whenDomainScaledDown_withPreCreateServerService_createClusterIPService() {
     final String SERVER3 = MANAGED_SERVER_NAMES[2];
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3).withPrecreateServerService(true);
 
@@ -634,7 +634,7 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
         .withExplicitRecheck().execute();
 
-    assertThat(isNonHeadlessClusterIPService(SERVER3), is(true));
+    assertThat(isClusterIPService(SERVER3), is(true));
   }
 
   @Test
@@ -643,7 +643,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2).withPrecreateServerService(true);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
-    assertThat(isNonHeadlessClusterIPService(SERVER3), is(true));
+    assertThat(isClusterIPService(SERVER3), is(true));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
     newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
@@ -1934,10 +1934,10 @@ class DomainProcessorTest {
         .orElse(false);
   }
 
-  private boolean isNonHeadlessClusterIPService(String serverName) {
+  private boolean isClusterIPService(String serverName) {
     return getServerService(serverName)
         .map(V1Service::getSpec)
-        .map(this::isNullClusterIP)
+        .map(this::isClusterIP)
         .orElse(false);
   }
 
@@ -1953,7 +1953,7 @@ class DomainProcessorTest {
         && "None".equals(serviceSpec.getClusterIP());
   }
 
-  private boolean isNullClusterIP(V1ServiceSpec serviceSpec) {
+  private boolean isClusterIP(V1ServiceSpec serviceSpec) {
     return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
         && serviceSpec.getClusterIP() == null;
   }
