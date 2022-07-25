@@ -114,6 +114,6 @@ fi
 
 trace "Exit script"  &>> ${STOP_OUT_FILE}
 
-trace "stopServer.sh: Contents of ${STOP_OUT_FILE}:"
+trace "stopServer.sh: Contents of ${STOP_OUT_FILE}:" > /proc/1/fd/1
 cat ${STOP_OUT_FILE} >> /proc/1/fd/1
-trace "stopServer.sh: End of ${STOP_OUT_FILE} contents."
+trace "stopServer.sh: End of ${STOP_OUT_FILE} contents." >> /proc/1/fd/1
