@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
@@ -161,8 +162,7 @@ public class DomainPresenceInfo implements PacketComponent {
    * @param cachedInfo the version of the domain presence info previously processed.
    */
   public boolean isDomainProcessingHalted(DomainPresenceInfo cachedInfo) {
-    return (isDomainProcessingAborted() && versionsUnchanged(cachedInfo))
-        || (!isPopulated() && !isNewerThan(cachedInfo));
+    return isDomainProcessingAborted() && versionsUnchanged(cachedInfo);
   }
 
   private boolean isDomainProcessingAborted() {
@@ -176,6 +176,16 @@ public class DomainPresenceInfo implements PacketComponent {
     return hasSameIntrospectVersion(cachedInfo)
         && hasSameRestartVersion(cachedInfo)
         && hasSameIntrospectImage(cachedInfo);
+  }
+
+  /**
+   * Returns true if the make-right operation was triggered by a domain event and the reported domain
+   * is older than the value already cached. That indicates that the event is old and should be ignored.
+   * @param operation the make-right operation.
+   * @param cachedInfo the cached domain presence info.
+   */
+  public boolean isFromOutOfDateEvent(MakeRightDomainOperation operation, DomainPresenceInfo cachedInfo) {
+    return operation.wasStartedFromEvent() && !isNewerThan(cachedInfo);
   }
 
   private boolean isNewerThan(DomainPresenceInfo cachedInfo) {

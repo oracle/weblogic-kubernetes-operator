@@ -5,6 +5,8 @@ package oracle.kubernetes.operator;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,7 +37,6 @@ import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
-import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -57,6 +58,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -89,7 +91,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -141,6 +142,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -272,7 +274,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainSpecNotChanged_dontRunUpdateThread() {
+  void whenDomainSpecNotChanged_dontRunMakeRight() {
     processor.registerDomainPresenceInfo(newInfo);
 
     processor.createMakeRightOperation(newInfo).execute();
@@ -285,9 +287,50 @@ class DomainProcessorTest {
   private String getResourceVersion(DomainResource domain) {
     return Optional.of(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse("");
   }
-  
+
   @Test
-  void whenDomainExplicitSet_runUpdateThread() {
+  void whenNamespaceNotRunning_dontRunMakeRight() {
+    processorDelegate.setNamespaceRunning(false);
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.createMakeRightOperation(originalInfo).execute();
+
+    assertThat(testSupport.getNumItemsRun(), equalTo(0));
+  }
+
+  @Test
+  void whenCachedDomainIsNewerThanSpecifiedDomain_runMakeRightWhenNotStartedFromEvent() {
+    consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
+    final DomainResource cachedDomain = this.domain;
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
+    cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(testSupport.getNumItemsRun(), greaterThan(0));
+  }
+
+  @Test
+  void whenCachedDomainIsNewerThanSpecifiedDomain_dontRunMakeRightWhenStartedFromEvent() {
+    consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
+    final DomainResource cachedDomain = this.domain;
+    processor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
+    cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
+
+    processor.createMakeRightOperation(newInfo)
+        .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED))
+        .execute();
+
+    assertThat(testSupport.getNumItemsRun(), equalTo(0));
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private OffsetDateTime laterThan(DomainResource newDomain) {
+    return newDomain.getMetadata().getCreationTimestamp().plus(1, ChronoUnit.SECONDS);
+  }
+
+  @Test
+  void whenExplicitRecheckRequested_runMakeRight() {
     processor.registerDomainPresenceInfo(originalInfo);
 
     processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
@@ -296,7 +339,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainChangedSpec_runUpdateThread() {
+  void whenDomainChangedSpec_runMakeRight() {
     processor.registerDomainPresenceInfo(originalInfo);
 
     processor.createMakeRightOperation(newInfo).execute();
@@ -494,8 +537,7 @@ class DomainProcessorTest {
   }
 
   private void setAdminServerStatus(DomainStatus status, String state) {
-    status.getServers().stream().filter(s -> matchingServerName(s, ADMIN_NAME)).findAny().orElse(null)
-        .setState(state);
+    status.getServers().stream().filter(s -> matchingServerName(s, ADMIN_NAME)).forEach(s -> s.setState(state));
   }
 
   private ServerStatus getManagedServerStatus(DomainStatus status, int idx) {
@@ -1082,7 +1124,6 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null);
     jobStatusSupplier.setJobStatus(createTimedOutStatus());
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processorDelegate.setMayRetry(true);
     testSupport.doOnCreate(JOB, (j -> assignUid((V1Job) j)));
 
     processor.createMakeRightOperation(newInfo).interrupt().execute();
@@ -1099,8 +1140,11 @@ class DomainProcessorTest {
 
     executeScheduledRetry();
 
-    assertThat(
-        Optional.ofNullable(getJob().getSpec()).map(V1JobSpec::getActiveDeadlineSeconds).orElse(0L), is(240L));
+    assertThat(getRecordedJob().getSpec().getActiveDeadlineSeconds(), is(240L));
+  }
+
+  private V1Job getRecordedJob() {
+    return testSupport.<V1Job>getResources(JOB).get(0);
   }
 
   private void executeScheduledRetry() {
@@ -1143,11 +1187,6 @@ class DomainProcessorTest {
             .orElse(null), equalTo("<match>me</match>"));
   }
 
-
-  @NotNull
-  private V1Job getJob() {
-    return (V1Job) testSupport.getResources(JOB).stream().findFirst().get();
-  }
 
   V1JobStatus createTimedOutStatus() {
     return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
@@ -1541,6 +1580,7 @@ class DomainProcessorTest {
         ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void getMIIOnlineUpdateIntrospectResult(DomainConditionType domainConditionType, String updateResult)
       throws Exception {
 

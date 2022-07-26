@@ -302,7 +302,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
       return true;
-    } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
+    } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo) || liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return false;
     } else if (operation.isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo)) {
       return true;
@@ -313,7 +313,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
-    return cachedInfo == null || cachedInfo.getDomain() == null;
+    return Optional.ofNullable(cachedInfo).map(DomainPresenceInfo::getDomain).orElse(null) == null;
   }
 
   private void logStartingDomain(DomainPresenceInfo presenceInfo) {
@@ -706,7 +706,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(EventItem.DOMAIN_CREATED, null)
+        .withEventData(new EventData(EventItem.DOMAIN_CREATED))
         .execute();
   }
 
@@ -714,14 +714,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
-        .withEventData(EventItem.DOMAIN_CHANGED, null)
+        .withEventData(new EventData(EventItem.DOMAIN_CHANGED))
         .execute();
   }
 
   private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
-        .withEventData(EventItem.DOMAIN_DELETED, null)
+        .withEventData(new EventData(EventItem.DOMAIN_DELETED))
         .execute();
   }
 
