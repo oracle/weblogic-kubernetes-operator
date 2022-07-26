@@ -1,9 +1,12 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -20,6 +23,15 @@ public class SystemClockTestSupport {
 
   public static Matcher<OffsetDateTime> isDuringTest() {
     return new DuringTestTimeMatcher();
+  }
+
+  /**
+   * If installed, returns the start time of the current test on the simulated clock. This will always be truncated
+   * to milliseconds. If not installed, will return null.
+   */
+  @Nullable
+  public static OffsetDateTime getTestStartTime() {
+    return Optional.ofNullable(clock).map(TestSystemClock::getTestStartTime).orElse(null);
   }
 
   /**
@@ -46,7 +58,7 @@ public class SystemClockTestSupport {
   }
 
   static class TestSystemClock extends SystemClock {
-    private final OffsetDateTime testStartTime = SystemClock.now();
+    private final OffsetDateTime testStartTime = SystemClock.now().truncatedTo(ChronoUnit.SECONDS);
     private OffsetDateTime currentTime = testStartTime;
 
     @Override
@@ -60,6 +72,10 @@ public class SystemClockTestSupport {
 
     void setCurrentTime(OffsetDateTime time) {
       currentTime = time;
+    }
+
+    OffsetDateTime getTestStartTime() {
+      return testStartTime;
     }
   }
 
