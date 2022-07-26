@@ -6,6 +6,8 @@
 #
 # This script is used to attempt to gracefully shutdown a WL Server
 # before its pod is deleted.  It requires the SERVER_NAME env var.
+# It writes it's output to ${SERVER_NAME}.stop.out file in the LOG_HOME dir.
+# STOP_OUT_FILE_MAX = max number of stop server .out files to keep around (default=11)
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
@@ -22,7 +24,9 @@ SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
 SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
 
 
-trace "Stop server ${SERVER_NAME}" &>> ${STOP_OUT_FILE}
+logFileRotate ${STOP_OUT_FILE} ${STOP_OUT_FILE_MAX:-11}
+
+trace "Stop server ${SERVER_NAME}" &> ${STOP_OUT_FILE}
 
 checkEnv SERVER_NAME || exit 1
 
@@ -114,6 +118,9 @@ fi
 
 trace "Exit script"  &>> ${STOP_OUT_FILE}
 
+# K8S does not print any logs in the PreStop stage in kubectl logs.
+# The workaround is to print script's output to the main process' stdout using /proc/1/fd/1
+# See https://github.com/kubernetes/kubernetes/issues/25766 for more details.
 trace "Stop Server: === Contents of the script output file ${STOP_OUT_FILE} ===" > /proc/1/fd/1
 cat ${STOP_OUT_FILE} >> /proc/1/fd/1
 trace "Stop Server: === End of ${STOP_OUT_FILE} contents. ===" >> /proc/1/fd/1
