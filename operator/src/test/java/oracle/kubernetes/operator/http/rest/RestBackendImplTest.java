@@ -78,6 +78,7 @@ class RestBackendImplTest {
   private final Collection<String> namespaces = new ArrayList<>(Collections.singletonList(NS));
   private DomainResource updatedDomain;
   private ClusterResource updatedClusterResource;
+  private ClusterResource createdClusterResource;
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain1);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private WlsDomainConfig config;
@@ -105,6 +106,7 @@ class RestBackendImplTest {
     testSupport.doOnCreate(SUBJECT_ACCESS_REVIEW, s -> allow((V1SubjectAccessReview) s));
     testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (DomainResource) d);
     testSupport.doOnUpdate(CLUSTER, c -> updatedClusterResource = (ClusterResource) c);
+    testSupport.doOnCreate(CLUSTER, c -> createdClusterResource = (ClusterResource) c);
     domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     domain1ConfigSupport.addWlsCluster("cluster2", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
@@ -362,6 +364,10 @@ class RestBackendImplTest {
     return updatedClusterResource;
   }
 
+  private ClusterResource getCreatedClusterResource() {
+    return createdClusterResource;
+  }
+
   @Test
   void whenNoPerClusterReplicaSettingAndDefaultMatchesRequest_doNothing() {
     configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
@@ -369,6 +375,15 @@ class RestBackendImplTest {
     restBackend.scaleCluster(DOMAIN1, "cluster1", REPLICA_LIMIT);
 
     assertThat(getUpdatedDomain(), nullValue());
+  }
+
+  @Test
+  void whenNoPerClusterReplicaSettingAndNonDefaultMatchesRequest_createCluster() {
+    configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
+
+    restBackend.scaleCluster(DOMAIN1, "cluster1", 3);
+
+    assertThat(getCreatedClusterResource().getSpec().getReplicas(), equalTo(3));
   }
 
   @Test
