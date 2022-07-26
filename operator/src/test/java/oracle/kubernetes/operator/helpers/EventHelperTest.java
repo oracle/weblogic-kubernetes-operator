@@ -15,6 +15,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
@@ -108,7 +109,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AV
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILURE_RESOLVED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
@@ -312,19 +312,15 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
-    createMakeRightWithEvent(DOMAIN_CREATED).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("ADDED", domain));
 
     assertThat("Found DOMAIN_CREATED event",
         containsEvent(getEvents(testSupport), DOMAIN_CREATED_EVENT), is(true));
   }
 
-  private MakeRightDomainOperation createMakeRightWithEvent(EventHelper.EventItem eventItem) {
-    return makeRightOperation.withEventData(new EventData(eventItem));
-  }
-
   @Test
   void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
-    createMakeRightWithEvent(DOMAIN_CREATED).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("ADDED", domain));
 
     assertThat("Found DOMAIN_CREATED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -334,7 +330,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
-    createMakeRightWithEvent(DOMAIN_CHANGED).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
 
     assertThat("Found DOMAIN_CHANGED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_CHANGED_EVENT), is(true));
@@ -342,7 +338,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
-    createMakeRightWithEvent(DOMAIN_CHANGED).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
 
     assertThat("Found DOMAIN_CHANGED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -365,10 +361,20 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
-    createMakeRightWithEvent(DOMAIN_DELETED).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("DELETED", domain));
 
     assertThat("Found DOMAIN_DELETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_DELETED_EVENT), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
+    processor.dispatchDomainWatch(new Watch.Response<>("DELETED", domain));
+
+    assertThat("Found DOMAIN_DELETED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            EventConstants.DOMAIN_DELETED_EVENT,
+            getFormattedMessage(DOMAIN_DELETED_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -381,14 +387,8 @@ class EventHelperTest {
             getFormattedMessage(DOMAIN_COMPLETED_EVENT_PATTERN, UID)), is(true));
   }
 
-  @Test
-  void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
-    createMakeRightWithEvent(DOMAIN_DELETED).execute();
-
-    assertThat("Found DOMAIN_DELETED event with expected message",
-        containsEventWithMessage(getEvents(testSupport),
-            EventConstants.DOMAIN_DELETED_EVENT,
-            getFormattedMessage(DOMAIN_DELETED_EVENT_PATTERN, UID)), is(true));
+  private MakeRightDomainOperation createMakeRightWithEvent(EventHelper.EventItem eventItem) {
+    return makeRightOperation.withEventData(new EventData(eventItem));
   }
 
   @Test
