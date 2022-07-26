@@ -172,7 +172,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `lastProbeTime` | DateTime | Last time we probed the condition. |
 | `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |

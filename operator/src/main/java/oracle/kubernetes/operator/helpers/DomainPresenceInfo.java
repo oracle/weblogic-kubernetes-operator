@@ -56,7 +56,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -162,17 +161,8 @@ public class DomainPresenceInfo implements PacketComponent {
    * @param cachedInfo the version of the domain presence info previously processed.
    */
   public boolean isDomainProcessingHalted(DomainPresenceInfo cachedInfo) {
-    return isFatalIntrospectorError()
-        || (isDomainProcessingAborted() && versionsUnchanged(cachedInfo))
-        || !isPopulated() && !isNewerThan(cachedInfo);
-  }
-
-  private boolean isFatalIntrospectorError() {
-    final String existingError = Optional.ofNullable(getDomain())
-        .map(DomainResource::getStatus)
-        .map(DomainStatus::getMessage)
-        .orElse(null);
-    return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
+    return (isDomainProcessingAborted() && versionsUnchanged(cachedInfo))
+        || (!isPopulated() && !isNewerThan(cachedInfo));
   }
 
   private boolean isDomainProcessingAborted() {
