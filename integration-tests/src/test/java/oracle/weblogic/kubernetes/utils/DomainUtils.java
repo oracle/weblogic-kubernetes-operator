@@ -194,19 +194,18 @@ public class DomainUtils {
   }
 
   /**
-   * Check the status reason of the domain matches the given reason.
+   * Check the status reason of the domainUid matches the given reason.
    *
-   * @param domain  oracle.weblogic.domain.Domain object
-   * @param namespace the namespace in which the domain exists
-   * @param statusReason the expected status reason of the domain
+   * @param domainUid  domain uid
+   * @param namespace the namespace in which the domainUid exists
+   * @param statusReason the expected status reason of the domainUid
    */
-  public static void checkDomainStatusReasonMatches(Domain domain, String namespace, String statusReason) {
+  public static void checkDomainStatusReasonMatches(String domainUid, String namespace, String statusReason) {
     LoggingFacade logger = getLogger();
-    testUntil(
-        assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)),
+    testUntil(assertDoesNotThrow(() -> domainStatusReasonMatches(domainUid, namespace, statusReason)),
         logger,
         "the status reason of the domain {0} in namespace {1}",
-        domain,
+        domainUid,
         namespace,
         statusReason);
   }
