@@ -312,15 +312,19 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
+    createMakeRightWithEvent(DOMAIN_CREATED).execute();
 
     assertThat("Found DOMAIN_CREATED event",
         containsEvent(getEvents(testSupport), DOMAIN_CREATED_EVENT), is(true));
   }
 
+  private MakeRightDomainOperation createMakeRightWithEvent(EventHelper.EventItem eventItem) {
+    return makeRightOperation.withEventData(new EventData(eventItem));
+  }
+
   @Test
   void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
+    createMakeRightWithEvent(DOMAIN_CREATED).execute();
 
     assertThat("Found DOMAIN_CREATED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -330,7 +334,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
+    createMakeRightWithEvent(DOMAIN_CHANGED).execute();
 
     assertThat("Found DOMAIN_CHANGED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_CHANGED_EVENT), is(true));
@@ -338,7 +342,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
+    createMakeRightWithEvent(DOMAIN_CHANGED).execute();
 
     assertThat("Found DOMAIN_CHANGED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -361,7 +365,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
+    createMakeRightWithEvent(DOMAIN_DELETED).execute();
 
     assertThat("Found DOMAIN_DELETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_DELETED_EVENT), is(true));
@@ -369,7 +373,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withCompletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_COMPLETE, null).execute();
+    createMakeRightWithEvent(DOMAIN_COMPLETE).execute();
 
     assertThat("Found DOMAIN_COMPLETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -379,7 +383,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
+    createMakeRightWithEvent(DOMAIN_DELETED).execute();
 
     assertThat("Found DOMAIN_DELETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -419,7 +423,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withAvailableEventData_domainAvailableEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_AVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_AVAILABLE).execute();
 
     assertThat("Found DOMAIN_AVAILABLE event",
         containsEvent(getEvents(testSupport), DOMAIN_AVAILABLE_EVENT), is(true));
@@ -427,7 +431,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withAvailableEventData_domainAvailableEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_AVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_AVAILABLE).execute();
 
     assertThat("Found DOMAIN_AVAILABLE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -437,7 +441,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withUnavailableEventData_domainUnavailableEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_UNAVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_UNAVAILABLE).execute();
 
     assertThat("Found DOMAIN_UNAVAILABLE event",
         containsEvent(getEvents(testSupport), DOMAIN_UNAVAILABLE_EVENT), is(true));
@@ -445,7 +449,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withUnavailableEventData_domainUnavailableEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_UNAVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_UNAVAILABLE).execute();
 
     assertThat("Found DOMAIN_UNAVAILABLE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -455,7 +459,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withIncompleteEventData_domainIncompleteEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_INCOMPLETE, null).execute();
+    createMakeRightWithEvent(DOMAIN_INCOMPLETE).execute();
 
     assertThat("Found DOMAIN_INCOMPLETE event",
         containsEvent(getEvents(testSupport), DOMAIN_INCOMPLETE_EVENT), is(true));
@@ -463,7 +467,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withIncompleteEventData_domainIncompleteEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_INCOMPLETE, null).execute();
+    createMakeRightWithEvent(DOMAIN_INCOMPLETE).execute();
 
     assertThat("Found DOMAIN_INCOMPLETE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -473,7 +477,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withFailureResolvedEventData_domainFailureResolvedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_FAILURE_RESOLVED, null).execute();
+    createMakeRightWithEvent(DOMAIN_FAILURE_RESOLVED).execute();
 
     assertThat("Found DOMAIN_FAILURE_RESOLVED event",
         containsEvent(getEvents(testSupport), DOMAIN_FAILURE_RESOLVED_EVENT), is(true));
@@ -481,7 +485,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withFailureResolvedEventData_domainFailureResolvedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_FAILURE_RESOLVED, null).execute();
+    createMakeRightWithEvent(DOMAIN_FAILURE_RESOLVED).execute();
 
     assertThat("Found DOMAIN_FAILURE_RESOLVED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
