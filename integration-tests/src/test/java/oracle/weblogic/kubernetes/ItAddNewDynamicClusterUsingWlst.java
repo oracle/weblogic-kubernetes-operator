@@ -42,13 +42,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The test class verifies that a newly added dynamic cluster is not considered as a configured cluster
- * and server in the newly added dynamic cluster is started successfully.
+ * The test class verifies that a new dynamic cluster added by using an online WLST script
+ * is not considered as a configured cluster and server in the newly added dynamic cluster is started successfully.
  */
 @DisplayName("Verify that server in newly added dynamic cluster is started successfully")
 @IntegrationTest
 @Tag("oke-parallel")
-class ItDynAsConfigCluster {
+class ItAddNewDynamicClusterUsingWlst {
 
   // domain constants
   private static final String domainUid = "dynasconfigcluster-domain-1";
@@ -98,7 +98,7 @@ class ItDynAsConfigCluster {
   void testDynamicClusterNotAsConfigCluster() {
     // create a domain in PV domain
     Domain domain = createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
-        clusterName, replicaCount, ItDynAsConfigCluster.class.getSimpleName());
+        clusterName, replicaCount, ItAddNewDynamicClusterUsingWlst.class.getSimpleName());
     assertDomainNotNull(domain);
 
     // get admin service node port
