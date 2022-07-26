@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Helm uninstall/install an operator that monitors DOMAIN_NAMESPACE.
@@ -51,6 +51,7 @@ fi
 set +e
 
 kubectl create namespace $DOMAIN_NAMESPACE
+kubectl label ns $DOMAIN_NAMESPACE weblogic-operator=enabled
 kubectl create namespace $OPER_NAMESPACE
 kubectl create serviceaccount -n $OPER_NAMESPACE $OPER_SA
 
