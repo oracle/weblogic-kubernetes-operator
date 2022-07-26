@@ -1390,5 +1390,6 @@ expandWdtArchiveCustomDir() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/custom
     done
 
-  traceDirs before ${DOMAIN_HOME}/wlsdeploy/custom
+  CUSTOM_DIR=${DOMAIN_HOME}/wlsdeploy/custom
+  traceDirs before CUSTOM_DIR
 }
