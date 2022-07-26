@@ -702,7 +702,7 @@ checkAuxiliaryImage() {
   fi
 
   trace FINE "Auxiliary Image: AUXILIARY_IMAGE_MOUNT_PATH is '$AUXILIARY_IMAGE_MOUNT_PATH'."
-  traceDirs before $AUXILIARY_IMAGE_MOUNT_PATH
+  traceDirs before AUXILIARY_IMAGE_MOUNT_PATH
   touch ${AUXILIARY_IMAGE_MOUNT_PATH}/testaccess.tmp
   if [ $? -ne 0 ]; then
     trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_MOUNT_PATH '${AUXILIARY_IMAGE_MOUNT_PATH}'. " \
@@ -756,7 +756,7 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
   trace FINE "Compatibility Auxiliary Image: AUXILIARY_IMAGE_PATHS is '$AUXILIARY_IMAGE_PATHS'."
   for AUXILIARY_IMAGE_PATH in ${AUXILIARY_IMAGE_PATHS/,/ }; do
     trace FINE "Compatibility Auxiliary Image: AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH'."
-    traceDirs $AUXILIARY_IMAGE_PATH
+    traceDirs AUXILIARY_IMAGE_PATH
     touch ${AUXILIARY_IMAGE_PATH}/testaccess.tmp
     if [ $? -ne 0 ]; then
       trace SEVERE "Compatibility Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_PATH '${AUXILIARY_IMAGE_PATH}'. " \
