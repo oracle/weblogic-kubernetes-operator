@@ -269,6 +269,20 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * Create Cluster Resource.
+   *
+   * @param namespace namespace
+   * @param body      cluster resource
+   * @return Cluster Resource
+   * @throws ApiException on failure
+   */
+  public ClusterResource createNamespacedCluster(String namespace, ClusterResource body)
+      throws ApiException {
+    return toCluster(createNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        body, null, null, null));
+  }
+
+  /**
    * Patch Cluster Resource.
    *
    * @param name      name

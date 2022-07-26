@@ -487,6 +487,11 @@ public class CallBuilder {
                   requestParams.name,
                   requestParams.namespace,
                   (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<ClusterResource> createClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .createNamespacedCluster(
+                  requestParams.namespace, (ClusterResource) requestParams.body);
   private final SynchronousCallFactory<ClusterResource> patchClusterCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -720,6 +725,19 @@ public class CallBuilder {
             limit,
             timeoutSeconds,
             callback);
+  }
+
+  /**
+   * Create Event.
+   *
+   * @param namespace Namespace
+   * @param body Request body
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public ClusterResource createCluster(String namespace, ClusterResource body) throws ApiException {
+    RequestParams requestParams = new RequestParams("createCluster", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, createClusterCall);
   }
 
   /**

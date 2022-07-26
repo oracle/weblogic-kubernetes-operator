@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import jakarta.json.Json;
@@ -56,8 +57,6 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public class RestBackendImpl implements RestBackend {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String NEW_CLUSTER_REPLICAS =
-      "{'clusterName':'%s','replicas':%d}".replace("'", "\"");
   private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test
@@ -336,11 +335,10 @@ public class RestBackendImpl implements RestBackend {
 
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
     verifyWlsConfiguredClusterCapacity(domain, cluster, managedServerCount);
-    if (managedServerCount == Optional.of(domain.getSpec()).map(DomainSpec::getReplicas).orElse(1)) {
+    if (managedServerCount == Optional.of(domain.getSpec()).map(DomainSpec::getReplicas).orElse(0)) {
       return;
     }
-    // FIXME: Do we create CR here?
-    throw new IllegalStateException();
+    createCluster(domain, cluster, managedServerCount);
   }
 
   private void patchClusterResourceReplicas(ClusterResource cluster, int replicas) {
@@ -359,6 +357,29 @@ public class RestBackendImpl implements RestBackend {
               .patchCluster(
                       cluster.getMetadata().getName(), cluster.getMetadata().getNamespace(),
                       new V1Patch(patchBuilder.build().toString()));
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  private void createCluster(DomainResource domain, String clusterName, int replicas) {
+    V1ObjectMeta domainMetadata = domain.getMetadata();
+    String namespace = domainMetadata.getNamespace();
+    ClusterResource cluster = new ClusterResource()
+        .withMetadata(new V1ObjectMeta()
+            .namespace(namespace)
+            .name(domain.getDomainUid() + "-" + clusterName)
+            .putLabelsItem("weblogic.createdByOperator", "true")
+            .addOwnerReferencesItem(new V1OwnerReference()
+                .apiVersion(domain.getApiVersion())
+                .kind(domain.getKind())
+                .name(domainMetadata.getName())
+                .uid(domainMetadata.getUid())
+                .controller(true)))
+        .withReplicas(replicas);
+    try {
+      callBuilder
+          .createCluster(namespace, cluster);
     } catch (ApiException e) {
       throw handleApiException(e);
     }
