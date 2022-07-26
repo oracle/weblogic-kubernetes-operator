@@ -101,6 +101,13 @@ public class FiberTestSupport {
   }
 
   /**
+   * Returns the number of items actually run since this object was created.
+   */
+  public int getNumItemsRun() {
+    return schedule.getNumItemsRun();
+  }
+
+  /**
    * Returns the engine used by this support object.
    *
    * @return the current engine object
@@ -255,10 +262,14 @@ public class FiberTestSupport {
     private final PriorityQueue<ScheduledItem> scheduledItems = new PriorityQueue<>();
     private final Queue<Runnable> queue = new ArrayDeque<>();
     private Runnable current;
+    private int numItemsRun;
 
-    public static ScheduledExecutorStub create() {
-      final ScheduledExecutorStub strictStub = createStrictStub(ScheduledExecutorStub.class);
-      return strictStub;
+    static ScheduledExecutorStub create() {
+      return createStrictStub(ScheduledExecutorStub.class);
+    }
+
+    int getNumItemsRun() {
+      return numItemsRun;
     }
 
     @Override
@@ -299,6 +310,7 @@ public class FiberTestSupport {
         Container old = cr.enterContainer(container);
         try {
           current.run();
+          numItemsRun++;
         } finally {
           cr.exitContainer(old);
         }
