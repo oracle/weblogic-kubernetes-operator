@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.work;
 
 import java.io.File;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Map;
@@ -21,6 +23,7 @@ import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingContext;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -254,7 +257,8 @@ public class FiberTestSupport {
     private Runnable current;
 
     public static ScheduledExecutorStub create() {
-      return createStrictStub(ScheduledExecutorStub.class);
+      final ScheduledExecutorStub strictStub = createStrictStub(ScheduledExecutorStub.class);
+      return strictStub;
     }
 
     @Override
@@ -325,10 +329,20 @@ public class FiberTestSupport {
 
     private void executeAsScheduled(ScheduledItem item) {
       currentTime = item.atTime;
+      adjustSystemClock(currentTime);
       execute(item.runnable);
       if (item.isReschedulable()) {
         scheduledItems.add(item.rescheduled());
       }
+    }
+
+    private void adjustSystemClock(long currentTime) {
+      Optional.ofNullable(SystemClockTestSupport.getTestStartTime())
+          .ifPresent(startTime -> adjustSystemClock(currentTime, startTime));
+    }
+
+    private void adjustSystemClock(long currentTime, OffsetDateTime initialClockTime) {
+      SystemClockTestSupport.setCurrentTime(initialClockTime.plus(currentTime, ChronoUnit.MILLIS));
     }
 
     /**
