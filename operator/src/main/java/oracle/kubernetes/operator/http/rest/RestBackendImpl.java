@@ -33,7 +33,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
 import oracle.kubernetes.operator.http.rest.model.DomainAction;
 import oracle.kubernetes.operator.http.rest.model.DomainActionType;
@@ -44,6 +43,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 import static oracle.kubernetes.common.logging.MessageKeys.INVALID_DOMAIN_UID;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -324,11 +324,7 @@ public class RestBackendImpl implements RestBackend {
     authorize(domainUid, Operation.UPDATE);
     getClusterResource(cluster)
         .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
-            // FIXME: Do we need to create missing Cluster resource here?
-            () -> {
-            throw new IllegalStateException();
-          }
-          /*() ->  forDomainDo(domainUid, d -> performScaling(d, cr, cluster, managedServerCount)) */);
+          () ->  forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount)));
 
     LOGGER.exiting();
   }
@@ -338,21 +334,13 @@ public class RestBackendImpl implements RestBackend {
     patchClusterResourceReplicas(cluster, managedServerCount);
   }
 
-  private void performScaling(DomainResource domain, ClusterResource cluster,
-                              String clusterName, int managedServerCount) {
-    verifyWlsConfiguredClusterCapacity(domain, clusterName, managedServerCount);
-    patchClusterReplicas(domain, cluster, clusterName, managedServerCount);
-  }
-
-  private void patchClusterReplicas(DomainResource domain, ClusterResource cluster, String clusterName, int replicas) {
-    if (replicas == new DomainPresenceInfo(domain).getReplicaCount(clusterName)) {
+  private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
+    verifyWlsConfiguredClusterCapacity(domain, cluster, managedServerCount);
+    if (managedServerCount == Optional.of(domain.getSpec()).map(DomainSpec::getReplicas).orElse(1)) {
       return;
     }
-
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    patchBuilder.replace("/spec/replicas", replicas);
-
-    patchCluster(cluster, patchBuilder);
+    // FIXME: Do we create CR here?
+    throw new IllegalStateException();
   }
 
   private void patchClusterResourceReplicas(ClusterResource cluster, int replicas) {

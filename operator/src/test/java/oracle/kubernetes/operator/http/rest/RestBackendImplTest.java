@@ -45,7 +45,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
@@ -320,17 +319,6 @@ class RestBackendImplTest {
   }
 
   @Test
-  void whenPerClusterReplicaSetting_scaleClusterUpdatesSetting() {
-    DomainPresenceInfo info = new DomainPresenceInfo(getUpdatedDomain());
-    configureCluster(info, "cluster1").withReplicas(1);
-    info.getReferencedClusters().forEach(testSupport::defineResources);
-
-    restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
-
-    assertThat(info.getReplicaCount("cluster1"), equalTo(5));
-  }
-
-  @Test
   void whenPerClusterResourceReplicaSetting_scaleClusterUpdatesClusterResource() {
     final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, CLUSTER_1)
             .withReplicas(1);
@@ -364,12 +352,6 @@ class RestBackendImplTest {
             () -> restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 10));
   }
 
-  @Test
-  void whenScalingAndDomainNotFound_throwException() {
-    assertThrows(WebApplicationException.class,
-            () -> restBackend.scaleCluster(DOMAIN3, "cluster1", 4));
-  }
-
   private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
     return new ClusterResource()
             .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
@@ -387,18 +369,6 @@ class RestBackendImplTest {
     restBackend.scaleCluster(DOMAIN1, "cluster1", REPLICA_LIMIT);
 
     assertThat(getUpdatedDomain(), nullValue());
-  }
-
-  @Test
-  void whenReplaceDomainReturnsError_scaleClusterThrowsException() {
-    testSupport.failOnResource(DOMAIN, DOMAIN2, NS, HTTP_CONFLICT);
-
-    DomainPresenceInfo info = new DomainPresenceInfo(domain2);
-    DomainConfiguratorFactory.forDomain(domain2).configureCluster(info,"cluster1").withReplicas(2);
-    info.getReferencedClusters().forEach(testSupport::defineResources);
-
-    assertThrows(WebApplicationException.class,
-              () -> restBackend.scaleCluster(DOMAIN2, "cluster1", 3));
   }
 
   @Test
