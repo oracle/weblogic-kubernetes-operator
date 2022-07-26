@@ -445,6 +445,28 @@ public class Kubernetes {
                                  Boolean previous,
                                  Integer sinceSeconds)
       throws ApiException {
+    return getPodLog(name, namespace, container, previous, sinceSeconds, null);
+  }
+
+  /**
+   * Get a pod's log.
+   *
+   * @param name name of the Pod
+   * @param namespace name of the Namespace
+   * @param container name of container for which to stream logs
+   * @param previous whether return previous terminated container logs
+   * @param sinceSeconds relative time in seconds before the current time from which to show logs
+   * @param follow whether to follow the log stream of the pod
+   * @return log as a String or NULL when there is an error
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodLog(String name,
+                                 String namespace,
+                                 String container,
+                                 Boolean previous,
+                                 Integer sinceSeconds,
+                                 Boolean follow)
+      throws ApiException {
     String log = null;
     checkPodInitialized(name,null,namespace);
     try {
@@ -452,7 +474,7 @@ public class Kubernetes {
           name, // name of the Pod
           namespace, // name of the Namespace
           container, // container for which to stream logs
-          null, //  Boolean Follow the log stream of the pod
+          follow, //  Boolean Follow the log stream of the pod
           null, // skip TLS verification of backend
           null, // number of bytes to read from the server before terminating the log output
           PRETTY, // pretty print output

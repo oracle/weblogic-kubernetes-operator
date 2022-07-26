@@ -377,7 +377,7 @@ initCompatibilityModeInitContainersWithLegacyAuxImages() {
 
   trace FINE "Compatibility Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
              "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
-  traceDirs before $AUXILIARY_IMAGE_PATH
+  traceDirs before AUXILIARY_IMAGE_PATH
 
   trace FINE "Compatibility Auxiliary Image: About to execute AUXILIARY_IMAGE_COMMAND='$AUXILIARY_IMAGE_COMMAND' ."
   results=$(eval $AUXILIARY_IMAGE_COMMAND 2>&1)
