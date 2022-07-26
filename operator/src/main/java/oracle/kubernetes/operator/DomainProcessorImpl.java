@@ -17,7 +17,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -88,17 +87,20 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static String debugPrefix = null;  // Debugging: set this to a non-null value to dump the make-right steps
 
   /** A map that holds at most one FiberGate per namespace to run make-right steps. */
-  private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
 
   /** A map that holds at most one FiberGate per namespace to run status update steps. */
-  private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
 
   // Map namespace to map of domainUID to Domain; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
 
   // map namespace to map of uid to processing.
-  private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
 
@@ -275,18 +277,36 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public void runMakeRight(MakeRightDomainOperation operation, Predicate<DomainPresenceInfo> shouldProceed) {
-    final DomainPresenceInfo presenceInfo = operation.getPresenceInfo();
-    if (delegate.isNamespaceRunning(presenceInfo.getNamespace())) {
-      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(presenceInfo)) {
-        if (shouldProceed.test(getExistingDomainPresenceInfo(presenceInfo))) {
-          logStartingDomain(presenceInfo);
+  public void runMakeRight(MakeRightDomainOperation operation) {
+    final DomainPresenceInfo liveInfo = operation.getPresenceInfo();
+    if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
+      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
+        if (shouldContinue(operation, liveInfo)) {
+          logStartingDomain(liveInfo);
           new DomainPlan(operation, delegate).execute();
         } else {
-          logNotStartingDomain(presenceInfo);
+          logNotStartingDomain(liveInfo);
         }
       }
     }
+  }
+
+  private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
+    final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
+    if (isNewDomain(cachedInfo)) {
+      return true;
+    } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
+      return false;
+    } else if (operation.isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo)) {
+      return true;
+    } else {
+      cachedInfo.setDomain(liveInfo.getDomain());
+      return false;
+    }
+  }
+
+  private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
+    return cachedInfo == null || cachedInfo.getDomain() == null;
   }
 
   private void logStartingDomain(DomainPresenceInfo presenceInfo) {
