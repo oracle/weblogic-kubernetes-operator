@@ -8,7 +8,6 @@ import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
@@ -31,11 +30,18 @@ public interface MakeRightDomainOperation extends PacketComponent {
 
   MakeRightDomainOperation withExplicitRecheck();
 
-  MakeRightDomainOperation withEventData(EventItem eventItem, String message);
-
+  /**
+   * Specifies the event that started this operation.
+   * @param eventData a description of the event, containing at least the event type.
+   */
   MakeRightDomainOperation withEventData(EventData eventData);
 
   MakeRightDomainOperation interrupt();
+
+  /**
+   * Returns true if this operation was started by an event.
+   */
+  boolean wasStartedFromEvent();
 
   boolean isDeleting();
 
