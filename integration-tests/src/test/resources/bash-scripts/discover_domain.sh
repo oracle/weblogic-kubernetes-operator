@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -111,8 +111,8 @@ function install_wdt {
     for proxy in "${https_proxy}" "${https_proxy2}"; do
 	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
 	  https_proxy="${proxy}" \
-      curl --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
-    curl_res=$?
+	    curl --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
+	  curl_res=$?
 	  [ $curl_res -eq 0 ] && break
 	done
   done
