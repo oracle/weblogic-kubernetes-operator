@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022git , Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -228,14 +228,14 @@ class ItServerStartPolicy {
     assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
         "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException",
             startTime));
-    
+
     // verify that the sample script can start admin server
-    // executeLifecycleScript(domainUid, domainNamespace, samplePath,
-    //    START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
-    //logger.info("Check admin service/pod {0} is created in namespace {1}",
-    //    adminServerPodName, domainNamespace);
-    //checkPodReadyAndServiceExists(adminServerPodName,
-    //    domainUid, domainNamespace);
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+            START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
+    logger.info("Check admin service/pod {0} is created in namespace {1}",
+            adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName,
+            domainUid, domainNamespace);
   }
 
   /**
