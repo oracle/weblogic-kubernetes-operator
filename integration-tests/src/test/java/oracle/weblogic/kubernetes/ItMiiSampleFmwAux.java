@@ -28,6 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @IntegrationTest
 @Tag("samples")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-fmw-cert")
 class ItMiiSampleFmwAux {
 
   private static ItMiiSampleHelper myItMiiSampleHelper = null;

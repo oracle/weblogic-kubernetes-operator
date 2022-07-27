@@ -115,6 +115,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test logHome on PV, add SystemResources, Clusters to model in image domain")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-srg")
 class ItMiiUpdateDomainConfig {
 
   private static String opNamespace = null;

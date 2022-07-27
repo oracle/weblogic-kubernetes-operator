@@ -70,7 +70,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Operator upgrade tests with Istio")
 @IntegrationTest
 @Tag("oke-sequential")
-class ItOperatorIstioUpgrade {
+@Tag("kind-sequential")
+class ItOperatorUpgradeWithIstio {
 
   private final String clusterName = "cluster-1"; // do not modify
   private static LoggingFacade logger = null;

@@ -63,6 +63,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain dynamic cluster")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItServerStartPolicyDynamicCluster {
 
   private static String domainNamespace = null;
