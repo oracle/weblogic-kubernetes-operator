@@ -37,7 +37,7 @@ public class Pod {
 
     // reusable condition factory
     ConditionFactory retry
-        = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
+        = with().pollInterval(5, SECONDS).atMost(10, MINUTES).await();
 
     for (Map.Entry<String, OffsetDateTime> entry : pods.entrySet()) {
       // check pods are replaced
