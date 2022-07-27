@@ -67,6 +67,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JRF domain on pv sample using wlst and wdt")
 @IntegrationTest
 @Tag("samples")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
 public class ItFmwSample {
 
   private static String dbNamespace = null;

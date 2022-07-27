@@ -72,6 +72,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test server's pod init container feature")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItInitContainers {
 
   private static String opNamespace = null;

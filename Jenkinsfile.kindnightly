@@ -84,9 +84,10 @@ pipeline {
 
     parameters {
         choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are kind-sequential (the default) and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are kind-sequential (the default), kind-parallel and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
                         'kind-sequential',
+                        'kind-parallel',
                         'integration-tests'
                 ]
         )
