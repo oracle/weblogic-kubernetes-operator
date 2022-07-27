@@ -83,6 +83,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + "MonitoringExporter Side Car via Prometheus and Grafana")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItMonitoringExporterSideCar {
 
   // domain constants

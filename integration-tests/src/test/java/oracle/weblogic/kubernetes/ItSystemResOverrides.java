@@ -93,6 +93,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItSystemResOverrides {
 
   private static String opNamespace = null;
