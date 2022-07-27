@@ -1020,8 +1020,8 @@ class ItMiiDomain {
         .atMost(15, MINUTES)
         .await()
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for patched application running on all managed servers in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
+            condition -> logger.info("Waiting for patched application running on all managed servers in namespace {0} "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
             namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))

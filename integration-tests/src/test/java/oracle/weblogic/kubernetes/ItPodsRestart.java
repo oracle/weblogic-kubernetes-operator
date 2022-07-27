@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -83,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test pods are restarted after the following properties in server pods are changed.
  * Change: The env property tested: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true
- * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+ * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never).
  * Change: podSecurityContext: runAsUser:0 --> runAsUser: 1000
  * Add resources: limits: cpu: "1", resources: requests: cpu: "0.5".
  *
@@ -541,11 +542,13 @@ class ItPodsRestart {
    * Modify the domain scope property on the domain resource.
    * Verify all pods are restarted and back to ready state.
    * Verifies that the domain roll starting/pod cycle starting events are logged.
-   * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+   * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never).
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
   void testServerPodsRestartByChangingImagePullPolicy() {
+    String pullPolicy = KIND_REPO != null ? "Never" : "Always";
+    
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -560,13 +563,13 @@ class ItPodsRestart {
     String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
-    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never)
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/imagePullPolicy\",")
         .append("\"value\": \"")
-        .append("Never")
+        .append(pullPolicy)
         .append("\"}]");
     logger.info("PatchStr for imagePullPolicy: {0}", patchStr.toString());
 
@@ -582,8 +585,8 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertTrue(imagePullPolicy.equalsIgnoreCase("Never"), "imagePullPolicy was not updated"
-        + " in the new patched domain");
+    assertTrue(imagePullPolicy.equalsIgnoreCase(pullPolicy),
+        "imagePullPolicy was not updated in the new patched domain");
 
     //get current timestamp before domain rolling restart to verify domain roll events
     OffsetDateTime timestamp = now();
@@ -603,15 +606,15 @@ class ItPodsRestart {
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the 'imagePullPolicy' "
-        + "changed from 'IfNotPresent' to 'Never' message is logged");
-    assertTrue(event.getMessage().contains("Never"));
+        + "changed from 'IfNotPresent' to '" + pullPolicy + "' message is logged");
+    assertTrue(event.getMessage().contains(pullPolicy));
 
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the 'imagePullPolicy' "
-        + "changed from 'IfNotPresent' to 'Never' message is logged");
-    assertTrue(event.getMessage().contains("Never"));
+        + "changed from 'IfNotPresent' to '" + pullPolicy + "' message is logged");
+    assertTrue(event.getMessage().contains(pullPolicy));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
@@ -824,6 +827,7 @@ class ItPodsRestart {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy("IfNotPresent")
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -844,6 +848,7 @@ class ItPodsRestart {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
     setPodAntiAffinity(domain);
+    logger.info(Yaml.dump(domain));
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);

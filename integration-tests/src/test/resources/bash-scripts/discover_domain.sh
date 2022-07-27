@@ -82,7 +82,6 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 WDT_DIR=${WDT_DIR:-/u01/wdt}
 
-
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 
 DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
@@ -112,8 +111,8 @@ function install_wdt {
     for proxy in "${https_proxy}" "${https_proxy2}"; do
 	  echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
 	  https_proxy="${proxy}" \
-	     curl --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
-	  curl_res=$?
+      curl --show-error --connect-timeout 10 -L $WDT_INSTALL_ZIP_URL -o $WDT_INSTALL_ZIP_FILE
+    curl_res=$?
 	  [ $curl_res -eq 0 ] && break
 	done
   done
