@@ -563,7 +563,7 @@
             </properties>
         </profile>
         <profile>
-            <id>olcne-cert</id>
+            <id>olcne</id>
             <properties>
                 <skipITs>false</skipITs>
                 <groups>olcne</groups>
