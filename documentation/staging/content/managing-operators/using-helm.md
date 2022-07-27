@@ -525,7 +525,7 @@ elasticSearchPort: 9201
 ```
 
 ##### `elasticSearchProtocol`
-Specifies the protocol to be use for communication with Elasticsearch. This parameter is ignored if `elkIntegrationEnabled` is `false`.
+Specifies the protocol to use for communication with Elasticsearch. This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
 Defaults to `http`.
 
@@ -539,7 +539,7 @@ elasticSearchProtocol: https
 ##### `createLogStashConfigMap`
 Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`.
 The ConfigMap contains the Logstash pipeline configuration file `logstash.conf` and the Logstash settings file `logstash.yml` for the Logstash container running in the operator pod.
-If set to `true`, a ConfigMap will be created during `helm install` using the `logstash.conf` and `logstash.yml` files in the `kubernetes/samples/charts/weblogic-operator` directory.
+If set to `true`, then a ConfigMap will be created during `helm install` using the `logstash.conf` and `logstash.yml` files in the `kubernetes/samples/charts/weblogic-operator` directory.
 Set `createLogStashConfigMap` to `false` if the ConfigMap already exists in the operator's namespace with the Logstash configuration files.
 This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
