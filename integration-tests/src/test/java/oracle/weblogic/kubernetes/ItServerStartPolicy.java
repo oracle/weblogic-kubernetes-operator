@@ -230,12 +230,12 @@ class ItServerStartPolicy {
             startTime));
     
     // verify that the sample script can start admin server
-    executeLifecycleScript(domainUid, domainNamespace, samplePath,
-        START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
-    logger.info("Check admin service/pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName,
-        domainUid, domainNamespace);
+    // executeLifecycleScript(domainUid, domainNamespace, samplePath,
+    //    START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
+    //logger.info("Check admin service/pod {0} is created in namespace {1}",
+    //    adminServerPodName, domainNamespace);
+    //checkPodReadyAndServiceExists(adminServerPodName,
+    //    domainUid, domainNamespace);
   }
 
   /**
