@@ -9,6 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -35,6 +36,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -205,26 +207,20 @@ class FailureRetryTest {
   }
 
   enum VersionChangeType {
-    INTROSPECT_VERSION {
-      @Override
-      void updateDomain(DomainResource domain) {
-        domain.getSpec().setIntrospectVersion("test");
-      }
-    },
-    RESTART_VERSION {
-      @Override
-      void updateDomain(DomainResource domain) {
-        domain.getSpec().setRestartVersion("test");
-      }
-    },
-    INTROSPECT_IMAGE {
-      @Override
-      void updateDomain(DomainResource domain) {
-        domain.getSpec().setImage("test");
-      }
-    };
+    INTROSPECT_VERSION(DomainSpec::setIntrospectVersion),
+    RESTART_VERSION(DomainSpec::setRestartVersion),
+    INTROSPECT_IMAGE(DomainSpec::setImage);
 
-    abstract void updateDomain(DomainResource domain);
+    private final BiConsumer<DomainSpec,String> mutator;
+
+    VersionChangeType(BiConsumer<DomainSpec, String> mutator) {
+      this.mutator = mutator;
+    }
+
+    void updateDomain(DomainResource domain) {
+      mutator.accept(domain.getSpec(), "test");
+    }
+
   }
 
   @Test
@@ -346,8 +342,13 @@ class FailureRetryTest {
     }
 
     @Override
-    public MakeRightDomainOperation withEventData(EventHelper.EventItem eventItem, String message) {
+    public MakeRightDomainOperation withEventData(EventHelper.EventData eventItem) {
       return this;
+    }
+
+    @Override
+    public boolean wasStartedFromEvent() {
+      return false;
     }
 
     @Override

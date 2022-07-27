@@ -41,9 +41,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.jetbrains.annotations.NotNull;
 
@@ -333,18 +330,11 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
+      String serverState = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
       if (shutdownAttemptSucceeded(packet) && serverNotShutdown(serverState)) {
         return doDelay(this, packet, getPollingInterval(), TimeUnit.SECONDS);
       }
       return doNext(packet);
-    }
-
-    private String getServerState(DomainResource domain) {
-      return Optional.ofNullable(domain)
-          .map(DomainResource::getStatus)
-          .map(this::getServerStatus)
-          .map(ServerStatus::getState).orElse(null);
     }
 
     @NotNull
@@ -355,14 +345,6 @@ public class ShutdownManagedServerStep extends Step {
     @NotNull
     private Boolean serverNotShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
-    }
-
-    private ServerStatus getServerStatus(DomainStatus domainStatus) {
-      return domainStatus.getServers().stream().filter(this::matchingServerName).findAny().orElse(null);
-    }
-
-    private boolean matchingServerName(ServerStatus serverStatus) {
-      return serverStatus.getServerName().equals(serverName);
     }
 
     private int getPollingInterval() {

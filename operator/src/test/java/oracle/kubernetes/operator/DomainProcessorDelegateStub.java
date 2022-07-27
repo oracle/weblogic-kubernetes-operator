@@ -31,8 +31,8 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
   private final FiberTestSupport testSupport;
+  private boolean namespaceRunning = true;
   private boolean waitedForIntrospection;
-  private boolean mayRetry = false;
 
   public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
     this.testSupport = testSupport;
@@ -42,17 +42,17 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     return createStrictStub(DomainProcessorDelegateStub.class, testSupport);
   }
 
-  public void setMayRetry(boolean mayRetry) {
-    this.mayRetry = mayRetry;
-  }
-
   public boolean waitedForIntrospection() {
     return waitedForIntrospection;
   }
 
+  public void setNamespaceRunning(boolean namespaceRunning) {
+    this.namespaceRunning = namespaceRunning;
+  }
+
   @Override
   public boolean isNamespaceRunning(String namespace) {
-    return true;
+    return namespaceRunning;
   }
 
   @Override

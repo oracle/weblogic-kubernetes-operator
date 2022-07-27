@@ -108,18 +108,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   /**
    * Set the event data that is associated with this operation.
    *
-   * @param eventItem event data
-   * @param message   event message
-   * @return the updated factory
-   */
-  public MakeRightDomainOperation withEventData(EventHelper.EventItem eventItem, String message) {
-    this.eventData = new EventHelper.EventData(eventItem, message);
-    return this;
-  }
-
-  /**
-   * Set the event data that is associated with this operation.
-   *
    * @param eventData event data
    * @return the updated factory
    */
@@ -147,6 +135,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   public MakeRightDomainOperation interrupt() {
     willInterrupt = true;
     return this;
+  }
+
+  @Override
+  public boolean wasStartedFromEvent() {
+    return eventData != null;
   }
 
   @Override
