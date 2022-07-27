@@ -26,6 +26,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.doesPodLogContainStringInTimeRange;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -105,13 +106,22 @@ class ItServerStartPolicy {
    */
   @BeforeEach
   public void beforeEach() {
-
+    if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, adminServerPodName))) {
+      executeLifecycleScript(domainUid, domainNamespace, samplePath,
+              START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
+    }
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName,
         domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
+      String podName = managedServerPrefix + i;
+      if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName))) {
+        executeLifecycleScript(domainUid, domainNamespace, samplePath,
+                START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server" + i, "", true);
+
+      }
       checkPodReadyAndServiceExists(managedServerPrefix + i,
           domainUid, domainNamespace);
     }
