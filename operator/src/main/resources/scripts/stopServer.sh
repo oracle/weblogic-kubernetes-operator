@@ -44,12 +44,14 @@ export SHUTDOWN_WAIT_FOR_ALL_SESSIONS_ARG=${SHUTDOWN_WAIT_FOR_ALL_SESSIONS:-fals
 export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
 export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
 
-# Calculate the time to issue "kill -9" before the pod is destroyed.
-export WAIT_TIME=$(expr $SHUTDOWN_TIMEOUT_ARG - 3)
+# Calculate the wait timeout to issue "kill -9" before the pod is destroyed. 
+# Allow 3 seconds for the NFS v3 manager to detect the process destruction and release file locks.
+export SIGKILL_WAIT_TIMEOUT=$(expr $SHUTDOWN_TIMEOUT_ARG - 3)
 wait_and_kill_after_timeout(){
-  trace "Wait for ${WAIT_TIME} seconds for ${SERVER_NAME} to gracefully shutdown." >> ${STOP_OUT_FILE}
-  sleep ${WAIT_TIME}
-  trace "Graceful shutdown for ${SERVER_NAME} didn't finish in $WAIT_TIME seconds, kill the server process." >> ${STOP_OUT_FILE}
+  trace "Wait for ${SIGKILL_WAIT_TIMEOUT} seconds for ${SERVER_NAME} to gracefully shutdown." >> ${STOP_OUT_FILE}
+  sleep ${SIGKILL_WAIT_TIMEOUT}
+  trace "Graceful shutdown for ${SERVER_NAME} didn't finish in ${SIGKILL_WAIT_TIMEOUT} seconds, " \
+        "kill the server processes." >> ${STOP_OUT_FILE}
   # Adjust PATH if necessary before calling jps
   adjustPath
 
@@ -57,6 +59,8 @@ wait_and_kill_after_timeout(){
   kill -9 `jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{ print $1 }'`
   touch ${SHUTDOWN_MARKER_FILE}
 }
+
+# Wait for the timeout value to issue "kill -9" and then kill the WebLogic server processes.
 wait_and_kill_after_timeout &
 
 check_for_shutdown() {
