@@ -84,6 +84,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];
