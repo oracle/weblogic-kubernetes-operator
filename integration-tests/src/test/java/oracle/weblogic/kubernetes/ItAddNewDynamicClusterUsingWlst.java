@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify that server in newly added dynamic cluster is started successfully")
 @IntegrationTest
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItAddNewDynamicClusterUsingWlst {
 
   // domain constants
@@ -119,13 +120,13 @@ class ItAddNewDynamicClusterUsingWlst {
         "Console login validation");
 
     // create a new dynamic cluster using an online WLST script
-    createNewDynCluster();
+    createNewDynamicCluster();
 
     // verify the managed server pod in newly added dynamic cluster comes up
     checkPodReadyAndServiceExists(newManagedServerPodPrefix + 1, domainUid, domainNamespace);
   }
 
-  private void createNewDynCluster() {
+  private void createNewDynamicCluster() {
     // get admin service hostname
     String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     logger.info("admin svc host = {0}", adminSvcExtHost);
