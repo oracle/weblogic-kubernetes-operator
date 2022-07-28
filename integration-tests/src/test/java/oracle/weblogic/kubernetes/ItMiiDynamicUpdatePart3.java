@@ -69,6 +69,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("olcne")
 @Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-mrg")
 class ItMiiDynamicUpdatePart3 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();

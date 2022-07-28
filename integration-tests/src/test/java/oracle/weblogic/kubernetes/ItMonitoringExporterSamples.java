@@ -106,6 +106,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify end to end sample, provided in the Monitoring Exporter github project")
 @Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 @Tag("olcne")
 class ItMonitoringExporterSamples {

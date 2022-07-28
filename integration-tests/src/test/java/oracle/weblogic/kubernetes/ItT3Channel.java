@@ -79,6 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("olcne")
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItT3Channel {
   // namespace constants
   private static String opNamespace = null;

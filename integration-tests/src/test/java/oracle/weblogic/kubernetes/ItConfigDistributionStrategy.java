@@ -122,6 +122,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 @Tag("olcne")
 class ItConfigDistributionStrategy {

@@ -91,6 +91,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test external RMI access through NodePort tunneling")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne")

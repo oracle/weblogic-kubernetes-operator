@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItIstioTwoDomainsInImage {
 
   private static String opNamespace = null;

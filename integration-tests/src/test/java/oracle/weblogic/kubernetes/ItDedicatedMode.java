@@ -63,6 +63,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#weblogic-domain-management
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
+@Tag("kind-sequential")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 @Tag("olcne")
 class ItDedicatedMode {

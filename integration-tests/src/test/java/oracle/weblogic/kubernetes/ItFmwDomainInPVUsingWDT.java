@@ -60,6 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Tag("olcne")
 @Tag("oke-sequential")
+@Tag("kind-sequential")
+@Tag("okd-fmw-cert")
 class ItFmwDomainInPVUsingWDT {
 
   private static String opNamespace = null;

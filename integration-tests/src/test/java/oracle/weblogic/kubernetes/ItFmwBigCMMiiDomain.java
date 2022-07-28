@@ -60,6 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
+@Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 @IntegrationTest
 @Tag("olcne")
 class ItFmwBigCMMiiDomain {

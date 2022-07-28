@@ -132,6 +132,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "
         + "the sample application can be accessed via NGINX ingress controller")
+@Tag("kind-parallel")
 @IntegrationTest
 @Tag("olcne")
 class ItMultiDomainModelsWithLoadBalancer {
