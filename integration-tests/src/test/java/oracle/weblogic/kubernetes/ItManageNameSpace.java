@@ -83,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

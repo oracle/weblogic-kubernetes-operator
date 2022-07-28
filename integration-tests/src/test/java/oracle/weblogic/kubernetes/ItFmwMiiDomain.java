@@ -68,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create FMW model in image domain and start the domain")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-fmw-cert")

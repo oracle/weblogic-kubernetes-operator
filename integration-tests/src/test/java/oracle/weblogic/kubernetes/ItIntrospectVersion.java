@@ -136,6 +136,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

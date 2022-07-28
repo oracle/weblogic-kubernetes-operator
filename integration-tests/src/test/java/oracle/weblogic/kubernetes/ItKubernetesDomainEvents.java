@@ -128,6 +128,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @IntegrationTest
+@Tag("olcne")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;
