@@ -35,6 +35,30 @@ if [ "${MOCK_WLS}" == 'true' ]; then
   exit 0
 fi
 
+# Arguments for shutdown
+export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
+export SHUTDOWN_PROTOCOL_ARG=${LOCAL_ADMIN_PROTOCOL:-t3}
+export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
+export SHUTDOWN_IGNORE_SESSIONS_ARG=${SHUTDOWN_IGNORE_SESSIONS:-false}
+export SHUTDOWN_WAIT_FOR_ALL_SESSIONS_ARG=${SHUTDOWN_WAIT_FOR_ALL_SESSIONS:-false}
+export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
+export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
+
+# Calculate the time to issue "kill -9" before the pod is destroyed.
+export WAIT_TIME=$(expr $SHUTDOWN_TIMEOUT_ARG - 3)
+wait_and_kill_after_timeout(){
+  trace "Wait for ${WAIT_TIME} seconds for ${SERVER_NAME} to gracefully shutdown." >> ${STOP_OUT_FILE}
+  sleep ${WAIT_TIME}
+  trace "Graceful shutdown for ${SERVER_NAME} didn't finish in $WAIT_TIME seconds, kill the server process." >> ${STOP_OUT_FILE}
+  # Adjust PATH if necessary before calling jps
+  adjustPath
+
+  kill -9 `jps -v | grep " NodeManager " | awk '{ print $1 }'`
+  kill -9 `jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{ print $1 }'`
+  touch ${SHUTDOWN_MARKER_FILE}
+}
+wait_and_kill_after_timeout &
+
 check_for_shutdown() {
   [ ! -f "${SCRIPTPATH}/readState.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/readState.sh'." && exit 1
 
@@ -83,14 +107,6 @@ check_for_shutdown
 
 # Otherwise, connect to the node manager and stop the server instance
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
-
-# Arguments for shutdown
-export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
-export SHUTDOWN_PROTOCOL_ARG=${LOCAL_ADMIN_PROTOCOL:-t3}
-export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
-export SHUTDOWN_IGNORE_SESSIONS_ARG=${SHUTDOWN_IGNORE_SESSIONS:-false}
-export SHUTDOWN_WAIT_FOR_ALL_SESSIONS_ARG=${SHUTDOWN_WAIT_FOR_ALL_SESSIONS:-false}
-export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
 
 trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${STOP_OUT_FILE}
 ${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${STOP_OUT_FILE}
