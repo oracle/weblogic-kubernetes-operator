@@ -76,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 @DisabledOnSlimImage
+@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

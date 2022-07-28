@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
 @Tag("samples")
+@Tag("olcne")
 class ItMiiSampleWlsMain {
 
   private static ItMiiSampleHelper myItMiiSampleHelper = null;

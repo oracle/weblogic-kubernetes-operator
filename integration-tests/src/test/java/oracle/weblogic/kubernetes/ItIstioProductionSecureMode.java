@@ -57,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 class ItIstioProductionSecureMode {

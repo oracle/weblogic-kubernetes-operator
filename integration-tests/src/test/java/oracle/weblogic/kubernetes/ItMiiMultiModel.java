@@ -81,6 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
