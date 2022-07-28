@@ -512,6 +512,13 @@
         </profile>
 
         <profile>
+            <id>olcne</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>olcne</groups>
+            </properties>
+        </profile>
+        <profile>
             <id>toolkits-srg</id>
             <properties>
                 <skipITs>false</skipITs>

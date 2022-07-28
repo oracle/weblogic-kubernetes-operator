@@ -66,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-sequential")
 @Tag("okd-wls-mrg")
 @IntegrationTest
+@Tag("olcne")
 class ItDedicatedMode {
   // namespace constants
   private static String opNamespace = null;

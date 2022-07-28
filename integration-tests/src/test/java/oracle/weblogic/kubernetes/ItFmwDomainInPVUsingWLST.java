@@ -70,6 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("kind-parallel")
 @Tag("okd-fmw-cert")
 @IntegrationTest
+@Tag("olcne")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;

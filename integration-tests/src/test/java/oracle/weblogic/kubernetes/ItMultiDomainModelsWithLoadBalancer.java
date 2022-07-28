@@ -134,6 +134,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
         + "the sample application can be accessed via NGINX ingress controller")
 @Tag("kind-parallel")
 @IntegrationTest
+@Tag("olcne")
 class ItMultiDomainModelsWithLoadBalancer {
 
   // domain constants
