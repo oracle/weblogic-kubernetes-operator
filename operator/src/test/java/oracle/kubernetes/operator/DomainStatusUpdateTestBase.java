@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -942,7 +943,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenPodPendingForTooLong_reportServerPodFailure() {
-    domain.getSpec().setMaxPendingWaitTimeSeconds(20);
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
     defineScenario().withServers("ms1", "ms2")
         .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
         .build();
@@ -955,7 +956,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenPodPendingWithinTimeLimit_doNotReportServerPodFailure() {
-    domain.getSpec().setMaxPendingWaitTimeSeconds(20);
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
     defineScenario().withServers("ms1", "ms2")
         .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
         .build();

@@ -63,8 +63,8 @@ public class SchemaConversionUtils {
   private static final String VOLUME = "volume";
   private static final String MOUNT_PATH = "mountPath";
   private static final String IMAGE = "image";
-  public static final String OLD_STATE_GOAL_KEY = "desiredState";
-  public static final String NEW_STATE_GOAL_KEY = "stateGoal";
+  private static final String V8_STATE_GOAL_KEY = "desiredState";
+  private static final String V9_STATE_GOAL_KEY = "stateGoal";
 
   private final AtomicInteger containerIndex = new AtomicInteger(0);
   private final String targetAPIVersion;
@@ -163,10 +163,11 @@ public class SchemaConversionUtils {
     if (API_VERSION_V8.equals(targetAPIVersion)) {
       convertCompletedToProgressing(domain);
       Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
+      renameServerStatusFieldsV9ToV8(domain);
     } else { // 9 or above
       removeObsoleteConditionsFromDomainStatus(domain);
       removeUnsupportedDomainStatusConditionReasons(domain);
-      renameServerStatusFields(domain);
+      renameServerStatusFieldsV8ToV9(domain);
     }
   }
 
@@ -223,14 +224,22 @@ public class SchemaConversionUtils {
     return !SUPPORTED_FAILURE_REASONS.contains(reason);
   }
 
-  private void renameServerStatusFields(Map<String, Object> domain) {
-    getServerStatuses(domain).forEach(this::adjustServerStatus);
-
+  private void renameServerStatusFieldsV8ToV9(Map<String, Object> domain) {
+    getServerStatuses(domain).forEach(this::adjustServerStatusV8ToV9);
   }
 
-  private void adjustServerStatus(Map<String, Object> serverStatus) {
-    serverStatus.computeIfAbsent(NEW_STATE_GOAL_KEY, key -> serverStatus.get(OLD_STATE_GOAL_KEY));
-    serverStatus.remove(OLD_STATE_GOAL_KEY);
+  private void adjustServerStatusV8ToV9(Map<String, Object> serverStatus) {
+    serverStatus.computeIfAbsent(V9_STATE_GOAL_KEY, key -> serverStatus.get(V8_STATE_GOAL_KEY));
+    serverStatus.remove(V8_STATE_GOAL_KEY);
+  }
+
+  private void renameServerStatusFieldsV9ToV8(Map<String, Object> domain) {
+    getServerStatuses(domain).forEach(this::adjustServerStatusV9ToV8);
+  }
+
+  private void adjustServerStatusV9ToV8(Map<String, Object> serverStatus) {
+    serverStatus.computeIfAbsent(V8_STATE_GOAL_KEY, key -> serverStatus.get(V9_STATE_GOAL_KEY));
+    serverStatus.remove(V9_STATE_GOAL_KEY);
   }
 
   @Nonnull

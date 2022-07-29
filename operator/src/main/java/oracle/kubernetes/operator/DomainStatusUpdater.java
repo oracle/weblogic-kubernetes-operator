@@ -1102,7 +1102,7 @@ public class DomainStatusUpdater {
         return Optional.ofNullable(getInfo().getDomain())
             .map(d -> getInfo().getServer(getServerName(pod), getClusterNameFromPod(pod)))
             .map(EffectiveServerSpec::getMaximumPendingWaitTimeSeconds)
-            .orElse(TuningParameters.getInstance().getMaxReadyWaitTimeSeconds());
+            .orElse(TuningParameters.getInstance().getMaxPendingWaitTimeSeconds());
       }
 
       private String getServerName(V1Pod pod) {

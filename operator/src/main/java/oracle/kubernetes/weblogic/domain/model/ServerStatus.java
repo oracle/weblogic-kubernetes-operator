@@ -78,6 +78,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     this.nodeName = other.nodeName;
     this.isAdminServer = other.isAdminServer;
     this.podReady = other.podReady;
+    this.podPhase = other.podPhase;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 

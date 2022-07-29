@@ -216,9 +216,9 @@ class SchemaConversionUtilsTest {
 
   @Test
   void whenOldDomainHasDesiredStateFields_renameAsStateGoal() {
-    addServerStatus("ms1", "RUNNING", "UNKNOWN");
-    addServerStatus("ms2", "RUNNING", "RUNNING");
-    addServerStatus("ms2", "SHUTDOWN", "SHUTDOWN");
+    addV8ServerStatus("ms1", "RUNNING", "UNKNOWN");
+    addV8ServerStatus("ms2", "RUNNING", "RUNNING");
+    addV8ServerStatus("ms2", "SHUTDOWN", "SHUTDOWN");
 
     converter.convert(v8Domain);
 
@@ -229,7 +229,7 @@ class SchemaConversionUtilsTest {
     assertThat(converter.getDomain(), hasNoJsonPath("$.status.servers[0].desiredState"));
   }
 
-  private void addServerStatus(String serverName, String desiredState, String state) {
+  private void addV8ServerStatus(String serverName, String desiredState, String state) {
     final Map<String, String> serverStatus
         = Map.of("serverName", serverName, "state", state, "desiredState", desiredState);
     getServerStatuses(v8Domain).add(new HashMap<>(serverStatus));
@@ -436,6 +436,29 @@ class SchemaConversionUtilsTest {
 
     assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
     assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
+  }
+
+  @Test
+  void whenV9DomainHasServerStatusStateGoal_renameToDesiredState() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+
+    addV9ServerStatus(v9Domain, "ms1", "RUNNING", "UNKNOWN");
+    addV9ServerStatus(v9Domain, "ms2", "RUNNING", "RUNNING");
+    addV9ServerStatus(v9Domain, "ms2", "SHUTDOWN", "SHUTDOWN");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.servers[*].state", contains("UNKNOWN", "RUNNING", "SHUTDOWN")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.servers[*].desiredState", contains("RUNNING", "RUNNING", "SHUTDOWN")));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.status.servers[0].stateGoal"));
+  }
+
+  private void addV9ServerStatus(Map<String, Object> v9Domain, String serverName, String stateGoal, String state) {
+    final Map<String, String> serverStatus
+        = Map.of("serverName", serverName, "state", state, "stateGoal", stateGoal);
+    getServerStatuses(v9Domain).add(new HashMap<>(serverStatus));
   }
 
   @Test
