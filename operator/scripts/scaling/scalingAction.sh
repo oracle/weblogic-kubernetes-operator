@@ -302,15 +302,13 @@ INPUT
 }
 
 #
-# Function to get minimum replica count for cluster
+# Function to get minimum replica count from cluster resource
 # $1 - Cluster resource in json format
-# $2 - Name of the cluster
-# $3 - Return value containing minimum replica count
+# $2 - Return value containing minimum replica count, 0 if minReplicas not defined in Cluster resource
 #
 get_min_replicas_from_cluster() {
   local clusterJson=$1
-  local clusterName=$2
-  local __result=$3
+  local __result=$2
 
   eval "$__result"=0
   if jq_available; then
@@ -324,6 +322,30 @@ INPUT
   minReplicas=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   eval "$__result"="${minReplicas:-0}"
+}
+
+#
+# Function to get maximum replica count from cluster resource
+# $1 - Cluster resource in json format
+# $2 - Return value containing maximum replica count, value not set if maxReplicas not defined in
+#      Cluster resource
+#
+get_max_replicas_from_cluster() {
+  local clusterJson=$1
+  local __result=$2
+
+  eval "$__result"=0
+  if jq_available; then
+    maxReplicaCmd=".status.maximumReplicas"
+    maxReplicas=$(echo "${clusterJson}" | jq "${maxReplicaCmd}"  2>> ${log_file_name})
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["status"]["maximumReplicas"]))
+INPUT
+  maxReplicas=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+  eval "$__result"="${maxReplicas}"
 }
 
 # Get the current replica count for the WLS cluster if defined in the CRD's Cluster
@@ -341,7 +363,7 @@ get_replica_count() {
     trace "$wls_cluster_name defined in clusters"
     num_ms=$(get_num_ms_in_cluster "$DOMAIN")
   else
-    trace "$wls_cluster_name NOT defined in clusters"
+    trace "$wls_cluster_name is NOT defined in clusters"
     num_ms=$(get_num_ms_domain_scope "$DOMAIN")
   fi
 
@@ -361,20 +383,20 @@ get_replica_count() {
 # args:
 # $1 Cluster Custom Resource
 # $2 Domain Custom Resource
-get_replica_count_or_default() {
+get_replica_count_from_cluster_or_domain() {
   local clusterJson="$1"
   local domainJson="$2"
   local replicas
   replicas=$(get_replicas_from_cluster "$clusterJson")
   if [ "$replicas" == -1 ]
   then
-    trace "$wls_cluster_name NOT defined in clusters"
     replicas=$(get_num_ms_domain_scope "$domainJson")
+    trace "replicas for $wls_cluster_name is not specified in Cluster resource. Using replicas value of $replicas from Domain resource."
   else
-    trace "$wls_cluster_name defined in clusters"
+    trace "replicas for $wls_cluster_name from Cluster resource is $replicas"
   fi
 
-  get_min_replicas_from_cluster "${clusterJson}" "${wls_cluster_name}" minReplicas
+  get_min_replicas_from_cluster "${clusterJson}" minReplicas
   if [[ "${replicas}" -lt "${minReplicas}" ]]; then
     # Reset managed server count to minimum replicas
     replicas=${minReplicas}
@@ -429,16 +451,31 @@ verify_minimum_ms_count_for_cluster() {
 # args:
 # $1 Managed server count
 # $2 Cluster Custom Resource
-# $3 Cluster name
 verify_minimum_replicas_for_cluster() {
   local new_ms="$1"
   local clusterJson="$2"
-  local clusterName="$3"
   # check if replica count is less than minimum replicas
-  get_min_replicas_from_cluster "${clusterJson}" "${clusterName}" minReplicas
+  get_min_replicas_from_cluster "${clusterJson}" minReplicas
   if [ "${new_ms}" -lt "${minReplicas}" ]; then
     trace "Scaling request to new managed server count $new_ms is less than configured minimum \
-    replica count $minReplicas."
+replica count of $minReplicas. Exiting."
+    exit 1
+  fi
+}
+
+# Verify if requested managed server scaling count is greater than the configured
+# maximum replica count for the cluster.
+# args:
+# $1 Managed server count
+# $3 Cluster name
+verify_maximum_replicas_for_cluster() {
+  local new_ms="$1"
+  local clusterJson="$2"
+  # check if replica count is less than minimum replicas
+  get_max_replicas_from_cluster "${clusterJson}" maxReplicas
+  if [ -n "$maxReplicas" ] && [ "${new_ms}" -gt "${maxReplicas}" ]; then
+    trace "Scaling request to new managed server count $new_ms is greater than configured maximum \
+replica count of $maxReplicas. Exiting."
     exit 1
   fi
 }
@@ -587,15 +624,15 @@ else
   trace "Cluster resource found."
 
   # Retrieve replica count from Cluster or Domain Resource.
-  current_replica_count=$(get_replica_count_or_default "$CLUSTER" "$DOMAIN")
+  current_replica_count=$(get_replica_count_from_cluster_or_domain "$CLUSTER" "$DOMAIN")
   trace "current number of managed servers is $current_replica_count"
 
   # Calculate new managed server count
   new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
 
-  # Verify the requested new managed server count is not less than
-  # configured minimum replica count for the cluster
-  verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER" "$wls_cluster_name"
+  # Verify the requested new managed server count
+  verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER"
+  verify_maximum_replicas_for_cluster "$new_ms" "$CLUSTER"
 
 fi
 
