@@ -157,19 +157,10 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   /**
    * Desired state of this WebLogic Server. Required.
    *
-   * @param stateGoal Requested state
-   */
-  public void setStateGoal(String stateGoal) {
-    this.stateGoal = stateGoal;
-  }
-
-  /**
-   * Desired state of this WebLogic Server. Required.
-   *
    * @param stateGoal stateGoal
    * @return this
    */
-  public ServerStatus withDesiredState(String stateGoal) {
+  public ServerStatus withStateGoal(String stateGoal) {
     this.stateGoal = stateGoal;
     return this;
   }
@@ -181,15 +172,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    */
   public String getClusterName() {
     return clusterName;
-  }
-
-  /**
-   * WebLogic cluster name, if the server is part of a cluster.
-   *
-   * @param clusterName cluster name
-   */
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
   }
 
   /**
@@ -311,7 +293,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append("serverName", serverName)
         .append("isAdminServer", isAdminServer)
         .append("state", state)
-        .append("desiredState", stateGoal)
+        .append("stateGoal", stateGoal)
         .append("clusterName", clusterName)
         .append("nodeName", nodeName)
         .append("podPhase", podPhase)
@@ -379,7 +361,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("serverName", ServerStatus::getServerName)
         .withStringField("clusterName", ServerStatus::getClusterName)
         .withStringField("state", ServerStatus::getState)
-        .withStringField("desiredState", ServerStatus::getStateGoal)
+        .withStringField("stateGoal", ServerStatus::getStateGoal)
         .withStringField("nodeName", ServerStatus::getNodeName)
         .withStringField("podPhase", ServerStatus::getPodPhaseAsString)
         .withStringField("podReady", ServerStatus::getPodReady)

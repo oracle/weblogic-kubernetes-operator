@@ -1222,16 +1222,16 @@ public class DomainStatusUpdater {
         return new ServerStatus()
             .withServerName(serverName)
             .withClusterName(clusterName)
-            .withDesiredState(getDesiredState())
+            .withStateGoal(getStateGoal())
             .withIsAdminServer(isAdminServer);
       }
 
-      private String getDesiredState() {
-        return wasServerStarted() ? getDesiredState(serverName, clusterName) : SHUTDOWN_STATE;
+      private String getStateGoal() {
+        return wasServerStarted() ? getStateGoal(serverName, clusterName) : SHUTDOWN_STATE;
       }
 
-      private String getDesiredState(String serverName, String clusterName) {
-        return info.getServer(serverName, clusterName).getDesiredState();
+      private String getStateGoal(String serverName, String clusterName) {
+        return info.getServer(serverName, clusterName).getStateGoal();
       }
 
       private boolean wasServerStarted() {

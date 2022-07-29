@@ -171,7 +171,7 @@ abstract class DomainStatusUpdateTestBase {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withNodeName("node1")
                 .withServerName("server1")
                 .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
@@ -182,7 +182,7 @@ abstract class DomainStatusUpdateTestBase {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -223,12 +223,12 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(),
           hasStatusForServer("server3")
                 .withState(RUNNING_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withClusterName("clusterC"));
     assertThat(getRecordedDomain(),
           hasStatusForServer("server4")
                 .withState(SHUTDOWN_STATE)
-                .withDesiredState(SHUTDOWN_STATE)
+                .withStateGoal(SHUTDOWN_STATE)
                 .withClusterName("clusterC"));
   }
 
@@ -296,7 +296,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-          hasStatusForServer("server1").withState(SHUTDOWN_STATE).withDesiredState(SHUTDOWN_STATE));
+          hasStatusForServer("server1").withState(SHUTDOWN_STATE).withStateGoal(SHUTDOWN_STATE));
   }
 
   @Test
@@ -308,7 +308,7 @@ abstract class DomainStatusUpdateTestBase {
                 Collections.singletonList(
                     new ServerStatus()
                         .withState(SHUTDOWN_STATE)
-                        .withDesiredState(SHUTDOWN_STATE)
+                        .withStateGoal(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
               .addCondition(new DomainCondition(AVAILABLE).withStatus(false))
@@ -1647,7 +1647,7 @@ abstract class DomainStatusUpdateTestBase {
       return this;
     }
 
-    ServerStatusMatcher withDesiredState(String expectedValue) {
+    ServerStatusMatcher withStateGoal(String expectedValue) {
       matcher.addField("desired state", ServerStatus::getStateGoal, expectedValue);
       return this;
     }

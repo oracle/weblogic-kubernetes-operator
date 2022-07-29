@@ -431,11 +431,11 @@ class DomainProcessorTest {
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(RUNNING_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(RUNNING_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(RUNNING_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(RUNNING_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
     assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
   }
@@ -470,7 +470,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void afterMakeRightAndChangeServerToNever_desiredStateIsShutdown() {
+  void afterMakeRightAndChangeServerToNever_stateGoalIsShutdown() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
@@ -479,11 +479,11 @@ class DomainProcessorTest {
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
   }
 
@@ -556,7 +556,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void afterChangeToNever_statusUpdateRetainsDesiredState() {
+  void afterChangeToNever_statusUpdateRetainsStateGoal() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     final DomainPresenceInfo info1 = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info1).execute();
@@ -569,12 +569,12 @@ class DomainProcessorTest {
     triggerStatusUpdate();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getDesiredState(updatedDomain, ADMIN_NAME), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, ADMIN_NAME), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
   }
 
   private void triggerStatusUpdate() {
@@ -2096,7 +2096,7 @@ class DomainProcessorTest {
     return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getMessage).orElse(null);
   }
 
-  private String getDesiredState(DomainResource domain, String serverName) {
+  private String getStateGoal(DomainResource domain, String serverName) {
     return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getStateGoal).orElse("");
   }
 

@@ -47,7 +47,7 @@ public interface EffectiveServerSpec {
    *
    * @return desired state
    */
-  String getDesiredState();
+  String getStateGoal();
 
   /**
    * Returns true if the specified server should be started, based on the current domain spec.

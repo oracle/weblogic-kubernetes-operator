@@ -113,7 +113,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
-  public String getDesiredState() {
+  public String getStateGoal() {
     return getEffectiveServerStartPolicy().equals(ServerStartPolicy.NEVER) ? SHUTDOWN_STATE : RUNNING_STATE;
   }
 
