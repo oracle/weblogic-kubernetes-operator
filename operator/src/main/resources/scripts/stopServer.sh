@@ -38,7 +38,6 @@ fi
 # Arguments for shutdown
 export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
 export SHUTDOWN_PROTOCOL_ARG=${LOCAL_ADMIN_PROTOCOL:-t3}
-export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
 export SHUTDOWN_IGNORE_SESSIONS_ARG=${SHUTDOWN_IGNORE_SESSIONS:-false}
 export SHUTDOWN_WAIT_FOR_ALL_SESSIONS_ARG=${SHUTDOWN_WAIT_FOR_ALL_SESSIONS:-false}
 export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
@@ -48,15 +47,16 @@ export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
 # Allow 3 seconds for the NFS v3 manager to detect the process destruction and release file locks.
 export SIGKILL_WAIT_TIMEOUT=$(expr $SHUTDOWN_TIMEOUT_ARG - 3)
 wait_and_kill_after_timeout(){
-  trace "Wait for ${SIGKILL_WAIT_TIMEOUT} seconds for ${SERVER_NAME} to gracefully shutdown." >> ${STOP_OUT_FILE}
+  trace "Wait for ${SIGKILL_WAIT_TIMEOUT} seconds for ${SERVER_NAME} to shut down." >> ${STOP_OUT_FILE}
   sleep ${SIGKILL_WAIT_TIMEOUT}
-  trace "Graceful shutdown for ${SERVER_NAME} didn't finish in ${SIGKILL_WAIT_TIMEOUT} seconds, " \
-        "kill the server processes." >> ${STOP_OUT_FILE}
+  trace "The server ${SERVER_NAME} didn't shut down in ${SIGKILL_WAIT_TIMEOUT} seconds, " \
+        "killing the server processes." >> ${STOP_OUT_FILE}
   # Adjust PATH if necessary before calling jps
   adjustPath
 
+  #Specifically killing the NM first as it can auto-restart a killed WL server.
   kill -9 `jps -v | grep " NodeManager " | awk '{ print $1 }'`
-  kill -9 `jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{ print $1 }'`
+  kill -9 `jps -v | grep -v Jps | awk '{ print $1 }'`
   touch ${SHUTDOWN_MARKER_FILE}
 }
 
