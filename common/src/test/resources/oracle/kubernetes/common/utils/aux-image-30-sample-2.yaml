@@ -8,6 +8,7 @@ kind: Domain
 metadata:
   name: sample-domain1
   namespace: sample-domain1-ns
+  uid: f6b4dcbd-f88e-436e-a217-1d803124bb98
   labels:
     weblogic.domainUID: sample-domain1
 

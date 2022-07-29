@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -99,9 +100,15 @@ public class ConversionWebhookResource extends BaseResource {
   private ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    List<Object> convertedDomains = conversionRequest.getDomains().stream()
-          .map(schemaConversionUtils::convertDomainSchema)
+    List<SchemaConversionUtils.Resources> convertedResources = conversionRequest.getDomains().stream()
+          .map(d -> schemaConversionUtils.convertDomainSchema(d, null))
           .collect(Collectors.toList());
+
+    List<Object> convertedDomains = new ArrayList<>();
+    for (SchemaConversionUtils.Resources cr : convertedResources) {
+      convertedDomains.add(cr.domain);
+      // HERE -- create or update clusters
+    }
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())
