@@ -173,12 +173,12 @@ get_custom_resource_cluster() {
 # args:
 # $1 Custom Resource Domain
 is_defined_in_clusters() {
-  local clusterJson="$1"
+  local DOMAIN="$1"
   local in_cluster_startup="False"
 
   if jq_available; then
     local inClusterStartupCmd="(.spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
-    local clusterDefinedInCRD=$(echo "${clusterJson}" | jq "${inClusterStartupCmd}"  2>> ${log_file_name})
+    local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}"  2>> ${log_file_name})
     if [ "${clusterDefinedInCRD}" != "" ]; then
       in_cluster_startup="True"
     fi
@@ -194,7 +194,7 @@ for j in json.load(sys.stdin)["spec"]["clusters"]:
 if outer_loop_must_break == False:
   print (False)
 INPUT
-in_cluster_startup=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+in_cluster_startup=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   echo "$in_cluster_startup"
 }
@@ -552,13 +552,13 @@ domain_api_version=$(get_domain_api_version)
 trace "domain_api_version: $domain_api_version"
 
 # Retrieve the Domain configuration
-clusterJson=$(get_custom_resource_domain)
+DOMAIN=$(get_custom_resource_domain)
 
 # API version of cluster resource hard coded to "v1" in this release
 cluster_api_version="v1"
-clusterJson=$(get_custom_resource_cluster "$wls_cluster_name")
+CLUSTER=$(get_custom_resource_cluster "$wls_cluster_name")
 
-if [ -z "$clusterJson" ]; then
+if [ -z "$CLUSTER" ]; then
   # Cluster resource not found. Should not be allowed to scale this cluster.
 
   # However, for the time being, we are keeping old code that use older domain
@@ -567,12 +567,12 @@ if [ -z "$clusterJson" ]; then
   trace "Cluster resource not found. Assuming clusters still defined in Domain resource"
 
   # Determine if WLS cluster has configuration in CRD
-  in_cluster_startup=$(is_defined_in_clusters "$clusterJson")
+  in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
 
   # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
   # depending on whether the specified cluster is defined in clusters
   # or not.
-  current_replica_count=$(get_replica_count "$in_cluster_startup" "$clusterJson")
+  current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
   trace "current number of managed servers is $current_replica_count"
 
   # Calculate new managed server count
@@ -580,14 +580,14 @@ if [ -z "$clusterJson" ]; then
 
   # Verify the requested new managed server count is not less than
   # configured minimum replica count for the cluster
-  verify_minimum_ms_count_for_cluster "$new_ms" "$clusterJson" "$wls_cluster_name"
+  verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
 
 else
 
   trace "Cluster resource found."
 
   # Retrieve replica count from Cluster or Domain Resource.
-  current_replica_count=$(get_replica_count_or_default "$clusterJson" "$clusterJson")
+  current_replica_count=$(get_replica_count_or_default "$CLUSTER" "$DOMAIN")
   trace "current number of managed servers is $current_replica_count"
 
   # Calculate new managed server count
@@ -595,7 +595,7 @@ else
 
   # Verify the requested new managed server count is not less than
   # configured minimum replica count for the cluster
-  verify_minimum_replicas_for_cluster "$new_ms" "$clusterJson" "$wls_cluster_name"
+  verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER" "$wls_cluster_name"
 
 fi
 
