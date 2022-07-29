@@ -1843,6 +1843,11 @@ window.onload = function() {
             "OnFailure"
           ]
         },
+        "maxPendingWaitTimeSeconds": {
+          "default": 300.0,
+          "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes.",
+          "type": "integer"
+        },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
           "additionalProperties": {
@@ -1908,7 +1913,7 @@ window.onload = function() {
           "description": "Status of the WebLogic Server pod\u0027s Ready condition if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown.",
           "type": "string"
         },
-        "desiredState": {
+        "stateGoal": {
           "description": "Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN.",
           "type": "string"
         },

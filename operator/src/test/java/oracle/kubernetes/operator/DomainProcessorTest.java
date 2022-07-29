@@ -2097,7 +2097,7 @@ class DomainProcessorTest {
   }
 
   private String getDesiredState(DomainResource domain, String serverName) {
-    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getDesiredState).orElse("");
+    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getStateGoal).orElse("");
   }
 
   private ServerStatus getServerStatus(DomainResource domain, String serverName) {

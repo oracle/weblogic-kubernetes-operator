@@ -38,6 +38,7 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
+
   private static final String METADATA = "metadata";
   private static final String SPEC = "spec";
   private static final String STATUS = "status";
@@ -62,6 +63,8 @@ public class SchemaConversionUtils {
   private static final String VOLUME = "volume";
   private static final String MOUNT_PATH = "mountPath";
   private static final String IMAGE = "image";
+  public static final String OLD_STATE_GOAL_KEY = "desiredState";
+  public static final String NEW_STATE_GOAL_KEY = "stateGoal";
 
   private final AtomicInteger containerIndex = new AtomicInteger(0);
   private final String targetAPIVersion;
@@ -163,6 +166,7 @@ public class SchemaConversionUtils {
     } else { // 9 or above
       removeObsoleteConditionsFromDomainStatus(domain);
       removeUnsupportedDomainStatusConditionReasons(domain);
+      renameServerStatusFields(domain);
     }
   }
 
@@ -217,6 +221,23 @@ public class SchemaConversionUtils {
 
   private boolean isUnsupportedReason(@Nonnull String reason) {
     return !SUPPORTED_FAILURE_REASONS.contains(reason);
+  }
+
+  private void renameServerStatusFields(Map<String, Object> domain) {
+    getServerStatuses(domain).forEach(this::adjustServerStatus);
+
+  }
+
+  private void adjustServerStatus(Map<String, Object> serverStatus) {
+    serverStatus.computeIfAbsent(NEW_STATE_GOAL_KEY, key -> serverStatus.get(OLD_STATE_GOAL_KEY));
+    serverStatus.remove(OLD_STATE_GOAL_KEY);
+  }
+
+  @Nonnull
+  private List<Map<String,Object>> getServerStatuses(Map<String, Object> domain) {
+    return (List<Map<String,Object>>) Optional.ofNullable(getStatus(domain))
+          .map(status -> status.get("servers"))
+          .orElse(Collections.emptyList());
   }
 
   private void convertDomainHomeInImageToDomainHomeSourceType(Map<String, Object> domain) {

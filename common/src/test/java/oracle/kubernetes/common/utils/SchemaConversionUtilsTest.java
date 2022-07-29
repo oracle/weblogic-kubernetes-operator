@@ -153,10 +153,6 @@ class SchemaConversionUtilsTest {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String,Object> getStatus() {
-    return getStatus(v8Domain);
-  }
-
   private Map<String,Object> getStatus(Map<String, Object> domain) {
     return (Map<String, Object>) domain.computeIfAbsent("status", k -> new HashMap<>());
   }
@@ -219,6 +215,32 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void whenOldDomainHasDesiredStateFields_renameAsStateGoal() {
+    addServerStatus("ms1", "RUNNING", "UNKNOWN");
+    addServerStatus("ms2", "RUNNING", "RUNNING");
+    addServerStatus("ms2", "SHUTDOWN", "SHUTDOWN");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.servers[*].state", contains("UNKNOWN", "RUNNING", "SHUTDOWN")));
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.servers[*].stateGoal", contains("RUNNING", "RUNNING", "SHUTDOWN")));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.status.servers[0].desiredState"));
+  }
+
+  private void addServerStatus(String serverName, String desiredState, String state) {
+    final Map<String, String> serverStatus
+        = Map.of("serverName", serverName, "state", state, "desiredState", desiredState);
+    getServerStatuses(v8Domain).add(new HashMap<>(serverStatus));
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Object> getServerStatuses(Map<String, Object> domain) {
+    return (List<Object>) getStatus(domain).computeIfAbsent("servers", k -> new ArrayList<>());
+  }
+
+  @Test
   void testV8DomainWithConfigOverrides_moveToOverridesConfigMap() {
     setConfigOverrides(v8Domain, "someMap");
 
@@ -249,7 +271,7 @@ class SchemaConversionUtilsTest {
     getMapAtPath(v8Domain, "spec.configuration").put("overridesConfigMap", configMap);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
   private Map<String, Object> addCluster(Map<String, Object> v8Domain, String name) {
     List<Map<String, Object>> clusters = (List<Map<String, Object>>) getDomainSpec(v8Domain)
             .computeIfAbsent("clusters", k -> new ArrayList<>());
@@ -259,7 +281,7 @@ class SchemaConversionUtilsTest {
     return newCluster;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
   private Map<String, Object> addManagedServer(Map<String, Object> v8Domain, String name) {
     List<Map<String, Object>> managedServers = (List<Map<String, Object>>) getDomainSpec(v8Domain)
             .computeIfAbsent("managedServers", k -> new ArrayList<>());
@@ -452,6 +474,7 @@ class SchemaConversionUtilsTest {
   }
   
   @SuppressWarnings("unchecked")
+  @Test
   void testV8DomainWebLogicCredentialsSecretWithNamespace_remove() {
     ((Map<String, Object>) getDomainSpec(v8Domain).get("webLogicCredentialsSecret")).put("namespace", "my-ns");
 

@@ -257,6 +257,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
+  public Long getMaximumPendingWaitTimeSeconds() {
+    return server.getMaximumPendingWaitTimeSeconds();
+  }
+
+  @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
