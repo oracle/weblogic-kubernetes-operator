@@ -643,7 +643,6 @@ fi
 request_body=$(get_request_body "$new_ms")
 
 content_type="Content-Type: application/json"
-accept_resp_type="Accept: application/json"
 requested_by="X-Requested-By: WLDF"
 authorization="Authorization: Bearer $access_token"
 pem_filename="weblogic_operator-$$.pem"
