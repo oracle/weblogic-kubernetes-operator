@@ -140,7 +140,7 @@ domain_api_version=$(echo "${APIS}" | python cmds-$$.py 2>> ${log_file_name})
 
 # Retrieve Custom Resource Domain
 get_custom_resource_domain() {
-  local clusterJson=$(curl \
+  local DOMAIN=$(curl \
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
@@ -149,10 +149,10 @@ get_custom_resource_domain() {
     trace "Failed to retrieve WebLogic Domain Custom Resource Definition"
     exit 1
   fi
-  echo "$clusterJson"
+  echo "$DOMAIN"
 }
 
-# Retrieve Custom Resource Cluster
+# Retrieve Cluster Custom Resource
 # args:
 # $1 Cluster name (assumed to be same as name of the Cluster Resource)
 get_custom_resource_cluster() {
@@ -480,6 +480,63 @@ replica count of $maxReplicas. Exiting."
   fi
 }
 
+# calculate target replica count
+# args:
+# $1 sacling action - scaleUp or scaleDown
+# $2 scaling size
+# $3 Cluster Custom Resource
+# $4 Domain Custom Resource
+find_target_replicas() {
+  local scaling_action="$1"
+  local scaling_size="$2"
+  local CLUSTER="$3"
+  local DOMAIN="$4"
+  local new_ms
+
+  if [ -z "$CLUSTER" ]; then
+
+    # Cluster resource not found. Should not be allowed to scale this cluster.
+
+    # However, for the time being, we are keeping old code that use older domain
+    # resource with clusters config to avoid breaking existing tests.
+    # *** To be removed later. ***
+    trace "Cluster resource not found. Assuming clusters still defined in Domain resource"
+
+    # Determine if WLS cluster has configuration in Domain Resource
+    in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
+
+    # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
+    # depending on whether the specified cluster is defined in clusters
+    # or not.
+    current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
+    trace "current number of managed servers is $current_replica_count"
+
+    # Calculate new managed server count
+    new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
+
+    # Verify the requested new managed server count is not less than
+    # configured minimum replica count for the cluster
+    verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
+
+  else
+
+    trace "Cluster resource found."
+
+    # Retrieve replica count from Cluster or Domain Resource.
+    current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
+    trace "current number of managed servers is $current_replica_count"
+
+    # Calculate new managed server count
+    new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
+
+    # Verify the requested new managed server count
+    verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER"
+    verify_maximum_replicas_for_cluster "$new_ms" "$CLUSTER"
+
+  fi
+  echo "$new_ms"
+}
+
 # Create the REST endpoint CA certificate in PEM format
 # args:
 # $1 certificate file name to create
@@ -595,46 +652,7 @@ DOMAIN=$(get_custom_resource_domain)
 cluster_api_version="v1"
 CLUSTER=$(get_custom_resource_cluster "$wls_cluster_name")
 
-if [ -z "$CLUSTER" ]; then
-  # Cluster resource not found. Should not be allowed to scale this cluster.
-
-  # However, for the time being, we are keeping old code that use older domain
-  # resource with clusters config to avoid breaking existing tests.
-  # *** To be removed later. ***
-  trace "Cluster resource not found. Assuming clusters still defined in Domain resource"
-
-  # Determine if WLS cluster has configuration in CRD
-  in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
-
-  # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
-  # depending on whether the specified cluster is defined in clusters
-  # or not.
-  current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
-  trace "current number of managed servers is $current_replica_count"
-
-  # Calculate new managed server count
-  new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
-
-  # Verify the requested new managed server count is not less than
-  # configured minimum replica count for the cluster
-  verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
-
-else
-
-  trace "Cluster resource found."
-
-  # Retrieve replica count from Cluster or Domain Resource.
-  current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
-  trace "current number of managed servers is $current_replica_count"
-
-  # Calculate new managed server count
-  new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
-
-  # Verify the requested new managed server count
-  verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER"
-  verify_maximum_replicas_for_cluster "$new_ms" "$CLUSTER"
-
-fi
+new_ms=$(find_target_replicas "$scaling_action" "$scaling_size" "$CLUSTER" "$DOMAIN")
 
 # Cleanup cmds-$$.py
 [ -e cmds-$$.py ] && rm cmds-$$.py

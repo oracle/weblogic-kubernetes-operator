@@ -3,8 +3,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # To run this test manually:
-# export SHUNIT2_PATH=<path to shunit2>
-# export SCRIPTPATH=<path to scalingAction.sh>
+# export SHUNIT2_PATH=<path of shunit2 binary>
+# export SCRIPTPATH=<path of directory containing scalingAction.sh>
 # sh scaling/scalingActionTest.sh
 #
 
@@ -320,7 +320,7 @@ test_get_replicas_from_cluster() {
 
   result=$(get_replicas_from_cluster "${cluster_json}")
 
-  assertEquals '1' "${result}"
+  assertEquals '3' "${result}"
 }
 
 test_get_replicas_from_cluster_jq() {
@@ -334,7 +334,7 @@ test_get_replicas_from_cluster_jq() {
 
   result=$(get_replicas_from_cluster "${cluster_json}")
 
-  assertEquals '1' "${result}"
+  assertEquals '3' "${result}"
 }
 
 test_get_replicas_from_cluster_no_replicas() {
@@ -642,7 +642,7 @@ test_get_replica_count_from_resources_cluster() {
 
   result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
 
-  assertEquals '1' "${result}"
+  assertEquals '3' "${result}"
 }
 
 test_get_replica_count_from_resources_cluster_jq() {
@@ -658,7 +658,7 @@ test_get_replica_count_from_resources_cluster_jq() {
 
   result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
 
-  assertEquals '1' "${result}"
+  assertEquals '3' "${result}"
 }
 
 test_get_replica_count_from_resources_domain() {
@@ -721,6 +721,122 @@ test_get_replica_count_from_resources_set_to_minReplicas_jq() {
   result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
 
   assertEquals '3' "${result}"
+}
+
+##### find_target_replicas tests #####
+
+test_find_target_replicas_scaleUp() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '4' "${result}"
+}
+
+test_find_target_replicas_scaleUp_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '4' "${result}"
+}
+
+test_find_target_replicas_scaleDown() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(find_target_replicas "scaleDown" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '2' "${result}"
+}
+
+test_find_target_replicas_scaleDown_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(find_target_replicas "scaleDown" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '2' "${result}"
+}
+
+test_find_target_replicas_no_replicas_in_cluster_resource() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '3' "${result}"
+}
+
+test_find_target_replicas_no_replicas_in_cluster_resource_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '3' "${result}"
+}
+
+test_find_target_replicas_no_cluster_resource() {
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=""
+
+  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '2' "${result}"
+}
+
+test_find_target_replicas_no_cluster_resource_jq() {
+  skip_if_jq_not_installed
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=''
+
+  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  assertEquals '2' "${result}"
 }
 
 ######################### Mocks for the tests ###############
