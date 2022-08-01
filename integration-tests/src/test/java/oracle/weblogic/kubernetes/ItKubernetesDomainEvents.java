@@ -731,7 +731,7 @@ class ItKubernetesDomainEvents {
   private static void checkEventWithCount(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp, int countBefore) {
-    testUntil(
+    testUntil(withLongRetryPolicy,
         checkDomainEventWithCount(
             opNamespace, domainNamespace, domainUid, reason, type, timestamp, countBefore),
         logger,
