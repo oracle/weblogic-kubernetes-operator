@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
@@ -23,7 +24,6 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 import static java.util.Collections.emptyList;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_FAILURE;
@@ -85,8 +85,7 @@ public class IntrospectionStatus {
   }
 
   private static String getWaitingMessageFromStatus(@Nonnull V1Pod pod) {
-    return Optional.ofNullable(getWaitingMessageFromStatus(getIntrospectorStatus(pod)))
-          .orElse(null);
+    return getWaitingMessageFromStatus(getIntrospectorStatus(pod));
   }
 
   private static String getWaitingMessageFromStatus(V1ContainerStatus status) {
@@ -121,19 +120,6 @@ public class IntrospectionStatus {
             .map(V1ContainerState::getWaiting)
             .map(V1ContainerStateWaiting::getReason)
             .orElse(null);
-  }
-
-  private static boolean isReady(@Nonnull V1Pod pod) {
-    return Optional.of(pod).map(IntrospectionStatus::getContainerStatus).map(V1ContainerStatus::getReady).orElse(false);
-
-  }
-
-  private static V1ContainerStatus getContainerStatus(@Nonnull V1Pod pod) {
-    return getContainerStatuses(pod).stream().findFirst().orElse(new V1ContainerStatus());
-  }
-
-  private static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
-    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(emptyList());
   }
 
   abstract static class PodStatus {
