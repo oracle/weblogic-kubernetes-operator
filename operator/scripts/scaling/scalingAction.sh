@@ -203,11 +203,11 @@ in_cluster_startup=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
 # args:
 # $1 Custom Resource Domain
 get_num_ms_in_cluster() {
-  local clusterJson="$1"
+  local DOMAIN="$1"
   local num_ms
   if jq_available; then
   local numManagedServersCmd="(.spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
-  num_ms=$(echo "${clusterJson}" | jq "${numManagedServersCmd}"  2>> ${log_file_name})
+  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -215,7 +215,7 @@ for j in json.load(sys.stdin)["spec"]["clusters"]:
   if j["clusterName"] == "$wls_cluster_name":
     print((j["replicas"]))
 INPUT
-  num_ms=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  num_ms=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
   fi
 
   if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
@@ -232,8 +232,8 @@ get_replicas_from_cluster() {
   local clusterJson="$1"
   local replicas
   if jq_available; then
-    local numManagedServersCmd=".spec.replicas"
-    replicas=$(echo "${clusterJson}" | jq "${numManagedServersCmd}" 2>> ${log_file_name} )
+    local numReplicasCmd=".spec.replicas"
+    replicas=$(echo "${clusterJson}" | jq "${numReplicasCmd}" 2>> ${log_file_name} )
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -383,7 +383,7 @@ get_replica_count() {
 # args:
 # $1 Cluster Custom Resource
 # $2 Domain Custom Resource
-get_replica_count_from_cluster_or_domain() {
+get_replica_count_from_resources() {
   local clusterJson="$1"
   local domainJson="$2"
   local replicas
@@ -624,7 +624,7 @@ else
   trace "Cluster resource found."
 
   # Retrieve replica count from Cluster or Domain Resource.
-  current_replica_count=$(get_replica_count_from_cluster_or_domain "$CLUSTER" "$DOMAIN")
+  current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
   trace "current number of managed servers is $current_replica_count"
 
   # Calculate new managed server count
