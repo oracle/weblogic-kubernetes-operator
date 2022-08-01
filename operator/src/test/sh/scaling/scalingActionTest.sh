@@ -628,7 +628,7 @@ test_get_replica_count_set_to_minReplicas_jq() {
   assertEquals '3' "${result}"
 }
 
-##### get_replica_count_from_cluster_or_domain tests #####
+##### get_replica_count_from_resources tests #####
 
 test_get_replica_count_from_resources_cluster() {
 
