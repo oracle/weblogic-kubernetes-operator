@@ -33,7 +33,6 @@ import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import jakarta.validation.Valid;
-import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -241,10 +240,18 @@ class ServerPod extends KubernetesResource {
    *
    * @since 4.0
    */
-  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
-      + "before it considers the pod failed. Defaults to 1800 seconds.")
-  @Default(intDefault = 1800)
-  private Long maxReadyWaitTimeSeconds = 1800L;
+  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready "
+      + "state before it considers the pod failed. Defaults to 1800 seconds.")
+  private Long maxReadyWaitTimeSeconds = null;
+
+  /**
+   * The maximum pending wait time.
+   *
+   * @since 4.0
+   */
+  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running "
+      + "state before it considers the pod failed. Defaults to 5 minutes.")
+  private Long maxPendingWaitTimeSeconds = null;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -380,6 +387,14 @@ class ServerPod extends KubernetesResource {
     this.maxReadyWaitTimeSeconds = maxReadyWaitTimeSeconds;
   }
 
+  public Long getMaxPendingWaitTimeSeconds() {
+    return this.maxPendingWaitTimeSeconds;
+  }
+
+  public void setMaxPendingWaitTimeSeconds(@Nullable Long maxPendingWaitTimeSeconds) {
+    this.maxPendingWaitTimeSeconds = maxPendingWaitTimeSeconds;
+  }
+
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
@@ -404,7 +419,12 @@ class ServerPod extends KubernetesResource {
     copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
-    maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
+    if (maxReadyWaitTimeSeconds == null) {
+      maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
+    }
+    if (maxPendingWaitTimeSeconds == null) {
+      maxPendingWaitTimeSeconds = serverPod1.maxPendingWaitTimeSeconds;
+    }
     if (serverPod1.affinity != null && isNullOrDefaultAffinity()) {
       affinity = serverPod1.affinity;
     }

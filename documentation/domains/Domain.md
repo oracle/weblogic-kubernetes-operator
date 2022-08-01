@@ -149,6 +149,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `initContainers` | Array of [Container](k8s1.13.5.md#container) | Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `livenessProbe` | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a WebLogic Server instance. |
+| `maxPendingWaitTimeSeconds` | integer | The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes. |
 | `maxReadyWaitTimeSeconds` | integer | The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds. |
 | `nodeName` | string | NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`. |
 | `nodeSelector` | Map | Selector which must match a Node's labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`. |
@@ -201,13 +202,13 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name, if the server is a member of a cluster. |
-| `desiredState` | string | Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server instance. |
 | `nodeName` | string | Name of Node that is hosting the Pod containing this WebLogic Server instance. |
 | `podPhase` | string | Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown. |
 | `podReady` | string | Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown. |
 | `serverName` | string | WebLogic Server instance name. |
 | `state` | string | Current state of this WebLogic Server instance. |
+| `stateGoal` | string | Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN. |
 
 ### Admin Service
 

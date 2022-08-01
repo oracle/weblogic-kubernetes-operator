@@ -281,7 +281,7 @@ class DomainStatusPatchTest {
     DomainStatus status2 = new DomainStatus()
           .addServer(new ServerStatus()
                 .withServerName("ms1").withClusterName("cluster1")
-                .withState(RUNNING_STATE).withNodeName("node1").withDesiredState(RUNNING_STATE))
+                .withState(RUNNING_STATE).withNodeName("node1").withStateGoal(RUNNING_STATE))
           .addServer(new ServerStatus()
                 .withServerName("ms2").withClusterName("cluster1").withState(STARTING_STATE));
 
@@ -289,8 +289,8 @@ class DomainStatusPatchTest {
 
     assertThat(builder.getPatches(),
           hasItemsInOrder(
-             "ADD /status/servers/- {'clusterName':'cluster1','desiredState':'RUNNING',"
-                 + "'nodeName':'node1','serverName':'ms1','state':'RUNNING'}",
+             "ADD /status/servers/- {'clusterName':'cluster1','nodeName':'node1',"
+                 + "'serverName':'ms1','state':'RUNNING','stateGoal':'RUNNING'}",
              "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms2','state':'STARTING'}"
              ));
   }
