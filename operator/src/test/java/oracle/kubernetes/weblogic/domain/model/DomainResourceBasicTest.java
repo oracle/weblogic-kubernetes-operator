@@ -367,6 +367,34 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
+  void whenWaitTimeSpecifiedOnMultipleLevels_ServerOverridesClusterValue() {
+    configureCluster(CLUSTER_NAME)
+        .withMaximumReadyWaitTimeSeconds(250)
+        .withMaximumPendingWaitTimeSeconds(27);
+
+    configureServer(SERVER1)
+        .withMaximumReadyWaitTimeSeconds(100)
+        .withMaximumPendingWaitTimeSeconds(32);
+
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
+    
+    assertThat(spec.getMaximumReadyWaitTimeSeconds(), equalTo(100L));
+    assertThat(spec.getMaximumPendingWaitTimeSeconds(), equalTo(32L));
+  }
+
+  @Test
+  void whenWaitTimeSpecifiedOnMultipleLevels_DomainOverridesTuningValue() {
+    configureDomain(domain)
+        .withMaximumReadyWaitTimeSeconds(250L)
+        .withMaximumPendingWaitTimeSeconds(80L);
+
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getMaximumReadyWaitTimeSeconds(), equalTo(250L));
+    assertThat(spec.getMaximumPendingWaitTimeSeconds(), equalTo(80L));
+  }
+
+  @Test
   void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
     EffectiveServerSpec effectiveServerSpec = info.getServer("server1", null);

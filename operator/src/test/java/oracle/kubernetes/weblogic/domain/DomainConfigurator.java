@@ -232,6 +232,16 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withMaximumReadyWaitTimeSeconds(Long readyWaitTimeSeconds) {
+    getDomainSpec().setMaxReadyWaitTimeSeconds(readyWaitTimeSeconds);
+    return this;
+  }
+
+  public DomainConfigurator withMaximumPendingWaitTimeSeconds(Long pendingWaitTimeSeconds) {
+    getDomainSpec().setMaxPendingWaitTimeSeconds(pendingWaitTimeSeconds);
+    return this;
+  }
+
   public DomainConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
     getDomainSpec().setMaxClusterConcurrentShutdown(maxConcurrentShutdown);
     return this;
