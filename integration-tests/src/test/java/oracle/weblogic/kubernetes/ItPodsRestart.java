@@ -13,6 +13,7 @@ import java.util.Map;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -40,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -81,7 +83,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test pods are restarted after the following properties in server pods are changed.
  * Change: The env property tested: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true
- * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+ * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never).
  * Change: podSecurityContext: runAsUser:0 --> runAsUser: 1000
  * Add resources: limits: cpu: "1", resources: requests: cpu: "0.5".
  *
@@ -461,11 +463,13 @@ class ItPodsRestart {
    * Modify the domain scope property on the domain resource.
    * Verify all pods are restarted and back to ready state.
    * Verifies that the domain roll starting/pod cycle starting events are logged.
-   * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+   * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never).
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
   void testServerPodsRestartByChangingImagePullPolicy() {
+    String pullPolicy = KIND_REPO != null 
+        ? ImagePullPolicyEnum.NEVER.getValue() : ImagePullPolicyEnum.ALWAYS.getValue();
     // get the original domain resource before update
     Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
@@ -476,13 +480,13 @@ class ItPodsRestart {
     V1Container.ImagePullPolicyEnum imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
-    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never)
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/imagePullPolicy\",")
         .append("\"value\": \"")
-        .append("Never")
+        .append(pullPolicy)
         .append("\"}]");
     logger.info("PatchStr for imagePullPolicy: {0}", patchStr.toString());
 
@@ -501,8 +505,8 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertEquals(V1Container.ImagePullPolicyEnum.NEVER, imagePullPolicy, "imagePullPolicy was not updated"
-        + " in the new patched domain");
+    assertTrue(imagePullPolicy.getValue().equalsIgnoreCase(pullPolicy),
+        "imagePullPolicy was not updated in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
