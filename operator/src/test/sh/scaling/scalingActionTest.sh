@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# To run this test:
+# To run this test manually:
 # export SHUNIT2_PATH=<path to shunit2>
 # export SCRIPTPATH=<path to scalingAction.sh>
 # sh scaling/scalingActionTest.sh
@@ -310,6 +310,154 @@ test_get_num_ms_in_cluster_no_matching_jq() {
   assertEquals '0' "${result}"
 }
 
+##### get_replicas_from_cluster tests #####
+
+test_get_replicas_from_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '1' "${result}"
+}
+
+test_get_replicas_from_cluster_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  wls_cluster_name='cluster-1'
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '1' "${result}"
+}
+
+test_get_replicas_from_cluster_no_replicas() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '-1' "${result}"
+}
+
+test_get_replicas_from_cluster_no_replicas_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  wls_cluster_name='cluster-1'
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '-1' "${result}"
+}
+
+##### get_min_replicas_from_cluster tests #####
+
+test_get_min_replicas_from_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_min_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '1' "${result}"
+}
+
+test_get_min_replicas_from_cluster_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_min_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '1' "${result}"
+}
+
+test_get_min_replicas_from_cluster_default() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_min_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '0' "${result}"
+}
+
+test_get_min_replicas_from_cluster_default_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_min_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '0' "${result}"
+}
+
+##### get_max_replicas_from_cluster tests #####
+
+test_get_max_replicas_from_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_max_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '8' "${result}"
+}
+
+test_get_max_replicas_from_cluster_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_max_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '8' "${result}"
+}
+
+test_get_max_replicas_from_cluster_default() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_max_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '' "${result}"
+}
+
+test_get_max_replicas_from_cluster_default_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_max_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '' "${result}"
+}
+
 ##### get_num_ms_domain_scope tests #####
 
 test_get_num_ms_domain_scope() {
@@ -476,6 +624,101 @@ test_get_replica_count_set_to_minReplicas_jq() {
   domain_json=`command cat ${DOMAIN_FILE}`
 
   result=$(get_replica_count 'False' "${domain_json}")
+
+  assertEquals '3' "${result}"
+}
+
+##### get_replica_count_from_cluster_or_domain tests #####
+
+test_get_replica_count_from_resources_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '1' "${result}"
+}
+
+test_get_replica_count_from_resources_cluster_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '1' "${result}"
+}
+
+test_get_replica_count_from_resources_domain() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '2' "${result}"
+}
+
+test_get_replica_count_from_resources_domain_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '2' "${result}"
+}
+
+test_get_replica_count_from_resources_set_to_minReplicas() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr_min3.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '3' "${result}"
+}
+
+test_get_replica_count_from_resources_set_to_minReplicas_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr_min3.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
 
   assertEquals '3' "${result}"
 }
