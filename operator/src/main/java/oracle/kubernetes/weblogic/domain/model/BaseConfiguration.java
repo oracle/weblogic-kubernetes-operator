@@ -358,13 +358,20 @@ public abstract class BaseConfiguration {
     this.restartVersion = restartVersion;
   }
 
-
   Long getMaximumReadyWaitTimeSeconds() {
     return serverPod.getMaxReadyWaitTimeSeconds();
   }
 
+  Long getMaximumPendingWaitTimeSeconds() {
+    return serverPod.getMaxPendingWaitTimeSeconds();
+  }
+
   public void setMaxReadyWaitTimeSeconds(long waitTime) {
     serverPod.setMaxReadyWaitTimeSeconds(waitTime);
+  }
+
+  public void setMaxPendingWaitTimeSeconds(long waitTime) {
+    serverPod.setMaxPendingWaitTimeSeconds(waitTime);
   }
 
   @Override
