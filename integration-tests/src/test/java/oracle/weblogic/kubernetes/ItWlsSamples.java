@@ -39,9 +39,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
@@ -97,6 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
+@Tag("oke-parallel")
 @IntegrationTest
 class ItWlsSamples {
 
@@ -113,7 +117,7 @@ class ItWlsSamples {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static String domainNamespace = null;
-  private static final String domainName = "domain1";
+  private static final String domainName = "wlsdomain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
       SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
@@ -123,12 +127,11 @@ class ItWlsSamples {
   private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
 
   private final Path samplePath = get(ITTESTS_DIR, "../kubernetes/samples");
-  private final Path tempSamplePath = get(WORK_DIR, "wls-sample-testing");
   private final Path domainLifecycleSamplePath = get(samplePath + "/scripts/domain-lifecycle");
   private static String UPDATE_MODEL_FILE = "model-samples-update-domain.yaml";
   private static String UPDATE_MODEL_PROPERTIES = "model-samples-update-domain.properties";
 
-  private static final String[] params = {"wlst:domain1", "wdt:domain2"};
+  private static final String[] params = {"wlst:wlsdomain1", "wdt:wlsdomain2"};
 
   private static LoggingFacade logger = null;
 
@@ -181,13 +184,13 @@ class ItWlsSamples {
     String script = model.split(":")[0];
 
     String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
-
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainName, script);
     //copy the samples directory to a temporary location
-    setupSample();
+    setupSample(testSamplePath);
     createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    Path sampleBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
+    Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
 
     // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainName, sampleBase);
@@ -241,9 +244,9 @@ class ItWlsSamples {
 
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainName, script);
     //copy the samples directory to a temporary location
-    setupSample();
+    setupSample(testSamplePath);
     String secretName = domainName + "-weblogic-credentials";
     if (!secretExists(secretName, domainNamespace)) {
       createSecretWithUsernamePassword(
@@ -253,12 +256,12 @@ class ItWlsSamples {
           ADMIN_PASSWORD_DEFAULT);
     }
     //create PV and PVC used by the domain
-    createPvPvc(domainName);
+    createPvPvc(domainName, testSamplePath);
 
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
 
-    Path sampleBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+    Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
     // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainName, sampleBase);
@@ -386,8 +389,9 @@ class ItWlsSamples {
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   @Tag("samples-gate")
   void testTraefikIngressController() {
-    setupSample();
-    Path scriptBase = get(tempSamplePath.toString(), "charts/util");
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "traefik");
+    setupSample(testSamplePath);
+    Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
     setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
   }
@@ -399,7 +403,8 @@ class ItWlsSamples {
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
-    setupSample();
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "nginx");
+    setupSample(testSamplePath);
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("TEST_IMAGES_REPO", TEST_IMAGES_REPO);
     templateMap.put("TEST_NGINX_IMAGE_NAME ", TEST_NGINX_IMAGE_NAME);
@@ -409,7 +414,7 @@ class ItWlsSamples {
     Path targetPropFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcPropFile.toString(), "nginx.properties", templateMap));
     logger.info("Generated nginx.properties file path is {0}", targetPropFile);
-    Path scriptBase = get(tempSamplePath.toString(), "charts/util");
+    Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace 
          + " -p " + targetPropFile.toString());
     setupLoadBalancer(scriptBase, "nginx", " -d -s -n " + nginxNamespace);
@@ -456,16 +461,16 @@ class ItWlsSamples {
   }
 
   // copy samples directory to a temporary location
-  private void setupSample() {
+  private void setupSample(Path testSamplePath) {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/wls-sample-testing"
-      logger.info("Deleting and recreating {0}", tempSamplePath);
-      createDirectories(tempSamplePath);
-      deleteDirectory(tempSamplePath.toFile());
-      createDirectories(tempSamplePath);
+      logger.info("Deleting and recreating {0}", testSamplePath);
+      createDirectories(testSamplePath);
+      deleteDirectory(testSamplePath.toFile());
+      createDirectories(testSamplePath);
 
-      logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
-      copyDirectory(samplePath.toFile(), tempSamplePath.toFile());
+      logger.info("Copying {0} to {1}", samplePath, testSamplePath);
+      copyDirectory(samplePath.toFile(), testSamplePath.toFile());
     });
   }
 
@@ -481,7 +486,7 @@ class ItWlsSamples {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc(String domainName) {
+  private void createPvPvc(String domainName, Path testSamplePath) {
 
     final String pvName = domainName + "-weblogic-sample-pv";
     final String pvcName = domainName + "-weblogic-sample-pvc";
@@ -503,29 +508,49 @@ class ItWlsSamples {
         assertDoesNotThrow(() -> pvNotExist(pvName, null),
             String.format("pvNotExists failed for pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
 
-    Path pvpvcBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
+    Path pvpvcBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
-    // create pv and pvc
+    if (!OKE_CLUSTER) {
+      // create pv and pvc
+      assertDoesNotThrow(() -> {
+        // when tests are running in local box the PV directories need to exist
+        Path pvHostPath;
+        pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
+
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
+
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+      });
+
+    } else {
+      assertDoesNotThrow(() -> {
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + FSS_DIR);
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStorageNFSServer: nfsServer", "weblogicDomainStorageNFSServer: " + NFS_SERVER);
+        replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+        replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+
+      });
+    }
     assertDoesNotThrow(() -> {
-      // when tests are running in local box the PV directories need to exist
-      Path pvHostPath;
-      pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
-
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      deleteDirectory(pvHostPath.toFile());
-      createDirectories(pvHostPath);
-
-      // set the pvHostPath in create-pv-pvc-inputs.yaml
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "namespace: default", "namespace: " + domainNamespace);
+              "namespace: default", "namespace: " + domainNamespace);
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
+              "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "domainUID:", "domainUID: " + domainName);
+              "domainUID:", "domainUID: " + domainName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -579,9 +604,24 @@ class ItWlsSamples {
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + "/" + domainName + "/domains");
       if (KIND_REPO == null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
             "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      }
+      if (OKE_CLUSTER && sampleBase.toString().contains("domain-home-on-pv")) {
+        String chownCommand1 = "chown 1000:0 %DOMAIN_ROOT_DIR%"
+                + "/. && find %DOMAIN_ROOT_DIR%"
+                + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+        String chownCommand2 = "chown 1000:1000 %DOMAIN_ROOT_DIR%"
+                + "/. && find %DOMAIN_ROOT_DIR%"
+                + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-job-template.yaml").toString(),
+                "chown -R 1000:0 %DOMAIN_ROOT_DIR%", chownCommand1);
+        replaceStringInFile(get(sampleBase.toString(), "update-domain-job-template.yaml").toString(),
+                "chown -R 1000:1000 %DOMAIN_ROOT_DIR%", chownCommand2);
       }
     });
   }
