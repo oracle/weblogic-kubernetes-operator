@@ -403,13 +403,13 @@ public class RestBackendImpl implements RestBackend {
     WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domainUid, cluster);
 
     // Verify the current configured cluster size
-    int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
-    if (requestedSize > maxClusterSize) {
+    int clusterSize = wlsClusterConfig.getClusterSize();
+    if (requestedSize > clusterSize) {
       throw createWebApplicationException(
               Status.BAD_REQUEST,
               MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
               requestedSize,
-              maxClusterSize,
+              clusterSize,
               cluster,
               cluster);
     }

@@ -237,7 +237,7 @@ public class ManagedServersUpStep extends Step {
     boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
-        int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        int configMaxClusterSize = clusterConfig.getDynamicClusterSizeOrZero();
         return clusterConfig.hasDynamicServers()
             && clusterConfig.getServerConfigs().size() == configMaxClusterSize
             && info.getReplicaCount(clusterName) > configMaxClusterSize;
@@ -294,7 +294,7 @@ public class ManagedServersUpStep extends Step {
         String clusterName = clusterConfig.getClusterName();
         addReplicasTooHighValidationErrorWarning(
             info.getReplicaCount(clusterName),
-            clusterConfig.getMaxDynamicClusterSize(),
+            clusterConfig.getDynamicClusterSizeOrZero(),
             clusterName);
       }
     }

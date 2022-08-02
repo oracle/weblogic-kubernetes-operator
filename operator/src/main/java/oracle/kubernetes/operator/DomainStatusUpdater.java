@@ -1220,7 +1220,7 @@ public class DomainStatusUpdater {
       final String clusterName = clusterConfig.getName();
       return new ClusterStatus()
           .withClusterName(clusterName)
-          .withMaximumReplicas(clusterConfig.getMaxClusterSize())
+          .withMaximumReplicas(clusterConfig.getClusterSize())
           .withMinimumReplicas(useMinimumClusterSize(clusterName) ? clusterConfig.getMinClusterSize() : 0)
           .withReplicasGoal(getClusterSizeGoal(clusterName));
     }

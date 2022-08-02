@@ -253,7 +253,8 @@ class DomainTopologyTest {
 
     assertTrue(wlsClusterConfig.hasDynamicServers());
     assertTrue(wlsClusterConfig.hasStaticServers());
-    assertEquals(2, wlsClusterConfig.getClusterSize());
+    assertEquals(5, wlsClusterConfig.getClusterSize());
+    assertEquals(2, wlsClusterConfig.getConfiguredClusterSize());
     assertEquals(3, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(5, wlsClusterConfig.getServerConfigs().size());
     assertEquals(2, wlsClusterConfig.getServers().size());

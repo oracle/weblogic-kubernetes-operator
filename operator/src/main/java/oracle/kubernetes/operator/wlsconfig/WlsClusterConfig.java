@@ -83,13 +83,14 @@ public class WlsClusterConfig {
    * @return The number of servers that are statically configured in this cluster
    */
   @JsonIgnore
-  public synchronized int getClusterSize() {
+  public synchronized int getConfiguredClusterSize() {
     return servers.size();
   }
 
   @JsonIgnore
-  public synchronized int getMaxClusterSize() {
-    return hasDynamicServers() ? getClusterSize() + getMaxDynamicClusterSize() : getClusterSize();
+  public synchronized int getClusterSize() {
+    return hasDynamicServers()
+        ? getConfiguredClusterSize() + getDynamicClusterSizeOrZero() : getConfiguredClusterSize();
   }
 
   /**
@@ -187,8 +188,7 @@ public class WlsClusterConfig {
    * Returns the current size of the dynamic cluster (the number of dynamic server instances allowed
    * to be created).
    *
-   * @return the current size of the dynamic cluster, or -1 if there is no dynamic servers in this
-   *     cluster
+   * @return the current size of the dynamic cluster, or -1 if there is no dynamic servers in this cluster
    */
   @JsonIgnore
   public int getDynamicClusterSize() {
@@ -196,21 +196,19 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the maximum size of the dynamic cluster.
+   * Returns the size of the dynamic cluster.
    *
-   * @return the maximum size of the dynamic cluster, or 0 if there are no dynamic servers in this
-   *     cluster
+   * @return the size of the dynamic cluster, or 0 if there are no dynamic servers in this cluster
    */
   @JsonIgnore
-  public int getMaxDynamicClusterSize() {
-    return Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getMaxDynamicClusterSize).orElse(0);
+  public int getDynamicClusterSizeOrZero() {
+    return Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getDynamicClusterSize).orElse(0);
   }
 
   /**
    * Returns the minimum size of the dynamic cluster.
    *
-   * @return the minimum size of the dynamic cluster, or 0 if there are no dynamic servers in this
-   *     cluster
+   * @return the minimum size of the dynamic cluster, or 0 if there are no dynamic servers in this cluster
    */
   @JsonIgnore
   public int getMinDynamicClusterSize() {
