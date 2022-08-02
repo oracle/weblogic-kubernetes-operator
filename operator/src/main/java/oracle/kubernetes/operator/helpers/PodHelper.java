@@ -45,7 +45,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -239,17 +238,28 @@ public class PodHelper {
   }
 
   /**
-   * Check if pod is in failed state.
-   * @param pod pod
-   * @return true, if pod is in failed state
+   * Returns true if the specified pod is in the failed state.
+   * @param pod the pod to check
    */
   public static boolean isFailed(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null && V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())) {
+    if (V1PodStatus.PhaseEnum.FAILED.equals(getPhase(pod))) {
       LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
       return true;
     }
     return false;
+  }
+
+  /**
+   * Returns true if the specified pod is in the pending state.
+   * @param pod the pod to check
+   */
+  public static boolean isPending(V1Pod pod) {
+    return V1PodStatus.PhaseEnum.PENDING.equals(getPhase(pod));
+  }
+
+  @Nullable
+  private static V1PodStatus.PhaseEnum getPhase(V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse(null);
   }
 
   /**
@@ -620,7 +630,7 @@ public class PodHelper {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
         patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
         new CallBuilder()
-            .patchPod(getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
+            .patchPod(super.getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
       } catch (ApiException ignored) {
         /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
       }
@@ -735,7 +745,7 @@ public class PodHelper {
       }
     }
 
-    @NotNull
+    @Nonnull
     private Boolean isServerShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
     }

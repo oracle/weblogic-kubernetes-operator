@@ -68,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify Apache load balancer handles traffic to one or two backend Weblogic domains")
 @Tag("kind-parallel")
 @IntegrationTest
+@Tag("olcne")
 class ItLBTwoDomainsApache {
 
   private static final int numberOfDomains = 2;

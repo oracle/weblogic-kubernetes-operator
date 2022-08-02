@@ -68,6 +68,7 @@ public class TuningParameters {
   public static final String STATUS_UPDATE_EVENTUAL_LONG_DELAY = "statusUpdateEventualLongDelay";
   public static final String SECRET_REREAD_INTERVAL_SECONDS = "weblogicCredentialsSecretRereadIntervalSeconds";
   public static final String MAX_READY_WAIT_TIME_SECONDS = "maxReadyWaitTimeSeconds";
+  public static final String MAX_PENDING_WAIT_TIME_SECONDS = "maxPendingWaitTimeSeconds";
   public static final String RESTART_EVICTED_PODS = "restartEvictedPods";
   public static final String INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = "introspectorJobActiveDeadlineSeconds";
   public static final String INTROSPECTOR_JOB_DEADLINE_INCREMENT_SECONDS = "introspectorJobDeadlineIncrementSeconds";
@@ -206,6 +207,10 @@ public class TuningParameters {
 
   public long getMaxReadyWaitTimeSeconds() {
     return getParameter(MAX_READY_WAIT_TIME_SECONDS, 1800);
+  }
+
+  public long getMaxPendingWaitTimeSeconds() {
+    return getParameter(MAX_PENDING_WAIT_TIME_SECONDS, 300);
   }
 
   public boolean isRestartEvictedPods() {

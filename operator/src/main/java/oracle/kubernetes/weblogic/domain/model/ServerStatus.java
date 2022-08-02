@@ -34,7 +34,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
 
   @Description("Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN.")
   @Expose
-  private String desiredState;
+  private String stateGoal;
 
   @Description("WebLogic cluster name, if the server is a member of a cluster.")
   @Expose
@@ -73,11 +73,12 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   ServerStatus(ServerStatus other) {
     this.serverName = other.serverName;
     this.state = other.state;
-    this.desiredState = other.desiredState;
+    this.stateGoal = other.stateGoal;
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
     this.isAdminServer = other.isAdminServer;
     this.podReady = other.podReady;
+    this.podPhase = other.podPhase;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 
@@ -149,17 +150,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    *
    * @return requested state
    */
-  public String getDesiredState() {
-    return desiredState;
-  }
-
-  /**
-   * Desired state of this WebLogic Server. Required.
-   *
-   * @param desiredState Requested state
-   */
-  public void setDesiredState(String desiredState) {
-    this.desiredState = desiredState;
+  public String getStateGoal() {
+    return stateGoal;
   }
 
   /**
@@ -168,8 +160,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    * @param stateGoal stateGoal
    * @return this
    */
-  public ServerStatus withDesiredState(String stateGoal) {
-    this.desiredState = stateGoal;
+  public ServerStatus withStateGoal(String stateGoal) {
+    this.stateGoal = stateGoal;
     return this;
   }
 
@@ -180,15 +172,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    */
   public String getClusterName() {
     return clusterName;
-  }
-
-  /**
-   * WebLogic cluster name, if the server is part of a cluster.
-   *
-   * @param clusterName cluster name
-   */
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
   }
 
   /**
@@ -310,7 +293,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append("serverName", serverName)
         .append("isAdminServer", isAdminServer)
         .append("state", state)
-        .append("desiredState", desiredState)
+        .append("stateGoal", stateGoal)
         .append("clusterName", clusterName)
         .append("nodeName", nodeName)
         .append("podPhase", podPhase)
@@ -326,7 +309,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(serverName)
         .append(health)
         .append(state)
-        .append(desiredState)
+        .append(stateGoal)
         .append(clusterName)
         .append(podPhase)
         .append(podReady)
@@ -347,7 +330,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(serverName, rhs.serverName)
         .append(health, rhs.health)
         .append(state, rhs.state)
-        .append(desiredState, rhs.desiredState)
+        .append(stateGoal, rhs.stateGoal)
         .append(clusterName, rhs.clusterName)
         .append(podPhase, rhs.podPhase)
         .append(podReady, rhs.podReady)
@@ -378,7 +361,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("serverName", ServerStatus::getServerName)
         .withStringField("clusterName", ServerStatus::getClusterName)
         .withStringField("state", ServerStatus::getState)
-        .withStringField("desiredState", ServerStatus::getDesiredState)
+        .withStringField("stateGoal", ServerStatus::getStateGoal)
         .withStringField("nodeName", ServerStatus::getNodeName)
         .withStringField("podPhase", ServerStatus::getPodPhaseAsString)
         .withStringField("podReady", ServerStatus::getPodReady)

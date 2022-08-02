@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -26,6 +26,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.doesPodLogContainStringInTimeRange;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -60,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
@@ -107,13 +109,22 @@ class ItServerStartPolicy {
    */
   @BeforeEach
   public void beforeEach() {
-
+    if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, adminServerPodName))) {
+      executeLifecycleScript(domainUid, domainNamespace, samplePath,
+              START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
+    }
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName,
         domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
+      String podName = managedServerPrefix + i;
+      if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName))) {
+        executeLifecycleScript(domainUid, domainNamespace, samplePath,
+                START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server" + i, "", true);
+
+      }
       checkPodReadyAndServiceExists(managedServerPrefix + i,
           domainUid, domainNamespace);
     }
@@ -220,14 +231,14 @@ class ItServerStartPolicy {
     assertFalse(doesPodLogContainStringInTimeRange(opNamespace, operatorPodName,
         "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException",
             startTime));
-    
+
     // verify that the sample script can start admin server
     executeLifecycleScript(domainUid, domainNamespace, samplePath,
-        START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
+            START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     logger.info("Check admin service/pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
+            adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName,
-        domainUid, domainNamespace);
+            domainUid, domainNamespace);
   }
 
   /**

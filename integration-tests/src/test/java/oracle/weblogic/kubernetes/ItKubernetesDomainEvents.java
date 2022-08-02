@@ -128,6 +128,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @IntegrationTest
+@Tag("olcne")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;
@@ -730,7 +731,7 @@ class ItKubernetesDomainEvents {
   private static void checkEventWithCount(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp, int countBefore) {
-    testUntil(
+    testUntil(withLongRetryPolicy,
         checkDomainEventWithCount(
             opNamespace, domainNamespace, domainUid, reason, type, timestamp, countBefore),
         logger,
