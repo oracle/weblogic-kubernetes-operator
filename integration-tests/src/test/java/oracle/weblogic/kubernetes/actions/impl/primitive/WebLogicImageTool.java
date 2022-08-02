@@ -10,6 +10,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
@@ -86,6 +87,48 @@ public class WebLogicImageTool {
         .execute();
   }
 
+  /**
+   * Inspect an image using the params using WIT inspect command.
+   * @return inspection output string if the command succeeds otherwise null
+   */
+  public String inspectImage(String imageName, String imageTag) {
+    String output = null;
+    // download WIT if it is not in the expected location
+    if (!downloadWit()) {
+      return output;
+    }
+
+    // download WDT if it is not in the expected location
+    if (!downloadWdt()) {
+      return output;
+    }
+
+    // delete the old cache entry for the WDT installer
+    if (!deleteEntry()) {
+      return output;
+    }
+
+    // add the WDT installer that we just downloaded into WIT cache entry
+    if (!addInstaller()) {
+      return output;
+    }
+    ExecResult result = Command.withParams(
+            defaultCommandParams()
+                    .command(buildInspectWitCommand(imageName,
+                            imageTag))
+                    .redirect(params.redirect()))
+            .executeAndReturnResult();
+    // check exitValue to determine if the command execution has failed.
+
+    if (result.exitValue() != 0) {
+      getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+    } else {
+      getLogger().info("The command execution succeeded with result: {0}.", result);
+      output = result.stdout();
+    }
+    return output;
+  }
+
   private boolean downloadWit() {
     // install WIT if needed
     return Installer.withParams(
@@ -109,9 +152,15 @@ public class WebLogicImageTool {
 
   private String buildWitCommand() {
     LoggingFacade logger = getLogger();
-    String ownerShip = " --chown oracle:root";
+    String ownership = " --chown oracle:root";
     if (OKE_CLUSTER) {
-      ownerShip = " --chown oracle:oracle";
+      if (params.baseImageName().equals(FMWINFRA_IMAGE_NAME)) {
+        String output = inspectImage(params.baseImageName(), params.baseImageTag());
+        logger.info("Inspect image result ");
+        if (output != null && !output.contains("root")) {
+          ownership = " --chown oracle:oracle";
+        }
+      }
     }
     String command =
         IMAGE_TOOL
@@ -119,7 +168,7 @@ public class WebLogicImageTool {
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
         + " --wdtDomainType " + params.domainType()
-        + ownerShip;
+        + ownership;
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
@@ -160,6 +209,19 @@ public class WebLogicImageTool {
     }
 
     logger.info("Build image with command: {0} and domainType: {1}", command,  params.domainType());
+    return command;
+  }
+
+  private String buildInspectWitCommand(String imageName, String imageTag) {
+    LoggingFacade logger = getLogger();
+    String command =
+            IMAGE_TOOL
+                    + " inspect "
+                    + " -i " + imageName + ":" + imageTag;
+
+    logger.info("Inspect image {0} with command: {1}",
+            imageName + ":" + imageTag,
+            command);
     return command;
   }
 

@@ -71,6 +71,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("samples")
 @Tag("oke-parallel")
+@Tag("olcne")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
 public class ItFmwSample {
 
   private static String dbNamespace = null;
