@@ -51,8 +51,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -972,6 +974,11 @@ public class CommonTestUtils {
   private static void isLocalPortFree(int port) throws IOException {
     try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
       getLogger().info("Port {0} is already in use", port);
+    }
+    if (OKE_CLUSTER) {
+      try (Socket socket = new Socket(NODE_IP, port)) {
+        getLogger().info("Port {0} is already in use", port);
+      }
     }
   }
 
