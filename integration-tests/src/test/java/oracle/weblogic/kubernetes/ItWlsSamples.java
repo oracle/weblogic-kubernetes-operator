@@ -274,8 +274,8 @@ class ItWlsSamples {
               "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHome: /shared/domains/domain1", "domainHome: /shared/"
-                      + domainNamespace + "/" + domainName + "/" + script +  "/domains/" + domainName);
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + "/" + domainName + "/" + script +  "/domains");
     });
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
