@@ -21,6 +21,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
@@ -341,6 +342,7 @@ public class PodUtils {
     }
   }
 
+
   /**
    * Verify introspector log contains the error message.
    * @param domainUid domain uid of the domain
@@ -348,21 +350,36 @@ public class PodUtils {
    * @param expectedErrorMsg error message
    */
   public static void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
-                                                                String namespace,
-                                                                String expectedErrorMsg) {
+                                                                      String namespace,
+                                                                      String expectedErrorMsg) {
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg, null);
+  }
+
+  /**
+   * Verify introspector log contains the error message.
+   * @param domainUid domain uid of the domain
+   * @param namespace domain namespace in which introspector runs
+   * @param expectedErrorMsg error message
+   * @param follow whether to follow the log stream of the Pod
+   */
+  public static void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
+                                                                      String namespace,
+                                                                      String expectedErrorMsg,
+                                                                      Boolean follow) {
     final LoggingFacade logger = getLogger();
     // wait and check whether the introspector log contains the expected error message
     logger.info("verifying that the introspector log contains the expected error message");
     testUntil(
-        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg),
+        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg, follow),
         logger,
         "Checking for the log of introspector pod contains the expected error msg {0}",
         expectedErrorMsg);
   }
 
   private static boolean introspectorPodLogContainsExpectedErrorMsg(String domainUid,
-                                                             String namespace,
-                                                             String errormsg) {
+                                                                    String namespace,
+                                                                    String errormsg,
+                                                                    Boolean follow) {
     String introspectPodName;
     V1Pod introspectorPod;
     final LoggingFacade logger = getLogger();
@@ -386,7 +403,7 @@ public class PodUtils {
 
     String introspectorLog;
     try {
-      introspectorLog = getPodLog(introspectPodName, namespace);
+      introspectorLog = Kubernetes.getPodLog(introspectPodName, namespace, null, null, null, follow);
       logger.info("introspector log: {0}", introspectorLog);
     } catch (ApiException apiEx) {
       logger.severe("got ApiException while getting pod log: {0}", apiEx);

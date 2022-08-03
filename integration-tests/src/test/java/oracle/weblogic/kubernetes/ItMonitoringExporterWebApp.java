@@ -36,6 +36,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -58,7 +59,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
@@ -91,6 +91,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter WebApp via Prometheus and Grafana")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItMonitoringExporterWebApp {
 
   // domain constants
@@ -146,7 +150,7 @@ class ItMonitoringExporterWebApp {
   public static void initAll(@Namespaces(6) List<String> namespaces) {
 
     logger = getLogger();
-    monitoringExporterDir = monitoringExporterDir = Paths.get(RESULTS_ROOT,
+    monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterWebApp", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
     monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
@@ -181,8 +185,6 @@ class ItMonitoringExporterWebApp {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
-    assertDoesNotThrow(() -> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        "pvc-grafana", "pvc-" + grafanaReleaseName));
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
@@ -296,7 +298,7 @@ class ItMonitoringExporterWebApp {
       logger.info("Testing replace with no restPort configuration");
       replaceMetricsNoRestPortConfiguration();
     } finally {
-      shutdownDomain(domain1Namespace, domain1Uid);
+      shutdownDomain(domain1Uid, domain1Namespace);
     }
   }
 
@@ -334,7 +336,7 @@ class ItMonitoringExporterWebApp {
           true, null),
           "monitoring exporter metrics page can't be accessed via https");
     } finally {
-      shutdownDomain(domain2Namespace, domain2Uid);
+      shutdownDomain(domain2Uid, domain2Namespace);
     }
   }
 
@@ -384,7 +386,7 @@ class ItMonitoringExporterWebApp {
       });
     } finally {
       logger.info("Shutting down domain3");
-      shutdownDomain(domain3Namespace, domain3Uid);
+      shutdownDomain(domain3Uid, domain3Namespace);
       if (miiImage1 != null) {
         deleteImage(miiImage1);
       }
@@ -402,18 +404,20 @@ class ItMonitoringExporterWebApp {
                                         ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+      cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
+      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              "prometheus" + releaseSuffix).toString();
       promHelmParams = installAndVerifyPrometheus(releaseSuffix,
-          monitoringNS,
-          promChartVersion,
-          prometheusRegexValue);
+              monitoringNS,
+              promChartVersion,
+              prometheusRegexValue, promHelmValuesFileDir);
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
       hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
       if (OKD) {
         hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
-            + "-service", monitoringNS) + ":" + nodeportPrometheus;
+                + "-service", monitoringNS) + ":" + nodeportPrometheus;
       }
     }
     //if prometheus already installed change CM for specified domain
@@ -426,10 +430,11 @@ class ItMonitoringExporterWebApp {
     logger.info("Prometheus is running");
 
     if (grafanaHelmParams == null) {
-      //logger.info("Node Port for Grafana is " + nodeportgrafana);
+      String grafanaHelmValuesFileDir =  Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              grafanaReleaseName).toString();
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
               monitoringNS,
-              monitoringExporterEndToEndDir + "/grafana/values.yaml",
+              grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();

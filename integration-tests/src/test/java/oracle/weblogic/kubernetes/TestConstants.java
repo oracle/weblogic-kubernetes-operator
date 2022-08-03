@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
+  public static final String OLD_DOMAIN_VERSION = "v8";
   public static final Boolean SKIP_CLEANUP =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.cleanup", "false"));
   public static final Boolean COLLECT_LOGS_ON_SUCCESS =
@@ -340,10 +341,10 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
 
   //Oracle database operator constants
-  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";
+  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
-  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "/weblogick8s/test-images/database/operator:0.1.0";
+  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "/weblogick8s/test-images/database/operator:0.2.0";
   public static final String CERT_MANAGER
       = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
   public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"

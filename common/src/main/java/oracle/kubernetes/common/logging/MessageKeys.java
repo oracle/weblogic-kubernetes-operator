@@ -168,6 +168,7 @@ public class MessageKeys {
   public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
   public static final String WATCH_CLUSTER = "WLSKO-0228";
   public static final String WATCH_CLUSTER_DELETED = "WLSKO-0229";
+  public static final String CLUSTER_STATUS = "WLSKO-0230";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -207,6 +208,7 @@ public class MessageKeys {
   public static final String PODS_NOT_READY = "WLSDO-0041";
   public static final String CYCLING_POD_EVICTED = "WLSDO-0042";
   public static final String CYCLING_POD_SPEC_CHANGED = "WLSDO-0043";
+  public static final String PODS_NOT_RUNNING = "WLSDO-0044";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

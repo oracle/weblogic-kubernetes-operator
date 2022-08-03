@@ -39,8 +39,6 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.http.rest.Scan;
-import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
@@ -69,6 +67,8 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
+import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
+import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -123,7 +123,7 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(next);
+    return new StatusUpdateStep(createClusterResourceStatusUpdaterStep(next));
   }
 
 
@@ -516,7 +516,8 @@ public class DomainStatusUpdater {
 
     private boolean hasReachedRetryLimit(DomainStatus status, DomainCondition condition) {
       return condition.getSeverity() == SEVERE
-          && status.getMinutesFromInitialToLastFailure() > getDomain().getFailureRetryLimitMinutes();
+          && status.getInitialFailureTime() != null
+          && status.getMinutesFromInitialToLastFailure() >= getDomain().getFailureRetryLimitMinutes();
     }
 
     private String getFatalMessage() {
@@ -626,6 +627,8 @@ public class DomainStatusUpdater {
 
         if (isHasFailedPod()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodFailedMessage()));
+        } else if (hasPodNotRunningInTime()) {
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotRunningMessage()));
         } else if (hasPodNotReadyInTime()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotReadyMessage()));
         } else {
@@ -638,6 +641,10 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
+      }
+
+      private String getPodNotRunningMessage() {
+        return LOGGER.formatMessage(PODS_NOT_RUNNING);
       }
 
       private String getPodNotReadyMessage() {
@@ -1028,13 +1035,7 @@ public class DomainStatusUpdater {
       }
 
       private Optional<WlsDomainConfig> getDomainConfig() {
-        return Optional.ofNullable(config).or(this::getScanCacheDomainConfig);
-      }
-
-      private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
-        DomainPresenceInfo info = getInfo();
-        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
+        return Optional.ofNullable(config);
       }
 
       private boolean isServerReady(@Nonnull String serverName) {
@@ -1050,8 +1051,16 @@ public class DomainStatusUpdater {
         return getInfo().getServerPods().anyMatch(this::isNotReadyInTime);
       }
 
-      public boolean isNotReadyInTime(V1Pod pod) {
+      private boolean isNotReadyInTime(V1Pod pod) {
         return !PodHelper.isReady(pod) && hasBeenUnreadyExceededWaitTime(pod);
+      }
+
+      private boolean hasPodNotRunningInTime() {
+        return getInfo().getServerPods().anyMatch(this::isNotRunningInTime);
+      }
+
+      private boolean isNotRunningInTime(V1Pod pod) {
+        return PodHelper.isPending(pod) && hasBeenPendingExceededWaitTime(pod);
       }
 
       private boolean hasBeenUnreadyExceededWaitTime(V1Pod pod) {
@@ -1059,6 +1068,13 @@ public class DomainStatusUpdater {
         return SystemClock.now()
             .isAfter(getLater(creationTime, getReadyConditionLastTransitTimestamp(pod, creationTime))
                 .plusSeconds(getMaxReadyWaitTime(pod)));
+      }
+
+      private boolean hasBeenPendingExceededWaitTime(V1Pod pod) {
+        OffsetDateTime creationTime = getCreationTimestamp(pod);
+        return SystemClock.now()
+            .isAfter(getLater(creationTime, getReadyConditionLastTransitTimestamp(pod, creationTime))
+                .plusSeconds(getMaxPendingWaitTime(pod)));
       }
 
       private OffsetDateTime getLater(OffsetDateTime time1, OffsetDateTime time2) {
@@ -1080,6 +1096,13 @@ public class DomainStatusUpdater {
             .map(d -> getInfo().getServer(getServerName(pod), getClusterNameFromPod(pod)))
             .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds)
             .orElse(TuningParameters.getInstance().getMaxReadyWaitTimeSeconds());
+      }
+
+      private long getMaxPendingWaitTime(V1Pod pod) {
+        return Optional.ofNullable(getInfo().getDomain())
+            .map(d -> getInfo().getServer(getServerName(pod), getClusterNameFromPod(pod)))
+            .map(EffectiveServerSpec::getMaximumPendingWaitTimeSeconds)
+            .orElse(TuningParameters.getInstance().getMaxPendingWaitTimeSeconds());
       }
 
       private String getServerName(V1Pod pod) {
@@ -1199,16 +1222,16 @@ public class DomainStatusUpdater {
         return new ServerStatus()
             .withServerName(serverName)
             .withClusterName(clusterName)
-            .withDesiredState(getDesiredState())
+            .withStateGoal(getStateGoal())
             .withIsAdminServer(isAdminServer);
       }
 
-      private String getDesiredState() {
-        return wasServerStarted() ? getDesiredState(serverName, clusterName) : SHUTDOWN_STATE;
+      private String getStateGoal() {
+        return wasServerStarted() ? getStateGoal(serverName, clusterName) : SHUTDOWN_STATE;
       }
 
-      private String getDesiredState(String serverName, String clusterName) {
-        return info.getServer(serverName, clusterName).getDesiredState();
+      private String getStateGoal(String serverName, String clusterName) {
+        return info.getServer(serverName, clusterName).getStateGoal();
       }
 
       private boolean wasServerStarted() {

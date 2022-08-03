@@ -95,6 +95,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItOperatorFmwUpgrade {
 
   private static String opNamespace = null;

@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -476,6 +477,51 @@ public class LoggingUtil {
     }
 
     return podLog.contains(expectedString);
+  }
+
+  /**
+   * Check whether pod log contains expected string in time range from provided start time to the current moment.
+   *
+   * @param namespace      - namespace where pod exists
+   * @param podName        - pod name of the log
+   * @param expectedString - expected string in the pod log
+   * @param timestamp      - starting time to check the log
+   * @return true if pod log contains expected string, false otherwise
+   */
+  public static boolean doesPodLogContainStringInTimeRange(String namespace, String podName, String expectedString,
+                                                           OffsetDateTime timestamp) {
+    String rangePodLog;
+    try {
+      String podLog = getPodLog(podName, namespace);
+      String startTimestamp = timestamp.toString().replace("Z", "");
+      int begin = -1;
+      int count = 0;
+
+      //search log for timestamp plus up to 5 seconds if pod log does not have it matching timestamp
+      while (begin == (-1) && count < 5) {
+        startTimestamp = timestamp.toString().replace("Z", "");
+        begin = podLog.indexOf(startTimestamp);
+        getLogger().info("Index of  timestamp {0} in the pod log is : {1}, count {2}",
+                startTimestamp,
+                begin,
+                count);
+        timestamp = timestamp.plusSeconds(1);
+        count++;
+      }
+      if (begin == (-1)) {
+        getLogger().info("Could not find any messages after timestamp {0}", startTimestamp);
+        return false;
+      }
+      rangePodLog = podLog.substring(begin);
+      getLogger().info("pod log for pod {0} in namespace {1} starting from timestamp {2} : {3}", podName,
+              namespace,
+              startTimestamp,
+              rangePodLog);
+    } catch (ApiException apiEx) {
+      getLogger().severe("got ApiException while getting pod log: ", apiEx);
+      return false;
+    }
+    return rangePodLog.contains(expectedString);
   }
 
   /**

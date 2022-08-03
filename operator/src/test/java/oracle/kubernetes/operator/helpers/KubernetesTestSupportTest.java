@@ -44,6 +44,7 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
@@ -57,6 +58,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -185,6 +187,23 @@ class KubernetesTestSupportTest {
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
+  }
+
+  @Test
+  void afterClusterStatusReplaced_resourceVersionIsIncremented() {
+    ClusterResource originalCluster = createCluster(NS, "cluster1");
+    testSupport.defineResources(originalCluster);
+    originalCluster.getMetadata().setResourceVersion("123");
+
+    Step steps = new CallBuilder()
+        .replaceClusterStatusAsync("cluster1", NS,
+            createCluster(NS, "cluster1")
+                .withStatus(new ClusterStatus().withMaximumReplicas(8)),
+            null);
+    testSupport.runSteps(steps);
+
+    ClusterResource updatedCluster = testSupport.getResourceWithName(CLUSTER, "cluster1");
+    assertThat(updatedCluster.getMetadata().getResourceVersion(), equalTo("124"));
   }
 
   @Test
@@ -443,6 +462,19 @@ class KubernetesTestSupportTest {
 
     assertThat(responseStep.callResponse.getResult().getItems(),
                containsInAnyOrder(cluster1, cluster2));
+  }
+
+  @Test
+  void afterReplaceClusterStatusAsync_specIsUnchanged() {
+    ClusterResource originalCluster = createCluster(NS, "cluster1").spec(new ClusterSpec().withReplicas(5));
+    testSupport.defineResources(originalCluster);
+
+    ClusterResource newCluster = createCluster(NS, "cluster1");
+    Step steps = new CallBuilder().replaceClusterStatusAsync("cluster1", NS, newCluster, null);
+    testSupport.runSteps(steps);
+
+    ClusterResource updatedCluster = testSupport.getResourceWithName(CLUSTER, "cluster1");
+    assertThat(updatedCluster.getSpec().getReplicas(), equalTo(5));
   }
 
   private ClusterResource createCluster(String namespace, String name) {

@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -26,10 +25,8 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -50,10 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_PROGRESSING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -62,9 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -76,11 +68,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
@@ -92,14 +81,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -108,6 +93,11 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.utils.UpgradeUtils.checkCrdVersion;
+import static oracle.weblogic.kubernetes.utils.UpgradeUtils.checkDomainStatus;
+import static oracle.weblogic.kubernetes.utils.UpgradeUtils.cleanUpCRD;
+import static oracle.weblogic.kubernetes.utils.UpgradeUtils.installOldOperator;
+import static oracle.weblogic.kubernetes.utils.UpgradeUtils.upgradeOperatorToCurrent;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -127,9 +117,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItOperatorWlsUpgrade {
 
-  public static final String OLD_DOMAIN_VERSION = "v8";
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
   private String adminServerPodName = domainUid + "-admin-server";
@@ -151,8 +141,11 @@ class ItOperatorWlsUpgrade {
   @BeforeEach
   public void beforeEach(@Namespaces(2) List<String> namespaces) {
     this.namespaces = namespaces;
-    assertNotNull(namespaces.get(0), "Namespace[0] is null");
-    assertNotNull(namespaces.get(1), "Namespace[1] is null");
+    assertNotNull(namespaces.get(0), "Namespace is null");
+    opNamespace = namespaces.get(0);
+    logger.info("Assign a unique namespace for domain");
+    assertNotNull(namespaces.get(1), "Namespace is null");
+    domainNamespace = namespaces.get(1);
   }
 
   /**
@@ -255,25 +248,9 @@ class ItOperatorWlsUpgrade {
     }
   }
 
-  private void cleanUpCRD() {
-    boolean doesCrdExist = doesCrdExist();
-
-    if (doesCrdExist) {
-      Command
-              .withParams(new CommandParams()
-                      .command("kubectl patch crd/domains.weblogic.oracle"
-                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
-              .execute();
-      Command
-              .withParams(new CommandParams()
-                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-              .execute();
-    }
-  }
-
   void upgradeWlsAuxDomain(String oldVersion) {
     logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", oldVersion);
-    installOldOperator(oldVersion);
+    installOldOperator(oldVersion,opNamespace,domainNamespace);
     createSecrets();
 
     // Create the repo secret to pull base WebLogic image
@@ -331,24 +308,11 @@ class ItOperatorWlsUpgrade {
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-    upgradeOperatorToCurrent();
+    upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
     scaleClusterUpAndDown();
   }
 
-
-  private void installOldOperator(String operatorVersion) {
-    logger.info("Assign a unique namespace for operator");
-    assertNotNull(namespaces.get(0), "Namespace is null");
-    opNamespace = namespaces.get(0);
-    logger.info("Assign a unique namespace for domain");
-    assertNotNull(namespaces.get(1), "Namespace is null");
-    domainNamespace = namespaces.get(1);
-
-    // install operator with older release
-    HelmParams opHelmParams = installOperator(operatorVersion,
-                 opNamespace, domainNamespace);
-  }
 
   // After upgrade scale up/down the cluster
   private void scaleClusterUpAndDown() {
@@ -372,45 +336,6 @@ class ItOperatorWlsUpgrade {
 
   }
 
-  // upgrade to operator to current version
-  private void upgradeOperatorToCurrent() {
-    latestOperatorImageName = getOperatorImageName();
-    HelmParams upgradeHelmParams = new HelmParams()
-            .releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR)
-            .repoUrl(null)
-            .chartVersion(null)
-            .chartName(null);
-
-    // build operator chart values
-    OperatorParams opParams = new OperatorParams()
-            .helmParams(upgradeHelmParams)
-            .image(latestOperatorImageName)
-            .externalRestEnabled(true);
-
-    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
-            String.format("Failed to upgrade operator in namespace %s", opNamespace));
-
-    // check operator image name after upgrade
-    logger.info("Checking image name in operator container ");
-    testUntil(
-            assertDoesNotThrow(() -> getOpContainerImageName(opNamespace),
-              "Exception while getting the operator image name"),
-            logger,
-            "Checking operator image name in namespace {0} after upgrade",
-            opNamespace);
-
-    // check CRD version is updated
-    logger.info("Checking CRD version");
-    testUntil(
-          checkCrdVersion(),
-          logger,
-          "the CRD version to be updated to current");
-    // check domain status conditions
-    checkDomainStatus(domainNamespace);
-  }
-
   private void installDomainResource(
       String domainType,
       String domainVersion,
@@ -428,7 +353,7 @@ class ItOperatorWlsUpgrade {
       String operatorVersion, String domainVersion,
       String externalServiceNameSuffix) {
 
-    installOldOperator(operatorVersion);
+    installOldOperator(operatorVersion,opNamespace,domainNamespace);
 
     // create WLS domain and verify
     installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
@@ -474,7 +399,7 @@ class ItOperatorWlsUpgrade {
     accountingThread.start();
     try {
       // upgrade to current operator
-      upgradeOperatorToCurrent();
+      upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
       verifyPodsNotRolled(domainNamespace, pods);
     } finally {
       if (accountingThread != null) {
@@ -501,7 +426,7 @@ class ItOperatorWlsUpgrade {
         "the CRD version to be updated to current");
 
     // check domain status conditions
-    checkDomainStatus(domainNamespace);
+    checkDomainStatus(domainNamespace,domainUid);
 
     int externalRestHttpsPort = getServiceNodePort(
         opNamespace, "external-weblogic-operator-svc");
@@ -565,36 +490,6 @@ class ItOperatorWlsUpgrade {
            String.valueOf(serviceNodePort), false);
   }
 
-  private HelmParams installOperator(String operatorVersion,
-      String opNamespace, String domainNamespace) {
-    // delete existing CRD if any
-    cleanUpCRD();
-
-    // build Helm params to install the Operator
-    HelmParams opHelmParams =
-        new HelmParams().releaseName("weblogic-operator")
-            .namespace(opNamespace)
-            .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
-            .repoName("weblogic-operator")
-            .chartName("weblogic-operator")
-            .chartVersion(operatorVersion);
-
-    // install operator with passed version
-    String opServiceAccount = opNamespace + "-sa";
-    installAndVerifyOperator(opNamespace, opServiceAccount, true,
-        0, opHelmParams, domainNamespace);
-
-    return opHelmParams;
-  }
-
-  private Callable<Boolean> checkCrdVersion() {
-    return () -> Command
-        .withParams(new CommandParams()
-            .command("kubectl get crd domains.weblogic.oracle -o "
-                + "jsonpath='{.spec.versions[?(@.storage==true)].name}'"))
-        .executeAndVerify(TestConstants.DOMAIN_VERSION);
-  }
-
   private void checkDomainStarted(String domainUid, String domainNamespace) {
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
@@ -626,23 +521,6 @@ class ItOperatorWlsUpgrade {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodDeleted(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
-  }
-
-  private Callable<Boolean> getOpContainerImageName(String namespace) {
-    return () -> {
-      String imageName = getOperatorContainerImageName(namespace);
-      if (imageName != null) {
-        if (!imageName.equals(latestOperatorImageName)) {
-          logger.info("Operator image name {0} doesn't match with latest image {1}",
-              imageName, latestOperatorImageName);
-          return false;
-        } else {
-          logger.info("Operator image name {0}", imageName);
-          return true;
-        }
-      }
-      return false;
-    };
   }
 
   private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
@@ -763,22 +641,6 @@ class ItOperatorWlsUpgrade {
 
     params.command(new String(commandStr));
     boolean result = Command.withParams(params).execute();
-  }
-
-  void checkDomainStatus(String domainNamespace) {
-
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, OLD_DOMAIN_VERSION);
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", OLD_DOMAIN_VERSION);
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE, OLD_DOMAIN_VERSION);
-    // verify there is no status condition type Progressing
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_PROGRESSING_TYPE, OLD_DOMAIN_VERSION);
   }
 
   private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {

@@ -8,8 +8,8 @@ import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -18,7 +18,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
-public interface MakeRightDomainOperation {
+public interface MakeRightDomainOperation extends PacketComponent {
 
   /**
    * Defines the operation as pertaining to the deletion of a domain.
@@ -30,20 +30,24 @@ public interface MakeRightDomainOperation {
 
   MakeRightDomainOperation withExplicitRecheck();
 
-  MakeRightDomainOperation withEventData(EventItem eventItem, String message);
-
+  /**
+   * Specifies the event that started this operation.
+   * @param eventData a description of the event, containing at least the event type.
+   */
   MakeRightDomainOperation withEventData(EventData eventData);
 
   MakeRightDomainOperation interrupt();
+
+  /**
+   * Returns true if this operation was started by an event.
+   */
+  boolean wasStartedFromEvent();
 
   boolean isDeleting();
 
   boolean isWillInterrupt();
 
   boolean isExplicitRecheck();
-
-  // for unit testing only
-  MakeRightDomainOperation throwNPE();
 
   void execute();
 
@@ -60,6 +64,11 @@ public interface MakeRightDomainOperation {
   void setLiveInfo(@Nonnull DomainPresenceInfo info);
 
   void clear();
+
+  @Override
+  default void addToPacket(Packet packet) {
+    packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
+  }
 
   boolean wasInspectionRun();
 
@@ -96,7 +105,11 @@ public interface MakeRightDomainOperation {
     return fromPacket(packet).map(MakeRightDomainOperation::createSteps).orElse(null);
   }
 
-  private static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
+  /**
+   * Returns an optional containing the make-right-domain-operation in the packet.
+   * @param packet a packet which may contain a make-right operation
+   */
+  static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getValue(MAKE_RIGHT_DOMAIN_OPERATION));
   }
 }

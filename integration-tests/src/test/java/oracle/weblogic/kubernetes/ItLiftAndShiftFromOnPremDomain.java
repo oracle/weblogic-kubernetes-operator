@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -90,6 +91,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 
 @DisplayName("Test to validate on-prem to k8s use case")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
@@ -416,7 +420,7 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(filePath,
           "\\{\\{\\{imageName\\}\\}\\}", imageName);
       replaceStringInFile(filePath,
-          "name: ocir", "name: " + TEST_IMAGES_REPO_SECRET_NAME);
+          "imagePullSecrets: \\[\\]", "imagePullSecrets:\n    - name: " + TEST_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(filePath,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
       replaceStringInFile(filePath,

@@ -113,7 +113,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   @Override
-  public String getDesiredState() {
+  public String getStateGoal() {
     return getEffectiveServerStartPolicy().equals(ServerStartPolicy.NEVER) ? SHUTDOWN_STATE : RUNNING_STATE;
   }
 
@@ -254,6 +254,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   @Override
   public Long getMaximumReadyWaitTimeSeconds() {
     return server.getMaximumReadyWaitTimeSeconds();
+  }
+
+  @Override
+  public Long getMaximumPendingWaitTimeSeconds() {
+    return server.getMaximumPendingWaitTimeSeconds();
   }
 
   @Override

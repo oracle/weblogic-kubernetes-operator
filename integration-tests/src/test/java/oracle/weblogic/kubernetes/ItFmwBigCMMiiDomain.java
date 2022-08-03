@@ -20,6 +20,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -59,7 +60,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
+@Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 @IntegrationTest
+@Tag("olcne")
 class ItFmwBigCMMiiDomain {
 
   private static String dbNamespace = null;
