@@ -955,7 +955,10 @@ public class CommonTestUtils {
     while (port <= END_PORT) {
       freePort = port++;
       try {
-        isLocalPortFree(freePort);
+        isLocalPortFree(freePort, K8S_NODEPORT_HOST);
+        if (OKE_CLUSTER) {
+          isLocalPortFree(freePort, NODE_IP);
+        }
       } catch (IOException ex) {
         return freePort;
       }
@@ -971,14 +974,9 @@ public class CommonTestUtils {
    * @param port port to check
    * @throws java.io.IOException when the port is not used by any socket
    */
-  private static void isLocalPortFree(int port) throws IOException {
+  private static void isLocalPortFree(int port, String host) throws IOException {
     try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
       getLogger().info("Port {0} is already in use", port);
-    }
-    if (OKE_CLUSTER) {
-      try (Socket socket = new Socket(NODE_IP, port)) {
-        getLogger().info("Port {0} is already in use", port);
-      }
     }
   }
 

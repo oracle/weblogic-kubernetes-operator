@@ -184,7 +184,7 @@ class ItWlsSamples {
     String script = model.split(":")[0];
 
     String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
-    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainName, script);
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "domainInImage", domainName, script);
     //copy the samples directory to a temporary location
     setupSample(testSamplePath);
     createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
@@ -244,7 +244,7 @@ class ItWlsSamples {
 
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainName, script);
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "domainInPV", domainName, script);
     //copy the samples directory to a temporary location
     setupSample(testSamplePath);
     String secretName = domainName + "-weblogic-credentials";
@@ -606,7 +606,7 @@ class ItWlsSamples {
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "domainHome: /shared/domains", "domainHome: /shared/"
-                      + domainNamespace + "/" + domainName + "/domains");
+                      + domainNamespace + "/" + domainName + "/domains/" + domainName);
       if (KIND_REPO == null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
             "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
