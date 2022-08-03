@@ -14,10 +14,10 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.RetryStrategyStub;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
+import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
@@ -32,7 +32,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER_STATUS;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -48,7 +47,6 @@ class ClusterResourceStatusUpdaterTest {
   private final ClusterResource cluster = createClusterResource(CLUSTER);
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(NAME);
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
   @BeforeEach
@@ -70,10 +68,6 @@ class ClusterResourceStatusUpdaterTest {
     testSupport.throwOnCompletionFailure();
   }
 
-  void addTopologyToPacket(WlsDomainConfig domainConfig) {
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-  }
-
   private void updateClusterResourceStatus() {
     testSupport.runSteps(ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep(endStep));
   }
@@ -92,6 +86,23 @@ class ClusterResourceStatusUpdaterTest {
         .getResourceWithName(KubernetesTestSupport.CLUSTER, NAME + '-' + CLUSTER);
     assertThat(clusterResource,  notNullValue());
     assertThat(clusterResource.getStatus(), equalTo(newStatus));
+  }
+
+  @Test
+  void whenReplicaCountWithinMaxUnavailableOfReplicas_clusterIsAvailable() {
+    ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
+        .withClusterName(CLUSTER).withReplicas(5).withReadyReplicas(5).withReplicasGoal(5);
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(ClusterCondition.FALSE));
+    domain.getStatus().addCluster(newStatus);
+    cluster.withStatus(null);
+    cluster.getSpec().setMaxUnavailable(1);
+    info.addClusterResource(cluster);
+
+    updateClusterResourceStatus();
+
+    ClusterResource clusterResource = testSupport
+        .getResourceWithName(KubernetesTestSupport.CLUSTER, NAME + '-' + CLUSTER);
+    assertThat(clusterResource.getStatus().getConditions().size(), equalTo(1));
   }
 
   @Test
@@ -179,6 +190,8 @@ class ClusterResourceStatusUpdaterTest {
     return new ClusterResource()
         .withMetadata(new V1ObjectMeta().namespace(DomainProcessorTestSetup.NS).name(
             ClusterResourceStatusUpdaterTest.NAME + '-' + clusterName))
-        .spec(new ClusterSpec().withDomainUid(ClusterResourceStatusUpdaterTest.NAME).withClusterName(clusterName));
+        .spec(new ClusterSpec()
+            .withDomainUid(ClusterResourceStatusUpdaterTest.NAME)
+            .withClusterName(clusterName));
   }
 }

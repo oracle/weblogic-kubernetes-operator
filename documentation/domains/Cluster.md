@@ -30,8 +30,10 @@
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. |
+| `conditions` | Array of [Cluster Condition](#cluster-condition) | Current service state of the cluster. |
 | `maximumReplicas` | integer | The maximum number of cluster members. |
 | `minimumReplicas` | integer | The minimum number of cluster members. |
+| `observedGeneration` | integer | The generation observed by the WebLogic operator. |
 | `readyReplicas` | integer | The number of ready cluster members. |
 | `replicas` | integer | The number of currently running cluster members. |
 | `replicasGoal` | integer | The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero. |
@@ -81,6 +83,15 @@
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `precreateService` | Boolean | If true, the operator will create ClusterIP Services even for WebLogic Server instances without running Pods. |
+
+### Cluster Condition
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
+| `message` | string | Human-readable message indicating details about last transition. |
+| `status` | string | The status of the condition. Can be True, False. |
+| `type` | string | The type of the condition. Valid types are Completed, Available, Failed, and Rolling. |
 
 ### Probe Tuning
 

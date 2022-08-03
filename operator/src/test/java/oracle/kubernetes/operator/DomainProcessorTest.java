@@ -414,6 +414,7 @@ class DomainProcessorTest {
   @Test
   void whenMakeRightRun_updateClusterResourceStatus() {
     ClusterResource clusterResource = createClusterResource(UID, NS, CLUSTER);
+    clusterResource.getMetadata().generation(2L);
     testSupport.defineResources(clusterResource);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
 
@@ -424,6 +425,7 @@ class DomainProcessorTest {
     assertThat(updatedClusterResource.getStatus(), notNullValue());
     assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
     assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
+    assertThat(updatedClusterResource.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test

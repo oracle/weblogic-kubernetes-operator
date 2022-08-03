@@ -1020,6 +1020,31 @@ window.onload = function() {
         }
       }
     },
+    "ClusterCondition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The type of the condition. Valid types are Completed, Available, Failed, and Rolling.",
+          "type": "string",
+          "enum": [
+            "Available",
+            "Completed"
+          ]
+        },
+        "lastTransitionTime": {
+          "description": "Last time the condition transitioned from one status to another.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "message": {
+          "description": "Human-readable message indicating details about last transition.",
+          "type": "string"
+        },
+        "status": {
+          "description": "The status of the condition. Can be True, False.",
+          "type": "string"
+        }
+      }
+    },
     "ClusterService": {
       "type": "object",
       "properties": {
@@ -1140,6 +1165,17 @@ window.onload = function() {
           "description": "The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero.",
           "type": "integer",
           "minimum": 0.0
+        },
+        "conditions": {
+          "description": "Current service state of the cluster.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterCondition"
+          }
+        },
+        "observedGeneration": {
+          "description": "The generation observed by the WebLogic operator.",
+          "type": "integer"
         }
       }
     },

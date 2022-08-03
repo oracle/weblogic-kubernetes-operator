@@ -56,4 +56,44 @@ class ClusterStatusTest {
     assertThat("ClusterStatus for cluster1 should be ordered after ClusterStatus without cluster name",
         cluster1.compareTo(nullCluster), greaterThan(0));
   }
+
+  @Test
+  void verifyAdd_duplicateCondition_hasOneEntry() {
+    ClusterCondition condition = new ClusterCondition(ClusterConditionType.AVAILABLE)
+        .withStatus(ClusterCondition.FALSE);
+    ClusterCondition newCondition = new ClusterCondition(ClusterConditionType.AVAILABLE)
+        .withStatus(ClusterCondition.FALSE);
+    cluster1.addCondition(condition);
+    cluster1.addCondition(newCondition);
+
+    assertThat(cluster1.getConditions().size(), equalTo(1));
+    assertThat(cluster1.getConditions().get(0), equalTo(condition));
+  }
+
+  @Test
+  void verifyAdd_updatedCondition_hasUpdatedEntry() {
+    ClusterCondition condition = new ClusterCondition(ClusterConditionType.AVAILABLE)
+        .withStatus(ClusterCondition.FALSE);
+    ClusterCondition newCondition = new ClusterCondition(ClusterConditionType.AVAILABLE)
+        .withStatus(ClusterCondition.TRUE);
+    cluster1.addCondition(condition);
+    cluster1.addCondition(newCondition);
+
+    assertThat(cluster1.getConditions().size(), equalTo(1));
+    assertThat(cluster1.getConditions().get(0), equalTo(newCondition));
+  }
+
+  @Test
+  void verifyAdd_multipleConditions_areSorted() {
+    ClusterCondition availableCondition = new ClusterCondition(ClusterConditionType.AVAILABLE)
+        .withStatus(ClusterCondition.TRUE);
+    ClusterCondition completedCondition = new ClusterCondition(ClusterConditionType.COMPLETED)
+        .withStatus(ClusterCondition.FALSE);
+    cluster1.addCondition(completedCondition);
+    cluster1.addCondition(availableCondition);
+
+    assertThat(cluster1.getConditions().size(), equalTo(2));
+    assertThat(cluster1.getConditions().get(0), equalTo(availableCondition));
+    assertThat(cluster1.getConditions().get(1), equalTo(completedCondition));
+  }
 }

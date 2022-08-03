@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -144,12 +145,15 @@ public class ClusterResourceStatusUpdater {
     private final Packet packet;
     private final DomainResource domain;
     private final ClusterResource resource;
+    private ClusterStatus newStatus;
+    private final boolean isMakeRight;
 
     private ReplaceClusterStatusContext(@Nonnull Packet packet, @Nonnull ClusterResource resource) {
       this.packet = packet;
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       this.domain = info.getDomain();
       this.resource = resource;
+      isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
     }
 
     String getClusterName() {
@@ -172,10 +176,19 @@ public class ClusterResourceStatusUpdater {
           .withStatus(getNewStatus());
     }
 
+    @NotNull
     private ClusterStatus getNewStatus() {
+      if (newStatus == null) {
+        newStatus = createNewStatus();
+      }
+
+      return newStatus;
+    }
+
+    private ClusterStatus createNewStatus() {
       return Optional.ofNullable(domain)
-          .map(dom -> findClusterStatus(dom.getOrCreateStatus().getClusters(), getClusterName()))
-          .orElse(null);
+        .map(dom -> findClusterStatus(dom.getOrCreateStatus().getClusters(), getClusterName()))
+        .orElse(null);
     }
 
     boolean isClusterResourceStatusChanged() {
@@ -185,6 +198,12 @@ public class ClusterResourceStatusUpdater {
     private StepAndPacket createReplaceClusterResourceStatusStep() {
       LOGGER.fine(MessageKeys.CLUSTER_STATUS, getClusterResourceName(),
           getNewStatus());
+
+      ClusterStatus newClusterStatus = getNewStatus();
+      if (isMakeRight) {
+        // Only set observedGeneration during a make-right, but not during a background status update
+        newClusterStatus.setObservedGeneration(resource.getMetadata().getGeneration());
+      }
       return new StepAndPacket(createReplaceClusterStatusAsyncStep(), packet);
     }
 

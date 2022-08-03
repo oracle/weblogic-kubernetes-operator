@@ -39,6 +39,8 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
+import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -999,6 +1001,125 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
+  void whenReplicaCountWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionTrue() {
+    configureDomain().configureCluster("cluster1").withReplicas(5).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenReplicaCountNotWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionFalse() {
+    configureDomain().configureCluster("cluster1").withReplicas(20).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
+  void whenClusterIsIntentionallyShutdown_establishClusterAvailableConditionTrue() {
+    configureDomain().configureCluster("cluster1").withReplicas(0).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 0).build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenClusterIsIntentionallyShutdown_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster("cluster1").withReplicas(0).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 0).build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition completedCondition = clusterStatus.getConditions().get(1);
+    assertThat(completedCondition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(completedCondition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenClusterHasTooManyReplicas_establishClusterCompletedConditionFalse() {
+    configureDomain().configureCluster("cluster1").withReplicas(20).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
+  void whenAllDesiredServersRunning_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster("cluster1").withReplicas(4).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenAllDesiredServersRunningButSomeShutdown_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster("cluster1").withReplicas(2).withMaxUnavailable(1);
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2", "server3", "server4")
+        .notStarting("server2", "server3")
+        .withServersReachingState(SHUTDOWN_STATE, "server2", "server3")
+        .build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishClusterCompletedConditionFalse() {
+    info.setServersToRoll(Map.of("server1", new Step.StepAndPacket(null, null)));
+    configureDomain().configureCluster("cluster1").withReplicas(2).withMaxUnavailable(1);
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2", "server3", "server4")
+        .build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(FALSE));
   }
 
   @Test
