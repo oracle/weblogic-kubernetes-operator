@@ -298,7 +298,6 @@ fi
 # Test Filter (all) and Maven Profile is integration-tests
 if [ "x${maven_profile_name}" = "xintegration-tests" ] && 
    [ "${test_filter}" = "**/It*" ] ; then
-     echo 'Test Filter[ ${test_filter} ] and MVN Profile[ ${maven_profile_name} ]'
      echo '(ERROR) All tests cannot be run with [integration-tests] profile'
      exit 0
 fi
@@ -307,7 +306,6 @@ fi
 # not integration-tests
 if [ "x${maven_profile_name}" != "xintegration-tests" ] && 
    [ "${test_filter}" != "**/It*" ] ; then
-    echo 'Test Filter[ ${test_filter} ] and MVN Profile[ ${maven_profile_name} ]'
     echo '(ERROR) Individual Test MUST be run with [integration-tests] profile'
     exit 0
 fi
