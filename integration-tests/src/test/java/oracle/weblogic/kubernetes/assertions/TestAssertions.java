@@ -419,24 +419,27 @@ public class TestAssertions {
 
   /**
    * Check the status reason of the domain matches the given reason.
-   * @param domain  oracle.weblogic.domain.Domain object
+   * @param domainUid  domain uid
+   * @param namespace namespace in which the domain resource exists
    * @param statusReason the expected status reason of the domain
    * @return true if the status reason matches, false otherwise
    */
-  public static Callable<Boolean> domainStatusReasonMatches(oracle.weblogic.domain.Domain domain,
-                                                            String statusReason) {
+  public static Callable<Boolean> domainStatusReasonMatches(String domainUid, String namespace,
+      String statusReason) {
     LoggingFacade logger = getLogger();
     return () -> {
-      if (domain != null && domain.getStatus() != null && domain.getStatus().getReason() != null) {
-        logger.info("domain status reason: {0}", domain.getStatus().getReason());
-        return domain.getStatus().getReason().equalsIgnoreCase(statusReason);
+      oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
+      if (domain != null && domain.getStatus() != null && !domain.getStatus().getConditions().isEmpty()) {
+        boolean match = domain.getStatus().getConditions().stream()
+            .anyMatch(condition -> condition.getReason().contains(statusReason));
+        return match;
       } else {
         if (domain == null) {
           logger.info("domain is null");
         } else if (domain.getStatus() == null) {
           logger.info("domain status is null");
         } else {
-          logger.info("domain status reason is null");
+          logger.info("domain status conditions is empty");
         }
         return false;
       }

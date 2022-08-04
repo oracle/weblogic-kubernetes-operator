@@ -72,7 +72,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItSessionMigration {
 
   // constants for creating domain image using model in image

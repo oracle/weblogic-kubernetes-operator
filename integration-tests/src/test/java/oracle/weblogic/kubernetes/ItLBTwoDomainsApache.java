@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -54,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVC
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test Apache load balancer handles traffic to one or two backend Weblogic domains.
@@ -64,7 +66,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify Apache load balancer handles traffic to one or two backend Weblogic domains")
+@Tag("kind-parallel")
 @IntegrationTest
+@Tag("olcne")
 class ItLBTwoDomainsApache {
 
   private static final int numberOfDomains = 2;
