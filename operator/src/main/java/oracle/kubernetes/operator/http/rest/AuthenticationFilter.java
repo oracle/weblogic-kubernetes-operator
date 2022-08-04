@@ -43,7 +43,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
   public static final String REST_BACKEND_PROPERTY = "RestBackend";
   public static final String ACCESS_TOKEN_PREFIX = "Bearer ";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  @Context private Application application; // TBD - does this work?
+  @Context private Application application;
 
   /** Construct an AuthenticationFilter. */
   public AuthenticationFilter() {

@@ -378,12 +378,35 @@ public class RestBackendImpl implements RestBackend {
                 .controller(true)))
         .withReplicas(replicas);
     try {
-      callBuilder
-          .createCluster(namespace, cluster);
+      callBuilder.createCluster(namespace, cluster);
     } catch (ApiException e) {
       throw handleApiException(e);
     }
   }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Object createOrReplaceCluster(Map<String, Object> cluster) {
+    String namespace = Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
+        .map(m -> (String) m.get("namespace")).orElse("default");
+    try {
+      // FIXME: should do a create or replace
+      return callBuilder.createClusterUntyped(namespace, cluster);
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List<Map<String, Object>> listClusters(String namespace) {
+    try {
+      return (List<Map<String, Object>>) callBuilder.listClusterUntyped(namespace);
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
 
   private void patchDomain(DomainResource domain, JsonPatchBuilder patchBuilder) {
     try {
