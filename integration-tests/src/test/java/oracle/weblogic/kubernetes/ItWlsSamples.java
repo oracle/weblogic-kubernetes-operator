@@ -242,12 +242,12 @@ class ItWlsSamples {
   @Tag("samples-gate")
   void testSampleDomainInPv(String model) {
 
-    String domainName = model.split(":")[1];
+    String domainUid = model.split(":")[1];
     String script = model.split(":")[0];
-    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "domainInPV", domainName, script);
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "domainInPV", domainUid, script);
     //copy the samples directory to a temporary location
     setupSample(testSamplePath);
-    String secretName = domainName + "-weblogic-credentials";
+    String secretName = domainUid + "-weblogic-credentials";
     if (!secretExists(secretName, domainNamespace)) {
       createSecretWithUsernamePassword(
           secretName,
@@ -256,7 +256,7 @@ class ItWlsSamples {
           ADMIN_PASSWORD_DEFAULT);
     }
     //create PV and PVC used by the domain
-    createPvPvc(domainName, testSamplePath);
+    createPvPvc(domainUid, testSamplePath);
 
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
@@ -264,7 +264,7 @@ class ItWlsSamples {
     Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
     // update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainName, sampleBase);
+    updateDomainInputsFile(domainUid, sampleBase);
 
     // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
@@ -273,17 +273,14 @@ class ItWlsSamples {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
-      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHome: /shared/domains", "domainHome: /shared/"
-                      + domainNamespace + "/" + domainName + "/domains/" + domainName);
     });
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
-    createDomainAndVerify(domainName, sampleBase);
+    createDomainAndVerify(domainUid, sampleBase);
 
     // update the domain to add a new cluster
     copyModelFileForUpdateDomain(sampleBase);
-    updateDomainAndVerify(domainName, sampleBase, domainNamespace, script);
+    updateDomainAndVerify(domainUid, sampleBase, domainNamespace, script);
   }
 
   /**
@@ -468,19 +465,18 @@ class ItWlsSamples {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/wls-sample-testing"
       logger.info("Deleting and recreating {0}", testSamplePath);
-      createDirectories(testSamplePath);
       deleteDirectory(testSamplePath.toFile());
       createDirectories(testSamplePath);
 
       logger.info("Copying {0} to {1}", samplePath, testSamplePath);
       copyDirectory(samplePath.toFile(), testSamplePath.toFile());
-      String command = "chmod -R 755 " + testSamplePath;
-      logger.info("The command to be executed: " + command);
-      assertTrue(Command
-              .withParams(new CommandParams()
-                      .command(command))
-              .execute(), "Failed to chmod testSamplePath");
     });
+    String command = "chmod -R 755 " + testSamplePath;
+    logger.info("The command to be executed: " + command);
+    assertTrue(Command
+            .withParams(new CommandParams()
+                    .command(command))
+            .execute(), "Failed to chmod testSamplePath");
   }
 
   private void copyModelFileForUpdateDomain(Path sampleBase) {
@@ -602,17 +598,23 @@ class ItWlsSamples {
         domainNamespace);
   }
 
-  private void updateDomainInputsFile(String domainName, Path sampleBase) {
+  private void updateDomainInputsFile(String domainUid, Path sampleBase) {
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domain1", domainName);
+              "domain1", domainUid);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
+      /*
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + "/" + domainUid + "/domains");
+
+       */
 
       if (KIND_REPO == null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
