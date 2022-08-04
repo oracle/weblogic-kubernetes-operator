@@ -12,7 +12,7 @@ def getEnvVar(var):
 
 domain_uid                   = getEnvVar("DOMAIN_UID")
 server_port                  = int(getEnvVar("MANAGED_SERVER_PORT"))
-domain_path                  = getEnvVar("DOMAIN_HOME")../
+domain_path                  = getEnvVar("DOMAIN_HOME")
 cluster_name                 = getEnvVar("CLUSTER_NAME")
 admin_server_name            = getEnvVar("ADMIN_SERVER_NAME")
 admin_server_name_svc        = getEnvVar("ADMIN_SERVER_NAME_SVC")
