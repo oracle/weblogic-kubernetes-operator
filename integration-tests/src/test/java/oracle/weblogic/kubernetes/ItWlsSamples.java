@@ -624,6 +624,7 @@ class ItWlsSamples {
         String chownCommand1 = "chown 1000:0 %DOMAIN_ROOT_DIR%"
                 + "/. && find %DOMAIN_ROOT_DIR%"
                 + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+
         String chownCommand2 = "chown 1000:1000 %DOMAIN_ROOT_DIR%"
                 + "/. && find %DOMAIN_ROOT_DIR%"
                 + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";

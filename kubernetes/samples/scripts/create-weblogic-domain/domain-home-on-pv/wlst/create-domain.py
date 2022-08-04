@@ -12,7 +12,7 @@ def getEnvVar(var):
 
 domain_uid                   = getEnvVar("DOMAIN_UID")
 server_port                  = int(getEnvVar("MANAGED_SERVER_PORT"))
-domain_path                  = getEnvVar("DOMAIN_HOME")
+domain_path                  = getEnvVar("DOMAIN_HOME")../
 cluster_name                 = getEnvVar("CLUSTER_NAME")
 admin_server_name            = getEnvVar("ADMIN_SERVER_NAME")
 admin_server_name_svc        = getEnvVar("ADMIN_SERVER_NAME_SVC")
@@ -27,6 +27,7 @@ managed_server_name_base_svc = getEnvVar("MANAGED_SERVER_NAME_BASE_SVC")
 domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
+
 
 # Read the domain secrets from the common python file
 execfile('%s/read-domain-secret.py' % script_dir)
