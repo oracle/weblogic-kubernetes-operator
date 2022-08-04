@@ -213,9 +213,12 @@ doPodWait() {
   local wcmd="\$WORKDIR/utils/wl-pod-wait.sh -p $1 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE -t \$POD_WAIT_TIMEOUT_SECS"
 
   if [ $1 -eq 0 ]; then
-    doCommand -c "$wcmd -q"
+    doCommand -c "$wcmd -q -i"
   else
-    doCommand    "$wcmd"
+    # TBD: this mode depends on the operator properly updating 'observedGeneration' only after it has cleared Completed condition if needed
+    trace "TBD: Temporarily sleeping 5 seconds to hopefully work-around potential bug in operator."
+    sleep 5
+    doCommand    "$wcmd -i"
   fi
 }
 
@@ -395,7 +398,7 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doPodWait 0
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doPodWait 3
+  doPodWait Completed
 
   if [ "$OKD" = "true" ]; then
     # expose the cluster service as an route
@@ -445,7 +448,7 @@ if [ "$DO_UPDATE1" = "true" ]; then
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doPodWait 3
+  doPodWait Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -496,7 +499,7 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doPodWait 0
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doPodWait 3
+  doPodWait Completed
 
   if [ "$OKD" = "true" ]; then
     # expose the cluster service as an route
@@ -566,7 +569,7 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doPodWait 3
+  doPodWait Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -618,7 +621,7 @@ if [ "$DO_UPDATE4" = "true" ]; then
 
   doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doPodWait 3
+  doPodWait Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
     testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
