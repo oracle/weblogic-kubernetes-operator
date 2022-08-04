@@ -293,17 +293,27 @@ if [ "x${maven_profile_name}" = "xkind-sequential" ] ; then
   echo "Setting the variable parallel_run to [${parallel_run}] for kind-sequential profile"
 fi
 
+# Check for invalid Test Filter/Maven Profile Combination
+
+# Test Filter (all) and Maven Profile is integration-tests
 if [ "x${maven_profile_name}" = "xintegration-tests" ] && 
    [ "${test_filter}" = "**/It*" ] ; then
-  echo '[integration-tests] profile MUST be used for individual Test(s)'
-  exit 0
+     echo 'Test Filter[${test_filter}] and MVN Profile[${maven_profile_name}]'
+     echo '(ERROR) All tests cannot be run with [integration-tests] profile'
+     exit 0
+fi
+
+# Test Filter is Individual Test Clas(es) and Maven Profile is 
+# not integration-tests
+if [ "x${maven_profile_name}" != "xintegration-tests" ] && 
+   [ "${test_filter}" != "**/It*" ] ; then
+    echo 'Test Filter[${test_filter}] and MVN Profile[${maven_profile_name}]'
+    echo '(ERROR) Individual Test MUST be run with [integration-tests] profile'
+    exit 0
 fi
 
 echo "Run tests..."
 if [ "${test_filter}" != "**/It*" ]; then
-  maven_profile_name="integration-tests"
-  echo "Overwriting the maven profile to [integration-tests]" 
-  echo "Running individual class [${test_filter}] with profile [${maven_profile_name}]"
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
 else
