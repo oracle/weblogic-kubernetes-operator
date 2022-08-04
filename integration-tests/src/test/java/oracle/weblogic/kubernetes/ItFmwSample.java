@@ -167,7 +167,7 @@ public class ItFmwSample {
 
     String domainUid = model.split(":")[1];
     String script = model.split(":")[0];
-    Path testSamplePath = get(WORK_DIR, "fmw-sample-testing", domainUid);
+    Path testSamplePath = get(WORK_DIR, "fmw-sample-testing", domainNamespace, "fwmdomainInPV", domainUid, script);
 
     setupSample(testSamplePath);
 
