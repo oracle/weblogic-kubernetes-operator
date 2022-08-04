@@ -290,7 +290,7 @@ rm -rf "${RESULT_ROOT:?}/*"
 if [ "x${maven_profile_name}" = "xkind-sequential" ] ; then
   parallel_run="false"
   threads=1
-  echo 'Setting the variable parallel_run to [${parallel_run}] for kind-sequential profile"
+  echo "Setting the variable parallel_run to [${parallel_run}] for kind-sequential profile"
 fi
 
 echo "Run tests..."
