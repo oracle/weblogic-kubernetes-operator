@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -62,7 +63,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#weblogic-domain-management
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
+@Tag("kind-sequential")
+@Tag("okd-wls-mrg")
 @IntegrationTest
+@Tag("olcne")
 class ItDedicatedMode {
   // namespace constants
   private static String opNamespace = null;

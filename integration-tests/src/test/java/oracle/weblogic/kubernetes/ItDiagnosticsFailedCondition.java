@@ -94,7 +94,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the domain status failed conditions for domain lifecycle")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;

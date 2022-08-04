@@ -641,6 +641,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withMaximumPendingWaitTimeSeconds(long waitTime) {
+      server.setMaxPendingWaitTimeSeconds(waitTime);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
       return this;
@@ -838,6 +844,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withMaximumReadyWaitTimeSeconds(long maximumReadyWaitTimeSeconds) {
       clusterSpec.setMaxReadyWaitTimeSeconds(maximumReadyWaitTimeSeconds);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaximumPendingWaitTimeSeconds(long maximumReadyWaitTimeSeconds) {
+      clusterSpec.setMaxPendingWaitTimeSeconds(maximumReadyWaitTimeSeconds);
       return this;
     }
 
