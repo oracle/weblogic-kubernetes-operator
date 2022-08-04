@@ -293,8 +293,13 @@ if [ "x${maven_profile_name}" = "xkind-sequential" ] ; then
   echo "Setting the variable parallel_run to [${parallel_run}] for kind-sequential profile"
 fi
 
-echo "Run tests..."
+if [ "x${maven_profile_name}" = "xintegration-tests" ] && 
+   [ "${test_filter}" = "**/It*" ] ; then
+  echo '[integration-tests] profile MUST be used for individual Test(s) '
+  exit 0
+fi
 
+echo "Run tests..."
 if [ "${test_filter}" != "**/It*" ]; then
   maven_profile_name="integration-tests"
   echo "Overwriting the maven profile to [integration-tests]" 
