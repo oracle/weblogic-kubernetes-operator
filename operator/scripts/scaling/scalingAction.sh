@@ -152,21 +152,93 @@ get_custom_resource_domain() {
   echo "$DOMAIN"
 }
 
-# Retrieve Cluster Custom Resource
+# Retrieve Cluster Custom Resource with the resource name
 # args:
-# $1 Cluster name (assumed to be same as name of the Cluster Resource)
+# $1 Cluster Custom Resource name
 get_custom_resource_cluster() {
-  local cluster_id="$1"
+  local cluster_resource_name="$1"
   local clusterJson=$(curl \
     -v -f \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-    "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_id")
+    "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_resource_name")
   if [ $? -ne 0 ]; then
-    trace "Failed to retrieve WebLogic Cluster Custom Resource Definition with cluster name '$cluster_id'"
-    exit 1
+    trace "Failed to retrieve WebLogic Cluster Custom Resource Definition with cluster resource name '$cluster_resource_name'"
   fi
   echo "$clusterJson"
+}
+
+# Retrieve the Cluster custom resource with the resource name, and return it only
+# if its spec.clusterName value matches the WebLogic cluster name
+# args:
+# $1 Cluster Custom Resource name
+# $2 WebLogic cluster name
+get_cluster_resource_if_cluster_name_matches() {
+  local cluster_resource_name="$1"
+  local wls_cluster_name="$2"
+  local clusterJson
+  local cluste_name
+  clusterJson=$(get_custom_resource_cluster "$cluster_resource_name")
+  if [ -n "$clusterJson" ]; then
+    cluster_name=$(get_cluster_name_from_cluster "$clusterJson")
+    if [[ "$cluster_name" == "$wls_cluster_name" ]]; then
+      echo "$clusterJson"
+    fi
+  fi
+}
+
+# Find the Cluster custom resource with the WebLogic cluster name
+# args:
+# $1 Domain custom resource
+# $2 WebLogic cluster name
+find_cluster_resource_with_cluster_name() {
+  local domainJson="$1"
+  local wls_cluster_name="$2"
+  local cluster_resource_names
+  local clusterJson
+  cluster_resource_names=$(get_cluster_resource_names_from_domain "$domainJson")
+  # Try cluster resources with name that ends with the WebLogic cluster name
+  for name in $cluster_resource_names
+  do
+    if [[ "$name" == *"$wls_cluster_name" ]]; then
+      clusterJson=$(get_cluster_resource_if_cluster_name_matches "$name" "$wls_cluster_name")
+      if [ -n "$clusterJson" ]; then
+        echo "$clusterJson"
+        return
+      fi
+    fi
+  done
+  # Try the rest of the cluster resource names
+  for name in $cluster_resource_names
+  do
+    if [[ "$name" != *"$wls_cluster_name" ]]; then
+      clusterJson=$(get_cluster_resource_if_cluster_name_matches "$name" "$wls_cluster_name")
+      if [ -n "$clusterJson" ]; then
+        echo "$clusterJson"
+        return
+      fi
+    fi
+  done
+}
+
+# Gets the names of Cluster custom resources referenced by the Domain custom resource
+# args:
+# $1 Domain custom resource
+get_cluster_resource_names_from_domain() {
+  local DOMAIN="$1"
+  local clusters
+  if jq_available; then
+  clusters=$(echo "${DOMAIN}" | jq -r '.spec.clusters[].name'  2>> ${log_file_name})
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+for j in json.load(sys.stdin)["spec"]["clusters"]:
+  print((j["name"]))
+INPUT
+  clusters=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
+  fi
+
+  echo "$clusters"
 }
 
 # Verify if cluster is defined in clusters of the Custom Resource Domain
@@ -299,6 +371,25 @@ INPUT
   minReplicas=$(echo "${domainJson}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   eval "$__result"="${minReplicas}"
+}
+
+# Function to get the clusterName from cluster resource.
+# args:
+# $1 Cluster resource in json format
+get_cluster_name_from_cluster() {
+  local clusterJson="$1"
+  local clusterName
+  if jq_available; then
+    clusterName=$(echo "${clusterJson}" | jq -r ".spec.clusterName" 2>> ${log_file_name} )
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["spec"]["clusterName"]))
+INPUT
+  clusterName=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+
+  echo "$clusterName"
 }
 
 #
@@ -650,7 +741,7 @@ DOMAIN=$(get_custom_resource_domain)
 
 # API version of cluster resource hard coded to "v1" in this release
 cluster_api_version="v1"
-CLUSTER=$(get_custom_resource_cluster "$wls_cluster_name")
+CLUSTER=$(find_cluster_resource_with_cluster_name "$DOMAIN" "$wls_cluster_name")
 
 new_ms=$(find_target_replicas "$scaling_action" "$scaling_size" "$CLUSTER" "$DOMAIN")
 

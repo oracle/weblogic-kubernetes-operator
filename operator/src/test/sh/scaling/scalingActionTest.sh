@@ -310,6 +310,83 @@ test_get_num_ms_in_cluster_no_matching_jq() {
   assertEquals '0' "${result}"
 }
 
+##### get_cluster_resource_names_from_domain tests #####
+
+test_get_cluster_resource_names_from_domain() {
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
+
+  if [[ "${result}" != "domain1-cluster-1"*"domain1-cluster-2" ]]; then
+    fail "get_cluster_resource_names_from_domain returned unexpected value: <${result}>"
+  fi
+}
+
+test_get_cluster_resource_names_from_domain_jq() {
+  skip_if_jq_not_installed
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
+
+  if [[ "${result}" != "domain1-cluster-1"*"domain1-cluster-2" ]]; then
+    fail "get_cluster_resource_names_from_domain returned unexpected value: <${result}>"
+  fi
+}
+
+test_get_cluster_resource_names_from_domain_no_clusters() {
+
+  DOMAIN_FILE="${testdir}/domain_0cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
+
+  assertEquals "" "${result}"
+}
+
+test_get_cluster_resource_names_from_domain_no_clusters_jq() {
+  skip_if_jq_not_installed
+
+  DOMAIN_FILE="${testdir}/domain_0cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
+
+  assertEquals "" "${result}"
+}
+
+##### get_cluster_name_from_cluster tests #####
+
+test_get_cluster_name_from_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_cluster_name_from_cluster "${cluster_json}")
+
+  assertEquals 'cluster-1' "${result}"
+}
+
+test_get_cluster_name_from_cluster_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_cluster_name_from_cluster "${cluster_json}")
+
+  assertEquals 'cluster-1' "${result}"
+}
+
 ##### get_replicas_from_cluster tests #####
 
 test_get_replicas_from_cluster() {
@@ -837,6 +914,104 @@ test_find_target_replicas_no_cluster_resource_jq() {
 
   result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
   assertEquals '2' "${result}"
+}
+
+##### get_cluster_resource_if_cluster_name_matches tests #####
+
+test_get_cluster_resource_if_cluster_name_matches() {
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource" "${expectedResult}" "${result}"
+}
+
+test_get_cluster_resource_if_cluster_name_matches_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource" "${expectedResult}" "${result}"
+}
+
+test_get_cluster_resource_if_cluster_name_matches_not_matching() {
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-2")
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
+}
+
+test_get_cluster_resource_if_cluster_name_matches_not_matching_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-2")
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
+}
+
+##### find_cluster_resource_with_cluster_name tests #####
+
+test_find_cluster_resource_with_cluster_name() {
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource returned" "${expectedResult}" "${result}"
+}
+
+test_find_cluster_resource_with_cluster_name_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource returned" "${expectedResult}" "${result}"
+}
+
+test_find_cluster_resource_with_cluster_name_not_found() {
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "non-existing-cluster")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
+}
+
+test_find_cluster_resource_with_cluster_name_not_found_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "non-existing-cluster")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
 }
 
 ######################### Mocks for the tests ###############
