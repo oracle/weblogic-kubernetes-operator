@@ -177,7 +177,7 @@ get_cluster_resource_if_cluster_name_matches() {
   local cluster_resource_name="$1"
   local wls_cluster_name="$2"
   local clusterJson
-  local cluste_name
+  local cluster_name
   clusterJson=$(get_custom_resource_cluster "$cluster_resource_name")
   if [ -n "$clusterJson" ]; then
     cluster_name=$(get_cluster_name_from_cluster "$clusterJson")
@@ -235,7 +235,7 @@ import sys, json
 for j in json.load(sys.stdin)["spec"]["clusters"]:
   print((j["name"]))
 INPUT
-  clusters=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
+  clusters=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
   fi
 
   echo "$clusters"
