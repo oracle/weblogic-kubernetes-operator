@@ -839,7 +839,7 @@ class ItWlsSamples {
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(namespace);
 
-    final String podName = "weblogic-pv-pod-" + namespace;
+    final String podName = "weblogic-pv-pod-" + namespace + domainUid;
     final String pvName = domainUid + "-weblogic-sample-pv";
     final String pvcName = domainUid + "-weblogic-sample-pvc";
     io.kubernetes.client.openapi.models.V1PodSpec podSpec = new io.kubernetes.client.openapi.models.V1PodSpec()
