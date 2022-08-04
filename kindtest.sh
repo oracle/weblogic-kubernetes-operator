@@ -295,7 +295,7 @@ fi
 
 if [ "x${maven_profile_name}" = "xintegration-tests" ] && 
    [ "${test_filter}" = "**/It*" ] ; then
-  echo '[integration-tests] profile MUST be used for individual Test(s) '
+  echo '[integration-tests] profile MUST be used for individual Test(s)'
   exit 0
 fi
 
