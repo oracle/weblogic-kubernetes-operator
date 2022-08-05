@@ -21,7 +21,7 @@ import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -158,7 +158,7 @@ public class CleanupUtil {
       try {
         if (!Kubernetes.listDomains(namespace).getItems().isEmpty()) {
           logger.info("Domain still exists !!!");
-          List<Domain> items = Kubernetes.listDomains(namespace).getItems();
+          List<DomainResource> items = Kubernetes.listDomains(namespace).getItems();
           for (var item : items) {
             logger.info(item.getMetadata().getName());
           }

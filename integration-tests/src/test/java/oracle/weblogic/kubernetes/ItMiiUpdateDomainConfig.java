@@ -29,9 +29,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -248,7 +247,7 @@ class ItMiiUpdateDomainConfig {
   @Order(0)
   @DisplayName("Check environment variable with special characters")
   void testMiiCustomEnv() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     List<V1EnvVar> envList = domain1.getSpec().getServerPod().getEnv();
@@ -822,8 +821,9 @@ class ItMiiUpdateDomainConfig {
       int replicaCount, String configmapName, String dbSecretName) {
     List<String> securityList = new ArrayList<>();
     securityList.add(dbSecretName);
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -865,9 +865,6 @@ class ItMiiUpdateDomainConfig {
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .secrets(securityList)
                             .model(new Model()

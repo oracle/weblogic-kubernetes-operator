@@ -9,8 +9,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -183,7 +183,7 @@ public class MiiDynamicUpdateHelper {
   public void verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionStatus) {
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()

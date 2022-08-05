@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -214,7 +214,7 @@ class ItFmwMiiDomain {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(domainUid,
+    DomainResource domain = FmwUtils.createDomainResource(domainUid,
         fmwDomainNamespace,
         adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,

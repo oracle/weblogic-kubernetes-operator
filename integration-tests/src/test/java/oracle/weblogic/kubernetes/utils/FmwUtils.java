@@ -14,9 +14,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
@@ -54,12 +53,13 @@ public class FmwUtils {
    * @param miiImage name of model in image
    * @return Domain WebLogic domain
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
       String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -89,9 +89,6 @@ public class FmwUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .opss(new Opss()
                     .walletPasswordSecret(opssWalletPasswordSecretName))
@@ -118,12 +115,12 @@ public class FmwUtils {
    * @param maxServerPodReadyWaitTime maximum time to wait for a server pod to be ready
    * @return Domain WebLogic domain
    */
-  public static Domain createDomainResourceWithMaxServerPodReadyWaitTime(
+  public static DomainResource createDomainResourceWithMaxServerPodReadyWaitTime(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
       String opssWalletPasswordSecretName, int replicaCount, String miiImage, long maxServerPodReadyWaitTime) {
     // create the domain CR
-    Domain domain = createDomainResource(domainUid, domNamespace,
+    DomainResource domain = createDomainResource(domainUid, domNamespace,
         adminSecretName, repoSecretName, encryptionSecretName,
         rcuAccessSecretName, opssWalletPasswordSecretName, replicaCount, miiImage);
     domain.getSpec().getServerPod().setMaxReadyWaitTimeSeconds(maxServerPodReadyWaitTime);
@@ -144,12 +141,13 @@ public class FmwUtils {
    * @param miiImage name of model in image
    * @return Domain WebLogic domain
    */
-  public static Domain createIstioDomainResource(
+  public static DomainResource createIstioDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
       String opssWalletPasswordSecretName, int replicaCount, String miiImage, String configmapName) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -174,9 +172,6 @@ public class FmwUtils {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .opss(new Opss()
                     .walletPasswordSecret(opssWalletPasswordSecretName))
@@ -203,17 +198,18 @@ public class FmwUtils {
    * @param t3ChannelPort port number of t3 channel
    * @return Domain WebLogic domain
    */
-  public static Domain createDomainResourceOnPv(String domainUid,
-                                                String domNamespace,
-                                                String adminSecretName,
-                                                String clusterName,
-                                                String pvName,
-                                                String pvcName,
-                                                String domainInHomePrefix,
-                                                int replicaCount,
-                                                int t3ChannelPort) {
+  public static DomainResource createDomainResourceOnPv(String domainUid,
+                                                        String domNamespace,
+                                                        String adminSecretName,
+                                                        String clusterName,
+                                                        String pvName,
+                                                        String pvcName,
+                                                        String domainInHomePrefix,
+                                                        int replicaCount,
+                                                        int t3ChannelPort) {
+
     // create a domain custom resource configuration object
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -256,10 +252,7 @@ public class FmwUtils {
                         .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)));
+                        .nodePort(t3ChannelPort)))));
 
     return domain;
   }

@@ -6,7 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.util.ArrayList;
 import java.util.List;
 
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -118,7 +118,7 @@ class ItMultiDomainModels {
   @Tag("crio")
   @DisabledOnSlimImage
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
-    Domain domain = createDomainBasedOnDomainType(domainType);
+    DomainResource domain = createDomainBasedOnDomainType(domainType);
 
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -182,15 +182,15 @@ class ItMultiDomainModels {
    * Assert the specified domain and domain spec, metadata and clusters not null.
    * @param domain oracle.weblogic.domain.Domain object
    */
-  private static void assertDomainNotNull(Domain domain) {
+  private static void assertDomainNotNull(DomainResource domain) {
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), domain + " spec is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
     assertNotNull(domain.getSpec().getClusters(), domain.getSpec() + " getClusters() is null");
   }
 
-  private static Domain createDomainBasedOnDomainType(String domainType) {
-    Domain domain = null;
+  private static DomainResource createDomainBasedOnDomainType(String domainType) {
+    DomainResource domain = null;
 
     if (domainType.equalsIgnoreCase("modelInImage")) {
       domain = createMiiDomainAndVerify(miiDomainNamespace, miiDomainUid,

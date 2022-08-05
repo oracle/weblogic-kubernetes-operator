@@ -22,9 +22,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -91,6 +91,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -216,12 +218,23 @@ class ItMiiDomain {
         + "         ListenPort: '" + adminServerSecurePort + "' \n";
     createModelConfigMap(configMapName, yamlString, domainUid);
 
+    // create cluster object
+    String clusterName = "cluster-1";
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
     // create the domain object
-    Domain domain = createDomainResourceWithConfigMap(domainUid,
+    DomainResource domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
                replicaCount,
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -337,8 +350,16 @@ class ItMiiDomain {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace1,
             "weblogicenc", "weblogicenc");
 
+    // create cluster object
+    String clusterName = "cluster-1";
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace1, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace1);
+    createClusterAndVerify(cluster);
+
     // create the domain object
-    Domain domain = createDomainResource(domainUid1,
+    DomainResource domain = createDomainResource(domainUid1,
                 domainNamespace1,
                 adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
@@ -348,6 +369,9 @@ class ItMiiDomain {
 
     // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -558,7 +582,7 @@ class ItMiiDomain {
   @Order(5)
   @DisplayName("Check admin service annotations and labels")
   void testAdminServiceAnnotationsLabels() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertTrue(
@@ -764,11 +788,12 @@ class ItMiiDomain {
   }
 
 
-  private Domain createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-                                    String repoSecretName, String encryptionSecretName, int replicaCount,
-                                      String miiImage) {
+  private DomainResource createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+                                              String repoSecretName, String encryptionSecretName, int replicaCount,
+                                              String miiImage) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -797,9 +822,6 @@ class ItMiiDomain {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -810,16 +832,16 @@ class ItMiiDomain {
   }
 
   // Create a domain resource with a custom ConfigMap
-  private Domain createDomainResourceWithConfigMap(String domainUid,
-          String domNamespace, String adminSecretName,
-          String repoSecretName, String encryptionSecretName,
-          int replicaCount, String miiImage, String configmapName) {
+  private DomainResource createDomainResourceWithConfigMap(String domainUid,
+                                                           String domNamespace, String adminSecretName,
+                                                           String repoSecretName, String encryptionSecretName,
+                                                           int replicaCount, String miiImage, String configmapName) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -855,9 +877,6 @@ class ItMiiDomain {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")

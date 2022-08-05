@@ -22,9 +22,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -162,7 +161,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
-  private static List<Domain> domains = new ArrayList<>();
+  private static List<DomainResource> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String domainInImageNamespace = null;
@@ -265,7 +264,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisabledOnSlimImage
   void testScaleClustersByPatchingDomainResource(String domainType) {
 
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
+    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -330,7 +329,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisabledOnSlimImage
   void testScaleClustersWithRestApi(String domainType) {
 
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
+    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -377,7 +376,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisabledOnSlimImage
   void testScaleClustersWithWLDF(String domainType) {
 
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
+    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -428,7 +427,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @Test
   @DisplayName("Test liveness probe of pod")
   void testLivenessProbe() {
-    Domain domain = createOrStartDomainBasedOnDomainType("modelInImage");
+    DomainResource domain = createOrStartDomainBasedOnDomainType("modelInImage");
 
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
@@ -533,7 +532,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with domain in image type")
   void testDataHomeOverrideDomainInImage() {
 
-    Domain domainInImage = createOrStartDomainBasedOnDomainType("domainInImage");
+    DomainResource domainInImage = createOrStartDomainBasedOnDomainType("domainInImage");
     String domainUid = domainInImage.getSpec().getDomainUid();
     String domainNamespace = domainInImage.getMetadata().getNamespace();
 
@@ -579,7 +578,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with model in image type")
   void testDataHomeOverrideMiiDomain() {
 
-    Domain miiDomain = createOrStartDomainBasedOnDomainType("modelInImage");
+    DomainResource miiDomain = createOrStartDomainBasedOnDomainType("modelInImage");
     String domainUid = miiDomain.getSpec().getDomainUid();
     String domainNamespace = miiDomain.getMetadata().getNamespace();
 
@@ -630,7 +629,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with domain on PV type")
   void testDataHomeOverrideDomainOnPV() {
 
-    Domain domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
+    DomainResource domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
     String domainUid = domainOnPV.getSpec().getDomainUid();
     String domainNamespace = domainOnPV.getMetadata().getNamespace();    
     String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
@@ -679,7 +678,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   void testMiiMultiClustersRollingRestart() {
 
     // get the original domain resource before update
-    Domain domain1 = createOrStartDomainBasedOnDomainType("modelInImage");
+    DomainResource domain1 = createOrStartDomainBasedOnDomainType("modelInImage");
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
@@ -750,7 +749,7 @@ class ItMultiDomainModelsWithLoadBalancer {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createMiiDomainWithMultiClusters(String domainNamespace) {
+  private static DomainResource createMiiDomainWithMultiClusters(String domainNamespace) {
 
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -771,16 +770,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
-    for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
-      clusterList.add(new Cluster()
-          .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount));
-    }
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -815,7 +806,6 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusterList)
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
@@ -855,11 +845,11 @@ class ItMultiDomainModelsWithLoadBalancer {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createDomainOnPvUsingWdt(String domainUid, String domainNamespace) {
+  private static DomainResource createDomainOnPvUsingWdt(String domainUid, String domainNamespace) {
 
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
-    Domain domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
+    DomainResource domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
         replicaCount, ItMultiDomainModelsWithLoadBalancer.class.getSimpleName());
 
     // build application sample-app and opensessionapp
@@ -943,7 +933,7 @@ class ItMultiDomainModelsWithLoadBalancer {
    * Assert the specified domain and domain spec, metadata and clusters not null.
    * @param domain oracle.weblogic.domain.Domain object
    */
-  private static void assertDomainNotNull(Domain domain) {
+  private static void assertDomainNotNull(DomainResource domain) {
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), domain + " spec is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
@@ -1042,7 +1032,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR without encryption secret created
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1106,8 +1096,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     return miiImage;
   }
 
-  private static Domain createOrStartDomainBasedOnDomainType(String domainType) {
-    Domain domain = null;
+  private static DomainResource createOrStartDomainBasedOnDomainType(String domainType) {
+    DomainResource domain = null;
 
     if (domainType.equalsIgnoreCase("modelInImage")) {
       if (!doesDomainExist(miiDomainUid, DOMAIN_VERSION, miiDomainNamespace)) {
@@ -1156,7 +1146,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     return domain;
   }
 
-  private static void createRouteForOKDOrIngressForDomain(Domain domain) {
+  private static void createRouteForOKDOrIngressForDomain(DomainResource domain) {
 
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();

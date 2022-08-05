@@ -25,9 +25,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.FluentdSpecification;
 import oracle.weblogic.domain.Model;
@@ -394,7 +393,7 @@ class ItElasticLoggingFluentd {
       fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
     });
 
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -432,9 +431,6 @@ class ItElasticLoggingFluentd {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .logHome("/scratch/logs/" + domainUid)
             .logHomeEnabled(true)
             .configuration(new Configuration()

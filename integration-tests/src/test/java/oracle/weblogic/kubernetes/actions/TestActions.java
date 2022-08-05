@@ -32,11 +32,14 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1StorageClass;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.Apache;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
@@ -76,6 +79,7 @@ import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
@@ -181,7 +185,7 @@ public class TestActions {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+  public static boolean createDomainCustomResource(DomainResource domain,
                                                    String... domainVersion) throws ApiException {
     return Domain.createDomainCustomResource(domain, domainVersion);
   }
@@ -204,8 +208,8 @@ public class TestActions {
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -218,9 +222,9 @@ public class TestActions {
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace,
-                                                                      String domainVersion) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace,
+                                                       String domainVersion) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
@@ -308,7 +312,7 @@ public class TestActions {
    */
   public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
     LoggingFacade logger = getLogger();
-    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    DomainResource domain = Domain.getDomainCustomResource(domainUid, namespace);
     String introspectVersion = domain.getSpec().getIntrospectVersion();
     if (null != introspectVersion) {
       logger.info("current introspectVersion: {0}", introspectVersion);
@@ -318,6 +322,19 @@ public class TestActions {
       introspectVersion = Integer.toString(1);
     }
     return introspectVersion;
+  }
+
+  // ----------------------   cluster  -----------------------------------
+
+  /**
+   * Create Cluster Custom Resource.
+   *
+   * @param cluster Cluster custom resource model object
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterCustomResource(ClusterResource cluster) throws ApiException {
+    return Cluster.createClusterCustomResource(cluster, CLUSTER_VERSION);
   }
 
   /**

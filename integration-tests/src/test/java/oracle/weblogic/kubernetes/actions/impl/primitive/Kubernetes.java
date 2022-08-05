@@ -91,8 +91,9 @@ import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
@@ -112,6 +113,7 @@ public class Kubernetes {
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
   private static final String DOMAIN_PLURAL = "domains";
+  private static final String CLUSTER_PLURAL = "clusters";
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";
   private static final int GRACE_PERIOD = 0;
@@ -128,7 +130,7 @@ public class Kubernetes {
   // Extended GenericKubernetesApi clients
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
-  private static GenericKubernetesApi<Domain, DomainList> crdClient = null;
+  private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
   private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
   private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
@@ -177,7 +179,7 @@ public class Kubernetes {
 
     crdClient =
         new GenericKubernetesApi<>(
-            Domain.class,  // the api type class
+            DomainResource.class,  // the api type class
             DomainList.class, // the api list type class
             DOMAIN_GROUP, // the api group
             DOMAIN_VERSION, // the api version
@@ -1227,7 +1229,7 @@ public class Kubernetes {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(Domain domain, String... domVersion) throws ApiException {
+  public static boolean createDomainCustomResource(DomainResource domain, String... domVersion) throws ApiException {
     String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
 
     if (domain == null) {
@@ -1289,7 +1291,7 @@ public class Kubernetes {
    */
   public static boolean deleteDomainCustomResource(String domainUid, String namespace) {
 
-    KubernetesApiResponse<Domain> response = crdClient.delete(namespace, domainUid, deleteOptions);
+    KubernetesApiResponse<DomainResource> response = crdClient.delete(namespace, domainUid, deleteOptions);
 
     if (!response.isSuccess()) {
       getLogger().warning(
@@ -1315,7 +1317,7 @@ public class Kubernetes {
    * @return domain custom resource or null if Domain does not exist
    * @throws ApiException if Kubernetes request fails
    */
-  public static Domain getDomainCustomResource(String domainUid, String namespace)
+  public static DomainResource getDomainCustomResource(String domainUid, String namespace)
       throws ApiException {
     return getDomainCustomResource(domainUid, namespace, DOMAIN_VERSION);
   }
@@ -1329,7 +1331,7 @@ public class Kubernetes {
    * @return domain custom resource or null if Domain does not exist
    * @throws ApiException if Kubernetes request fails
    */
-  public static Domain getDomainCustomResource(String domainUid, String namespace, String domainVersion)
+  public static DomainResource getDomainCustomResource(String domainUid, String namespace, String domainVersion)
       throws ApiException {
     Object domain;
     try {
@@ -1346,7 +1348,7 @@ public class Kubernetes {
     }
 
     if (domain != null) {
-      return handleResponse(domain, Domain.class);
+      return handleResponse(domain, DomainResource.class);
     }
 
     getLogger().warning("Domain Custom Resource '" + domainUid + "' not found in namespace " + namespace);
@@ -1415,7 +1417,7 @@ public class Kubernetes {
                                                   V1Patch patch, String patchFormat) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
-    KubernetesApiResponse<Domain> response = crdClient.patch(
+    KubernetesApiResponse<DomainResource> response = crdClient.patch(
         namespace, // name of namespace
         domainUid, // name of custom resource domain
         patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
@@ -1432,6 +1434,90 @@ public class Kubernetes {
     }
 
     return true;
+  }
+
+
+  // --------------------------- Custom Resource Domain -----------------------------------
+  /**
+   * Create a Cluster Custom Resource.
+   *
+   * @param cluster Cluster custom resource model object
+   * @param clusterVersion Version custom resource's version
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterCustomResource(ClusterResource cluster, String clusterVersion)
+      throws ApiException {
+
+    if (cluster == null) {
+      throw new IllegalArgumentException(
+          "Parameter 'cluster' cannot be null when calling createClusterCustomResource()");
+    }
+
+    if (cluster.getMetadata() == null) {
+      throw new IllegalArgumentException(
+          "'metadata' field of the parameter 'cluster' cannot be null when calling createClusterCustomResource()");
+    }
+
+    if (cluster.getMetadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+          "'namespace' field in the metadata cannot be null when calling createClusterCustomResource()");
+    }
+
+    String namespace = cluster.getMetadata().getNamespace();
+
+    JsonElement json = convertToJson(cluster);
+
+    Object response;
+    try {
+      response = customObjectsApi.createNamespacedCustomObject(
+          DOMAIN_GROUP, // custom resource's group name
+          clusterVersion, //custom resource's version
+          namespace, // custom resource's namespace
+          CLUSTER_PLURAL, // custom resource's plural name
+          json, // JSON schema of the Resource to create
+          null, // pretty print output
+          null, // dry run
+          null // field manager
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Get the Cluster Custom Resource.
+   *
+   * @param clusterResName name of the cluster custom resource
+   * @param namespace name of namespace
+   * @param clusterVersion version of cluster
+   * @return cluster custom resource or null if ClusterResource does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static ClusterResource getClusterCustomResource(String clusterResName, String namespace, String clusterVersion)
+      throws ApiException {
+    Object cluster;
+    try {
+      cluster = customObjectsApi.getNamespacedCustomObject(
+          DOMAIN_GROUP, // custom resource's group name
+          clusterVersion, // //custom resource's version
+          namespace, // custom resource's namespace
+          CLUSTER_PLURAL, // custom resource's plural name
+          clusterResName // custom object's name
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    if (cluster != null) {
+      return handleResponse(cluster, ClusterResource.class);
+    }
+
+    getLogger().warning("Cluster Custom Resource '" + clusterResName + "' not found in namespace " + namespace);
+    return null;
   }
 
   /**

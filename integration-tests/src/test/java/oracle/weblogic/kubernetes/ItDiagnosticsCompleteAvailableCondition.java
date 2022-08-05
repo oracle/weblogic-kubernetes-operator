@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -613,7 +613,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           getPodCreationTime(domainNamespace1, managedServerPodNamePrefix + i));
     }
 
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
     //print out the original image name
     String imageName = domain.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
