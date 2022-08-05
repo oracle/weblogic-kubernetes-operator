@@ -303,7 +303,7 @@ class RestBackendImplTest {
   void whenPerClusterReplicaSettingGreaterThanMax_throwsException() {
     final String cluster1 = "cluster1";
     DomainPresenceInfo info = new DomainPresenceInfo(domain1);
-    configureCluster(info, cluster1);
+    configureCluster(info, cluster1).withReplicas(5);
     domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
             .withClusterLimits(0, 5));
     info.getReferencedClusters().forEach(testSupport::defineResources);

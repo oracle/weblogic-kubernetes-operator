@@ -331,12 +331,12 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void performScaling(String domainUid, ClusterResource cluster, int managedServerCount) {
-    verifyWlsConfiguredClusterCapacity(domainUid, cluster, managedServerCount);
+    verifyWlsConfiguredClusterCapacity(domainUid, cluster.getClusterName(), managedServerCount);
     patchClusterResourceReplicas(cluster, managedServerCount);
   }
 
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
-    verifyWlsConfiguredClusterCapacity(domain, cluster, managedServerCount);
+    verifyWlsConfiguredClusterCapacity(domain.getDomainUid(), cluster, managedServerCount);
     if (managedServerCount == Optional.of(domain.getSpec()).map(DomainSpec::getReplicas).orElse(0)) {
       return;
     }
@@ -443,41 +443,21 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  private void verifyWlsConfiguredClusterCapacity(
-          String domainUid, ClusterResource cluster, int requestedSize) {
+  private void verifyWlsConfiguredClusterCapacity(String domainUid, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
-    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domainUid, cluster.getClusterName());
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domainUid, cluster);
 
     // Verify the current configured cluster size
-    int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
-    if (requestedSize > maxClusterSize) {
+    int clusterSize = wlsClusterConfig.getClusterSize();
+    if (requestedSize > clusterSize) {
       throw createWebApplicationException(
               Status.BAD_REQUEST,
               MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
               requestedSize,
-              maxClusterSize,
+              clusterSize,
               cluster,
               cluster);
-    }
-  }
-
-  private void verifyWlsConfiguredClusterCapacity(
-      DomainResource domain, String cluster, int requestedSize) {
-    // Query WebLogic Admin Server for current configured WebLogic Cluster size
-    // and verify we have enough configured managed servers to auto-scale
-    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUid(), cluster);
-
-    // Verify the current configured cluster size
-    int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
-    if (requestedSize > maxClusterSize) {
-      throw createWebApplicationException(
-          Status.BAD_REQUEST,
-          MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
-          requestedSize,
-          maxClusterSize,
-          cluster,
-          cluster);
     }
   }
 

@@ -436,7 +436,7 @@ class TopologyValidationStepTest {
   private void ensureNoClustersAreEmpty() {
     for (String clusterName : domainConfig.getClusterNames()) {
       final WlsClusterConfig clusterConfig = domainConfig.getClusterConfig(clusterName);
-      if (clusterConfig.getMaxClusterSize() <= 0) {
+      if (clusterConfig.getClusterSize() <= 0) {
         clusterConfig.addWlsServer(clusterName + "-0", "here", 1);
       }
     }
