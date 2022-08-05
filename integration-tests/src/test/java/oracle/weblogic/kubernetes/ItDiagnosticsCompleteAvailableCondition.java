@@ -57,7 +57,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain status conditions for domain lifecycle")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItDiagnosticsCompleteAvailableCondition {
 
   private static final String adminServerName = "admin-server";

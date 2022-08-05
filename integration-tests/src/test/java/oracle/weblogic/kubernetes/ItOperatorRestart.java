@@ -56,7 +56,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // domain custom resource that uses model-in-image.
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;

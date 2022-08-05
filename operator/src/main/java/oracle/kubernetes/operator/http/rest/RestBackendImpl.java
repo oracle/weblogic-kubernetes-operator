@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.http.rest;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
@@ -378,12 +380,57 @@ public class RestBackendImpl implements RestBackend {
                 .controller(true)))
         .withReplicas(replicas);
     try {
-      callBuilder
-          .createCluster(namespace, cluster);
+      callBuilder.createCluster(namespace, cluster);
     } catch (ApiException e) {
       throw handleApiException(e);
     }
   }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Object createOrReplaceCluster(Map<String, Object> cluster) {
+    Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
+        .orElse(Collections.emptyMap());
+    String namespace = (String) metadata.getOrDefault("namespace", "default");
+    String name = (String) metadata.get("name");
+    Object currentCluster = null;
+    try {
+      currentCluster = callBuilder.readClusterUntyped(name, namespace);
+    } catch (ApiException apiException) {
+      if (apiException.getCode() != KubernetesConstants.HTTP_NOT_FOUND) {
+        throw handleApiException(apiException);
+      }
+    }
+
+    if (currentCluster == null) {
+      try {
+        return callBuilder.createClusterUntyped(namespace, cluster);
+      } catch (ApiException f) {
+        throw handleApiException(f);
+      }
+    }
+
+    metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
+        .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
+    try {
+      return callBuilder.replaceClusterUntyped(namespace, cluster);
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List<Map<String, Object>> listClusters(String namespace) {
+    try {
+      Map<String, Object> clusterList = (Map<String, Object>) callBuilder.listClusterUntyped(namespace);
+      return Optional.of(clusterList).map(cl -> (List<Map<String, Object>>) cl.get("items"))
+          .orElse(Collections.emptyList());
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
 
   private void patchDomain(DomainResource domain, JsonPatchBuilder patchBuilder) {
     try {

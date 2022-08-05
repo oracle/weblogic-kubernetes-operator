@@ -59,14 +59,17 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.crea
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
 import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeClusterToMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainToMap;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
@@ -146,7 +149,7 @@ class WebhookRestTest extends RestTestBase {
     return request;
   }
 
-  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
+  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class, this);
 
   @Override
   protected Application configure() {
@@ -168,6 +171,10 @@ class WebhookRestTest extends RestTestBase {
     String responseString = sendConversionWebhookRequestAsString(conversionReview);
 
     assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
+
+    ClusterResource clusterResource = testSupport
+        .getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain1-cluster-1");
+    assertThat(clusterResource,  notNullValue());
   }
 
   @Test
@@ -584,7 +591,16 @@ class WebhookRestTest extends RestTestBase {
     return Entity.entity(jsonStr, MediaType.APPLICATION_JSON);
   }
 
-  abstract static class RestBackendStub implements RestBackend {
+  abstract class RestBackendStub implements RestBackend {
+    public Object createOrReplaceCluster(Map<String, Object> body) {
+      ClusterResource cluster = readCluster(writeMap(body));
+      testSupport.defineResources(cluster);
+      return body;
+    }
+
+    public List<Map<String, Object>> listClusters(String namespace) {
+      return null; // TODO
+    }
   }
 
   abstract static class RestConfigStub implements RestConfig {

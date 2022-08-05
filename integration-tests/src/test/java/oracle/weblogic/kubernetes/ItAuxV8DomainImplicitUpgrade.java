@@ -77,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test implicit upgrade of auximage domain resource with api version v8")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItAuxV8DomainImplicitUpgrade {
   private static String opNamespace = null;
   private static String domainNamespace = null;

@@ -69,7 +69,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItIstioDomainInImage {
 
   private static String opNamespace = null;

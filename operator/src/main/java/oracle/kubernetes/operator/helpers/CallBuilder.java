@@ -453,6 +453,19 @@ public class CallBuilder {
                   RESOURCE_VERSION,
                   timeoutSeconds,
                   WATCH);
+  private final SynchronousCallFactory<Object> listClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .listNamespacedClusterUntyped(
+                  requestParams.namespace,
+                  PRETTY,
+                  null,
+                  fieldSelector,
+                  labelSelector,
+                  limit,
+                  RESOURCE_VERSION,
+                  timeoutSeconds,
+                  WATCH);
   private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -487,11 +500,30 @@ public class CallBuilder {
                   requestParams.name,
                   requestParams.namespace,
                   (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<Object> readClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .readNamespacedClusterUntyped(
+                  requestParams.name,
+                  requestParams.namespace
+              );
   private final SynchronousCallFactory<ClusterResource> createClusterCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .createNamespacedCluster(
                   requestParams.namespace, (ClusterResource) requestParams.body);
+  private final SynchronousCallFactory<Object> createClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .createNamespacedCluster(
+                  requestParams.namespace, (Map<String, Object>) requestParams.body);
+  private final SynchronousCallFactory<Object> replaceClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceNamespacedCluster(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Map<String, Object>) requestParams.body);
   private final SynchronousCallFactory<ClusterResource> patchClusterCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -702,6 +734,18 @@ public class CallBuilder {
   }
 
   /**
+   * List clusters.
+   *
+   * @param namespace Namespace
+   * @return Cluster list
+   * @throws ApiException API exception
+   */
+  public @Nonnull Object listClusterUntyped(String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("listCluster", namespace, null, null, callParams);
+    return executeSynchronousCall(requestParams, listClusterCallUntyped);
+  }
+
+  /**
    * Asynchronous step for listing clusters.
    *
    * @param namespace Namespace
@@ -728,7 +772,7 @@ public class CallBuilder {
   }
 
   /**
-   * Create Event.
+   * Create Cluster.
    *
    * @param namespace Namespace
    * @param body Request body
@@ -738,6 +782,19 @@ public class CallBuilder {
   public ClusterResource createCluster(String namespace, ClusterResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("createCluster", namespace, null, body, callParams);
     return executeSynchronousCall(requestParams, createClusterCall);
+  }
+
+  /**
+   * Create Cluster.
+   *
+   * @param namespace Namespace
+   * @param body Request body
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public Object createClusterUntyped(String namespace, Map<String, Object> body) throws ApiException {
+    RequestParams requestParams = new RequestParams("createCluster", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, createClusterCallUntyped);
   }
 
   /**
@@ -774,6 +831,30 @@ public class CallBuilder {
     return new WeblogicApi(client).getNamespacedClusterAsync(name, namespace, callback);
   }
 
+  /**
+   * Create Cluster.
+   *
+   * @param namespace Namespace
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public Object readClusterUntyped(String name, String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("readCluster", namespace, name, null, callParams);
+    return executeSynchronousCall(requestParams, readClusterCallUntyped);
+  }
+
+  /**
+   * Replace cluster.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Object replaceClusterUntyped(String namespace, Map<String, Object> body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceCluster", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, replaceClusterCallUntyped);
+  }
 
   /**
    * List domains.

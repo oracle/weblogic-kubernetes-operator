@@ -433,11 +433,11 @@ class DomainProcessorTest {
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(RUNNING_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(RUNNING_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(RUNNING_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(RUNNING_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
     assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
   }
@@ -473,7 +473,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void afterMakeRightAndChangeServerToNever_desiredStateIsShutdown() {
+  void afterMakeRightAndChangeServerToNever_stateGoalIsShutdown() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -484,11 +484,11 @@ class DomainProcessorTest {
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
   }
 
@@ -565,7 +565,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void afterChangeToNever_statusUpdateRetainsDesiredState() {
+  void afterChangeToNever_statusUpdateRetainsStateGoal() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -581,12 +581,12 @@ class DomainProcessorTest {
     triggerStatusUpdate();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getDesiredState(updatedDomain, ADMIN_NAME), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
-    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, ADMIN_NAME), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
   }
 
   private void triggerStatusUpdate() {
@@ -659,6 +659,55 @@ class DomainProcessorTest {
 
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  void whenDomainScaledDown_withoutPreCreateServerService_removeService() {
+    final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3).withPrecreateServerService(false);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    createMakeRight(newInfo).execute();
+    assertThat(isHeadlessService(SERVER3), is(true));
+
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+
+    assertThat(getServerService(SERVER3).isPresent(), is(false));
+  }
+
+  @Test
+  void whenDomainScaledDown_withPreCreateServerService_createClusterIPService() {
+    final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3).withPrecreateServerService(true);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    createMakeRight(newInfo).execute();
+    assertThat(isHeadlessService(SERVER3), is(true));
+
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+
+    assertThat(isClusterIPService(SERVER3), is(true));
+  }
+
+  @Test
+  void whenDomainScaledUp_withPreCreateServerService_createHeadlessService() {
+    final String SERVER3 = MANAGED_SERVER_NAMES[2];
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2).withPrecreateServerService(true);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    processor.createMakeRightOperation(newInfo).execute();
+    assertThat(isClusterIPService(SERVER3), is(true));
+
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3);
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    processor.createMakeRightOperation(newInfo)
+        .withExplicitRecheck().execute();
+
+    assertThat(isHeadlessService(SERVER3), is(true));
   }
 
   @Test
@@ -1955,6 +2004,37 @@ class DomainProcessorTest {
     return getRunningServices().stream().filter(ServiceHelper::isServerService);
   }
 
+  private boolean isHeadlessService(String serverName) {
+    return getServerService(serverName)
+        .map(V1Service::getSpec)
+        .map(this::isHeadless)
+        .orElse(false);
+  }
+
+  private boolean isClusterIPService(String serverName) {
+    return getServerService(serverName)
+        .map(V1Service::getSpec)
+        .map(this::isClusterIP)
+        .orElse(false);
+  }
+
+  private Optional<V1Service> getServerService(String serverName) {
+    return getRunningServices().stream()
+        .filter(ServiceHelper::isServerService)
+        .filter(s -> ServiceHelper.getServerName(s).equals(serverName))
+        .findFirst();
+  }
+
+  private boolean isHeadless(V1ServiceSpec serviceSpec) {
+    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+        && "None".equals(serviceSpec.getClusterIP());
+  }
+
+  private boolean isClusterIP(V1ServiceSpec serviceSpec) {
+    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+        && serviceSpec.getClusterIP() == null;
+  }
+
   private List<V1Service> getRunningServices() {
     return testSupport.getResources(KubernetesTestSupport.SERVICE);
   }
@@ -2071,8 +2151,8 @@ class DomainProcessorTest {
     return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getMessage).orElse(null);
   }
 
-  private String getDesiredState(DomainResource domain, String serverName) {
-    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getDesiredState).orElse("");
+  private String getStateGoal(DomainResource domain, String serverName) {
+    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getStateGoal).orElse("");
   }
 
   private ServerStatus getServerStatus(DomainResource domain, String serverName) {

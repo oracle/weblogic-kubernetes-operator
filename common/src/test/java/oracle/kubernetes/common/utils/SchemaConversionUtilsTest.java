@@ -251,6 +251,32 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void whenOldDomainHasDesiredStateFields_renameAsStateGoal() {
+    addV8ServerStatus("ms1", "RUNNING", "UNKNOWN");
+    addV8ServerStatus("ms2", "RUNNING", "RUNNING");
+    addV8ServerStatus("ms2", "SHUTDOWN", "SHUTDOWN");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.servers[*].state", contains("UNKNOWN", "RUNNING", "SHUTDOWN")));
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.servers[*].stateGoal", contains("RUNNING", "RUNNING", "SHUTDOWN")));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.status.servers[0].desiredState"));
+  }
+
+  private void addV8ServerStatus(String serverName, String desiredState, String state) {
+    final Map<String, String> serverStatus
+        = Map.of("serverName", serverName, "state", state, "desiredState", desiredState);
+    getServerStatuses(v8Domain).add(new HashMap<>(serverStatus));
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Object> getServerStatuses(Map<String, Object> domain) {
+    return (List<Object>) getStatus(domain).computeIfAbsent("servers", k -> new ArrayList<>());
+  }
+
+  @Test
   void testV8DomainWithConfigOverrides_moveToOverridesConfigMap() {
     setConfigOverrides(v8Domain, "someMap");
 
@@ -281,7 +307,7 @@ class SchemaConversionUtilsTest {
     getMapAtPath(v8Domain, "spec.configuration").put("overridesConfigMap", configMap);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
   private Map<String, Object> addCluster(Map<String, Object> v8Domain, String name) {
     List<Map<String, Object>> clusters = (List<Map<String, Object>>) getDomainSpec(v8Domain)
             .computeIfAbsent("clusters", k -> new ArrayList<>());
@@ -291,7 +317,7 @@ class SchemaConversionUtilsTest {
     return newCluster;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
   private Map<String, Object> addManagedServer(Map<String, Object> v8Domain, String name) {
     List<Map<String, Object>> managedServers = (List<Map<String, Object>>) getDomainSpec(v8Domain)
             .computeIfAbsent("managedServers", k -> new ArrayList<>());
@@ -455,6 +481,29 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void whenV9DomainHasServerStatusStateGoal_renameToDesiredState() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+
+    addV9ServerStatus(v9Domain, "ms1", "RUNNING", "UNKNOWN");
+    addV9ServerStatus(v9Domain, "ms2", "RUNNING", "RUNNING");
+    addV9ServerStatus(v9Domain, "ms2", "SHUTDOWN", "SHUTDOWN");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.servers[*].state", contains("UNKNOWN", "RUNNING", "SHUTDOWN")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.servers[*].desiredState", contains("RUNNING", "RUNNING", "SHUTDOWN")));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.status.servers[0].stateGoal"));
+  }
+
+  private void addV9ServerStatus(Map<String, Object> v9Domain, String serverName, String stateGoal, String state) {
+    final Map<String, String> serverStatus
+        = Map.of("serverName", serverName, "state", state, "stateGoal", stateGoal);
+    getServerStatuses(v9Domain).add(new HashMap<>(serverStatus));
+  }
+
+  @Test
   void testV8DomainIstio_preserved() {
     // Simplify domain to focus on Istio
     getDomainSpec(v8Domain).remove("adminServer");
@@ -490,6 +539,7 @@ class SchemaConversionUtilsTest {
   }
   
   @SuppressWarnings("unchecked")
+  @Test
   void testV8DomainWebLogicCredentialsSecretWithNamespace_remove() {
     ((Map<String, Object>) getDomainSpec(v8Domain).get("webLogicCredentialsSecret")).put("namespace", "my-ns");
 

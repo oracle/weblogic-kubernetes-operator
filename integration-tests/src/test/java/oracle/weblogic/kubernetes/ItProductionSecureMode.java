@@ -96,7 +96,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItProductionSecureMode {
 
   private static String opNamespace = null;
