@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -98,7 +98,7 @@ class ItAddNewDynamicClusterUsingWlst {
       + "verify that server from new cluster is started successfully")
   void testDynamicClusterNotAsConfigCluster() {
     // create a domain in PV domain
-    Domain domain = createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
+    DomainResource domain = createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
         clusterName, replicaCount, ItAddNewDynamicClusterUsingWlst.class.getSimpleName());
     assertDomainNotNull(domain);
 
@@ -175,7 +175,7 @@ class ItAddNewDynamicClusterUsingWlst {
    * Assert the specified domain and domain spec, metadata and clusters not null.
    * @param domain oracle.weblogic.domain.Domain object
    */
-  private static void assertDomainNotNull(Domain domain) {
+  private static void assertDomainNotNull(DomainResource domain) {
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), domain + " spec is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
