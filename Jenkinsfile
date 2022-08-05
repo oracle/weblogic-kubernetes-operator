@@ -543,13 +543,13 @@ EOF
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
                             if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                currentBuild.result = 'ABORTED'
-                                error("ERROR Aborting the build. All tests cannot be run with integration-tests profile")
+                                currentBuild.result='ABORTED'
+                                error('ERROR Aborting the build. All tests cannot be run with integration-tests profile')
                             elif [ "${IT_TEST}" != '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
-                                currentBuild.result = 'ABORTED'
-                                error("ERROR Aborting the build. Individual Test MUST be run with integration-tests profile")
+                                currentBuild.result='ABORTED'
+                                error('ERROR Aborting the build. Individual Test MUST be run with integration-tests profile')
                             elif [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
-                                PARALLEL_RUN=false
+                                PARALLEL_RUN='false'
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
