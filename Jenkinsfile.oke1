@@ -395,9 +395,9 @@ EOF
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
                                         oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.phx.aaaaaaaakdzrfchbw7lysat5a7d6i2sar2eijzifw6qgpuefvcszn2mu2gzq --file ${kubeconfig_file} --region us-phoenix-1 --token-version 2.0.0
-    
-    kubectl -n kube-system create serviceaccount ${clusterName}-sa1
-    kubectl create clusterrolebinding add-on-cluster-admin1 --clusterrole=cluster-admin --serviceaccount=kube-system:${clusterName}-sa1
+
+    #kubectl -n kube-system create serviceaccount ${clusterName}-sa1
+    #kubectl create clusterrolebinding add-on-cluster-admin1 --clusterrole=cluster-admin --serviceaccount=kube-system:${clusterName}-sa1
     TOKENNAME=`kubectl -n kube-system get serviceaccount/${clusterName}-sa1 -o jsonpath='{.secrets[0].name}'`
     TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
     kubectl config set-credentials ${clusterName}-sa1 --token=$TOKEN
