@@ -530,7 +530,7 @@ public class ImageUtils {
            logger,
            "docker push succeeds for image {0} to repo {1}",
            dockerImage,
-           DOMAIN_IMAGES_REPO);
+           TEST_IMAGES_REPO);
     }
   }
 
