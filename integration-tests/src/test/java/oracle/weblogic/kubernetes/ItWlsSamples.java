@@ -83,7 +83,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
+//import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -105,7 +105,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
-@Tag("oke-parallel")
+@Tag("oke-seqential")
 @IntegrationTest
 class ItWlsSamples {
 
@@ -262,6 +262,7 @@ class ItWlsSamples {
     }
     //create PV and PVC used by the domain
     createPvPvc(domainUid, testSamplePath);
+    /*
     logger.info("Setting up WebLogic pod to access PV");
     String mountPath = "/shared";
     io.kubernetes.client.openapi.models.V1Pod pvPod = setupWebLogicPod(domainNamespace, mountPath, domainUid);
@@ -281,7 +282,7 @@ class ItWlsSamples {
     logger.info("Creating directory {0} in PV", "/shared/" + domainNamespace + "/" + domainUid);
     execInPod(pvPod, null, true, "mkdir -p " + "/shared/"
             + domainNamespace + "/" + domainUid);
-
+    */
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
 
