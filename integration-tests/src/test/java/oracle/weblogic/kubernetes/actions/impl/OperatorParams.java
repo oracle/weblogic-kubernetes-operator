@@ -39,6 +39,7 @@ public class OperatorParams {
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
   private static final String WEBHOOK_ONLY = "webhookOnly";
+  private static final String OPENSHIFT_ISTIO_INJECTION = "annotations.sidecar\\.istio\\.io/inject";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -65,6 +66,7 @@ public class OperatorParams {
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
   private boolean webhookOnly;
+  private boolean openshiftIstioInjection;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -201,6 +203,11 @@ public class OperatorParams {
     this.webhookOnly = webhookOnly;
     return this;
   }
+  
+  public OperatorParams openShiftIstioInjection(boolean openshiftIstioInjection) {
+    this.openshiftIstioInjection = openshiftIstioInjection;
+    return this;
+  }
 
   /**
    * Loads Helm values into a value map.
@@ -258,7 +265,10 @@ public class OperatorParams {
     }
     if (webhookOnly) {
       values.put(WEBHOOK_ONLY, webhookOnly);
-    }    
+    }
+    if (openshiftIstioInjection) {
+      values.put(OPENSHIFT_ISTIO_INJECTION, openshiftIstioInjection);
+    }
 
     values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
 

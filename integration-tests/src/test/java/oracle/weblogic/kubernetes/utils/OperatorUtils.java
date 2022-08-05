@@ -391,7 +391,7 @@ public class OperatorUtils {
         false,
         domainNamespace);
   }
-
+  
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
    *
@@ -430,6 +430,68 @@ public class OperatorUtils {
                                                         int domainPresenceFailureRetrySeconds,
                                                         boolean webhookOnly,
                                                         String... domainNamespace) {
+    
+    return installAndVerifyOperator(opNamespace,
+        opServiceAccount,
+        withRestAPI,
+        externalRestHttpsPort,
+        opHelmParams,
+        ELASTICSEARCH_HOST,
+        elkIntegrationEnabled,
+        true,
+        domainNamespaceSelectionStrategy,
+        domainNamespaceSelector,
+        enableClusterRoleBinding,
+        loggingLevel,
+        domainPresenceFailureRetryMaxCount,
+        domainPresenceFailureRetrySeconds,        
+        false,
+        false,
+        domainNamespace);    
+  }
+  
+  
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elasticSearchHost Elasticsearchhost 
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param createLogStashConfigMap boolean indicating creating logstash
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
+   *                                  how to select the set of namespaces that it will manage
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param loggingLevel logging level of operator
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param webhookOnly boolean indicating install webHo 
+   * @param openshiftIstioInjection openshift istio enabled
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
+                                                        String opServiceAccount,
+                                                        boolean withRestAPI,
+                                                        int externalRestHttpsPort,
+                                                        HelmParams opHelmParams,
+                                                        String elasticSearchHost,
+                                                        boolean elkIntegrationEnabled,
+                                                        boolean createLogStashConfigMap,
+                                                        String domainNamespaceSelectionStrategy,
+                                                        String domainNamespaceSelector,
+                                                        boolean enableClusterRoleBinding,
+                                                        String loggingLevel,
+                                                        int domainPresenceFailureRetryMaxCount,
+                                                        int domainPresenceFailureRetrySeconds,
+                                                        boolean openshiftIstioInjection,
+                                                        boolean webhookOnly,
+                                                        String... domainNamespace) {
     String operatorImage;
     LoggingFacade logger = getLogger();
 
@@ -465,6 +527,10 @@ public class OperatorUtils {
     
     if (webhookOnly) {
       opParams.webHookOnly(webhookOnly);
+    }
+    
+    if (openshiftIstioInjection) {
+      opParams.openShiftIstioInjection(openshiftIstioInjection);
     }
 
     if (domainNamespaceSelectionStrategy != null) {

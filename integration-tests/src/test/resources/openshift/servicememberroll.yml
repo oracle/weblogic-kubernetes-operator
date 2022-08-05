@@ -1,0 +1,10 @@
+apiVersion: maistra.io/v1
+kind: ServiceMeshMemberRoll
+metadata:
+  name: weblogic-smr
+  namespace: istio-system
+spec:
+  members:
+    # a list of projects joined into the service mesh
+    - OPERATOR_NAMESPACE
+    - DOMAIN_NAMESPACE

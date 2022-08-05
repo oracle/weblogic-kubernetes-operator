@@ -44,7 +44,27 @@ public class Configuration {
 
   @ApiModelProperty("Rollback the changes if the update require domain restart.")
   private Boolean rollBackIfRestartRequired = false;
+  
+  
+  @ApiModelProperty("Istio configuration properties.")
+  private Istio istio;
 
+  public Configuration istio(Istio istio) {
+    this.istio = istio;
+    return this;
+  }
+
+  public Istio istio() {
+    return istio;
+  }
+
+  public Istio getIstio() {
+    return istio;
+  }
+
+  public void setIstio(Istio istio) {
+    this.istio = istio;
+  }
 
   public Configuration model(Model model) {
     this.model = model;
