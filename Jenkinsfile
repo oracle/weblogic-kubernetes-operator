@@ -544,13 +544,12 @@ EOF
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
                             if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                 currentBuild.result = 'ABORTED'
-                                error("Aborting the build. (ERROR) All tests cannot be run with [integration-tests] profile")
+                                error("ERROR Aborting the build. All tests cannot be run with integration-tests profile")
                             elif [ "${IT_TEST}" != '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
                                 currentBuild.result = 'ABORTED'
-                                error("Aborting the build. (ERROR) Individual Test MUST be run with [integration-tests] profile")
+                                error("ERROR Aborting the build. Individual Test MUST be run with integration-tests profile")
                             elif [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
                                 PARALLEL_RUN=false
-                                NUMBER_OF_THREADS="1"
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
