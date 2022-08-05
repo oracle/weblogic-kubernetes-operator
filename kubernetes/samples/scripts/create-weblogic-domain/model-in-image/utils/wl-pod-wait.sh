@@ -261,6 +261,7 @@ ${goal_image_current}
 ${goal_aiimages_current}
 ${goal_k8s_generation}
 ${observed_generation}
+${condition_failed_str}
 ^M"
 }
 
@@ -289,10 +290,27 @@ getPodInfo() {
     ljpath+='{"\n"}'
   ljpath+='{end}'
 
+  # get introspector pod, if any:
+  kubectl -n ${DOMAIN_NAMESPACE} get pods \
+          -l job-name=${DOMAIN_UID}-introspector \
+          -o=jsonpath="$ljpath" \
+          | sortAIImages
+
+  # get wl server pods, if any:
   kubectl -n ${DOMAIN_NAMESPACE} get pods \
           -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
           -o=jsonpath="$ljpath" \
           | sortAIImages
+}
+
+# report criteria, generation, Failed state, and Completed state
+reportBasics() {
+  echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
+  for criterion in $criteria; do
+    echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
+  done
+  echo
+  echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Failure conditions (if any): '${condition_failed_str}'."
 }
 
 tmpfileorig=$(tempfile)
@@ -408,10 +426,9 @@ while [ 1 -eq 1 ]; do
     #   or when a report_interval has passed
 
     if [ "$reported" = "false" ]; then
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
-      for criterion in $criteria; do
-        echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
-      done
+
+      reportBasics # report goal 'lead_string' and criteria, generation, Failed state, and Completed state
+
       echo -n "@@ [$(timestamp)][seconds=$SECONDS] Info: Current pods that match the above criteria ="
       echo -n " $pod_count"
       reported="true"
@@ -444,10 +461,7 @@ while [ 1 -eq 1 ]; do
 
       if [ "$reported" = "false" ]; then
         echo
-        echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
-        for criterion in $criteria; do
-          echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
-        done
+        reportBasics # report goal 'lead_string' and criteria, generation, Failed state, and Completed state
         echo
         reported="true"
       fi
