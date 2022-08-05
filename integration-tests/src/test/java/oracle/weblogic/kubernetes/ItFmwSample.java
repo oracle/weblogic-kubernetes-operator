@@ -315,9 +315,6 @@ public class ItFmwSample {
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
-      // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "domainUID:", "domainUID: " + domainUid);
     });
