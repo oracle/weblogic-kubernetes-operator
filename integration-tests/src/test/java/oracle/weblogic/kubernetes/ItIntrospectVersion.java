@@ -29,9 +29,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.ClusterStatus;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -292,7 +291,7 @@ class ItIntrospectVersion {
 
     //verify the maximum cluster size is updated to expected value
     testUntil(() -> {
-      Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
+      DomainResource res = getDomainCustomResource(domainUid, introDomainNamespace);
       for (ClusterStatus clusterStatus : res.getStatus().getClusters()) {
         if (clusterStatus.clusterName().equals(cluster1Name)) {
           return clusterStatus.getMaximumReplicas() == 3;
@@ -572,7 +571,7 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    Domain cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
+    DomainResource cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
     if (cluster2Created) {
       // verify new cluster managed server pods are ready
       for (int i = 1; i <= cluster2ReplicaCount; i++) {
@@ -695,7 +694,7 @@ class ItIntrospectVersion {
   void testUpdateImageName() {
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, introDomainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -1029,9 +1028,10 @@ class ItIntrospectVersion {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
 
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1078,10 +1078,7 @@ class ItIntrospectVersion {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(cluster1Name)
-                .replicas(cluster1ReplicaCount)));
+                        .nodePort(getNextFreePort())))));
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -1259,7 +1256,7 @@ class ItIntrospectVersion {
       verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion);
     }
 
-    Domain cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
+    DomainResource cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
     if (cluster2Created) {
       // verify new cluster managed server pods are ready
       for (int i = 1; i <= cluster2ReplicaCount; i++) {

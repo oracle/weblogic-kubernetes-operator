@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions;
@@ -14,10 +14,12 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerStatus;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
@@ -428,7 +430,7 @@ public class TestAssertions {
       String statusReason) {
     LoggingFacade logger = getLogger();
     return () -> {
-      oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
+      DomainResource domain = getDomainCustomResource(domainUid, namespace);
       if (domain != null && domain.getStatus() != null && !domain.getStatus().getConditions().isEmpty()) {
         boolean match = domain.getStatus().getConditions().stream()
             .anyMatch(condition -> condition.getReason().contains(statusReason));
@@ -475,7 +477,7 @@ public class TestAssertions {
                                                                   String domainVersion) {
     LoggingFacade logger = getLogger();
     return () -> {
-      oracle.weblogic.domain.Domain domain =
+      DomainResource domain =
           assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
 
       if (domain != null && domain.getStatus() != null) {
@@ -532,7 +534,7 @@ public class TestAssertions {
     LoggingFacade logger = getLogger();
 
     return () -> {
-      oracle.weblogic.domain.Domain domain =
+      DomainResource domain =
           assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
 
       if (domain != null && domain.getStatus() != null) {
@@ -575,7 +577,7 @@ public class TestAssertions {
     LoggingFacade logger = getLogger();
 
     return () -> {
-      oracle.weblogic.domain.Domain domain =
+      DomainResource domain =
           assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
 
       if (domain != null && domain.getStatus() != null) {
@@ -983,4 +985,16 @@ public class TestAssertions {
         pod.getMetadata().getNamespace()).contains(searchKey);
   }
 
+  /**
+   * Check if a WebLogic custom resource cluster object exists in specified
+   * namespace.
+   *
+   * @param clusterResName cluster resource name
+   * @param clusterVersion version value for Kind Cluster
+   * @param namespace in which the domain custom resource object exists
+   * @return true if domain object exists
+   */
+  public static Callable<Boolean> clusterExists(String clusterResName, String clusterVersion, String namespace) {
+    return () -> Cluster.doesClusterExist(clusterResName, clusterVersion, namespace);
+  }
 }

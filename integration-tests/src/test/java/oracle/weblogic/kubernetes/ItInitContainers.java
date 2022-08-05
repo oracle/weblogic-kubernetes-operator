@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -15,9 +14,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
@@ -37,6 +36,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -316,16 +317,8 @@ class ItInitContainers {
    */
   private void createAndVerifyMiiDomain(String domainNamespace, String domainUid, String testCaseName) {
 
-
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount));
-
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -354,7 +347,6 @@ class ItInitContainers {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
@@ -382,12 +374,8 @@ class ItInitContainers {
         setPodAntiAffinity(domain);
         break;
       case "clusters":
-        clusters = domain.getSpec().getClusters();
-        assertNotNull(clusters, "Can't find clusters in CRD ");
-        Cluster mycluster = clusters.stream()
-            .filter(cluster -> clusterName.equals(cluster.getClusterName())).findAny()
-            .orElse(null);
-        assertNotNull(mycluster, "Can't find cluster " + clusterName);
+        ClusterSpec mycluster = assertDoesNotThrow(() ->
+            getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION)).getSpec();
         setPodAntiAffinity(domain);
         mycluster.getServerPod()
                 .addInitContainersItem(new V1Container()

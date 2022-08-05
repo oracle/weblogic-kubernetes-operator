@@ -441,7 +441,7 @@ class ItServerStartPolicyDynamicCluster {
     executeLifecycleScript(domainUid, domainNamespace, samplePath,
         STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER, domainUid,
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
         domainNamespace, 1)));
     logger.info("managed server " + serverName + " stopped successfully.");
 
@@ -450,7 +450,7 @@ class ItServerStartPolicyDynamicCluster {
         START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
-        domainUid, domainNamespace, 2)));
+        domainNamespace, 2)));
     logger.info("managed server " + serverName + " restarted successfully.");
   }
 
@@ -493,7 +493,7 @@ class ItServerStartPolicyDynamicCluster {
     // check managed server from config cluster are not affected
     logger.info("Check configured managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CONFIG_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+        domainNamespace, replicaCount)));
 
     boolean isPodRestarted =
         assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
@@ -546,7 +546,7 @@ class ItServerStartPolicyDynamicCluster {
     // check managed server from config cluster are not affected
     logger.info("Check configured managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CONFIG_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+        domainNamespace, replicaCount)));
     checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env
@@ -576,6 +576,6 @@ class ItServerStartPolicyDynamicCluster {
     assertTrue(result.contains(expectedResult), "Expected result " + expectedResult + "not returned");
     // verify the replica did not change
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+        domainNamespace, replicaCount)));
   }
 }

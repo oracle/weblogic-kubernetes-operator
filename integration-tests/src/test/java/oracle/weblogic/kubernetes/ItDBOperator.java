@@ -12,7 +12,7 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -249,7 +249,7 @@ class ItDBOperator {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,

@@ -9,6 +9,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+
 @ApiModel(description = "An element representing a cluster in the domain configuration.")
 public class ClusterSpec {
 
@@ -62,6 +63,11 @@ public class ClusterSpec {
 
   public void setClusterName(String clusterName) {
     this.clusterName = clusterName;
+  }
+
+  public ClusterSpec withClusterName(String clusterName) {
+    setClusterName(clusterName);
+    return this;
   }
 
   public ClusterSpec replicas(Integer replicas) {

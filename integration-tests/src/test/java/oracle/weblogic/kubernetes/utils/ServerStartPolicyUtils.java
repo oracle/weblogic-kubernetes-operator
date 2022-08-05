@@ -19,9 +19,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
@@ -174,7 +173,7 @@ public class ServerStartPolicyUtils {
 
     // verify that scaleCluster.sh does scale to a required replica number
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
-        domainUid, domainNamespace, replicaNum)));
+        domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
     testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterName, regex), logger,
@@ -223,8 +222,9 @@ public class ServerStartPolicyUtils {
       String encryptionSecretName,
       String configmapName) {
     List<String> securityList = new ArrayList<>();
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -254,14 +254,6 @@ public class ServerStartPolicyUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName(DYNAMIC_CLUSTER)
-                .replicas(replicaCount)
-                .serverStartPolicy("IfNeeded"))
-            .addClustersItem(new Cluster()
-                .clusterName(CONFIG_CLUSTER)
-                .replicas(replicaCount)
-                .serverStartPolicy("IfNeeded"))
             .addManagedServersItem(new ManagedServer()
                 .serverName("standalone-managed")
                 .serverStartPolicy("IfNeeded"))

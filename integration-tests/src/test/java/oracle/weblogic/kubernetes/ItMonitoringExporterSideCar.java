@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.MonitoringExporterConfiguration;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -232,7 +232,7 @@ class ItMonitoringExporterSideCar {
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
       }
-      Domain domain = getDomainCustomResource(domain3Uid, domain3Namespace);
+      DomainResource domain = getDomainCustomResource(domain3Uid, domain3Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
       assertTrue(monexpConfig.contains("openSessionsHighCount"));
@@ -295,7 +295,7 @@ class ItMonitoringExporterSideCar {
     boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
     assertTrue(cmPatched, "patchDomainCustomResource(changeMonExporter) failed");
 
-    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource after patching");
@@ -375,7 +375,7 @@ class ItMonitoringExporterSideCar {
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
       }
 
-      Domain domain = getDomainCustomResource(domain2Uid,domain2Namespace);
+      DomainResource domain = getDomainCustomResource(domain2Uid,domain2Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
       assertTrue(monexpConfig.contains("openSessionsHighCount"));

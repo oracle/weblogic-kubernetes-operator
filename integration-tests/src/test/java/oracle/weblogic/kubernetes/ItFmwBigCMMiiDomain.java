@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -225,7 +225,7 @@ class ItFmwBigCMMiiDomain {
     dockerLoginAndPushImageToRegistry(jrfMii1Image);
 
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         jrfDomainNamespace,
         adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,

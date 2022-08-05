@@ -8,7 +8,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +17,8 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ProbeTuning;
@@ -156,7 +154,7 @@ class ItLivenessProbeCustomization {
   @Tag("gate")
   @Tag("crio")
   void testCustomLivenessProbeTriggered() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -220,7 +218,7 @@ class ItLivenessProbeCustomization {
   @Test
   @DisplayName("Test custom liveness probe is not triggered")
   void testCustomLivenessProbeNotTriggered() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -270,7 +268,7 @@ class ItLivenessProbeCustomization {
   @Test
   @DisplayName("Test custom livenessProbe failureThreshold and successThreshold in serverPod")
   void testCustomLivenessProbeFailureThresholdSuccessThreshold() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -411,7 +409,7 @@ class ItLivenessProbeCustomization {
   @Test
   @DisplayName("Test custom livenessProbe invalid successThreshold in serverPod")
   void testCustomLivenessProbeNegativeSuccessThreshold() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -436,7 +434,7 @@ class ItLivenessProbeCustomization {
   @Test
   @DisplayName("Test custom livenessProbe successThreshold in serverPod from an invalid value to valid value")
   void testCustomLivenessProbeSuccessThresholdFromInvalidToValid() {
-    Domain domain = createDomainResource(domainUid2);
+    DomainResource domain = createDomainResource(domainUid2);
     domain.getSpec().serverPod().livenessProbe().successThreshold(2);
 
     // create model in image domain
@@ -451,7 +449,7 @@ class ItLivenessProbeCustomization {
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid2, domainNamespace));
 
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid2, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid2, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid2, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -492,16 +490,10 @@ class ItLivenessProbeCustomization {
   }
 
   @NotNull
-  private static Domain createDomainResource(String domainName) {
-    // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
-    for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
-      clusterList.add(new Cluster()
-          .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount));
-    }
+  private static DomainResource createDomainResource(String domainName) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -533,7 +525,6 @@ class ItLivenessProbeCustomization {
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
-            .clusters(clusterList)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
@@ -549,7 +540,7 @@ class ItLivenessProbeCustomization {
   @Test
   @DisplayName("Test custom readinessProbe failureThreshold and successThreshold")
   void testCustomReadinessProbeFailureThresholdSuccessThreshold() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -692,7 +683,7 @@ class ItLivenessProbeCustomization {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
 
-    Domain domain = createDomainResource(domainUid);
+    DomainResource domain = createDomainResource(domainUid);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",

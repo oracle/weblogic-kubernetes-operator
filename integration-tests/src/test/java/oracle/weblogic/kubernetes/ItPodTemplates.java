@@ -14,9 +14,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -31,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -280,8 +280,9 @@ class ItPodTemplates {
     // add label to cluster serverPod for CLUSTER_NAME
     Map<String, String> clusterLabelKeyValues = new HashMap<>();
     clusterLabelKeyValues.put("clustername", "$(CLUSTER_NAME)");
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -315,24 +316,14 @@ class ItPodTemplates {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    domain.getSpec().getClusters()
-        .stream()
-        .forEach(
-            cluster -> {
-                if (cluster.getClusterName().equals(clusterName)) {
-                  cluster.getServerPod().labels(clusterLabelKeyValues);
-                }
-            }
-    );
+    assertDoesNotThrow(() -> Kubernetes.getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION))
+        .getSpec().getServerPod().labels(clusterLabelKeyValues);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, imageName);

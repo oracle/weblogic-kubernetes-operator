@@ -12,9 +12,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
@@ -229,8 +228,9 @@ class ItFmwDynamicClusterMiiDomain {
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
       String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -259,9 +259,6 @@ class ItFmwDynamicClusterMiiDomain {
                         .addChannelsItem(new Channel()
                             .channelName("default")
                             .nodePort(getNextFreePort()))))
-                .addClustersItem(new Cluster()
-                    .clusterName("cluster-1")
-                    .replicas(replicaCount))
                 .configuration(new Configuration()
                     .opss(new Opss()
                         .walletPasswordSecret(opssWalletPasswordSecretName))

@@ -19,9 +19,8 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -936,14 +935,8 @@ class ItUsabilityOperatorHelmChart {
     String encryptionSecretName = "encryptionsecret" + domainUid;
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount));
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -972,7 +965,6 @@ class ItUsabilityOperatorHelmChart {
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(280L)
                 .model(new Model()

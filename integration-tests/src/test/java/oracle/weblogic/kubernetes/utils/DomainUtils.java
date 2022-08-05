@@ -38,10 +38,9 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
@@ -129,7 +128,7 @@ public class DomainUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @param domVersion custom resource's version
    */
-  public static void createDomainAndVerify(Domain domain,
+  public static void createDomainAndVerify(DomainResource domain,
                                            String domainNamespace,
                                            String... domVersion) {
     String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
@@ -169,7 +168,7 @@ public class DomainUtils {
    * @param managedServerPodNamePrefix managed server pod prefix
    * @param replicaCount replica count
    */
-  public static void createDomainAndVerify(String domainUid, Domain domain,
+  public static void createDomainAndVerify(String domainUid, DomainResource domain,
                                            String domainNamespace, String adminServerPodName,
                                            String managedServerPodNamePrefix, int replicaCount) {
     LoggingFacade logger = getLogger();
@@ -327,7 +326,7 @@ public class DomainUtils {
                                                                     String domainNamespace,
                                                                     String conditionType,
                                                                     String domainVersion) {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace,
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace,
               domainVersion));
 
     if (domain != null && domain.getStatus() != null) {
@@ -396,7 +395,7 @@ public class DomainUtils {
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
     Map<String, OffsetDateTime> podsWithTimeStamps = null;
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
@@ -469,12 +468,12 @@ public class DomainUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static Domain createDomainOnPvUsingWdt(String domainUid,
-                                                String domainNamespace,
-                                                String wlSecretName,
-                                                String clusterName,
-                                                int replicaCount,
-                                                String testClassName) {
+  public static DomainResource createDomainOnPvUsingWdt(String domainUid,
+                                                        String domainNamespace,
+                                                        String wlSecretName,
+                                                        String clusterName,
+                                                        int replicaCount,
+                                                        String testClassName) {
 
     int t3ChannelPort = getNextFreePort();
 
@@ -544,7 +543,7 @@ public class DomainUtils {
     runCreateDomainOnPVJobUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
         domainUid, pvName, pvcName, domainNamespace, testClassName);
 
-    Domain domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
+    DomainResource domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
         clusterName, replicaCount);
 
     // Verify the domain custom resource is created.
@@ -567,17 +566,18 @@ public class DomainUtils {
    * @param replicaCount - repica count of the clsuter
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainResourceForDomainOnPV(String domainUid,
-                                                         String domainNamespace,
-                                                         String wlSecretName,
-                                                         String pvName,
-                                                         String pvcName,
-                                                         String clusterName,
-                                                         int replicaCount) {
+  public static DomainResource createDomainResourceForDomainOnPV(String domainUid,
+                                                                 String domainNamespace,
+                                                                 String wlSecretName,
+                                                                 String pvName,
+                                                                 String pvcName,
+                                                                 String clusterName,
+                                                                 int replicaCount) {
     String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
+
     // create the domain custom resource
     getLogger().info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -618,10 +618,7 @@ public class DomainUtils {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)));
+                        .nodePort(getNextFreePort())))));
     setPodAntiAffinity(domain);
 
     return domain;
@@ -835,13 +832,13 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createAndVerifyDomainInImageUsingWdt(String domainUid,
-                                                            String domainNamespace,
-                                                            String wdtModelFileForDomainInImage,
-                                                            List<String> appSrcDirList,
-                                                            String wlSecretName,
-                                                            String clusterName,
-                                                            int replicaCount) {
+  public static DomainResource createAndVerifyDomainInImageUsingWdt(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String wdtModelFileForDomainInImage,
+                                                                    List<String> appSrcDirList,
+                                                                    String wlSecretName,
+                                                                    String clusterName,
+                                                                    int replicaCount) {
 
     // create secret for admin credentials
     getLogger().info("Create secret for admin credentials");
@@ -877,14 +874,15 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainResourceForDomainInImage(String domainUid,
-                                                            String domainNamespace,
-                                                            String imageName,
-                                                            String wlSecretName,
-                                                            String clusterName,
-                                                            int replicaCount) {
+  public static DomainResource createDomainResourceForDomainInImage(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String imageName,
+                                                                    String wlSecretName,
+                                                                    String clusterName,
+                                                                    int replicaCount) {
+
     // create the domain custom resource
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -916,9 +914,6 @@ public class DomainUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE))
@@ -939,14 +934,14 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainInImageAndVerify(String domainUid,
-                                                    String domainNamespace,
-                                                    String imageName,
-                                                    String wlSecretName,
-                                                    String clusterName,
-                                                    int replicaCount) {
+  public static DomainResource createDomainInImageAndVerify(String domainUid,
+                                                            String domainNamespace,
+                                                            String imageName,
+                                                            String wlSecretName,
+                                                            String clusterName,
+                                                            int replicaCount) {
     // create the domain custom resource
-    Domain domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, imageName, wlSecretName,
+    DomainResource domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, imageName, wlSecretName,
         clusterName, replicaCount);
 
     createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
@@ -985,8 +980,8 @@ public class DomainUtils {
    * @param domainUid the UID
    */
   @NotNull
-  public static Domain getAndValidateInitialDomain(String domainNamespace, String domainUid) {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+  public static DomainResource getAndValidateInitialDomain(String domainNamespace, String domainUid) {
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
 
@@ -996,7 +991,7 @@ public class DomainUtils {
     return domain;
   }
 
-  private static boolean domainHasRollingCondition(Domain domain) {
+  private static boolean domainHasRollingCondition(DomainResource domain) {
     return Optional.ofNullable(domain.getStatus())
           .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
           .map(DomainCondition::getType).anyMatch("Rolling"::equals);

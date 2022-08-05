@@ -22,9 +22,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -179,7 +178,7 @@ class ItDiagnosticsFailedCondition {
     try {
       // Test - test bad model file status with introspector failure
       logger.info("Creating a domain resource with bad model file from configmap");
-      Domain domain = createDomainResourceWithConfigMap(domainName, 
+      DomainResource domain = createDomainResourceWithConfigMap(domainName,
           domainNamespace, adminSecretName,
           BASE_IMAGES_REPO_SECRET_NAME, 
           encryptionSecretName, replicaCount, 
@@ -214,7 +213,7 @@ class ItDiagnosticsFailedCondition {
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with replicas=100");
-    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image);
 
     try {
@@ -281,7 +280,7 @@ class ItDiagnosticsFailedCondition {
     String image = MII_BASIC_IMAGE_NAME + ":non-existing";
 
     logger.info("Creating domain resource with non-existing image");
-    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     try {
@@ -316,7 +315,7 @@ class ItDiagnosticsFailedCondition {
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with missing image pull secret");
-    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         BASE_IMAGES_REPO_SECRET_NAME + "bad", encryptionSecretName, 100, image);
 
     try {
@@ -353,7 +352,7 @@ class ItDiagnosticsFailedCondition {
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
-    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image);
     domain.getSpec().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
@@ -390,7 +389,8 @@ class ItDiagnosticsFailedCondition {
     try {
       // create a domain custom resource configuration object
       logger.info("Creating domain custom resource");
-      Domain domain = new Domain()
+
+      DomainResource domain = new DomainResource()
           .apiVersion(DOMAIN_API_VERSION)
           .kind("Domain")
           .metadata(new V1ObjectMeta()
@@ -427,10 +427,7 @@ class ItDiagnosticsFailedCondition {
                   .adminService(new AdminService()
                       .addChannelsItem(new Channel()
                           .channelName("default")
-                          .nodePort(getNextFreePort()))))
-              .addClustersItem(new Cluster() //cluster
-                  .clusterName("cluster-1")
-                  .replicas(replicaCount)));
+                          .nodePort(getNextFreePort())))));
       setPodAntiAffinity(domain);
 
       // verify the domain custom resource is created
@@ -463,7 +460,7 @@ class ItDiagnosticsFailedCondition {
     String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResource(domainName, domainNamespace, "non-existent-secret",
+    DomainResource domain = createDomainResource(domainName, domainNamespace, "non-existent-secret",
         BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     try {
@@ -498,7 +495,7 @@ class ItDiagnosticsFailedCondition {
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     AdminServer as = new AdminServer()
@@ -540,7 +537,7 @@ class ItDiagnosticsFailedCondition {
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
@@ -630,7 +627,7 @@ class ItDiagnosticsFailedCondition {
       dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
-      Domain domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,
+      DomainResource domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,
           domainNamespace,
           adminSecretName,
           BASE_IMAGES_REPO_SECRET_NAME,
@@ -705,16 +702,16 @@ class ItDiagnosticsFailedCondition {
   }
 
   // Create a domain resource with a custom ConfigMap
-  private Domain createDomainResourceWithConfigMap(String domainUid,
-          String domNamespace, String adminSecretName,
-          String repoSecretName, String encryptionSecretName,
-          int replicaCount, String miiImage, String configmapName, Long introspectorDeadline) {
+  private DomainResource createDomainResourceWithConfigMap(String domainUid,
+                   String domNamespace, String adminSecretName,
+                   String repoSecretName, String encryptionSecretName,
+                   int replicaCount, String miiImage, String configmapName, Long introspectorDeadline) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -746,9 +743,6 @@ class ItDiagnosticsFailedCondition {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -759,11 +753,12 @@ class ItDiagnosticsFailedCondition {
     return domain;
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, int replicaCount,
-      String miiImage) {
+  private DomainResource createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+                                              String repoSecretName, String encryptionSecretName, int replicaCount,
+                                              String miiImage) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -792,9 +787,6 @@ class ItDiagnosticsFailedCondition {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")

@@ -12,9 +12,8 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -285,9 +284,11 @@ class ItIstioDomainInImage {
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount) {
+
+
     // In case of istio "default" channel can not be exposed through nodeport.
     // No AdminService on domain resource.
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -312,9 +313,6 @@ class ItIstioDomainInImage {
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
                     .adminServer(createAdminServer())
-                    .addClustersItem(new Cluster()
-                            .clusterName(clusterName)
-                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS"))

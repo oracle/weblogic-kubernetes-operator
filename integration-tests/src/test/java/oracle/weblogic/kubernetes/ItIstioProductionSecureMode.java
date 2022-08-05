@@ -13,9 +13,8 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -154,7 +153,7 @@ class ItIstioProductionSecureMode {
     createModelConfigMap(configMapName, yamlString, domainUid);
 
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
                                       TEST_IMAGES_REPO_SECRET_NAME,
@@ -207,13 +206,13 @@ class ItIstioProductionSecureMode {
 
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace,
-           String adminSecretName, String repoSecretName,
-           String encryptionSecretName, int replicaCount,
-           String miiImage, String configmapName) {
+  private DomainResource createDomainResource(String domainUid, String domNamespace,
+                                              String adminSecretName, String repoSecretName,
+                                              String encryptionSecretName, int replicaCount,
+                                              String miiImage, String configmapName) {
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -241,9 +240,6 @@ class ItIstioProductionSecureMode {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(createAdminServer())
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                      .model(new Model()
                          .domainType("WLS")

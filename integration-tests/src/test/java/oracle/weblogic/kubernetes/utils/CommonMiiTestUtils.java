@@ -35,9 +35,9 @@ import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -124,7 +124,7 @@ public class CommonMiiTestUtils {
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
    */
-  public static Domain createMiiDomainAndVerify(
+  public static DomainResource createMiiDomainAndVerify(
       String domainNamespace,
       String domainUid,
       String imageName,
@@ -161,7 +161,7 @@ public class CommonMiiTestUtils {
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         domainNamespace,
         imageName,
         adminSecretName,
@@ -212,7 +212,7 @@ public class CommonMiiTestUtils {
    * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -223,7 +223,7 @@ public class CommonMiiTestUtils {
       String clusterName) {
 
     // create the domain CR
-    Domain domain = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+    DomainResource domain = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         imageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, List.of(clusterName));
     setPodAntiAffinity(domain);
@@ -245,7 +245,7 @@ public class CommonMiiTestUtils {
    * @param clusterNames a list of the cluster name to add in domain
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -262,7 +262,7 @@ public class CommonMiiTestUtils {
     }
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
@@ -294,12 +294,6 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
-    for (String clusterName : clusterNames) {
-      domain.spec()
-          .addClustersItem(new oracle.weblogic.domain.Cluster()
-              .clusterName(clusterName)
-              .replicas(replicaCount));
-    }
 
     domain.spec().setImagePullSecrets(secrets);
     setPodAntiAffinity(domain);
@@ -324,7 +318,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -337,7 +331,7 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
         domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
         List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
 
@@ -362,7 +356,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -375,7 +369,7 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, clusterNames);
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
@@ -411,7 +405,7 @@ public class CommonMiiTestUtils {
    * @param auxiliaryImages list of AuxiliaryImages
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -423,7 +417,7 @@ public class CommonMiiTestUtils {
       List<AuxiliaryImageVolume> auxiliaryImageVolumes,
       List<AuxiliaryImage> auxiliaryImages) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, clusterName);
 
@@ -457,7 +451,7 @@ public class CommonMiiTestUtils {
    * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -468,7 +462,7 @@ public class CommonMiiTestUtils {
       String clusterName) {
 
     // create the domain CR
-    Domain domain = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName, domNamespace,
+    DomainResource domain = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName, domNamespace,
         imageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, List.of(clusterName));
     setPodAntiAffinity(domain);
@@ -490,7 +484,7 @@ public class CommonMiiTestUtils {
    * @param clusterNames a list of the cluster name to add in domain
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -505,8 +499,9 @@ public class CommonMiiTestUtils {
     for (String secret : repoSecretName) {
       secrets.add(new V1LocalObjectReference().name(secret));
     }
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
@@ -538,13 +533,6 @@ public class CommonMiiTestUtils {
                                     .domainType("WLS")
                                     .runtimeEncryptionSecret(encryptionSecretName))
                             .introspectorJobActiveDeadlineSeconds(600L)));
-    for (String clusterName : clusterNames) {
-      domain.spec()
-              .addClustersItem(new oracle.weblogic.domain.Cluster()
-                      .clusterName(clusterName)
-                      .replicas(replicaCount));
-    }
-
     domain.spec().setImagePullSecrets(secrets);
     setPodAntiAffinity(domain);
     return domain;
@@ -567,7 +555,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -579,7 +567,7 @@ public class CommonMiiTestUtils {
       String auxiliaryImagePath,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
         domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
         List.of(clusterName), auxiliaryImagePath, auxiliaryImageName);
 
@@ -603,7 +591,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -615,7 +603,7 @@ public class CommonMiiTestUtils {
       String auxiliaryImagePath,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, clusterNames);
     int index = 0;
@@ -654,7 +642,7 @@ public class CommonMiiTestUtils {
    * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithLogHome(
+  public static DomainResource createDomainResourceWithLogHome(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -711,9 +699,6 @@ public class CommonMiiTestUtils {
                 .addChannelsItem(new Channel()
                     .channelName("default")
                     .nodePort(0))))
-        .addClustersItem(new Cluster()
-            .clusterName(clusterName)
-            .replicas(replicaCount))
         .configuration(new Configuration()
             .secrets(securityList)
             .model(new Model()
@@ -728,7 +713,7 @@ public class CommonMiiTestUtils {
       domainSpec.dataHome(uniquePath + "/data");
     }
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1436,7 +1421,7 @@ public class CommonMiiTestUtils {
         "patchDomainClusterWithAuxiliaryImageAndVerify failed ");
     assertTrue(aiPatched, "patchDomainClusterWithAuxiliaryImageAndVerify failed");
 
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
@@ -1530,11 +1515,11 @@ public class CommonMiiTestUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static Domain createMiiDomainWithIstioMultiClusters(String domainUid,
-                                                             String domainNamespace,
-                                                             String miiImage,
-                                                             int numOfClusters,
-                                                             int replicaCount) {
+  public static DomainResource createMiiDomainWithIstioMultiClusters(String domainUid,
+                                                                     String domainNamespace,
+                                                                     String miiImage,
+                                                                     int numOfClusters,
+                                                                     int replicaCount) {
     return createMiiDomainWithIstioMultiClusters(domainUid, domainNamespace, miiImage, numOfClusters,
         replicaCount, null);
   }
@@ -1550,12 +1535,12 @@ public class CommonMiiTestUtils {
    * @param serverPodLabels the labels for the server pod
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static Domain createMiiDomainWithIstioMultiClusters(String domainUid,
-                                                             String domainNamespace,
-                                                             String miiImage,
-                                                             int numOfClusters,
-                                                             int replicaCount,
-                                                             Map<String, String> serverPodLabels) {
+  public static DomainResource createMiiDomainWithIstioMultiClusters(String domainUid,
+                                                                     String domainNamespace,
+                                                                     String miiImage,
+                                                                     int numOfClusters,
+                                                                     int replicaCount,
+                                                                     Map<String, String> serverPodLabels) {
 
     LoggingFacade logger = getLogger();
     // admin/managed server name here should match with WDT model yaml file
@@ -1584,18 +1569,21 @@ public class CommonMiiTestUtils {
     }
 
     // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
+    List<ClusterSpec> clusterSpecList = new ArrayList<>();
+    List<V1LocalObjectReference> clusterRefList = new ArrayList<>();
     for (int i = numOfClusters; i >= 1; i--) {
-      Cluster cluster = new Cluster()
+      ClusterSpec clusterSpec = new ClusterSpec()
           .clusterName("cluster-" + i)
           .replicas(replicaCount);
 
       if (serverPodLabels != null) {
-        cluster.serverPod(new ServerPod()
+        clusterSpec.serverPod(new ServerPod()
             .labels(serverPodLabels));
       }
 
-      clusterList.add(cluster);
+      clusterSpecList.add(clusterSpec);
+
+      clusterRefList.add(new V1LocalObjectReference().name("cluster-" + i));
     }
 
     // set resource request and limit
@@ -1607,7 +1595,7 @@ public class CommonMiiTestUtils {
     resourceLimit.put("memory", new Quantity("2Gi"));
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1635,7 +1623,7 @@ public class CommonMiiTestUtils {
                 .resources(new V1ResourceRequirements()
                     .requests(resourceRequest)
                     .limits(resourceLimit)))
-            .clusters(clusterList)
+            .clusters(clusterRefList)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
@@ -1712,16 +1700,16 @@ public class CommonMiiTestUtils {
    *
    * @return domain object of the domain resource
    */
-  public static  Domain create2channelsDomainResourceWithConfigMap(String domainUid,
-          String domNamespace, String adminSecretName,
-          String repoSecretName, String encryptionSecretName,
-          int replicaCount, String miiImage, String configmapName) {
+  public static DomainResource create2channelsDomainResourceWithConfigMap(String domainUid,
+                                                String domNamespace, String adminSecretName,
+                                                String repoSecretName, String encryptionSecretName,
+                                                int replicaCount, String miiImage, String configmapName) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1756,9 +1744,6 @@ public class CommonMiiTestUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -1818,7 +1803,7 @@ public class CommonMiiTestUtils {
     createModelConfigMapSSLenable(configMapName, yamlString, domainUid, domainNamespace);
 
     // create the domain object
-    Domain domain = create2channelsDomainResourceWithConfigMap(domainUid,
+    DomainResource domain = create2channelsDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
                replicaCount,
@@ -1889,7 +1874,7 @@ public class CommonMiiTestUtils {
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = createIstioDomainResource(domainUid,
+    DomainResource domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,

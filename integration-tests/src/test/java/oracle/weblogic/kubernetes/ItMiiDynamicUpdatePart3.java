@@ -13,8 +13,8 @@ import java.util.List;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -392,7 +392,7 @@ class ItMiiDynamicUpdatePart3 {
     logger.info("verifying the domain status message contains the expected error msg");
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           return (miidomain != null) && (miidomain.getStatus() != null) && (miidomain.getStatus().getMessage() != null)
               && miidomain.getStatus().getMessage().contains(expectedErrorMsg);
         },
@@ -404,7 +404,7 @@ class ItMiiDynamicUpdatePart3 {
     logger.info("verifying the domain status condition message contains the expected error msg");
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase("Failed"))

@@ -20,9 +20,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -297,7 +296,7 @@ class ItIstioDBOperator {
     createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
@@ -771,7 +770,7 @@ class ItIstioDBOperator {
     return istioIngressPort;
   }
 
-  private static Domain createDomainResourceWithLogHome(
+  private static DomainResource createDomainResourceWithLogHome(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -821,9 +820,6 @@ class ItIstioDBOperator {
             .addVolumeMountsItem(new V1VolumeMount()
                 .mountPath("/shared")
                 .name(pvName)))
-        .addClustersItem(new Cluster()
-            .clusterName(clusterName)
-            .replicas(replicaCount))
         .configuration(new Configuration()
             .secrets(securityList)
             .model(new Model()
@@ -838,7 +834,7 @@ class ItIstioDBOperator {
       domainSpec.dataHome("/shared/data");
     }
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()

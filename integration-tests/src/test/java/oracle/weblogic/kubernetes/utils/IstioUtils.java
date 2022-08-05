@@ -17,9 +17,8 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
@@ -329,10 +328,10 @@ public class IstioUtils {
    * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
-  public static Domain createIstioDomainResource(String domainUid, String domNamespace,
-                                                 String adminSecretName, String repoSecretName,
-                                                 String encryptionSecretName, int replicaCount,
-                                                 String miiImage, String configmapName, String clusterName) {
+  public static DomainResource createIstioDomainResource(String domainUid, String domNamespace,
+                                                         String adminSecretName, String repoSecretName,
+                                                         String encryptionSecretName, int replicaCount,
+                                                         String miiImage, String configmapName, String clusterName) {
     return createIstioDomainResource(domainUid,
         domNamespace, adminSecretName,repoSecretName,
         encryptionSecretName, replicaCount, miiImage,
@@ -356,14 +355,14 @@ public class IstioUtils {
    * @param monexpImage name of monitoring exporter sidecar image
    * @return domain object of the domain resource
    */
-  public static Domain createIstioDomainResource(String domainUid, String domNamespace,
-                                      String adminSecretName, String repoSecretName,
-                                      String encryptionSecretName, int replicaCount,
-                                      String miiImage, String configmapName, String clusterName,
-                                      String monexpConfig, String monexpImage) {
+  public static DomainResource createIstioDomainResource(String domainUid, String domNamespace,
+                                                         String adminSecretName, String repoSecretName,
+                                                         String encryptionSecretName, int replicaCount,
+                                                         String miiImage, String configmapName, String clusterName,
+                                                         String monexpConfig, String monexpImage) {
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -387,9 +386,6 @@ public class IstioUtils {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")

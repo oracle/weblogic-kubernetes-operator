@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.domain.AuxiliaryImage;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -162,7 +162,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage);
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage);
@@ -248,7 +248,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage);
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
         miiAuxiliaryImage);
@@ -322,7 +322,7 @@ class ItMiiCreateAuxImageWithImageTool {
     String domain3Uid = "domain3";
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domain3Uid, miiAuxiliaryImage);
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()

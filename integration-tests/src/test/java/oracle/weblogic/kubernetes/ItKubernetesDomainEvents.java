@@ -26,8 +26,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -325,7 +324,7 @@ class ItKubernetesDomainEvents {
     try {
       V1Patch patch;
       String patchStr;
-      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "Never",
+      DomainResource domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "Never",
           spec -> spec.failureRetryLimitMinutes(2L));
       assertNotNull(domain, " Can't create domain resource");
 
@@ -553,7 +552,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
@@ -625,7 +624,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
@@ -755,15 +754,15 @@ class ItKubernetesDomainEvents {
   }
 
   // Create and start a WebLogic domain in PV
-  private static Domain createDomain(String domainNamespace, String domainUid,
-                                     String pvName, String pvcName, String serverStartupPolicy) {
+  private static DomainResource createDomain(String domainNamespace, String domainUid,
+                                             String pvName, String pvcName, String serverStartupPolicy) {
     return createDomain(domainNamespace, domainUid, pvName, pvcName, serverStartupPolicy, UnaryOperator.identity());
   }
 
   // Create and start a WebLogic domain in PV
-  private static Domain createDomain(String domainNamespace, String domainUid,
-                                     String pvName, String pvcName, String serverStartupPolicy,
-                                     UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
+  private static DomainResource createDomain(String domainNamespace, String domainUid,
+                                             String pvName, String pvcName, String serverStartupPolicy,
+                                             UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
 
     String uniquePath = "/shared/" + domainNamespace + "/domains";
 
@@ -812,7 +811,7 @@ class ItKubernetesDomainEvents {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -849,10 +848,7 @@ class ItKubernetesDomainEvents {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster() //cluster
-                            .clusterName(cluster1Name)
-                            .replicas(replicaCount))));
+                                            .nodePort(getNextFreePort()))))));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
