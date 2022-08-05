@@ -48,7 +48,6 @@ pipeline {
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
         CLUSTER_NAME = "mlcluster"
-        MAVEN_PROFILE_NAME = "oke-parallel"
         availability_domain = "VPGL:PHX-AD-2"
     }
 
