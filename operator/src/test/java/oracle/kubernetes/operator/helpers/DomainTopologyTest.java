@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -253,7 +253,8 @@ class DomainTopologyTest {
 
     assertTrue(wlsClusterConfig.hasDynamicServers());
     assertTrue(wlsClusterConfig.hasStaticServers());
-    assertEquals(2, wlsClusterConfig.getClusterSize());
+    assertEquals(5, wlsClusterConfig.getClusterSize());
+    assertEquals(2, wlsClusterConfig.getConfiguredClusterSize());
     assertEquals(3, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(5, wlsClusterConfig.getServerConfigs().size());
     assertEquals(2, wlsClusterConfig.getServers().size());
