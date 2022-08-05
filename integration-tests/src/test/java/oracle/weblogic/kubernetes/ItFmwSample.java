@@ -80,7 +80,6 @@ public class ItFmwSample {
   private static String domainNamespace = null;
 
   private static final Path samplePath = get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = get(WORK_DIR, "fmw-sample-testing");
   private static final Path dbSamplePath = get(WORK_DIR, "fmw-sample-testing", "db");
 
   private static final String ORACLEDBURLPREFIX = "oracle-db.";

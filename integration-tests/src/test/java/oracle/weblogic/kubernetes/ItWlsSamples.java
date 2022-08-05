@@ -40,12 +40,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
@@ -62,7 +60,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
@@ -80,10 +77,8 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
-//import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -262,27 +257,6 @@ class ItWlsSamples {
     }
     //create PV and PVC used by the domain
     createPvPvc(domainUid, testSamplePath);
-    /*
-    logger.info("Setting up WebLogic pod to access PV");
-    String mountPath = "/shared";
-    io.kubernetes.client.openapi.models.V1Pod pvPod = setupWebLogicPod(domainNamespace, mountPath, domainUid);
-    logger.info("Changing file ownership {0} to oracle:root in PV", mountPath);
-    String argCommand = "chown -R 1000:root " + mountPath;
-    if (OKE_CLUSTER) {
-      argCommand = "chown 1000:root " + mountPath
-              + "/. && find "
-              + mountPath
-              + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:root";
-    }
-    //Calls execInPod to change the ownership of files in PV - not valid in OKD
-    if (!OKD) {
-      execInPod(pvPod, null, true, argCommand);
-    }
-
-    logger.info("Creating directory {0} in PV", "/shared/" + domainNamespace + "/" + domainUid);
-    execInPod(pvPod, null, true, "mkdir -p " + "/shared/"
-            + domainNamespace + "/" + domainUid);
-    */
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
 
@@ -834,58 +808,4 @@ class ItWlsSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to manage ingress controller");
   }
-
-  private static io.kubernetes.client.openapi.models.V1Pod setupWebLogicPod(String namespace, String mountPath,
-                                                                            String domainUid) {
-    // this secret is used only for non-kind cluster
-    createBaseRepoSecret(namespace);
-
-    final String podName = "weblogic-pv-pod-" + namespace + domainUid;
-    final String pvName = domainUid + "-weblogic-sample-pv";
-    final String pvcName = domainUid + "-weblogic-sample-pvc";
-    io.kubernetes.client.openapi.models.V1PodSpec podSpec = new io.kubernetes.client.openapi.models.V1PodSpec()
-            .containers(Arrays.asList(
-                    new io.kubernetes.client.openapi.models.V1Container()
-                            .name("weblogic-container")
-                            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                            .imagePullPolicy(IMAGE_PULL_POLICY)
-                            .addCommandItem("sleep")
-                            .addArgsItem("600")
-                            .volumeMounts(Arrays.asList(
-                                    new io.kubernetes.client.openapi.models.V1VolumeMount()
-                                            .name(pvName) // mount the persistent volume to /shared inside the pod
-                                            .mountPath(mountPath)))))
-            .imagePullSecrets(Arrays.asList(new io.kubernetes.client.openapi.models.V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
-            // the persistent volume claim used by the test
-            .volumes(Arrays.asList(
-                    new io.kubernetes.client.openapi.models.V1Volume()
-                            .name(pvName) // the persistent volume that needs to be archived
-                            .persistentVolumeClaim(
-                                    new io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource()
-                                            .claimName(pvcName))));
-    if (!OKD) {
-      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, mountPath)));
-    }
-
-    io.kubernetes.client.openapi.models.V1Pod podBody = new io.kubernetes.client.openapi.models.V1Pod()
-            .spec(podSpec)
-            .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta().name(podName))
-            .apiVersion("v1")
-            .kind("Pod");
-
-    io.kubernetes.client.openapi.models.V1Pod wlsPod = assertDoesNotThrow(() ->
-            oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createPod(namespace, podBody));
-
-    testUntil(
-            podReady(podName, null, namespace),
-            logger,
-            "{0} to be ready in namespace {1}",
-            podName,
-            namespace);
-
-    return wlsPod;
-  }
-
-
 }
