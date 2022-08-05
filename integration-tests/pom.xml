@@ -541,6 +541,15 @@
           </properties>
         </profile>
         <profile>
+            <id>openshift</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItOpenshiftIstioMiiDomain
+                </includes-failsafe>
+          </properties>
+        </profile>        
+        <profile>
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
