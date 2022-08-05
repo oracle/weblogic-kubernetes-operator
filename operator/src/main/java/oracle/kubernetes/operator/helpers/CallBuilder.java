@@ -500,6 +500,13 @@ public class CallBuilder {
                   requestParams.name,
                   requestParams.namespace,
                   (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<Object> readClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .readNamespacedClusterUntyped(
+                  requestParams.name,
+                  requestParams.namespace
+              );
   private final SynchronousCallFactory<ClusterResource> createClusterCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -510,6 +517,13 @@ public class CallBuilder {
           new WeblogicApi(client)
               .createNamespacedCluster(
                   requestParams.namespace, (Map<String, Object>) requestParams.body);
+  private final SynchronousCallFactory<Object> replaceClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceNamespacedCluster(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Map<String, Object>) requestParams.body);
   private final SynchronousCallFactory<ClusterResource> patchClusterCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -817,6 +831,30 @@ public class CallBuilder {
     return new WeblogicApi(client).getNamespacedClusterAsync(name, namespace, callback);
   }
 
+  /**
+   * Create Cluster.
+   *
+   * @param namespace Namespace
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public Object readClusterUntyped(String name, String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("readCluster", namespace, name, null, callParams);
+    return executeSynchronousCall(requestParams, readClusterCallUntyped);
+  }
+
+  /**
+   * Replace cluster.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Object replaceClusterUntyped(String namespace, Map<String, Object> body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceCluster", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, replaceClusterCallUntyped);
+  }
 
   /**
    * List domains.

@@ -191,6 +191,19 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * Read cluster.
+   *
+   * @param name      name of the domain
+   * @param namespace namespace of the domain
+   * @return domain
+   * @throws ApiException on failure
+   */
+  public Object readNamespacedClusterUntyped(String name, String namespace)
+      throws ApiException {
+    return getNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL, name);
+  }
+
+  /**
    * List domains.
    *
    * @param namespace       namespace
@@ -325,6 +338,21 @@ public class WeblogicApi extends CustomObjectsApi {
       throws ApiException {
     return createNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
         body, null, null, null);
+  }
+
+  /**
+   * Replace cluster.
+   *
+   * @param name      name
+   * @param namespace namespace
+   * @param body      cluster
+   * @return domain
+   * @throws ApiException on failure
+   */
+  public Object replaceNamespacedCluster(String name, String namespace, Map<String, Object> body)
+      throws ApiException {
+    return replaceNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        name, body, null, null);
   }
 
   /**
