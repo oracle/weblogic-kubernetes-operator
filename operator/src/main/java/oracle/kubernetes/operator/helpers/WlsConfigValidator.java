@@ -303,20 +303,20 @@ public class WlsConfigValidator {
     private final List<String> failures;
     private final String clusterName;
     private final int replicaCount;
-    private final int maxClusterSize;
+    private final int clusterSize;
 
     ClusterReplicaCheck(List<String> failures, String clusterName) {
       this.failures = failures;
       this.clusterName = clusterName;
       this.replicaCount = info.getReplicaCount(clusterName);
-      this.maxClusterSize = domainConfig.getClusterConfig(clusterName).getMaxClusterSize();
+      this.clusterSize = domainConfig.getClusterConfig(clusterName).getClusterSize();
     }
 
     private void validateCluster() {
-      if (replicaCount > maxClusterSize) {
-        failures.add(DomainFailureMessages.createReplicaFailureMessage(clusterName, replicaCount, maxClusterSize));
+      if (replicaCount > clusterSize) {
+        failures.add(DomainFailureMessages.createReplicaFailureMessage(clusterName, replicaCount, clusterSize));
         if (loggingFacade != null) {
-          loggingFacade.warning(TOO_MANY_REPLICAS_FAILURE, replicaCount, clusterName, maxClusterSize);
+          loggingFacade.warning(TOO_MANY_REPLICAS_FAILURE, replicaCount, clusterName, clusterSize);
         }
       }
     }
