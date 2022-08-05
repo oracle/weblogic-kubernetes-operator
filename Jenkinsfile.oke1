@@ -140,6 +140,10 @@ pipeline {
                description: '',
                defaultValue: '2.0.6'
         )
+        choice(name: 'MAVEN_PROFILE_NAME',
+                       choices: ['oke-sequential', 'oke-parallel'],
+                       description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
+                )
 
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -223,11 +227,9 @@ pipeline {
 
                         export OKE_CLUSTER="true"
                         export FSS_DIR="/oketest"
-                        if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
-                           VCN_CIDR_PREFIX="10.5"
-                        else
-                           VCN_CIDR_PREFIX="10.3"
-                        fi
+
+                        VCN_CIDR_PREFIX="10.5"
+
                         export VCN_CIDR_PREFIX=${VCN_CIDR_PREFIX}
 
                         export OKE_CLUSTER_NAME=${OKE_CLUSTER_NAME}
