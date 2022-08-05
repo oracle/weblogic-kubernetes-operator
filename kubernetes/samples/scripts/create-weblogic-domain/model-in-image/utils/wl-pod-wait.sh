@@ -16,7 +16,7 @@ usage() {
   Usage:
 
     $(basename $0) [-n mynamespace] [-d mydomainuid] \\
-       [-t timeout_secs] [-q]
+       [-p 0|Completed] [-t timeout_secs] [-q]
 
   Description:
 
