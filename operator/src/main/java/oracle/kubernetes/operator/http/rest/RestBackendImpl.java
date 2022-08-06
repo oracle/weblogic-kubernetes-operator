@@ -413,7 +413,7 @@ public class RestBackendImpl implements RestBackend {
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
-      return callBuilder.replaceClusterUntyped(namespace, cluster);
+      return callBuilder.replaceClusterUntyped(name, namespace, cluster);
     } catch (ApiException e) {
       throw handleApiException(e);
     }

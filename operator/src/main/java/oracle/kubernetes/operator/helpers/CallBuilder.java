@@ -846,13 +846,14 @@ public class CallBuilder {
   /**
    * Replace cluster.
    *
+   * @param name Name
    * @param namespace Namespace
    * @param body Body
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Object replaceClusterUntyped(String namespace, Map<String, Object> body) throws ApiException {
-    RequestParams requestParams = new RequestParams("replaceCluster", namespace, null, body, callParams);
+  public Object replaceClusterUntyped(String name, String namespace, Map<String, Object> body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceCluster", namespace, name, body, callParams);
     return executeSynchronousCall(requestParams, replaceClusterCallUntyped);
   }
 
