@@ -271,7 +271,8 @@ class ItWlsSamples {
     // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
+              "createDomainFilesDir: wlst", "createDomainFilesDir: "
+                      + domainNamespace + "/" + script + "/" + domainUid);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
