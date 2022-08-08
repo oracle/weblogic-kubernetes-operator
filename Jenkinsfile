@@ -546,7 +546,7 @@ EOF
                             if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
                                 error('All tests cannot be run with integration-tests profile')
-                            elif [ "x${IT_TEST}" != 'x`' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
+                            elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
                                 error('Individual test MUST be run with integration-tests profile')
                             elif [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
