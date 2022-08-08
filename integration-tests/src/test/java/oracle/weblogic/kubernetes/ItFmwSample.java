@@ -49,6 +49,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.p
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -171,7 +172,9 @@ public class ItFmwSample {
     setupSample(testSamplePath);
 
     // create persistent volume and persistent volume claims used by the samples
-    createPvPvc(domainUid, testSamplePath);
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pv-");
+    createPvPvc(domainUid, testSamplePath, pvName, pvcName);
 
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
@@ -184,7 +187,7 @@ public class ItFmwSample {
         "scripts/create-fmw-infrastructure-domain/domain-home-on-pv");
 
     //update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainUid, sampleBase);
+    updateDomainInputsFile(domainUid, sampleBase, pvcName);
 
     // change image name
     assertDoesNotThrow(() -> {
@@ -251,10 +254,7 @@ public class ItFmwSample {
     checkAccessToEMconsole(adminServerPodName);
   }
 
-  private void createPvPvc(String domainUid, Path testSamplePath) {
-
-    final String pvName = domainUid + "-weblogic-sample-pv";
-    final String pvcName = domainUid + "-weblogic-sample-pvc";
+  private void createPvPvc(String domainUid, Path testSamplePath, String pvName, String pvcName) {
 
     // delete pvc first if exists
     if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
@@ -310,13 +310,16 @@ public class ItFmwSample {
                 "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
         replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
                 "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
-
       }
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "domainUID:", "domainUID: " + domainUid);
+      replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pvc", pvcName);
+      replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pv", pvName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -380,7 +383,7 @@ public class ItFmwSample {
         .execute(), "Failed to chmod testSamplePath");
   }
 
-  private void updateDomainInputsFile(String domainUid, Path sampleBase) {
+  private void updateDomainInputsFile(String domainUid, Path sampleBase, String pvcName) {
     // in general the node port range has to be between 30,100 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30172
@@ -421,6 +424,8 @@ public class ItFmwSample {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "logHome: /shared/logs", "domainHome: /shared/"
                       + domainNamespace + "/" + domainUid + "/logs");
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc", pvcName);
     });
   }
 

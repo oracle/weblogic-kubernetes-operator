@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.p
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -193,7 +194,7 @@ class ItWlsSamples {
     Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
 
     // update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainName, sampleBase);
+    updateDomainInputsFile(domainName, sampleBase,null);
 
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
@@ -256,14 +257,16 @@ class ItWlsSamples {
           ADMIN_PASSWORD_DEFAULT);
     }
     //create PV and PVC used by the domain
-    createPvPvc(domainUid, testSamplePath);
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pv-");
+    createPvPvc(domainUid, testSamplePath, pvName, pvcName);
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
 
     Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
     // update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainUid, sampleBase);
+    updateDomainInputsFile(domainUid, sampleBase, pvcName);
 
     // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
@@ -490,10 +493,7 @@ class ItWlsSamples {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc(String domainName, Path testSamplePath) {
-
-    final String pvName = domainName + "-weblogic-sample-pv";
-    final String pvcName = domainName + "-weblogic-sample-pvc";
+  private void createPvPvc(String domainName, Path testSamplePath, String pvName, String pvcName) {
 
     // delete pvc first if exists
     if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
@@ -558,6 +558,10 @@ class ItWlsSamples {
        */
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
               "domainUID:", "domainUID: " + domainName);
+      replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pvc", pvcName);
+      replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pv", pvName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -600,7 +604,7 @@ class ItWlsSamples {
         domainNamespace);
   }
 
-  private void updateDomainInputsFile(String domainUid, Path sampleBase) {
+  private void updateDomainInputsFile(String domainUid, Path sampleBase, String pvcName) {
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -618,8 +622,10 @@ class ItWlsSamples {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "logHome: /shared/logs", "domainHome: /shared/"
                       + domainNamespace + "/" + domainUid + "/logs");
-
-
+      if (pvcName != null) {
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+                "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc", pvcName);
+      }
 
       if (KIND_REPO == null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
