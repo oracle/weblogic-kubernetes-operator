@@ -624,7 +624,8 @@ class ItWlsSamples {
                       + domainNamespace + "/" + domainUid + "/logs");
       if (pvcName != null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc", "persistentVolumeClaimName: " + pvcName);
+                "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc",
+                "persistentVolumeClaimName: " + pvcName);
       }
 
       if (KIND_REPO == null) {
