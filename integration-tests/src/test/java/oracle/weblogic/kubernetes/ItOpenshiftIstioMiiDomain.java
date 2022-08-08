@@ -75,7 +75,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ *
+ * A sample mii domain tests running in Openshift service mesh. The test assumes that the service mesh istio operator is
+ * running in istio-system namespace. All the service mesh related operators are installed and running as per this
+ * documentation. https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/installing-ossm.html
+ */
 @DisplayName("Test Openshift servce mesh istio enabled WebLogic Domain in mii model")
+@Tag("openshift")
 @IntegrationTest
 class ItOpenshiftIstioMiiDomain {
 
@@ -152,6 +159,8 @@ class ItOpenshiftIstioMiiDomain {
 
   /**
    * Create a domain using model-in-image model.
+   * Inject sidecar.istio.io in domain resource under global serverPod object.
+   * Set localhostBindingsEnabled to true in istio configuration. 
    * Add istio configuration with default readinessPort.
    * Do not add any AdminService under AdminServer configuration.
    * Deploy istio gateways and virtual service.
@@ -161,8 +170,7 @@ class ItOpenshiftIstioMiiDomain {
    * Access web application thru istio http ingress port using curl.
    */
   @Test
-  @DisplayName("Create WebLogic Domain with mii model with openshift service mesh")
-  @Tag("openshift")
+  @DisplayName("Create WebLogic Domain with mii model with openshift service mesh")  
   void testIstioModelInImageDomain() {
 
     // Create the repo secret to pull the image

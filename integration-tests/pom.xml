@@ -544,9 +544,7 @@
             <id>openshift</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                  **/ItOpenshiftIstioMiiDomain
-                </includes-failsafe>
+                <groups>openshift</groups>
           </properties>
         </profile>        
         <profile>
