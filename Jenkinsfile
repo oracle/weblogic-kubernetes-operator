@@ -543,12 +543,12 @@ EOF
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
                             echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
                             echo "Selected IT Tests [${IT_TEST}]"
-                            if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
+                            if [ "${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
-                                error('All tests cannot be run with integration-tests profile')
+                                echo 'All tests cannot be run with integration-tests profile'
                             elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
-                                error('Individual test MUST be run with integration-tests profile')
+                                echo 'Individual test MUST be run with integration-tests profile'
                             elif [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
                                 PARALLEL_RUN='false'
                             elif [ ! -z "${IT_TEST}" ]; then
