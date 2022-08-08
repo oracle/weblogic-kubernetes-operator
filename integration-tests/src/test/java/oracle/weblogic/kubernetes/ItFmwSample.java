@@ -173,7 +173,7 @@ public class ItFmwSample {
 
     // create persistent volume and persistent volume claims used by the samples
     final String pvName = getUniqueName(domainUid + "-pv-");
-    final String pvcName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
     createPvPvc(domainUid, testSamplePath, pvName, pvcName);
 
     //create WebLogic secrets for the domain

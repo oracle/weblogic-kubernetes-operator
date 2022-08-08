@@ -258,7 +258,7 @@ class ItWlsSamples {
     }
     //create PV and PVC used by the domain
     final String pvName = getUniqueName(domainUid + "-pv-");
-    final String pvcName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
     createPvPvc(domainUid, testSamplePath, pvName, pvcName);
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
