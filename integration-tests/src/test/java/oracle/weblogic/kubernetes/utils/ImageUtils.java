@@ -514,14 +514,14 @@ public class ImageUtils {
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    //TODO 
+    //TODO
     getLogger().info("!!!!DEBUG, DOMAIN_IMAGES_REPO is: " + DOMAIN_IMAGES_REPO);
     String repoPrefix = TEST_IMAGES_REPO;
-    if (TEST_IMAGES_REPO.contains("weblogick8s")) {
-      repoPrefix = TEST_IMAGES_REPO.substring(0, DOMAIN_IMAGES_REPO.length() - 12);
+    if (DOMAIN_IMAGES_REPO.contains("weblogick8s")) {
+      repoPrefix = DOMAIN_IMAGES_REPO.substring(0, DOMAIN_IMAGES_REPO.length() - 12);
     }
 
-    if (!TEST_IMAGES_REPO.isEmpty() && dockerImage.contains(repoPrefix)) {
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(repoPrefix)) {
       logger.info("docker login to TEST_IMAGES_REPO {0}", TEST_IMAGES_REPO);
       testUntil(() -> dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD),
             logger,
@@ -532,7 +532,7 @@ public class ImageUtils {
            logger,
            "docker push succeeds for image {0} to repo {1}",
            dockerImage,
-           TEST_IMAGES_REPO);
+           DOMAIN_IMAGES_REPO);
     }
   }
 
