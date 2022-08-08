@@ -299,7 +299,7 @@ class RestBackendImplTest {
   @Test
   void whenPerClusterReplicaSettingGreaterThanMax_throwsException() {
     final String cluster1 = "cluster1";
-    configureCluster(cluster1);
+    configureCluster(cluster1).withReplicas(5);
     domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
             .withClusterLimits(0, 5));
 
