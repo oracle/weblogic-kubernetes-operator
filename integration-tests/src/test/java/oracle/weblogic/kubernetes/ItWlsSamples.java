@@ -100,7 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
-@Tag("oke-parallel")
+@Tag("oke-sequential")
 @IntegrationTest
 class ItWlsSamples {
 
@@ -615,6 +615,9 @@ class ItWlsSamples {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "domainHome: /shared/domains", "domainHome: /shared/"
                       + domainNamespace + "/" + domainUid + "/domains");
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "logHome: /shared/logs", "domainHome: /shared/"
+                      + domainNamespace + "/" + domainUid + "/logs");
 
 
 

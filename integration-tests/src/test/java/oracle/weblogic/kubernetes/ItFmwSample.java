@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JRF domain on pv sample using wlst and wdt")
 @IntegrationTest
 @Tag("samples")
-@Tag("oke-sequential")
+@Tag("oke-parallel")
 @Tag("olcne")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
@@ -418,6 +418,9 @@ public class ItFmwSample {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "domainHome: /shared/domains", "domainHome: /shared/"
                       + domainNamespace + "/" + domainUid + "/domains");
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "logHome: /shared/logs", "domainHome: /shared/"
+                      + domainNamespace + "/" + domainUid + "/logs");
     });
   }
 
