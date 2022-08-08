@@ -118,14 +118,14 @@ class ItWlsSamples {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static String domainNamespace = null;
-  private static final String domainName = "wlsdomain1";
+  private static final String domain1Name = "wlsdomain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
       SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String managedServerNameBase = "managed-server";
-  private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
+  private final String managedServerPodNamePrefix = domain1Name + "-" + managedServerNameBase;
 
   private final Path samplePath = get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = get(samplePath + "/scripts/domain-lifecycle");
@@ -272,7 +272,7 @@ class ItWlsSamples {
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "createDomainFilesDir: wlst", "createDomainFilesDir: "
-                      + domainNamespace + "/" + script + "/" + domainUid);
+                      +  script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
@@ -298,16 +298,16 @@ class ItWlsSamples {
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
     String serverName = managedServerNameBase + "1";
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
-    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 1);
+      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 1);
     });
 
     // Verify that startServer script execution starts server pod and replica count is incremented
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
-    checkPodExists(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
     });
   }
 
@@ -323,18 +323,18 @@ class ItWlsSamples {
     String keepReplicaCountConstantParameter = "-k";
     // Verify that replica count is not changed when using "-k" parameter and a replacement server is started
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
-    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domainName, domainNamespace);
-    checkPodExists(managedServerPodNamePrefix + "3", domainName, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
     });
 
     // Verify that replica count is not changed when using "-k" parameter and replacement server is shutdown
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
-    checkPodExists(managedServerPodNamePrefix + "1", domainName, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + "3", domainName, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
     });
   }
 
@@ -350,13 +350,13 @@ class ItWlsSamples {
     // Verify all clustered server pods are shut down after stopCluster script execution
     executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
 
     // Verify all clustered server pods are started after startCluster script execution
     executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodExists(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
   }
 
@@ -371,18 +371,18 @@ class ItWlsSamples {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
     String adminServerName = "admin-server";
-    String adminServerPodName = domainName + "-" + adminServerName;
-    checkPodDoesNotExist(adminServerPodName, domainName, domainNamespace);
+    String adminServerPodName = domain1Name + "-" + adminServerName;
+    checkPodDoesNotExist(adminServerPodName, domain1Name, domainNamespace);
 
     // Verify all WebLogic server instance pods are started after startDomain script execution
     executeLifecycleScript(START_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodExists(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
-    checkPodExists(adminServerPodName, domainName, domainNamespace);
+    checkPodExists(adminServerPodName, domain1Name, domainNamespace);
   }
 
   /**
@@ -438,7 +438,7 @@ class ItWlsSamples {
     if (scriptType.equals("INTROSPECT_DOMAIN")) {
       commonParameters = extraParams;
     } else {
-      commonParameters = " -d " + domainName + " -n " + domainNamespace;
+      commonParameters = " -d " + domain1Name + " -n " + domainNamespace;
     }
     params = new CommandParams().defaults();
     if (scriptType.equals(SERVER_LIFECYCLE)) {
