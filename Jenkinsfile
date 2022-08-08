@@ -549,7 +549,8 @@ EOF
                             elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
                                 echo 'Individual test MUST be run with integration-tests profile'
-                            elif [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
+                            elif [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
+                                echo 'Overriding the PARALLEL_RUN to false for kind-sequential profile'  
                                 PARALLEL_RUN='false'
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config

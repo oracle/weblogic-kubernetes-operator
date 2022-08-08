@@ -458,14 +458,16 @@ EOF
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
-
-                            if [ "${IT_TEST}" == '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
+                            echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
+                            echo "Selected IT Tests [${IT_TEST}]"
+                            if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
-                                error('All tests cannot be run with integration-tests profile')
-                            elif [ "${IT_TEST}" != '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
+                                echo 'All tests cannot be run with integration-tests profile'
+                            elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
-                                error('Individual test MUST be run with integration-tests profile')
-                            elif [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
+                                echo 'Individual test MUST be run with integration-tests profile'
+                            elif [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
+                                echo 'Overriding the PARALLEL_RUN to false for kind-sequential profile'
                                 PARALLEL_RUN=false
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
