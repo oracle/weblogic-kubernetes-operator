@@ -422,7 +422,7 @@ public class ItFmwSample {
               "domainHome: /shared/domains", "domainHome: /shared/"
                       + domainNamespace + "/" + domainUid + "/domains");
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "logHome: /shared/logs", "domainHome: /shared/"
+              "logHome: /shared/logs", "logHome: /shared/"
                       + domainNamespace + "/" + domainUid + "/logs");
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc",
