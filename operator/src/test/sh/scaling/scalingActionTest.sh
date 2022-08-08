@@ -769,37 +769,6 @@ test_get_replica_count_from_resources_domain_jq() {
   assertEquals '2' "${result}"
 }
 
-test_get_replica_count_from_resources_set_to_minReplicas() {
-
-  CLUSTER_FILE="${testdir}/cluster_cr_min3.json"
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-  cluster_json=`command cat ${CLUSTER_FILE}`
-
-  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
-
-  assertEquals '3' "${result}"
-}
-
-test_get_replica_count_from_resources_set_to_minReplicas_jq() {
-  skip_if_jq_not_installed
-
-  CLUSTER_FILE="${testdir}/cluster_cr_min3.json"
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-  cluster_json=`command cat ${CLUSTER_FILE}`
-
-  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
-
-  assertEquals '3' "${result}"
-}
-
 ##### find_target_replicas tests #####
 
 test_find_target_replicas_scaleUp() {

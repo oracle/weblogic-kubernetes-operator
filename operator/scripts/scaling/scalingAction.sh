@@ -197,7 +197,10 @@ find_cluster_resource_with_cluster_name() {
   local cluster_resource_names
   local clusterJson
   cluster_resource_names=$(get_cluster_resource_names_from_domain "$domainJson")
-  # Try cluster resources with name that ends with the WebLogic cluster name
+  # Try cluster resources with name that ends with the WebLogic cluster name first.
+  # This can help save the number of GET cluster Kubernetes API calls when Cluster
+  # resource name follows the naming pattern *"$wls_cluster_name, especially when
+  # the Domain resource references a large number of Cluster resource.
   for name in $cluster_resource_names
   do
     if [[ "$name" == *"$wls_cluster_name" ]]; then
@@ -485,12 +488,6 @@ get_replica_count_from_resources() {
     trace "replicas for $wls_cluster_name is not specified in Cluster resource. Using replicas value of $replicas from Domain resource."
   else
     trace "replicas for $wls_cluster_name from Cluster resource is $replicas"
-  fi
-
-  get_min_replicas_from_cluster "${clusterJson}" minReplicas
-  if [[ "${replicas}" -lt "${minReplicas}" ]]; then
-    # Reset managed server count to minimum replicas
-    replicas=${minReplicas}
   fi
 
   echo "$replicas"
