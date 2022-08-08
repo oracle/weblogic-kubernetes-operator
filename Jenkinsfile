@@ -541,6 +541,8 @@ EOF
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
+                            echo "[${IT_TEST}]" 
+                            echo "[${MAVEN_PROFILE_NAME}]"
                             if [ "${IT_TEST}" == '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
                                 currentBuild.result='ABORTED'
                                 error('All tests cannot be run with integration-tests profile')
