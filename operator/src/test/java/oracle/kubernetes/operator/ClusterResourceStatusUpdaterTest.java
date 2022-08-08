@@ -30,10 +30,16 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_UNAVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER_STATUS;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -184,6 +190,66 @@ class ClusterResourceStatusUpdaterTest {
         .getResourceWithName(KubernetesTestSupport.CLUSTER, NAME + '-' + CLUSTER);
     assertThat(clusterResource,  notNullValue());
     assertThat(clusterResource.getStatus(), equalTo(newStatus));
+  }
+
+  @Test
+  void whenClusterConditionAvailableWithStatusTrue_verifyAvailableEventGenerated() {
+    ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
+        .withClusterName(CLUSTER).withReplicas(5).withReadyReplicas(5).withReplicasGoal(5);
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(ClusterCondition.TRUE));
+    domain.getStatus().addCluster(newStatus);
+    cluster.withStatus(null);
+    info.addClusterResource(cluster);
+
+    updateClusterResourceStatus();
+
+    assertThat(testSupport, hasEvent(CLUSTER_AVAILABLE_EVENT));
+    assertThat(testSupport, not(hasEvent(CLUSTER_UNAVAILABLE_EVENT)));
+  }
+
+  @Test
+  void whenClusterConditionAvailableWithStatusFalse_verifyAvailableEventNotGenerated() {
+    ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
+        .withClusterName(CLUSTER).withReplicas(5).withReadyReplicas(5).withReplicasGoal(5);
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(ClusterCondition.FALSE));
+    domain.getStatus().addCluster(newStatus);
+    cluster.withStatus(null);
+    info.addClusterResource(cluster);
+
+    updateClusterResourceStatus();
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_AVAILABLE_EVENT)));
+    assertThat(testSupport, hasEvent(CLUSTER_UNAVAILABLE_EVENT));
+  }
+
+  @Test
+  void whenClusterConditionCompletedWithStatusTrue_verifyCompletedEventGenerated() {
+    ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
+        .withClusterName(CLUSTER).withReplicas(5).withReadyReplicas(5).withReplicasGoal(5);
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(ClusterCondition.TRUE));
+    domain.getStatus().addCluster(newStatus);
+    cluster.withStatus(null);
+    info.addClusterResource(cluster);
+
+    updateClusterResourceStatus();
+
+    assertThat(testSupport, hasEvent(CLUSTER_COMPLETED_EVENT));
+    assertThat(testSupport, not(hasEvent(CLUSTER_INCOMPLETE_EVENT)));
+  }
+
+  @Test
+  void whenClusterConditionCompletedWithStatusFalse_verifyCompletedEventNotGenerated() {
+    ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
+        .withClusterName(CLUSTER).withReplicas(5).withReadyReplicas(5).withReplicasGoal(5);
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(ClusterCondition.FALSE));
+    domain.getStatus().addCluster(newStatus);
+    cluster.withStatus(null);
+    info.addClusterResource(cluster);
+
+    updateClusterResourceStatus();
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_COMPLETED_EVENT)));
+    assertThat(testSupport, hasEvent(CLUSTER_INCOMPLETE_EVENT));
   }
 
   private ClusterResource createClusterResource(String clusterName) {

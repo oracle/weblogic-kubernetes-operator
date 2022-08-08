@@ -243,6 +243,10 @@ public class MessageKeys {
   public static final String CLUSTER_CREATED_EVENT_PATTERN = "WLSEO-0031";
   public static final String CLUSTER_DELETED_EVENT_PATTERN = "WLSEO-0032";
   public static final String CLUSTER_CHANGED_EVENT_PATTERN = "WLSEO-0033";
+  public static final String CLUSTER_AVAILABLE_EVENT_PATTERN = "WLSEO-0034";
+  public static final String CLUSTER_COMPLETED_EVENT_PATTERN = "WLSEO-0035";
+  public static final String CLUSTER_UNAVAILABLE_EVENT_PATTERN = "WLSEO-0036";
+  public static final String CLUSTER_INCOMPLETE_EVENT_PATTERN = "WLSEO-0037";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";

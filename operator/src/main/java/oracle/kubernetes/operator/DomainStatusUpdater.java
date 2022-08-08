@@ -669,22 +669,21 @@ public class DomainStatusUpdater {
 
         void apply() {
           conditionList.forEach(newCondition -> addCondition(status, newCondition));
-          setClusterStatusCondition(status);
+          setClusterStatusConditions(status);
         }
 
-        private void setClusterStatusCondition(DomainStatus status) {
-          for (ClusterStatus cs : status.getClusters()) {
-            if (cs.getConditions().isEmpty()) {
-              cs.addCondition(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(false));
-              cs.addCondition(new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(false));
-            }
-            ClusterCheck check = getClusterCheck(cs.getClusterName());
-            if (check !=  null) {
-              cs.addCondition(new ClusterCondition(ClusterConditionType.AVAILABLE)
-                  .withStatus(check.isAvailable()));
-              cs.addCondition(new ClusterCondition(ClusterConditionType.COMPLETED)
-                  .withStatus(check.isProcessingCompleted()));
-            }
+        private void setClusterStatusConditions(DomainStatus status) {
+          status.getClusters().forEach(cs -> addClusterConditions(cs, getClusterCheck(cs.getClusterName())));
+        }
+
+        private void addClusterConditions(ClusterStatus cs, ClusterCheck clusterCheck) {
+          if (clusterCheck != null) {
+            cs.addCondition(
+                new ClusterCondition(ClusterConditionType.AVAILABLE)
+                    .withStatus(clusterCheck.isAvailable()));
+            cs.addCondition(
+                new ClusterCondition(ClusterConditionType.COMPLETED)
+                    .withStatus(clusterCheck.isProcessingCompleted()));
           }
         }
 

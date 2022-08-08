@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -11,11 +12,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -24,10 +29,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -176,7 +181,6 @@ public class ClusterResourceStatusUpdater {
           .withStatus(getNewStatus());
     }
 
-    @NotNull
     private ClusterStatus getNewStatus() {
       if (newStatus == null) {
         newStatus = createNewStatus();
@@ -202,9 +206,56 @@ public class ClusterResourceStatusUpdater {
       ClusterStatus newClusterStatus = getNewStatus();
       if (isMakeRight) {
         // Only set observedGeneration during a make-right, but not during a background status update
-        newClusterStatus.setObservedGeneration(resource.getMetadata().getGeneration());
+        Optional.ofNullable(newClusterStatus)
+            .ifPresent(cs -> cs.setObservedGeneration(resource.getMetadata().getGeneration()));
       }
-      return new StepAndPacket(createReplaceClusterStatusAsyncStep(), packet);
+
+      final List<Step> result = new ArrayList<>();
+      result.add(createReplaceClusterStatusAsyncStep());
+
+      // add steps to create events for conditions
+      addClusterStatusConditionTrueEvents(newClusterStatus, result);
+      addClusterStatusConditionFalseEvents(newClusterStatus, result);
+
+      return new StepAndPacket(Step.chain(result), packet);
+    }
+
+    private void addClusterStatusConditionFalseEvents(ClusterStatus newClusterStatus, List<Step> result) {
+      Optional.ofNullable(newClusterStatus).ifPresent(cs -> cs.getConditions()
+          .stream()
+          .filter(c -> "False".equals(c.getStatus()))
+          .map(this::toFalseClusterResourceEvent)
+          .map(EventHelper::createClusterResourceEventStep)
+          .forEach(result::add));
+    }
+
+    private void addClusterStatusConditionTrueEvents(ClusterStatus newClusterStatus, List<Step> result) {
+      Optional.ofNullable(newClusterStatus).ifPresent(cs -> cs.getConditions()
+          .stream()
+          .filter(c -> "True".equals(c.getStatus()))
+          .map(this::toTrueClusterResourceEvent)
+          .map(EventHelper::createClusterResourceEventStep)
+          .forEach(result::add));
+    }
+
+    private EventData toTrueClusterResourceEvent(ClusterCondition condition) {
+      return Optional.ofNullable(condition.getType().getAddedEvent())
+          .map(ClusterResourceEventData::new)
+          .map(this::initializeClusterResourceEventData)
+          .orElse(null);
+    }
+
+    private EventData toFalseClusterResourceEvent(ClusterCondition removedCondition) {
+      return Optional.ofNullable(removedCondition.getType().getRemovedEvent())
+          .map(ClusterResourceEventData::new)
+          .map(this::initializeClusterResourceEventData)
+          .orElse(null);
+    }
+
+    private EventData initializeClusterResourceEventData(ClusterResourceEventData eventData) {
+      DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      return eventData.resourceName(resource.getMetadata().getName())
+          .namespace(resource.getNamespace()).domainPresenceInfo(info);
     }
 
     private static ClusterStatus findClusterStatus(List<ClusterStatus> clusterStatuses, String clusterName) {
@@ -218,6 +269,21 @@ public class ClusterResourceStatusUpdater {
               getNamespace(),
               createReplacementClusterResource(),
               new ClusterResourceStatusReplaceResponseStep(this));
+    }
+
+    private class ClusterResourceEventData extends EventData {
+
+      public ClusterResourceEventData(EventItem eventItem) {
+        super(eventItem);
+      }
+
+      @Override
+      public String getUID() {
+        return Optional.of(resource)
+            .map(ClusterResource::getMetadata)
+            .map(V1ObjectMeta::getUid)
+            .orElse("");
+      }
     }
   }
 

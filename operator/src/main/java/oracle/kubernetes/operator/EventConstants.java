@@ -6,9 +6,13 @@ package oracle.kubernetes.operator;
 /** Constants used in Operator events. */
 public interface EventConstants {
 
+  String CLUSTER_AVAILABLE_EVENT = "ClusterAvailable";
   String CLUSTER_CHANGED_EVENT = "ClusterChanged";
+  String CLUSTER_COMPLETED_EVENT = "ClusterCompleted";
   String CLUSTER_CREATED_EVENT = "ClusterCreated";
   String CLUSTER_DELETED_EVENT = "ClusterDeleted";
+  String CLUSTER_INCOMPLETE_EVENT = "ClusterIncomplete";
+  String CLUSTER_UNAVAILABLE_EVENT = "ClusterUnavailable";
   String DOMAIN_CHANGED_EVENT = "Changed";
   String DOMAIN_CREATED_EVENT = "Created";
   String DOMAIN_DELETED_EVENT = "Deleted";

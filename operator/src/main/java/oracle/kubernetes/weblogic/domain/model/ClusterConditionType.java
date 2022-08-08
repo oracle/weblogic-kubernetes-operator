@@ -5,17 +5,27 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Obsoleteable;
+import oracle.kubernetes.operator.helpers.EventHelper;
+
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_AVAILABLE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_COMPLETE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_INCOMPLETE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_UNAVAILABLE;
 
 public enum ClusterConditionType implements Obsoleteable {
   @SerializedName("Available")
-  AVAILABLE("Available"),
+  AVAILABLE("Available", CLUSTER_AVAILABLE, CLUSTER_UNAVAILABLE),
   @SerializedName("Completed")
-  COMPLETED("Completed");
+  COMPLETED("Completed", CLUSTER_COMPLETE, CLUSTER_INCOMPLETE);
 
   private final String value;
+  private final EventHelper.EventItem addedEvent;
+  private final EventHelper.EventItem removedEvent;
 
-  ClusterConditionType(String value) {
+  ClusterConditionType(String value, EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
     this.value = value;
+    this.addedEvent = addedEvent;
+    this.removedEvent = removedEvent;
   }
 
   /**
@@ -26,6 +36,14 @@ public enum ClusterConditionType implements Obsoleteable {
    */
   int compare(ClusterCondition thisCondition, ClusterCondition thatCondition) {
     return thisCondition.compareTransitionTime(thatCondition);
+  }
+
+  public EventHelper.EventItem getAddedEvent() {
+    return addedEvent;
+  }
+
+  public EventHelper.EventItem getRemovedEvent() {
+    return removedEvent;
   }
 
   @Override
