@@ -552,6 +552,8 @@ EOF
                         ''' ,returnStatus:true)
                        if (res != 0) {
                           currentBuild.result = 'ABORTED'
+                          echo 'Validation return code [' +res+ ']')
+                          error('Profile/ItTests Validation Validation Failed')
                        }
                      }
                      sh '''
