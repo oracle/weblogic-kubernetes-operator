@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1659378324" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1659378324" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1660057474" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1660057474" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1659378324"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1660057474"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1659378324"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1659378324"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1660057474"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1660057474"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1659378324"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1660057474"></script>
 
     
   </div>
@@ -3531,6 +3531,7 @@
 <li><a href="#dns-configuration">DNS Configuration</a></li>
 <li><a href="#database">Database</a></li>
 <li><a href="#review--create">Review + create</a></li>
+<li><a href="#template-outputs">Template outputs</a></li>
 <li><a href="#useful-resources">Useful resources</a></li>
 </ul>
 <h4 id="introduction">Introduction</h4>
@@ -4124,6 +4125,90 @@
 <p>In the <strong>Review + create blade</strong>, review the details you provided for deploying Oracle WebLogic Server on AKS. If you want to make changes to any of the fields, click <strong>&lt; previous</strong> or click on the respective blade and update the details.</p>
 <p>If you want to use this template to automate the deployment, download it by selecting <strong>Download a template for automation</strong>.</p>
 <p>Click <strong>Create</strong> to create this offer. This process may take 30 to 60 minutes.</p>
+<h4 id="template-outputs">Template outputs</h4>
+<p>After clicking <strong>Create</strong> to create this offer, you will go to the <strong>Deployment is in progress</strong> page. When the deployment is completed, the page shows <strong>Your deployment is complete</strong>. In the left panel, select <strong>Outputs</strong>. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aksClusterName</code></td>
+<td>Name of your AKS cluster that is running the WLS cluster. <br />Sample value: <code>wlsonaksiyiql2i2o2u2i</code>.</td>
+</tr>
+<tr>
+<td><code>adminConsoleInternalUrl</code></td>
+<td>The fully qualified, private link to the Administration Console portal. You can access it only inside the AKS cluster. <br />Sample value: <code>http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7001/console</code>.</td>
+</tr>
+<tr>
+<td><code>adminConsoleExternalUrl</code></td>
+<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br /> <br />This is a fully qualified, public link to the Administration Console portal. You can access it from the public Internet. <br />Sample value: <code>http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/console</code>.</td>
+</tr>
+<tr>
+<td><code>adminConsoleExternalSecuredUrl</code></td>
+<td>This output is not always present:<br />1. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br />2. You must configure a custom DNS name by filling out <a href="#dns-configuration">DNS Configuration</a>.<br />3. The TLS/SSL certificate used is configured by filling out <a href="#tlsssl-configuration">TLS/SSL configuration</a>.<br /><br />This is a fully qualified, secure, public link to the Administration Console portal. You can access it from the public Internet. <br />Sample value: <code>https://contoso.com/console</code>.</td>
+</tr>
+<tr>
+<td><code>adminRemoteConsoleUrl</code></td>
+<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br /><br />This is a fully qualified, public link to the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/">WebLogic Server Remote Console</a>. You can access it from the public Internet.<br />Sample value: <code>http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/remoteconsole</code>.</td>
+</tr>
+<tr>
+<td><code>adminRemoteConsoleSecuredUrl</code></td>
+<td>This output is not always present:<br />1. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.<br />2. You must configure a custom DNS name following <a href="#dns-configuration">DNS Configuration</a>.<br />3. The TLS/SSL certificate used is configured by filling out <a href="#tlsssl-configuration">TLS/SSL configuration</a>.<br /><br />This is a fully qualified, public link to the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/">WebLogic Server Remote Console</a>. You can access it from the public Internet.<br />Sample value: <code>https://contoso.com/remoteconsole</code>.</td>
+</tr>
+<tr>
+<td><code>adminServerT3InternalUrl</code></td>
+<td>This output is not always present:<br />1. You must <a href="https://oracle.github.io/weblogic-azure/aks/">create/update the WLS cluster with advanced configuration</a>.<br /> 2. You must enable custom T3 channel by setting <code>enableAdminT3Tunneling=true</code>.<br /><br />This is a fully qualified, private link to custom T3 channel of the Administration Server.<br />Sample value: <code>http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7005/console</code>.</td>
+</tr>
+<tr>
+<td><code>adminServerT3ExternalUrl</code></td>
+<td>This output is not always present:<br />1. You must <a href="https://oracle.github.io/weblogic-azure/aks/">create/update the WLS cluster with advanced configuration</a>.<br />2. You must enable custom T3 channel by setting <code>enableAdminT3Tunneling=true</code>.<br />3. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service for the Administration Server.<br /><br />This is a fully qualified, public link to custom T3 channel of the Administration Server.<br />Sample value: <code>http://20.4.56.3:7005/console/</code></td>
+</tr>
+<tr>
+<td><code>clusterInternalUrl</code></td>
+<td>The fully qualified, private link to the WLS cluster. You are able to access your application with <code>${clusterInternalUrl}&lt;your-app-path&gt;</code> inside AKS cluster.<br />Sample value: <code>http://sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local:8001/</code>.</td>
+</tr>
+<tr>
+<td><code>clusterExternalUrl</code></td>
+<td>This output is not always present:<br />You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.<br /><br />This is a fully qualified, public link to the WLS cluster. You can access your application with <code>${clusterExternalUrl}&lt;your-app-path&gt;</code> from the public Internet.<br />Sample value: <code>http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/</code>.</td>
+</tr>
+<tr>
+<td><code>clusterExternalSecuredUrl</code></td>
+<td>This output is not always present:<br />1. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.<br />2. The TLS/SSL certificate used is configured by filling out <a href="#tlsssl-configuration">TLS/SSL configuration</a>.<br /><br />This is a fully qualified, public link to the WLS cluster. You can access your application with <code>${clusterExternalUrl}&lt;your-app-path&gt;</code> from the public Internet.<br />Sample value: <code>https://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/</code>.</td>
+</tr>
+<tr>
+<td><code>clusterT3InternalUrl</code></td>
+<td>This output is not always present:<br />1. You must <a href="https://oracle.github.io/weblogic-azure/aks/">create/update the WLS cluster with advanced configuration</a>.<br />2. You must enable custom T3 channel by setting <code>enableClusterT3Tunneling=true</code>.<br /><br />This is a fully qualified, private link to custom T3 channel of the WLS cluster.</td>
+</tr>
+<tr>
+<td><code>clusterT3ExternalEndpoint</code></td>
+<td>This output is not always present:<br />1. You must <a href="https://oracle.github.io/weblogic-azure/aks/">create/update the WLS cluster with advanced configuration</a>.<br />2. You must enable custom T3 channel by setting <code>enableClusterT3Tunneling=true</code>.<br />3. You must configure <a href="#networking">Networking</a> to enable the Azure Load Balancer service for the WLS cluster.<br /><br />This is a fully qualified, public link to custom T3 channel of the WLS cluster.<br />Sample value:<code>http://20.4.56.3:8005/</code></td>
+</tr>
+<tr>
+<td><code>shellCmdtoConnectAks</code></td>
+<td>AZ CLI command to connect to the AKS cluster.<br />Sample value: <br /><code>az account set --subscription xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx; az aks get-credentials --resource-group contoso-rg --name contosoakscluster</code></td>
+</tr>
+<tr>
+<td><code>shellCmdtoOutputWlsDomainYaml</code></td>
+<td>Shell command to display the base64 encoded string of the WLS domain resource definition.<br />Sample value: <br /><code>echo -e YXBpV...mVCg== | base64 -d &gt; domain.yaml</code></td>
+</tr>
+<tr>
+<td><code>shellCmdtoOutputWlsImageModelYaml</code></td>
+<td>Shell command to display the base64 encoded string of the WLS <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/">image model</a>.<br />Sample value:<br /><code>echo -e IyBDb...3EnC | base64 -d &gt; model.yaml</code></td>
+</tr>
+<tr>
+<td><code>shellCmdtoOutputWlsImageProperties</code></td>
+<td>Shell command to display the base64 encoded string of the model properties.<br />Sample value:<br /><code>echo -e IyBDF...PTUK | base64 -d &gt; model.properties</code></td>
+</tr>
+<tr>
+<td><code>shellCmdtoOutputWlsVersionsandPatches</code></td>
+<td>Shell command to display the base64 encoded string of the WLS version and patches.<br />Sample value:<br /><code>echo -e CldlY...gMS4= | base64 -d &gt; version.info</code></td>
+</tr>
+</tbody>
+</table>
 <h4 id="useful-resources">Useful resources</h4>
 <p>Review the following useful resources.</p>
 <h5 id="store-the-tlsssl-certificate-in-the-key-vault">Store the TLS/SSL certificate in the Key Vault</h5>
@@ -6479,19 +6564,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1659378324"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1660057474"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1659378324"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1659378324"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1660057474"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1660057474"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1659378324"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1660057474"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
