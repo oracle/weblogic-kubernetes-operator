@@ -101,7 +101,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
-@Tag("oke-sequential")
+@Tag("oke-parallel")
 @IntegrationTest
 class ItWlsSamples {
 
