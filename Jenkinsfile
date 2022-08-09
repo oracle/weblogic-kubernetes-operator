@@ -540,19 +540,19 @@ EOF
                          echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
                          echo "Selected IT Tests [${IT_TEST}]"
                         if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
-                           echo 'All tests cannot be run with integration-tests profile'
+                           echo 'ERROR: All tests cannot be run with integration-tests profile'
                            exit 1 
                         elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
-                           echo 'Individual test MUST be run with integration-tests profile'
+                           echo 'ERROR: Individual test MUST be run with integration-tests profile'
                          exit 1 
                         else 
-                           echo 'Profile/ItTests Validation Validation Passed'
+                           echo 'Profile/ItTests Validation Passed'
                            exit 0
                          fi;
                         ''' ,returnStatus:true)
                        if (res != 0) {
                           currentBuild.result = 'ABORTED'
-                          error('Profile/ItTests Validation Validation Failed')
+                          error('Profile/ItTests Validation Failed')
                        }
                      }
                      sh '''
@@ -562,8 +562,6 @@ EOF
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
-                            echo "xMaven Profile [${MAVEN_PROFILE_NAME}]"
-                            echo "xSelected IT Tests [${IT_TEST}]"
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                PARALLEL_RUN='false'
                             elif [ ! -z "${IT_TEST}" ]; then
