@@ -1,4 +1,4 @@
-oracle.kubernetes:operator-parent:3.4.1
+oracle.kubernetes:operator-parent:3.4.2
 -------- Copyrights
 Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 Copyright (c) 2017, 2021 Oracle and/or its affiliates.
