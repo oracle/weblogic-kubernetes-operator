@@ -541,6 +541,13 @@
           </properties>
         </profile>
         <profile>
+            <id>openshift</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>openshift</groups>
+          </properties>
+        </profile>        
+        <profile>
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>

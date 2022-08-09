@@ -36,6 +36,7 @@ public class OperatorParams {
   private static final String FEATURE_GATES = "featureGates";
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
+  private static final String OPENSHIFT_ISTIO_INJECTION = "annotations.sidecar\\.istio\\.io/inject";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -61,6 +62,7 @@ public class OperatorParams {
   private String featureGates;
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
+  private boolean openshiftIstioInjection;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -188,11 +190,15 @@ public class OperatorParams {
     return kubernetesPlatform;
   }
 
-
   public OperatorParams createLogStashConfigMap(boolean createLogStashConfigMap) {
     this.createLogStashConfigMap = createLogStashConfigMap;
     return this;
   }
+  
+  public OperatorParams openShiftIstioInjection(boolean openshiftIstioInjection) {
+    this.openshiftIstioInjection = openshiftIstioInjection;
+    return this;
+  }  
 
   /**
    * Loads Helm values into a value map.
@@ -248,9 +254,10 @@ public class OperatorParams {
     if (kubernetesPlatform != null) {
       values.put(KUBERNETES_PLATFORM, kubernetesPlatform);
     }
-
+    if (openshiftIstioInjection) {
+      values.put(OPENSHIFT_ISTIO_INJECTION, openshiftIstioInjection);
+    }
     values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
-
     values.values().removeIf(Objects::isNull);
     return values;
   }
