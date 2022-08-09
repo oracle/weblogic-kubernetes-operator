@@ -708,7 +708,7 @@ class ItIntrospectVersion {
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
         : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
-    getLogger().info(" !!!!DEBUG, imageUpdate is: " + imageUpdate);
+    getLogger().info(" The image name used for update is: {0}", imageUpdate);
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 

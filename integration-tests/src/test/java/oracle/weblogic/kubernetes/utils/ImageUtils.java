@@ -514,8 +514,7 @@ public class ImageUtils {
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    //TODO
-    getLogger().info("!!!!DEBUG, DOMAIN_IMAGES_REPO is: " + DOMAIN_IMAGES_REPO);
+    getLogger().info("DOMAIN_IMAGES_REPO used for dockerLoginAndPushImageToRegistry is: {0}", DOMAIN_IMAGES_REPO);
     String repoPrefix = TEST_IMAGES_REPO;
     if (DOMAIN_IMAGES_REPO.contains("weblogick8s")) {
       repoPrefix = DOMAIN_IMAGES_REPO.substring(0, DOMAIN_IMAGES_REPO.length() - 12);
