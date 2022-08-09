@@ -357,8 +357,8 @@ public interface TestConstants {
   //retry improvement
   //Defaulting to 120 seconds
   public static final Long FAILURE_RETRY_INTERVAL_SECONDS =
-      Long.valueOf(getNonEmptySystemProperty("Failure.retry.interval.seconds", "60"));
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.interval.seconds", "60"));
   //Defaulting to 1440 minutes (24 hours)
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
-      Long.valueOf(getNonEmptySystemProperty("Failure.retry.limit.minutes", "10"));
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
 }
