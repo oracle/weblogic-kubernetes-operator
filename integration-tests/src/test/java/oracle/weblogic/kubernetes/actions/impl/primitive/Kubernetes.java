@@ -91,6 +91,7 @@ import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.domain.DomainResource;
@@ -131,6 +132,7 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
+  private static GenericKubernetesApi<ClusterResource, ClusterList> clusterResClient = null;
   private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
   private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
@@ -1520,6 +1522,40 @@ public class Kubernetes {
     return null;
   }
 
+  
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterResource(String clusterName, String namespace,
+      V1Patch patch, String patchFormat) {
+
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<ClusterResource> response = clusterResClient.patch(
+        namespace, // name of namespace
+        clusterName, // name of cluster resource
+        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+        patch // patch data
+    );
+
+    if (!response.isSuccess()) {
+      getLogger().warning(
+          "Failed with response code " + response.getHttpStatusCode() + " response message "
+          + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+          + " when patching " + clusterName + " in namespace "
+          + namespace + " with " + patch + " using patch format: " + patchFormat);
+      return false;
+    }
+
+    return true;
+  }
+  
   /**
    * Patch the Deployment.
    *
