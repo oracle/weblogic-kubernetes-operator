@@ -5,7 +5,7 @@ draft: false
 weight: 4
 ---
 
-#### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md) ingress controller.
+#### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/traefik/README.md) ingress controller.
 
 First, set up Helm:
 
@@ -21,7 +21,7 @@ Create a namespace for the ingress controller.
 $ kubectl create namespace traefik
 ```
 
-Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/values.yaml) file in the sample but set `kubernetes.namespaces` specifically.
+Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/traefik/values.yaml) file in the sample but set `kubernetes.namespaces` specifically.
 
 
 ```shell

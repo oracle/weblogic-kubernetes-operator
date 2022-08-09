@@ -2,7 +2,7 @@
 title: "Handling security validations"
 date: 2020-06-30T08:55:00-05:00
 draft: false
-weight: 14
+weight: 15
 description: "Why am I seeing these security warnings?"
 ---
 
