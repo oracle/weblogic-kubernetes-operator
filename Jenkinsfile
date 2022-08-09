@@ -534,26 +534,39 @@ EOF
                         TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
-                        sh '''
+                     script {
+                      def res = 0
+                      res = sh ( script: '''
+                         echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
+                         echo "Selected IT Tests [${IT_TEST}]"
+                        if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
+                           echo 'All tests cannot be run with integration-tests profile'
+                           exit 1 
+                        elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
+                           echo 'Individual test MUST be run with integration-tests profile'
+                         exit 1 
+                        else 
+                           echo 'Profile/ItTests Validation Validation Passed'
+                           exit 0
+                         fi;
+                        ''' ,returnStatus:true)
+                       if (res != 0) {
+                          currentBuild.result = 'ABORTED'
+                       }
+                     }
+                     sh '''
                             export PATH=${runtime_path}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
-                            echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
-                            echo "Selected IT Tests [${IT_TEST}]"
-                            if [ "${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
-                                currentBuild.result='ABORTED'
-                                echo 'All tests cannot be run with integration-tests profile'
-                            elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
-                                currentBuild.result='ABORTED'
-                                echo 'Individual test MUST be run with integration-tests profile'
-                            elif [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
-                                echo 'Overriding the PARALLEL_RUN to false for kind-sequential profile'  
-                                PARALLEL_RUN='false'
+                            echo "xMaven Profile [${MAVEN_PROFILE_NAME}]"
+                            echo "xSelected IT Tests [${IT_TEST}]"
+                            if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
+                               PARALLEL_RUN='false'
                             elif [ ! -z "${IT_TEST}" ]; then
-                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                               echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
