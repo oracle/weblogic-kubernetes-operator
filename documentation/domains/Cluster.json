@@ -1124,24 +1124,24 @@
   },
   "properties": {
     "metadata": {
-      "description": "The resource metadata. Must include the `name` and `namespace`. Required.",
+      "description": "The resource metadata. Must include the `name` and `namespace.",
       "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
     },
     "apiVersion": {
-      "description": "The API version defines the versioned schema of this Domain. Required.",
+      "description": "The API version defines the versioned schema of this cluster.",
       "type": "string"
     },
     "kind": {
-      "description": "The type of the REST resource. Must be \"Domain\". Required.",
+      "description": "The type of the REST resource. Must be \"Cluster\".",
       "type": "string"
     },
     "spec": {
-      "description": "The specification of the operation of the WebLogic domain. Required.",
-      "$ref": "#/definitions/DomainSpec"
+      "description": "The specification of the operation of the WebLogic cluster. Required.",
+      "$ref": "#/definitions/ClusterSpec"
     },
     "status": {
-      "description": "The current status of the operation of the WebLogic domain. Updated automatically by the operator.",
-      "$ref": "#/definitions/DomainStatus"
+      "description": "The current status of the operation of the WebLogic cluster. Updated automatically by the operator.",
+      "$ref": "#/definitions/ClusterStatus"
     }
   }
 }
