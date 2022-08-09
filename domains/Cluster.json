@@ -1,0 +1,1147 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "definitions": {
+    "AdminServer": {
+      "type": "object",
+      "properties": {
+        "serverService": {
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "serverPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "adminChannelPortForwardingEnabled": {
+          "default": true,
+          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to true.",
+          "type": "boolean"
+        },
+        "serverStartPolicy": {
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNeeded"
+          ]
+        },
+        "adminService": {
+          "description": "Customization affecting the generation of a NodePort Service for the Administration Server used to expose specific channels or network access points outside the Kubernetes cluster. See also `domains.spec.adminServer.serverService` for configuration affecting the generation of the ClusterIP Service.",
+          "$ref": "#/definitions/AdminService"
+        },
+        "restartVersion": {
+          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
+          "type": "string"
+        }
+      }
+    },
+    "AdminService": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "description": "Specifies which of the Administration Server\u0027s WebLogic channels should be exposed outside the Kubernetes cluster via a NodePort Service, along with the port for each channel. If not specified, the Administration Server\u0027s NodePort Service will not be created.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Channel"
+          }
+        },
+        "annotations": {
+          "description": "Annotations to associate with the Administration Server\u0027s NodePort Service, if it is created.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "Labels to associate with the Administration Server\u0027s NodePort Service, if it is created.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "AuxiliaryImage": {
+      "type": "object",
+      "properties": {
+        "sourceWDTInstallHome": {
+          "description": "The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail.",
+          "type": "string"
+        },
+        "image": {
+          "description": "The auxiliary image containing Model in Image model files, application archive files, and/or WebLogic Deploying Tooling installation files. Required.",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "sourceModelHome": {
+          "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
+          "type": "string"
+        }
+      }
+    },
+    "Channel": {
+      "type": "object",
+      "properties": {
+        "channelName": {
+          "description": "Name of the channel. The \"default\" value refers to the Administration Server\u0027s default channel, which is configured using the ServerMBean\u0027s ListenPort. The \"default-secure\" value refers to the Administration Server\u0027s default secure channel, which is configured using the ServerMBean\u0027s SSLMBean\u0027s ListenPort. The \"default-admin\" value refers to the Administration Server\u0027s default administrative channel, which is configured using the DomainMBean\u0027s AdministrationPort. Otherwise, provide the name of one of the Administration Server\u0027s network access points, which is configured using the ServerMBean\u0027s NetworkAccessMBeans. The \"default\", \"default-secure\", and \"default-admin\" channels may not be specified here when using Istio.",
+          "type": "string"
+        },
+        "nodePort": {
+          "description": "Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel.",
+          "type": "integer"
+        }
+      }
+    },
+    "ClusterService": {
+      "type": "object",
+      "properties": {
+        "sessionAffinity": {
+          "default": "None",
+          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
+          "type": "string",
+          "enum": [
+            "ClientIP",
+            "None"
+          ]
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "ClusterSpec": {
+      "type": "object",
+      "properties": {
+        "serverService": {
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "maxUnavailable": {
+          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "replicas": {
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 1.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "clusterName": {
+          "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
+          "type": "string"
+        },
+        "allowReplicasBelowMinDynClusterSize": {
+          "description": "Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true.",
+          "type": "boolean"
+        },
+        "serverPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "domainUID": {
+          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
+          "type": "string"
+        },
+        "clusterService": {
+          "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
+          "$ref": "#/definitions/ClusterService"
+        },
+        "maxConcurrentShutdown": {
+          "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are `Never`, or `IfNeeded`. Defaults to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "type": "string",
+          "enum": [
+            "Never",
+            "IfNeeded"
+          ]
+        },
+        "maxConcurrentStartup": {
+          "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "restartVersion": {
+          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
+          "type": "string"
+        }
+      }
+    },
+    "ClusterStatus": {
+      "type": "object",
+      "properties": {
+        "minimumReplicas": {
+          "description": "The minimum number of cluster members.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximumReplicas": {
+          "description": "The maximum number of cluster members.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "replicas": {
+          "description": "The number of currently running cluster members.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "clusterName": {
+          "description": "WebLogic cluster name.",
+          "type": "string"
+        },
+        "readyReplicas": {
+          "description": "The number of ready cluster members.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "replicasGoal": {
+          "description": "The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "Configuration": {
+      "type": "object",
+      "properties": {
+        "overrideDistributionStrategy": {
+          "default": "Dynamic",
+          "description": "Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are `Dynamic`, which means that the operator will distribute updated configuration overrides dynamically to running servers, and `OnRestart`, which means that servers will use updated configuration overrides only after the server\u0027s next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to `Dynamic`.",
+          "type": "string",
+          "enum": [
+            "Dynamic",
+            "OnRestart"
+          ]
+        },
+        "opss": {
+          "description": "Settings for OPSS security.",
+          "$ref": "#/definitions/Opss"
+        },
+        "model": {
+          "description": "Model in image model files and properties.",
+          "$ref": "#/definitions/Model"
+        },
+        "secrets": {
+          "description": "A list of names of the Secrets for WebLogic configuration overrides or model.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overridesConfigMap": {
+          "description": "The name of the ConfigMap for WebLogic configuration overrides.",
+          "type": "string"
+        },
+        "introspectorJobActiveDeadlineSeconds": {
+          "default": 120,
+          "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
+          "type": "integer"
+        }
+      }
+    },
+    "DateTime": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "DomainCondition": {
+      "type": "object",
+      "properties": {
+        "severity": {
+          "description": "The severity of the failure. Can be Fatal, Severe or Warning.",
+          "type": "string",
+          "enum": [
+            "Fatal",
+            "Severe",
+            "Warning"
+          ]
+        },
+        "reason": {
+          "description": "Unique, one-word, CamelCase reason for the condition\u0027s last transition.",
+          "type": "string",
+          "enum": [
+            "DomainInvalid",
+            "Introspection",
+            "Kubernetes",
+            "ServerPod",
+            "ReplicasTooHigh",
+            "TopologyMismatch",
+            "Internal",
+            "Aborted"
+          ]
+        },
+        "type": {
+          "description": "The type of the condition. Valid types are Completed, Available, Failed, Rolling, and ConfigChangesPendingRestart.",
+          "type": "string",
+          "enum": [
+            "Failed",
+            "Available",
+            "Completed",
+            "ConfigChangesPendingRestart",
+            "Rolling"
+          ]
+        },
+        "lastTransitionTime": {
+          "description": "Last time the condition transitioned from one status to another.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "message": {
+          "description": "Human-readable message indicating details about last transition.",
+          "type": "string"
+        },
+        "status": {
+          "description": "The status of the condition. Can be True, False, Unknown.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ]
+    },
+    "DomainSpec": {
+      "description": "The specification of the operation of the WebLogic domain. Required.",
+      "type": "object",
+      "properties": {
+        "monitoringExporter": {
+          "description": "Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.",
+          "$ref": "#/definitions/MonitoringExporterSpecification"
+        },
+        "configuration": {
+          "description": "Models and overrides affecting the WebLogic domain configuration.",
+          "$ref": "#/definitions/Configuration"
+        },
+        "imagePullSecrets": {
+          "description": "A list of image pull Secrets for the WebLogic Server image.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+          }
+        },
+        "fluentdSpecification": {
+          "description": "Automatic fluentd sidecar injection. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. WebLogic Server instances that are already running when the `fluentdSpecification` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod  will have the fluentd sidecar or not, as appropriate",
+          "$ref": "#/definitions/FluentdSpecification"
+        },
+        "domainUID": {
+          "pattern": "^[a-z0-9-.]{1,45}$",
+          "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
+          "type": "string"
+        },
+        "serverService": {
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "domainHome": {
+          "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
+          "type": "string"
+        },
+        "logHomeLayout": {
+          "default": "ByServers",
+          "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `Flat` specifies that all files are kept directly in the `logHome` root directory. `ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`. Defaults to `ByServers`.",
+          "type": "string",
+          "enum": [
+            "Flat",
+            "ByServers"
+          ]
+        },
+        "domainHomeSourceType": {
+          "description": "Domain home file system source type: Legal values: `Image`, `PersistentVolume`, `FromModel`. `Image` indicates that the domain home file system is present in the container image specified by the `image` field. `PersistentVolume` indicates that the domain home file system is located on a persistent volume. `FromModel` indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. Defaults to `Image`, unless `configuration.model` is set, in which case the default is `FromModel`.",
+          "type": "string",
+          "enum": [
+            "Image",
+            "PersistentVolume",
+            "FromModel"
+          ]
+        },
+        "httpAccessLogInLogHome": {
+          "default": true,
+          "description": "Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.",
+          "type": "boolean"
+        },
+        "webLogicCredentialsSecret": {
+          "description": "Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+        },
+        "adminServer": {
+          "description": "Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service.",
+          "$ref": "#/definitions/AdminServer"
+        },
+        "failureRetryIntervalSeconds": {
+          "default": 120,
+          "description": "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "logHome": {
+          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.See also `domains.spec.logHomeLayout`.",
+          "type": "string"
+        },
+        "failureRetryLimitMinutes": {
+          "default": 1440,
+          "description": "The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "includeServerOutInPodLog": {
+          "default": true,
+          "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
+          "type": "boolean"
+        },
+        "clusters": {
+          "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterSpec"
+          }
+        },
+        "image": {
+          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "maxClusterConcurrentStartup": {
+          "default": 0,
+          "description": "The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "replicas": {
+          "default": 1,
+          "description": "The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 1.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxClusterConcurrentShutdown": {
+          "default": 1,
+          "description": "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster\u0027s `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "serverStartPolicy": {
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "type": "string",
+          "enum": [
+            "Never",
+            "IfNeeded",
+            "AdminOnly"
+          ]
+        },
+        "livenessProbeCustomScript": {
+          "description": "Full path of an optional liveness probe custom script for WebLogic Server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, then pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored.",
+          "type": "string"
+        },
+        "restartVersion": {
+          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
+          "type": "string"
+        },
+        "introspectVersion": {
+          "description": "Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`.",
+          "type": "string"
+        },
+        "dataHome": {
+          "description": "An optional directory in a server\u0027s container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration.",
+          "type": "string"
+        },
+        "logHomeEnabled": {
+          "description": "Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.",
+          "type": "boolean"
+        },
+        "allowReplicasBelowMinDynClusterSize": {
+          "default": true,
+          "description": "Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.",
+          "type": "boolean"
+        },
+        "serverPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "managedServers": {
+          "description": "Lifecycle options for individual Managed Servers, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic domain configuration or that matches a dynamic cluster member based on the server template.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagedServer"
+          }
+        }
+      }
+    },
+    "DomainStatus": {
+      "description": "The current status of the operation of the WebLogic domain. Updated automatically by the operator.",
+      "type": "object",
+      "properties": {
+        "reason": {
+          "description": "A brief CamelCase message indicating details about why the domain is in this state.",
+          "type": "string"
+        },
+        "servers": {
+          "description": "Status of WebLogic Servers in this domain.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerStatus"
+          }
+        },
+        "introspectJobFailureCount": {
+          "deprecated": "true",
+          "description": "Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter \u0027domainPresenceFailureRetryMaxCount\u0027 (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "replicas": {
+          "description": "The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "failedIntrospectionUid": {
+          "description": "Unique ID of the last failed introspection job.",
+          "type": "string"
+        },
+        "startTime": {
+          "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "initialFailureTime": {
+          "description": "RFC 3339 date and time at which a currently failing domain started automatic retries.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "lastFailureTime": {
+          "description": "RFC 3339 date and time at which a currently failing domain last experienced a Severe failure.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "conditions": {
+          "description": "Current service state of the domain.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DomainCondition"
+          }
+        },
+        "message": {
+          "description": "A human readable message indicating details about why the domain is in this condition.",
+          "type": "string"
+        },
+        "observedGeneration": {
+          "description": "The generation observed by the WebLogic operator.",
+          "type": "integer"
+        },
+        "clusters": {
+          "description": "Status of WebLogic clusters in this domain.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterStatus"
+          }
+        }
+      }
+    },
+    "FluentdSpecification": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
+          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "fluentdConfiguration": {
+          "description": "The fluentd configuration text, specify your own custom fluentd configuration.",
+          "type": "string"
+        },
+        "elasticSearchCredentials": {
+          "description": "Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "watchIntrospectorLogs": {
+          "description": "Fluentd will watch introspector logs",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "volumeMounts": {
+          "description": "Volume mounts for fluentd container",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+          }
+        }
+      }
+    },
+    "ManagedServer": {
+      "type": "object",
+      "properties": {
+        "serverService": {
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "serverName": {
+          "description": "The name of the Managed Server. This name must match the name of a Managed Server instance or of a dynamic cluster member name from a server template already defined in the WebLogic domain configuration. Required.",
+          "type": "string"
+        },
+        "serverPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "serverStartPolicy": {
+          "default": "IfNeeded",
+          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNeeded"
+          ]
+        },
+        "restartVersion": {
+          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
+          "type": "string"
+        }
+      }
+    },
+    "Map": {
+      "type": "object"
+    },
+    "Model": {
+      "type": "object",
+      "properties": {
+        "runtimeEncryptionSecret": {
+          "description": "Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.",
+          "type": "string"
+        },
+        "domainType": {
+          "default": "WLS",
+          "description": "WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
+          "type": "string",
+          "enum": [
+            "WLS",
+            "RestrictedJRF",
+            "JRF"
+          ]
+        },
+        "configMap": {
+          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
+          "type": "string"
+        },
+        "auxiliaryImages": {
+          "description": "Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod\u0027s base image `domain.spec.image`. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuxiliaryImage"
+          }
+        },
+        "onlineUpdate": {
+          "description": "Online update option for Model In Image dynamic update.",
+          "$ref": "#/definitions/OnlineUpdate"
+        },
+        "auxiliaryImageVolumeMountPath": {
+          "description": "The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to `/aux`, which means the emptyDir volume will be mounted at `/aux` path in the WebLogic-Server container within every pod. The defaults for `modelHome` and `wdtInstallHome` will start with the new mount path, and files from `sourceModelHome` and `sourceWDTInstallHome` will be copied to the new default locations.",
+          "type": "string"
+        },
+        "modelHome": {
+          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise.",
+          "type": "string"
+        },
+        "wdtInstallHome": {
+          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise.",
+          "type": "string"
+        },
+        "auxiliaryImageVolumeMedium": {
+          "description": "The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume\u0027s files are stored on the local node\u0027s file system for the life of the pod.",
+          "type": "string"
+        },
+        "auxiliaryImageVolumeSizeLimit": {
+          "description": "The emptyDir volume size limit. This is an advanced setting that rarely needs to be configured. Defaults to unset.",
+          "type": "string"
+        }
+      }
+    },
+    "MonitoringExporterSpecification": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "configuration": {
+          "x-kubernetes-preserve-unknown-fields": "true",
+          "description": "The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances.",
+          "$ref": "#/definitions/Map"
+        },
+        "port": {
+          "default": 8080,
+          "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs).",
+          "type": "integer"
+        }
+      }
+    },
+    "OnlineUpdate": {
+      "type": "object",
+      "properties": {
+        "onNonDynamicChanges": {
+          "default": "CommitUpdateOnly",
+          "description": "Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are \u0027CommitUpdateOnly\u0027 and \u0027CommitUpdateAndRoll\u0027. Defaults to `CommitUpdateOnly`. If set to \u0027CommitUpdateOnly\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. If set to \u0027CommitUpdateAndRoll\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. For more information, see the runtime update section of the Model in Image user guide.",
+          "type": "string",
+          "enum": [
+            "CommitUpdateAndRoll",
+            "CommitUpdateOnly"
+          ]
+        },
+        "enabled": {
+          "default": false,
+          "description": "Enable online update. Default is \u0027false\u0027.",
+          "type": "boolean"
+        },
+        "wdtTimeouts": {
+          "$ref": "#/definitions/WDTTimeouts"
+        }
+      }
+    },
+    "Opss": {
+      "type": "object",
+      "properties": {
+        "walletFileSecret": {
+          "description": "Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.",
+          "type": "string"
+        },
+        "walletPasswordSecret": {
+          "description": "Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.",
+          "type": "string"
+        }
+      }
+    },
+    "ProbeTuning": {
+      "type": "object",
+      "properties": {
+        "failureThreshold": {
+          "default": 1,
+          "description": "Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "periodSeconds": {
+          "description": "The number of seconds between checks.",
+          "type": "integer"
+        },
+        "timeoutSeconds": {
+          "description": "The number of seconds with no response that indicates a failure.",
+          "type": "integer"
+        },
+        "successThreshold": {
+          "default": 1,
+          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "initialDelaySeconds": {
+          "description": "The number of seconds before the first check is performed.",
+          "type": "integer"
+        }
+      }
+    },
+    "ServerHealth": {
+      "type": "object",
+      "properties": {
+        "overallHealth": {
+          "description": "Server health of this WebLogic Server instance. If the value is \"Not available\", the operator has failed to read the health. If the value is \"Not available (possibly overloaded)\", the operator has failed to read the health of the server possibly due to the server is in the overloaded state.",
+          "type": "string"
+        },
+        "activationTime": {
+          "description": "RFC 3339 date and time at which the server started.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "subsystems": {
+          "description": "Status of unhealthy subsystems, if any.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubsystemHealth"
+          }
+        }
+      }
+    },
+    "ServerPod": {
+      "type": "object",
+      "properties": {
+        "nodeName": {
+          "description": "NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`.",
+          "type": "string"
+        },
+        "readinessGates": {
+          "description": "If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to \"True\". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodReadinessGate"
+          }
+        },
+        "serviceAccountName": {
+          "description": "Name of the ServiceAccount to be used to run this Pod. If it is not set, default ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. See `kubectl explain pods.spec.serviceAccountName`.",
+          "type": "string"
+        },
+        "podSecurityContext": {
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
+        "priorityClassName": {
+          "description": "If specified, indicates the Pod\u0027s priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. See `kubectl explain pods.spec.priorityClassName`.",
+          "type": "string"
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "hostAliases": {
+          "description": "HostAliases is an optional list of hosts and IPs that will be injected into the pod\u0027s hosts file if specified. This is only valid for non-hostNetwork pods.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.HostAlias"
+          }
+        },
+        "nodeSelector": {
+          "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "volumeMounts": {
+          "description": "Additional volume mounts for the container running a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+          }
+        },
+        "runtimeClassName": {
+          "description": "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future. See `kubectl explain pods.spec.runtimeClassName`.",
+          "type": "string"
+        },
+        "tolerations": {
+          "description": "If specified, the Pod\u0027s tolerations. See `kubectl explain pods.spec.tolerations`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
+          }
+        },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a WebLogic Server instance.",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "containerSecurityContext": {
+          "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+        },
+        "schedulerName": {
+          "description": "If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. See `kubectl explain pods.spec.schedulerName`.",
+          "type": "string"
+        },
+        "maxReadyWaitTimeSeconds": {
+          "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds.",
+          "type": "integer"
+        },
+        "livenessProbe": {
+          "description": "Settings for the liveness probe associated with a WebLogic Server instance.",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "volumes": {
+          "description": "Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+          }
+        },
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "restartPolicy": {
+          "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "OnFailure"
+          ]
+        },
+        "maxPendingWaitTimeSeconds": {
+          "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes.",
+          "type": "integer"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "containers": {
+          "description": "Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        },
+        "initContainers": {
+          "description": "Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        },
+        "shutdown": {
+          "description": "Configures how the operator should shut down the server instance.",
+          "$ref": "#/definitions/Shutdown"
+        },
+        "affinity": {
+          "description": "The Pod\u0027s scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
+        }
+      }
+    },
+    "ServerService": {
+      "type": "object",
+      "properties": {
+        "precreateService": {
+          "description": "If true, the operator will create ClusterIP Services even for WebLogic Server instances without running Pods.",
+          "type": "boolean"
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "ServerStatus": {
+      "type": "object",
+      "properties": {
+        "nodeName": {
+          "description": "Name of Node that is hosting the Pod containing this WebLogic Server instance.",
+          "type": "string"
+        },
+        "podReady": {
+          "description": "Status of the WebLogic Server pod\u0027s Ready condition if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown.",
+          "type": "string"
+        },
+        "stateGoal": {
+          "description": "Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN.",
+          "type": "string"
+        },
+        "podPhase": {
+          "description": "Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.",
+          "type": "string",
+          "enum": [
+            "Failed",
+            "Pending",
+            "Running",
+            "Succeeded",
+            "Unknown"
+          ]
+        },
+        "clusterName": {
+          "description": "WebLogic cluster name, if the server is a member of a cluster.",
+          "type": "string"
+        },
+        "serverName": {
+          "description": "WebLogic Server instance name.",
+          "type": "string"
+        },
+        "health": {
+          "description": "Current status and health of a specific WebLogic Server instance.",
+          "$ref": "#/definitions/ServerHealth"
+        },
+        "state": {
+          "description": "Current state of this WebLogic Server instance.",
+          "type": "string"
+        }
+      }
+    },
+    "Shutdown": {
+      "type": "object",
+      "properties": {
+        "ignoreSessions": {
+          "default": false,
+          "description": "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Defaults to false.",
+          "type": "boolean"
+        },
+        "shutdownType": {
+          "default": "Graceful",
+          "description": "Specifies how the operator will shut down server instances. Legal values are `Graceful` and `Forced`. Defaults to `Graceful`.",
+          "type": "string",
+          "enum": [
+            "Graceful",
+            "Forced"
+          ]
+        },
+        "timeoutSeconds": {
+          "default": 30,
+          "description": "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds.",
+          "type": "integer"
+        },
+        "waitForAllSessions": {
+          "default": false,
+          "description": "For graceful shutdown only, set to true to wait for all HTTP sessions during in-flight work handling; false to wait for non-persisted HTTP sessions only. Defaults to false.",
+          "type": "boolean"
+        }
+      }
+    },
+    "SubsystemHealth": {
+      "type": "object",
+      "properties": {
+        "symptoms": {
+          "description": "Symptoms provided by the reporting subsystem.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "health": {
+          "description": "Server health of this WebLogic Server instance.",
+          "type": "string"
+        },
+        "subsystemName": {
+          "description": "Name of subsystem providing symptom information.",
+          "type": "string"
+        }
+      }
+    },
+    "WDTTimeouts": {
+      "type": "object",
+      "properties": {
+        "setServerGroupsTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. Default: 180000.",
+          "type": "integer"
+        },
+        "connectTimeoutMillis": {
+          "default": 120000,
+          "description": "WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.",
+          "type": "integer"
+        },
+        "undeployTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT application or library undeployment timeout in milliseconds. Default: 180000.",
+          "type": "integer"
+        },
+        "deployTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT application or library deployment timeout in milliseconds. Default: 180000.",
+          "type": "integer"
+        },
+        "startApplicationTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT application start timeout in milliseconds. Default: 180000.",
+          "type": "integer"
+        },
+        "activateTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.",
+          "type": "integer"
+        },
+        "stopApplicationTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT application stop timeout in milliseconds. Default: 180000.",
+          "type": "integer"
+        },
+        "redeployTimeoutMillis": {
+          "default": 180000,
+          "description": "WDT application or library redeployment timeout in milliseconds. Default: 180000.",
+          "type": "integer"
+        }
+      }
+    }
+  },
+  "properties": {
+    "metadata": {
+      "description": "The resource metadata. Must include the `name` and `namespace.",
+      "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+    },
+    "apiVersion": {
+      "description": "The API version defines the versioned schema of this cluster.",
+      "type": "string"
+    },
+    "kind": {
+      "description": "The type of the REST resource. Must be \"Cluster\".",
+      "type": "string"
+    },
+    "spec": {
+      "description": "The specification of the operation of the WebLogic cluster. Required.",
+      "$ref": "#/definitions/ClusterSpec"
+    },
+    "status": {
+      "description": "The current status of the operation of the WebLogic cluster. Updated automatically by the operator.",
+      "$ref": "#/definitions/ClusterStatus"
+    }
+  }
+}
