@@ -14,16 +14,6 @@ spec:
         app: %DOMAIN_UID%-create-fmw-infra-sample-domain-job
     spec:
       restartPolicy: Never
-      initContainers:
-         - name: fix-pvc-owner
-           image: %WEBLOGIC_IMAGE%
-           command: [ "sh", "-c", "chown -R 1000:0 %DOMAIN_ROOT_DIR%" ]
-           volumeMounts:
-             - name: fmw-infra-sample-domain-storage-volume
-               mountPath: %DOMAIN_ROOT_DIR%
-           securityContext:
-             runAsUser: 0
-             runAsGroup: 0
       containers:
         - name: create-fmw-infra-sample-domain-job
           image: %WEBLOGIC_IMAGE%

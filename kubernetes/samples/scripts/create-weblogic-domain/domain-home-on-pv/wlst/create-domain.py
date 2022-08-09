@@ -28,7 +28,6 @@ domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
 
-
 # Read the domain secrets from the common python file
 execfile('%s/read-domain-secret.py' % script_dir)
 
