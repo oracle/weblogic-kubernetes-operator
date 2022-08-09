@@ -72,6 +72,7 @@
 # Initialize globals
 
 export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
+export WLSDEPLOY_PROPERTIES=-Dwlsdeploy.debugToStdout=true
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
