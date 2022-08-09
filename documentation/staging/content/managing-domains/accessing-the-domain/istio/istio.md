@@ -41,6 +41,10 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
+WebLogic Kubernetes Operator assume you are familiar with Istio. If you are new to
+Istio or OpenShift Service Mesh, we strongly recommend reading the documentations and work through the `Bookinfo`
+sample application to familiar with the mesh and verify it is working properly in your environment before proceeding working with the Operator.
+
 To learn more about Istio,
 see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
 
@@ -51,6 +55,8 @@ The current support for Istio has these limitations:
 * The operator supports Istio versions 1.10 and later,
   and has been tested with single and multicluster
   Istio installations from 1.10 up to 1.13.2.
+
+* For Redhat OpenShift Service Mesh, continue to use Operator version 3.4 until OpenShift Service Mesh upgraded its own implementation to base on Istio version 1.10 and later.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
