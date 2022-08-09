@@ -56,6 +56,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EV
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
+import static oracle.kubernetes.operator.DomainProcessorImpl.getClusterEventK8SObjects;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_CHANGED_EVENT;
@@ -1158,7 +1159,7 @@ public class EventHelper {
     }
 
     private Step createEventAPICall(CoreV1Event event) {
-      CoreV1Event existingEvent = getExistingEvent(event);
+      CoreV1Event existingEvent = getExistingClusterEvent(event);
       return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
     }
 
@@ -1184,8 +1185,8 @@ public class EventHelper {
               new ReplaceClusterResourceEventResponseStep(this, existingEvent, getNext()));
     }
 
-    private CoreV1Event getExistingEvent(CoreV1Event event) {
-      return Optional.ofNullable(getEventK8SObjects(event))
+    private CoreV1Event getExistingClusterEvent(CoreV1Event event) {
+      return Optional.ofNullable(getClusterEventK8SObjects(event))
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
