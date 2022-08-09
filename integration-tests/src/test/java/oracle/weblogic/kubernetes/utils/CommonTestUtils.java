@@ -972,11 +972,12 @@ public class CommonTestUtils {
    * the given port is already in use by an another process.
    *
    * @param port port to check
+   * @param host host to check
    * @throws java.io.IOException when the port is not used by any socket
    */
   private static void isLocalPortFree(int port, String host) throws IOException {
-    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
-      getLogger().info("Port {0} is already in use", port);
+    try (Socket socket = new Socket(host, port)) {
+      getLogger().info("Port {0} is already in use for host {1}", port, host);
     }
   }
 

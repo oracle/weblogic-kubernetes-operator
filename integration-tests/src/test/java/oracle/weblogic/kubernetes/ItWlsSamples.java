@@ -475,15 +475,6 @@ class ItWlsSamples {
       logger.info("Copying {0} to {1}", samplePath, testSamplePath);
       copyDirectory(samplePath.toFile(), testSamplePath.toFile());
     });
-    /*
-    String command = "chmod -R 755 " + testSamplePath;
-    logger.info("The command to be executed: " + command);
-    assertTrue(Command
-            .withParams(new CommandParams()
-                    .command(command))
-            .execute(), "Failed to chmod testSamplePath");
-
-     */
   }
 
   private void copyModelFileForUpdateDomain(Path sampleBase) {
@@ -556,11 +547,6 @@ class ItWlsSamples {
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
-      /*
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-              "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
-
-       */
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
               "domainUID:", "domainUID: " + domainName);
       replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
