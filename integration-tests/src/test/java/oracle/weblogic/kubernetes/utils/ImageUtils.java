@@ -526,7 +526,7 @@ public class ImageUtils {
             logger,
             "docker login to repo {0} succeeds",
                 TEST_IMAGES_REPO);
-      logger.info("docker push image {0} to {1}", dockerImage, TEST_IMAGES_REPO);
+      logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
       testUntil(() -> dockerPush(dockerImage),
            logger,
            "docker push succeeds for image {0} to repo {1}",
