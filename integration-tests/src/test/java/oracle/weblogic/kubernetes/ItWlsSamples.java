@@ -468,6 +468,7 @@ class ItWlsSamples {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/wls-sample-testing"
       logger.info("Deleting and recreating {0}", testSamplePath);
+      createDirectories(testSamplePath);
       deleteDirectory(testSamplePath.toFile());
       createDirectories(testSamplePath);
 
