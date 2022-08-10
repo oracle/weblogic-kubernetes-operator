@@ -43,7 +43,7 @@ other components and services that have tracing enabled.
 
 WebLogic Kubernetes Operator assumes that you are familiar with Istio. If you are new to
 Istio, we strongly recommend reading the documentation and working through the `Bookinfo`
-sample application to familiarize yourself with the mesh and verify that it is working properly in your environment, before proceeding to work with the Operator.
+sample application to familiarize yourself with the mesh and verify that it is working properly in your environment, before proceeding to work with the operator.
 
 To learn more about Istio,
 see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
@@ -56,7 +56,7 @@ The current support for Istio has these limitations:
   and has been tested with single and multicluster
   Istio installations from 1.10 up to 1.13.2.
 
-* For Red Hat OpenShift Service Mesh, continue to use Operator version 3.4.  This version of Operator is incompatible with OpenShift Service Mesh base Istio version implementation which is 1.9.
+* For Red Hat OpenShift Service Mesh, continue to use operator version 3.4.  This version of the operator is incompatible with OpenShift Service Mesh, base Istio version implementation which is 1.9.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
