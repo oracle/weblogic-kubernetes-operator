@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -80,18 +79,6 @@ public class ClusterCondition implements Comparable<ClusterCondition>, Patchable
   }
 
   /**
-   * Human-readable message indicating details about last transition.
-   *
-   * @param message message
-   * @return this
-   */
-  public ClusterCondition withMessage(@Nonnull String message) {
-    lastTransitionTime = SystemClock.now();
-    this.message = message;
-    return this;
-  }
-
-  /**
    * The status of the condition. Can be True, False. Required.
    *
    * @return status
@@ -107,7 +94,7 @@ public class ClusterCondition implements Comparable<ClusterCondition>, Patchable
    * @return this object
    */
   public ClusterCondition withStatus(String status) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.status = status;
     return this;
   }
@@ -118,7 +105,7 @@ public class ClusterCondition implements Comparable<ClusterCondition>, Patchable
    * @return this object
    */
   public ClusterCondition withStatus(boolean status) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.status = status ? TRUE : FALSE;
     return this;
   }

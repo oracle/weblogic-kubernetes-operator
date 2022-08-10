@@ -3,6 +3,14 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.utils.SystemClockTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -16,6 +24,17 @@ class ClusterStatusTest {
   static final ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
   static final ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster10");
   static final ClusterStatus nullCluster = new ClusterStatus();
+  private final List<Memento> mementos = new ArrayList<>();
+
+  @BeforeEach
+  void setUp() throws Exception {
+    mementos.add(SystemClockTestSupport.installClock());
+  }
+
+  @AfterEach
+  void tearDown() {
+    mementos.forEach(Memento::revert);
+  }
 
   @Test
   void verify_Equal_compareTo() {
@@ -61,6 +80,8 @@ class ClusterStatusTest {
   void verifyAdd_duplicateCondition_hasOneEntry() {
     ClusterCondition condition = new ClusterCondition(ClusterConditionType.AVAILABLE)
         .withStatus(ClusterCondition.FALSE);
+    final OffsetDateTime initialTime = condition.getLastTransitionTime();
+    SystemClockTestSupport.increment();
     ClusterCondition newCondition = new ClusterCondition(ClusterConditionType.AVAILABLE)
         .withStatus(ClusterCondition.FALSE);
     cluster1.addCondition(condition);
@@ -68,6 +89,7 @@ class ClusterStatusTest {
 
     assertThat(cluster1.getConditions().size(), equalTo(1));
     assertThat(cluster1.getConditions().get(0), equalTo(condition));
+    assertThat(cluster1.getConditions().get(0).getLastTransitionTime(), equalTo(initialTime));
   }
 
   @Test
@@ -89,11 +111,13 @@ class ClusterStatusTest {
         .withStatus(ClusterCondition.TRUE);
     ClusterCondition completedCondition = new ClusterCondition(ClusterConditionType.COMPLETED)
         .withStatus(ClusterCondition.FALSE);
+    List<ClusterCondition> list = new ArrayList<>();
+    list.add(availableCondition);
+    list.add(completedCondition);
     cluster1.addCondition(completedCondition);
     cluster1.addCondition(availableCondition);
 
     assertThat(cluster1.getConditions().size(), equalTo(2));
-    assertThat(cluster1.getConditions().get(0), equalTo(availableCondition));
-    assertThat(cluster1.getConditions().get(1), equalTo(completedCondition));
+    assertThat(cluster1.getConditions(), equalTo(list));
   }
 }
