@@ -272,6 +272,7 @@ public class CommonMiiTestUtils {
             .domainUid(domainResourceName)
             .domainHomeSourceType("FromModel")
             .image(imageName)
+            .replicas(replicaCount)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))

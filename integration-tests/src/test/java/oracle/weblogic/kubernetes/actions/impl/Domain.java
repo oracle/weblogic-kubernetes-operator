@@ -378,12 +378,10 @@ public class Domain {
       }
     }
 
-    // TODO: Below needs to be modifed for v9
     // construct the patch string for scaling the cluster in the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
-        .append("\"path\": \"/spec/clusters/")
-        .append(index)
+        .append("\"path\": \"/spec")
         .append("/replicas\", ")
         .append("\"value\": ")
         .append(numOfServers)
