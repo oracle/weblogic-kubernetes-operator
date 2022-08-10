@@ -1043,11 +1043,10 @@ class ItIntrospectVersion {
         pvName, pvcName, introDomainNamespace);
     
     // create cluster object
-    String clusterName = "cluster-1";
     ClusterResource cluster = createClusterResource(
-        clusterName, introDomainNamespace, cluster1ReplicaCount);
+        cluster1Name, introDomainNamespace, cluster1ReplicaCount);
 
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, introDomainNamespace);
+    logger.info("Creating cluster {0} in namespace {1}",cluster1Name, introDomainNamespace);
     createClusterAndVerify(cluster);    
 
 
@@ -1109,7 +1108,7 @@ class ItIntrospectVersion {
     }
     domain.spec().setImagePullSecrets(secrets);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Name));
 
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
