@@ -71,6 +71,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     this.minimumReplicas = other.minimumReplicas;
     this.replicasGoal = other.replicasGoal;
     this.observedGeneration = other.observedGeneration;
+    this.conditions = new ArrayList<>(other.conditions);
   }
 
   /**
@@ -192,7 +193,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(minimumReplicas)
         .append(replicasGoal)
         .append(observedGeneration)
-        .append(ClusterResource.sortList(conditions))
+        .append(DomainResource.sortList(conditions))
         .toHashCode();
   }
 
@@ -213,7 +214,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(minimumReplicas, rhs.minimumReplicas)
         .append(replicasGoal, rhs.replicasGoal)
         .append(observedGeneration, rhs.observedGeneration)
-        .append(ClusterResource.sortList(conditions), ClusterResource.sortList(rhs.conditions))
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .isEquals();
   }
 

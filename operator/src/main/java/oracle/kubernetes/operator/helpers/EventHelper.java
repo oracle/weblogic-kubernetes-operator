@@ -1202,13 +1202,14 @@ public class EventHelper {
     }
 
     private class ReplaceClusterResourceEventResponseStep extends ResponseStep<CoreV1Event> {
-      Step replaceEventStep;
-      CoreV1Event existingEvent;
+      Step replaceClusterEventStep;
+      CoreV1Event existingClusterEvent;
 
-      ReplaceClusterResourceEventResponseStep(Step replaceEventStep, CoreV1Event existingEvent, Step next) {
+      ReplaceClusterResourceEventResponseStep(Step replaceClusterEventStep, CoreV1Event existingClusterEvent,
+          Step next) {
         super(next);
-        this.existingEvent = existingEvent;
-        this.replaceEventStep = replaceEventStep;
+        this.existingClusterEvent = existingClusterEvent;
+        this.replaceClusterEventStep = replaceClusterEventStep;
       }
 
       @Override
@@ -1218,29 +1219,29 @@ public class EventHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        restoreExistingEvent();
+        restoreExistingClusterEvent();
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
             || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(eventData)), getNext()), packet);
         } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
         } else {
-          return onFailure(createRetry(existingEvent), packet, callResponse);
+          return onFailure(createClusterEventRetryStep(existingClusterEvent), packet, callResponse);
         }
       }
 
-      private void restoreExistingEvent() {
-        if (existingEvent == null || existingEvent.getCount() == null) {
+      private void restoreExistingClusterEvent() {
+        if (existingClusterEvent == null || existingClusterEvent.getCount() == null) {
           return;
         }
-        existingEvent.count(existingEvent.getCount() - 1);
+        existingClusterEvent.count(existingClusterEvent.getCount() - 1);
       }
 
-      Step createRetry(CoreV1Event event) {
-        return Step.chain(createEventRefreshStep(event), replaceEventStep);
+      Step createClusterEventRetryStep(CoreV1Event event) {
+        return Step.chain(createClusterEventRefreshStep(event), replaceClusterEventStep);
       }
 
-      private Step createEventRefreshStep(CoreV1Event event) {
+      private Step createClusterEventRefreshStep(CoreV1Event event) {
         return new CallBuilder().readEventAsync(
             event.getMetadata().getName(),
             event.getMetadata().getNamespace(),

@@ -28,18 +28,18 @@ public class ClusterCondition implements Comparable<ClusterCondition>, Patchable
   private final ClusterConditionType type;
 
   @Description("Last time the condition transitioned from one status to another.")
-  @SerializedName("lastTransitionTime")
   @Expose
+  @SerializedName("lastTransitionTime")
   private OffsetDateTime lastTransitionTime;
 
   @Description("Human-readable message indicating details about last transition.")
-  @SerializedName("message")
   @Expose
+  @SerializedName("message")
   private String message;
 
   @Description("The status of the condition. Can be True, False.")
-  @SerializedName("status")
   @Expose
+  @SerializedName("status")
   @NotNull
   private String status = "True";
 

@@ -113,7 +113,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return configuration;
   }
 
-  @NotNull
   public String getClusterName() {
     return clusterName;
   }
