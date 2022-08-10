@@ -9,7 +9,7 @@
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:8-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk18.0.1.1/65ae32619e2f40f3a9af3af1851d6e19/2/GPL/openjdk-18.0.1.1_linux-x64_bin.tar.gz"
+ENV JAVA_URL="https://download.java.net/java/GA/jdk18.0.2/f6ad4b4450fd4d298113270ec84f30ee/9/GPL/openjdk-18.0.2_linux-x64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
