@@ -6,7 +6,7 @@
 # integration test suite against that cluster.
 #
 # To install Kind:
-#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-$(uname)-amd64
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-$(uname)-amd64
 #    chmod +x ./kind
 #    mv ./kind /some-dir-in-your-PATH/kind
 #
@@ -133,6 +133,12 @@ case "${kind_version}" in
     ;;
   "kind v0.12."*)
     kind_series="0.12.0"
+    ;;
+  "kind v0.13."*)
+    kind_series="0.13.0"
+    ;;
+  "kind v0.14."*)
+    kind_series="0.14.0"
     ;;
 esac
 
@@ -291,8 +297,8 @@ else
     echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl integration-tests -P ${maven_profile_name} verify"
     time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
-    echo "Running mvn -Dit.test=!ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItMultiDomainModels -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="!ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItResilience, !ItMultiDomainModels" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+    echo "Running mvn -Dit.test=!ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItMultiDomainModels, !ItOpenshiftIstioMiiDomain -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="!ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItResilience, !ItMultiDomainModels, !ItOpenshiftIstioMiiDomain" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   fi
 fi
 

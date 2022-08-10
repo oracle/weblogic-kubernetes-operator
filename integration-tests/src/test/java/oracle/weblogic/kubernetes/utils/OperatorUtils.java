@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -180,6 +180,7 @@ public class OperatorUtils {
             loggingLevel,
             -1,
             -1,
+            false,
             domainNamespace);
   }
 
@@ -333,6 +334,7 @@ public class OperatorUtils {
             "INFO",
             domainPresenceFailureRetryMaxCount,
             domainPresenceFailureRetrySeconds,
+            false,
             domainNamespace);
   }
 
@@ -352,6 +354,7 @@ public class OperatorUtils {
    * @param loggingLevel logging level of operator
    * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
    * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param openshiftIstioInjection openshift istio enabled
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -367,6 +370,7 @@ public class OperatorUtils {
                                                         String loggingLevel,
                                                         int domainPresenceFailureRetryMaxCount,
                                                         int domainPresenceFailureRetrySeconds,
+                                                        boolean openshiftIstioInjection,
                                                         String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
@@ -458,7 +462,11 @@ public class OperatorUtils {
     if (OKD) {
       opParams.kubernetesPlatform("OpenShift");
     }
-
+    
+    if (openshiftIstioInjection) {
+      opParams.openShiftIstioInjection(openshiftIstioInjection);
+    }
+    
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),

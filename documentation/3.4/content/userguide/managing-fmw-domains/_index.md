@@ -409,7 +409,7 @@ You also need to create a Kubernetes Secret containing the credentials for the d
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.
 
-We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-rcu-credentials/README.md)
+We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md)
 that demonstrates how to create the secret.  The schema owner user name required will be the
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.
