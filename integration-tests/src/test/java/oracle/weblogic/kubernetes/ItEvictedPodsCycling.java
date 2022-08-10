@@ -163,6 +163,7 @@ class ItEvictedPodsCycling {
                 .requests(new HashMap<>())
                 .limits(new HashMap<>()));
 
+    domain.spec().replicas(replicaCount);
     createDomainAndVerify(domain, domainNamespace);
 
     checkServerPodsAndServiceReady();
