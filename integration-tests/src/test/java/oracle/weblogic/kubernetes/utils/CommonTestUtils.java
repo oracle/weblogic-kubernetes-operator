@@ -1295,7 +1295,7 @@ public class CommonTestUtils {
     String createContainerCmd = new StringBuffer("docker run -d -p 7001:7001 --name=")
         .append(containerName)
         .append(" --network=host ")
-        .append(" --add-host=host.docker.internal:host-gateway ")
+        //.append(" --add-host=host.docker.internal:host-gateway ")
         .append(imageName)
         .append(" /u01/oracle/user_projects/domains/")
         .append(domainUid)
@@ -1304,19 +1304,23 @@ public class CommonTestUtils {
 
     try {
       result = exec(createContainerCmd, true);
+      logger.info("Result for WLS docker container creation is {0}", result);
     } catch (Exception ex) {
       logger.info("createContainerCmd: caught unexpected exception {0}", ex);
     }
-
-    // check if the docker container started
-    logger.info("Wait for docker container {0} starting", containerName);
-    testUntil(
-        withStandardRetryPolicy,
-        isDockerContainerReady(containerName),
-        logger,
-        "{0} is started",
-        containerName);
-
+    assertNotNull(result, "command returns null");
+    if (result.exitValue() == 0) {
+      // check if the docker container started
+      logger.info("Wait for docker container {0} starting", containerName);
+      testUntil(
+          withStandardRetryPolicy,
+          isDockerContainerReady(containerName),
+          logger,
+          "{0} is started",
+          containerName);
+    } else {
+      logger.info("Failed to exec the command {0}. Error is {1} ", createContainerCmd, result.stderr());
+    }
     return result;
   }
 

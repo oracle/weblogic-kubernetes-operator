@@ -154,9 +154,8 @@ class ItEvictedPodsCycling {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        clusterName);
+        encryptionSecretName
+    );
 
     domain.spec()
         .serverPod()
@@ -164,6 +163,7 @@ class ItEvictedPodsCycling {
                 .requests(new HashMap<>())
                 .limits(new HashMap<>()));
 
+    domain.spec().replicas(replicaCount);
     createDomainAndVerify(domain, domainNamespace);
 
     checkServerPodsAndServiceReady();

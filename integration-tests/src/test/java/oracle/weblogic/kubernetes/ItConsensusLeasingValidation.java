@@ -123,9 +123,8 @@ class ItConsensusLeasingValidation {
         consensusLeasingImageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        "cluster-1");
+        encryptionSecretName
+    );
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -158,9 +157,8 @@ class ItConsensusLeasingValidation {
         databaseLeasingImageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        "cluster-1");
+        encryptionSecretName
+    );
 
     createDomainAndVerify(domain, domainNamespace);
 
