@@ -1132,6 +1132,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid = "domain7";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
+    int replicaCount = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
