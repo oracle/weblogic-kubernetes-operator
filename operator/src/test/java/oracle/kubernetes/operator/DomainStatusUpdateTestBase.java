@@ -21,6 +21,9 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -28,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -104,8 +108,6 @@ abstract class DomainStatusUpdateTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private List<String> liveServers;
 
   @BeforeEach
@@ -126,7 +128,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private V1ObjectMeta createPodMetadata(String serverName) {
-    return new V1ObjectMeta().namespace(NS).name(serverName);
+    return new V1ObjectMeta().namespace(NS).name(serverName).creationTimestamp(SystemClock.now());
   }
 
   @AfterEach
@@ -171,7 +173,7 @@ abstract class DomainStatusUpdateTestBase {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withNodeName("node1")
                 .withServerName("server1")
                 .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
@@ -182,7 +184,7 @@ abstract class DomainStatusUpdateTestBase {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -223,12 +225,12 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(),
           hasStatusForServer("server3")
                 .withState(RUNNING_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withClusterName("clusterC"));
     assertThat(getRecordedDomain(),
           hasStatusForServer("server4")
                 .withState(SHUTDOWN_STATE)
-                .withDesiredState(SHUTDOWN_STATE)
+                .withStateGoal(SHUTDOWN_STATE)
                 .withClusterName("clusterC"));
   }
 
@@ -296,7 +298,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-          hasStatusForServer("server1").withState(SHUTDOWN_STATE).withDesiredState(SHUTDOWN_STATE));
+          hasStatusForServer("server1").withState(SHUTDOWN_STATE).withStateGoal(SHUTDOWN_STATE));
   }
 
   @Test
@@ -308,7 +310,7 @@ abstract class DomainStatusUpdateTestBase {
                 Collections.singletonList(
                     new ServerStatus()
                         .withState(SHUTDOWN_STATE)
-                        .withDesiredState(SHUTDOWN_STATE)
+                        .withStateGoal(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
               .addCondition(new DomainCondition(AVAILABLE).withStatus(false))
@@ -834,6 +836,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
     unreadyPod("server2");
 
+    SystemClockTestSupport.increment();
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(FAILED).withStatus(TRUE));
@@ -856,6 +859,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
     markPodRunningPhaseFalse("server2");
 
+    SystemClockTestSupport.increment();
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(FAILED).withStatus(TRUE));
@@ -938,6 +942,48 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(),
         hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
   }
+
+  @Test
+  void whenPodPendingForTooLong_reportServerPodFailure() {
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+
+    SystemClockTestSupport.increment(21);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(SERVER_POD).withMessageContaining("did not start"));
+  }
+
+  @Test
+  void whenPodPendingWithinTimeLimit_doNotReportServerPodFailure() {
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+
+    SystemClockTestSupport.increment(19);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
+  }
+
+  @Test
+  void whenPodPendingWithinTimeLimit_removePreviousServerPodFailures() {
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(SERVER_POD).withMessage("unit test"));
+    domain.getSpec().setMaxPendingWaitTimeSeconds(20);
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+
+    SystemClockTestSupport.increment(19);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
+  }
+
+  // todo remove server pod failures when OK
 
   @Test
   void whenNoDynamicClusters_doNotAddReplicasTooHighFailure() {
@@ -1547,6 +1593,7 @@ abstract class DomainStatusUpdateTestBase {
     private final List<String> terminatingServers = new ArrayList<>();
     private final List<String> nonStartedServers = new ArrayList<>();
     private final Map<String,String[]> serverStates = new HashMap<>();
+    private final Map<String, V1ContainerStateWaiting> waitingStates = new HashMap<>();
 
     private ScenarioBuilder() {
       configSupport = new WlsDomainConfigSupport("testDomain");
@@ -1598,6 +1645,12 @@ abstract class DomainStatusUpdateTestBase {
 
     ScenarioBuilder withServersReachingState(String state, String... servers) {
       serverStates.put(state, servers);
+      return this;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    ScenarioBuilder withServerState(String serverName, V1ContainerStateWaiting waitingState) {
+      waitingStates.put(serverName, waitingState);
       return this;
     }
 
@@ -1668,9 +1721,23 @@ abstract class DomainStatusUpdateTestBase {
       final V1Pod pod = getPod(serverName);
 
       Objects.requireNonNull(pod.getSpec()).setNodeName(toNodeName(serverName));
-      pod.setStatus(new V1PodStatus()
-            .phase(V1PodStatus.PhaseEnum.RUNNING)
-            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+      if (waitingStates.containsKey(serverName)) {
+        pod.setStatus(new V1PodStatus()
+            .startTime(SystemClock.now())
+            .phase(V1PodStatus.PhaseEnum.PENDING)
+            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False"))
+            .addContainerStatusesItem(createContainerStatusItem(serverName))
+        );  
+      } else {
+        pod.setStatus(new V1PodStatus()
+              .startTime(SystemClock.now())
+              .phase(V1PodStatus.PhaseEnum.RUNNING)
+              .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+      }
+    }
+
+    private V1ContainerStatus createContainerStatusItem(String serverName) {
+      return new V1ContainerStatus().state(new V1ContainerState().waiting(waitingStates.get(serverName)));
     }
 
     private void markServerTerminating(String serverName) {
@@ -1701,8 +1768,8 @@ abstract class DomainStatusUpdateTestBase {
       return this;
     }
 
-    ServerStatusMatcher withDesiredState(String expectedValue) {
-      matcher.addField("desired state", ServerStatus::getDesiredState, expectedValue);
+    ServerStatusMatcher withStateGoal(String expectedValue) {
+      matcher.addField("desired state", ServerStatus::getStateGoal, expectedValue);
       return this;
     }
 

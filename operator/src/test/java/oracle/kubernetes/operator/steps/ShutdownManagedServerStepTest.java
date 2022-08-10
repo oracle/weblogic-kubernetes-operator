@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.steps;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -43,11 +44,15 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
@@ -60,12 +65,16 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 class ShutdownManagedServerStepTest {
   // The log messages to be checked during this test
@@ -316,8 +325,9 @@ class ShutdownManagedServerStepTest {
         equalTo(Shutdown.DEFAULT_TIMEOUT + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME));
   }
 
-  @Test
-  void whenShutdownResponseThrowsException_logRetry() {
+  @ParameterizedTest
+  @ValueSource(strings = {RUNNING_STATE, ADMIN_STATE, SHUTDOWN_STATE})
+  void whenShutdownResponseThrowsExceptionAndServerIsRunning_logRetry(String state) {
     ShutdownManagedServerResponseStep responseStep =
         new ShutdownManagedServerResponseStep(MANAGED_SERVER1, terminalStep);
     Packet p = testSupport.getPacket();
@@ -329,16 +339,40 @@ class ShutdownManagedServerStepTest {
         standaloneServerService, standaloneManagedServer1);
     HttpAsyncRequestStep httpAsyncRequestStep = processing.createRequestStep(responseStep);
     responseStep.setHttpAsyncRequestStep(httpAsyncRequestStep);
+    setServerState(state);
 
-    // Assert that we will retry due to exception
     responseStep.onFailure(p, null);
-    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
-    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_RETRY));
+    if (!SHUTDOWN_STATE.equals(state)) {
+      // Assert that we will retry due to exception and server not shutdown
+      assertRetry(p);
+    } else {
+      // Assert that we will not retry as server is shutdown
+      assertNoRetry(p);
+    }
 
     // Assert we only retry once
     responseStep.onFailure(p, null);
     assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), is(nullValue()));
-    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_THROWABLE));
+    if (!SHUTDOWN_STATE.equals(state)) {
+      // Log throwable message only if the server is not shutdown.
+      assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_THROWABLE));
+    }
+  }
+
+  private void assertRetry(Packet p) {
+    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_RETRY));
+  }
+
+  private void assertNoRetry(Packet p) {
+    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(null));
+    assertThat(logRecords, not(containsInfo(SERVER_SHUTDOWN_REST_RETRY)));
+  }
+
+  private void setServerState(String state) {
+    DomainStatus domainStatus = info.getDomain().getStatus();
+    domainStatus.withServers(Collections.singletonList(new ServerStatus()
+        .withServerName(MANAGED_SERVER1).withState(state)));
   }
 
   private void setForcedShutdownType(String serverName) {

@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +17,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -45,7 +46,6 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
-import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -56,6 +56,7 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -63,7 +64,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.operator.DomainPresence.getDomainPresenceFailureRetrySeconds;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -83,18 +83,24 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static final String DELETED = "DELETED";
   private static final String ERROR = "ERROR";
 
+  @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
+  private static String debugPrefix = null;  // Debugging: set this to a non-null value to dump the make-right steps
+
   /** A map that holds at most one FiberGate per namespace to run make-right steps. */
-  private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
 
   /** A map that holds at most one FiberGate per namespace to run status update steps. */
-  private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
 
   // Map namespace to map of domainUID to Domain; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
 
   // map namespace to map of uid to processing.
-  private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
 
@@ -305,18 +311,36 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public void runMakeRight(MakeRightDomainOperation operation, Predicate<DomainPresenceInfo> shouldProceed) {
-    final DomainPresenceInfo presenceInfo = operation.getPresenceInfo();
-    if (delegate.isNamespaceRunning(presenceInfo.getNamespace())) {
-      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(presenceInfo)) {
-        if (shouldProceed.test(getExistingDomainPresenceInfo(presenceInfo))) {
-          logStartingDomain(presenceInfo);
+  public void runMakeRight(MakeRightDomainOperation operation) {
+    final DomainPresenceInfo liveInfo = operation.getPresenceInfo();
+    if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
+      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
+        if (shouldContinue(operation, liveInfo)) {
+          logStartingDomain(liveInfo);
           new DomainPlan(operation, delegate).execute();
         } else {
-          logNotStartingDomain(presenceInfo);
+          logNotStartingDomain(liveInfo);
         }
       }
     }
+  }
+
+  private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
+    final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
+    if (isNewDomain(cachedInfo)) {
+      return true;
+    } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo) || liveInfo.isDomainProcessingHalted(cachedInfo)) {
+      return false;
+    } else if (operation.isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo)) {
+      return true;
+    } else {
+      cachedInfo.setDomain(liveInfo.getDomain());
+      return false;
+    }
+  }
+
+  private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
+    return Optional.ofNullable(cachedInfo).map(DomainPresenceInfo::getDomain).orElse(null) == null;
   }
 
   private void logStartingDomain(DomainPresenceInfo presenceInfo) {
@@ -723,7 +747,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(EventItem.DOMAIN_CREATED, null)
+        .withEventData(new EventData(EventItem.DOMAIN_CREATED))
         .execute();
   }
 
@@ -731,14 +755,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
-        .withEventData(EventItem.DOMAIN_CHANGED, null)
+        .withEventData(new EventData(EventItem.DOMAIN_CHANGED))
         .execute();
   }
 
   private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
-        .withEventData(EventItem.DOMAIN_DELETED, null)
+        .withEventData(new EventData(EventItem.DOMAIN_DELETED))
         .execute();
   }
 
@@ -755,8 +779,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
-    final MakeRightDomainOperationImpl operation = new MakeRightDomainOperationImpl(this, delegate, liveInfo);
+  public MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo) {
+    final MakeRightDomainOperation operation = delegate.createMakeRightOperation(this, liveInfo);
 
     if (isFirstDomainNewer(liveInfo, getExistingDomainPresenceInfo(liveInfo))) {
       operation.interrupt();
@@ -809,17 +833,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  abstract static class ThrowableCallback implements CompletionCallback {
-    @Override
-    public final void onCompletion(Packet packet) {
-      // no-op
-    }
-  }
-
   private static class DomainPlan {
 
     private final MakeRightDomainOperation operation;
-    private final DomainProcessorDelegate delegate;
     private final DomainPresenceInfo presenceInfo;
     private final FiberGate gate;
 
@@ -828,7 +844,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     public DomainPlan(MakeRightDomainOperation operation, DomainProcessorDelegate delegate) {
       this.operation = operation;
-      this.delegate = delegate;
       this.presenceInfo = operation.getPresenceInfo();
       this.firstStep = operation.createSteps();
       this.packet = operation.createPacket();
@@ -841,6 +856,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     private void execute() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, operation.getPresenceInfo().getDomainUid());
+      Optional.ofNullable(debugPrefix).ifPresent(prefix -> packet.put(Fiber.DEBUG_FIBER, prefix));
 
       if (operation.isWillInterrupt()) {
         gate.startFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
@@ -853,11 +869,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return new DomainPlanCompletionCallback();
     }
 
-    class DomainPlanCompletionCallback extends ThrowableCallback {
+    class DomainPlanCompletionCallback implements CompletionCallback {
+
+      @Override
+      public void onCompletion(Packet packet) {
+        retryIfNeeded(packet);
+      }
+
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
         reportFailure(throwable);
-        scheduleRetry();
       }
 
       private void reportFailure(Throwable throwable) {
@@ -882,27 +903,43 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       }
     }
 
-    static class FailureReportCompletionCallback extends ThrowableCallback {
+    class FailureReportCompletionCallback implements CompletionCallback {
+
+      @Override
+      public void onCompletion(Packet packet) {
+        retryIfNeeded(packet);
+      }
+
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
         logThrowable(throwable);
       }
     }
 
-    public void scheduleRetry() {
-      Optional.ofNullable(getExistingDomainPresenceInfo()).ifPresent(this::scheduleRetry);
-    }
-
-    private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
-      if (delegate.mayRetry(domainPresenceInfo)) {
-        final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
-        gate.getExecutor().schedule(retry::execute, getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
+    public void retryIfNeeded(Packet packet) {
+      if (shouldRetry(packet)) {
+        DomainPresenceInfo.fromPacket(packet).ifPresent(this::scheduleRetry);
       }
     }
 
-    private DomainPresenceInfo getExistingDomainPresenceInfo() {
-      return DomainProcessorImpl
-          .getExistingDomainPresenceInfo(presenceInfo.getNamespace(), presenceInfo.getDomainUid());
+    @Nonnull
+    private Boolean shouldRetry(Packet packet) {
+      return DomainPresenceInfo.fromPacket(packet)
+          .map(DomainPresenceInfo::getDomain)
+          .map(DomainResource::shouldRetry)
+          .orElse(false);
+    }
+
+    private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
+      final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
+      gate.getExecutor().schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
+    }
+    
+    private long delayUntilNextRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
+      final OffsetDateTime nextRetryTime = domainPresenceInfo.getDomain().getNextRetryTime();
+      final Duration interval = Duration.between(SystemClock.now(), nextRetryTime);
+      return interval.getSeconds();
+
     }
 
   }

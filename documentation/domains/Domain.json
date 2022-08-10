@@ -349,15 +349,15 @@
           "description": "Human-readable message indicating details about last transition.",
           "type": "string"
         },
-        "lastProbeTime": {
-          "description": "Last time we probed the condition.",
-          "$ref": "#/definitions/DateTime"
-        },
         "status": {
           "description": "The status of the condition. Can be True, False, Unknown.",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "type",
+        "status"
+      ]
     },
     "DomainSpec": {
       "description": "The specification of the operation of the WebLogic domain. Required.",
@@ -740,8 +740,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -927,7 +927,6 @@
           "type": "string"
         },
         "maxReadyWaitTimeSeconds": {
-          "default": 1800,
           "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds.",
           "type": "integer"
         },
@@ -961,6 +960,10 @@
             "Never",
             "OnFailure"
           ]
+        },
+        "maxPendingWaitTimeSeconds": {
+          "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes.",
+          "type": "integer"
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
@@ -1027,7 +1030,7 @@
           "description": "Status of the WebLogic Server pod\u0027s Ready condition if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown.",
           "type": "string"
         },
-        "desiredState": {
+        "stateGoal": {
           "description": "Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN.",
           "type": "string"
         },

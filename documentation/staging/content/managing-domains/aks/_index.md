@@ -15,6 +15,7 @@ description: "Deploy WebLogic Server on Azure Kubernetes Service."
 - [DNS Configuration](#dns-configuration)
 - [Database](#database)
 - [Review + create](#review--create)
+- [Template outputs](#template-outputs)
 - [Useful resources](#useful-resources)
 
 
@@ -53,7 +54,6 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Confirm password | Re-enter the value of the preceding field. |
 | Password for WebLogic Model encryption | Model in Image requires a runtime encryption secret with a secure password key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime ConfigMap or log. For more information, see [Required runtime encryption secret]({{< relref "/managing-domains/model-in-image/usage#required-runtime-encryption-secret" >}}).|
 | Confirm password | Re-enter the value of the preceding field. |
-| User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced previously.  For more information, please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
 
 ##### Optional Basic Configuration
 
@@ -206,7 +206,6 @@ You must select one of the following three options, each described in turn.
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
 
@@ -217,14 +216,12 @@ You must select one of the following three options, each described in turn.
 | The name of the secret in the specified Key Vault whose value is the front-end TLS/SSL certificate data | Enter the name of the Azure Key Vault secret that holds the value of the Application Gateway front-end SSL certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
 | The name of the secret in the specified Key Vault whose value is the password for the front-end TLS/SSL certificate | Enter the name of the Azure Key Vault secret that holds the value of the password for the application gateway front-end SSL certificate. |
 | The name of the secret in the specified Key Vault whose value is the trusted root certificate data | A trusted root certificate is required to allow back-end instances in the application gateway. Enter the name of the Azure Key Vault secret that holds the value of the application gateway trusted root certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Generate a self-signed frontend certificate**
 
 | Field | Description |
 |-------|-------------|
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth --scopes /subscriptions/<AZURE_SUBSCRIPTION_ID> \| base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
 
@@ -300,6 +297,31 @@ In the **Review + create blade**, review the details you provided for deploying 
 If you want to use this template to automate the deployment, download it by selecting **Download a template for automation**.
 
 Click **Create** to create this offer. This process may take 30 to 60 minutes.
+
+#### Template outputs
+
+After clicking **Create** to create this offer, you will go to the **Deployment is in progress** page. When the deployment is completed, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.
+
+| Field | Description |
+|-------|-------------|
+| `aksClusterName` | Name of your AKS cluster that is running the WLS cluster. {{< line_break >}}Sample value: `wlsonaksiyiql2i2o2u2i`. |
+| `adminConsoleInternalUrl` | The fully qualified, private link to the Administration Console portal. You can access it only inside the AKS cluster. {{< line_break >}}Sample value: `http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7001/console`. |
+| `adminConsoleExternalUrl` | This output is not always present:{{< line_break >}}You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}} {{< line_break >}}This is a fully qualified, public link to the Administration Console portal. You can access it from the public Internet. {{< line_break >}}Sample value: `http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/console`. |
+| `adminConsoleExternalSecuredUrl` | This output is not always present:{{< line_break >}}1. You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}}2. You must configure a custom DNS name by filling out [DNS Configuration](#dns-configuration).{{< line_break >}}3. The TLS/SSL certificate used is configured by filling out [TLS/SSL configuration](#tlsssl-configuration).{{< line_break >}}{{< line_break >}}This is a fully qualified, secure, public link to the Administration Console portal. You can access it from the public Internet. {{< line_break >}}Sample value: `https://contoso.com/console`. |
+| `adminRemoteConsoleUrl` | This output is not always present:{{< line_break >}}You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the [WebLogic Server Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console.md" >}}). You can access it from the public Internet.{{< line_break >}}Sample value: `http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/remoteconsole`. |
+| `adminRemoteConsoleSecuredUrl` | This output is not always present:{{< line_break >}}1. You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}}2. You must configure a custom DNS name following [DNS Configuration](#dns-configuration).{{< line_break >}}3. The TLS/SSL certificate used is configured by filling out [TLS/SSL configuration](#tlsssl-configuration).{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the [WebLogic Server Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console.md" >}}). You can access it from the public Internet.{{< line_break >}}Sample value: `https://contoso.com/remoteconsole`.|
+| `adminServerT3InternalUrl` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}} 2. You must enable custom T3 channel by setting `enableAdminT3Tunneling=true`.{{< line_break >}}{{< line_break >}}This is a fully qualified, private link to custom T3 channel of the Administration Server.{{< line_break >}}Sample value: `http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7005/console`.|
+| `adminServerT3ExternalUrl` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}}2. You must enable custom T3 channel by setting `enableAdminT3Tunneling=true`.{{< line_break >}}3. You must configure [Networking](#networking) to enable the Azure Load Balancer service for the Administration Server.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to custom T3 channel of the Administration Server.{{< line_break >}}Sample value: `http://20.4.56.3:7005/console/` |
+| `clusterInternalUrl` | The fully qualified, private link to the WLS cluster. You are able to access your application with `${clusterInternalUrl}<your-app-path>` inside AKS cluster.{{< line_break >}}Sample value: `http://sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local:8001/`. |
+| `clusterExternalUrl` | This output is not always present:{{< line_break >}}You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the WLS cluster. You can access your application with `${clusterExternalUrl}<your-app-path>` from the public Internet.{{< line_break >}}Sample value: `http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/`. |
+| `clusterExternalSecuredUrl` | This output is not always present:{{< line_break >}}1. You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.{{< line_break >}}2. The TLS/SSL certificate used is configured by filling out [TLS/SSL configuration](#tlsssl-configuration).{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the WLS cluster. You can access your application with `${clusterExternalUrl}<your-app-path>` from the public Internet.{{< line_break >}}Sample value: `https://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/`. |
+| `clusterT3InternalUrl` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}}2. You must enable custom T3 channel by setting `enableClusterT3Tunneling=true`.{{< line_break >}}{{< line_break >}}This is a fully qualified, private link to custom T3 channel of the WLS cluster. |
+| `clusterT3ExternalEndpoint` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}}2. You must enable custom T3 channel by setting `enableClusterT3Tunneling=true`.{{< line_break >}}3. You must configure [Networking](#networking) to enable the Azure Load Balancer service for the WLS cluster.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to custom T3 channel of the WLS cluster.{{< line_break >}}Sample value:`http://20.4.56.3:8005/` |
+| `shellCmdtoConnectAks` | AZ CLI command to connect to the AKS cluster.{{< line_break >}}Sample value: {{< line_break >}}`az account set --subscription xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx; az aks get-credentials --resource-group contoso-rg --name contosoakscluster`|
+| `shellCmdtoOutputWlsDomainYaml` | Shell command to display the base64 encoded string of the WLS domain resource definition.{{< line_break >}}Sample value: {{< line_break >}}`echo -e YXBpV...mVCg== \| base64 -d > domain.yaml` |
+| `shellCmdtoOutputWlsImageModelYaml` | Shell command to display the base64 encoded string of the WLS [image model]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).{{< line_break >}}Sample value:{{< line_break >}}`echo -e IyBDb...3EnC \| base64 -d > model.yaml`|
+| `shellCmdtoOutputWlsImageProperties`|Shell command to display the base64 encoded string of the model properties.{{< line_break >}}Sample value:{{< line_break >}}`echo -e IyBDF...PTUK \| base64 -d > model.properties` |
+| `shellCmdtoOutputWlsVersionsandPatches` | Shell command to display the base64 encoded string of the WLS version and patches.{{< line_break >}}Sample value:{{< line_break >}}`echo -e CldlY...gMS4= \| base64 -d > version.info`|
 
 #### Useful resources
 

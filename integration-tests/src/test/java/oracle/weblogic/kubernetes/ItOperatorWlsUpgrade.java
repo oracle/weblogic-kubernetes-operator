@@ -117,6 +117,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
 @Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItOperatorWlsUpgrade {
 
   private static LoggingFacade logger = null;

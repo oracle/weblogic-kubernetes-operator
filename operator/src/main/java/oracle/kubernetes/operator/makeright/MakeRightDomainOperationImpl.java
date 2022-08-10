@@ -51,7 +51,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitial
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
@@ -67,7 +66,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   private boolean willInterrupt;
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
-  private boolean willThrow;
+
 
   /**
    * Create the operation.
@@ -109,18 +108,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   /**
    * Set the event data that is associated with this operation.
    *
-   * @param eventItem event data
-   * @param message   event message
-   * @return the updated factory
-   */
-  public MakeRightDomainOperation withEventData(EventHelper.EventItem eventItem, String message) {
-    this.eventData = new EventHelper.EventData(eventItem, message);
-    return this;
-  }
-
-  /**
-   * Set the event data that is associated with this operation.
-   *
    * @param eventData event data
    * @return the updated factory
    */
@@ -151,6 +138,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   }
 
   @Override
+  public boolean wasStartedFromEvent() {
+    return eventData != null;
+  }
+
+  @Override
   public boolean isDeleting() {
     return deleting;
   }
@@ -165,20 +157,9 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return explicitRecheck;
   }
 
-  /**
-   * Modifies the factory to indicate that it should throw.
-   * For unit testing only.
-   *
-   * @return the updated factory
-   */
-  public MakeRightDomainOperation throwNPE() {
-    willThrow = true;
-    return this;
-  }
-
   @Override
   public void execute() {
-    executor.runMakeRight(this, this::shouldContinue);
+    executor.runMakeRight(this);
   }
 
   @Override
@@ -212,31 +193,10 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return inspectionRun;
   }
 
-  private boolean shouldContinue(DomainPresenceInfo cachedInfo) {
-    if (isNewDomain(cachedInfo)) {
-      return true;
-    } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
-      return false;
-    } else if (shouldRecheck(cachedInfo)) {
-      return true;
-    }
-    cachedInfo.setDomain(liveInfo.getDomain());
-    return false;
-  }
-
-  private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
-    return cachedInfo == null || cachedInfo.getDomain() == null;
-  }
-
-  private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
-    return isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo);
-  }
-
   @Override
   @Nonnull
   public Packet createPacket() {
-    Packet packet = new Packet().with(delegate).with(liveInfo);
-    packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
+    Packet packet = new Packet().with(delegate).with(liveInfo).with(this);
     packet
         .getComponents()
         .put(
@@ -259,7 +219,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   public Step createSteps() {
     final List<Step> result = new ArrayList<>();
 
-    result.add(willThrow ? createThrowStep() : null);
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
     result.add(createStatusInitializationStep());
@@ -466,17 +425,4 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     }
   }
 
-  // for unit testing only
-  private Step createThrowStep() {
-    return new ThrowStep();
-  }
-
-  // for unit testing only
-  private static class ThrowStep extends Step {
-
-    @Override
-    public NextAction apply(Packet packet) {
-      throw new NullPointerException("Force unit test to handle NPE");
-    }
-  }
 }

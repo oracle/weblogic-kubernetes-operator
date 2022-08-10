@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 97d10e7cc5fcd103f81751e3076c373426751acdf07b598a176e8b17801d752c
+    weblogic.sha256: 72c437b7f72c1b9372ee95e866aa0bc6ef694b843ce70524484c91f7dd1503be
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -377,7 +377,6 @@ spec:
                       default scheduler. See `kubectl explain pods.spec.schedulerName`.
                     type: string
                   maxReadyWaitTimeSeconds:
-                    default: 1800
                     description: The maximum time in seconds that the operator waits
                       for a WebLogic Server pod to reach the ready state before it
                       considers the pod failed. Defaults to 1800 seconds.
@@ -1257,6 +1256,11 @@ spec:
                     - Never
                     - OnFailure
                     type: string
+                  maxPendingWaitTimeSeconds:
+                    description: The maximum time in seconds that the operator waits
+                      for a WebLogic Server pod to reach the running state before
+                      it considers the pod failed. Defaults to 5 minutes.
+                    type: integer
                   labels:
                     additionalProperties:
                       type: string

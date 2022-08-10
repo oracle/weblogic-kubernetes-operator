@@ -75,7 +75,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItPodsShutdownOption {
 
   private static String domainNamespace = null;
@@ -422,7 +425,7 @@ class ItPodsShutdownOption {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
             "Can't get operator's pod name");
-    String expectedMsg = "WL pod shutdown: Successfully shutdown WebLogic server managed-server2 via REST interface";
+    String expectedMsg = "WL pod shutdown: Initiating shutdown of WebLogic server managed-server2 via REST interface";
     checkPodLogContainsString(opNamespace, operatorPodName, expectedMsg);
 
     // delete ms2

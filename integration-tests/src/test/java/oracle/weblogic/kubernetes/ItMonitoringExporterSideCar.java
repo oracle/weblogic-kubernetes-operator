@@ -82,7 +82,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify WebLogic Metric is processed as expected by "
     + "MonitoringExporter Side Car via Prometheus and Grafana")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItMonitoringExporterSideCar {
 
   // domain constants

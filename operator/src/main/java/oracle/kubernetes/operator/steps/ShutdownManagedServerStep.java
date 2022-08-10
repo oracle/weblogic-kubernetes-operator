@@ -41,15 +41,14 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 public class ShutdownManagedServerStep extends Step {
@@ -333,18 +332,11 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      String serverState = getServerState(getDomainPresenceInfo(packet).getDomain());
+      String serverState = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
       if (shutdownAttemptSucceeded(packet) && serverNotShutdown(serverState)) {
         return doDelay(this, packet, getPollingInterval(), TimeUnit.SECONDS);
       }
       return doNext(packet);
-    }
-
-    private String getServerState(DomainResource domain) {
-      return Optional.ofNullable(domain)
-          .map(DomainResource::getStatus)
-          .map(this::getServerStatus)
-          .map(ServerStatus::getState).orElse(null);
     }
 
     @NotNull
@@ -355,14 +347,6 @@ public class ShutdownManagedServerStep extends Step {
     @NotNull
     private Boolean serverNotShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
-    }
-
-    private ServerStatus getServerStatus(DomainStatus domainStatus) {
-      return domainStatus.getServers().stream().filter(this::matchingServerName).findAny().orElse(null);
-    }
-
-    private boolean matchingServerName(ServerStatus serverStatus) {
-      return serverStatus.getServerName().equals(serverName);
     }
 
     private int getPollingInterval() {
@@ -396,10 +380,15 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
-        if (retryRequest(packet)) {
+        if (shouldRetry(packet)) {
+          addShutdownRequestRetryCountToPacket(packet, 1);
+          // Retry request
+          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
           return doNext(requestStep, packet);
         }
-        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
+        if (!isServerStateShutdown(packet)) {
+          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
+        }
       } else {
         LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
@@ -409,16 +398,18 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(packet);
     }
 
-    private boolean retryRequest(Packet packet) {
-      if (getShutdownRequestRetryCount(packet) == null) {
-        addShutdownRequestRetryCountToPacket(packet, 1);
-        if (requestStep != null) {
-          // Retry request
-          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
-          return true;
-        }
-      }
-      return false;
+    private boolean shouldRetry(Packet packet) {
+      return isServerStateRunningOrAdmin(packet) && getShutdownRequestRetryCount(packet) == null && requestStep != null;
+    }
+
+    private boolean isServerStateRunningOrAdmin(Packet packet) {
+      String state = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
+      return RUNNING_STATE.equals(state) || ADMIN_STATE.equals(state);
+    }
+
+    private boolean isServerStateShutdown(Packet packet) {
+      String state = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
+      return SHUTDOWN_STATE.equals(state);
     }
 
     private static Integer getShutdownRequestRetryCount(Packet packet) {

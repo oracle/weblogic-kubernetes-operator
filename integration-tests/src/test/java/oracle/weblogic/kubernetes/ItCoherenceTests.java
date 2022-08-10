@@ -68,7 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
+@Tag("olcne")
 @Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItCoherenceTests {
 
   // constants for Coherence

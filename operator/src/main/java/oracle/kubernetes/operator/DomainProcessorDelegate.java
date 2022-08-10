@@ -3,10 +3,10 @@
 
 package oracle.kubernetes.operator;
 
-import javax.annotation.Nonnull;
-
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.operator.work.FiberGate;
+import org.jetbrains.annotations.NotNull;
 
 /** A set of underlying services required during domain processing. */
 public interface DomainProcessorDelegate extends CoreDelegate {
@@ -42,9 +42,8 @@ public interface DomainProcessorDelegate extends CoreDelegate {
    */
   FiberGate createFiberGate();
 
-  /**
-   * Returns true if a retry of the last make-right on the specified domain presence info may be scheduled.
-   * @param domainPresenceInfo a domain presence info
-   */
-  boolean mayRetry(@Nonnull DomainPresenceInfo domainPresenceInfo);
+  @NotNull
+  default MakeRightDomainOperation createMakeRightOperation(MakeRightExecutor executor, DomainPresenceInfo info) {
+    return new MakeRightDomainOperationImpl(executor, this, info);
+  }
 }

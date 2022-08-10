@@ -41,12 +41,16 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -175,6 +179,28 @@ public class PodHelper {
         .filter(PodHelper::isReadyNotTrueCondition).findFirst().orElse(null);
   }
 
+  /**
+   * Get the server state From the domain resource.
+   * @param domain domain resource.
+   * @param serverName Name of the server.
+   * @return server state, if exists, otherwise null.
+   */
+  public static String getServerState(DomainResource domain, String serverName) {
+    return Optional.ofNullable(domain)
+        .map(DomainResource::getStatus)
+        .map(s -> getServerStatus(s, serverName))
+        .map(ServerStatus::getState).orElse(null);
+  }
+
+  private static ServerStatus getServerStatus(DomainStatus domainStatus, String serverName) {
+    return domainStatus.getServers().stream().filter(s -> matchingServerName(s, serverName))
+        .findAny().orElse(null);
+  }
+
+  private static boolean matchingServerName(ServerStatus serverStatus, String serverName) {
+    return serverStatus.getServerName().equals(serverName);
+  }
+
   private static boolean isRunning(@Nonnull V1PodStatus status) {
     return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
   }
@@ -212,17 +238,28 @@ public class PodHelper {
   }
 
   /**
-   * Check if pod is in failed state.
-   * @param pod pod
-   * @return true, if pod is in failed state
+   * Returns true if the specified pod is in the failed state.
+   * @param pod the pod to check
    */
   public static boolean isFailed(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null && V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())) {
+    if (V1PodStatus.PhaseEnum.FAILED.equals(getPhase(pod))) {
       LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
       return true;
     }
     return false;
+  }
+
+  /**
+   * Returns true if the specified pod is in the pending state.
+   * @param pod the pod to check
+   */
+  public static boolean isPending(V1Pod pod) {
+    return V1PodStatus.PhaseEnum.PENDING.equals(getPhase(pod));
+  }
+
+  @Nullable
+  private static V1PodStatus.PhaseEnum getPhase(V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse(null);
   }
 
   /**
@@ -593,7 +630,7 @@ public class PodHelper {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
         patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
         new CallBuilder()
-            .patchPod(getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
+            .patchPod(super.getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
       } catch (ApiException ignored) {
         /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
       }
@@ -698,11 +735,19 @@ public class PodHelper {
         info.setServerPodBeingDeleted(serverName, Boolean.TRUE);
         final String clusterName = getClusterName(oldPod);
         final String name = oldPod.getMetadata().getName();
-        final long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
+        long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
+        if (isServerShutdown(getServerState(info.getDomain(), serverName))) {
+          gracePeriodSeconds = 0;
+        }
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
             packet);
       }
+    }
+
+    @Nonnull
+    private Boolean isServerShutdown(String serverState) {
+      return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
     }
 
     @Nullable

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 30ce21ce450d686d881e12412a774f669de7b3179ad0921ffd424469e6729a87
+    weblogic.sha256: 4e1a3e2f77658db01cd17f920410f9d8e36064d3ccc038466ba8617ce4a042bb
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -42,9 +42,9 @@ spec:
                   appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.
                 properties:
                   image:
-                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6
+                    default: ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7
                     description: The WebLogic Monitoring Exporter sidecar container
-                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6
+                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the WebLogic Monitoring
@@ -861,7 +861,6 @@ spec:
                           by the default scheduler. See `kubectl explain pods.spec.schedulerName`.
                         type: string
                       maxReadyWaitTimeSeconds:
-                        default: 1800
                         description: The maximum time in seconds that the operator
                           waits for a WebLogic Server pod to reach the ready state
                           before it considers the pod failed. Defaults to 1800 seconds.
@@ -1743,6 +1742,11 @@ spec:
                         - Never
                         - OnFailure
                         type: string
+                      maxPendingWaitTimeSeconds:
+                        description: The maximum time in seconds that the operator
+                          waits for a WebLogic Server pod to reach the running state
+                          before it considers the pod failed. Defaults to 5 minutes.
+                        type: integer
                       labels:
                         additionalProperties:
                           type: string
@@ -3930,7 +3934,6 @@ spec:
                             pods.spec.schedulerName`.
                           type: string
                         maxReadyWaitTimeSeconds:
-                          default: 1800
                           description: The maximum time in seconds that the operator
                             waits for a WebLogic Server pod to reach the ready state
                             before it considers the pod failed. Defaults to 1800 seconds.
@@ -4814,6 +4817,11 @@ spec:
                           - Always
                           - Never
                           - OnFailure
+                        maxPendingWaitTimeSeconds:
+                          description: The maximum time in seconds that the operator
+                            waits for a WebLogic Server pod to reach the running state
+                            before it considers the pod failed. Defaults to 5 minutes.
+                          type: integer
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
@@ -6991,7 +6999,6 @@ spec:
                       default scheduler. See `kubectl explain pods.spec.schedulerName`.
                     type: string
                   maxReadyWaitTimeSeconds:
-                    default: 1800
                     description: The maximum time in seconds that the operator waits
                       for a WebLogic Server pod to reach the ready state before it
                       considers the pod failed. Defaults to 1800 seconds.
@@ -7871,6 +7878,11 @@ spec:
                     - Never
                     - OnFailure
                     type: string
+                  maxPendingWaitTimeSeconds:
+                    description: The maximum time in seconds that the operator waits
+                      for a WebLogic Server pod to reach the running state before
+                      it considers the pod failed. Defaults to 5 minutes.
+                    type: integer
                   labels:
                     additionalProperties:
                       type: string
@@ -9924,7 +9936,6 @@ spec:
                             pods.spec.schedulerName`.
                           type: string
                         maxReadyWaitTimeSeconds:
-                          default: 1800
                           description: The maximum time in seconds that the operator
                             waits for a WebLogic Server pod to reach the ready state
                             before it considers the pod failed. Defaults to 1800 seconds.
@@ -10808,6 +10819,11 @@ spec:
                           - Always
                           - Never
                           - OnFailure
+                        maxPendingWaitTimeSeconds:
+                          description: The maximum time in seconds that the operator
+                            waits for a WebLogic Server pod to reach the running state
+                            before it considers the pod failed. Defaults to 5 minutes.
+                          type: integer
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
@@ -12559,7 +12575,7 @@ spec:
                         if the pod is in Running phase, otherwise Unknown. Possible
                         values are: True, False or Unknown.'
                       type: string
-                    desiredState:
+                    stateGoal:
                       description: Desired state of this WebLogic Server instance.
                         Values are RUNNING, ADMIN, or SHUTDOWN.
                       type: string
@@ -12702,14 +12718,13 @@ spec:
                       description: Human-readable message indicating details about
                         last transition.
                       type: string
-                    lastProbeTime:
-                      format: date-time
-                      description: Last time we probed the condition.
-                      type: string
                     status:
                       description: The status of the condition. Can be True, False,
                         Unknown.
                       type: string
+                  required:
+                  - type
+                  - status
                 type: array
               message:
                 description: A human readable message indicating details about why
