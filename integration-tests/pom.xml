@@ -53,7 +53,6 @@
         <wko.it.okd.cluster>${env.OKD}</wko.it.okd.cluster>
         <wko.it.oracle.db.operator.release>${env.ORACLE_DB_OPERATOR_RELEASE}</wko.it.oracle.db.operator.release>
         <wko.it.oraclelinux.test.version>${env.ORACLELINUX_TEST_VERSION}</wko.it.oraclelinux.test.version>
-        <wko.it.wdt.version>${wdt.version}</wko.it.wdt.version>
         <wko.it.wdt.download.url>${wdt.download.url}</wko.it.wdt.download.url>
         <wko.it.wit.download.url>${wit.download.url}</wko.it.wit.download.url>
         <wko.it.remoteconsole.download.url>${remoteconsole.download.url}</wko.it.remoteconsole.download.url>
@@ -215,7 +214,6 @@
                                 <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
                                 <wko.it.oracle.db.operator.release>${wko.it.oracle.db.operator.release}</wko.it.oracle.db.operator.release>
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
-                                <wko.it.wdt.version>${wko.it.wdt.version}</wko.it.wdt.version>
                                 <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>
                                 <wko.it.wit.download.url>${wko.it.wit.download.url}</wko.it.wit.download.url>
                                 <wko.it.remoteconsole.download.url>${wko.it.remoteconsole.download.url}</wko.it.remoteconsole.download.url>
