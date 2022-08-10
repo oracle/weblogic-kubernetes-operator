@@ -20,10 +20,10 @@ log_file_name="scalingAction.log"
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
 #   example:  2018-10-01T14:00:00.000001Z
 timestamp() {
-  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
+  local timestamp="$(date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1)"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
-    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S.000000Z' 2>&1`"
+    timestamp="$(date -u '+%Y-%m-%dT%H:%M:%S.000000Z' 2>&1)"
   fi
   echo "${timestamp}"
 }
@@ -53,7 +53,7 @@ print_usage() {
 initialize_access_token() {
   if [ -z "$access_token" ]
   then
-    access_token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token`
+    access_token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
   fi
 }
 
@@ -81,7 +81,7 @@ get_operator_internal_rest_port() {
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-    -X GET $kubernetes_master/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
+    -X GET "$kubernetes_master"/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
   if [ $? -ne 0 ]
   then
     trace "Failed to retrieve status of $operator_service_name in name space: $operator_namespace"
@@ -113,7 +113,7 @@ get_domain_api_version() {
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
     -X GET \
-    $kubernetes_master/apis)
+    "$kubernetes_master"/apis)
   if [ $? -ne 0 ]
     then
       trace "Failed to retrieve list of APIs from Kubernetes cluster"
@@ -133,7 +133,7 @@ for i in json.load(sys.stdin)["groups"]:
   if i["name"] == "weblogic.oracle":
     print((i["preferredVersion"]["version"]))
 INPUT
-domain_api_version=`echo ${APIS} | python cmds-$$.py 2>> ${log_file_name}`
+domain_api_version=$(echo "${APIS}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   echo "$domain_api_version"
 }
@@ -144,12 +144,104 @@ get_custom_resource_domain() {
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-    $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$wls_domain_uid)
+    "$kubernetes_master"/apis/weblogic.oracle/"$domain_api_version"/namespaces/"$wls_domain_namespace"/domains/"$wls_domain_uid")
   if [ $? -ne 0 ]; then
     trace "Failed to retrieve WebLogic Domain Custom Resource Definition"
     exit 1
   fi
   echo "$DOMAIN"
+}
+
+# Retrieve Cluster Custom Resource with the resource name
+# args:
+# $1 Cluster Custom Resource name
+get_custom_resource_cluster() {
+  local cluster_resource_name="$1"
+  local clusterJson=$(curl \
+    -v -f \
+    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    "$kubernetes_master"/apis/weblogic.oracle/"$cluster_api_version"/namespaces/"$wls_domain_namespace"/clusters/"$cluster_resource_name")
+  if [ $? -ne 0 ]; then
+    trace "Failed to retrieve WebLogic Cluster Custom Resource Definition with cluster resource name '$cluster_resource_name'"
+  fi
+  echo "$clusterJson"
+}
+
+# Retrieve the Cluster custom resource with the resource name, and return it only
+# if its spec.clusterName value matches the WebLogic cluster name
+# args:
+# $1 Cluster Custom Resource name
+# $2 WebLogic cluster name
+get_cluster_resource_if_cluster_name_matches() {
+  local cluster_resource_name="$1"
+  local wls_cluster_name="$2"
+  local clusterJson
+  local cluster_name
+  clusterJson=$(get_custom_resource_cluster "$cluster_resource_name")
+  if [ -n "$clusterJson" ]; then
+    cluster_name=$(get_cluster_name_from_cluster "$clusterJson")
+    if [[ "$cluster_name" == "$wls_cluster_name" ]]; then
+      echo "$clusterJson"
+    fi
+  fi
+}
+
+# Find the Cluster custom resource with the WebLogic cluster name
+# args:
+# $1 Domain custom resource
+# $2 WebLogic cluster name
+find_cluster_resource_with_cluster_name() {
+  local domainJson="$1"
+  local wls_cluster_name="$2"
+  local cluster_resource_names
+  local clusterJson
+  cluster_resource_names=$(get_cluster_resource_names_from_domain "$domainJson")
+  # Try cluster resources with name that ends with the WebLogic cluster name first.
+  # This can help save the number of GET cluster Kubernetes API calls when Cluster
+  # resource name follows the naming pattern *"$wls_cluster_name, especially when
+  # the Domain resource references a large number of Cluster resource.
+  for name in $cluster_resource_names
+  do
+    if [[ "$name" == *"$wls_cluster_name" ]]; then
+      clusterJson=$(get_cluster_resource_if_cluster_name_matches "$name" "$wls_cluster_name")
+      if [ -n "$clusterJson" ]; then
+        echo "$clusterJson"
+        return
+      fi
+    fi
+  done
+  # Try the rest of the cluster resource names
+  for name in $cluster_resource_names
+  do
+    if [[ "$name" != *"$wls_cluster_name" ]]; then
+      clusterJson=$(get_cluster_resource_if_cluster_name_matches "$name" "$wls_cluster_name")
+      if [ -n "$clusterJson" ]; then
+        echo "$clusterJson"
+        return
+      fi
+    fi
+  done
+}
+
+# Gets the names of Cluster custom resources referenced by the Domain custom resource
+# args:
+# $1 Domain custom resource
+get_cluster_resource_names_from_domain() {
+  local DOMAIN="$1"
+  local clusters
+  if jq_available; then
+  clusters=$(echo "${DOMAIN}" | jq -r '.spec.clusters[].name'  2>> ${log_file_name})
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+for j in json.load(sys.stdin)["spec"]["clusters"]:
+  print((j["name"]))
+INPUT
+  clusters=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+
+  echo "$clusters"
 }
 
 # Verify if cluster is defined in clusters of the Custom Resource Domain
@@ -177,7 +269,7 @@ for j in json.load(sys.stdin)["spec"]["clusters"]:
 if outer_loop_must_break == False:
   print (False)
 INPUT
-in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
+in_cluster_startup=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   echo "$in_cluster_startup"
 }
@@ -198,7 +290,7 @@ for j in json.load(sys.stdin)["spec"]["clusters"]:
   if j["clusterName"] == "$wls_cluster_name":
     print((j["replicas"]))
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
+  num_ms=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
   fi
 
   if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
@@ -206,6 +298,30 @@ INPUT
   fi
 
   echo "$num_ms"
+}
+
+# Gets the replicas value from the Cluster. Return -1 if no replicas configured in the Cluster.
+# args:
+# $1 Cluster Custom Resource
+get_replicas_from_cluster() {
+  local clusterJson="$1"
+  local replicas
+  if jq_available; then
+    local numReplicasCmd=".spec.replicas"
+    replicas=$(echo "${clusterJson}" | jq "${numReplicasCmd}" 2>> ${log_file_name} )
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["spec"]["replicas"]))
+INPUT
+  replicas=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+
+  if [ "${replicas}" == "null" ] || [ "${replicas}" == '' ] ; then
+    replicas=-1
+  fi
+
+  echo "$replicas"
 }
 
 # Gets the replica count at the Domain level
@@ -221,7 +337,7 @@ cat > cmds-$$.py << INPUT
 import sys, json
 print((json.load(sys.stdin)["spec"]["replicas"]))
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
+  num_ms=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
   fi
 
   if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
@@ -243,11 +359,11 @@ get_min_replicas() {
   local clusterName=$2
   local __result=$3
 
-  eval $__result=0
+  eval "$__result"=0
   if jq_available; then
     minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
       | .minimumReplicas"
-    minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}"  2>> ${log_file_name})
+    minReplicas=$(echo "${domainJson}" | jq "${minReplicaCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -255,9 +371,75 @@ for j in json.load(sys.stdin)["status"]["clusters"]:
   if j["clusterName"] == "$clusterName":
     print((j["minimumReplicas"]))
 INPUT
-  minReplicas=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
+  minReplicas=$(echo "${domainJson}" | python cmds-$$.py 2>> ${log_file_name})
   fi
-  eval $__result=${minReplicas}
+  eval "$__result"="${minReplicas}"
+}
+
+# Function to get the clusterName from cluster resource.
+# args:
+# $1 Cluster resource in json format
+get_cluster_name_from_cluster() {
+  local clusterJson="$1"
+  local clusterName
+  if jq_available; then
+    clusterName=$(echo "${clusterJson}" | jq -r ".spec.clusterName" 2>> ${log_file_name} )
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["spec"]["clusterName"]))
+INPUT
+  clusterName=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+
+  echo "$clusterName"
+}
+
+#
+# Function to get minimum replica count from cluster resource
+# $1 - Cluster resource in json format
+# $2 - Return value containing minimum replica count, 0 if minReplicas not defined in Cluster resource
+#
+get_min_replicas_from_cluster() {
+  local clusterJson=$1
+  local __result=$2
+
+  eval "$__result"=0
+  if jq_available; then
+    minReplicaCmd=".status.minimumReplicas"
+    minReplicas=$(echo "${clusterJson}" | jq "${minReplicaCmd}"  2>> ${log_file_name})
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["status"]["minimumReplicas"]))
+INPUT
+  minReplicas=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+  eval "$__result"="${minReplicas:-0}"
+}
+
+#
+# Function to get maximum replica count from cluster resource
+# $1 - Cluster resource in json format
+# $2 - Return value containing maximum replica count, value not set if maxReplicas not defined in
+#      Cluster resource
+#
+get_max_replicas_from_cluster() {
+  local clusterJson=$1
+  local __result=$2
+
+  eval "$__result"=0
+  if jq_available; then
+    maxReplicaCmd=".status.maximumReplicas"
+    maxReplicas=$(echo "${clusterJson}" | jq "${maxReplicaCmd}"  2>> ${log_file_name})
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+print((json.load(sys.stdin)["status"]["maximumReplicas"]))
+INPUT
+  maxReplicas=$(echo "${clusterJson}" | python cmds-$$.py 2>> ${log_file_name})
+  fi
+  eval "$__result"="${maxReplicas}"
 }
 
 # Get the current replica count for the WLS cluster if defined in the CRD's Cluster
@@ -275,7 +457,7 @@ get_replica_count() {
     trace "$wls_cluster_name defined in clusters"
     num_ms=$(get_num_ms_in_cluster "$DOMAIN")
   else
-    trace "$wls_cluster_name NOT defined in clusters"
+    trace "$wls_cluster_name is NOT defined in clusters"
     num_ms=$(get_num_ms_domain_scope "$DOMAIN")
   fi
 
@@ -288,7 +470,30 @@ get_replica_count() {
   echo "$num_ms"
 }
 
-# Determine the nuber of managed servers to scale
+# Get the current replica count for the WLS cluster if defined in the Cluster
+# resource. If not defined in the Cluster resource, return the default
+# replica count from the Domain resource.
+# Returns replica count = 0 if no replica count found.
+# args:
+# $1 Cluster Custom Resource
+# $2 Domain Custom Resource
+get_replica_count_from_resources() {
+  local clusterJson="$1"
+  local domainJson="$2"
+  local replicas
+  replicas=$(get_replicas_from_cluster "$clusterJson")
+  if [ "$replicas" == -1 ]
+  then
+    replicas=$(get_num_ms_domain_scope "$domainJson")
+    trace "replicas for $wls_cluster_name is not specified in Cluster resource. Using replicas value of $replicas from Domain resource."
+  else
+    trace "replicas for $wls_cluster_name from Cluster resource is $replicas"
+  fi
+
+  echo "$replicas"
+}
+
+# Determine the number of managed servers to scale
 # args:
 # $1 scaling action (scaleUp or scaleDown)
 # $2 current replica count
@@ -302,10 +507,10 @@ calculate_new_ms_count() {
   then
     # Scale up by specified scaling size
     # shellcheck disable=SC2004
-    new_ms=$(($current_replica_count + $scaling_size))
+    new_ms=$((current_replica_count + scaling_size))
   else
     # Scale down by specified scaling size
-    new_ms=$(($current_replica_count - $scaling_size))
+    new_ms=$((current_replica_count - scaling_size))
   fi
   echo "$new_ms"
 }
@@ -329,14 +534,105 @@ verify_minimum_ms_count_for_cluster() {
   fi
 }
 
+# Verify if requested managed server scaling count is less than the configured
+# minimum replica count for the cluster.
+# args:
+# $1 Managed server count
+# $2 Cluster Custom Resource
+verify_minimum_replicas_for_cluster() {
+  local new_ms="$1"
+  local clusterJson="$2"
+  # check if replica count is less than minimum replicas
+  get_min_replicas_from_cluster "${clusterJson}" minReplicas
+  if [ "${new_ms}" -lt "${minReplicas}" ]; then
+    trace "Scaling request to new managed server count $new_ms is less than configured minimum \
+replica count of $minReplicas. Exiting."
+    exit 1
+  fi
+}
+
+# Verify if requested managed server scaling count is greater than the configured
+# maximum replica count for the cluster.
+# args:
+# $1 Managed server count
+# $3 Cluster name
+verify_maximum_replicas_for_cluster() {
+  local new_ms="$1"
+  local clusterJson="$2"
+  # check if replica count is less than minimum replicas
+  get_max_replicas_from_cluster "${clusterJson}" maxReplicas
+  if [ -n "$maxReplicas" ] && [ "${new_ms}" -gt "${maxReplicas}" ]; then
+    trace "Scaling request to new managed server count $new_ms is greater than configured maximum \
+replica count of $maxReplicas. Exiting."
+    exit 1
+  fi
+}
+
+# calculate target replica count
+# args:
+# $1 sacling action - scaleUp or scaleDown
+# $2 scaling size
+# $3 Cluster Custom Resource
+# $4 Domain Custom Resource
+find_target_replicas() {
+  local scaling_action="$1"
+  local scaling_size="$2"
+  local CLUSTER="$3"
+  local DOMAIN="$4"
+  local new_ms
+
+  if [ -z "$CLUSTER" ]; then
+
+    # Cluster resource not found. Should not be allowed to scale this cluster.
+
+    # However, for the time being, we are keeping old code that use older domain
+    # resource with clusters config to avoid breaking existing tests.
+    # *** To be removed later. ***
+    trace "Cluster resource not found. Assuming clusters still defined in Domain resource"
+
+    # Determine if WLS cluster has configuration in Domain Resource
+    in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
+
+    # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
+    # depending on whether the specified cluster is defined in clusters
+    # or not.
+    current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
+    trace "current number of managed servers is $current_replica_count"
+
+    # Calculate new managed server count
+    new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
+
+    # Verify the requested new managed server count is not less than
+    # configured minimum replica count for the cluster
+    verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
+
+  else
+
+    trace "Cluster resource found."
+
+    # Retrieve replica count from Cluster or Domain Resource.
+    current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
+    trace "current number of managed servers is $current_replica_count"
+
+    # Calculate new managed server count
+    new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
+
+    # Verify the requested new managed server count
+    verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER"
+    verify_maximum_replicas_for_cluster "$new_ms" "$CLUSTER"
+
+  fi
+  echo "$new_ms"
+}
+
 # Create the REST endpoint CA certificate in PEM format
 # args:
 # $1 certificate file name to create
 create_ssl_certificate_file() {
   local pem_filename="$1"
-  if [ ${INTERNAL_OPERATOR_CERT} ];
+  if [ "${INTERNAL_OPERATOR_CERT}" ];
   then
-    echo ${INTERNAL_OPERATOR_CERT} | base64 --decode >  $pem_filename
+    echo "${INTERNAL_OPERATOR_CERT}" | base64 --decode >  "$pem_filename"
   else
     trace "Operator Cert File not found"
     exit 1
@@ -433,28 +729,18 @@ logScalingParameters
 port=$(get_operator_internal_rest_port)
 trace "port: $port"
 
-# Retrieve the api version of the deployed CRD
+# Retrieve the api version of the deployed Domain Resource
 domain_api_version=$(get_domain_api_version)
 trace "domain_api_version: $domain_api_version"
 
 # Retrieve the Domain configuration
 DOMAIN=$(get_custom_resource_domain)
 
-# Determine if WLS cluster has configuration in CRD
-in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
+# API version of cluster resource hard coded to "v1" in this release
+cluster_api_version="v1"
+CLUSTER=$(find_cluster_resource_with_cluster_name "$DOMAIN" "$wls_cluster_name")
 
-# Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
-# depending on whether the specified cluster is defined in clusters
-# or not.
-current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
-trace "current number of managed servers is $current_replica_count"
-
-# Calculate new managed server count
-new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
-
-# Verify the requested new managed server count is not less than
-# configured minimum replica count for the cluster
-verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
+new_ms=$(find_target_replicas "$scaling_action" "$scaling_size" "$CLUSTER" "$DOMAIN")
 
 # Cleanup cmds-$$.py
 [ -e cmds-$$.py ] && rm cmds-$$.py
@@ -463,7 +749,6 @@ verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
 request_body=$(get_request_body "$new_ms")
 
 content_type="Content-Type: application/json"
-accept_resp_type="Accept: application/json"
 requested_by="X-Requested-By: WLDF"
 authorization="Authorization: Bearer $access_token"
 pem_filename="weblogic_operator-$$.pem"
@@ -487,7 +772,7 @@ then
     -H "$requested_by" \
     -H "$authorization" \
     -d "$request_body" \
-    $operator_url)
+    "$operator_url")
 else
   trace "Operator PEM formatted file not found"
   exit 1
