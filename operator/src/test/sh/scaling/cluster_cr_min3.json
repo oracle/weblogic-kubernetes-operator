@@ -1,0 +1,25 @@
+{
+    "apiVersion": "weblogic.oracle/v1",
+    "kind": "Cluster",
+    "metadata": {
+        "creationTimestamp": "2022-07-29T23:32:05Z",
+        "generation": 4,
+        "name": "domain1-cluster-1",
+        "namespace": "default",
+        "resourceVersion": "50081676",
+        "uid": "c0827c0a-eae1-419e-bfe6-1d1def039a04"
+    },
+    "spec": {
+        "clusterName": "cluster-1",
+        "replicas": 2,
+        "serverService": {
+            "precreateService": true
+        }
+    },
+    "status": {
+        "clusterName": "cluster-1",
+        "maximumReplicas": 8,
+        "minimumReplicas": 3,
+        "replicasGoal": 2
+    }
+}
