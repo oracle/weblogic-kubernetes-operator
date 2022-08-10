@@ -281,4 +281,18 @@ public class ClusterResource implements KubernetesObject {
     }
     return List.of();
   }
+
+  /**
+   * Returns true if the cluster resourcehas a later generation than the passed-in cached cluster resource.
+   * @param cachedResource another presence info against which to compare this one.
+   */
+  public boolean isGenerationChanged(ClusterResource cachedResource) {
+    return getGeneration()
+        .map(gen -> (gen.compareTo(cachedResource.getGeneration().orElse(0L)) > 0))
+        .orElse(true);
+  }
+
+  private Optional<Long> getGeneration() {
+    return Optional.ofNullable(getMetadata().getGeneration());
+  }
 }

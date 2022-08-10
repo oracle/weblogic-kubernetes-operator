@@ -666,6 +666,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     if (info == null) {
       return;
     }
+    ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
+    if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
+      return;
+    }
+
     LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
         cluster.getDomainUid());
     createMakeRightOperation(info)

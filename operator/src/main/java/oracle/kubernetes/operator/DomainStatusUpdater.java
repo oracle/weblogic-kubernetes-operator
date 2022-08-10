@@ -669,11 +669,11 @@ public class DomainStatusUpdater {
 
         void apply() {
           conditionList.forEach(newCondition -> addCondition(status, newCondition));
-          setClusterStatusConditions(status);
+          setClusterStatusConditions(status.getClusters());
         }
 
-        private void setClusterStatusConditions(DomainStatus status) {
-          status.getClusters().forEach(cs -> addClusterConditions(cs, getClusterCheck(cs.getClusterName())));
+        private void setClusterStatusConditions(List<ClusterStatus> clusterStatuses) {
+          clusterStatuses.forEach(cs -> addClusterConditions(cs, getClusterCheck(cs.getClusterName())));
         }
 
         private void addClusterConditions(ClusterStatus cs, ClusterCheck clusterCheck) {
