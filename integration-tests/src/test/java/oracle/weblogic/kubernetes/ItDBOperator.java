@@ -197,6 +197,8 @@ class ItDBOperator {
   @Test
   @DisplayName("Create FMW Domain model in image")
   void  testFmwModelInImageWithDbOperator() {
+    int replicaCount = 1;
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(fmwDomainNamespace);
@@ -319,8 +321,8 @@ class ItDBOperator {
     // create the domain CR with a pre-defined configmap
     createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
+        pvName, pvcName, configMapName,
         dbSecretName, false, false, true);
 
     // wait for the domain to exist

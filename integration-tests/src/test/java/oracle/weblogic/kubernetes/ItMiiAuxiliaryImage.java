@@ -13,7 +13,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.AuxiliaryImage;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -61,6 +63,8 @@ import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersi
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
@@ -247,14 +251,25 @@ class ItMiiAuxiliaryImage {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
 
+    // create cluster object
+    String clusterName = "cluster-1";
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid1, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1,
         miiAuxiliaryImage2);
+
+    // set cluster references
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -462,7 +477,7 @@ class ItMiiAuxiliaryImage {
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
     DomainResource domainCR1 = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        encryptionSecretName, replicaCount, auxiliaryImagePath,
         miiAuxiliaryImage1, miiAuxiliaryImage4);
 
     // create domain and verify its running
@@ -485,7 +500,7 @@ class ItMiiAuxiliaryImage {
     DomainResource domainCR2 = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(
         domainUid + "1", domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage1,
         miiAuxiliaryImage4);
 
@@ -541,7 +556,7 @@ class ItMiiAuxiliaryImage {
         domainUid, miiAuxiliaryImage5);
     DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+        encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
         miiAuxiliaryImage5);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
@@ -612,7 +627,7 @@ class ItMiiAuxiliaryImage {
     String[] images = {miiAuxiliaryImage6, miiAuxiliaryImage7};
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1",
+        encryptionSecretName,
         auxiliaryImagePathCustom, miiAuxiliaryImage6,
         miiAuxiliaryImage7);
 
@@ -666,7 +681,7 @@ class ItMiiAuxiliaryImage {
             domainUid, miiAuxiliaryImage8);
     DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-            encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+            encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
             miiAuxiliaryImage8);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
@@ -733,7 +748,7 @@ class ItMiiAuxiliaryImage {
             domainUid, miiAuxiliaryImage12);
     final DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-            encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+            encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
             miiAuxiliaryImage12);
     assertNotNull(domainCR, "failed to create domain resource");
     domainCR.spec().configuration().model().configMap(configMapName);
@@ -779,7 +794,7 @@ class ItMiiAuxiliaryImage {
             domainUid, miiAuxiliaryImage12);
     DomainResource domainCR1 = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-            encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+            encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
             miiAuxiliaryImage12);
     assertNotNull(domainCR1, "failed to create domain resource");
     domainCR1.spec().configuration().model().configMap(configMapName1);
@@ -868,7 +883,7 @@ class ItMiiAuxiliaryImage {
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
     DomainResource domainCR1 = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        encryptionSecretName, replicaCount, auxiliaryImagePath,
         miiAuxiliaryImage1, miiAuxiliaryImage2);
 
     // create domain and verify its running
@@ -897,6 +912,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid2 = "domain7";
     final String adminServerPodName = domainUid2 + "-admin-server";
     final String managedServerPrefix = domainUid2 + "-managed-server";
+    int replicaCount = 1;
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
@@ -925,7 +941,7 @@ class ItMiiAuxiliaryImage {
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(
         domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(errorpathDomainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         errorPathAuxiliaryImage1);
 
     // create domain and verify it is failed
@@ -967,6 +983,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid2 = "domain7";
     final String adminServerPodName = domainUid2 + "-admin-server";
     final String managedServerPrefix = domainUid2 + "-managed-server";
+    int replicaCount = 1;
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
@@ -994,7 +1011,7 @@ class ItMiiAuxiliaryImage {
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(
         domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(errorpathDomainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         errorPathAuxiliaryImage2);
 
     // create domain and verify it is failed
@@ -1037,6 +1054,7 @@ class ItMiiAuxiliaryImage {
     final String adminServerPodName = domainUid2 + "-admin-server";
     final String managedServerPrefix = domainUid2 + "-managed-server";
     final String auxiliaryImagePath = "/auxiliary";
+    int replicaCount = 1;
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
@@ -1066,7 +1084,7 @@ class ItMiiAuxiliaryImage {
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(
         domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(errorpathDomainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         errorPathAuxiliaryImage3);
 
 
@@ -1114,6 +1132,7 @@ class ItMiiAuxiliaryImage {
     final String domainUid = "domain7";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
+    int replicaCount = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -1169,7 +1188,7 @@ class ItMiiAuxiliaryImage {
         domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid, wdtDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(wdtDomainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage9,
         miiAuxiliaryImage10);
 
@@ -1255,7 +1274,7 @@ class ItMiiAuxiliaryImage {
         domainUid, aiThatDoesntExist);
     DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        encryptionSecretName, replicaCount, auxiliaryImagePath,
         aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG);
     // createDomainResource util method sets 600 for activeDeadlineSeconds which is too long to verify
     // introspector re-run in this use case
@@ -1304,7 +1323,6 @@ class ItMiiAuxiliaryImage {
     }
   }
 
-
   /**
    * Cleanup images.
    */
@@ -1351,7 +1369,6 @@ class ItMiiAuxiliaryImage {
       String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
-      List<String> clusterNames,
       String auxiliaryImagePath,
       String... auxiliaryImageName) {
 
@@ -1362,29 +1379,23 @@ class ItMiiAuxiliaryImage {
             adminSecretName,
             repoSecretName,
             encryptionSecretName,
-            replicaCount,
-            auxiliaryImagePath,
-            auxiliaryImagePath,
-            clusterNames,
-            auxiliaryImageName);
+        auxiliaryImagePath, auxiliaryImagePath, replicaCount,
+        auxiliaryImageName);
   }
 
   private DomainResource createDomainResourceWithAuxiliaryImage(
-          String domainResourceName,
-          String domNamespace,
-          String baseImageName,
-          String adminSecretName,
-          String[] repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          String sourceWDTInstallHome,
-          String sourceWDTModelHome,
-          List<String> clusterNames,
-          String... auxiliaryImageName) {
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName,
+      String sourceWDTInstallHome, String sourceWDTModelHome, int replicaCount,
+      String... auxiliaryImageName) {
 
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
             baseImageName, adminSecretName, repoSecretName,
-            encryptionSecretName, replicaCount, clusterNames);
+            encryptionSecretName);
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
       AuxiliaryImage auxImage = new AuxiliaryImage()
@@ -1400,6 +1411,7 @@ class ItMiiAuxiliaryImage {
       domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
       index++;
     }
+    domainCR.spec().replicas(replicaCount);
     return domainCR;
   }
 
@@ -1430,9 +1442,8 @@ class ItMiiAuxiliaryImage {
             domainUid, imageName);
     DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-            encryptionSecretName, replicaCount, wdtInstallPath, wdtModelHomePath,
-            List.of("cluster-1"),
-            imageName);
+            encryptionSecretName, wdtInstallPath, wdtModelHomePath, replicaCount,
+        imageName);
 
     assertNotNull(domainCR,
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",

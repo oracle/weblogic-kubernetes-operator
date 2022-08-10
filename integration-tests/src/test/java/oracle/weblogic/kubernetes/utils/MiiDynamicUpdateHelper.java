@@ -139,7 +139,7 @@ public class MiiDynamicUpdateHelper {
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        pvName, pvcName, configMapName,
         dbSecretName, false, true, false);
 
     // wait for the domain to exist

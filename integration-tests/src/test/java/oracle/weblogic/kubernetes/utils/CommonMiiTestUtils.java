@@ -166,9 +166,8 @@ public class CommonMiiTestUtils {
         imageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        "cluster-1");
+        encryptionSecretName
+    );
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -208,8 +207,6 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResource(
@@ -218,42 +215,7 @@ public class CommonMiiTestUtils {
       String imageName,
       String adminSecretName,
       String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String clusterName) {
-
-    // create the domain CR
-    DomainResource domain = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-        imageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, List.of(clusterName));
-    setPodAntiAffinity(domain);
-
-    return domain;
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param imageName name of the image including its tag
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
-   * @return domain object of the domain resource
-   */
-  public static DomainResource createDomainResource(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames) {
+      String encryptionSecretName) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -311,8 +273,6 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
    * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
    * @param auxiliaryImageVolumeName auxiliary image volume name
    * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
@@ -326,15 +286,13 @@ public class CommonMiiTestUtils {
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
-      String clusterName,
       String auxiliaryImagePath,
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
-        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
-        List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImageAndVolume(domainResourceName,
+        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName,
+        auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
 
     return domainCR;
   }
@@ -349,30 +307,26 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
    * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
    * @param auxiliaryImageVolumeName auxiliary image volume name
    * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static DomainResource createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImageAndVolume(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames,
       String auxiliaryImagePath,
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterNames);
+        encryptionSecretName);
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
         .mountPath(auxiliaryImagePath)
         .name(auxiliaryImageVolumeName));
@@ -392,7 +346,8 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and auxiliary image.
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
+   * image.
    *
    * @param domainResourceName name of the domain resource
    * @param domNamespace Kubernetes namespace that the domain is hosted
@@ -400,10 +355,9 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
-   * @param auxiliaryImageVolumes list of AuxiliaryImageVolumes
-   * @param auxiliaryImages list of AuxiliaryImages
+   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
+   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
+   *                   and WDT installation files
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResourceWithAuxiliaryImage(
@@ -413,28 +367,24 @@ public class CommonMiiTestUtils {
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
-      String clusterName,
-      List<AuxiliaryImageVolume> auxiliaryImageVolumes,
-      List<AuxiliaryImage> auxiliaryImages) {
+      String auxiliaryImagePath,
+      String... auxiliaryImageName) {
 
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterName);
-
-    for (AuxiliaryImageVolume auxiliaryImageVolume : auxiliaryImageVolumes) {
-      domainCR.spec().addAuxiliaryImageVolumesItem(auxiliaryImageVolume);
-      domainCR.spec().configuration().model()
-          .withModelHome(auxiliaryImageVolume.getMountPath() + "/models")
-          .withWdtInstallHome(auxiliaryImageVolume.getMountPath() + "/weblogic-deploy");
+        encryptionSecretName);
+    int index = 0;
+    for (String cmImageName: auxiliaryImageName) {
+      AuxiliaryImage auxImage = new AuxiliaryImage()
+          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
+      //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
+      if (index == 0) {
+        auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
+            .sourceModelHome(auxiliaryImagePath + "/models");
+      }
+      domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
+      index++;
     }
-
-    for (AuxiliaryImage auxiliaryImage : auxiliaryImages) {
-      /* Commented out due to auxiliary image 4.0 changes
-      domainCR.spec().serverPod().addAuxiliaryImagesItem(auxiliaryImage);
-       */
-    }
-
     return domainCR;
   }
 
@@ -448,8 +398,6 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResourceWithAuxiliaryImage(
@@ -458,42 +406,7 @@ public class CommonMiiTestUtils {
       String imageName,
       String adminSecretName,
       String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String clusterName) {
-
-    // create the domain CR
-    DomainResource domain = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName, domNamespace,
-        imageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, List.of(clusterName));
-    setPodAntiAffinity(domain);
-
-    return domain;
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param imageName name of the image including its tag
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
-   * @return domain object of the domain resource
-   */
-  public static DomainResource createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames) {
+      String encryptionSecretName) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -540,89 +453,6 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param baseImageName name of the base image to use
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
-   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
-   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
-   *                   and WDT installation files
-   * @return domain object of the domain resource
-   */
-  public static DomainResource createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String baseImageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String clusterName,
-      String auxiliaryImagePath,
-      String... auxiliaryImageName) {
-
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
-        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
-        List.of(clusterName), auxiliaryImagePath, auxiliaryImageName);
-
-    return domainCR;
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param baseImageName name of the base image to use
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
-   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
-   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
-   *                   and WDT installation files
-   * @return domain object of the domain resource
-   */
-  public static DomainResource createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String baseImageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames,
-      String auxiliaryImagePath,
-      String... auxiliaryImageName) {
-
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-        baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterNames);
-    int index = 0;
-    for (String cmImageName: auxiliaryImageName) {
-      AuxiliaryImage auxImage = new AuxiliaryImage()
-          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
-      //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
-      if (index == 0) {
-        auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
-                .sourceModelHome(auxiliaryImagePath + "/models");
-      }
-      domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
-      index++;
-    }
-    return domainCR;
-  }
-
-  /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
    * image.
    *
@@ -632,10 +462,8 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
    * @param pvName Name of persistent volume
    * @param pvcName Name of persistent volume claim
-   * @param clusterName name of the cluster to add in domain
    * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
    * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
@@ -650,10 +478,8 @@ public class CommonMiiTestUtils {
       String adminSecretName,
       String repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
       String pvName,
       String pvcName,
-      String clusterName,
       String configMapName,
       String dbSecretName,
       boolean allowReplicasBelowMinDynClusterSize,
@@ -731,6 +557,48 @@ public class CommonMiiTestUtils {
         + "for %s in namespace %s", domainResourceName, domNamespace));
 
     setPodAntiAffinity(domain);
+    return domain;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start, set at domain level
+   * @param pvName Name of persistent volume
+   * @param pvcName Name of persistent volume claim
+   * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
+   * @param dbSecretName name of the Secret for WebLogic configuration overrides
+   * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
+   * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
+   * @param setDataHome whether to set data home at domain resource
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResourceWithLogHome(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String pvName,
+      String pvcName,
+      String configMapName,
+      String dbSecretName,
+      boolean allowReplicasBelowMinDynClusterSize,
+      boolean onlineUpdateEnabled,
+      boolean setDataHome) {
+    DomainResource domain = createDomainResourceWithLogHome(domainResourceName, domNamespace, imageName,
+        adminSecretName, repoSecretName, encryptionSecretName, pvName, pvcName, configMapName,
+        dbSecretName, allowReplicasBelowMinDynClusterSize, onlineUpdateEnabled, setDataHome);
+    domain.getSpec().replicas(replicaCount);
     return domain;
   }
 

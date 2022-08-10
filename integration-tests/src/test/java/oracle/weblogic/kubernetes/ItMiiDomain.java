@@ -230,8 +230,7 @@ class ItMiiDomain {
     DomainResource domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-               replicaCount,
-               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
@@ -770,6 +769,7 @@ class ItMiiDomain {
             .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
             .target(witTarget)
+            .target(witTarget)
             .env(env)
             .redirect(true));
 
@@ -835,7 +835,7 @@ class ItMiiDomain {
   private DomainResource createDomainResourceWithConfigMap(String domainUid,
                                                            String domNamespace, String adminSecretName,
                                                            String repoSecretName, String encryptionSecretName,
-                                                           int replicaCount, String miiImage, String configmapName) {
+                                                           String miiImage, String configmapName) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
