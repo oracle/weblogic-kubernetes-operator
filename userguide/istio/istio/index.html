@@ -12,20 +12,20 @@
     <title>Istio support :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1660076908" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1660076908" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1660165318" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1660165318" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1660076908"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1660165318"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1660076908"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1660076908"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1660165318"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1660165318"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1660076908"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1660165318"></script>
 
     
   </div>
@@ -3557,6 +3557,8 @@
 <div class="notices note" ><p>These instructions assume that you are using a Kubernetes cluster with
 <a href="https://istio.io/latest/docs/setup/install/">Istio</a> installed and configured already.  The operator will not install
 Istio for you.</p>
+<p>For Red Hat OpenShift Service Mesh, which has its own implementation of Istio, refer to the correct version of the documentation for installation.
+<a href="https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/installing-ossm.html">OpenShift Service Mesh installation 4.10</a></p>
 </div>
 
 <p>Istio support lets you run the operator, and WebLogic domains managed by
@@ -3565,8 +3567,13 @@ Istio gateways and virtual services to access applications deployed in these dom
 If your applications have suitable tracing code in them, then you will also be able to
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.</p>
+<p>WebLogic Kubernetes Operator assumes that you are familiar with Istio or Red Hat OpenShift Service Mesh. If you are new to
+them, we strongly recommend reading the respective documentation and working through the <code>Bookinfo</code>
+sample application to familiarize yourself with the mesh and verify that it is working properly in your environment, before proceeding to work with the Operator.</p>
 <p>To learn more about Istio,
 see <a href="https://istio.io/latest/docs/concepts/what-is-istio/">What is Istio</a>.</p>
+<p>For Redhat OpenShift Service Mesh, see</p>
+<p><a href="https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/ossm-about.html">OpenShift Service Mesh</a>.</p>
 <h4 id="limitations">Limitations</h4>
 <p>The current support for Istio has these limitations:</p>
 <ul>
@@ -3574,6 +3581,9 @@ see <a href="https://istio.io/latest/docs/concepts/what-is-istio/">What is Istio
 <p>The operator supports Istio versions 1.7 and higher,
 and has been tested with single and multicluster
 Istio installations from 1.7.3 up to 1.11.x.</p>
+</li>
+<li>
+<p>For Red Hat OpenShift Service Mesh,  we have tested with Red Hat OpenShift Container Platform version 4.10.20, Service Mesh 2.2.1.</p>
 </li>
 <li>
 <p>You cannot set up a NodePort using <code>domain.spec.adminServer.adminService.channels</code>
@@ -3701,6 +3711,7 @@ Use <code>true</code> for Istio versions prior to 1.10 and set to <code>false</c
 </tr>
 </tbody>
 </table>
+<p><strong>For Red Hat OpenShift Service Mesh</strong>,  you do not need to set <code>istioLocalhostBindingsEnabled</code> or if set, it must be set to <code>true</code>.</p>
 </li>
 </ul>
 <p><strong>Note</strong>: If the <code>localhostBindingsEnabled</code> is set incorrectly for the Istio version running in a domain,
@@ -6509,19 +6520,19 @@ spec:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1660076908"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1660165318"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1660076908"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1660076908"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1660165318"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1660165318"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1660076908"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1660165318"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
