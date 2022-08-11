@@ -59,7 +59,7 @@ class ItMultiDomainModels {
 
   // domain constants
   private static final String clusterName = "cluster-1";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private static final String wlSecretName = "weblogic-credentials";
   private static final String miiDomainUid = "miidomain";
   private static final String dimDomainUid = "domaininimage";
