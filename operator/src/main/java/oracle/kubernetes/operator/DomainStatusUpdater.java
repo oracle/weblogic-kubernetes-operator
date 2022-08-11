@@ -416,8 +416,8 @@ public class DomainStatusUpdater {
       return getDomain().getDomainUid();
     }
 
-    boolean isStatusUnchanged() {
-      return getDomain() == null || getNewStatus().equals(getStatus());
+    boolean isStatusChanged() {
+      return getDomain() != null && !getNewStatus().equals(getStatus());
     }
 
     private String getNamespace() {
@@ -488,7 +488,7 @@ public class DomainStatusUpdater {
 
     private Step createUpdateSteps(Step next) {
       final List<Step> result = new ArrayList<>();
-      if (!isStatusUnchanged()) {
+      if (isStatusChanged()) {
         result.add(createDomainStatusReplaceStep());
       }
       createDomainEvents().stream().map(EventHelper::createEventStep).forEach(result::add);
@@ -722,7 +722,11 @@ public class DomainStatusUpdater {
         }
 
         private boolean isProcessingCompleted() {
-          return !haveTooManyReplicas() && allIntendedServersReady();
+          return !haveTooManyReplicas() && allIntendedServersReady() && !hasFailedCondition();
+        }
+
+        private boolean hasFailedCondition() {
+          return status.hasConditionWithType(FAILED);
         }
 
         private boolean haveTooManyReplicas() {
@@ -738,7 +742,9 @@ public class DomainStatusUpdater {
         }
 
         private List<String> getNonStartedServersWithState() {
-          return serverState.keySet().stream().filter(this::isNonStartedServer).collect(Collectors.toList());
+          return Optional.ofNullable(serverState).map(Map::keySet).orElse(Collections.emptySet())
+              .stream().filter(this::isNonStartedServer)
+              .collect(Collectors.toList());
         }
 
         // returns true if the server pod does not have a label indicating that it needs to be rolled
