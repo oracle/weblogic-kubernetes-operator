@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -214,28 +215,33 @@ public class ClusterResourceStatusUpdater {
       result.add(createReplaceClusterStatusAsyncStep());
 
       // add steps to create events for conditions
-      addClusterStatusConditionTrueEvents(newClusterStatus, result);
-      addClusterStatusConditionFalseEvents(newClusterStatus, result);
+      Optional.ofNullable(newClusterStatus)
+          .map(ncs -> getClusteStatusConditionEvents(ncs.getConditions())).orElse(Collections.emptyList())
+          .stream().map(EventHelper::createClusterResourceEventStep).forEach(result::add);
 
       return new StepAndPacket(Step.chain(result), packet);
     }
 
-    private void addClusterStatusConditionFalseEvents(ClusterStatus newClusterStatus, List<Step> result) {
-      Optional.ofNullable(newClusterStatus).ifPresent(cs -> cs.getConditions()
-          .stream()
-          .filter(c -> "False".equals(c.getStatus()))
-          .map(this::toFalseClusterResourceEvent)
-          .map(EventHelper::createClusterResourceEventStep)
-          .forEach(result::add));
+    private List<EventData> getClusteStatusConditionEvents(List<ClusterCondition> conditions) {
+      List<EventData> list = new ArrayList<>();
+      list.addAll(getClusterStatusConditionTrueEvents(conditions));
+      list.addAll(getClusterStatusConditionFalseEvents(conditions));
+      list.sort(Comparator.comparing(EventData::getOrdering));
+      return list;
     }
 
-    private void addClusterStatusConditionTrueEvents(ClusterStatus newClusterStatus, List<Step> result) {
-      Optional.ofNullable(newClusterStatus).ifPresent(cs -> cs.getConditions()
-          .stream()
-          .filter(c -> "True".equals(c.getStatus()))
+    private List<EventData> getClusterStatusConditionFalseEvents(List<ClusterCondition> conditions) {
+      return conditions.stream().filter(cc -> "False".equals(cc.getStatus()))
+           .map(this::toFalseClusterResourceEvent)
+           .filter(Objects::nonNull)
+           .collect(Collectors.toList());
+    }
+
+    private List<EventData> getClusterStatusConditionTrueEvents(List<ClusterCondition> conditions) {
+      return conditions.stream().filter(cc -> "True".equals(cc.getStatus()))
           .map(this::toTrueClusterResourceEvent)
-          .map(EventHelper::createClusterResourceEventStep)
-          .forEach(result::add));
+          .filter(Objects::nonNull)
+          .collect(Collectors.toList());
     }
 
     private EventData toTrueClusterResourceEvent(ClusterCondition condition) {
