@@ -96,7 +96,8 @@ public class FmwUtils {
                     .domainType("JRF")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                .introspectorJobActiveDeadlineSeconds(600L))
+            .replicas(replicaCount));
 
     return domain;
   }

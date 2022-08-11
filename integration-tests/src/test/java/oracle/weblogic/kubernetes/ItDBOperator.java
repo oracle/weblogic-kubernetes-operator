@@ -197,7 +197,6 @@ class ItDBOperator {
   @Test
   @DisplayName("Create FMW Domain model in image")
   void  testFmwModelInImageWithDbOperator() {
-    int replicaCount = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
