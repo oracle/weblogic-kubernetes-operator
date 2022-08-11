@@ -372,25 +372,27 @@ public class DomainUtils {
    * @param newImageName new auxiliary image name
    * @param domainUid uid of the domain
    * @param domainNamespace domain namespace
+   * @param replicaCount replica count to verify
    */
   public static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
-                                                            String domainUid, String domainNamespace) {
+                                                            String domainUid, String domainNamespace,
+                                                            int replicaCount) {
     patchDomainWithAuxiliaryImageAndVerify(oldImageName, newImageName, domainUid,
-        domainNamespace, true);
+        domainNamespace, true, replicaCount);
   }
 
   /**
    * Patch a domain with auxiliary image and verify pods are rolling restarted.
-   *
-   * @param oldImageName         old auxiliary image name
+   *  @param oldImageName         old auxiliary image name
    * @param newImageName         new auxiliary image name
    * @param domainUid            uid of the domain
    * @param domainNamespace      domain namespace
    * @param verifyRollingRestart verify if the pods are rolling restarted
+   * @param replicaCount replica count to verify
    */
   public static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
                                                             String domainUid, String domainNamespace,
-                                                            boolean verifyRollingRestart) {
+                                                            boolean verifyRollingRestart, int replicaCount) {
 
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
@@ -426,7 +428,7 @@ public class DomainUtils {
     //get current timestamp before domain rolling restart to verify domain roll events
     if (verifyRollingRestart) {
       podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
-          managedServerPrefix, 2);
+          managedServerPrefix, replicaCount);
     }
     V1Patch patch = new V1Patch((patchStr).toString());
 
