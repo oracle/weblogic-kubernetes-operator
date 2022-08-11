@@ -677,27 +677,7 @@ public class DomainStatusUpdater {
 
         void apply() {
           conditionList.forEach(newCondition -> addCondition(status, newCondition));
-          setClusterStatusConditions(status.getClusters());
-        }
-
-        private void setClusterStatusConditions(List<ClusterStatus> clusterStatuses) {
-          clusterStatuses.forEach(cs -> addClusterConditions(cs, getClusterCheck(cs.getClusterName())));
-        }
-
-        private void addClusterConditions(ClusterStatus cs, ClusterCheck clusterCheck) {
-          if (clusterCheck != null) {
-            cs.addCondition(
-                new ClusterCondition(ClusterConditionType.AVAILABLE)
-                    .withStatus(clusterCheck.isAvailable()));
-            cs.addCondition(
-                new ClusterCondition(ClusterConditionType.COMPLETED)
-                    .withStatus(clusterCheck.isProcessingCompleted()));
-          }
-        }
-
-        private ClusterCheck getClusterCheck(@Nonnull String clusterName) {
-          return Arrays.stream(clusterChecks).filter(clusterCheck -> clusterName.equals(clusterCheck.clusterName))
-              .findFirst().orElse(null);
+          Arrays.stream(clusterChecks).forEach(ClusterCheck::addClusterConditions);
         }
 
         private void addCondition(DomainStatus status, DomainCondition newCondition) {
@@ -809,8 +789,10 @@ public class DomainStatusUpdater {
         private final int specifiedReplicaCount;
         private final List<String> startedServers;
         private final List<String> nonStartedServers;
+        private final ClusterStatus clusterStatus;
 
         ClusterCheck(DomainStatus domainStatus, ClusterStatus clusterStatus) {
+          this.clusterStatus = clusterStatus;
           clusterName = clusterStatus.getClusterName();
           minReplicaCount = clusterStatus.getMinimumReplicas();
           maxReplicaCount = clusterStatus.getMaximumReplicas();
@@ -900,6 +882,15 @@ public class DomainStatusUpdater {
 
         private int maxUnavailable() {
           return getInfo().getMaxUnavailable(clusterName);
+        }
+
+        void addClusterConditions() {
+          clusterStatus.addCondition(
+              new ClusterCondition(ClusterConditionType.AVAILABLE)
+                  .withStatus(isAvailable()));
+          clusterStatus.addCondition(
+              new ClusterCondition(ClusterConditionType.COMPLETED)
+                  .withStatus(isProcessingCompleted()));
         }
       }
 
