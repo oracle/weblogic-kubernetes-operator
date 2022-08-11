@@ -214,7 +214,7 @@ public class ClusterResourceStatusUpdater {
       final List<Step> result = new ArrayList<>();
       result.add(createReplaceClusterStatusAsyncStep());
 
-      // add steps to create events for conditions
+      // add steps to create events for updating conditions
       Optional.ofNullable(newClusterStatus)
           .map(ncs -> getClusteStatusConditionEvents(ncs.getConditions())).orElse(Collections.emptyList())
           .stream().map(EventHelper::createClusterResourceEventStep).forEach(result::add);

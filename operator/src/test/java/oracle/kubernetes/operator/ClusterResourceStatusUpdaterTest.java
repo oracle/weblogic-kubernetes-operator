@@ -252,6 +252,22 @@ class ClusterResourceStatusUpdaterTest {
     assertThat(testSupport, hasEvent(CLUSTER_INCOMPLETE_EVENT));
   }
 
+  @Test
+  void whenClusterConditionAvailableAndCompletedTrue_verifyBothEventsGenerated() {
+    ClusterStatus newStatus = new ClusterStatus().withMinimumReplicas(0).withMaximumReplicas(8)
+        .withClusterName(CLUSTER).withReplicas(5).withReadyReplicas(5).withReplicasGoal(5);
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(ClusterCondition.TRUE));
+    newStatus.addCondition(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(ClusterCondition.TRUE));
+    domain.getStatus().addCluster(newStatus);
+    cluster.withStatus(null);
+    info.addClusterResource(cluster);
+
+    updateClusterResourceStatus();
+
+    assertThat(testSupport, hasEvent(CLUSTER_AVAILABLE_EVENT));
+    assertThat(testSupport, hasEvent(CLUSTER_COMPLETED_EVENT));
+  }
+
   private ClusterResource createClusterResource(String clusterName) {
     return new ClusterResource()
         .withMetadata(new V1ObjectMeta().namespace(DomainProcessorTestSetup.NS).name(
