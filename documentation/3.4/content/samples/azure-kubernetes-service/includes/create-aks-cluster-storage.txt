@@ -72,7 +72,10 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     $ echo ${aksMCRGName}
 
     # get network name of AKS cluster
-    $ aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+    $ aksNetworkName=$(az graph query -q "Resources \
+        | where type =~ 'Microsoft.Network/virtualNetworks' \
+        | where resourceGroup  =~ '${aksMCRGName}' \
+        | project name = name" --query "data[0].name"  -o tsv)
     $ echo ${aksNetworkName}
 
     # get subnet name of AKS agent pool

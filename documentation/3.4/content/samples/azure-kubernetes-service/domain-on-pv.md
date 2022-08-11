@@ -553,46 +553,111 @@ adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
 -rw-r--r-- 1 user user 3528 Jul  5 14:25 /tmp/testwebapp/testwebapp.war
 ```
 
-Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster:
+Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster. This sample uses WLS RESTful API [/management/weblogic/latest/edit/appDeployments](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html) to deploy the sample application:
 
-1. Go to the WebLogic Server Administration Console, Select "Lock & Edit".
-1. Select Deployments.
-1. Select Install.
-1. Select Upload your file(s).
-1. For the Deployment Archive, Select "Choose File".
-1. Select the file `kubernetes/samples/charts/application/testwebapp.war`.
-1. Select Next. Choose 'Install this deployment as an application'.
-1. Select Next. Select cluster-1 and All servers in the cluster.  Select Next.
-1. Accept the defaults in the next screen and select Next
-1. Select Finish.
-1. Select Activate Changes.
+```bash
+$ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+$ curl --user weblogic:welcome1 -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
+  -H Content-Type:multipart/form-data  \
+  -F "model={
+        name:    'testwebapp',
+        targets: [ { identity: [ 'clusters', 'cluster-1' ] } ]
+      }" \
+  -F "sourcePath=@/tmp/testwebapp/testwebapp.war" \
+  -H "Prefer:respond-async" \
+  -X POST http://${ADMIN_SERVER_IP}:7001/management/weblogic/latest/edit/appDeployments
+```
 
-{{%expand "Click here to view the application deployment screenshot." %}}
-![Deploy Application](../screenshot-deploy-test-app.png)
+After the successful deployment, you will find output like the following:
+
+{{%expand "Click here to view the output." %}}
+```text
+*   Trying 52.226.101.43:7001...
+* TCP_NODELAY set
+* Connected to 52.226.101.43 (52.226.101.43) port 7001 (#0)
+* Server auth using Basic with user 'weblogic'
+> POST /management/weblogic/latest/edit/appDeployments HTTP/1.1
+> Host: 52.226.101.43:7001
+> Authorization: Basic d2VibG9naWM6d2VsY29tZTE=
+> User-Agent: curl/7.68.0
+> X-Requested-By:MyClient
+> Accept:application/json
+> Prefer:respond-async
+> Content-Length: 3925
+> Content-Type: multipart/form-data; boundary=------------------------cc76a2c2d819911f
+> Expect: 100-continue
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 100 Continue
+* We are completely uploaded and fine
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 202 Accepted
+< Date: Thu, 11 Aug 2022 08:32:56 GMT
+< Location: http://domain1-admin-server:7001/management/weblogic/latest/domainRuntime/deploymentManager/deploymentProgressObjects/testwebapp
+< Content-Length: 764
+< Content-Type: application/json
+< X-ORACLE-DMS-ECID: 6f205c83-e172-4c34-a638-7f0c6345ce45-00000055
+< X-ORACLE-DMS-RID: 0
+< Set-Cookie: JSESSIONID=NOCMCQBO7dxyA2lUfCYp4zSYIeFB0S3V1KRRzigmmoOUfmQmlLOh!-546081476; path=/; HttpOnly
+< Vary: Accept-Encoding
+<
+{
+    "links": [{
+        "rel": "job",
+        "href": "http:\/\/domain1-admin-server:7001\/management\/weblogic\/latest\/domainRuntime\/deploymentManager\/deploymentProgressObjects\/testwebapp"
+    }],
+    "identity": [
+        "deploymentManager",
+        "deploymentProgressObjects",
+        "testwebapp"
+    ],
+    "rootExceptions": [],
+    "deploymentMessages": [],
+    "name": "testwebapp",
+    "operationType": 3,
+    "startTimeAsLong": 1660206785965,
+    "state": "STATE_RUNNING",
+    "id": "0",
+    "type": "DeploymentProgressObject",
+    "targets": ["cluster-1"],
+    "applicationName": "testwebapp",
+    "failedTargets": [],
+    "progress": "processing",
+    "completed": false,
+    "intervalToPoll": 1000,
+    "startTime": "2022-08-11T08:33:05.965Z"
+* Connection #0 to host 52.226.101.43 left intact
+```
 {{% /expand %}}
 
-Next you will need to start the application:
-
-1. Go to Deployments.
-1. Select Control.
-1. Select the check box next to `testwebapp`.
-1. Select Start.
-1. Select Servicing all requests.
-1. Select Yes.
-
-After the successful deployment, go to the application through the `domain1-cluster-1-lb` external IP.
+Now, you can go to the application through the `domain1-cluster-1-lb` external IP.
 
 ```shell
-$ kubectl  get svc domain1-cluster-1-external-lb
-```
-```
-NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
-domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   8001:32695/TCP   30m
+$ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+$ curl http://${CLUSTER_IP}:8001/testwebapp/
 ```
 
-In the example, the application address is: `http://52.224.248.40:8001/testwebapp`.
+The test application will list the server host and server IP on the output, like the following:
 
-The test application will list the server host and server IP on the page.
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <link rel="stylesheet" href="/testwebapp/res/styles.css;jsessionid=9uiMDakndtPlZTyDB9A-OKZEFBBAPyIs_9bG3qC4uA3PYaI8DsH1!-1450005246" type="text/css">
+    <title>Test WebApp</title>
+  </head>
+  <body>
+
+
+    <li>InetAddress: domain1-managed-server1/10.244.1.8
+    <li>InetAddress.hostname: domain1-managed-server1
+
+  </body>
+</html>
+```
 
 #### Validate NFS volume
 

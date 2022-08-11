@@ -276,11 +276,13 @@ loginAzure() {
   az login --service-principal --username $azureServicePrincipalAppId \
   --password $azureServicePrincipalClientSecret \
   --tenant $azureServicePrincipalTenantId
-  echo Login Azure with Servie Principal successfully.
 
   if [ $? -ne 0 ]; then
     fail "Login to Azure failed!"
   fi
+
+  echo Login Azure with Servie Principal successfully.
+  az extension add --name resource-graph
 }
 
 createResourceGroup() {
@@ -371,7 +373,11 @@ configureStorageAccountNetwork() {
   echo ${aksMCRGName}
 
   # get network name of AKS cluster
-  local aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+  local aksNetworkName=$(az graph query -q "Resources \
+    | where type =~ 'Microsoft.Network/virtualNetworks' \
+    | where resourceGroup  =~ '${aksMCRGName}' \
+    | project name = name" --query "data[0].name"  -o tsv)
+
   echo ${aksNetworkName}
 
   # get subnet name of AKS agent pool
