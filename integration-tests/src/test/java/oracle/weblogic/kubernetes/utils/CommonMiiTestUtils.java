@@ -597,8 +597,8 @@ public class CommonMiiTestUtils {
     DomainResource domain = createDomainResourceWithLogHome(domainResourceName, domNamespace, imageName,
         adminSecretName, repoSecretName, encryptionSecretName, pvName, pvcName, configMapName,
         dbSecretName, allowReplicasBelowMinDynClusterSize, onlineUpdateEnabled, setDataHome);
-    domain.getSpec().replicas(replicaCount);
-    return domain;
+    DomainSpec spec = domain.getSpec().replicas(replicaCount);
+    return domain.spec(spec);
   }
 
   /**
