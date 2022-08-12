@@ -646,6 +646,7 @@ class ItExternalLbTunneling {
             .spec(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
+                    .replicas(replicaCount)
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
                     .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
