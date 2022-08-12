@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainProcessorImpl.getClusterEventK8SObjects;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
@@ -49,6 +50,9 @@ class OperatorEventProcessingTest {
   private static final String OPERATOR_UID = "1234-5678-101112";
   private static final String NS = "namespace";
   private static final String UID = "uid";
+  public final V1ObjectReference clusterReference =
+      new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
+
   private final V1ObjectReference domainReference =
       new V1ObjectReference().name(UID).kind("Domain").namespace(NS);
 
@@ -273,12 +277,54 @@ class OperatorEventProcessingTest {
     assertThat(getMatchingEvent(event1), nullValue());
   }
 
+  @Test
+  void onNewClusterCreatedEvent_updateClusterKubernetesEventObjectsMap() {
+    CoreV1Event event = createClusterEvent(
+        clusterReference);
+    dispatchAddedEventWatch(event);
+    assertThat("Found NO CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), notNullValue());
+  }
+
+  @Test
+  void onNewClusterCreatedEventWithNoInvolvedObject_doNothing() {
+    CoreV1Event event = createClusterEvent(null);
+    dispatchAddedEventWatch(event);
+    assertThat("Found CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), nullValue());
+  }
+
+  @Test
+  void afterOnAddClusterCreatedEvent_onDeleteClusterCreatedEvent_updateClusterKubernetesEventObjectsMap() {
+    final V1ObjectReference clusterReference =
+        new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
+    CoreV1Event event = createClusterEvent(clusterReference);
+    dispatchAddedEventWatch(event);
+    dispatchDeletedEventWatch(event);
+    assertThat("Found CLUSTER_CREATED event in the map", getMatchingClusterEvent(event), nullValue());
+  }
+
+  @Test
+  void afterOnAddClusterCreatedEvent_onDeleteClusterCreatedEventWithNoInvolvedObject_doNothing() {
+    final V1ObjectReference clusterReference =
+        new V1ObjectReference().name(UID + "-cluster1").kind("Cluster").namespace(NS);
+    CoreV1Event event1 = createClusterEvent(clusterReference);
+    dispatchAddedEventWatch(event1);
+    CoreV1Event event2 = createClusterEvent(null);
+    dispatchDeletedEventWatch(event2);
+    assertThat("Found NO CLUSTER_CREATED event1 in the map", getMatchingClusterEvent(event1), notNullValue());
+  }
+
   private int getMatchingEventCount(CoreV1Event event) {
     return Optional.ofNullable(getMatchingEvent(event)).map(CoreV1Event::getCount).orElse(0);
   }
 
   private CoreV1Event getMatchingEvent(CoreV1Event event) {
     CoreV1Event found = Optional.ofNullable(getEventK8SObjects(event)).map(k -> k.getExistingEvent(event)).orElse(null);
+    return getEventName(found).equals(getEventName(event)) ? found : null;
+  }
+
+  private CoreV1Event getMatchingClusterEvent(CoreV1Event event) {
+    CoreV1Event found = Optional.ofNullable(getClusterEventK8SObjects(event))
+        .map(k -> k.getExistingEvent(event)).orElse(null);
     return getEventName(found).equals(getEventName(event)) ? found : null;
   }
 
@@ -308,6 +354,19 @@ class OperatorEventProcessingTest {
 
     metadata.putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     return metadata;
+  }
+
+  private CoreV1Event createClusterEvent(V1ObjectReference involvedObj) {
+    return new CoreV1Event()
+      .metadata(createMetadata("uid-cluster1", NS, false))
+      .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+      .reportingInstance(OPERATOR_POD_NAME)
+      .lastTimestamp(SystemClock.now())
+      .type(EventConstants.EVENT_NORMAL)
+      .reason(EventItem.CLUSTER_CREATED.getReason())
+      .message("")
+      .involvedObject(involvedObj)
+      .count(1);
   }
 
   private CoreV1Event createDomainEvent(
