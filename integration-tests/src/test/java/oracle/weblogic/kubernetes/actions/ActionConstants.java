@@ -50,8 +50,11 @@ public interface ActionConstants {
       "https://github.com/oracle/weblogic-deploy-tooling/releases/latest";
   public static final String WDT_DOWNLOAD_URL =
       getNonEmptySystemProperty("wko.it.wdt.download.url", WDT_DOWNLOAD_URL_DEFAULT);
-  public static final String WDT_VERSION =
-      getNonEmptySystemProperty("wko.it.wdt.version", "latest");
+  //WDT_VERSION is used as the sub-directory identifier when we need to find out
+  //from where we can locate weblogic-deploy.zip file. Right now when we install WDT
+  //we always put zip file under "latest" sub-directory no matter using "latest" branch or
+  //explicit version download URL or custom download URL
+  public static final String WDT_VERSION = "latest";
   public static final String WDT_DOWNLOAD_FILENAME_DEFAULT = "weblogic-deploy.zip";
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";

@@ -32,10 +32,10 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -47,7 +47,7 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLo
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyApache;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
@@ -117,7 +117,7 @@ class ItLBTwoDomainsApache {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
       domainUids.add("wls-apache-domain-" + i);
@@ -131,7 +131,7 @@ class ItLBTwoDomainsApache {
       //   3. docker tag with the KIND_REPO value
       //   4. docker push to KIND_REPO
       testUntil(
-          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+          () -> dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD),
           logger,
           "docker login to be successful");
 
@@ -225,7 +225,7 @@ class ItLBTwoDomainsApache {
 
   private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {
     return (() -> {
-      kindRepoApacheImage = KIND_REPO + apacheImage.substring(OCIR_REGISTRY.length() + 1);
+      kindRepoApacheImage = KIND_REPO + apacheImage.substring(TEST_IMAGES_REPO.length() + 1);
       logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
           apacheImage, kindRepoApacheImage);
       return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
