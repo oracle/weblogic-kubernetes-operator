@@ -58,9 +58,33 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
     The command provisions an NFS file share with NFS 4.1 or above.
 
-3. Configure network security.
+3. Assign the AKS cluster Contributor role to access the storage account.
 
-    You must configure the network security allowing access from AKS cluster to the storage account.
+    You must configure role assignment allowing access from AKS cluster to the storage account.
+
+    Get `objectId` of the AKS cluster with the following command and save it with variable `AKS_OBJECT_ID`:
+
+    ```shell
+    $ AKS_OBJECT_ID=$(az aks show --name ${AKS_CLUSTER_NAME} --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "identity.principalId" -o tsv)
+    ```
+
+    Get Id of the storage account with the following command:
+
+    ```shell
+    $ STORAGE_ACCOUNT_ID=$(az storage account show --name ${AKS_PERS_STORAGE_ACCOUNT_NAME} --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "id" -o tsv)
+    ```
+
+    Now, you are able to create a role assignment to grant the AKS cluster **Contributor** in the scope of the storage account. Then, the AKS cluster is able to access the file share.
+
+    ```shell
+    $ az role assignment create --assignee "${AKS_OBJECT_ID}" \
+      --role "Contributor" \
+      --scope "${STORAGE_ACCOUNT_ID}"
+    ```
+
+4. Configure network security.
+
+    You must configure the network security allowing access from AKS cluster to the file share.
 
     First, you must get the virtual network name and the subnet name of the AKS cluster.
 

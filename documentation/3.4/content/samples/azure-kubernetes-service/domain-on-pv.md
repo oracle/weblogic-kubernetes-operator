@@ -32,6 +32,19 @@ Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/we
 $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
+##### Sign in with Azure CLI
+
+Please run `az login` to sign in your subscription. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
+
+```shell
+# Login
+$ az login
+
+# Set your working subscription
+$ export SUBSCRIPTION_ID=<your-subscription-id>
+$ az account set -s $SUBSCRIPTION_ID
+```
+
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
 
@@ -495,9 +508,6 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal; refer to the application ID in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
-| `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
-| `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
 | `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
 | `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
