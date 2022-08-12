@@ -611,7 +611,7 @@ class ItWlsSamples {
               "domainHome: /shared/domains", "domainHome: /shared/"
                       + domainNamespace + "/domains");
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "logHome: /shared/domains", "logHome: /shared/"
+              "logHome: /shared/logs", "logHome: /shared/"
                       + domainNamespace + "/logs");
       if (pvcName != null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
