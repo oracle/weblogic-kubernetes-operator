@@ -48,6 +48,8 @@ import org.apache.commons.io.FileUtils;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
@@ -700,6 +702,8 @@ public class MonitoringUtils {
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

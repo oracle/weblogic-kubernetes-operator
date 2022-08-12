@@ -55,6 +55,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -347,6 +349,8 @@ public class CommonLBTestUtils {
             .logHome("/shared/" + domainNamespace + "/" + domainUid + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
