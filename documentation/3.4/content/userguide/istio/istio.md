@@ -34,6 +34,10 @@ description: "Lets you run the operator, and WebLogic domains managed by the ope
 These instructions assume that you are using a Kubernetes cluster with
 [Istio](https://istio.io/latest/docs/setup/install/) installed and configured already.  The operator will not install
 Istio for you.
+
+For Red Hat OpenShift Service Mesh, which has its own implementation of Istio, refer to the correct version of the documentation for installation. 
+[OpenShift Service Mesh installation 4.10](https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/installing-ossm.html)
+
 {{% /notice %}}
 
 Istio support lets you run the operator, and WebLogic domains managed by
@@ -43,8 +47,17 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
+WebLogic Kubernetes Operator assumes that you are familiar with Istio or Red Hat OpenShift Service Mesh. If you are new to
+them, we strongly recommend reading the respective documentation and working through the `Bookinfo`
+sample application to familiarize yourself with the mesh and verify that it is working properly in your environment, before proceeding to work with the Operator.
+
+
 To learn more about Istio,
 see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
+
+For Redhat OpenShift Service Mesh, see
+
+[OpenShift Service Mesh](https://docs.openshift.com/container-platform/4.10/service_mesh/v2x/ossm-about.html).
 
 #### Limitations
 
@@ -53,6 +66,8 @@ The current support for Istio has these limitations:
 * The operator supports Istio versions 1.7 and higher,
   and has been tested with single and multicluster
   Istio installations from 1.7.3 up to 1.11.x.
+
+* For Red Hat OpenShift Service Mesh,  we have tested with Red Hat OpenShift Container Platform version 4.10.20, Service Mesh 2.2.1.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
@@ -187,6 +202,8 @@ See the following description of each `spec.configuration.istio` attribute:
   |Pre-1.10|`false`|Not supported.|
   |1.10 and later|`true`|Not supported.|
   |1.10 and later|`false`|Supported.|
+
+  **For Red Hat OpenShift Service Mesh**,  you do not need to set `istioLocalhostBindingsEnabled` or if set, it must be set to `true`.
 
 __Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
 then:
