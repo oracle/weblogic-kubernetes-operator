@@ -453,7 +453,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .addResourcesItem("clusters")
                 .addResourcesItem("domains")
                 .addResourcesItem("domains/status")
-                .verbs(asList("get", "list", "watch", "update", "patch")))
+                .verbs(asList("get", "create", "list", "watch", "update", "patch")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("authentication.k8s.io")
