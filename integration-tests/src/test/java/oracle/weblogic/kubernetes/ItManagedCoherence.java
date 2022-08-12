@@ -280,6 +280,7 @@ class ItManagedCoherence {
             .domainUid(domainUid)
             .domainHomeSourceType("Image")
             .image(domImage)
+            .replicas(replicaCount)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
