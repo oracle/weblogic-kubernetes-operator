@@ -20,6 +20,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *  Implementation of actions that build an application archive file.
@@ -130,11 +131,15 @@ public class AppBuilder {
           String appSrcDir = String.format("%s/%s/u01/application/builddir/%s.%s",
               WORK_DIR, params.appName(), params.appName(), appType);
           String archiveSrcDir = String.format("%s/%s.%s", ARCHIVE_SRC_DIR, params.appName(), appType);
+          assertTrue(FileUtils.doesFileExist(appSrcDir), "File " + appSrcDir + " doesn't exist");
+          assertTrue(FileUtils.doesDirExist(ARCHIVE_SRC_DIR), "Dir " + ARCHIVE_SRC_DIR + " doesn't exist");
+
           FileUtils.copy(Paths.get(appSrcDir), Paths.get(archiveSrcDir));
         }
         jarBuilt = true;
       } catch (IOException ex) {
         getLogger().severe("Failed to copy Coherence app ", ex.getMessage());
+        ex.printStackTrace();
         return false;
       }
     }
