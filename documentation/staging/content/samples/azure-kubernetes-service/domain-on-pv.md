@@ -236,7 +236,7 @@ You need to set up the domain configuration for the WebLogic domain.
    export adminServerName="admin-server"
    export domainUID="domain1"
    export domainHome="/shared/domains/domain1"
-   export serverStartPolicy="IF_NEEDED"
+   export serverStartPolicy="IfNeeded"
    export clusterName="cluster-1"
    export configuredManagedServerCount="5"
    export initialManagedServerReplicas="2"
