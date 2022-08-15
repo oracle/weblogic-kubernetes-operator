@@ -282,8 +282,6 @@ class ItInitContainers {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
 
-    assertDoesNotThrow(() -> Thread.sleep(1000 * 60 * 2));
-
     //check if init container got executed
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server1",
         domain3Namespace, "init-container").contains("Hi from Cluster"),
@@ -397,6 +395,10 @@ class ItInitContainers {
             .withClusterName(clusterName)
             .replicas(replicaCount)
             .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .maxReadyWaitTimeSeconds(1800)
                 .addContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("init-container")
