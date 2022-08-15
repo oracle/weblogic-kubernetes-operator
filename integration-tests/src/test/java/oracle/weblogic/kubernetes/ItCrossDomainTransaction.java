@@ -587,6 +587,7 @@ class ItCrossDomainTransaction {
             .namespace(domNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
+            .replicas(replicaCount)
             .domainHomeSourceType("Image")
             .image(domainImage)
             .imagePullPolicy(IMAGE_PULL_POLICY)
