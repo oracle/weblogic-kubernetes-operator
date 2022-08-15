@@ -391,19 +391,20 @@ class ItInitContainers {
         setPodAntiAffinity(domain);
         break;
       case "clusters":
-        ClusterSpec mycluster = assertDoesNotThrow(() ->
-            getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION)).getSpec();
+        ClusterSpec myclusterSpec = assertDoesNotThrow(()
+            -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION)).getSpec();
         ServerPod serverPod = new ServerPod();
-        mycluster.serverPod(serverPod);
+        myclusterSpec.serverPod(serverPod);
         setPodAntiAffinity(domain);
-        mycluster.getServerPod()
-                .addInitContainersItem(new V1Container()
-                    .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
-                    .name("init-container")
-                    .imagePullPolicy(IMAGE_PULL_POLICY)
-                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
+        ServerPod addInitContainersItem = myclusterSpec.getServerPod()
+            .addInitContainersItem(new V1Container()
+                .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
+                .name("init-container")
+                .imagePullPolicy(IMAGE_PULL_POLICY)
+                .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
         logger.info(Yaml.dump(
             assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
+        logger.info(Yaml.dump(addInitContainersItem));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()
