@@ -767,26 +767,22 @@ public class SchemaConversionUtils {
     }
   }
 
+  public static String toDns1123LegalName(String value) {
+    return value.toLowerCase().replace('_', '-');
+  }
+
   private Map<String, Object> generateCluster(Map<String, Object> domainMeta,
                                               Map<String, Object> existingCluster) {
     Map<String, Object> cluster = new LinkedHashMap<>();
     cluster.put(API_VERSION, "weblogic.oracle/v1");
     cluster.put("kind", "Cluster");
     Map<String, Object> clusterMeta = new LinkedHashMap<>();
-    clusterMeta.put("name", domainMeta.get("name") + "-" + existingCluster.get(CLUSTER_NAME));
+    clusterMeta.put("name", domainMeta.get("name") + "-"
+        + toDns1123LegalName((String) existingCluster.get(CLUSTER_NAME)));
     clusterMeta.put(NAMESPACE, domainMeta.get(NAMESPACE));
     Map<String, Object> labels = new LinkedHashMap<>();
     labels.put("weblogic.createdByOperator", "true");
     clusterMeta.put("labels", labels);
-    List<Map<String, Object>> ownerReferences = new ArrayList<>();
-    Map<String, Object> ownerReference = new LinkedHashMap<>();
-    ownerReference.put(API_VERSION, targetAPIVersion);
-    ownerReference.put("kind", "Domain");
-    ownerReference.put(NAME, domainMeta.get(NAME));
-    ownerReference.put("uid", domainMeta.get("uid"));
-    ownerReference.put("controller", Boolean.TRUE);
-    ownerReferences.add(ownerReference);
-    clusterMeta.put("ownerReferences", ownerReferences);
     cluster.put(METADATA, clusterMeta);
     cluster.put(SPEC, existingCluster);
     return cluster;
