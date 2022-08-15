@@ -27,13 +27,16 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+// import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.scaleClusters;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -123,32 +126,38 @@ class ItMultiDomainModels {
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
-
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
-    // In OKD cluster, we need to get the routeHost for the external admin service
+    // In OKD cluster, get the routeHost for the external admin service
     String routeHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
 
-
+    final String managedServerPrefix = domainUid + "-managed-server";
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers);
-    List<String> managedServersBeforeScale = listManagedServersBeforeScale(replicaCount);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, numberOfServers, null, managedServersBeforeScale);
-
-    // then scale cluster back to 2 servers
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-    managedServersBeforeScale = listManagedServersBeforeScale(numberOfServers);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        numberOfServers, replicaCount, null, managedServersBeforeScale);
+    assertDoesNotThrow(() -> scaleClusters(domainUid,domainNamespace,
+        numberOfServers), "Could not scale up the cluster");
+    // check managed server pods are ready
+    for (int i = 1; i <= numberOfServers; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+              managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    // then scale cluster back to 1 server
+    logger.info("Scaling bacck cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
+    assertDoesNotThrow(() -> scaleClusters(domainUid,domainNamespace,
+        replicaCount), "Could not scale down the cluster");
+    for (int i = (replicaCount + 1); i <= numberOfServers; i++) {
+      logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",
+              managedServerPrefix + i, domainNamespace);
+      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+    }
     
     logger.info("Validating WebLogic admin server access by login to console");
     testUntil(
