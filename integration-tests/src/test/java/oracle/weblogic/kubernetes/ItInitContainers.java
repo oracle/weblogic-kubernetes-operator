@@ -405,6 +405,11 @@ class ItInitContainers {
         logger.info(Yaml.dump(
             assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
         logger.info(Yaml.dump(addInitContainersItem));
+        ClusterResource mycluster = assertDoesNotThrow(()
+            -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION));
+        mycluster.spec().serverPod(serverPod);
+        logger.info(Yaml.dump(
+            assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()

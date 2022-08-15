@@ -53,6 +53,10 @@ public class ClusterResource implements KubernetesObject {
     this.spec = spec;
     return this;
   }
+  
+  public ClusterSpec spec() {
+    return spec;
+  }
 
   @Override
   public String toString() {
