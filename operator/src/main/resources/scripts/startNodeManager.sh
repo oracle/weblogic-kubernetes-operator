@@ -334,7 +334,7 @@ max_wait_secs=${NODE_MANAGER_MAX_WAIT:-60}
 while [ 1 -eq 1 ]; do
   sleep 1
   # Test if node manager listen port is reachable
-  $(timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/5556')
+  $(timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/5556' > /dev/null 2>&1)
   res="$?"
   if [ $res -eq 0 ]; then
     break
