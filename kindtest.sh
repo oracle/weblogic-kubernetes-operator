@@ -287,13 +287,15 @@ docker ps
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
-# if [ "${test_filter}" != "**/It*" ]; Individual test
-#     run the individual test with integration-tests (ignore the profile param)
+# if [ "${test_filter}" != "**/It*" ]
+#     Ignore the profile parammeter
+#     run individual test(s) with integration-tests profile
 #  else
-#    if [ toolkits-srg || fmw-image-cert || kind-sequential ]; then
-#       Run the mvn command with profile
-#      else
-#       Run mvn command with integration-test profile with certtain exclusion
+#    if [ profile is toolkits-srg or fmw-image-cert or kind-sequential ]
+#       Run the mvn command with given profile
+#    else
+#       Ignore the profile parammeter
+#       Run mvn command with integration-test profile with certain exclusion
 #    fi
 #  fi
   
