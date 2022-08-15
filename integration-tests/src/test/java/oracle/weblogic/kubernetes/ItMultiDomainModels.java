@@ -3,8 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
@@ -26,6 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 // import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -38,8 +41,10 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -136,6 +141,9 @@ class ItMultiDomainModels {
     // In OKD cluster, get the routeHost for the external admin service
     String routeHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
 
+
+    String dynamicServerPodName = domainUid + "-managed-server1";
+    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
     final String managedServerPrefix = domainUid + "-managed-server";
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
@@ -148,6 +156,13 @@ class ItMultiDomainModels {
               managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+
+    Callable<Boolean> isDynRestarted =
+         assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
+         domainNamespace, dynTs));
+    assertFalse(assertDoesNotThrow(isDynRestarted::call),
+
+         "Dynamic managed server pod must not be restated");
     // then scale cluster back to 1 server
     logger.info("Scaling bacck cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
@@ -169,22 +184,6 @@ class ItMultiDomainModels {
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-  }
-
-  /**
-   * Generate a server list which contains all managed servers in the cluster before scale.
-   *
-   * @param replicasBeforeScale the replicas of WebLogic cluster before scale
-   * @return list of managed servers in the cluster before scale
-   */
-  private static List<String> listManagedServersBeforeScale(int replicasBeforeScale) {
-
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicasBeforeScale; i++) {
-      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
-    }
-
-    return managedServerNames;
   }
 
   /**
