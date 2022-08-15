@@ -55,6 +55,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `clusters` | Array of [Cluster Status](#cluster-status) | Status of WebLogic clusters in this domain. |
 | `conditions` | Array of [Domain Condition](#domain-condition) | Current service state of the domain. |
 | `failedIntrospectionUid` | string | Unique ID of the last failed introspection job. |
+| `failureRetryConfiguration` | [Failure Retry Configuration](#failure-retry-configuration) |  |
 | `initialFailureTime` | DateTime | RFC 3339 date and time at which a currently failing domain started automatic retries. |
 | `introspectJobFailureCount` | integer | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
 | `lastFailureTime` | DateTime | RFC 3339 date and time at which a currently failing domain last experienced a Severe failure. |
@@ -198,6 +199,11 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `severity` | string | The severity of the failure. Can be Fatal, Severe or Warning. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
 | `type` | string | The type of the condition. Valid types are Completed, Available, Failed, Rolling, and ConfigChangesPendingRestart. |
+
+### Failure Retry Configuration
+
+| Name | Type | Description |
+| --- | --- | --- |
 
 ### Server Status
 

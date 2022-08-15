@@ -452,7 +452,9 @@ public class DomainStatusUpdater {
     }
 
     DomainStatus cloneStatus() {
-      return Optional.ofNullable(getStatus()).map(DomainStatus::new).orElse(new DomainStatus());
+      final DomainStatus status = Optional.ofNullable(getStatus()).map(DomainStatus::new).orElse(new DomainStatus());
+      status.setFailureRetryConfiguration(getDomain());
+      return status;
     }
 
     private Step createDomainStatusReplaceStep() {

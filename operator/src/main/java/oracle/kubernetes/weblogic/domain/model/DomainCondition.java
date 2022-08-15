@@ -16,6 +16,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.FATAL;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
@@ -215,6 +216,10 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   public boolean hasType(DomainConditionType type) {
     return type == this.type;
+  }
+
+  public boolean isRetriableFailure() {
+    return getType() == FAILED && getSeverity() == SEVERE;
   }
 
   boolean isMarkedForDeletion() {

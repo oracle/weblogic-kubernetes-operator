@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.makeright;
 
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +38,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -51,6 +55,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import static oracle.kubernetes.common.logging.MessageKeys.MAKE_RIGHT_WILL_RETRY;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.operator.DomainFailureMessages.createReplicaFailureMessage;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -64,8 +69,10 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROS
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 class FailureReportingTest {
@@ -96,6 +103,7 @@ class FailureReportingTest {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
+    mementos.add(SystemClockTestSupport.installClock());
 
     testSupport.defineResources(domain);
     defineDomainTopology();
@@ -215,8 +223,30 @@ class FailureReportingTest {
   }
 
   @ParameterizedTest
+  @EnumSource(TestCase.class)   // todo ensure no retry message for fatal introspection error
+  void whenFailureReported_domainSummaryMessageIncludesRetryTime(TestCase testCase) {
+    final OffsetDateTime makeRightTime = SystemClock.now();
+    testCase.getMutator().accept(this);
+
+    executeMakeRight();
+
+    if (testCase.isRetriable()) {
+      assertThat(domain.getStatus().getMessage(), containsString(createRetryMessageAugmentation(makeRightTime)));
+    } else {
+      assertThat(domain.getStatus().getMessage().toLowerCase(), not(containsString("will retry")));
+    }
+  }
+
+  private String createRetryMessageAugmentation(OffsetDateTime makeRightTime) {
+    return LOGGER.formatMessage(MAKE_RIGHT_WILL_RETRY, "",
+        domain.getNextRetryTime(),
+        domain.getFailureRetryIntervalSeconds(),
+        makeRightTime.plus(domain.getFailureRetryLimitMinutes(), ChronoUnit.MINUTES));
+  }
+
+  @ParameterizedTest
   @EnumSource(TestCase.class)
-  void whenMakeWithExistingFailureFails_createFailedEvent(TestCase testCase) throws NoSuchFieldException {
+  void whenMakeWithExistingFailureFails_createFailedEvent(TestCase testCase) {
     testCase.getMutator().accept(this);
 
     executeMakeRight();
@@ -290,6 +320,11 @@ class FailureReportingTest {
       String getExpectedMessage() {
         return createReplicaFailureMessage(CLUSTER_1, TOO_HIGH_REPLICA_COUNT, MAXIMUM_CLUSTER_SIZE);
       }
+
+      @Override
+      boolean isRetriable() {
+        return false;
+      }
     },
     TOPOLOGY_MISMATCH_FAILURE {
       @Override
@@ -322,6 +357,10 @@ class FailureReportingTest {
 
     @Nonnull
     abstract String getExpectedMessage();
+
+    boolean isRetriable() {
+      return true;
+    }
   }
 
   static class FlickerDetector {
