@@ -11,6 +11,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -401,6 +402,8 @@ class ItInitContainers {
                     .name("init-container")
                     .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
+        logger.info(Yaml.dump(
+            assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()
