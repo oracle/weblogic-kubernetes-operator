@@ -61,4 +61,6 @@ public interface ProcessingConstants {
   String WEBHOOK = "Webhook";
 
   String SHUTDOWN_WITH_HTTP_SUCCEEDED = "SHUTDOWN_WITH_HTTP_SUCCEEDED";
+
+  String WAIT_FOR_POD_DELETE = "waitForPodDelete";
 }

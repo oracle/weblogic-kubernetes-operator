@@ -23,6 +23,8 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,12 +32,16 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the PodWatcher. */
@@ -391,4 +397,37 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     }
   }
 
+  @Test
+  void whenPodNotFound_waitForDeleteDoesNotRecordKubernetesFailure() {
+    final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
+    final AtomicBoolean stopping = new AtomicBoolean(false);
+    final PodWatcher watcher = createWatcher(stopping);
+    testSupport.addDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    try {
+      testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
+    } finally {
+      stopping.set(true);
+    }
+
+    assertThat(domain, not(hasCondition(DomainConditionType.FAILED).withReason(KUBERNETES)));
+  }
+
+  @Test
+  void whenReadPodHit400_waitForDeleteRecordKubernetesFailure() {
+    final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
+    final AtomicBoolean stopping = new AtomicBoolean(false);
+    final PodWatcher watcher = createWatcher(stopping);
+    testSupport.addDomainPresenceInfo(new DomainPresenceInfo(domain));
+    testSupport.defineResources(createPod());
+    testSupport.failOnRead(KubernetesTestSupport.POD, NAME, NS, HTTP_BAD_REQUEST);
+
+    try {
+      testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
+    } finally {
+      stopping.set(true);
+    }
+
+    assertThat(domain, hasCondition(DomainConditionType.FAILED).withReason(KUBERNETES));
+  }
 }

@@ -180,9 +180,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   private abstract static class WaitForPodStatusStep extends WaitForReadyStep<V1Pod> {
 
     public static final int RECHECK_DEBUG_COUNT = 10;
+    private boolean isDelete;
 
-    private WaitForPodStatusStep(V1Pod pod, Step next) {
+    private WaitForPodStatusStep(V1Pod pod, Step next, boolean isDelete) {
       super(pod, next);
+      this.isDelete = isDelete;
     }
 
     private WaitForPodStatusStep(String podName, Step next) {
@@ -203,7 +205,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new DefaultResponseStep<>(getNext()) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
           String serverName = (String)packet.get(SERVER_NAME);
           String resource = initialResource == null ? resourceName : getMetadata(initialResource).getName();
@@ -219,6 +220,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
             }
 
             if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+              markForScaleDown(packet, isDelete);
               callback.proceedFromWait(callResponse.getResult());
               return null;
             }
@@ -260,12 +262,20 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         }
       };
     }
+
+    private static void markForScaleDown(Packet packet, boolean isDelete) {
+      if (isDelete) {
+        packet.put(ProcessingConstants.WAIT_FOR_POD_DELETE, Boolean.TRUE);
+      }
+    }
   }
+
+
 
   private class WaitForPodReadyStep extends WaitForPodStatusStep {
 
     private WaitForPodReadyStep(V1Pod pod, Step next) {
-      super(pod, next);
+      super(pod, next, false);
     }
 
     private WaitForPodReadyStep(String podName, Step next) {
@@ -321,7 +331,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
   private class WaitForPodDeleteStep extends WaitForPodStatusStep {
     private WaitForPodDeleteStep(V1Pod pod, Step next) {
-      super(pod, next);
+      super(pod, next, true);
     }
 
     @Override

@@ -28,7 +28,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.ProcessingConstants.WAIT_FOR_POD_DELETE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.FIBER_TIMEOUT;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
@@ -178,7 +180,9 @@ public abstract class ResponseStep<T> extends Step {
 
   private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
     if (callResponse != null) {
-      addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
+      if (callResponse.getStatusCode() != HTTP_OK && !isNotFoundOnDelete(packet, callResponse)) {
+        addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
+      }
 
       if (callResponse.getStatusCode() != HTTP_NOT_FOUND && LOGGER.isWarningEnabled()) {
         LOGGER.warning(
@@ -202,6 +206,14 @@ public abstract class ResponseStep<T> extends Step {
       }
     }
     return null;
+  }
+
+  private boolean isNotFoundOnDelete(Packet packet, CallResponse<T> callResponse) {
+    return isDeleteForScaleDown(packet) && callResponse.getStatusCode() == HTTP_NOT_FOUND;
+  }
+
+  private boolean isDeleteForScaleDown(Packet packet) {
+    return packet.remove(WAIT_FOR_POD_DELETE) != null;
   }
 
   private void addDomainFailureStatus(Packet packet, RequestParams requestParams, ApiException apiException) {
