@@ -294,7 +294,8 @@ class ItIntrospectVersion {
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}\"}"
         + "]";
     patch = new V1Patch(patchStr);
-    Kubernetes.patchClusterResource(cluster1Name, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    assertTrue(Kubernetes.patchClusterResource(cluster1Name, introDomainNamespace,
+        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
     
 
     //verify the introspector pod is created and runs

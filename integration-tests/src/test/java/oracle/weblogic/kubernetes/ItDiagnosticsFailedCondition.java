@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -62,6 +63,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -433,6 +436,14 @@ class ItDiagnosticsFailedCondition {
                           .nodePort(getNextFreePort())))));
       setPodAntiAffinity(domain);
 
+      ClusterResource cluster = createClusterResource(
+          "cluster-1", domainNamespace, replicaCount);
+
+      logger.info("Creating cluster {0} in namespace {1}", "cluster-1", domainNamespace);
+      createClusterAndVerify(cluster);
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name("cluster-1"));  
+    
       // verify the domain custom resource is created
       createDomainAndVerify(domain, domainNamespace);
 
@@ -753,6 +764,15 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
+    
+    ClusterResource cluster = createClusterResource(
+        "cluster-1", domNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}", "cluster-1", domNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name("cluster-1"));
+    
     return domain;
   }
 

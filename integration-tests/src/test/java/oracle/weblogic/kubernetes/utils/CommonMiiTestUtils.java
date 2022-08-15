@@ -35,6 +35,7 @@ import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -81,6 +82,8 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -296,6 +299,15 @@ public class CommonMiiTestUtils {
                 .introspectorJobActiveDeadlineSeconds(600L)));
 
     domain.spec().setImagePullSecrets(secrets);
+    
+    for (String clusterName : clusterNames) {
+      ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+      createClusterAndVerify(cluster);
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));   
+    }
+    
     setPodAntiAffinity(domain);
     return domain;
   }
