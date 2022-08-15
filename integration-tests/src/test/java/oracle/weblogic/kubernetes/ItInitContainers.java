@@ -282,7 +282,7 @@ class ItInitContainers {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
 
-    assertDoesNotThrow(() -> Thread.sleep(1000 * 60 * 5));
+    assertDoesNotThrow(() -> Thread.sleep(1000 * 60 * 2));
 
     //check if init container got executed
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server1",
@@ -361,14 +361,16 @@ class ItInitContainers {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    // create cluster object
-    ClusterResource cluster = createClusterResource(
-        clusterName, domainNamespace, replicaCount);
+    if (!testCaseName.equals("clusters")) {
+      // create cluster object
+      ClusterResource cluster = createClusterResource(
+          clusterName, domainNamespace, replicaCount);
 
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
-    createClusterAndVerify(cluster);
-    // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
+      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      createClusterAndVerify(cluster);
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    }
 
     switch (testCaseName) {
       case "spec":
@@ -391,23 +393,20 @@ class ItInitContainers {
         setPodAntiAffinity(domain);
         break;
       case "clusters":
-        ClusterSpec myclusterSpec = assertDoesNotThrow(()
-            -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION)).getSpec();
-        ServerPod serverPod = new ServerPod();
-        myclusterSpec.serverPod(serverPod);
-        setPodAntiAffinity(domain);
-        ServerPod addInitContainersItem = myclusterSpec.getServerPod()
-            .addInitContainersItem(new V1Container()
-                .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
-                .name("init-container")
-                .imagePullPolicy(IMAGE_PULL_POLICY)
-                .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
-        logger.info(Yaml.dump(
-            assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
-        logger.info(Yaml.dump(addInitContainersItem));
-        ClusterResource mycluster = assertDoesNotThrow(()
-            -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION));
-        mycluster.spec().serverPod(serverPod);
+        ClusterSpec clusterSpec = new ClusterSpec()
+            .withClusterName(clusterName)
+            .replicas(replicaCount)
+            .serverPod(new ServerPod()
+                .addContainersItem(new V1Container()
+                    .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
+                    .name("init-container")
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
+                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
+        ClusterResource cluster = createClusterResource(clusterName, domainNamespace, clusterSpec);
+        logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+        createClusterAndVerify(cluster);
+        // set cluster references
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
         logger.info(Yaml.dump(
             assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
         break;
