@@ -281,12 +281,14 @@ class ItInitContainers {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
 
+    assertDoesNotThrow(() -> Thread.sleep(1000 * 60 * 5));
+
     //check if init container got executed
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server1",
-        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        domain3Namespace, "init-container").contains("Hi from Cluster"),
         "failed to init init-container container command for cluster's managed-server1"));
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server2",
-        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        domain3Namespace, "init-container").contains("Hi from Cluster"),
         "failed to init init-container container command for cluster's managed-server2"));
   }
 
@@ -390,6 +392,8 @@ class ItInitContainers {
       case "clusters":
         ClusterSpec mycluster = assertDoesNotThrow(() ->
             getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION)).getSpec();
+        ServerPod serverPod = new ServerPod();
+        mycluster.serverPod(serverPod);
         setPodAntiAffinity(domain);
         mycluster.getServerPod()
                 .addInitContainersItem(new V1Container()
