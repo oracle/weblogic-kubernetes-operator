@@ -290,12 +290,12 @@ rm -rf "${RESULT_ROOT:?}/*"
 # Check for invalid Test Filter/Maven Profile Combination
 if [ "${maven_profile_name}" == "integration-tests" ] && 
    [ "${test_filter}" = "**/It*" ] ; then
-     echo '(ERROR) All tests cannot be run with [integration-tests] profile'
+     echo "(ERROR) All tests cannot be run with [integration-tests] profile"
      exit 0
 fi
 
 if [ "${maven_profile_name}" == "kind-sequential" ]; then
-   echo "Overriding the parallel_run to false for kind-sequential profile'
+   echo "Overriding the parallel_run to false for kind-sequential profiler"
    parallel_run=false
    threads=1
 fi
