@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -25,7 +25,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
@@ -35,6 +34,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePo
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -139,24 +139,15 @@ class ItMiiCustomSslStore {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResourceWithLogHome(domainUid, domainNamespace,
+    DomainResource domain = createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, 
         pvName, pvcName, configMapName,
         null, false, false, false);
 
     // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    createDomainAndVerify(domain, domainNamespace);
 
-    logger.info("Check admin service and pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // Generate JKS Keystore using openssl before
     // managed server services and pods are ready
     generateJksStores();
@@ -169,11 +160,6 @@ class ItMiiCustomSslStore {
         Paths.get(RESULTS_ROOT, "TrustKeyStore.jks"),
         Paths.get("/shared/TrustKeyStore.jks")));
 
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server services and pods are created in namespace {0}",
-          domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
   }
 
   /**

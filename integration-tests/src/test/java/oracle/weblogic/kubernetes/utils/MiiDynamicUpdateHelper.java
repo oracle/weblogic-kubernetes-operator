@@ -17,14 +17,12 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -39,6 +37,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -136,20 +135,14 @@ public class MiiDynamicUpdateHelper {
     // setting setDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
     // because of bug OWLS-88679
     // testMiiRemoveTarget should work fine after the bug is fixed with setDataHome set to true
-    createDomainResourceWithLogHome(domainUid, domainNamespace,
+    DomainResource domain = createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
         dbSecretName, false, true, false);
 
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    createDomainAndVerify(domain, domainNamespace);
+
   }
 
   /**
