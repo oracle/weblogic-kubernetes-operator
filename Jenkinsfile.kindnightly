@@ -480,7 +480,7 @@ EOF
                                 PARALLEL_RUN=false
                             fi
                             if [ ! -z "${IT_TEST}" ]; then
-                                echo 'Overriding the MAVEN_PROFILE_NAME to integration-test'
+                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                 MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
