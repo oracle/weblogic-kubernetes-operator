@@ -51,12 +51,12 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -83,7 +83,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -252,7 +252,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Uninstalling operator");
       uninstallOperator(opHelmParams);
       cleanUpSA(opNamespace);
-      deleteSecret(OCIR_SECRET_NAME, opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
 
       // verify the operator pod does not exist in the operator namespace
       logger.info("Checking that operator pod does not exist in operator namespace");
@@ -362,7 +362,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
         cleanUpDomainSecrets(domain1Namespace);
@@ -476,7 +476,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
         cleanUpDomainSecrets(domain2Namespace);
@@ -521,7 +521,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
         cleanUpDomainSecrets(domain1Namespace);
@@ -566,7 +566,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
@@ -614,8 +614,8 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperator(op2HelmParams);
     } finally {
       uninstallOperator(opHelmParams);
-      deleteSecret(OCIR_SECRET_NAME,opNamespace);
-      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
     }
@@ -710,7 +710,7 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op2HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
         cleanUpDomainSecrets(domain2Namespace);
@@ -783,7 +783,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       //uninstall operator helm chart
       uninstallOperator(opHelmParams);
-      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
     }
   }
@@ -890,7 +890,7 @@ class ItUsabilityOperatorHelmChart {
         logger.info("Failed to collect operator log");
       }
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,op3Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op3Namespace);
       cleanUpSA(op3Namespace);
     }
   }
@@ -920,7 +920,7 @@ class ItUsabilityOperatorHelmChart {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -951,7 +951,7 @@ class ItUsabilityOperatorHelmChart {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -1068,12 +1068,12 @@ class ItUsabilityOperatorHelmChart {
       // Create Docker registry secret in the operator namespace to pull the image from repository
       // this secret is used only for non-kind cluster
       logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
-      createOcirRepoSecret(operNamespace);
+      createTestRepoSecret(operNamespace);
 
     }
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", OCIR_SECRET_NAME);
+    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
