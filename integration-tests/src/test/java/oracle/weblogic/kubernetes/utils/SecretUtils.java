@@ -17,22 +17,22 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -209,16 +209,16 @@ public class SecretUtils {
   public static String[] createSecretsForImageRepos(String namespace) {
     List<String> secrets = new ArrayList<>();
     //create repo registry secret
-    if (!secretExists(OCIR_SECRET_NAME, namespace)) {
-      createOcirRepoSecret(namespace);
+    if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, namespace)) {
+      createTestRepoSecret(namespace);
     }
-    secrets.add(OCIR_SECRET_NAME);
-    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+    secrets.add(TEST_IMAGES_REPO_SECRET_NAME);
+    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
       //create base images repo secret
-      if (!secretExists(OCR_SECRET_NAME, namespace)) {
-        createOcrRepoSecret(namespace);
+      if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, namespace)) {
+        createBaseRepoSecret(namespace);
       }
-      secrets.add(OCR_SECRET_NAME);
+      secrets.add(BASE_IMAGES_REPO_SECRET_NAME);
     }
     return secrets.toArray(new String[secrets.size()]);
   }

@@ -58,6 +58,7 @@ usage() {
                             IMPORTANT: If setting this env var, do not run multiple use cases on the same command line,
                             as then all use cases will use the same image.
     IMAGE_PULL_SECRET_NAME: (not set)
+    DOMAIN_IMAGE_PULL_SECRET_NAME: (not set)
     DB_NAMESPACE          : default (used by -db and -rcu)
     DB_IMAGE_PULL_SECRET  : docker-secret (used by -db and -rcu)
     TRAEFIK_NAMESPACE     : traefik-operator-ns (used by -traefik and by tests)

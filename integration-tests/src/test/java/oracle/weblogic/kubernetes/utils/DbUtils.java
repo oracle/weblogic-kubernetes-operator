@@ -45,7 +45,7 @@ import org.awaitility.core.ConditionFactory;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -58,7 +58,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -103,7 +103,7 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(dbNamespace);
+    createBaseRepoSecret(dbNamespace);
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
         dbImage, dbPort, dbNamespace, dbListenerPort);
@@ -219,7 +219,7 @@ public class DbUtils {
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));
+                            .name(BASE_IMAGES_REPO_SECRET_NAME))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0} dbListenerPost {1}",
         dbNamespace, dbListenerPort);
@@ -319,7 +319,7 @@ public class DbUtils {
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME))));  // this secret is used only for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
