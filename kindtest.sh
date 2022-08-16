@@ -294,8 +294,6 @@ if [ "x${maven_profile_name}" = "xkind-sequential" ] ; then
 fi
 
 # Check for invalid Test Filter/Maven Profile Combination
-
-# Test Filter (all) and Maven Profile is integration-tests
 if [ "x${maven_profile_name}" = "xintegration-tests" ] && 
    [ "${test_filter}" = "**/It*" ] ; then
      echo '(ERROR) All tests cannot be run with [integration-tests] profile'
@@ -313,11 +311,11 @@ if [ "${maven_profile_name}" == "kind-sequential" ]; then
    parallel_run=false
 fi
 
-# If the IT_TEST is not set to "**/It*" (i.e. individual tests are choosen), 
+# If the IT_TEST is not set to "**/It*" (i.e. individual tests are chosen), 
 # the maven_profile parameter is ignored and run individual test(s) with 
 # integration-tests profile 
 
-# If a specific maven profile is choosen, all tests are run with the choosen 
+# If a specific maven profile is chosen, all tests are run with the chosen 
 # profile and IT_TEST parameter is ignored
 
 echo "Run tests..."
