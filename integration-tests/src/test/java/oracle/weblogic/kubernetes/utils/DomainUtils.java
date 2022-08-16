@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -46,6 +47,7 @@ import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
@@ -588,6 +590,7 @@ public class DomainUtils {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(uniquePath)
+            .replicas(replicaCount)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
@@ -895,6 +898,7 @@ public class DomainUtils {
             .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
             .dataHome("/u01/mydata")
             .domainHomeSourceType("Image")
+            .replicas(replicaCount)
             .image(imageName)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -998,4 +1002,35 @@ public class DomainUtils {
           .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
           .map(DomainCondition::getType).anyMatch("Rolling"::equals);
   }
+
+  /**
+   * Scale the all the cluster(s) of the domain in the specified namespace.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param replicaCount number of servers to be scaled to
+   * @return true if patch domain custom resource succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleClusters(String domainUid, String namespace, int replicaCount)
+      throws ApiException {
+    LoggingFacade logger = getLogger();
+
+    // construct the patch string for scaling the cluster in the domain
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec")
+        .append("/replicas\", ")
+        .append("\"value\": ")
+        .append(replicaCount)
+        .append("}]");
+
+    logger.info("Scaling all cluster(s) in domain {0} using patch string: {1}",
+        domainUid, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
 }

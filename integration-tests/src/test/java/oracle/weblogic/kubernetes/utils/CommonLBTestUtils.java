@@ -333,6 +333,7 @@ public class CommonLBTestUtils {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
+            .replicas(replicaCount)
             .domainHome("/shared/" + domainNamespace + "/" + domainUid + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
