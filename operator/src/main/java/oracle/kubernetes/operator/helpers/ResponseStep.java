@@ -175,37 +175,40 @@ public abstract class ResponseStep<T> extends Step {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
         .map(rs -> rs.doPotentialRetry(conflictStep, packet,
             Optional.ofNullable(callResponse).map(CallResponse::getStatusCode).orElse(FIBER_TIMEOUT)))
-        .orElseGet(() -> logNoRetry(packet, callResponse));
+        .orElseGet(() -> handleNoRetry(packet, callResponse));
   }
 
-  private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
+  private NextAction handleNoRetry(Packet packet, CallResponse<T> callResponse) {
     if (callResponse != null) {
+      logNoRetry(packet, callResponse);
       if (callResponse.getStatusCode() != HTTP_OK && !isNotFoundOnDelete(packet, callResponse)) {
         addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
       }
-
-      if (callResponse.getStatusCode() != HTTP_NOT_FOUND && LOGGER.isWarningEnabled()) {
-        LOGGER.warning(
-            MessageKeys.ASYNC_NO_RETRY,
-            Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
-            Optional.of(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
-            callResponse.getExceptionString(),
-            callResponse.getStatusCode(),
-            callResponse.getHeadersString(),
-            Optional.of(callResponse.getRequestParams()).map(r -> r.namespace).orElse(""),
-            Optional.of(callResponse.getRequestParams()).map(r -> r.name).orElse(""),
-            Optional.of(callResponse.getRequestParams()).map(r -> r.body)
-                .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
-            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
-                .map(CallParams::getFieldSelector).orElse(""),
-            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
-                .map(CallParams::getLabelSelector).orElse(""),
-            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
-                .map(CallParams::getResourceVersion).orElse(""),
-            Optional.of(callResponse.getE()).map(ApiException::getResponseBody).orElse(""));
-      }
     }
     return null;
+  }
+
+  private void logNoRetry(Packet packet, CallResponse<T> callResponse) {
+    if (callResponse.getStatusCode() != HTTP_NOT_FOUND) {
+      LOGGER.warning(
+          MessageKeys.ASYNC_NO_RETRY,
+          Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
+          Optional.of(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
+          callResponse.getExceptionString(),
+          callResponse.getStatusCode(),
+          callResponse.getHeadersString(),
+          Optional.of(callResponse.getRequestParams()).map(r -> r.namespace).orElse(""),
+          Optional.of(callResponse.getRequestParams()).map(r -> r.name).orElse(""),
+          Optional.of(callResponse.getRequestParams()).map(r -> r.body)
+              .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
+          Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
+              .map(CallParams::getFieldSelector).orElse(""),
+          Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
+              .map(CallParams::getLabelSelector).orElse(""),
+          Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
+              .map(CallParams::getResourceVersion).orElse(""),
+          Optional.of(callResponse.getE()).map(ApiException::getResponseBody).orElse(""));
+    }
   }
 
   private boolean isNotFoundOnDelete(Packet packet, CallResponse<T> callResponse) {
