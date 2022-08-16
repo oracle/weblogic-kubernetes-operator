@@ -35,7 +35,7 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -45,7 +45,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -81,7 +81,7 @@ public class DeployUtil {
     final LoggingFacade logger = getLogger();
 
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(namespace);
+    createBaseRepoSecret(namespace);
 
 
     // create a temporary WebLogic domain property file
@@ -192,7 +192,7 @@ public class DeployUtil {
                                 .name(deployScriptConfigMap)))) //config map containing deployment scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create deploy Job");
 
