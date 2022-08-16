@@ -53,7 +53,7 @@ public interface ActionConstants {
   //WDT_VERSION is used as the sub-directory identifier when we need to find out
   //from where we can locate weblogic-deploy.zip file. Right now when we install WDT
   //we always put zip file under "latest" sub-directory no matter using "latest" branch or
-  //explicit version download URL or custom download URL.
+  //explicit version download URL or custom download URL
   public static final String WDT_VERSION = "latest";
   public static final String WDT_DOWNLOAD_FILENAME_DEFAULT = "weblogic-deploy.zip";
 
