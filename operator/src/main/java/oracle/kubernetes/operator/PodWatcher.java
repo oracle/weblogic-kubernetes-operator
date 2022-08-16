@@ -220,7 +220,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
             }
 
             if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
-              markForScaleDown(packet, isDelete);
+              markWaitForPodDelete(packet, isDelete);
               callback.proceedFromWait(callResponse.getResult());
               return null;
             }
@@ -263,7 +263,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       };
     }
 
-    private static void markForScaleDown(Packet packet, boolean isDelete) {
+    private static void markWaitForPodDelete(Packet packet, boolean isDelete) {
       if (isDelete) {
         packet.put(ProcessingConstants.WAIT_FOR_POD_DELETE, Boolean.TRUE);
       }
