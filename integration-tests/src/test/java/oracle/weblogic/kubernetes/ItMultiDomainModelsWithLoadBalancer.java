@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -31,6 +32,7 @@ import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -45,6 +47,7 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
@@ -76,6 +79,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExi
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -143,7 +148,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final int ADMIN_SERVER_SECURE_PORT = 7002;
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
@@ -161,7 +166,6 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
-  private static List<DomainResource> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String domainInImageNamespace = null;
@@ -262,7 +266,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   @DisabledOnSlimImage
-  void testScaleClustersByPatchingDomainResource(String domainType) {
+  void testScaleClustersByPatchingClusterResource(String domainType) {
 
     DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
@@ -272,7 +276,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     int numClusters = domain.getSpec().getClusters().size();
 
     for (int i = 1; i <= numClusters; i++) {
-      String clusterName = CLUSTER_NAME_PREFIX + i;
+      //String clusterName = CLUSTER_NAME_PREFIX + i;
+      String clusterName = domain.getSpec().getClusters().get(i - 1).getName();
       String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
       int numberOfServers;
@@ -335,6 +340,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
+    String clusterName = domain.getSpec().getClusters().get(0).getName();
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
     int numberOfServers = 3;
 
@@ -383,6 +389,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     String domainNamespace = domain.getMetadata().getNamespace();
     String domainHome = domain.getSpec().getDomainHome();
     int numClusters = domain.getSpec().getClusters().size();
+    String clusterName = domain.getSpec().getClusters().get(0).getName();
+
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
     curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
@@ -525,7 +533,7 @@ class ItMultiDomainModelsWithLoadBalancer {
    * In this domain, set dataHome to /u01/mydata in domain custom resource
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/customFileStore in the model file which should be overridden by dataHome
-   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * File store and JMS server are targeted to the WebLogic cluster dimcluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
   @Test
@@ -782,6 +790,7 @@ class ItMultiDomainModelsWithLoadBalancer {
             .domainHome("/u01/" + domainNamespace + "/domains/" + miiDomainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .replicas(replicaCount)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
@@ -811,6 +820,16 @@ class ItMultiDomainModelsWithLoadBalancer {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
+
+    // create cluster resource in mii domain
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      if (!Cluster.doesClusterExist(CLUSTER_NAME_PREFIX + i, CLUSTER_VERSION, domainNamespace)) {
+        ClusterResource cluster =
+            createClusterResource(CLUSTER_NAME_PREFIX + i, domainNamespace, replicaCount);
+        createClusterAndVerify(cluster);
+      }
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_PREFIX + i));
+    }
     setPodAntiAffinity(domain);
 
     // create model in image domain
@@ -848,8 +867,9 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static DomainResource createDomainOnPvUsingWdt(String domainUid, String domainNamespace) {
 
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-
-    DomainResource domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
+    String clusterName = "dopcluster-1";
+    DomainResource domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
+        clusterName,
         replicaCount, ItMultiDomainModelsWithLoadBalancer.class.getSimpleName());
 
     // build application sample-app and opensessionapp
@@ -1043,6 +1063,7 @@ class ItMultiDomainModelsWithLoadBalancer {
             .domainHome("/u01/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .replicas(replicaCount)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
@@ -1118,6 +1139,7 @@ class ItMultiDomainModelsWithLoadBalancer {
         List<String> appSrcDirList = new ArrayList<>();
         appSrcDirList.add(MII_BASIC_APP_NAME);
         appSrcDirList.add(WLDF_OPENSESSION_APP);
+        String clusterName = "dimcluster-1";
         domain = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
             wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
 
@@ -1159,7 +1181,9 @@ class ItMultiDomainModelsWithLoadBalancer {
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     int numClusters = domain.getSpec().getClusters().size();
     for (int i = 1; i <= numClusters; i++) {
-      clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
+      String clusterName = domain.getSpec().getClusters().get(i - 1).getName();
+      logger.info("DEBUG: get clusterName = {0}", clusterName);
+      clusterNameMsPortMap.put(clusterName, MANAGED_SERVER_PORT);
       createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
     }
 
