@@ -56,7 +56,7 @@ The current support for Istio has these limitations:
   and has been tested with single and multicluster
   Istio installations from 1.10 up to 1.13.2.
 
-* For Red Hat OpenShift Service Mesh, continue to use operator version 3.4.  This version of the operator is incompatible with OpenShift Service Mesh, base Istio version implementation which is 1.9.
+* For Red Hat OpenShift Service Mesh, continue to use operator version 3.4 or older.  This operator version (4.0) is incompatible with the current OpenShift Service Mesh implementation which is based on Istio version 1.9.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
