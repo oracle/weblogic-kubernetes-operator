@@ -303,8 +303,29 @@ getPodInfo() {
           | sortAIImages
 }
 
-# report criteria, generation, Failed state, and Completed state
+# report timeout setting, criteria, generation, observedGeneration, Failed state, and Completed state
 reportBasics() {
+  local lead_string
+  local criteria
+  local criterion
+  if [ "$expected" = "0" ]; then
+    lead_string="Waiting up to $timeout_secs seconds for there to be no (0) WebLogic Server pods that match the following criteria:"
+    criteria="namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
+  else
+    lead_string="Waiting up to $timeout_secs seconds for domain status condition 'Completed' to become 'True'"
+    lead_string+=" and '.metadata.generation' to match '.status.observedGeneration'."
+    lead_string+=" Current values are '$condition_completed', '$goal_k8s_generation', and '$observed_generation' respectively."
+    lead_string+=" WebLogic Server pods, if not shutting down, should reach the following criteria:"
+    criteria=""
+    criteria+=" namespace='$DOMAIN_NAMESPACE'"
+    criteria+=" domainUID='$DOMAIN_UID'"
+    criteria+=" ready='true'"
+    criteria+=" image='$goal_image_current'"
+    criteria+=" auxiliaryImages='$goal_aiimages_current'"
+    criteria+=" domainRestartVersion='$goal_RV_current'"
+    criteria+=" introspectVersion='$goal_IV_current'"
+  fi
+
   echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
   for criterion in $criteria; do
     echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
@@ -338,7 +359,7 @@ while [ 1 -eq 1 ]; do
   getDomainInfo
 
   #
-  # This script only works in v9+, so let's check.
+  # This script only works in v9+, so let's check the 'api_version' global
   #
 
   version_str=${api_version:-weblogic.oracle/v9}  # if domain resource is missing, api_version is blank
@@ -376,28 +397,12 @@ while [ 1 -eq 1 ]; do
   is_done="false"
 
   if [ "$expected" = "0" ]; then
-    lead_string="Waiting up to $timeout_secs seconds for there to be no (0) WebLogic Server pods that match the following criteria:"
-
-    criteria="namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
 
     pod_count=$( getPodInfo | wc -l )
 
     [ $pod_count -eq 0 ] && is_done="true"
 
   else
-    lead_string="Waiting up to $timeout_secs seconds for domain status condition 'Completed' to become 'True'"
-    lead_string+=" and '.metadata.generation' to match '.status.observedGeneration'."
-    lead_string+=" Current values are '$condition_completed', '$goal_k8s_generation', and '$observed_generation' respectively."
-    lead_string+=" WebLogic Server pods, if not shutting down, should reach the following criteria:"
-
-    criteria=""
-    criteria+=" namespace='$DOMAIN_NAMESPACE'"
-    criteria+=" domainUID='$DOMAIN_UID'"
-    criteria+=" ready='true'"
-    criteria+=" image='$goal_image_current'"
-    criteria+=" auxiliaryImages='$goal_aiimages_current'"
-    criteria+=" domainRestartVersion='$goal_RV_current'"
-    criteria+=" introspectVersion='$goal_IV_current'"
 
     # NOTE: this regex must correspond with the jpath in the 'getPodInfo' function
     regex="domainRestartVersion=;$goal_RV_current;"
