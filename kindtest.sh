@@ -287,28 +287,17 @@ docker ps
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
-if [ "x${maven_profile_name}" = "xkind-sequential" ] ; then
-  parallel_run="false"
-  threads=1
-  echo "Setting the variable parallel_run to [${parallel_run}] for kind-sequential profile"
-fi
-
 # Check for invalid Test Filter/Maven Profile Combination
-if [ "x${maven_profile_name}" = "xintegration-tests" ] && 
+if [ "${maven_profile_name}" == "integration-tests" ] && 
    [ "${test_filter}" = "**/It*" ] ; then
      echo '(ERROR) All tests cannot be run with [integration-tests] profile'
      exit 0
 fi
 
-if [ "${maven_profile_name}" == "integration-tests" ] && 
-   [ "${test_filter}" == "**/It*" ] ; then
-    echo 'ERROR: All tests cannot be run with integration-tests profile'
-    exit 0
-fi
-
 if [ "${maven_profile_name}" == "kind-sequential" ]; then
    echo "Overriding the parallel_run to false for kind-sequential profile'
    parallel_run=false
+   threads=1
 fi
 
 # If the IT_TEST is not set to "**/It*" (i.e. individual tests are chosen), 
