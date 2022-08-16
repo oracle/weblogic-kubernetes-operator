@@ -480,7 +480,7 @@ class ItManageNameSpace {
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
     testUntil(() -> {
-      V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
+      V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
       if (namespaceObject == null) {
         logger.info("namespace object is null");
         return false;
@@ -491,7 +491,7 @@ class ItManageNameSpace {
         logger.info("Before replacing the namespace object\n {0}", Yaml.dump(namespaceObject));
         Kubernetes.replaceNamespace(namespaceObject);
         logger.info("After replacing the namespace object\n {0}",
-            Yaml.dump(Kubernetes.getNamespaceAsObject(domainNS)));
+            Yaml.dump(Kubernetes.getNamespace(domainNS)));
       } catch (ApiException e) {
         logger.warning(e.getResponseBody());
         return false;

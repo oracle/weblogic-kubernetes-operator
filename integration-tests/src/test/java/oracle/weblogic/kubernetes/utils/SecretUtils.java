@@ -11,20 +11,17 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -33,10 +30,10 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -187,32 +184,20 @@ public class SecretUtils {
   }
 
   /**
-   * Verify the default secret exists for the default service account.
-   *
+   * Verify that the namespace is active.
    */
-  public static void verifyDefaultTokenExists() {
+  public static void verifyNamespaceActive() {
     final LoggingFacade logger = getLogger();
 
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(5, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting for the default token to be available in default service account, "
-                + "elapsed time {0}, remaining time {1}",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> {
-          V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
-          for (V1ServiceAccount sa : sas.getItems()) {
-            if (sa.getMetadata().getName().equals("default")) {
-              List<V1ObjectReference> secrets = sa.getSecrets();
-              return !secrets.isEmpty();
-            }
-          }
-          return false;
-        });
+    testUntil(
+        () -> {
+          V1Namespace namespace = Kubernetes.getNamespace("default");
+          return "Active".equals(
+              Optional.ofNullable(namespace).map(V1Namespace::getStatus)
+                  .map(V1NamespaceStatus::getPhase).orElse(null));
+        },
+        logger,
+        "waiting for the default namespace to be active");
   }
 
   /**
