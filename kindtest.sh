@@ -287,8 +287,8 @@ docker ps
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
-# If the IT_TEST(test_filter) is not set to "**/It*" (i.e. individual test
-# are choosen) here the maven_profile paramter is ignored and run individual 
+# If the IT_TEST is not set to "**/It*" (i.e. individual tests are choosen), 
+# the maven_profile parameter is ignored and run individual 
 # test(s) with integration-tests profile 
 
 # If the IT_TEST(test_filter) is set to "**/It*" (i.e. all tests are choosen)
