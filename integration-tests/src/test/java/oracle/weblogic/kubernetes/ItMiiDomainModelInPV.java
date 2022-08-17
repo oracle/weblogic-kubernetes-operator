@@ -24,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -65,8 +64,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
@@ -267,15 +264,6 @@ public class ItMiiDomainModelInPV {
         .addVolumeMountsItem(new V1VolumeMount()
             .mountPath(modelMountPath)
             .name(pvName));
-
-    // create cluster object
-    ClusterResource cluster = createClusterResource(
-        clusterName, domainNamespace, replicaCount);
-
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
-    createClusterAndVerify(cluster);
-    // set cluster references
-    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
