@@ -281,9 +281,9 @@ class ItMultiDomainModelsWithLoadBalancer {
       String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
       int numberOfServers;
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      // scale cluster-1 to 2 server and cluster-2 to 3 servers
       if (i == 1) {
-        numberOfServers = 1;
+        numberOfServers = 2;
       } else {
         numberOfServers = 3;
       }
@@ -295,7 +295,7 @@ class ItMultiDomainModelsWithLoadBalancer {
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
           replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
-      // then scale cluster back to 2 servers
+      // then scale cluster back to 1 servers
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
       managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);

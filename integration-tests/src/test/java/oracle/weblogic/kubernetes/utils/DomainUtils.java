@@ -48,8 +48,8 @@ import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
