@@ -264,7 +264,7 @@ public class ItMiiDomainModelInPV {
         .addVolumeMountsItem(new V1VolumeMount()
             .mountPath(modelMountPath)
             .name(pvName));
-    
+
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 

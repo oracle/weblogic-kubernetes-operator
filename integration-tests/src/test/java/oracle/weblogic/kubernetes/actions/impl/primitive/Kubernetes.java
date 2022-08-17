@@ -98,6 +98,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
@@ -188,6 +189,16 @@ public class Kubernetes {
             DOMAIN_PLURAL, // the resource plural
             apiClient //the api client
         );
+    
+    clusterResClient =
+        new GenericKubernetesApi<>(
+            ClusterResource.class,  // the api type class
+            ClusterList.class, // the api list type class
+            DOMAIN_GROUP, // the api group
+            CLUSTER_VERSION, // the api version
+            CLUSTER_PLURAL, // the resource plural
+            apiClient //the api client
+        );    
 
     deploymentClient =
         new GenericKubernetesApi<>(
