@@ -287,9 +287,8 @@ docker ps
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
-# If the IT_TEST is not set to "**/It*" (i.e. individual tests are chosen), 
-# the maven_profile parameter is ignored and run individual test(s) with 
-# integration-tests profile 
+# If IT_TEST is set, integration-test profile is used to run the tests and 
+# MAVEN_PROFILE_NAME parameter is ignored
 
 # If the IT_TEST(test_filter) is set to "**/It*" (i.e. all tests are chosen)
 # and  maven profile is chosen to any of toolkits-srg or fmw-image-cert or 
