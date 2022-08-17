@@ -360,7 +360,7 @@ public class TestActions {
    */
   public static boolean patchClusterCustomResource(String clusterName, String namespace,
       V1Patch patch, String patchFormat) {
-    return Cluster.patchClusterCutomResource(clusterName, namespace, patch, patchFormat);
+    return Cluster.patchClusterCustomResource(clusterName, namespace, patch, patchFormat);
   } 
 
   /**

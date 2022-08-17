@@ -9,6 +9,7 @@ import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+
 public class Cluster {
 
   /**
@@ -45,7 +46,7 @@ public class Cluster {
      "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
-  public static boolean patchClusterCutomResource(String clusterName, String namespace,
+  public static boolean patchClusterCustomResource(String clusterName, String namespace,
       V1Patch patch, String patchFormat) {
     return Kubernetes.patchClusterCustomResource(clusterName, namespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
