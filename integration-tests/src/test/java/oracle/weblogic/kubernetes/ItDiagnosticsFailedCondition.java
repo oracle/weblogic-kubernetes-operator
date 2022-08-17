@@ -659,6 +659,10 @@ class ItDiagnosticsFailedCondition {
           replicaCount,
           fmwMiiImage,
           5L);
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      createClusterAndVerify(createClusterResource(clusterName, domainNamespace, replicaCount));
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
       createDomainAndVerify(domain, domainNamespace);
 
