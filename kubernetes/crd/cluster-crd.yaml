@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 7e7b845dacf18c6f6766c9010dd43c2608b184c3839328350fa1f42a8c10d7ba
+    weblogic.sha256: 57b3b4bda5c4a959eec9a4c01080806fd648731085f9f556464dbbfc61cf0cd6
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3055,6 +3055,34 @@ spec:
                 description: The requested number of cluster members. Cluster members
                   will be started by the operator if this value is larger than zero.
                 minimum: 0
+                type: integer
+              conditions:
+                description: Current service state of the cluster.
+                items:
+                  type: object
+                  properties:
+                    type:
+                      description: The type of the condition. Valid types are Completed,
+                        Available, Failed, and Rolling.
+                      type: string
+                      enum:
+                      - Available
+                      - Completed
+                    lastTransitionTime:
+                      format: date-time
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    message:
+                      description: Human-readable message indicating details about
+                        last transition.
+                      type: string
+                    status:
+                      description: The status of the condition. Can be True, False.
+                      type: string
+                type: array
+              observedGeneration:
+                description: The generation observed by the WebLogic operator.
                 type: integer
             type: object
         type: object

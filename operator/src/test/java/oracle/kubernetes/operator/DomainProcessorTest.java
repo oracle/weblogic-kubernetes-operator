@@ -445,6 +445,7 @@ class DomainProcessorTest {
   @Test
   void whenMakeRightRun_updateClusterResourceStatus() {
     ClusterResource clusterResource = createClusterResource(NS, CLUSTER);
+    clusterResource.getMetadata().generation(2L);
     testSupport.defineResources(clusterResource);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     info.getDomain().getSpec().getClusters().add(new V1LocalObjectReference().name(CLUSTER));
@@ -456,6 +457,7 @@ class DomainProcessorTest {
     assertThat(updatedClusterResource.getStatus(), notNullValue());
     assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
     assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
+    assertThat(updatedClusterResource.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
@@ -2265,10 +2267,14 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceModified_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
-    configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
-    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(NS, CLUSTER));
-    originalInfo.getReferencedClusters().forEach(testSupport::defineResources);
+    ClusterResource clusterResource1 = createClusterResource(NS, CLUSTER);
+    configureDomain(domain).configureCluster(originalInfo, clusterResource1.getClusterName());
+    testSupport.defineResources(clusterResource1);
+    originalInfo.addClusterResource(clusterResource1);
+    ClusterResource clusterResource2 = createClusterResource(NS, CLUSTER);
+    clusterResource2.getMetadata().generation(2L);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource2);
 
     processor.dispatchClusterWatch(item);
 
@@ -2284,6 +2290,36 @@ class DomainProcessorTest {
     processor.dispatchClusterWatch(item);
 
     assertThat(logRecords, not(containsInfo(WATCH_CLUSTER)));
+  }
+
+  @Test
+  void whenClusterResourceModified_noGenerationChange_dontDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    processor.registerDomainPresenceInfo(originalInfo);
+    ClusterResource clusterResource1 = createClusterResource(NS, CLUSTER);
+    originalInfo.addClusterResource(clusterResource1);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource1);
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, not(containsFine(WATCH_CLUSTER)));
+  }
+
+  @Test
+  void whenClusterResourceModified_generationChanged_verifyDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    processor.registerDomainPresenceInfo(originalInfo);
+    ClusterResource clusterResource1 = createClusterResource(NS, CLUSTER);
+    configureDomain(domain).configureCluster(originalInfo, clusterResource1.getClusterName());
+    testSupport.defineResources(clusterResource1);
+    originalInfo.addClusterResource(clusterResource1);
+    ClusterResource clusterResource2 = createClusterResource(NS, CLUSTER);
+    clusterResource2.getMetadata().generation(2L);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource2);
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, containsFine(WATCH_CLUSTER));
   }
 
   @Test
@@ -2325,7 +2361,7 @@ class DomainProcessorTest {
 
   private ClusterResource createClusterResource(String namespace, String clusterName) {
     return new ClusterResource()
-        .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterName))
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterName).generation(1L))
         .spec(new ClusterSpec().withClusterName(clusterName));
   }
 }

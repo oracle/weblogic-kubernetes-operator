@@ -453,6 +453,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .addResourcesItem("clusters")
                 .addResourcesItem("domains")
                 .addResourcesItem("domains/status")
+                .addResourcesItem("clusters/status")
                 .verbs(asList("get", "create", "list", "watch", "update", "patch")))
         .addRulesItem(
             newPolicyRule()
