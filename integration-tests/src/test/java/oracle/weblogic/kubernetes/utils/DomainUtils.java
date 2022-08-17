@@ -65,6 +65,8 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
@@ -607,6 +609,8 @@ public class DomainUtils {
             .logHome(uniquePath + "/logs")
             .dataHome("")
             .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -918,6 +922,8 @@ public class DomainUtils {
                 .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
