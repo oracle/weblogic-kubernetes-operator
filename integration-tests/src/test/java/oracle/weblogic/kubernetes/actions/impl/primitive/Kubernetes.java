@@ -990,12 +990,12 @@ public class Kubernetes {
   }
 
   /**
-   * Return Namespace object for the given name from the Kubernetes cluster as V1Namespace object.
+   * Gets namespace.
    * @name name of namespace.
    * @return V1Namespace  Namespace object from the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static V1Namespace getNamespaceAsObject(String name) throws ApiException {
+  public static V1Namespace getNamespace(String name) throws ApiException {
     try {
       V1NamespaceList namespaceList = coreV1Api.listNamespace(
           PRETTY, // pretty print output
@@ -1631,6 +1631,18 @@ public class Kubernetes {
     }
 
     return true;
+  }
+
+  /**
+   * Gets a Kubernetes Secret.
+   *
+   * @param secretName Name of secret
+   * @param namespace Namespace
+   * @return secret, if found
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1Secret getSecret(String secretName, String namespace) throws ApiException {
+    return coreV1Api.readNamespacedSecret(secretName, namespace, PRETTY);
   }
 
   /**
