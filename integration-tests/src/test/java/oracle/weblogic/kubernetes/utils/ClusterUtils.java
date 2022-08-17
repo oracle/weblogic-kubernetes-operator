@@ -6,11 +6,13 @@ package oracle.weblogic.kubernetes.utils;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -81,5 +83,25 @@ public class ClusterUtils {
         "cluster {0} to be created in namespace {1}",
         clusterName,
         namespace);
+  }  
+  
+  /**
+   * Delete a cluster resource in the specified namespace.
+   *
+   * @param namespace the namespace in which the domain exists
+   * @param clusterName cluster resource name
+   */
+  public static void deleteClusterCustomResource(String clusterName, String namespace) {
+    //delete cluster resource in namespace and wait until it is deleted
+    getLogger().info("deleting cluster custom resource {0} in namespace {1}", clusterName, namespace);
+    Cluster.deleteClusterCustomResource(clusterName, namespace);
+
+    testUntil(
+        clusterDoesNotExist(clusterName, CLUSTER_VERSION, namespace),
+        getLogger(),
+        "cluster {0} to be created in namespace {1}",
+        clusterName,
+        namespace);
   }
+  
 }

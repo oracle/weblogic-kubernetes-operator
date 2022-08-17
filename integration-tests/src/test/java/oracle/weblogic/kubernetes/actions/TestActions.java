@@ -77,6 +77,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ClusterUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
@@ -342,10 +343,9 @@ public class TestActions {
    *
    * @param clusterName Cluster custom resource name
    * @param namespace namespace in which cluster custom resource exists
-   * @return true on success, false otherwise
    */
-  public static boolean deleteClusterCustomResource(String clusterName, String namespace) {
-    return Cluster.deleteClusterCustomResource(clusterName, namespace);
+  public static void deleteClusterCustomResource(String clusterName, String namespace) {
+    ClusterUtils.deleteClusterCustomResource(clusterName, namespace);
   }
   
   /**

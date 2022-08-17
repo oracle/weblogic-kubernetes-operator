@@ -464,6 +464,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
+      deleteClusterCustomResource(clusterName, domainNamespace);
       deleteDomainResource(domainNamespace, domainName);
     }
   }
@@ -499,6 +500,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -541,6 +543,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -577,6 +580,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
