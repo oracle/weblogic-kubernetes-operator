@@ -96,10 +96,12 @@ initialize() {
 
 initialize
 
-# Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
-if [ -z "${domainJson}" ]; then
-  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
+# Get the domain in json format. Changed made on 08/15/2022
+#domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+printInfo "clusterJson content before changes: ${clusterJson}"
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure the 'clusterName and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
   exit 1
 fi
 
@@ -112,12 +114,20 @@ fi
 
 # if the restartVersion is not provided, generate the value of restartVersion
 if [ -z "${restartVersion}" ]; then
-  generateClusterRestartVersion "${domainJson}" "${clusterName}" restartVersion 
+  generateClusterRestartVersion "${clusterJson}" "${clusterName}" restartVersion
 fi
 
+# Changed made on 08/15/2022
 printInfo "Patching restartVersion for cluster '${clusterName}' to '${restartVersion}'."
-createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
+#createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
+createPatchJsonToUpdateClusterRestartVersionUsingClusterResource "${clusterJson}" "${clusterName}" "${restartVersion}" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+printInfo "Patch command to execute is: '${kubernetesCli}' '${domainUid}' '${domainNamespace}' '${patchJson}' '${verboseMode}'"
+# Changed made on 08/15/2022
+#executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+printInfo "clusterJson content after changes: ${clusterJson}"
 
 printInfo "Successfully patched restartVersion for cluster '${clusterName}'!"
