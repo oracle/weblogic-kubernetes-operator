@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -301,13 +302,18 @@ public class CommonMiiTestUtils {
     domain.spec().setImagePullSecrets(secrets);
     
     for (String clusterName : clusterNames) {
-      ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
-      createClusterAndVerify(cluster);
-      // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));   
+      if (assertDoesNotThrow(()
+          -> Kubernetes.getClusterCustomResource(clusterName, domNamespace, CLUSTER_VERSION) == null)) {
+        ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+        createClusterAndVerify(cluster);
+        // set cluster references
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+      } else {
+        getLogger().info("Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+      }
     }
-    
+
     setPodAntiAffinity(domain);
     return domain;
   }
