@@ -304,7 +304,7 @@ public class CommonMiiTestUtils {
     ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
     for (String clusterName : clusterNames) {
       if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-        getLogger().info("Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
       } else {
         getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
         createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
