@@ -338,6 +338,32 @@ public class TestActions {
   }
 
   /**
+   * Delete Cluster Custom Resource.
+   *
+   * @param clusterName Cluster custom resource name
+   * @param namespace namespace in which cluster custom resource exists
+   * @return true on success, false otherwise
+   */
+  public static boolean deleteClusterCustomResource(String clusterName, String namespace) {
+    return Cluster.deleteClusterCustomResource(clusterName, namespace);
+  }
+  
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+     "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterCustomResource(String clusterName, String namespace,
+      V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCutomResource(clusterName, namespace, patch, patchFormat);
+  } 
+
+  /**
    * Scale the cluster of the domain in the specified namespace by patching the domain resource.
    *
    * @param domainUid domainUid of the domain to be scaled

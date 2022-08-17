@@ -294,7 +294,7 @@ class ItIntrospectVersion {
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}\"}"
         + "]";
     patch = new V1Patch(patchStr);
-    assertTrue(Kubernetes.patchClusterResource(cluster1Name, introDomainNamespace,
+    assertTrue(Kubernetes.patchClusterCustomResource(cluster1Name, introDomainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
     
 

@@ -60,7 +60,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -104,6 +106,7 @@ class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
   int replicaCount = 2;
+  String clusterName = "cluster-1";
 
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -201,6 +204,7 @@ class ItDiagnosticsFailedCondition {
       }
       deleteDomainResource(domainNamespace, domainName);
       deleteConfigMap(badModelFileCm, domainNamespace);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -245,12 +249,14 @@ class ItDiagnosticsFailedCondition {
           getLogger(),
           "waiting for domain status condition reason ReplicasTooHigh exists"
       );
+
       patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2}"
           + "]";
-      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "patchDomainCustomResource failed");
+      patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       testUntil(
           domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
           getLogger(),
@@ -267,6 +273,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -302,6 +309,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -337,6 +345,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -375,6 +384,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterName, domainNamespace);
     }
   }
 
@@ -437,12 +447,11 @@ class ItDiagnosticsFailedCondition {
       setPodAntiAffinity(domain);
 
       ClusterResource cluster = createClusterResource(
-          "cluster-1", domainNamespace, replicaCount);
-
-      logger.info("Creating cluster {0} in namespace {1}", "cluster-1", domainNamespace);
+          clusterName, domainNamespace, replicaCount);
+      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
       createClusterAndVerify(cluster);
       // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name("cluster-1"));  
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));  
     
       // verify the domain custom resource is created
       createDomainAndVerify(domain, domainNamespace);
@@ -765,13 +774,11 @@ class ItDiagnosticsFailedCondition {
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
     
-    ClusterResource cluster = createClusterResource(
-        "cluster-1", domNamespace, replicaCount);
-
-    logger.info("Creating cluster {0} in namespace {1}", "cluster-1", domNamespace);
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name("cluster-1"));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     
     return domain;
   }
@@ -816,6 +823,11 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));   
     return domain;
   }
 

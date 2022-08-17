@@ -1524,7 +1524,7 @@ public class Kubernetes {
 
   
   /**
-   * Patch the Domain Custom Resource.
+   * Patch the Cluster Custom Resource.
    *
    * @param clusterName unique cluster identifier
    * @param namespace name of namespace
@@ -1533,7 +1533,7 @@ public class Kubernetes {
    *     "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
-  public static boolean patchClusterResource(String clusterName, String namespace,
+  public static boolean patchClusterCustomResource(String clusterName, String namespace,
       V1Patch patch, String patchFormat) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
@@ -1550,6 +1550,30 @@ public class Kubernetes {
           + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
           + " when patching " + clusterName + " in namespace "
           + namespace + " with " + patch + " using patch format: " + patchFormat);
+      return false;
+    }
+
+    return true;
+  }
+  
+  
+  /**
+   * Delete the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @return true if successful, false otherwise
+   */
+  public static boolean deleteClusterCustomResource(String clusterName, String namespace) {
+
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<ClusterResource> response = clusterResClient.delete(namespace, clusterName);
+
+    if (!response.isSuccess()) {
+      getLogger().warning(
+          "Failed to delete cluster custom resource, response code " + response.getHttpStatusCode()
+          + " response message " + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+          + " when deleting " + clusterName + " in namespace " + namespace);
       return false;
     }
 
