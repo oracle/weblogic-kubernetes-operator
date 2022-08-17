@@ -595,7 +595,6 @@ class ItDiagnosticsFailedCondition {
     boolean testPassed = false;
     String domainName = getDomainName();
     try {
-
       String fmwMiiImage = null;
       String rcuSchemaPrefix = "FMWDOMAINMII";
       String oracleDbUrlPrefix = "oracledb.";
@@ -676,12 +675,12 @@ class ItDiagnosticsFailedCondition {
       }
 
       String patchStr
-          = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"Never\"}]";
+          = "[{\"op\": \"add\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"Never\"}]";
 
       logger.info("Shutting down cluster using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
+      assertTrue(patchClusterCustomResource(clusterName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch cluster");
 
       for (int i = 1; i <= replicaCount; i++) {
         String managedServerName = managedServerPrefix + i + "-c1";
@@ -699,12 +698,12 @@ class ItDiagnosticsFailedCondition {
       PodUtils.checkPodDeleted(dbPodName, null, domainNamespace);
 
       patchStr
-          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
+          = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
 
       logger.info("Starting cluster using patch string: {0}", patchStr);
       patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
+      assertTrue(patchClusterCustomResource(clusterName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch cluster");
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
@@ -720,6 +719,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
+      deleteClusterCustomResource(clusterName, domainNamespace);
       deleteDomainResource(domainNamespace, domainName);
     }
   }
