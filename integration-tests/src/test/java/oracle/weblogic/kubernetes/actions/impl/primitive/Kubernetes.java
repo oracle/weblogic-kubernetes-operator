@@ -1567,6 +1567,22 @@ public class Kubernetes {
     return true;
   }
   
+  /**
+   * List Cluster Custom Resources in a given namespace.
+   *
+   * @param namespace name of namespace
+   * @return List of Cluster Custom Resources
+   */
+  public static ClusterList listClusters(String namespace) {
+    KubernetesApiResponse<ClusterList> response = null;
+    try {
+      response = clusterResClient.list(namespace);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+    return response != null ? response.getObject() : new ClusterList();
+  }
   
   /**
    * Delete the Cluster Custom Resource.

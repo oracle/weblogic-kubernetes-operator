@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
@@ -49,5 +50,15 @@ public class Cluster {
     return Kubernetes.patchClusterCustomResource(clusterName, namespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
+    
 
+  /**
+   * List all Custom Resource Clusters in a namespace.
+   *
+   * @param namespace name of namespace
+   * @return list of Custom Resource Clusters for a given namespace
+   */
+  public static ClusterList listClusterCustomResources(String namespace) {
+    return Kubernetes.listClusters(namespace);
+  }
 }
