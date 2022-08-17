@@ -1,27 +1,24 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listServiceAccounts;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.readSecretByReference;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Secret {
 
@@ -56,52 +53,52 @@ public class Secret {
   public static String getSecretOfServiceAccount(String namespace, String serviceAccountName) {
 
     LoggingFacade logger = getLogger();
-    List<V1Secret> v1Secrets = new ArrayList<>();
-    List<V1ServiceAccount> v1ServiceAccounts = new ArrayList<>();
-    List<V1Secret> v1SaSecrets = new ArrayList<>();
-    String token = null;
 
-    if (!OKD) {
-      V1SecretList secretList = listSecrets(namespace);
-      if (secretList != null) {
-        v1Secrets = secretList.getItems();
-      }
-
-      for (V1Secret v1Secret : v1Secrets) {
-        if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
-          logger.info(" secret name = {0}", v1Secret.getMetadata().getName());
-          if (v1Secret.getMetadata().getName().startsWith(serviceAccountName)) {
-            return v1Secret.getMetadata().getName();
-          }
-        }
-      }
-    } else {
-      logger.info("service account = {0}", serviceAccountName);
-      logger.info("namespace = {0}", namespace);
-      V1ServiceAccountList serviceAccountList = listServiceAccounts(namespace);
-      if (serviceAccountList != null) {
-        v1ServiceAccounts = serviceAccountList.getItems();
-      }
-
-      try {
-        for (V1ServiceAccount v1ServiceAccount : v1ServiceAccounts) {
-          if (v1ServiceAccount.getMetadata() != null && v1ServiceAccount.getMetadata().getName() != null) {
-            if (v1ServiceAccount.getMetadata().getName().startsWith(serviceAccountName)) {
-              List<V1ObjectReference> saSecretList = v1ServiceAccount.getSecrets();
-              for (V1ObjectReference reference : saSecretList) {
-                // Get the secret.
-                V1Secret secret = readSecretByReference(reference, namespace);
-                logger.info("secret token = {0}", secret.getMetadata().getName());
-                return secret.getMetadata().getName();
-              }
-            }
-          }
-        }
-      } catch (ApiException apie) {
-        logger.info(" got ApiException");
+    logger.info("service account = {0}", serviceAccountName);
+    logger.info("namespace = {0}", namespace);
+    V1SecretList secretList = listSecrets(namespace);
+    for (V1Secret v1Secret : secretList.getItems()) {
+      V1ObjectMeta meta = Optional.ofNullable(v1Secret).map(V1Secret::getMetadata).orElse(new V1ObjectMeta());
+      Map<String, String> annotations =
+              Optional.of(meta).map(V1ObjectMeta::getAnnotations).orElse(Collections.emptyMap());
+      String saName = annotations.get("kubernetes.io/service-account.name");
+      if (serviceAccountName.equals(saName)) {
+        logger.info("secret name = {0}", meta.getName());
+        return meta.getName();
       }
     }
-    return "";
+
+    logger.info("No secret found for service account; creating one");
+    String saSecretName = serviceAccountName + "-" + "sa-token";
+    V1Secret saSecret = new V1Secret()
+            .type("kubernetes.io/service-account-token")
+            .metadata(new V1ObjectMeta()
+                    .name(saSecretName)
+                    .namespace(namespace)
+                    .putAnnotationsItem("kubernetes.io/service-account.name", serviceAccountName));
+
+    try {
+      Kubernetes.createSecret(saSecret);
+    } catch (ApiException e) {
+      logger.severe("failed to create secret for service account", e);
+      return "";
+    }
+
+    testUntil(
+            () -> hasToken(saSecretName, namespace),
+            logger,
+            "Waiting for token to be populated in secret");
+
+    return saSecretName;
+  }
+
+  private static boolean hasToken(String saSecretName, String namespace) throws ApiException {
+    V1Secret secret = Kubernetes.getSecret(saSecretName, namespace);
+    if (secret != null) {
+      Map<String, byte[]> data = Optional.of(secret).map(V1Secret::getData).orElse(Collections.emptyMap());
+      return data.containsKey("token");
+    }
+    return false;
   }
 
   /**
@@ -112,38 +109,26 @@ public class Secret {
    * @return the encoded token of the secret
    */
   public static String getSecretEncodedToken(String namespace, String secretName) {
-    LoggingFacade logger = getLogger();
-    for (int i = 0; i < 10; i++) {
-      String token = getToken(namespace, secretName);
-      if (token != null) {
-        logger.info("Got the token {0}", token);
-        return token;
-      }
-      logger.info("Token is null, retrying after 5 seconds");
-      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(5));
-    }
-    logger.warning("Secret token is null");
-    return null;
-  }
 
-  private static String getToken(String namespace, String secretName) {
-    String token = null;
     List<V1Secret> v1Secrets = new ArrayList<>();
+
     V1SecretList secretList = listSecrets(namespace);
     if (secretList != null) {
       v1Secrets = secretList.getItems();
     }
+
     for (V1Secret v1Secret : v1Secrets) {
       if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
         if (v1Secret.getMetadata().getName().equals(secretName)) {
-          if (v1Secret.getData() != null && v1Secret.getData().get("token") != null) {
+          if (v1Secret.getData() != null) {
             byte[] encodedToken = v1Secret.getData().get("token");
-            token = Base64.getEncoder().encodeToString(encodedToken);
+            return Base64.getEncoder().encodeToString(encodedToken);
           }
         }
       }
     }
-    return token;
+
+    return "";
   }
 
   /**
