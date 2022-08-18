@@ -60,12 +60,10 @@ public class Cluster {
         .append("\"value\": ")
         .append(numOfServers)
         .append("}]");
-
     logger.info("Scaling cluster {0} using patch string: {1}",
         clusterName, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
-
     return Kubernetes.patchClusterCustomResource(clusterName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 }

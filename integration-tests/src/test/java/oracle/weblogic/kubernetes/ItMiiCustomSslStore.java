@@ -148,6 +148,10 @@ class ItMiiCustomSslStore {
     // wait for the domain to exist
     createDomainAndVerify(domain, domainNamespace);
 
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
     // Generate JKS Keystore using openssl before
     // managed server services and pods are ready
     generateJksStores();
@@ -160,6 +164,11 @@ class ItMiiCustomSslStore {
         Paths.get(RESULTS_ROOT, "TrustKeyStore.jks"),
         Paths.get("/shared/TrustKeyStore.jks")));
 
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server services and pods are created in namespace {0}",
+          domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
   }
 
   /**
@@ -180,9 +189,7 @@ class ItMiiCustomSslStore {
 
     runClientOnAdminPod();
 
-    boolean psuccess = assertDoesNotThrow(() ->
-            scaleCluster("cluster-1", domainNamespace, 3),
-        String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean psuccess = scaleCluster("cluster-1", domainNamespace, 3);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
