@@ -1533,6 +1533,22 @@ public class Kubernetes {
     return null;
   }
 
+  /**
+   * Get the Cluster Custom Resource.
+   *
+   * @param clusterResName name of the cluster custom resource
+   * @param namespace name of namespace
+   * @return cluster custom resource or null if ClusterResource does not exist
+   */
+  public static ClusterResource getClusterCustomResource(String clusterResName, String namespace) {
+
+    KubernetesApiResponse<ClusterResource> cluster = clusterResClient.get(namespace, clusterResName);
+    if (cluster != null) {
+      return handleResponse(cluster, ClusterResource.class);
+    }
+    getLogger().warning("Cluster Custom Resource '" + clusterResName + "' not found in namespace " + namespace);
+    return null;
+  }
   
   /**
    * Patch the Cluster Custom Resource.
@@ -1547,7 +1563,7 @@ public class Kubernetes {
   public static boolean patchClusterCustomResource(String clusterName, String namespace,
       V1Patch patch, String patchFormat) {
 
-    // GenericKubernetesApi uses CustomObjectsApi calls
+    // GenericKubernetesApi uses CustomObjectsApi calls    
     KubernetesApiResponse<ClusterResource> response = clusterResClient.patch(
         namespace, // name of namespace
         clusterName, // name of cluster resource

@@ -408,6 +408,8 @@ class ItInitContainers {
         domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
         logger.info(Yaml.dump(
             assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION))));
+        logger.info(Yaml.dump(
+            assertDoesNotThrow(() -> getClusterCustomResource(clusterName, domainNamespace))));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()
