@@ -537,8 +537,6 @@ public class DomainStatusUpdater {
       if (status.getConditions().isEmpty()) {
         status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
         status.addCondition(new DomainCondition(AVAILABLE).withStatus(false));
-      } else {
-        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
       }
     }
   }
