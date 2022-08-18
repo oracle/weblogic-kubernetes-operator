@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.DomainStatusUpdater.UpdateCompletedConditionSteps;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
@@ -74,7 +75,22 @@ public class ManagedServersUpStep extends Step {
       insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
     }
 
+    if (hasWorkToDo(steps)) {
+      insert(steps, new UpdateCompletedConditionSteps());
+    }
     return Step.chain(steps.toArray(new Step[0]));
+  }
+
+  private static boolean hasWorkToDo(List<Step> steps) {
+    return getNonNullStepNum(steps) != 0;
+  }
+
+  private static boolean isNotNull(Step step) {
+    return step != null;
+  }
+
+  private static int getNonNullStepNum(List<Step> steps) {
+    return steps.stream().filter(step -> isNotNull(step)).collect(Collectors.toList()).size();
   }
 
   private static List<ServerShutdownInfo> getServersToStop(
