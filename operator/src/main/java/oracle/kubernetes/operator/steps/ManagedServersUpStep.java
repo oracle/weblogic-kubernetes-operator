@@ -75,14 +75,18 @@ public class ManagedServersUpStep extends Step {
       insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
     }
 
-    if (hasWorkToDo(steps)) {
+    if (hasWorkToDo(steps, next)) {
       insert(steps, new UpdateCompletedConditionSteps());
     }
     return Step.chain(steps.toArray(new Step[0]));
   }
 
-  private static boolean hasWorkToDo(List<Step> steps) {
-    return getNonNullStepNum(steps) != 0;
+  private static boolean hasWorkToDo(List<Step> steps, Step next) {
+    return getNonNullStepNum(steps) > getExpectedNumber(next);
+  }
+
+  private static int getExpectedNumber(Step next) {
+    return next == null ? 0 : 1;
   }
 
   private static boolean isNotNull(Step step) {
@@ -90,7 +94,7 @@ public class ManagedServersUpStep extends Step {
   }
 
   private static int getNonNullStepNum(List<Step> steps) {
-    return steps.stream().filter(step -> isNotNull(step)).collect(Collectors.toList()).size();
+    return (int) steps.stream().filter(ManagedServersUpStep::isNotNull).count();
   }
 
   private static List<ServerShutdownInfo> getServersToStop(

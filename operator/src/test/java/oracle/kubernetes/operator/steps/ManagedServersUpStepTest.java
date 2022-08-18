@@ -67,6 +67,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -243,6 +244,15 @@ class ManagedServersUpStepTest {
     invokeStepWithConfiguredServer();
 
     assertManagedServersUpStepNotCreated();
+  }
+
+  @Test
+  void whenNoServerStartRequested_dontPrependUpdateCompleteConditionStep() {
+    startNoServers();
+
+    invokeStepWithConfiguredServer();
+
+    assertThat(firstNonEventStep(createNextStep()), not(instanceOf(UpdateCompletedConditionSteps.class)));
   }
 
   private void startNoServers() {
