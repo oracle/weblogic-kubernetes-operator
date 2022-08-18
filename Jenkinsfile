@@ -537,14 +537,11 @@ EOF
                      script {
                       def res = 0
                       res = sh ( script: '''
-                         echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
-                         echo "Selected IT Tests [${IT_TEST}]"
+                        echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
+                        echo "Selected IT Tests [${IT_TEST}]"
                         if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
                            echo 'ERROR: All tests cannot be run with integration-tests profile'
                            exit 1 
-                        elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
-                           echo 'ERROR: Individual test MUST be run with integration-tests profile'
-                         exit 1 
                         else 
                            echo 'Profile/ItTests Validation Passed'
                            exit 0
@@ -565,6 +562,8 @@ EOF
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                PARALLEL_RUN='false'
                             elif [ ! -z "${IT_TEST}" ]; then
+                               echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                MAVEN_PROFILE_NAME="integration-tests"
                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
