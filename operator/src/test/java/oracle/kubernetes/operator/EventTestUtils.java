@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
 public class EventTestUtils {
@@ -297,6 +298,10 @@ public class EventTestUtils {
   public static boolean isDomainFailedAbortedEvent(CoreV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
         && e.getMessage().contains(getLocalizedString(ABORTED_EVENT_ERROR));
+  }
+  
+  public static boolean isDomainIncompleteEvent(CoreV1Event e) {
+    return DOMAIN_INCOMPLETE_EVENT.equals(e.getReason());
   }
 
   public static boolean isDomainInternalFailedEvent(CoreV1Event e) {

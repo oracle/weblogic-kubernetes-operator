@@ -722,11 +722,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean isProcessingCompleted() {
-          return !haveTooManyReplicas() && allIntendedServersReady() && !hasFailedCondition();
-        }
-
-        private boolean hasFailedCondition() {
-          return status.hasConditionWithType(FAILED);
+          return !haveTooManyReplicas() && allIntendedServersReady();
         }
 
         private boolean haveTooManyReplicas() {
@@ -1332,6 +1328,27 @@ public class DomainStatusUpdater {
     }
   }
 
+  public static class UpdateCompletedConditionSteps extends StatusUpdateStep {
+    public UpdateCompletedConditionSteps() {
+      super(null);
+    }
 
+    @Override
+    DomainStatusUpdaterContext createContext(Packet packet) {
+      return new UpdateCompletedConditionContext(packet, this);
+    }
+
+    static class UpdateCompletedConditionContext extends StatusUpdateStep.StatusUpdateContext {
+
+      UpdateCompletedConditionContext(Packet packet, StatusUpdateStep statusUpdateStep) {
+        super(packet, statusUpdateStep);
+      }
+
+      @Override
+      void modifyStatus(DomainStatus status) {
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+      }
+    }
+  }
 }
 

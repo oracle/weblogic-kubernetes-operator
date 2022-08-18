@@ -973,6 +973,22 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenClusterScaleDownToReplicas1_fromReplicas2_reportIncompleteEvent()
+      throws JsonProcessingException {
+    newDomain.getStatus().addCondition(new DomainCondition(COMPLETED).withStatus(true));
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    // now scale down the cluster
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+    logRecords.clear();
+
+    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainIncompleteEvent), is(true));
+  }
+
+  @Test
   void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(ServerStartPolicy.NEVER);

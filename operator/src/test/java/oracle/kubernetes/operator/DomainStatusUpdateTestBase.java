@@ -88,7 +88,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
@@ -606,19 +605,6 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_COMPLETED_EVENT)));
-  }
-
-  @Test
-  void whenAllDesiredServersRunningAndFailedConditionFound_dontGenerateCompletedEvent() {
-    defineScenario()
-        .withCluster("clusterA", "server1")
-        .withCluster("clusterB", "server2")
-        .build();
-    domain.getStatus().addCondition(new DomainCondition(FAILED).withStatus(TRUE).withReason(KUBERNETES));
-
-    updateDomainStatus();
-
-    assertThat(testSupport, not(hasEvent(DOMAIN_COMPLETED_EVENT)));
   }
 
   private List<CoreV1Event> getEvents() {
