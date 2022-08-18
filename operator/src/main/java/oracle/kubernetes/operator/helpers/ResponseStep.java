@@ -180,7 +180,7 @@ public abstract class ResponseStep<T> extends Step {
 
   private NextAction handleNoRetry(Packet packet, CallResponse<T> callResponse) {
     if (callResponse != null) {
-      logNoRetry(packet, callResponse);
+      logNoRetry(callResponse);
       if (callResponse.getStatusCode() != HTTP_OK && !isNotFoundOnDelete(packet, callResponse)) {
         addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
       }
@@ -188,7 +188,7 @@ public abstract class ResponseStep<T> extends Step {
     return null;
   }
 
-  private void logNoRetry(Packet packet, CallResponse<T> callResponse) {
+  private void logNoRetry(CallResponse<T> callResponse) {
     if (callResponse.getStatusCode() != HTTP_NOT_FOUND) {
       LOGGER.warning(
           MessageKeys.ASYNC_NO_RETRY,
