@@ -236,7 +236,6 @@ class ItFmwBigCMMiiDomain {
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         jrfMii1Image);
 
     createDomainAndVerify(domain, jrfDomainNamespace);
