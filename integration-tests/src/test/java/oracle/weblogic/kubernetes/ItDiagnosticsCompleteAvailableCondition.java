@@ -362,7 +362,6 @@ class ItDiagnosticsCompleteAvailableCondition {
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
     logger.info("patch the domain resource with new introspectVersion");
-
     patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
 
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
