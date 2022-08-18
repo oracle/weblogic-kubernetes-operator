@@ -255,6 +255,7 @@ class ItDiagnosticsFailedCondition {
           + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2}"
           + "]";
       patch = new V1Patch(patchStr);
+      logger.info("Patching cluster resource using patch string {0} ", patchStr);
       assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       testUntil(
