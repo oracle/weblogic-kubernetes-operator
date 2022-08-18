@@ -722,7 +722,11 @@ public class DomainStatusUpdater {
         }
 
         private boolean isProcessingCompleted() {
-          return !haveTooManyReplicas() && allIntendedServersReady();
+          return !haveTooManyReplicas() && allIntendedServersReady() && !hasFailedCondition();
+        }
+
+        private boolean hasFailedCondition() {
+          return status.hasConditionWithType(FAILED);
         }
 
         private boolean haveTooManyReplicas() {
