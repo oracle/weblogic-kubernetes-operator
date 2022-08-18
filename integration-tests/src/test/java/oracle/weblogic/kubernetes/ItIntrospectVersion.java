@@ -663,7 +663,7 @@ class ItIntrospectVersion {
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
         = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"clusterName\" : \"" + cluster2Name + "\"}"
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + cluster2Name + "\"}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
@@ -824,7 +824,7 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
     // scale down the cluster by 1
-    boolean scalingSuccess = scaleCluster("cluster-1", introDomainNamespace, cluster1ReplicaCount - 1);
+    boolean scalingSuccess = scaleCluster(cluster1Name, introDomainNamespace, cluster1ReplicaCount - 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling down failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 
@@ -836,7 +836,7 @@ class ItIntrospectVersion {
     cluster1ReplicaCount--;
 
     // scale up the cluster to cluster1ReplicaCount + 1
-    scalingSuccess = scaleCluster("cluster-1", introDomainNamespace, cluster1ReplicaCount + 1);
+    scalingSuccess = scaleCluster(cluster1Name, introDomainNamespace, cluster1ReplicaCount + 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling up failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 
