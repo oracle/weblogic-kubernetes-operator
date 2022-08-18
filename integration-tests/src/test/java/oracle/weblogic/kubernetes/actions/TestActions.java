@@ -338,18 +338,30 @@ public class TestActions {
   }
 
   /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+  "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterCustomResource(String clusterName, String namespace,
+                                                   V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCutomResource(clusterName, namespace, patch, patchFormat);
+  }
+
+  /**
    * Scale the cluster of the domain in the specified namespace by patching the domain resource.
    *
-   * @param domainUid domainUid of the domain to be scaled
-   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
-      throws ApiException {
-    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterName, namespace, numOfServers);
   }
 
   /**

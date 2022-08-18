@@ -141,7 +141,7 @@ class ItMiiCustomSslStore {
     // create the domain CR with a pre-defined configmap
     DomainResource domain = createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, 
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
         null, false, false, false);
 
@@ -181,7 +181,7 @@ class ItMiiCustomSslStore {
     runClientOnAdminPod();
 
     boolean psuccess = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 3),
+            scaleCluster("cluster-1", domainNamespace, 3),
         String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));

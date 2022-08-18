@@ -810,10 +810,8 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
     // scale down the cluster by 1
-    boolean scalingSuccess = assertDoesNotThrow(()
-        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount - 1),
-        String.format("Scaling down the cluster cluster-1 of domain %s in namespace %s failed",
-            domainUid, introDomainNamespace));
+    boolean scalingSuccess =
+        scaleCluster("cluster-1", introDomainNamespace, cluster1ReplicaCount - 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling down failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 
@@ -825,10 +823,7 @@ class ItIntrospectVersion {
     cluster1ReplicaCount--;
 
     // scale up the cluster to cluster1ReplicaCount + 1
-    scalingSuccess = assertDoesNotThrow(()
-        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount + 1),
-        String.format("Scaling up the cluster cluster-1 of domain %s in namespace %s failed",
-            domainUid, introDomainNamespace));
+    scalingSuccess = scaleCluster("cluster-1", introDomainNamespace, cluster1ReplicaCount + 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling up failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 

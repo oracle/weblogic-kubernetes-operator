@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -23,6 +25,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -66,6 +70,7 @@ public class MiiDynamicUpdateHelper {
   public String adminServerName = "admin-server";
   public LoggingFacade logger = null;
   public String adminSvcExtHost = null;
+  public String clusterName = "cluster-1";
 
   /**
    * Install Operator.
@@ -131,6 +136,13 @@ public class MiiDynamicUpdateHelper {
     // create job to change permissions on PV hostPath
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
+    // create cluster object
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
     // create the domain CR with a pre-defined configmap
     // setting setDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
     // because of bug OWLS-88679
@@ -140,6 +152,9 @@ public class MiiDynamicUpdateHelper {
         adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
         dbSecretName, false, true, false);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     createDomainAndVerify(domain, domainNamespace);
 
