@@ -333,6 +333,22 @@ class RestBackendImplTest {
   }
 
   @Test
+  void whenMultipleClusterResourceWithSameClusterName_scaleClusterUpdatesCorrectClusterResource() {
+    final ClusterResource clusterResource1 = createClusterResource(DOMAIN1, NS, CLUSTER_1)
+        .withReplicas(1);
+    final ClusterResource clusterResource2 = createClusterResource(DOMAIN2, NS, CLUSTER_1)
+        .withReplicas(1);
+    testSupport.defineResources(clusterResource1, clusterResource2);
+
+    configureDomain().withClusterReference(clusterResource1.getMetadata().getName());
+    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
+
+    assertThat(getUpdatedClusterResource().getMetadata().getName(),
+        equalTo(clusterResource1.getMetadata().getName()));
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
   void whenPerClusterResourceReplicaSettingMatchesScaleRequest_doNothing() {
     final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, CLUSTER_1)
             .withReplicas(1);

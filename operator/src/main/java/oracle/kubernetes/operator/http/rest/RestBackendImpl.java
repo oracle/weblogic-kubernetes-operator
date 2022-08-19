@@ -281,9 +281,10 @@ public class RestBackendImpl implements RestBackend {
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
   }
 
-  private Optional<ClusterResource> getClusterResource(String clusterName, List<String> referencedClusterResources) {
+  private Optional<ClusterResource> getClusterResource(DomainResource domain, String clusterName) {
     authorize(null, Operation.LIST);
 
+    List<String> referencedClusterResources = getReferencedClusterResources(domain);
     return getClusterStream()
         .filter(c -> isReferencedByDomain(c, referencedClusterResources))
         .filter(c -> isMatchingClusterResource(clusterName, c))
@@ -349,15 +350,16 @@ public class RestBackendImpl implements RestBackend {
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
     verifyWlsConfiguredClusterCapacity(domain.getDomainUid(), cluster, managedServerCount);
 
-    List<String> referencedClusterResources =
-        domain.getSpec().getClusters().stream().map(V1LocalObjectReference::getName)
-            .collect(Collectors.toList());
-
-    getClusterResource(cluster, referencedClusterResources)
+    getClusterResource(domain, cluster)
         .ifPresentOrElse(cr -> patchClusterResourceReplicas(cr, managedServerCount),
             () -> createClusterIfNecessary(domain, cluster, managedServerCount));
 
     //createCluster(domain, cluster, managedServerCount);
+  }
+
+  private List<String> getReferencedClusterResources(DomainResource domain) {
+    return domain.getSpec().getClusters().stream().map(V1LocalObjectReference::getName)
+            .collect(Collectors.toList());
   }
 
   private void createClusterIfNecessary(DomainResource domain, String cluster, int managedServerCount) {
