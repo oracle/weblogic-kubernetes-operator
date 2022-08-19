@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -284,11 +285,16 @@ public class RestBackendImpl implements RestBackend {
   private Optional<ClusterResource> getClusterResource(DomainResource domain, String clusterName) {
     authorize(null, Operation.LIST);
 
-    List<String> referencedClusterResources = getReferencedClusterResources(domain);
+    List<String> referencedClusterResources = getReferencedClusterResourceNames(domain);
     return getClusterStream()
+        .filter(c -> isInSameNamespace(c, domain))
         .filter(c -> isReferencedByDomain(c, referencedClusterResources))
         .filter(c -> isMatchingClusterResource(clusterName, c))
         .findFirst();
+  }
+
+  private boolean isInSameNamespace(ClusterResource c, DomainResource domain) {
+    return Objects.equals(c.getNamespace(), domain.getNamespace());
   }
 
   private boolean isReferencedByDomain(ClusterResource c, List<String> referencedClusterResources) {
@@ -357,9 +363,10 @@ public class RestBackendImpl implements RestBackend {
     //createCluster(domain, cluster, managedServerCount);
   }
 
-  private List<String> getReferencedClusterResources(DomainResource domain) {
-    return domain.getSpec().getClusters().stream().map(V1LocalObjectReference::getName)
-            .collect(Collectors.toList());
+  private List<String> getReferencedClusterResourceNames(DomainResource domain) {
+    return domain.getSpec().getClusters().stream()
+        .map(V1LocalObjectReference::getName)
+        .collect(Collectors.toList());
   }
 
   private void createClusterIfNecessary(DomainResource domain, String cluster, int managedServerCount) {

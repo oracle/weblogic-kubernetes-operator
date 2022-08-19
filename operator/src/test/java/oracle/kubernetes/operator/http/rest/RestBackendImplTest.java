@@ -63,6 +63,8 @@ class RestBackendImplTest {
   public static final String CLUSTER_1 = "cluster1";
   private static final int REPLICA_LIMIT = 4;
   private static final String NS = "namespace1";
+  private static final String NS2 = "namespace2";
+  private static final String NS3 = "namespace3";
   private static final String DOMAIN1 = "domain";
   private static final String DOMAIN2 = "domain2";
   private static final String DOMAIN3 = "domain3";
@@ -333,12 +335,32 @@ class RestBackendImplTest {
   }
 
   @Test
-  void whenMultipleClusterResourceWithSameClusterName_scaleClusterUpdatesCorrectClusterResource() {
+  void whenMultipleClusterResourceWithSameClusterName_scaleClusterUpdatesClusterInCorrectDomain() {
     final ClusterResource clusterResource1 = createClusterResource(DOMAIN1, NS, CLUSTER_1)
         .withReplicas(1);
     final ClusterResource clusterResource2 = createClusterResource(DOMAIN2, NS, CLUSTER_1)
         .withReplicas(1);
-    testSupport.defineResources(clusterResource1, clusterResource2);
+    final ClusterResource clusterResource3 = createClusterResource(DOMAIN3, NS, CLUSTER_1)
+        .withReplicas(1);
+    testSupport.defineResources(clusterResource2, clusterResource1, clusterResource3);
+
+    configureDomain().withClusterReference(clusterResource1.getMetadata().getName());
+    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
+
+    assertThat(getUpdatedClusterResource().getMetadata().getName(),
+        equalTo(clusterResource1.getMetadata().getName()));
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
+  void whenMultipleClusterResourceWithSameResourceName_scaleClusterUpdatesClusterInCorrectNamespace() {
+    final ClusterResource clusterResource1 = createClusterResource(DOMAIN1, NS, CLUSTER_1)
+        .withReplicas(1);
+    final ClusterResource clusterResource2 = createClusterResource(DOMAIN1, NS2, CLUSTER_1)
+        .withReplicas(1);
+    final ClusterResource clusterResource3 = createClusterResource(DOMAIN1, NS3, CLUSTER_1)
+        .withReplicas(1);
+    testSupport.defineResources(clusterResource2, clusterResource1, clusterResource3);
 
     configureDomain().withClusterReference(clusterResource1.getMetadata().getName());
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
