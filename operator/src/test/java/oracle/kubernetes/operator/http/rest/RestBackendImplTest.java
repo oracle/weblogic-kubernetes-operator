@@ -326,6 +326,7 @@ class RestBackendImplTest {
             .withReplicas(1);
     testSupport.defineResources(clusterResource);
 
+    configureDomain().withClusterReference(clusterResource.getMetadata().getName());
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
