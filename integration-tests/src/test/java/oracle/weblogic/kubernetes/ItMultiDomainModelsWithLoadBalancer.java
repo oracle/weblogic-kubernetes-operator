@@ -1184,7 +1184,7 @@ class ItMultiDomainModelsWithLoadBalancer {
       String clusterName = domain.getSpec().getClusters().get(i - 1).getName();
       logger.info("DEBUG: get clusterName = {0}", clusterName);
       clusterNameMsPortMap.put(clusterName, MANAGED_SERVER_PORT);
-      createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
+      createRouteForOKD(domainUid + "-cluster-" + clusterName, domainNamespace);
     }
 
     if (!OKD) {
