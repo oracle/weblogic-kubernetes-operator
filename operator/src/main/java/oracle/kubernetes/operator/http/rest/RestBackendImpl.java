@@ -341,17 +341,9 @@ public class RestBackendImpl implements RestBackend {
 
     authorize(domainUid, Operation.UPDATE);
     forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
-    //    getClusterResource(domainUid, cluster)
-    //        .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
-    //          () ->  forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount)));
 
     LOGGER.exiting();
   }
-
-  //private void performScaling(String domainUid, ClusterResource cluster, int managedServerCount) {
-  //  verifyWlsConfiguredClusterCapacity(domainUid, cluster.getClusterName(), managedServerCount);
-  // patchClusterResourceReplicas(cluster, managedServerCount);
-  //}
 
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
     verifyWlsConfiguredClusterCapacity(domain.getDomainUid(), cluster, managedServerCount);
@@ -359,8 +351,6 @@ public class RestBackendImpl implements RestBackend {
     getClusterResource(domain, cluster)
         .ifPresentOrElse(cr -> patchClusterResourceReplicas(cr, managedServerCount),
             () -> createClusterIfNecessary(domain, cluster, managedServerCount));
-
-    //createCluster(domain, cluster, managedServerCount);
   }
 
   private List<String> getReferencedClusterResourceNames(DomainResource domain) {
