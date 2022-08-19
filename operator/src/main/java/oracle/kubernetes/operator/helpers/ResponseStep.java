@@ -179,7 +179,7 @@ public abstract class ResponseStep<T> extends Step {
   private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
     if (callResponse != null) {
       addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
-      
+
       if (callResponse.getStatusCode() != HTTP_NOT_FOUND && LOGGER.isWarningEnabled()) {
         LOGGER.warning(
             MessageKeys.ASYNC_NO_RETRY,
