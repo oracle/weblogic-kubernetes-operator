@@ -361,17 +361,10 @@ createPatchJsonToUpdateClusterPolicyUsingClusterResource() {
   local clusterName=$2
   local policy=$3
   local __result=$4
-  local addClusterStartPolicyCmd=""
-  local mapCmd=""
-  local existingClusters=""
-  local patchJsonVal=""
   local startPolicyPatch=""
+  local patchJsonVal=""
 
-  existingClusters=$(echo ${clusterJson} | jq -cr '(.spec.clusters)')
-  addClusterStartPolicyCmd="{\"clusterName\":\"${clusterName}\", \
-      \"serverStartPolicy\":\"${policy}\"}"
-  startPolicyPatch=$(echo ${existingClusters} | jq -c "${addClusterStartPolicyCmd}")
-
+  startPolicyPatch="{\"clusterName\":\"${clusterName}\", \"serverStartPolicy\":\"${policy}\"}"
   patchJsonVal="{\"spec\": "${startPolicyPatch}"}"
   eval $__result="'${patchJsonVal}'"
 }
@@ -693,16 +686,10 @@ createPatchJsonToUpdateClusterRestartVersionUsingClusterResource() {
   local clusterName=$2
   local restartVersion=$3
   local __result=$4
-  local __existingClusters=""
-  local __addClusterReplicasCmd=""
   local __restartVersionPatch=""
-  local __mapCmd=""
   local __patchJsonVal=""
 
-  __existingClusters=$(echo ${clusterJson} | jq -cr '(.spec.clusters)')
-  __addClusterReplicasCmd="{\"clusterName\":\"${clusterName}\", \"restartVersion\":\"${restartVersion}\"}"
-  __restartVersionPatch=$(echo ${__existingClusters} | jq -c "${__addClusterReplicasCmd}")
-
+  __restartVersionPatch="{\"clusterName\":\"${clusterName}\", \"restartVersion\":\"${restartVersion}\"}"
   __patchJsonVal="{\"spec\": "${__restartVersionPatch}"}"
   eval $__result="'${__patchJsonVal}'"
 }
