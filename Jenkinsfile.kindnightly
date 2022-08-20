@@ -458,9 +458,6 @@ EOF
                         if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
                            echo 'ERROR: All tests cannot be run with integration-tests profile'
                            exit 1 
-                        elif [ "x${IT_TEST}" != 'x' ] && [ "${MAVEN_PROFILE_NAME}" != "integration-tests" ]; then
-                           echo 'ERROR: Individual test MUST be run with integration-tests profile'
-                         exit 1 
                         else 
                            echo 'Profile/ItTests Validation Passed'
                            exit 0
@@ -481,7 +478,10 @@ EOF
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                 echo 'Overriding the PARALLEL_RUN to false for kind-sequential profile'
                                 PARALLEL_RUN=false
-                            elif [ ! -z "${IT_TEST}" ]; then
+                            fi
+                            if [ ! -z "${IT_TEST}" ]; then
+                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
