@@ -87,15 +87,8 @@ initialize
 
 # Get the domain in json format. Changed made on 08/16/2022
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content before changes: ${clusterJson}"
 if [ -z "${domainJson}" ]; then
   printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
-  exit 1
-fi
-
-if [ -z "${clusterJson}" ]; then
-  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure the 'clusterName and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
   exit 1
 fi
 
@@ -103,6 +96,13 @@ isValidCluster=""
 validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
 if [ "${isValidCluster}" != 'true' ]; then
   printError "cluster ${clusterName} is not part of domain ${domainUid} in namespace ${domainNamespace}. Please make sure that cluster name is correct."
+  exit 1
+fi
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+printInfo "clusterJson content before changes: ${clusterJson}"
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure the 'clusterName and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
   exit 1
 fi
 
