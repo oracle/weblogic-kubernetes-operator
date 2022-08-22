@@ -72,7 +72,7 @@ class ItLBTwoDomainsNginx {
   private static LoggingFacade logger = null;
 
   // domain constants
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private static final int MANAGED_SERVER_PORT = 7100;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";

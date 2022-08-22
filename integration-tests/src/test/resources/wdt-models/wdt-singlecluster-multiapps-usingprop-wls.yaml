@@ -10,9 +10,9 @@ topology:
     Name: domain1
     AdminServerName: "admin-server"
     Cluster:
-        "cluster-1":
+        "dimcluster-1":
             DynamicServers:
-                ServerTemplate:  "cluster-1-template"
+                ServerTemplate:  "dimcluster-1-template"
                 ServerNamePrefix: "managed-server"
                 DynamicClusterSize: 5
                 MaxDynamicClusterSize: 5
@@ -24,19 +24,19 @@ topology:
                 Enabled: true
                 ListenPort: 7002
     ServerTemplate:
-        "cluster-1-template":
-            Cluster: "cluster-1"
+        "dimcluster-1-template":
+            Cluster: "dimcluster-1"
             ListenPort : 8001
 
 resources:
     FileStore:
         'FileStore-0':
             Directory: '/u01/oracle/customFileStore/'
-            Target: 'cluster-1'
+            Target: 'dimcluster-1'
     JMSServer:
         'JMSServer-0':
             PersistentStore: 'FileStore-0'
-            Target: 'cluster-1'
+            Target: 'dimcluster-1'
             MessagesMaximum: 100000
             BlockingSendPolicy: FIFO
 
@@ -45,9 +45,9 @@ appDeployments:
         myear:
             SourcePath: "wlsdeploy/applications/sample-app.ear"
             ModuleType: ear
-            Target: 'cluster-1,admin-server'
+            Target: 'dimcluster-1,admin-server'
 
         opensessionapp:
             SourcePath: "wlsdeploy/applications/opensessionapp.ear"
             ModuleType: ear
-            Target: 'cluster-1'
+            Target: 'dimcluster-1'
