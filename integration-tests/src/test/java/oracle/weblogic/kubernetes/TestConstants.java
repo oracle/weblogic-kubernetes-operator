@@ -272,7 +272,7 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.6");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.7");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
@@ -309,6 +309,7 @@ public interface TestConstants {
   public static final boolean OKE_CLUSTER =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
+  public static final String NODE_IP = System.getProperty("wko.it.node.ip", "");
   public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
   public static final ImagePullPolicyEnum IMAGE_PULL_POLICY = ImagePullPolicyEnum.IFNOTPRESENT;
 
@@ -358,4 +359,12 @@ public interface TestConstants {
       + "config/samples/sidb/singleinstancedatabase.yaml";
   public static final String ORACLELINUX_TEST_VERSION =
       getNonEmptySystemProperty("wko.it.oraclelinux.test.version", "7");
+
+  //retry improvement
+  //Defaulting to 120 seconds
+  public static final Long FAILURE_RETRY_INTERVAL_SECONDS =
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.interval.seconds", "60"));
+  //Defaulting to 1440 minutes (24 hours)
+  public static final Long FAILURE_RETRY_LIMIT_MINUTES =
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
 }

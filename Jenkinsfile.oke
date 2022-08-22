@@ -135,7 +135,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.6'
+               defaultValue: '2.0.7'
         )
 
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
@@ -456,6 +456,9 @@ EOF
                             fi
 
                             export K8S_NODEPORT_HOST=${NODE_IP}
+                            NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| head -n2 | tail -n1`
+                            echo "second node external IP ${NODE_IP}"
+                            export NODE_IP=${NODE_IP}
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
                            
                             mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`

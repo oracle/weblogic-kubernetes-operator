@@ -253,8 +253,8 @@ public class ItMiiDomainModelInPV {
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
-        image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName,
-        replicaCount, clusterName);
+        image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName
+    );
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()

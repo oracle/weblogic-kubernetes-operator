@@ -52,8 +52,10 @@ import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -952,7 +954,10 @@ public class CommonTestUtils {
     while (port <= END_PORT) {
       freePort = port++;
       try {
-        isLocalPortFree(freePort);
+        isLocalPortFree(freePort, K8S_NODEPORT_HOST);
+        if (OKE_CLUSTER) {
+          isLocalPortFree(freePort, NODE_IP);
+        }
       } catch (IOException ex) {
         return freePort;
       }
@@ -966,11 +971,12 @@ public class CommonTestUtils {
    * the given port is already in use by an another process.
    *
    * @param port port to check
+   * @param host host to check
    * @throws java.io.IOException when the port is not used by any socket
    */
-  private static void isLocalPortFree(int port) throws IOException {
-    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
-      getLogger().info("Port {0} is already in use", port);
+  private static void isLocalPortFree(int port, String host) throws IOException {
+    try (Socket socket = new Socket(host, port)) {
+      getLogger().info("Port {0} is already in use for host {1}", port, host);
     }
   }
 
@@ -1295,7 +1301,7 @@ public class CommonTestUtils {
     String createContainerCmd = new StringBuffer("docker run -d -p 7001:7001 --name=")
         .append(containerName)
         .append(" --network=host ")
-        .append(" --add-host=host.docker.internal:host-gateway ")
+        //.append(" --add-host=host.docker.internal:host-gateway ")
         .append(imageName)
         .append(" /u01/oracle/user_projects/domains/")
         .append(domainUid)
@@ -1304,19 +1310,23 @@ public class CommonTestUtils {
 
     try {
       result = exec(createContainerCmd, true);
+      logger.info("Result for WLS docker container creation is {0}", result);
     } catch (Exception ex) {
       logger.info("createContainerCmd: caught unexpected exception {0}", ex);
     }
-
-    // check if the docker container started
-    logger.info("Wait for docker container {0} starting", containerName);
-    testUntil(
-        withStandardRetryPolicy,
-        isDockerContainerReady(containerName),
-        logger,
-        "{0} is started",
-        containerName);
-
+    assertNotNull(result, "command returns null");
+    if (result.exitValue() == 0) {
+      // check if the docker container started
+      logger.info("Wait for docker container {0} starting", containerName);
+      testUntil(
+          withStandardRetryPolicy,
+          isDockerContainerReady(containerName),
+          logger,
+          "{0} is started",
+          containerName);
+    } else {
+      logger.info("Failed to exec the command {0}. Error is {1} ", createContainerCmd, result.stderr());
+    }
     return result;
   }
 

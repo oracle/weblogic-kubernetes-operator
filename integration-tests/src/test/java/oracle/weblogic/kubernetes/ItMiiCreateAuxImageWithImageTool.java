@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.AuxiliaryImage;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -49,6 +51,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageEx
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
@@ -167,7 +171,7 @@ class ItMiiCreateAuxImageWithImageTool {
         domain1Uid, miiAuxiliaryImage);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage);
 
     // create domain and verify its running
@@ -248,16 +252,27 @@ class ItMiiCreateAuxImageWithImageTool {
         DOMAIN_IMAGES_REPO);
     dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
+    // create cluster object
+    String clusterName = "cluster-1";
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
+        encryptionSecretName, auxiliaryImagePath2,
         miiAuxiliaryImage);
 
     String adminServerPodName = domain2Uid + "-admin-server";
     String managedServerPrefix = domain2Uid + "-managed-server";
+
+    // set cluster references
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
@@ -327,7 +342,7 @@ class ItMiiCreateAuxImageWithImageTool {
             domain3Uid, miiAuxiliaryImage);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1");
+        encryptionSecretName);
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage)

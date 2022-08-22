@@ -219,6 +219,7 @@ class ItT3Channel {
             .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .replicas(replicaCount)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()

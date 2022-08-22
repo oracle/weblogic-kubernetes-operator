@@ -287,19 +287,33 @@ docker ps
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
-echo "Run tests..."
+# Check for invalid Test Filter/Maven Profile Combination
+if [ "${maven_profile_name}" == "integration-tests" ] && 
+   [ "${test_filter}" == "**/It*" ] ; then
+     echo "(ERROR) All tests cannot be run with [integration-tests] profile, choose different profile"
+     exit 0
+fi
 
+if [ "${maven_profile_name}" == "kind-sequential" ]; then
+   echo "Overriding the parallel_run to false for kind-sequential profiler"
+   parallel_run=false
+   threads=1
+fi
+# If IT_TEST is set, integration-test profile is used to run the tests and 
+# MAVEN_PROFILE_NAME parameter is ignored
+
+# If a specific maven profile is chosen, all tests are run with the chosen 
+# profile and IT_TEST parameter is ignored
+
+echo "Run tests..."
 if [ "${test_filter}" != "**/It*" ]; then
-  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-  time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+  echo "Overriding the profile to integration-test"
+  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P integration-tests verify"
+  time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
 else
-  if [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "wls-srg" ] || [ "${maven_profile_name}" = "kind-sequential" ]; then
+    echo "Running Integration tests with profile  [${maven_profile_name}]"
     echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl integration-tests -P ${maven_profile_name} verify"
     time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
-  else
-    echo "Running mvn -Dit.test=!ItAuxV8DomainImplicitUpgrade, !ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItOperatorUpgradeWithIstio, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="!ItAuxV8DomainImplicitUpgrade, !ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOperatorUpgradeWithIstio, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
-  fi
 fi
 
 echo "Collect journalctl logs"

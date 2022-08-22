@@ -298,7 +298,7 @@ class ItTwoDomainsManagedByTwoOperators {
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
       DomainResource domain =
-          createDomainCustomResource(domainUid, domainNamespace, pvName, pvcName, t3ChannelPort);
+          createDomainCustomResource(domainUid, domainNamespace, pvName, pvcName, t3ChannelPort,replicaCount);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
       createDomainAndVerify(domain, domainNamespace);
@@ -628,7 +628,8 @@ class ItTwoDomainsManagedByTwoOperators {
                                                     String domainNamespace,
                                                     String pvName,
                                                     String pvcName,
-                                                    int t3ChannelPort) {
+                                                    int t3ChannelPort,
+                                                    int replicaCount) {
 
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
@@ -638,6 +639,7 @@ class ItTwoDomainsManagedByTwoOperators {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
+            .replicas(replicaCount)
             .domainHome("/shared/" + domainNamespace + "/" + domainUid + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)

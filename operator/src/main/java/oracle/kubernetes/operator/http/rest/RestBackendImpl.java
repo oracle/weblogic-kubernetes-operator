@@ -15,17 +15,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -487,8 +488,13 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private WebApplicationException handleApiException(ApiException e) {
-    // TBD - what about e.getResponseHeaders?
-    return createWebApplicationException(e.getCode(), e.getResponseBody());
+    return createWebApplicationException(e.getCode(),
+            Optional.ofNullable(new Gson().fromJson(e.getResponseBody(), V1Status.class))
+                    .map(this::messageFromStatus).orElse(null));
+  }
+
+  private String messageFromStatus(V1Status status) {
+    return status.getMessage();
   }
 
   private WebApplicationException createWebApplicationException(
@@ -502,11 +508,8 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private WebApplicationException createWebApplicationException(int status, String msg) {
-    ResponseBuilder rb = Response.status(status);
-    if (msg != null) {
-      rb.entity(msg);
-    }
-    return new WebApplicationException(rb.build());
+    return new WebApplicationException(
+            Optional.ofNullable(msg).map(m -> Response.status(status, m)).orElse(Response.status(status)).build());
   }
 
   protected boolean useAuthenticateWithTokenReview() {

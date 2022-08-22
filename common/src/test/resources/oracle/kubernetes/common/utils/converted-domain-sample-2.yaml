@@ -85,12 +85,6 @@ metadata:
   namespace: sample-domain1-ns
   labels:
     weblogic.createdByOperator: "true"
-  ownerReferences:
-  - apiVersion: "weblogic.oracle/v9"
-    kind: Domain
-    name: sample-domain1
-    uid: f6b4dcbd-f88e-436e-a217-1d803124bb98
-    controller: true
 spec:
     clusterName: cluster-1
     serverPod:
