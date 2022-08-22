@@ -52,8 +52,10 @@ import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -952,7 +954,10 @@ public class CommonTestUtils {
     while (port <= END_PORT) {
       freePort = port++;
       try {
-        isLocalPortFree(freePort);
+        isLocalPortFree(freePort, K8S_NODEPORT_HOST);
+        if (OKE_CLUSTER) {
+          isLocalPortFree(freePort, NODE_IP);
+        }
       } catch (IOException ex) {
         return freePort;
       }
@@ -966,11 +971,12 @@ public class CommonTestUtils {
    * the given port is already in use by an another process.
    *
    * @param port port to check
+   * @param host host to check
    * @throws java.io.IOException when the port is not used by any socket
    */
-  private static void isLocalPortFree(int port) throws IOException {
-    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
-      getLogger().info("Port {0} is already in use", port);
+  private static void isLocalPortFree(int port, String host) throws IOException {
+    try (Socket socket = new Socket(host, port)) {
+      getLogger().info("Port {0} is already in use for host {1}", port, host);
     }
   }
 
