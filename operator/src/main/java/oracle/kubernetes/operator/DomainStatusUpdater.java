@@ -1326,8 +1326,8 @@ public class DomainStatusUpdater {
     }
   }
 
-  public static class UpdateCompletedConditionSteps extends StatusUpdateStep {
-    public UpdateCompletedConditionSteps() {
+  public static class ClearCompletedConditionSteps extends StatusUpdateStep {
+    public ClearCompletedConditionSteps() {
       super(null);
     }
 

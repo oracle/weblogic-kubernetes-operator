@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.DomainStatusUpdater.UpdateCompletedConditionSteps;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
@@ -76,7 +76,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     if (hasWorkToDo(steps, next)) {
-      insert(steps, new UpdateCompletedConditionSteps());
+      insert(steps, new ClearCompletedConditionSteps());
     }
     return Step.chain(steps.toArray(new Step[0]));
   }
