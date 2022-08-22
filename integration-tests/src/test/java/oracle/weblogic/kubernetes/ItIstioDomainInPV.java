@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -143,9 +143,11 @@ class ItIstioDomainInPV  {
 
   /**
    * Create a WebLogic domain using WLST in a persistent volume.
+   * Use WebLogic (12.2.1.4) base image with Japanese Locale.
    * Add istio configuration.
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
+   * Check WebLogic Server log for few Japanese characters.
    * Verify login to WebLogic console is successful thru istio ingress Port.
    * Additionally, the test verifies that WebLogic cluster can be scaled down
    * and scaled up in the absence of Administration server.
@@ -206,15 +208,18 @@ class ItIstioDomainInPV  {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
 
-    // Enable istio in domain custom resource configuration object.
-    // Add T3Channel Service with port assigned to Istio TCP ingress port.
-    logger.info("Creating domain custom resource");
+    // Use the WebLogic(12.2.1.4) Base Image with Japanese Locale
     String imageLocation = null;
     if (KIND_REPO != null) {
       imageLocation = KIND_REPO + "weblogick8s/test-images/weblogic:" + LOCALE_IMAGE_TAG;
     } else {
       imageLocation = LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG;
     }
+
+    // Enable istio in domain custom resource configuration object.
+    // Add T3Channel Service with port assigned to Istio TCP ingress port.
+    logger.info("Creating domain custom resource");
+
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -284,7 +289,7 @@ class ItIstioDomainInPV  {
       checkPodReadyAndServiceExists(withLongRetryPolicy, managedServerPrefix + i, domainUid, domainNamespace);
     }
     
-    // Make sure Japanease character is found in server pod log
+    // Make sure Japanese character is found in server pod log
     assertTrue(matchPodLog(),"LANG is not set to ja_JP.utf8");
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
@@ -369,7 +374,7 @@ class ItIstioDomainInPV  {
     logger.info("Managed Server started in absense of administration server");
   }
 
-  // Looks for some Japanease Character in Server Pod Logs
+  // Looks for some Japanese Character in Server Pod Logs
   private boolean matchPodLog() {
     String toMatch = "起動しました";
     // toMatch = "起起起モードで起動しました"; test fails
