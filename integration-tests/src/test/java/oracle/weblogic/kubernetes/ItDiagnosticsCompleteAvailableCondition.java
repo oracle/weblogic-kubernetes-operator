@@ -126,7 +126,8 @@ class ItDiagnosticsCompleteAvailableCondition {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminServerPodName,
         managedServerPodNamePrefix,
-        replicaCount);
+        replicaCount, 
+        List.of(cluster1Name));
   }
 
   /**
