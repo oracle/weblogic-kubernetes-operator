@@ -22,14 +22,13 @@ public class ClusterList implements KubernetesListObject {
 
   @ApiModelProperty("The type of resource. Must be 'ClusterList'.")
   private String kind;
-  
   @ApiModelProperty(
       "Standard list metadata. "
           + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
   private V1ListMeta metadata;
   
   @ApiModelProperty(
-      "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
+      "List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
   private List<ClusterResource> items = new ArrayList<>();
 
   public ClusterList apiVersion(String apiVersion) {

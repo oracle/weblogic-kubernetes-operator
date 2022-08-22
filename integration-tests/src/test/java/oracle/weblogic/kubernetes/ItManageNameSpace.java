@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -54,7 +55,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -538,6 +542,25 @@ class ItManageNameSpace {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
+    domain = addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
+    return domain;
+  }
+
+  private static DomainResource addClusterToDomain(String testClusterName, String domainNamespace,
+                                                   DomainResource domain, int replicaCount) {
+    List<String> clusterNames = new ArrayList<>();
+    clusterNames.add(testClusterName);
+    ClusterList clusters = listClusterCustomResources(domainNamespace);
+    for (String clusterName : clusterNames) {
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domainNamespace);
+      } else {
+        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+        createClusterAndVerify(createClusterResource(clusterName, domainNamespace, replicaCount));
+      }
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    }
     return domain;
   }
 
