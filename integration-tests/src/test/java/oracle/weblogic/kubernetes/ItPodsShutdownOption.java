@@ -38,7 +38,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-//import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -53,8 +52,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-//import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
-//import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -508,42 +505,6 @@ class ItPodsShutdownOption {
 
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
-
-    // set shutdown options for cluster
-    /*
-    StringBuffer values = new StringBuffer("{\"timeoutSeconds\" : " + shutDownObject[2].getTimeoutSeconds() + ","
-            + "\"shutDownType\" : " + "\"" + shutDownObject[2].getShutdownType() + "\"");
-    if (shutDownObject[2].getIgnoreSessions() != null) {
-      values.append(","
-              + "\"ignoreSessions\" : " + shutDownObject[2].getIgnoreSessions());
-    }
-    if (shutDownObject[2].getWaitForAllSessions() != null) {
-      values.append(","
-              + "\"waitForAllSessions\" : " + shutDownObject[2].getWaitForAllSessions());
-    }
-    values.append("}");
-    String patchStr
-            = "["
-            + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/shutdown\", \"value\": "
-            + values
-            + "}]";
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
-            patch, io.kubernetes.client.custom.V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-
-    */
-    /*
-    domain.getSpec().getClusters().stream().forEach(
-            clusterResref -> {
-              ClusterSpec cluster1 = assertDoesNotThrow(() ->
-                      getClusterCustomResource(clusterResref.getName(), domainNamespace, CLUSTER_VERSION))
-                      .getSpec().serverPod(new ServerPod()
-                              .shutdown((shutDownObject[2])));
-              logger.info(cluster1.toString());
-              logger.info(cluster1.getServerPod().toString());
-            });
-
-     */
     return domain;
   }
 

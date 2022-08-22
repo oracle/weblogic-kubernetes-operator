@@ -432,17 +432,7 @@ class ItKubernetesDomainEvents {
     } finally {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
-      /*
-      String patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2}"
-          + "]";
-      logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain")
-
-       */
+      
       assertTrue(scaleCluster(cluster1Name, domainNamespace3, 2), "failed to scale cluster via patching");
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
