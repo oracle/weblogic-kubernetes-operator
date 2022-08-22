@@ -277,25 +277,25 @@ class ItIntrospectVersion {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    String patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
-        + "]";
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchClusterCustomResource(cluster1Name, introDomainNamespace, patch, 
-        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-
     // patch the domain to addintrospectVersion field
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
-    patchStr
+    String patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
     logger.info("Updating introspectVersion in domain resource using patch string: {0}", patchStr);
-    patch = new V1Patch(patchStr);
+    V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");    
+        "Failed to patch domain");
+
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
+        + "]";
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchClusterCustomResource(cluster1Name, introDomainNamespace, patch,
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");

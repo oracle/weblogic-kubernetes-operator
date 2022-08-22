@@ -39,6 +39,7 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
@@ -48,6 +49,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,6 +62,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
@@ -99,6 +102,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -626,6 +631,14 @@ public class DomainUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort())))));
+
+    // create cluster resource for the domain
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
 
     return domain;
@@ -928,6 +941,14 @@ public class DomainUtils {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource for the domain
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
 
     return domain;

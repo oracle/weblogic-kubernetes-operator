@@ -114,6 +114,7 @@ public class Kubernetes {
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
+  private static final String CLUSTER_GROUP = "weblogic.oracle";
   private static final String DOMAIN_PLURAL = "domains";
   private static final String CLUSTER_PLURAL = "clusters";
   private static final String FOREGROUND = "Foreground";
@@ -133,7 +134,7 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
-  private static GenericKubernetesApi<ClusterResource, ClusterList> clusterResClient = null;
+  private static GenericKubernetesApi<ClusterResource, ClusterList> clusterCrdClient = null;
   private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
   private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
@@ -190,7 +191,7 @@ public class Kubernetes {
             apiClient //the api client
         );
     
-    clusterResClient =
+    clusterCrdClient =
         new GenericKubernetesApi<>(
             ClusterResource.class,  // the api type class
             ClusterList.class, // the api list type class
@@ -199,6 +200,16 @@ public class Kubernetes {
             CLUSTER_PLURAL, // the resource plural
             apiClient //the api client
         );    
+
+    clusterCrdClient =
+        new GenericKubernetesApi<>(
+            ClusterResource.class,  // the api type class
+            ClusterList.class, // the api list type class
+            CLUSTER_GROUP, // the api group
+            CLUSTER_VERSION, // the api version
+            CLUSTER_PLURAL, // the resource plural
+            apiClient //the api client
+        );
 
     deploymentClient =
         new GenericKubernetesApi<>(
@@ -1534,39 +1545,6 @@ public class Kubernetes {
   }
   
   /**
-   * Patch the Cluster Custom Resource.
-   *
-   * @param clusterName unique cluster identifier
-   * @param namespace name of namespace
-   * @param patch patch data in format matching the specified media type
-   * @param patchFormat one of the following types used to identify patch document:
-   *     "application/json-patch+json", "application/merge-patch+json",
-   * @return true if successful, false otherwise
-   */
-  public static boolean patchClusterCustomResource(String clusterName, String namespace,
-      V1Patch patch, String patchFormat) {
-
-    // GenericKubernetesApi uses CustomObjectsApi calls    
-    KubernetesApiResponse<ClusterResource> response = clusterResClient.patch(
-        namespace, // name of namespace
-        clusterName, // name of cluster resource
-        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
-        patch // patch data
-    );
-
-    if (!response.isSuccess()) {
-      getLogger().warning(
-          "Failed with response code " + response.getHttpStatusCode() + " response message "
-          + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
-          + " when patching " + clusterName + " in namespace "
-          + namespace + " with " + patch + " using patch format: " + patchFormat);
-      return false;
-    }
-
-    return true;
-  }
-  
-  /**
    * List Cluster Custom Resources in a given namespace.
    *
    * @param namespace name of namespace
@@ -1575,7 +1553,7 @@ public class Kubernetes {
   public static ClusterList listClusters(String namespace) {
     KubernetesApiResponse<ClusterList> response = null;
     try {
-      response = clusterResClient.list(namespace);
+      response = clusterCrdClient.list(namespace);
     } catch (Exception ex) {
       getLogger().warning(ex.getMessage());
       throw ex;
@@ -1593,7 +1571,7 @@ public class Kubernetes {
   public static boolean deleteClusterCustomResource(String clusterName, String namespace) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
-    KubernetesApiResponse<ClusterResource> response = clusterResClient.delete(namespace, clusterName);
+    KubernetesApiResponse<ClusterResource> response = clusterCrdClient.delete(namespace, clusterName);
 
     if (!response.isSuccess()) {
       getLogger().warning(
@@ -1606,6 +1584,39 @@ public class Kubernetes {
     return true;
   }
   
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName name of the cluster to be patched
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterCustomResource(String clusterName, String namespace,
+                                                  V1Patch patch, String patchFormat) {
+
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<ClusterResource> response = clusterCrdClient.patch(
+        namespace, // name of namespace
+        clusterName, // name of custom resource domain
+        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+        patch // patch data
+    );
+
+    if (!response.isSuccess()) {
+      getLogger().warning(
+          "Failed with response code " + response.getHttpStatusCode() + " response message "
+              + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+              + " when patching " + clusterName + " in namespace "
+              + namespace + " with " + patch + " using patch format: " + patchFormat);
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    * Patch the Deployment.
    *
