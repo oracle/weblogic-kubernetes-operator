@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -30,6 +30,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -46,6 +47,9 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -53,9 +57,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -92,9 +98,9 @@ class ItIstioDomainInPV  {
   private static String domainNamespace = null;
 
   private final String wlSecretName = "weblogic-credentials";
-  private final String domainUid = "istio-div";
+  private final String domainUid = "istio-dpv";
   private final String clusterName = "cluster-1";
-  private final String adminServerName = "admin-server";
+  private final String adminServerName = "adminserver";
   private final String adminServerPodName = domainUid + "-" + adminServerName;
   private static LoggingFacade logger = null;
 
@@ -137,9 +143,11 @@ class ItIstioDomainInPV  {
 
   /**
    * Create a WebLogic domain using WLST in a persistent volume.
+   * Use WebLogic (12.2.1.4) base image with Japanese Locale.
    * Add istio configuration.
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
+   * Check WebLogic Server log for few Japanese characters.
    * Verify login to WebLogic console is successful thru istio ingress Port.
    * Additionally, the test verifies that WebLogic cluster can be scaled down
    * and scaled up in the absence of Administration server.
@@ -148,8 +156,8 @@ class ItIstioDomainInPV  {
   @DisplayName("Create WebLogic domain in PV with Istio")
   void testIstioDomainHomeInPv() {
 
-    final String managedServerNameBase = "wlst-ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final String managedServerNameBase = "managed-";
+    String managedServerPrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort();
 
@@ -200,9 +208,18 @@ class ItIstioDomainInPV  {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
 
+    // Use the WebLogic(12.2.1.4) Base Image with Japanese Locale
+    String imageLocation = null;
+    if (KIND_REPO != null) {
+      imageLocation = KIND_REPO + "weblogick8s/test-images/weblogic:" + LOCALE_IMAGE_TAG;
+    } else {
+      imageLocation = LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG;
+    }
+
     // Enable istio in domain custom resource configuration object.
     // Add T3Channel Service with port assigned to Istio TCP ingress port.
     logger.info("Creating domain custom resource");
+
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -213,7 +230,7 @@ class ItIstioDomainInPV  {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .image(imageLocation)
             .imagePullPolicy("IfNotPresent")
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
@@ -227,6 +244,9 @@ class ItIstioDomainInPV  {
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("LANG")
+                    .value("ja_JP.utf8"))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
@@ -258,25 +278,19 @@ class ItIstioDomainInPV  {
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, domainNamespace);
-
     // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+      logger.info("Check managed service {0} is created in namespace {1}",
+              managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(withLongRetryPolicy, managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
+    
+    // Make sure Japanese character is found in server pod log
+    assertTrue(matchPodLog(),"LANG is not set to ja_JP.utf8");
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -330,7 +344,6 @@ class ItIstioDomainInPV  {
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
 
-    // Refer JIRA OWLS-86407
     // Stop and Start the managed server in absense of administration server
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/adminServer/serverStartPolicy", "NEVER"),
@@ -346,7 +359,7 @@ class ItIstioDomainInPV  {
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     logger.info("Cluster is scaled down in absense of administration server");
-    checkPodDeleted(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "2", domainUid, domainNamespace);
     logger.info("Managed Server stopped in absense of administration server");
 
     scalingSuccess = assertDoesNotThrow(() ->
@@ -356,10 +369,32 @@ class ItIstioDomainInPV  {
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     logger.info("Cluster is scaled up in absense of administration server");
-    checkServiceExists(managedServerPodNamePrefix + "2", domainNamespace);
-    checkPodReady(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    checkServiceExists(managedServerPrefix + "2", domainNamespace);
+    checkPodReady(managedServerPrefix + "2", domainUid, domainNamespace);
     logger.info("Managed Server started in absense of administration server");
   }
+
+  // Looks for some Japanese Character in Server Pod Logs
+  private boolean matchPodLog() {
+    String toMatch = "起動しました";
+    // toMatch = "起起起モードで起動しました"; test fails
+    String podLog = null;
+    try {
+      podLog = Kubernetes.getPodLog("istio-dpv-managed-1", domainNamespace, "weblogic-server");
+      logger.info("{0}", podLog);
+      logger.info("Looking for string [{0}] in Pod log", toMatch);
+      if (podLog.contains(toMatch))  {
+        logger.info("Found the string [{0}] in Pod log", toMatch);
+        return true;
+      } else {
+        logger.info("Matching string  [{0}] Not found in Pod log", toMatch);
+        return false;
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  } 
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
