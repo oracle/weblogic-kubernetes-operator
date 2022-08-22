@@ -200,10 +200,9 @@ public class CommonMiiTestUtils {
 
     return domain;
   }
-
+  
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
    *
    * @param domainResourceName name of the domain resource
    * @param domNamespace Kubernetes namespace that the domain is hosted
@@ -220,6 +219,34 @@ public class CommonMiiTestUtils {
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName) {
+
+    return createDomainResource(domainResourceName, domNamespace, imageName, 
+        adminSecretName, repoSecretName, encryptionSecretName, 1, new ArrayList<>());
+  } 
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount replica count of the cluster
+   * @param clusterNames names of cluster resources to create
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
