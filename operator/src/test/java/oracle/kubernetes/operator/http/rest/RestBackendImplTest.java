@@ -336,38 +336,33 @@ class RestBackendImplTest {
 
   @Test
   void whenMultipleClusterResourceWithSameClusterName_scaleClusterUpdatesClusterInCorrectDomain() {
-    final ClusterResource clusterResource1 = createClusterResource(DOMAIN1, NS, CLUSTER_1)
-        .withReplicas(1);
-    final ClusterResource clusterResource2 = createClusterResource(DOMAIN2, NS, CLUSTER_1)
-        .withReplicas(1);
-    final ClusterResource clusterResource3 = createClusterResource(DOMAIN3, NS, CLUSTER_1)
-        .withReplicas(1);
-    testSupport.defineResources(clusterResource2, clusterResource1, clusterResource3);
-
-    configureDomain().withClusterReference(clusterResource1.getMetadata().getName());
+    defineClusterResources(new String[] {DOMAIN2, DOMAIN1, DOMAIN3}, new String[] {NS, NS, NS});
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
-    assertThat(getUpdatedClusterResource().getMetadata().getName(),
-        equalTo(clusterResource1.getMetadata().getName()));
+    assertThat(getUpdatedClusterResource().getMetadata().getName(), equalTo(DOMAIN1 + '-' + CLUSTER_1));
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
   }
 
   @Test
   void whenMultipleClusterResourceWithSameResourceName_scaleClusterUpdatesClusterInCorrectNamespace() {
-    final ClusterResource clusterResource1 = createClusterResource(DOMAIN1, NS, CLUSTER_1)
-        .withReplicas(1);
-    final ClusterResource clusterResource2 = createClusterResource(DOMAIN1, NS2, CLUSTER_1)
-        .withReplicas(1);
-    final ClusterResource clusterResource3 = createClusterResource(DOMAIN1, NS3, CLUSTER_1)
-        .withReplicas(1);
-    testSupport.defineResources(clusterResource2, clusterResource1, clusterResource3);
-
-    configureDomain().withClusterReference(clusterResource1.getMetadata().getName());
+    defineClusterResources(new String[] {DOMAIN1, DOMAIN1, DOMAIN1}, new String[] {NS2, NS, NS3});
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
-    assertThat(getUpdatedClusterResource().getMetadata().getName(),
-        equalTo(clusterResource1.getMetadata().getName()));
+    assertThat(getUpdatedClusterResource().getMetadata().getNamespace(), equalTo(NS));
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  private void defineClusterResources(String[] domainNames, String[] namespaces) {
+
+    ClusterResource[] clusterResources  = new ClusterResource[domainNames.length];
+    for (int i = 0; i < clusterResources.length; i++) {
+      clusterResources[i] =
+          createClusterResource(domainNames[i], namespaces[i], CLUSTER_1).withReplicas(1);
+    }
+    testSupport.defineResources(clusterResources);
+
+    ClusterResource clusterToReturn = clusterResources[1]; // return the middle one
+    configureDomain().withClusterReference(DOMAIN1 + '-' + CLUSTER_1);
   }
 
   @Test
