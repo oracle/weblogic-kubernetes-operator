@@ -63,7 +63,6 @@ public class DomainStatus {
   @Description("The generation observed by the WebLogic operator.")
   private Long observedGeneration;
 
-  private FailureRetryConfiguration failureRetryConfiguration;
 
   /**
    * The number of introspector job failures since the last success.
@@ -184,20 +183,24 @@ public class DomainStatus {
   private void setStatusSummary() {
     final DomainCondition selected = getSummaryCondition();
     reason = Optional.ofNullable(selected.getReason()).map(DomainFailureReason::toString).orElse(null);
+    message = selected.getMessage();
     if (selected.isRetriableFailure()) {
       initialFailureTime = Optional.ofNullable(initialFailureTime).orElse(selected.getLastTransitionTime());
-      message = createRetryMessage(selected);
     } else {
       initialFailureTime = lastFailureTime = null;
-      message = selected.getMessage();
     }
   }
 
-  private String createRetryMessage(DomainCondition selected) {
-    if (failureRetryConfiguration == null) {
-      return selected.getMessage();
+  /**
+   * Updates the summary message with retry information, if applicable.
+   * @param retryMessageFactory an object which can create a summary message with retry information
+   */
+  public void updateSummaryMessage(RetryMessageFactory retryMessageFactory) {
+    DomainCondition selected = getSummaryCondition();
+    if (retryMessageFactory != null && selected.isRetriableFailure()) {
+      message = retryMessageFactory.createRetryMessage(this, selected);
     } else {
-      return failureRetryConfiguration.createRetryMessage(this, selected);
+      message = selected.getMessage();
     }
   }
 
@@ -720,9 +723,5 @@ public class DomainStatus {
 
   private boolean isFatalIntrospectorMessage(String statusMessage) {
     return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
-  }
-
-  public void setFailureRetryConfiguration(FailureRetryConfiguration failureRetryConfiguration) {
-    this.failureRetryConfiguration = failureRetryConfiguration;
   }
 }

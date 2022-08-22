@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
@@ -212,14 +213,17 @@ class FailureReportingTest {
     assertThat(domain, hasCondition(COMPLETED).withStatus("False"));
   }
 
-  private void setReplicasTooHigh() {
-    domain.getSpec().setReplicas(TOO_HIGH_REPLICA_COUNT);
-  }
+  @ParameterizedTest
+  @EnumSource(TestCase.class)
+  void afterFailureReported_canSerializeAndDeserializeDomain(TestCase testCase) {
+    domain.getStatus().addCondition(new DomainCondition(COMPLETED).withStatus(true));
+    testCase.getMutator().accept(this);
 
-  private void configureUnknownServer() {
-    final ManagedServer managedServer = new ManagedServer().withServerName("No-such-server");
-    managedServer.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
-    domain.getSpec().getManagedServers().add(managedServer);
+    executeMakeRight();
+    final Gson gson = new Gson();
+    final String json = gson.toJson(domain);
+
+    assertThat(gson.fromJson(json, DomainResource.class), equalTo(domain));
   }
 
   @ParameterizedTest
@@ -253,6 +257,8 @@ class FailureReportingTest {
 
     assertThat(testSupport, hasEvent("Failed").withMessageContaining(testCase.getExpectedMessage()));
   }
+
+  // todo what about the retry message for two retriable failures, after the first is fixed, and the second remains?
 
   enum TestCase {
     DOMAIN_VALIDATION_FAILURE {
@@ -361,6 +367,16 @@ class FailureReportingTest {
     boolean isRetriable() {
       return true;
     }
+  }
+
+  private void setReplicasTooHigh() {
+    domain.getSpec().setReplicas(TOO_HIGH_REPLICA_COUNT);
+  }
+
+  private void configureUnknownServer() {
+    final ManagedServer managedServer = new ManagedServer().withServerName("No-such-server");
+    managedServer.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    domain.getSpec().getManagedServers().add(managedServer);
   }
 
   static class FlickerDetector {

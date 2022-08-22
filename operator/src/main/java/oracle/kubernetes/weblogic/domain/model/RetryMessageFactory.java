@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 /**
  * An interface to allow the DomainStatus to generate a summary message based on configured retry parameters.
  */
-interface FailureRetryConfiguration {
+interface RetryMessageFactory {
 
   /**
    * Returns a status summary message that indicates whether a retry is scheduled, and when.

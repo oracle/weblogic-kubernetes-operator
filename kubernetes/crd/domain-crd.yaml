@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 073fb71c951129c7e3eee6403adcacb49ed399b7e951507627997b9a68b88ab7
+    weblogic.sha256: 863c8df97bc01a098e94d76d4474f0f3cfa6b66012d1de1797fb72d00b78c15c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -12561,30 +12561,6 @@ spec:
                 description: A brief CamelCase message indicating details about why
                   the domain is in this state.
                 type: string
-              introspectJobFailureCount:
-                description: Non-zero if the introspector job fails for any reason.
-                  You can configure an introspector job retry limit for jobs that
-                  log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount'
-                  (default 5). You cannot configure a limit for other types of failures,
-                  such as a Domain resource reference to an unknown secret name; in
-                  which case, the retries are unlimited.
-                minimum: 0
-                type: integer
-              failureRetryConfiguration:
-                type: object
-              replicas:
-                description: The number of running cluster member Managed Servers
-                  in the WebLogic cluster if there is exactly one cluster defined
-                  in the domain configuration and where the `replicas` field is set
-                  at the `spec` level rather than for the specific cluster under `clusters`.
-                  This field is provided to support use of Kubernetes scaling for
-                  this limited use case.
-                minimum: 0
-                type: integer
-              message:
-                description: A human readable message indicating details about why
-                  the domain is in this condition.
-                type: string
               servers:
                 description: Status of WebLogic Servers in this domain.
                 items:
@@ -12660,6 +12636,24 @@ spec:
                       description: Current state of this WebLogic Server instance.
                       type: string
                 type: array
+              introspectJobFailureCount:
+                description: Non-zero if the introspector job fails for any reason.
+                  You can configure an introspector job retry limit for jobs that
+                  log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount'
+                  (default 5). You cannot configure a limit for other types of failures,
+                  such as a Domain resource reference to an unknown secret name; in
+                  which case, the retries are unlimited.
+                minimum: 0
+                type: integer
+              replicas:
+                description: The number of running cluster member Managed Servers
+                  in the WebLogic cluster if there is exactly one cluster defined
+                  in the domain configuration and where the `replicas` field is set
+                  at the `spec` level rather than for the specific cluster under `clusters`.
+                  This field is provided to support use of Kubernetes scaling for
+                  this limited use case.
+                minimum: 0
+                type: integer
               failedIntrospectionUid:
                 description: Unique ID of the last failed introspection job.
                 type: string
@@ -12732,6 +12726,10 @@ spec:
                   - type
                   - status
                 type: array
+              message:
+                description: A human readable message indicating details about why
+                  the domain is in this condition.
+                type: string
               observedGeneration:
                 description: The generation observed by the WebLogic operator.
                 type: integer
