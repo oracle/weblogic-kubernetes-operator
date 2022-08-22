@@ -85,7 +85,7 @@ initialize() {
 
 initialize
 
-# Get the domain in json format
+# Get the domain in json format. Changed made on 08/16/2022
 domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
 if [ -z "${domainJson}" ]; then
   printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
@@ -99,8 +99,16 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-# Get server start policy for this server
-getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
+clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+printInfo "clusterJson content before changes: ${clusterJson}"
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+  exit 1
+fi
+
+# Get server start policy for this server. Changed made on 08/16/2022
+#getClusterPolicy "${clusterJson}" "${clusterName}" startPolicy
+getClusterPolicyUsingClusterResource "${clusterJson}" "${clusterName}" startPolicy
 if [ -z "${startPolicy}" ]; then
   getDomainPolicy "${domainJson}" startPolicy
 fi
@@ -110,10 +118,16 @@ if [[ "${startPolicy}" == 'Never' || "${startPolicy}" == 'AdminOnly' ]]; then
   exit 0
 fi
 
-# Set policy value to Never
+# Set policy value to Never. Changed made on 08/16/2022
 printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'Never'."
-createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "Never" patchJson
+#createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "Never" patchJson
+createPatchJsonToUpdateClusterPolicyUsingClusterResource "${clusterJson}" "${clusterName}" "Never" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+# Changed made on 08/16/2022
+#executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+printInfo "clusterJson content after changes: ${clusterJson}"
 
 printInfo "Successfully patched cluster '${clusterName}' with 'Never' start policy!"

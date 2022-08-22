@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -33,8 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -45,6 +44,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -124,9 +125,7 @@ public class ServerStartPolicyUtils {
         Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainNamespace, domainUid, adminSecretName,
-        encryptionSecretName,
-        configMapName);
+    createDomainResource(domainNamespace, domainUid, adminSecretName, encryptionSecretName, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -225,6 +224,16 @@ public class ServerStartPolicyUtils {
       String configmapName) {
     List<String> securityList = new ArrayList<>();
 
+    // create cluster object
+    ClusterResource configCluster = createClusterResource(CONFIG_CLUSTER, domNamespace, replicaCount);
+    logger.info("Creating config cluster {0} in namespace {1}",CONFIG_CLUSTER, domNamespace);
+    createClusterAndVerify(configCluster);
+
+    // create cluster object
+    ClusterResource dynamicCluster = createClusterResource(DYNAMIC_CLUSTER, domNamespace, replicaCount);
+    logger.info("Creating dynamic cluster {0} in namespace {1}",DYNAMIC_CLUSTER, domNamespace);
+    createClusterAndVerify(dynamicCluster);
+
     // create the domain CR
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
@@ -244,8 +253,6 @@ public class ServerStartPolicyUtils {
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
-            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
-            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -279,8 +286,12 @@ public class ServerStartPolicyUtils {
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
-
     setPodAntiAffinity(domain);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(CONFIG_CLUSTER));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(DYNAMIC_CLUSTER));
+
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domNamespace);
