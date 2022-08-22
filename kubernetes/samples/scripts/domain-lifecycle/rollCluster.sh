@@ -109,7 +109,7 @@ fi
 clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content before changes: ${clusterJson}"
 if [ -z "${clusterJson}" ]; then
-  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure the 'clusterName and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
   exit 1
 fi
 
