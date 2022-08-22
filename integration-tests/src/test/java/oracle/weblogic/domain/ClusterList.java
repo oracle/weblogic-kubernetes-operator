@@ -22,14 +22,14 @@ public class ClusterList implements KubernetesListObject {
 
   @ApiModelProperty("The type of resource. Must be 'ClusterList'.")
   private String kind;
-
+  
   @ApiModelProperty(
       "Standard list metadata. "
           + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
   private V1ListMeta metadata;
-
+  
   @ApiModelProperty(
-      "List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
+      "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
   private List<ClusterResource> items = new ArrayList<>();
 
   public ClusterList apiVersion(String apiVersion) {
@@ -82,16 +82,11 @@ public class ClusterList implements KubernetesListObject {
   public void setMetadata(V1ListMeta metadata) {
     this.metadata = metadata;
   }
-
-  public ClusterList items(List<ClusterResource> items) {
-    this.items = items;
-    return this;
-  }
-
+  
   public List<ClusterResource> items() {
     return items;
   }
-
+  
   public List<ClusterResource> getItems() {
     return items;
   }
@@ -100,41 +95,57 @@ public class ClusterList implements KubernetesListObject {
     this.items = items;
   }
 
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this)
-        .append("apiVersion", apiVersion)
-        .append("kind", kind)
-        .append("metadata", metadata)
-        .append("items", items)
-        .toString();
+  public ClusterList withItems(List<ClusterResource> items) {
+    this.items = items;
+    return this;
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(apiVersion)
-        .append(kind)
         .append(metadata)
+        .append(apiVersion)
         .append(items)
+        .append(kind)
         .toHashCode();
   }
 
   @Override
   public boolean equals(Object other) {
-    if (this == other) {
+    if (other == this) {
       return true;
     }
-
-    if (other == null || getClass() != other.getClass()) {
+    if (!(other instanceof ClusterList)) {
       return false;
     }
-    ClusterList rhs = (ClusterList) other;
+    ClusterList rhs = ((ClusterList) other);
     return new EqualsBuilder()
-        .append(apiVersion, rhs.apiVersion)
-        .append(kind, rhs.kind)
         .append(metadata, rhs.metadata)
+        .append(apiVersion, rhs.apiVersion)
         .append(items, rhs.items)
+        .append(kind, rhs.kind)
         .isEquals();
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+            .append("apiVersion", apiVersion)
+            .append("items", items)
+            .append("kind", kind)
+            .append("metadata", metadata)
+            .toString();
+  }
+
+  /**
+   * Standard list metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @param metadata metadata
+   * @return this
+   */
+  public ClusterList withMetadata(V1ListMeta metadata) {
+    this.metadata = metadata;
+    return this;
   }
 }

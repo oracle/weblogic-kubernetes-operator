@@ -511,6 +511,7 @@ class ItManageNameSpace {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
+            .replicas(replicaCount)
             .image(miiImage)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()

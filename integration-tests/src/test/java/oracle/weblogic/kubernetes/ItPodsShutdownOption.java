@@ -8,11 +8,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+//import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -22,7 +24,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.Shutdown;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -37,7 +38,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+//import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -52,6 +53,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+//import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
+//import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.patchClusterCustomResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -87,11 +92,10 @@ class ItPodsShutdownOption {
 
   // domain constants
   private static String domainUid = "domain1";
-  private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-
+  String clusterName = "cluster-1";
   private static String indManagedServerName1 = "ms-1";
   private static String indManagedServerPodName1 = domainUid + "-" + indManagedServerName1;
   private static String indManagedServerName2 = "ms-2";
@@ -103,6 +107,7 @@ class ItPodsShutdownOption {
   private static String adminSecretName;
   private static String encryptionSecretName;
   private static String cmName = "configuredcluster";
+  private static ClusterResource cluster = null;
 
   /**
    * 1. Get namespaces for operator and WebLogic domain.
@@ -159,7 +164,6 @@ class ItPodsShutdownOption {
         + "      ListenPort: '9001'\n";
 
     createModelConfigMap(cmName, yamlString);
-
   }
 
   /**
@@ -174,6 +178,9 @@ class ItPodsShutdownOption {
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
     checkPodDoesNotExist(indManagedServerPodName1, domainUid, domainNamespace);
     checkPodDoesNotExist(indManagedServerPodName2, domainUid, domainNamespace);
+    if (cluster != null) {
+      TestActions.deleteClusterCustomResource(clusterName, domainNamespace);
+    }
   }
 
   /**
@@ -442,7 +449,7 @@ class ItPodsShutdownOption {
   // create custom domain resource with different shutdownobject values for adminserver/cluster/independent ms
   private DomainResource buildDomainResource(Shutdown[] shutDownObject) {
     logger.info("Creating domain custom resource");
-
+    // create cluster object
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -452,6 +459,7 @@ class ItPodsShutdownOption {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
+            .replicas(replicaCount)
             .image(miiImage)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -488,11 +496,54 @@ class ItPodsShutdownOption {
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[4]))));
     setPodAntiAffinity(domain);
-    domain.getSpec().getClusters().stream().forEach(clusterResref ->
-        assertDoesNotThrow(() ->
-            Kubernetes.getClusterCustomResource(clusterResref.getName(), domainNamespace, CLUSTER_VERSION)).getSpec()
-            .getServerPod()
-            .shutdown(shutDownObject[2]));
+
+
+    cluster = createClusterResource(
+            clusterName, domainNamespace, replicaCount);
+    cluster.getSpec().serverPod(new ServerPod()
+            .shutdown((shutDownObject[2])));
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
+    // set shutdown options for cluster
+    /*
+    StringBuffer values = new StringBuffer("{\"timeoutSeconds\" : " + shutDownObject[2].getTimeoutSeconds() + ","
+            + "\"shutDownType\" : " + "\"" + shutDownObject[2].getShutdownType() + "\"");
+    if (shutDownObject[2].getIgnoreSessions() != null) {
+      values.append(","
+              + "\"ignoreSessions\" : " + shutDownObject[2].getIgnoreSessions());
+    }
+    if (shutDownObject[2].getWaitForAllSessions() != null) {
+      values.append(","
+              + "\"waitForAllSessions\" : " + shutDownObject[2].getWaitForAllSessions());
+    }
+    values.append("}");
+    String patchStr
+            = "["
+            + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/shutdown\", \"value\": "
+            + values
+            + "}]";
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+            patch, io.kubernetes.client.custom.V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+
+    */
+    /*
+    domain.getSpec().getClusters().stream().forEach(
+            clusterResref -> {
+              ClusterSpec cluster1 = assertDoesNotThrow(() ->
+                      getClusterCustomResource(clusterResref.getName(), domainNamespace, CLUSTER_VERSION))
+                      .getSpec().serverPod(new ServerPod()
+                              .shutdown((shutDownObject[2])));
+              logger.info(cluster1.toString());
+              logger.info(cluster1.getServerPod().toString());
+            });
+
+     */
     return domain;
   }
 
