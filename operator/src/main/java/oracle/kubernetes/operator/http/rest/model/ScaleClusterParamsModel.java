@@ -14,14 +14,22 @@ import io.kubernetes.client.openapi.models.V1ScaleSpec;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ScaleClusterParamsModel extends BaseModel {
 
+  /**
+   * The desired number of managed servers in the WebLogic cluster.
+   *
+   * @deprecated Deprecated since release 4.0. Please use {#spec} instead.
+   */
   @Deprecated(since = "4.0")
   private int managedServerCount;
+
   private V1ScaleSpec spec;
 
   /**
    * Get the desired number of managed servers in the WebLogic cluster.
    *
    * @return the desired number of managed servers.
+   *
+   * @deprecated Deprecated since release 4.0. Please use {#spec} instead.
    */
   @Deprecated(since = "4.0")
   public int getManagedServerCount() {
@@ -52,6 +60,8 @@ public class ScaleClusterParamsModel extends BaseModel {
    * Set the desired number of managed servers in the WebLogic cluster.
    *
    * @param managedServerCount - the desired number of managed servers.
+   *
+   * @deprecated Deprecated since release 4.0. Please use {#spec} instead.
    */
   @Deprecated(since = "4.0")
   public void setManagedServerCount(int managedServerCount) {
@@ -71,6 +81,6 @@ public class ScaleClusterParamsModel extends BaseModel {
   protected String propertiesToString() {
     return "spec= "
         + Optional.ofNullable(spec).map(V1ScaleSpec::toString).orElse("<null>")
-        + ", managedServerCount=" + getManagedServerCount(); // super has no properties
+        + ", managedServerCount=" + managedServerCount; // super has no properties
   }
 }
