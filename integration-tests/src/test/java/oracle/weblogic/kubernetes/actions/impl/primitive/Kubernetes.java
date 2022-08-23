@@ -190,6 +190,16 @@ public class Kubernetes {
             DOMAIN_PLURAL, // the resource plural
             apiClient //the api client
         );
+    
+    clusterCrdClient =
+        new GenericKubernetesApi<>(
+            ClusterResource.class,  // the api type class
+            ClusterList.class, // the api list type class
+            DOMAIN_GROUP, // the api group
+            CLUSTER_VERSION, // the api version
+            CLUSTER_PLURAL, // the resource plural
+            apiClient //the api client
+        );    
 
     clusterCrdClient =
         new GenericKubernetesApi<>(
@@ -1533,7 +1543,47 @@ public class Kubernetes {
     getLogger().warning("Cluster Custom Resource '" + clusterResName + "' not found in namespace " + namespace);
     return null;
   }
+  
+  /**
+   * List Cluster Custom Resources in a given namespace.
+   *
+   * @param namespace name of namespace
+   * @return List of Cluster Custom Resources
+   */
+  public static ClusterList listClusters(String namespace) {
+    KubernetesApiResponse<ClusterList> response = null;
+    try {
+      response = clusterCrdClient.list(namespace);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+    return response != null ? response.getObject() : new ClusterList();
+  }
+  
+  /**
+   * Delete the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @return true if successful, false otherwise
+   */
+  public static boolean deleteClusterCustomResource(String clusterName, String namespace) {
 
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<ClusterResource> response = clusterCrdClient.delete(namespace, clusterName);
+
+    if (!response.isSuccess()) {
+      getLogger().warning(
+          "Failed to delete cluster custom resource, response code " + response.getHttpStatusCode()
+          + " response message " + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+          + " when deleting " + clusterName + " in namespace " + namespace);
+      return false;
+    }
+
+    return true;
+  }
+  
   /**
    * Patch the Cluster Custom Resource.
    *

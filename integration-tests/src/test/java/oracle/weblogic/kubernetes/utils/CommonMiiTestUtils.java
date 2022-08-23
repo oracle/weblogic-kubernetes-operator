@@ -35,6 +35,7 @@ import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -43,6 +44,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -81,6 +83,8 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -114,6 +118,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * The common utility class for model-in-image tests.
  */
 public class CommonMiiTestUtils {
+  
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
@@ -123,6 +128,7 @@ public class CommonMiiTestUtils {
    * @param adminServerPodName name of the admin server pod
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
+   * @return DomainResource
    */
   public static DomainResource createMiiDomainAndVerify(
       String domainNamespace,
@@ -131,6 +137,31 @@ public class CommonMiiTestUtils {
       String adminServerPodName,
       String managedServerPrefix,
       int replicaCount
+  ) {
+    return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, 
+        adminServerPodName, managedServerPrefix, replicaCount, null);
+  }
+  
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param adminServerPodName name of the admin server pod
+   * @param managedServerPrefix prefix of the managed server pods
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames names of clusters
+   * @return DomainResource
+   */
+  public static DomainResource createMiiDomainAndVerify(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      String adminServerPodName,
+      String managedServerPrefix,
+      int replicaCount, 
+      List<String> clusterNames
   ) {
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
@@ -166,7 +197,9 @@ public class CommonMiiTestUtils {
         imageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName
+        encryptionSecretName,
+        replicaCount,
+        clusterNames
     );
 
     createDomainAndVerify(domain, domainNamespace);
@@ -196,10 +229,9 @@ public class CommonMiiTestUtils {
 
     return domain;
   }
-
+  
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
    *
    * @param domainResourceName name of the domain resource
    * @param domNamespace Kubernetes namespace that the domain is hosted
@@ -216,6 +248,34 @@ public class CommonMiiTestUtils {
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName) {
+
+    return createDomainResource(domainResourceName, domNamespace, imageName,
+        adminSecretName, repoSecretName, encryptionSecretName, -1, Collections.<String>emptyList());
+  } 
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount replica count of the cluster
+   * @param clusterNames names of cluster resources to create
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -258,6 +318,19 @@ public class CommonMiiTestUtils {
                 .introspectorJobActiveDeadlineSeconds(600L)));
 
     domain.spec().setImagePullSecrets(secrets);
+    
+    ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
+    for (String clusterName : clusterNames) {
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+      } else {
+        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+        createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
+      }
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    }   
+
     setPodAntiAffinity(domain);
     return domain;
   }
