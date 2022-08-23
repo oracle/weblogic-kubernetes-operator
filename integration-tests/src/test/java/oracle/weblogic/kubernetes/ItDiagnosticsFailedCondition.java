@@ -232,11 +232,23 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      String patchStr = "[{\"op\": \"replace\", "
+      
+      // remove after debug
+      String patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2}"
+          + "]";
+      V1Patch patch = new V1Patch(patchStr);
+      logger.info("Patching cluster resource using patch string {0} ", patchStr);
+      assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+      //end of debug
+      
+      patchStr = "[{\"op\": \"replace\", "
           + "\"path\": \"/spec/webLogicCredentialsSecret/name\", \"value\": \"weblogic-credentials-foo\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
-      V1Patch patch = new V1Patch(patchStr);
+      patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
       testUntil(
