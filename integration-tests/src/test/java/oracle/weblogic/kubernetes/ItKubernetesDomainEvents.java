@@ -384,7 +384,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     createNewCluster();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
-        externalRestHttpsPort, opNamespace, opServiceAccount);
+            externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the Domain_Available event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid,
             DOMAIN_AVAILABLE, "Normal", timestamp);
@@ -422,7 +422,7 @@ class ItKubernetesDomainEvents {
           + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}"
           + "]";
 
-      logger.info("Updating introspect  using patch string: {0}",  patchStr);
+      logger.info("Updating introspect version  using patch string: {0}",  patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
               V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
@@ -432,7 +432,7 @@ class ItKubernetesDomainEvents {
     } finally {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
-      
+
       assertTrue(scaleCluster(cluster1Name, domainNamespace3, 2), "failed to scale cluster via patching");
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
@@ -479,7 +479,7 @@ class ItKubernetesDomainEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-      assertFalse(scaleCluster(cluster1Name, domainNamespace3, 1),"decreased replica to 1");
+      assertTrue(scaleCluster(cluster1Name, domainNamespace3, 1),"decreased replica to 1");
       // No event will be created for this
       logger.info("verify the Failed event is NOT generated");
       assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,  DOMAIN_FAILED, "Warning", timestamp));
