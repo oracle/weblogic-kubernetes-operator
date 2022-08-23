@@ -474,6 +474,16 @@ class AdmissionCheckerTest {
   }
 
   @Test
+  void whenClusterReplicasChanged_proposedClusterHasNoStatus_returnTrue() {
+    testSupport.defineResources(proposedDomain);
+    proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
+    proposedCluster.setStatus(null);
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.hasException(), equalTo(false));
+  }
+
+  @Test
   void whenClusterReplicasChangedToUnsetAndDomainReplicasValid_returnTrue() {
     testSupport.defineResources(proposedDomain);
     proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);

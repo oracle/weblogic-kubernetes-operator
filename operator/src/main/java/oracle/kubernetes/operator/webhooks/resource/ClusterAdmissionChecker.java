@@ -83,9 +83,12 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
   }
 
   private boolean isReplicaCountValid() {
-    return getClusterReplicaCount() != null
-        ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
-        : isDomainReplicaCountValid();
+    return Optional.ofNullable(proposedCluster.getStatus())
+        .map(clusterStatus -> getClusterReplicaCount() != null
+            ? getClusterReplicaCount() <= getClusterSize(clusterStatus)
+            : isDomainReplicaCountValid())
+        // skip validation if no status in Cluster, such as when domain is managed by a 3.x Operator
+        .orElse(true);
   }
 
   private Integer getClusterReplicaCount() {
