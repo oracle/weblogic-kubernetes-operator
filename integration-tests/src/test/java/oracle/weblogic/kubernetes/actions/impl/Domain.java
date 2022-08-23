@@ -27,13 +27,13 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ClusterUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
@@ -49,11 +49,13 @@ import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterR
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
 import static oracle.weblogic.kubernetes.actions.impl.Exec.exec;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
+import static oracle.weblogic.kubernetes.assertions.impl.Cluster.doesClusterExist;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.scaleClusters;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -352,7 +354,7 @@ public class Domain {
   /**
    * Scale the cluster of the domain in the specified namespace.
    *
-   * @param domainUid domainUid of the domain to be scaled
+   * @param domainUid uid of the domain
    * @param namespace namespace in which the domain exists
    * @param clusterName name of the WebLogic cluster to be scaled in the domain
    * @param numOfServers number of servers to be scaled to
@@ -362,43 +364,25 @@ public class Domain {
   public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
       throws ApiException {
     LoggingFacade logger = getLogger();
-    // get the domain cluster list
-    DomainResource domain = getDomainCustomResource(domainUid, namespace);
 
-    List<V1LocalObjectReference> clusterResRefs = new ArrayList<>();
-    if (domain.getSpec() != null) {
-      clusterResRefs = domain.getSpec().getClusters();
+    if (doesClusterExist(clusterName, CLUSTER_VERSION, namespace)) {
+      // construct the patch string for scaling the cluster in the domain
+      StringBuffer patchStr = new StringBuffer("[{")
+          .append("\"op\": \"replace\", ")
+          .append("\"path\": \"/spec/replicas\", ")
+          .append("\"value\": ")
+          .append(numOfServers)
+          .append("}]");
+
+      logger.info("Scaling cluster {0} in namespace {1} using patch string: {2}",
+          clusterName, namespace, patchStr.toString());
+
+      V1Patch patch = new V1Patch(new String(patchStr));
+
+      return Kubernetes.patchClusterCustomResource(clusterName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    } else {
+      return scaleClusters(domainUid, namespace, numOfServers);
     }
-
-    // get the index of the cluster with clusterName in the cluster list
-    int index = 0;
-    for (int i = 0; i < clusterResRefs.size(); i++) {
-      if (clusterResRefs.get(i).getName().equals(clusterName)) {
-        index = i;
-        break;
-      }
-    }
-
-    // TODO: Below needs to be modifed for v9
-    // construct the patch string for scaling the cluster in the domain
-    /*
-    StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"replace\", ")
-        .append("\"path\": \"/spec/")
-        .append("/replicas\", ")
-        .append("\"value\": ")
-        .append(numOfServers)
-        .append("}]");
-
-    logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
-        clusterName, domainUid, patchStr.toString());
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-
-    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
-
-    */
-    return ClusterUtils.scaleCluster(clusterName, namespace, numOfServers);
   }
 
   /**
@@ -438,7 +422,8 @@ public class Domain {
     // construct the patch string for scaling the cluster in the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
-        .append("\"path\": \"/spec/")
+        .append("\"path\": \"/spec/clusters/")
+        .append(index)
         .append("/replicas\", ")
         .append("\"value\": ")
         .append(numOfServers)
