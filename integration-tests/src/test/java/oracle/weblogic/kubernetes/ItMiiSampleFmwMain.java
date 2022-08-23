@@ -85,7 +85,7 @@ class ItMiiSampleFmwMain {
    * Test to verify JRF update2 use case.
    * @see ItMiiSampleWlsMain#testWlsUpdate2UseCase for more...
    */
-  @Test
+  //@Test
   @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
@@ -100,7 +100,7 @@ class ItMiiSampleFmwMain {
    * Test to verify JRF update3 use case.
    * @see ItMiiSampleWlsMain#testWlsUpdate3UseCase for more...
    */
-  @Test
+  //@Test
   @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
@@ -118,7 +118,7 @@ class ItMiiSampleFmwMain {
    * Verifies the sample application is running
    * and detects the updated configured count for the Min and Max Threads Constraints.
    */
-  @Test
+  //@Test
   @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case")
