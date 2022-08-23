@@ -51,14 +51,13 @@ public class FmwUtils {
    * @param encryptionSecretName name of encryption secret
    * @param rcuAccessSecretName name of RCU access secret
    * @param opssWalletPasswordSecretName name of opss wallet password secret
-   * @param replicaCount count of replicas
    * @param miiImage name of model in image
    * @return Domain WebLogic domain
    */
   public static DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
+      String opssWalletPasswordSecretName, String miiImage) {
 
     // create the domain CR
     DomainResource domain = new DomainResource()
@@ -126,7 +125,7 @@ public class FmwUtils {
     // create the domain CR
     DomainResource domain = createDomainResource(domainUid, domNamespace,
         adminSecretName, repoSecretName, encryptionSecretName,
-        rcuAccessSecretName, opssWalletPasswordSecretName, replicaCount, miiImage);
+        rcuAccessSecretName, opssWalletPasswordSecretName, miiImage);
     domain.getSpec().getServerPod().setMaxReadyWaitTimeSeconds(maxServerPodReadyWaitTime);
 
     return domain;

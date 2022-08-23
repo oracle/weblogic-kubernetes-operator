@@ -95,7 +95,7 @@ class ItFmwMiiDomain {
   private String domainUid = "fmwdomain-mii";
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPrefix = domainUid + "-managed-server";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSecretName = domainUid + "-weblogic-credentials";
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
@@ -221,7 +221,6 @@ class ItFmwMiiDomain {
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         fmwMiiImage);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
