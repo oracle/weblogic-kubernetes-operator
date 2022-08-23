@@ -75,6 +75,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureSteps;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
@@ -105,6 +106,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.NamespaceTest.createDomainNamespaces;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
@@ -893,6 +895,34 @@ class EventHelperTest {
         containsEventWithMessage(getEvents(testSupport),
             POD_CYCLE_STARTING_EVENT,
             getFormattedMessage(POD_CYCLE_STARTING_EVENT_PATTERN, "12345", "abcde")), is(true));
+  }
+
+  @Test
+  void whenClusterAvailableEventCreatedTwice_verifyEventReplaced() {
+    testSupport.runSteps(EventHelper.createClusterResourceEventStep(new EventData(CLUSTER_AVAILABLE)));
+    dispatchAddedEventWatches();
+    testSupport.runSteps(EventHelper.createClusterResourceEventStep(new EventData(CLUSTER_AVAILABLE)));
+
+    assertThat("Found CLUSTER_AVAILABLE event with unexpected count",
+        containsOneEventWithCount(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT, 2), is(true));
+  }
+
+  @Test
+  void whenClusterAvailableEventCreatedTwice_fail409OnReplace_eventCreatedOnceWithExpectedCount() {
+    testSupport.addRetryStrategy(retryStrategy);
+    Step eventStep = EventHelper.createClusterResourceEventStep(new EventData(CLUSTER_AVAILABLE)
+        .namespace(NS).resourceName(NS));
+    testSupport.runSteps(eventStep);
+    dispatchAddedEventWatches();
+
+    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT);
+    testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
+
+    testSupport.runSteps(eventStep);
+
+    assertThat("Found 2 CLUSTER_AVAILABLE event with expected count 1",
+        containsEventsWithCountOne(getEvents(testSupport),
+            CLUSTER_AVAILABLE_EVENT, 2), is(true));
   }
 
   private void dispatchAddedEventWatches() {

@@ -3,6 +3,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
@@ -50,6 +54,12 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer replicasGoal;
 
+  @Description("The generation observed by the WebLogic operator.")
+  private Long observedGeneration;
+
+  @Description("Current service state of the cluster.")
+  private List<ClusterCondition> conditions = new ArrayList<>();
+
   public ClusterStatus() {
   }
 
@@ -60,6 +70,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     this.maximumReplicas = other.maximumReplicas;
     this.minimumReplicas = other.minimumReplicas;
     this.replicasGoal = other.replicasGoal;
+    this.observedGeneration = other.observedGeneration;
+    this.conditions = new ArrayList<>(other.conditions);
   }
 
   /**
@@ -140,6 +152,23 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+  }
+
+  /**
+   * Current service state of cluster.
+   *
+   * @return conditions
+   */
+  public @Nonnull List<ClusterCondition> getConditions() {
+    return conditions;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -149,6 +178,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append("maximumReplicas", maximumReplicas)
         .append("minimumReplicas", minimumReplicas)
         .append("replicasGoal", replicasGoal)
+        .append("observedGeneration", observedGeneration)
+        .append("conditions", conditions)
         .toString();
   }
 
@@ -161,6 +192,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(maximumReplicas)
         .append(minimumReplicas)
         .append(replicasGoal)
+        .append(observedGeneration)
+        .append(DomainResource.sortList(conditions))
         .toHashCode();
   }
 
@@ -180,6 +213,8 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append(maximumReplicas, rhs.maximumReplicas)
         .append(minimumReplicas, rhs.minimumReplicas)
         .append(replicasGoal, rhs.replicasGoal)
+        .append(observedGeneration, rhs.observedGeneration)
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .isEquals();
   }
 
@@ -203,5 +238,26 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
 
   static ObjectPatch<ClusterStatus> getObjectPatch() {
     return clusterPatch;
+  }
+
+  /**
+   * Adds a condition to the status, replacing any existing conditions with the same type, and removing other
+   * conditions according to the cluster rules.
+   *
+   * @param newCondition the condition to add.
+   * @return this object.
+   */
+  public ClusterStatus addCondition(ClusterCondition newCondition) {
+    if (conditions.contains(newCondition)) {
+      return this;
+    }
+
+    conditions = conditions.stream()
+        .filter(c -> c.isCompatibleWith(newCondition))
+        .collect(Collectors.toList());
+
+    conditions.add(newCondition);
+    Collections.sort(conditions);
+    return this;
   }
 }

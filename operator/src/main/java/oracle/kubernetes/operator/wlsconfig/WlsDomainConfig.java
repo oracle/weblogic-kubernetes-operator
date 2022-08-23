@@ -263,7 +263,7 @@ public class WlsDomainConfig implements WlsDomain {
       return 0;
     }
 
-    return getClusterConfigs().get(clusterName).getMaxClusterSize();
+    return getClusterConfigs().get(clusterName).getClusterSize();
   }
 
   /**
