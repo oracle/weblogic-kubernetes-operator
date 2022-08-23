@@ -1369,23 +1369,30 @@ window.onload = function() {
           "description": "A brief CamelCase message indicating details about why the domain is in this state.",
           "type": "string"
         },
-        "servers": {
-          "description": "Status of WebLogic Servers in this domain.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ServerStatus"
-          }
-        },
         "introspectJobFailureCount": {
           "deprecated": "true",
           "description": "Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter \u0027domainPresenceFailureRetryMaxCount\u0027 (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited.",
           "type": "integer",
           "minimum": 0.0
         },
+        "failureRetryConfiguration": {
+          "$ref": "#/definitions/FailureRetryConfiguration"
+        },
         "replicas": {
           "description": "The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case.",
           "type": "integer",
           "minimum": 0.0
+        },
+        "message": {
+          "description": "A human readable message indicating details about why the domain is in this condition.",
+          "type": "string"
+        },
+        "servers": {
+          "description": "Status of WebLogic Servers in this domain.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerStatus"
+          }
         },
         "failedIntrospectionUid": {
           "description": "Unique ID of the last failed introspection job.",
@@ -1410,10 +1417,6 @@ window.onload = function() {
             "$ref": "#/definitions/DomainCondition"
           }
         },
-        "message": {
-          "description": "A human readable message indicating details about why the domain is in this condition.",
-          "type": "string"
-        },
         "observedGeneration": {
           "description": "The generation observed by the WebLogic operator.",
           "type": "integer"
@@ -1426,6 +1429,9 @@ window.onload = function() {
           }
         }
       }
+    },
+    "FailureRetryConfiguration": {
+      "type": "object"
     },
     "FluentdSpecification": {
       "type": "object",

@@ -512,7 +512,7 @@ public class DomainStatusUpdater {
     }
 
     private void addFailureCondition(DomainStatus status, DomainCondition condition) {
-      status.addCondition(condition);
+      status.addCondition(condition).updateSummaryMessage(getDomain());
       addDomainEvent(condition);
     }
 
