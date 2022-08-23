@@ -152,7 +152,7 @@ class ItIstioDomainInPV  {
 
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 2;
+    final int replicaCount = 1;
     final int t3ChannelPort = getNextFreePort();
 
     final String pvName = getUniqueName(domainUid + "-pv-");
