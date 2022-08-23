@@ -497,6 +497,7 @@ class ItElasticLogging {
         miiImage,
         adminServerPodName,
         managedServerPodPrefix,
+        "cluster-1",
         replicaCount);
   }
 
