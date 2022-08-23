@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterStatus;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -77,12 +78,15 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVe
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -273,18 +277,25 @@ class ItIntrospectVersion {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    // patch the domain to addintrospectVersion field
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
-
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    logger.info("Updating introspectVersion in domain resource using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
+        + "]";
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchClusterCustomResource(cluster1Name, introDomainNamespace, patch,
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -642,14 +653,17 @@ class ItIntrospectVersion {
     // changet the admin server port to a different value to force pod restart
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+    
+    ClusterResource cluster = createClusterResource(cluster2Name, introDomainNamespace, 2);
+    getLogger().info("Creating cluster {0} in namespace {1}", cluster2Name, introDomainNamespace);
+    createClusterAndVerify(cluster);
 
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
 
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
         = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2}"
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + cluster2Name + "\"}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
@@ -810,10 +824,7 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
     // scale down the cluster by 1
-    boolean scalingSuccess = assertDoesNotThrow(()
-        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount - 1),
-        String.format("Scaling down the cluster cluster-1 of domain %s in namespace %s failed",
-            domainUid, introDomainNamespace));
+    boolean scalingSuccess = scaleCluster(cluster1Name, introDomainNamespace, cluster1ReplicaCount - 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling down failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 
@@ -825,10 +836,7 @@ class ItIntrospectVersion {
     cluster1ReplicaCount--;
 
     // scale up the cluster to cluster1ReplicaCount + 1
-    scalingSuccess = assertDoesNotThrow(()
-        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount + 1),
-        String.format("Scaling up the cluster cluster-1 of domain %s in namespace %s failed",
-            domainUid, introDomainNamespace));
+    scalingSuccess = scaleCluster(cluster1Name, introDomainNamespace, cluster1ReplicaCount + 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling up failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 
@@ -1030,6 +1038,13 @@ class ItIntrospectVersion {
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(
+        cluster1Name, introDomainNamespace, cluster1ReplicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",cluster1Name, introDomainNamespace);
+    createClusterAndVerify(cluster);    
 
 
     // create a domain custom resource configuration object
@@ -1089,6 +1104,8 @@ class ItIntrospectVersion {
       secrets.add(new V1LocalObjectReference().name(secret));
     }
     domain.spec().setImagePullSecrets(secrets);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Name));
 
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created

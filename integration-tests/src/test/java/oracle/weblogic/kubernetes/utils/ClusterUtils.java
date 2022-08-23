@@ -3,14 +3,18 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -33,6 +37,23 @@ public class ClusterUtils {
         .withApiVersion(CLUSTER_API_VERSION)
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterResName))
         .spec(new ClusterSpec().withClusterName(clusterResName).replicas(replicaCount));
+  }
+
+  /**
+   * Create cluster custom resource object.
+   *
+   * @param clusterResName cluster resource name
+   * @param namespace in which the cluster object exists
+   * @param clusterSpec cluster specification
+   * @return cluster resource object
+   */
+  public static ClusterResource createClusterResource(String clusterResName,
+      String namespace, ClusterSpec clusterSpec) {
+    return new ClusterResource()
+        .withKind("Cluster")
+        .withApiVersion(CLUSTER_API_VERSION)
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterResName))
+        .spec(clusterSpec);
   }
 
   /**
@@ -64,5 +85,42 @@ public class ClusterUtils {
         "cluster {0} to be created in namespace {1}",
         clusterName,
         namespace);
+  }  
+  
+  /**
+   * Delete a cluster resource in the specified namespace.
+   *
+   * @param namespace the namespace in which the domain exists
+   * @param clusterName cluster resource name
+   */
+  public static void deleteClusterCustomResource(String clusterName, String namespace) {
+    //delete cluster resource in namespace and wait until it is deleted
+    getLogger().info("deleting cluster custom resource {0} in namespace {1}", clusterName, namespace);
+    Cluster.deleteClusterCustomResource(clusterName, namespace);
+
+    testUntil(
+        clusterDoesNotExist(clusterName, CLUSTER_VERSION, namespace),
+        getLogger(),
+        "cluster {0} to be created in namespace {1}",
+        clusterName,
+        namespace);
   }
+  
+  /**
+   * Scale cluster by patching cluster resource replicas.
+   *
+   * @param clusterName name of the cluster resource
+   * @param namespace namespace
+   * @param replicas scale to replicas
+   * @return true if patching succeeds otherwise false
+   */
+  public static boolean scaleCluster(String clusterName, String namespace, int replicas) {
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicas + "}"
+        + "]";
+    getLogger().info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    return patchClusterCustomResource(clusterName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }  
 }
