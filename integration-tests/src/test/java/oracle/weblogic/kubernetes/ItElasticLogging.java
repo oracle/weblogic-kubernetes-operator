@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -491,14 +492,16 @@ class ItElasticLogging {
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace);
+    List<String> clusterNames = new ArrayList();
+    clusterNames.add("cluster-1");
     createMiiDomainAndVerify(
         domainNamespace,
         domainUid,
         miiImage,
         adminServerPodName,
         managedServerPodPrefix,
-        "cluster-1",
-        replicaCount);
+        replicaCount,
+        clusterNames);
   }
 
   private void verifyServerRunningInSearchResults(String serverName) {

@@ -11,9 +11,11 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
@@ -36,7 +38,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -46,7 +47,8 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -280,10 +282,10 @@ class ItInitContainers {
 
     //check if init container got executed
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server1",
-        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        domain3Namespace, "init-container").contains("Hi from Cluster"),
         "failed to init init-container container command for cluster's managed-server1"));
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server2",
-        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        domain3Namespace, "init-container").contains("Hi from Cluster"),
         "failed to init init-container container command for cluster's managed-server2"));
   }
 
@@ -355,6 +357,16 @@ class ItInitContainers {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
+    if (!testCaseName.equals("clusters")) {
+      // create cluster object
+      ClusterResource cluster = createClusterResource(
+          clusterName, domainNamespace, replicaCount);
+
+      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      createClusterAndVerify(cluster);
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    }
 
     switch (testCaseName) {
       case "spec":
@@ -377,15 +389,21 @@ class ItInitContainers {
         setPodAntiAffinity(domain);
         break;
       case "clusters":
-        ClusterSpec mycluster = assertDoesNotThrow(() ->
-            getClusterCustomResource(clusterName, domainNamespace, CLUSTER_VERSION)).getSpec();
-        setPodAntiAffinity(domain);
-        mycluster.getServerPod()
+        ClusterSpec clusterSpec = new ClusterSpec()
+            .withClusterName(clusterName)
+            .replicas(replicaCount)
+            .serverPod(new ServerPod()
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("init-container")
                     .imagePullPolicy(IMAGE_PULL_POLICY)
-                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
+                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
+        logger.info(Yaml.dump(clusterSpec));
+        ClusterResource cluster = createClusterResource(clusterName, domainNamespace, clusterSpec);
+        logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+        createClusterAndVerify(cluster);
+        // set cluster references
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()

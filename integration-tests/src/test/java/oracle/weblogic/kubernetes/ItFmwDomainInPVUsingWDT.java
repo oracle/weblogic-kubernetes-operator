@@ -90,7 +90,7 @@ class ItFmwDomainInPVUsingWDT {
   private static final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
 
   private final String wdtCreateDomainScript = "setup_wdt.sh";
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-wdt";

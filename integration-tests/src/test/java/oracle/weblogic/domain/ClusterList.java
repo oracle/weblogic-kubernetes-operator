@@ -25,7 +25,7 @@ public class ClusterList implements KubernetesListObject {
 
   @ApiModelProperty(
       "Standard list metadata. "
-          + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
+      + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
   private V1ListMeta metadata;
 
   @ApiModelProperty(
@@ -41,6 +41,7 @@ public class ClusterList implements KubernetesListObject {
     return apiVersion;
   }
 
+  @Override
   public String getApiVersion() {
     return apiVersion;
   }
@@ -58,6 +59,7 @@ public class ClusterList implements KubernetesListObject {
     return kind;
   }
 
+  @Override
   public String getKind() {
     return kind;
   }
@@ -75,6 +77,7 @@ public class ClusterList implements KubernetesListObject {
     return metadata;
   }
 
+  @Override
   public V1ListMeta getMetadata() {
     return metadata;
   }
@@ -92,6 +95,7 @@ public class ClusterList implements KubernetesListObject {
     return items;
   }
 
+  @Override
   public List<ClusterResource> getItems() {
     return items;
   }
@@ -101,21 +105,11 @@ public class ClusterList implements KubernetesListObject {
   }
 
   @Override
-  public String toString() {
-    return new ToStringBuilder(this)
-        .append("apiVersion", apiVersion)
-        .append("kind", kind)
-        .append("metadata", metadata)
-        .append("items", items)
-        .toString();
-  }
-
-  @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(apiVersion)
-        .append(kind)
         .append(metadata)
+        .append(kind)
+        .append(apiVersion)
         .append(items)
         .toHashCode();
   }
@@ -136,5 +130,15 @@ public class ClusterList implements KubernetesListObject {
         .append(metadata, rhs.metadata)
         .append(items, rhs.items)
         .isEquals();
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .append("apiVersion", apiVersion)
+        .append("kind", kind)
+        .append("items", items)
+        .append("metadata", metadata)
+        .toString();
   }
 }

@@ -150,7 +150,7 @@ class ItFmwDomainInPVUsingWLST {
     final String managedServerNameBase = "wlst-ms-";
     final int managedServerPort = 8001;
     final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 2;
+    final int replicaCount = 1;
     final int t3ChannelPort = getNextFreePort();
 
     final String pvName = getUniqueName(domainUid + "-pv-");
