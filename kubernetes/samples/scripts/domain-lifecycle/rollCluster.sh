@@ -123,9 +123,9 @@ printInfo "Patching restartVersion for cluster '${clusterName}' to '${restartVer
 #createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
 createPatchJsonToUpdateClusterRestartVersionUsingClusterResource "${clusterJson}" "${clusterName}" "${restartVersion}" patchJson
 
-printInfo "Patch command to execute is: '${kubernetesCli}' '${domainUid}' '${domainNamespace}' '${patchJson}' '${verboseMode}'"
 # Changed made on 08/15/2022
 #executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
 executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)

@@ -126,8 +126,8 @@ createPatchJsonToUpdateReplicasUsingClusterResource "${clusterJson}" "${clusterN
 
 # Changed made on 08/15/2022
 #executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
 executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-printInfo "Command to execute cluster patch: ${executeClusterPatchCommand}"
 
 clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content after changes: ${clusterJson}"
