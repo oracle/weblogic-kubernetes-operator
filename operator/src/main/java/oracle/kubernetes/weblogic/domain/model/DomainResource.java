@@ -20,6 +20,7 @@ import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -51,6 +52,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.common.logging.MessageKeys.MAKE_RIGHT_WILL_RETRY;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
@@ -60,7 +62,7 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-public class DomainResource implements KubernetesObject {
+public class DomainResource implements KubernetesObject, RetryMessageFactory {
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
    */
@@ -741,10 +743,19 @@ public class DomainResource implements KubernetesObject {
   }
 
   /**
-   * Return the next time a retry should be done.
+   * Returns the next time a retry should be done. If the domain resource has no status, or there is no
+   * retry needed, returns null.
    */
+  @Nullable
   public OffsetDateTime getNextRetryTime() {
     return Optional.ofNullable(getStatus())
+          .map(this::getNextRetryTime)
+          .orElse(null);
+  }
+
+  @Nullable
+  private OffsetDateTime getNextRetryTime(@Nonnull DomainStatus domainStatus) {
+    return Optional.of(domainStatus)
           .map(DomainStatus::getLastFailureTime)
           .map(this::addRetryInterval)
           .orElse(null);
@@ -811,6 +822,16 @@ public class DomainResource implements KubernetesObject {
 
   public PrivateDomainApi getPrivateApi() {
     return new PrivateDomainApiImpl();
+  }
+
+  @Override
+  public String createRetryMessage(DomainStatus domainStatus, DomainCondition selected) {
+    return DomainStatus.LOGGER.formatMessage(MAKE_RIGHT_WILL_RETRY,
+        selected.getMessage(),
+        getNextRetryTime(domainStatus),
+        getFailureRetryIntervalSeconds(),
+        selected.getLastTransitionTime().plus(getFailureRetryLimitMinutes(),
+            ChronoUnit.MINUTES));
   }
 
   class PrivateDomainApiImpl implements PrivateDomainApi {

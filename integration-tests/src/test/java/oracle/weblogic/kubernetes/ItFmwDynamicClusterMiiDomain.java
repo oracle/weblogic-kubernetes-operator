@@ -87,7 +87,7 @@ class ItFmwDynamicClusterMiiDomain {
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
   private String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSvcExtHost = null;
 
   /**

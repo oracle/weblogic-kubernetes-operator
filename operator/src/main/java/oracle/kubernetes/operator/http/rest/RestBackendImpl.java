@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -18,6 +19,7 @@ import javax.annotation.Nonnull;
 import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -281,10 +283,25 @@ public class RestBackendImpl implements RestBackend {
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
   }
 
-  private Optional<ClusterResource> getClusterResource(String clusterName) {
+  private Optional<ClusterResource> getClusterResource(DomainResource domain, String clusterName) {
     authorize(null, Operation.LIST);
 
-    return getClusterStream().filter(c -> isMatchingClusterResource(clusterName, c)).findFirst();
+    List<String> referencedClusterResources = getReferencedClusterResourceNames(domain);
+    return getClusterStream()
+        .filter(c -> isInSameNamespace(c, domain))
+        .filter(c -> isReferencedByDomain(c, referencedClusterResources))
+        .filter(c -> isMatchingClusterResource(clusterName, c))
+        .findFirst();
+  }
+
+  private boolean isInSameNamespace(ClusterResource c, DomainResource domain) {
+    return Objects.equals(c.getNamespace(), domain.getNamespace());
+  }
+
+  private boolean isReferencedByDomain(ClusterResource c, List<String> referencedClusterResources) {
+    return Optional.ofNullable(referencedClusterResources)
+        .map(l -> l.contains(c.getMetadata().getName()))
+        .orElse(false);
   }
 
   private boolean isMatchingClusterResource(String clusterName, ClusterResource c) {
@@ -324,20 +341,26 @@ public class RestBackendImpl implements RestBackend {
     }
 
     authorize(domainUid, Operation.UPDATE);
-    getClusterResource(cluster)
-        .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
-          () ->  forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount)));
+    forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
 
     LOGGER.exiting();
   }
 
-  private void performScaling(String domainUid, ClusterResource cluster, int managedServerCount) {
-    verifyWlsConfiguredClusterCapacity(domainUid, cluster.getClusterName(), managedServerCount);
-    patchClusterResourceReplicas(cluster, managedServerCount);
-  }
-
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
     verifyWlsConfiguredClusterCapacity(domain.getDomainUid(), cluster, managedServerCount);
+
+    getClusterResource(domain, cluster)
+        .ifPresentOrElse(cr -> patchClusterResourceReplicas(cr, managedServerCount),
+            () -> createClusterIfNecessary(domain, cluster, managedServerCount));
+  }
+
+  private List<String> getReferencedClusterResourceNames(DomainResource domain) {
+    return domain.getSpec().getClusters().stream()
+        .map(V1LocalObjectReference::getName)
+        .collect(Collectors.toList());
+  }
+
+  private void createClusterIfNecessary(DomainResource domain, String cluster, int managedServerCount) {
     if (managedServerCount == Optional.of(domain.getSpec()).map(DomainSpec::getReplicas).orElse(0)) {
       return;
     }
