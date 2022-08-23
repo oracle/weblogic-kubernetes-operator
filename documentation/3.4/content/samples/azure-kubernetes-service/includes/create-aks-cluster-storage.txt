@@ -58,7 +58,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
     The command provisions an NFS file share with NFS 4.1 or above.
 
-3. Assign the AKS cluster Contributor role to access the storage account.
+3. Assign the AKS cluster **Contributor** role to access the storage account.
 
     You must configure role assignment allowing access from AKS cluster to the storage account.
 

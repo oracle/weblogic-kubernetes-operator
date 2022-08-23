@@ -34,16 +34,30 @@ $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-k
 
 ##### Sign in with Azure CLI
 
-Please run `az login` to sign in your subscription. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
+The steps in this section show you how to sign in to the Azure CLI.
 
-```shell
-# Login
-$ az login
+1. Open a Bash shell.
 
-# Set your working subscription
-$ export SUBSCRIPTION_ID=<your-subscription-id>
-$ az account set -s $SUBSCRIPTION_ID
-```
+1. Sign out and delete some authentication files to remove any lingering credentials.
+
+   ```shell
+   $ az logout
+   $ rm ~/.azure/accessTokens.json
+   $ rm ~/.azure/azureProfile.json
+   ```
+
+1. Sign in to your Azure CLI.
+
+   ```shell
+   $ az login
+   ```
+
+1. Set the subscription ID. Be sure to replace the placeholder with the appropriate value.
+
+   ```shell
+   $ export SUBSCRIPTION_ID=<your-subscription-id>
+   $ az account set -s $SUBSCRIPTION_ID
+   ```
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
@@ -536,14 +550,14 @@ The script will print the Administration Server address after a successful deplo
 
 Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository.
 
-Firstly, you must package the application with the following command:
+First, package the application with the following command:
 
 ```bash
 cd integration-tests/src/test/resources/bash-scripts
 bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
 ```
 
-Successful output will look like the following:
+Successful output will look similar to the following:
 
 ```text
 Found source at ../apps/testwebapp/
@@ -578,7 +592,7 @@ $ curl --user weblogic:welcome1 -H X-Requested-By:MyClient  -H Accept:applicatio
   -X POST http://${ADMIN_SERVER_IP}:7001/management/weblogic/latest/edit/appDeployments
 ```
 
-After the successful deployment, you will find output like the following:
+After the successful deployment, you will find output similar to the following:
 
 {{%expand "Click here to view the output." %}}
 ```text
