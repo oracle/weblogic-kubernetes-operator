@@ -380,7 +380,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       logger.info("patch the domain resource with new introspectVersion");
       patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertFalse(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
 
       int newReplicaCount = maxClusterSize + 1;
@@ -389,7 +389,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "},"
           + "]";
-      assertFalse(patchClusterCustomResource(cluster1Name, domainNamespace1,
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
           new V1Patch(patchStr), V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       
       // verify the admin server service exists
@@ -443,7 +443,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
       patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
           + "]";
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
