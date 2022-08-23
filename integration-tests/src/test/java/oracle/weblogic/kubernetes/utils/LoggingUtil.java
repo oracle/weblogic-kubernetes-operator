@@ -243,6 +243,13 @@ public class LoggingUtil {
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
+    
+    // get cluster objects in the given namespace
+    try {
+      writeToFile(Kubernetes.listClusters(namespace), resultDir, namespace + ".list.clusters.log");
+    } catch (Exception ex) {
+      logger.warning("Listing clusters failed, not collecting any data for clusters");
+    }    
 
     // get pods
     try {

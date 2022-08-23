@@ -248,6 +248,11 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withClusterReference(String clusterResourceName) {
+    getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterResourceName));
+    return this;
+  }
+
   /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *

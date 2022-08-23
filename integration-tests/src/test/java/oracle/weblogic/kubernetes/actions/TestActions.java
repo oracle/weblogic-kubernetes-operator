@@ -77,6 +77,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ClusterUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
@@ -338,6 +339,16 @@ public class TestActions {
   }
 
   /**
+   * Delete Cluster Custom Resource.
+   *
+   * @param clusterName Cluster custom resource name
+   * @param namespace namespace in which cluster custom resource exists
+   */
+  public static void deleteClusterCustomResource(String clusterName, String namespace) {
+    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterName, namespace);
+  }
+
+  /**
    * Patch the Cluster Custom Resource.
    *
    * @param clusterName unique cluster identifier
@@ -349,7 +360,7 @@ public class TestActions {
    */
   public static boolean patchClusterCustomResource(String clusterName, String namespace,
                                                    V1Patch patch, String patchFormat) {
-    return Cluster.patchClusterCutomResource(clusterName, namespace, patch, patchFormat);
+    return Cluster.patchClusterCustomResource(clusterName, namespace, patch, patchFormat);
   }
 
   /**

@@ -991,10 +991,22 @@ public class TestAssertions {
    *
    * @param clusterResName cluster resource name
    * @param clusterVersion version value for Kind Cluster
-   * @param namespace in which the domain custom resource object exists
-   * @return true if domain object exists
+   * @param namespace in which the cluster custom resource object exists
+   * @return true if cluster object exists
    */
   public static Callable<Boolean> clusterExists(String clusterResName, String clusterVersion, String namespace) {
     return () -> Cluster.doesClusterExist(clusterResName, clusterVersion, namespace);
+  }
+  
+  /**
+   * Check if a WebLogic custom resource cluster object does not exist in specified namespace.
+   *
+   * @param clusterResName cluster resource name
+   * @param clusterVersion version value for Kind Cluster
+   * @param namespace in which the cluster custom resource object exists
+   * @return true if cluster object exists
+   */
+  public static Callable<Boolean> clusterDoesNotExist(String clusterResName, String clusterVersion, String namespace) {
+    return () -> !Cluster.doesClusterExist(clusterResName, clusterVersion, namespace);
   }
 }
