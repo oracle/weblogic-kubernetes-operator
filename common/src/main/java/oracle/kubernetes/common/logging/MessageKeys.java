@@ -265,11 +265,10 @@ public class MessageKeys {
   public static final String VALIDATING_WEBHOOK_CONFIGURATION_REPLACED = "WLSWH-0012";
   public static final String REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0013";
   public static final String READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0014";
-  public static final String DOMAIN_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0015";
-  public static final String DOMAIN_REPLICAS_TOO_HIGH = "WLSWH-0016";
+  public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0015";
+  public static final String CLUSTER_REPLICAS_TOO_HIGH = "WLSWH-0016";
   public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSWH-0017";
   public static final String WEBHOOK_STARTUP_FAILED = "WLSWH-0018";
-  public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0019";
 
   private MessageKeys() {
   }
