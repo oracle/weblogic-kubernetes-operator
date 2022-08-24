@@ -325,6 +325,18 @@ public class TestActions {
     return introspectVersion;
   }
 
+  /**
+   * Scale all clusters in a domain by patching domain resource.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param replicaCount number of servers to be scaled to
+   * @return true on success, false otherwise
+   */
+  public static boolean scaleAllClusters(String domainUid, String namespace, int replicaCount) {
+    return Domain.scaleAllClusters(domainUid, namespace, replicaCount);
+  }
+
   // ----------------------   cluster  -----------------------------------
 
   /**
@@ -364,7 +376,7 @@ public class TestActions {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace by patching the domain resource.
+   * Scale a cluster in a specified namespace by patching cluster resource.
    *
    * @param clusterName cluster in the domain to be scaled
    * @param namespace name of Kubernetes namespace that the domain belongs to
