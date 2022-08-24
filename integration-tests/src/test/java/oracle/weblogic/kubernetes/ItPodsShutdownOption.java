@@ -348,7 +348,7 @@ class ItPodsShutdownOption {
     int newReplicaCount = replicaCount - 1;
     logger.info("Scaling down the cluster {0} in namespace {1} to set the replicas to {2}",
         clusterName, domainNamespace, newReplicaCount);
-    assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, newReplicaCount),
+    assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, newReplicaCount),
         String.format("failed to scale down cluster %s in namespace %s", clusterName, domainNamespace));
 
     checkPodDeleted(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace);
@@ -418,7 +418,7 @@ class ItPodsShutdownOption {
     int newReplicaCount = replicaCount - 1;
     logger.info("Scaling down the cluster {0} in namespace {1} to set the replicas to {2}",
         clusterName, domainNamespace, newReplicaCount);
-    assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, newReplicaCount),
+    assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, newReplicaCount),
         String.format("failed to scale down cluster %s in namespace %s", clusterName, domainNamespace));
 
     checkPodDeleted(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace);

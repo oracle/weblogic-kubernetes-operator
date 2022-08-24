@@ -87,7 +87,7 @@ class ItMiiCreateAuxImageWithImageTool {
   private String domain2Uid = "domain2";
   private static String miiImageTag = "new" + MII_BASIC_IMAGE_TAG;
   private static String miiImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiImageTag;
-  private final int replicaCount = 2;
+  private final int replicaCount = 1;
   private static String adminSecretName;
   private static String encryptionSecretName;
 

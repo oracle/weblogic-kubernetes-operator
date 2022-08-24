@@ -25,9 +25,9 @@ public class ClusterList implements KubernetesListObject {
 
   @ApiModelProperty(
       "Standard list metadata. "
-      + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
+          + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
   private V1ListMeta metadata;
-
+  
   @ApiModelProperty(
       "List of clusters. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
   private List<ClusterResource> items = new ArrayList<>();
@@ -77,7 +77,6 @@ public class ClusterList implements KubernetesListObject {
     return metadata;
   }
 
-  @Override
   public V1ListMeta getMetadata() {
     return metadata;
   }
@@ -95,7 +94,6 @@ public class ClusterList implements KubernetesListObject {
     return items;
   }
 
-  @Override
   public List<ClusterResource> getItems() {
     return items;
   }
@@ -103,6 +101,7 @@ public class ClusterList implements KubernetesListObject {
   public void setItems(List<ClusterResource> items) {
     this.items = items;
   }
+
 
   @Override
   public int hashCode() {
@@ -136,9 +135,22 @@ public class ClusterList implements KubernetesListObject {
   public String toString() {
     return new ToStringBuilder(this)
         .append("apiVersion", apiVersion)
-        .append("kind", kind)
         .append("items", items)
+        .append("kind", kind)
         .append("metadata", metadata)
         .toString();
   }
+
+  /**
+   * Standard list metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @param metadata metadata
+   * @return this
+   */
+  public ClusterList withMetadata(V1ListMeta metadata) {
+    this.metadata = metadata;
+    return this;
+  }
+
 }
