@@ -135,7 +135,7 @@ class ItIstioDomainInImage {
   @DisplayName("Create WebLogic domainhome-in-image with istio")
   void testIstioDomainHomeInImage() {
     final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
+    final int replicaCount = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
