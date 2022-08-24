@@ -28,10 +28,7 @@ public class ScaleClusterParamsModel extends BaseModel {
    * Get the desired number of managed servers in the WebLogic cluster.
    *
    * @return the desired number of managed servers.
-   *
-   * @deprecated Deprecated since release 4.0. Please use {#spec} instead.
    */
-  @Deprecated(since = "4.0")
   public int getManagedServerCount() {
     return managedServerCount;
   }
@@ -53,17 +50,14 @@ public class ScaleClusterParamsModel extends BaseModel {
   public int getReplicas() {
     return Optional.ofNullable(spec)
         .map(V1ScaleSpec::getReplicas)
-        .orElse(managedServerCount);
+        .orElse(getManagedServerCount());
   }
 
   /**
    * Set the desired number of managed servers in the WebLogic cluster.
    *
    * @param managedServerCount - the desired number of managed servers.
-   *
-   * @deprecated Deprecated since release 4.0. Please use {#spec} instead.
    */
-  @Deprecated(since = "4.0")
   public void setManagedServerCount(int managedServerCount) {
     this.managedServerCount = managedServerCount;
   }
@@ -81,6 +75,6 @@ public class ScaleClusterParamsModel extends BaseModel {
   protected String propertiesToString() {
     return "spec= "
         + Optional.ofNullable(spec).map(V1ScaleSpec::toString).orElse("<null>")
-        + ", managedServerCount=" + managedServerCount; // super has no properties
+        + ", managedServerCount=" + getManagedServerCount(); // super has no properties
   }
 }
