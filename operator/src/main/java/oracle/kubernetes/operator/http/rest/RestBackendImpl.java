@@ -368,12 +368,17 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void patchClusterResourceReplicas(ClusterResource cluster, int replicas) {
-    if (replicas == cluster.getSpec().getReplicas()) {
+    Integer currentReplicas = cluster.getSpec().getReplicas();
+    if (currentReplicas != null && replicas == currentReplicas) {
       return;
     }
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    patchBuilder.replace("/spec/replicas", replicas);
+    if (currentReplicas == null) {
+      patchBuilder.add("/spec/replicas", replicas);
+    } else {
+      patchBuilder.replace("/spec/replicas", replicas);
+    }
     patchCluster(cluster, patchBuilder);
   }
 
