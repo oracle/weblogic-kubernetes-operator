@@ -104,8 +104,7 @@ class ItStickySession {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
-  private static int managedServerPort = 8001;
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
@@ -367,6 +366,7 @@ class ItStickySession {
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
     setPodAntiAffinity(domain);
+
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -434,8 +434,8 @@ class ItStickySession {
     }
 
     if (execResult.exitValue() == 0) {
-      assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null");
-      assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty");
+      assertNotNull(execResult.stdout(), "Primary server name should not be null");
+      assertFalse(execResult.stdout().isEmpty(), "Primary server name should not be empty");
       logger.info("\n HTTP response is \n " + execResult.stdout());
 
       for (String httpAttrKey : httpAttrArray) {

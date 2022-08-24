@@ -365,7 +365,7 @@ class ItMiiAuxiliaryImage {
 
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1,
         miiAuxiliaryImage3,
-        domainUid1, domainNamespace);
+        domainUid1, domainNamespace, replicaCount);
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -1228,7 +1228,7 @@ class ItMiiAuxiliaryImage {
 
     //updating wdt to latest version by patching the domain with image3
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10,
-        miiAuxiliaryImage11, domainUid, wdtDomainNamespace);
+        miiAuxiliaryImage11, domainUid, wdtDomainNamespace, replicaCount);
 
     //check that WDT version is updated to latest 
     assertDoesNotThrow(() -> {
@@ -1297,7 +1297,7 @@ class ItMiiAuxiliaryImage {
     // patch the domain with correct image which exists
     patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG,
         miiAuxiliaryImage1, domainUid,
-        domainNamespace, false);
+        domainNamespace, false, replicaCount);
 
     // verify there is no status condition type Failed
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);

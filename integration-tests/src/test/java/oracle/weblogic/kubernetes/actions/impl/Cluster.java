@@ -8,7 +8,11 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.assertions.impl.Cluster.doesClusterExist;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Cluster {
 
@@ -49,9 +53,38 @@ public class Cluster {
   public static boolean patchClusterCustomResource(String clusterName, String namespace,
       V1Patch patch, String patchFormat) {
     return Kubernetes.patchClusterCustomResource(clusterName, namespace,
-        patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+        patch, patchFormat);
   }
-    
+
+  /**
+   * Scale the cluster in the specified namespace by patching the ClusterResource.
+   *
+   * @param clusterRes name of the cluster resource to be scaled in the domain
+   * @param namespace namespace in which the domain exists
+   * @param numOfServers number of servers to be scaled to
+   * @return true if patch domain custom resource succeeds, false otherwise
+   */
+  public static boolean scaleCluster(String clusterRes, String namespace, int numOfServers) {
+    LoggingFacade logger = getLogger();
+    logger.info("Looking for Cluster Resource {0} in NameSpace {1}", clusterRes, namespace);
+    if (!doesClusterExist(clusterRes, CLUSTER_VERSION, namespace)) {
+      logger.info("ClusterResource {0} not found in NameSpace {1}", clusterRes, namespace);
+      return false;
+    }
+
+    // construct the patch string for scaling the cluster
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec/replicas\", ")
+        .append("\"value\": ")
+        .append(numOfServers)
+        .append("}]");
+    logger.info("Scaling cluster {0} using patch string: {1}",
+        clusterRes, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return Kubernetes.patchClusterCustomResource(clusterRes, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
 
   /**
    * List all Custom Resource Clusters in a namespace.
@@ -62,4 +95,5 @@ public class Cluster {
   public static ClusterList listClusterCustomResources(String namespace) {
     return Kubernetes.listClusters(namespace);
   }
+
 }

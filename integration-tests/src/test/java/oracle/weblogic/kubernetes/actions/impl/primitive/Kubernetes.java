@@ -211,6 +211,16 @@ public class Kubernetes {
             apiClient //the api client
         );
 
+    clusterCrdClient =
+        new GenericKubernetesApi<>(
+            ClusterResource.class,  // the api type class
+            ClusterList.class, // the api list type class
+            DOMAIN_GROUP, // the api group
+            CLUSTER_VERSION, // the api version
+            CLUSTER_PLURAL, // the resource plural
+            apiClient //the api client
+        );
+
     deploymentClient =
         new GenericKubernetesApi<>(
             V1Deployment.class,  // the api type class
@@ -1616,6 +1626,7 @@ public class Kubernetes {
 
     return true;
   }
+
 
   /**
    * Patch the Deployment.

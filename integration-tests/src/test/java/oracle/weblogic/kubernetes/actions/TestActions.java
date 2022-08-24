@@ -325,6 +325,18 @@ public class TestActions {
     return introspectVersion;
   }
 
+  /**
+   * Scale all clusters in a domain by patching domain resource.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param replicaCount number of servers to be scaled to
+   * @return true on success, false otherwise
+   */
+  public static boolean scaleAllClusters(String domainUid, String namespace, int replicaCount) {
+    return Domain.scaleAllClusters(domainUid, namespace, replicaCount);
+  }
+
   // ----------------------   cluster  -----------------------------------
 
   /**
@@ -345,9 +357,9 @@ public class TestActions {
    * @param namespace namespace in which cluster custom resource exists
    */
   public static void deleteClusterCustomResource(String clusterName, String namespace) {
-    ClusterUtils.deleteClusterCustomResource(clusterName, namespace);
+    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterName, namespace);
   }
-  
+
   /**
    * Patch the Cluster Custom Resource.
    *
@@ -355,27 +367,24 @@ public class TestActions {
    * @param namespace name of namespace
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
-     "application/merge-patch+json",
+  "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
   public static boolean patchClusterCustomResource(String clusterName, String namespace,
-      V1Patch patch, String patchFormat) {
+                                                   V1Patch patch, String patchFormat) {
     return Cluster.patchClusterCustomResource(clusterName, namespace, patch, patchFormat);
-  } 
+  }
 
   /**
-   * Scale the cluster of the domain in the specified namespace by patching the domain resource.
+   * Scale a cluster in a specified namespace by patching cluster resource.
    *
-   * @param domainUid domainUid of the domain to be scaled
-   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
-      throws ApiException {
-    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterName, namespace, numOfServers);
   }
 
   /**

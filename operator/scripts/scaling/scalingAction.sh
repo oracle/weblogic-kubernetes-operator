@@ -580,6 +580,11 @@ DOMAIN=$(get_custom_resource_domain)
 cluster_api_version="v1"
 CLUSTER=$(find_cluster_resource_with_cluster_name "$DOMAIN" "$wls_cluster_name")
 
+if [ -z "${CLUSTER}" ]; then
+  trace "Cluster resource for ${wls_cluster_name} not found. Exiting."
+  exit 1
+fi
+
 # Retrieve replica count from Cluster or Domain Resource.
 current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
 trace "current number of managed servers is $current_replica_count"
