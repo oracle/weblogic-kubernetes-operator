@@ -1379,6 +1379,27 @@ public class DomainStatusUpdater {
     }
   }
 
+  public static class ClearCompletedConditionSteps extends StatusUpdateStep {
+    public ClearCompletedConditionSteps() {
+      super(null);
+    }
 
+    @Override
+    DomainStatusUpdaterContext createContext(Packet packet) {
+      return new UpdateCompletedConditionContext(packet, this);
+    }
+
+    static class UpdateCompletedConditionContext extends StatusUpdateStep.StatusUpdateContext {
+
+      UpdateCompletedConditionContext(Packet packet, StatusUpdateStep statusUpdateStep) {
+        super(packet, statusUpdateStep);
+      }
+
+      @Override
+      void modifyStatus(DomainStatus status) {
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+      }
+    }
+  }
 }
 
