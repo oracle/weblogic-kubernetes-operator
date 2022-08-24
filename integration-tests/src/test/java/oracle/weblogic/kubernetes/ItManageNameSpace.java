@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -511,6 +512,7 @@ class ItManageNameSpace {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
+            .replicas(replicaCount)
             .image(miiImage)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -537,6 +539,7 @@ class ItManageNameSpace {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
+    domain = addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
     return domain;
   }
 
