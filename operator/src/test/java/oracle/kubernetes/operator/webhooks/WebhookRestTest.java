@@ -91,7 +91,9 @@ class WebhookRestTest extends RestTestBase {
   private static final String VALIDATING_WEBHOOK_HREF = "/admission";
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
   private static final String REJECT_MESSAGE_PATTERN = "Change request to domain resource '%s' cannot be honored"
-          + " because the replica count for cluster '%s' would exceed the cluster size '%s'.";
+          + " because the replica count for cluster '%s' would exceed the cluster size '%s'";
+  private static final String REJECT_MESSAGE_PATTERN_CLUSTER = "Change request to cluster resource '%s' cannot be "
+      + "honored because the replica count would exceed the cluster size '%s'";
 
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
@@ -580,6 +582,20 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
 
     assertThat(isAllowed(responseReview), equalTo(false));
+  }
+
+  @Test
+  void whenClusterReplicasChangedAloneAndInvalid_rejectItWithExpectedMessage() {
+    proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
+    setExistingAndProposedCluster();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(getResponseStatusMessage(responseReview), equalTo(getRejectMessageForClusterResource()));
+  }
+
+  private Object getRejectMessageForClusterResource() {
+    return String.format(REJECT_MESSAGE_PATTERN_CLUSTER, proposedCluster.getClusterName(), ORIGINAL_REPLICAS);
   }
 
   @Test
