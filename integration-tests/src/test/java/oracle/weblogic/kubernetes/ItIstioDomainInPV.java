@@ -152,7 +152,7 @@ class ItIstioDomainInPV  {
 
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 1;
+    final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort();
 
     final String pvName = getUniqueName(domainUid + "-pv-");
@@ -217,6 +217,7 @@ class ItIstioDomainInPV  {
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
+            .replicas(replicaCount)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET_NAME)))     // this secret is used only on non-kind cluster
