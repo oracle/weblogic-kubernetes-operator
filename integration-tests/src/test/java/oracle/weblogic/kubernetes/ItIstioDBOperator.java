@@ -20,9 +20,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -298,7 +297,7 @@ class ItIstioDBOperator {
     createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
@@ -497,9 +496,7 @@ class ItIstioDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = assertDoesNotThrow(()
-        -> scaleCluster(wlsDomainUid, wlsDomainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
+    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));
@@ -772,7 +769,7 @@ class ItIstioDBOperator {
     return istioIngressPort;
   }
 
-  private static Domain createDomainResourceWithLogHome(
+  private static DomainResource createDomainResourceWithLogHome(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -822,9 +819,6 @@ class ItIstioDBOperator {
             .addVolumeMountsItem(new V1VolumeMount()
                 .mountPath("/shared")
                 .name(pvName)))
-        .addClustersItem(new Cluster()
-            .clusterName(clusterName)
-            .replicas(replicaCount))
         .configuration(new Configuration()
             .secrets(securityList)
             .model(new Model()
@@ -839,7 +833,7 @@ class ItIstioDBOperator {
       domainSpec.dataHome("/shared/data");
     }
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()

@@ -31,11 +31,10 @@ import static java.lang.System.lineSeparator;
 
 public abstract class AdmissionChecker {
   final List<String> messages = new ArrayList<>();
-  final String domainUid;
 
   /** Construct a AdmissionChecker. */
-  protected AdmissionChecker(@NotNull String domainUid) {
-    this.domainUid = domainUid;
+  protected AdmissionChecker() {
+    // no-op
   }
 
   abstract AdmissionResponse validate();

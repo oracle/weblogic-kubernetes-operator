@@ -701,11 +701,12 @@ class ManagedServersUpStepTest {
   }
 
   private void setCluster1Replicas(int replicas) {
-    configurator.configureCluster("cluster1").withReplicas(replicas);
+    configurator.configureCluster(info, "cluster1").withReplicas(replicas);
   }
 
   private void setCluster1AllowReplicasBelowMinDynClusterSize(boolean allowReplicasBelowMinDynClusterSize) {
-    configurator.configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
+    configurator.configureCluster(info,"cluster1")
+        .withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
   }
 
   private void configureServers(String... serverNames) {
@@ -751,7 +752,7 @@ class ManagedServersUpStepTest {
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName).withReplicas(1);
+    return configurator.configureCluster(info, clusterName).withReplicas(1);
   }
 
   private void assertManagedServersUpStepNotCreated() {

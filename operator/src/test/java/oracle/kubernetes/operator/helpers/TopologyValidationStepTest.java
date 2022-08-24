@@ -351,7 +351,7 @@ class TopologyValidationStepTest {
     void buildConfigurationScenario() {
       if (unknownClusterName != null) {
         topologyCase.configureDomain(domain)
-              .configureCluster(unknownClusterName).withReplicas(1).withServerStartPolicy(IF_NEEDED);
+              .configureCluster(info, unknownClusterName).withReplicas(1).withServerStartPolicy(IF_NEEDED);
       }
       if (unknownServerName != null) {
         topologyCase.configureDomain(domain).configureServer(unknownServerName);
@@ -371,7 +371,7 @@ class TopologyValidationStepTest {
     void buildReplicasScenario() {
       final DomainConfigurator domainConfigurator = configureDomain(domain);
       for (ClusterCase cluster : clusterCases) {
-        domainConfigurator.configureCluster(cluster.clusterName).withReplicas(cluster.numReplicas);
+        domainConfigurator.configureCluster(info, cluster.clusterName).withReplicas(cluster.numReplicas);
         cluster.addCluster(domainConfig);
       }
     }

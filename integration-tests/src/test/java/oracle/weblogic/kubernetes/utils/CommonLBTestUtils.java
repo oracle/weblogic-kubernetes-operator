@@ -42,8 +42,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 
@@ -172,7 +171,7 @@ public class CommonLBTestUtils {
 
       // create the domain custom resource configuration object
       getLogger().info("Creating domain custom resource");
-      Domain domain = createDomainCustomResource(domainUid, domainNamespace, sharingPvName,
+      DomainResource domain = createDomainCustomResource(domainUid, domainNamespace, sharingPvName,
           sharingPvcName, t3ChannelPort, wlSecretName, clusterName, replicaCount);
 
       getLogger().info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
@@ -319,15 +318,16 @@ public class CommonLBTestUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  private static Domain createDomainCustomResource(String domainUid,
-                                                   String domainNamespace,
-                                                   String pvName,
-                                                   String pvcName,
-                                                   int t3ChannelPort,
-                                                   String wlSecretName,
-                                                   String clusterName,
-                                                   int replicaCount) {
-    Domain domain = new Domain()
+  private static DomainResource createDomainCustomResource(String domainUid,
+                                                           String domainNamespace,
+                                                           String pvName,
+                                                           String pvcName,
+                                                           int t3ChannelPort,
+                                                           String wlSecretName,
+                                                           String clusterName,
+                                                           int replicaCount) {
+
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -335,6 +335,7 @@ public class CommonLBTestUtils {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
+            .replicas(replicaCount)
             .domainHome("/shared/" + domainNamespace + "/" + domainUid + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -377,10 +378,7 @@ public class CommonLBTestUtils {
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)));
+                        .nodePort(t3ChannelPort)))));
     setPodAntiAffinity(domain);
     return domain;
   }

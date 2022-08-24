@@ -171,6 +171,7 @@ public class MessageKeys {
   public static final String CLUSTER_STATUS = "WLSKO-0230";
 
   // domain status messages
+  public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
   public static final String DUPLICATE_CLUSTER_NAME_FOUND = "WLSDO-0002";
   public static final String LOG_HOME_NOT_MOUNTED = "WLSDO-0003";

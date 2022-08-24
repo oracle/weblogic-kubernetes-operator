@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -66,6 +65,6 @@ public class ClusterWatcher extends Watcher<ClusterResource> {
 
   @Override
   public String getDomainUid(Response<ClusterResource> item) {
-    return Optional.ofNullable(item.object).map(ClusterResource::getDomainUid).orElse(null);
+    return null;
   }
 }

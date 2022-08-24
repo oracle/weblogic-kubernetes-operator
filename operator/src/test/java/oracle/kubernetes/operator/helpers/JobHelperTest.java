@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -638,9 +639,9 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureDomain()
           .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
@@ -655,9 +656,9 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainFailsValidation_dontStartIntrospectorJob() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
@@ -676,8 +677,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasMultipleConfigOverrideSecretsWithLongNames_volumesCreatedWithShorterNames() {
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, V1Secret.class, NS);
 
     configureDomain()
           .withConfigOverrideSecrets(LONG_RESOURCE_NAME, SECOND_LONG_RESOURCE_NAME);
@@ -695,7 +696,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasConfigMapOverrideWithLongConfigMapName_volumeCreatedWithShorterName() {
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1ConfigMap.class, NS);
 
     configureDomain()
           .withConfigOverrides(LONG_RESOURCE_NAME);
@@ -709,7 +710,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasModelConfigMapOverrideWithLongModelCMName_volumeCreatedWithShorterName() {
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1ConfigMap.class, NS);
 
     configureDomain()
           .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
@@ -724,8 +725,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasMultipleConfigOverrideSecretsWithLongAndShortNames_volumeCreatedWithCorrectNames() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1Secret.class, NS);
 
     configureDomain()
           .withConfigOverrideSecrets(SECRET_NAME, LONG_RESOURCE_NAME);
@@ -1397,7 +1398,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @SuppressWarnings("SameParameterValue")
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
+    return configureDomain().configureCluster(domainPresenceInfo, clusterName);
   }
 
   @SuppressWarnings("SameParameterValue")

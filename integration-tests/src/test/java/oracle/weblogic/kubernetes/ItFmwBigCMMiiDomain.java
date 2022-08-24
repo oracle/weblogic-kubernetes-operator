@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -86,7 +86,7 @@ class ItFmwBigCMMiiDomain {
   private String domainUid = "jrfdomain-mii";
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPrefix = domainUid + "-managed-server";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSecretName = domainUid + "-weblogic-credentials";
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
@@ -229,14 +229,13 @@ class ItFmwBigCMMiiDomain {
     dockerLoginAndPushImageToRegistry(jrfMii1Image);
 
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         jrfDomainNamespace,
         adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         jrfMii1Image);
 
     createDomainAndVerify(domain, jrfDomainNamespace);

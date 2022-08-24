@@ -3,9 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -85,20 +85,20 @@ class DomainResourcesValidation {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
-            .forEach(info -> removeInactiveClusterResources(c, info)));
+            .forEach(info -> adjustClusterResources(c, info)));
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
   }
 
-  private void removeInactiveClusterResources(ClusterList clusters, DomainPresenceInfo info) {
-    Set<String> clusterNames = clusters.getItems().stream().filter(c -> isForDomain(c, info))
-        .map(c -> c.getSpec().getClusterName()).collect(Collectors.toSet());
-    info.removeInactiveClusterResources(clusterNames);
+  private void adjustClusterResources(ClusterList clusters, DomainPresenceInfo info) {
+    List<ClusterResource> resources = clusters.getItems().stream()
+        .filter(c -> isForDomain(c, info)).collect(Collectors.toList());
+    info.adjustClusterResources(resources);
   }
 
   private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
-    return clusterResource.getDomainUid().equals(info.getDomainUid());
+    return info.doesReferenceCluster(clusterResource.getMetadata().getName());
   }
 
   private void addPodList(V1PodList list) {
@@ -157,13 +157,7 @@ class DomainResourcesValidation {
 
   private void addClusterList(ClusterList list) {
     activeClusterResources = list;
-    list.getItems().forEach(this::addCluster);
   }
-
-  private void addCluster(ClusterResource clusterResource) {
-    getDomainPresenceInfo(clusterResource.getDomainUid()).addClusterResource(clusterResource);
-  }
-
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
     return Stream.concat(

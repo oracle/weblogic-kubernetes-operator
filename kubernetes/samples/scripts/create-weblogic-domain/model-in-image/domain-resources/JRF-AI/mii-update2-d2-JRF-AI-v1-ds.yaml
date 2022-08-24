@@ -94,9 +94,7 @@ spec:
 
   # The desired behavior for starting a specific cluster's member servers
   clusters:
-  - clusterName: cluster-1
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -151,3 +149,18 @@ spec:
 
       # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
       #walletFileSecret: sample-domain2-opss-walletfile-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: sample-domain1-ns
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: sample-domain1
+
+spec:
+  replicas: 2

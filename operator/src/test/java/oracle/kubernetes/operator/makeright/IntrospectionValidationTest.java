@@ -77,7 +77,7 @@ class IntrospectionValidationTest {
   @EnumSource(Scenario.class)
   void introspectionRespondsToNewConditions(Scenario scenario) throws JsonProcessingException {
     info.setServerPod("admin", new V1Pod());
-    scenario.initializeScenario(testSupport);
+    scenario.initializeScenario(info, testSupport);
 
     testSupport.runSteps(MakeRightDomainOperationImpl.domainIntrospectionSteps());
 
@@ -128,18 +128,18 @@ class IntrospectionValidationTest {
       }
 
       @Override
-      DomainConfigurator configureDomain(DomainResource domainResource) {
-        final DomainConfigurator domainConfigurator = super.configureDomain(domainResource);
-        domainConfigurator.configureCluster("cluster-2");
+      DomainConfigurator configureDomain(DomainPresenceInfo info, DomainResource domainResource) {
+        final DomainConfigurator domainConfigurator = super.configureDomain(info, domainResource);
+        domainConfigurator.configureCluster(info,"cluster-2");
         return domainConfigurator;
       }
     };
 
     abstract boolean isCompatibleWith(TopologyType topologyType);
 
-    DomainConfigurator configureDomain(DomainResource domainResource) {
+    DomainConfigurator configureDomain(DomainPresenceInfo info, DomainResource domainResource) {
       final DomainConfigurator domainConfigurator = DomainConfiguratorFactory.forDomain(domainResource);
-      domainConfigurator.configureCluster("cluster-1");
+      domainConfigurator.configureCluster(info,"cluster-1");
       return domainConfigurator;
     }
   }
@@ -166,7 +166,8 @@ class IntrospectionValidationTest {
       this.finalTopology = finalTopology;
     }
 
-    private void initializeScenario(KubernetesTestSupport testSupport) throws JsonProcessingException {
+    private void initializeScenario(DomainPresenceInfo info, KubernetesTestSupport testSupport)
+        throws JsonProcessingException {
       if (initialTopology != null) {
         testSupport.addToPacket(DOMAIN_INTROSPECTOR_LOG_RESULT, initialTopology.createIntrospectionResult());
         testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null));
@@ -181,7 +182,7 @@ class IntrospectionValidationTest {
                 .withReason(DomainFailureReason.TOPOLOGY_MISMATCH)
                 .withMessage("preset for test"));
       }
-      finalDomain.configureDomain(getDomain(testSupport));
+      finalDomain.configureDomain(info, getDomain(testSupport));
     }
 
     private DomainResource getDomain(KubernetesTestSupport testSupport) {

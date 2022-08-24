@@ -133,6 +133,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
+  private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
+    List<DomainPresenceInfo> referencingDomains = new ArrayList<>();
+    Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values().stream()
+        .filter(info -> info.doesReferenceCluster(cluster)).forEach(referencingDomains::add));
+    return referencingDomains;
+  }
+
   static void cleanupNamespace(String namespace) {
     clusterEventK8SObjects.remove(namespace);
     domains.remove(namespace);
@@ -672,51 +679,42 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    if (info == null) {
-      return;
-    }
-    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
-        cluster.getDomainUid());
-    createMakeRightOperation(info)
-        .interrupt()
-        .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
-        .execute();
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
+      createMakeRightOperation(info)
+          .interrupt()
+          .withExplicitRecheck()
+          .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
+          .execute();
+    });
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    if (info == null) {
-      return;
-    }
-    ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
-    if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
-      return;
-    }
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
+      ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
+      if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
+        return;
+      }
 
-    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
-        cluster.getDomainUid());
-    createMakeRightOperation(info)
-        .interrupt()
-        .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
-        .execute();
+      LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
+      createMakeRightOperation(info)
+          .interrupt()
+          .withExplicitRecheck()
+          .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
+          .execute();
+    });
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    if (info == null) {
-      return;
-    }
-    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(),
-        cluster.getDomainUid());
-    info.removeClusterResource(cluster.getClusterName());
-    createMakeRightOperation(info)
-        .interrupt()
-        .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
-        .execute();
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(), info.getDomainUid());
+      info.removeClusterResource(cluster.getClusterName());
+      createMakeRightOperation(info)
+          .interrupt()
+          .withExplicitRecheck()
+          .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
+          .execute();
+    });
   }
 
 

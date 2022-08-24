@@ -319,7 +319,7 @@ class ItServerStartPolicyConfigCluster {
     // check managed server from dynamic cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+        domainNamespace, replicaCount)));
 
     boolean isPodRestarted =
         assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
@@ -412,7 +412,7 @@ class ItServerStartPolicyConfigCluster {
     // check managed server from dynamic cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+        domainNamespace, replicaCount)));
     checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env

@@ -12,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -229,15 +228,6 @@ public class ClusterResource implements KubernetesObject {
   public ClusterResource withStatus(ClusterStatus status) {
     setStatus(status);
     return this;
-  }
-
-  /**
-   * Returns the domain unique identifier.
-   *
-   * @return domain UID
-   */
-  public String getDomainUid() {
-    return Optional.ofNullable(spec.getDomainUid()).orElse(KubernetesUtils.getDomainUidLabel(metadata));
   }
 
   @NotNull

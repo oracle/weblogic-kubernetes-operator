@@ -300,14 +300,14 @@ class ItWlsSamples {
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 1);
+      checkClusterReplicaCountMatches(clusterName, domainNamespace, 1);
     });
 
     // Verify that startServer script execution starts server pod and replica count is incremented
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterName, domainNamespace, 2);
     });
   }
 
@@ -326,7 +326,7 @@ class ItWlsSamples {
     checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     checkPodExists(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterName, domainNamespace, 2);
     });
 
     // Verify that replica count is not changed when using "-k" parameter and replacement server is shutdown
@@ -334,7 +334,7 @@ class ItWlsSamples {
     checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterName, domainNamespace, 2);
     });
   }
 

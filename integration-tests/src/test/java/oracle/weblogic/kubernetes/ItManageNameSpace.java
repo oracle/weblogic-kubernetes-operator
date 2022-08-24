@@ -13,9 +13,8 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -492,7 +491,7 @@ class ItManageNameSpace {
 
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
-    Domain domain = createDomainResource(domainNamespace, domainUid);
+    DomainResource domain = createDomainResource(domainNamespace, domainUid);
     assertDoesNotThrow(() -> createVerifyDomain(domainNamespace, domainUid, miiImage, domain));
     return true;
   }
@@ -500,16 +499,10 @@ class ItManageNameSpace {
   /**
    * Create a model in image domain resource.
    */
-  private Domain createDomainResource(String domainNamespace, String domainUid) {
-
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount));
+  private DomainResource createDomainResource(String domainNamespace, String domainUid) {
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -538,7 +531,6 @@ class ItManageNameSpace {
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
@@ -579,7 +571,7 @@ class ItManageNameSpace {
     deleteSecret(encryptionSecretName, domainNamespace);
   }
 
-  private void createVerifyDomain(String domainNamespace, String domainUid, String miiImage, Domain domain) {
+  private void createVerifyDomain(String domainNamespace, String domainUid, String miiImage, DomainResource domain) {
     // create domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -602,7 +594,7 @@ class ItManageNameSpace {
   }
 
   private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
-    Domain domain = createDomainResource(domNamespace, domainUid);
+    DomainResource domain = createDomainResource(domNamespace, domainUid);
     assertNotNull(domain, "Failed to create domain CRD in namespace " + domNamespace);
     createDomainAndVerify(domain, domNamespace);
     checkPodDoesNotExist(podName,domainUid, domNamespace);

@@ -177,6 +177,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void whenNoReplicaCountSpecified_canChangeIt() {
+    configureCluster("cluster1");
     info.setReplicaCount("cluster1", 7);
 
     assertThat(info.getReplicaCount("cluster1"), equalTo(7));

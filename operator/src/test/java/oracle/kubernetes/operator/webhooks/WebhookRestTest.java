@@ -35,13 +35,12 @@ import oracle.kubernetes.operator.webhooks.model.Result;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static java.lang.System.lineSeparator;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static java.util.Arrays.asList;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
@@ -54,29 +53,23 @@ import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setFromModel;
 import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeClusterToMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainToMap;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
@@ -158,7 +151,7 @@ class WebhookRestTest extends RestTestBase {
     return request;
   }
 
-  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
+  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class, this);
 
   @Override
   protected Application configure() {
@@ -180,6 +173,10 @@ class WebhookRestTest extends RestTestBase {
     String responseString = sendConversionWebhookRequestAsString(conversionReview);
 
     assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
+
+    ClusterResource clusterResource = testSupport
+        .getResourceWithName(KubernetesTestSupport.CLUSTER, "sample-domain1-cluster-1");
+    assertThat(clusterResource,  notNullValue());
   }
 
   @Test
@@ -350,6 +347,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
+  @Disabled("Cluster replicas are no longer included in Domain specification")
   void whenDomainReplicasChangedAloneAndInvalid_rejectIt() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     setExistingAndProposedDomain();
@@ -358,106 +356,6 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(isAllowed(responseReview), equalTo(false));
   }
-
-  @Test
-  void whenLogHomeChangedAndFirstClusterReplicasChangedInvalid_rejectItWithExpectedMessage() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-    setExistingAndProposedDomain();
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(false));
-    assertThat(getResponseStatusMessage(responseReview), equalTo(getRejectMessage(0)));
-  }
-
-  private String getRejectMessage(int i) {
-    return String.format(REJECT_MESSAGE_PATTERN,
-        proposedDomain.getDomainUid(),
-        proposedDomain.getSpec().getClusters().get(i).getClusterName(),
-        ORIGINAL_REPLICAS);
-  }
-
-  @Test
-  void whenLogHomeChangedAndSecondClusterReplicasChangedInvalid_rejectItWithExpectedMessage() {
-    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-    setExistingAndProposedDomain();
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(false));
-    assertThat(getResponseStatusMessage(responseReview), equalTo(getRejectMessage(1)));
-  }
-
-  @Test
-  void whenIntrospectVersionChangedAndFirstClusterReplicasChangedInvalid_acceptIt() {
-    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-    setExistingAndProposedDomain();
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
-    assertThat(getWarnings(responseReview).contains(
-        "allowed because 'spec.introspectVersion' also changed"), equalTo(true));
-  }
-
-  @Test
-  void whenIntrospectVersionChangedAndSecondClusterReplicasChangedInvalid_acceptIt() {
-    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
-    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-    setExistingAndProposedDomain();
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
-    assertThat(getWarnings(responseReview).contains(
-        "allowed because 'spec.introspectVersion' also changed"), equalTo(true));
-  }
-
-  @Test
-  void whenImageChangedAndOneClusterReplicasChangedInvalid_acceptItWithExpectedMessage() {
-    proposedDomain.getSpec().setImage(NEW_IMAGE_NAME);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-    setExistingAndProposedDomain();
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
-    assertThat(getWarnings(responseReview).contains(
-        "allowed because 'spec.image' also changed"), equalTo(true));
-  }
-
-  @Test
-  void whenMIIAuxiliaryImageChangedAndOneClusterReplicasChangedInvalid_acceptItWithExpectedMessage() {
-    setFromModel(existingDomain);
-    setFromModel(proposedDomain);
-    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-    setExistingAndProposedDomain();
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(true));
-    assertThat(getWarnings(responseReview).contains("exceed the cluster size"), equalTo(true));
-    assertThat(getWarnings(responseReview).contains(
-        "allowed because 'spec.configuration.model.auxiliaryImages' also changed"), equalTo(true));
-  }
-
 
   @Test
   void whenProposedObjectMissing_acceptIt() {
@@ -481,28 +379,6 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenBothExistingAndProposedDomainMissing_acceptIt() {
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(true));
-  }
-
-  @Test
-  void whenExistingAndProposedDomainSameAndOneClusterReplicasChangedInvalid_acceptIt() {
-    existingDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    setExistingDomain(existingDomain);
-    setProposedDomain(existingDomain);
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
-
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(isAllowed(responseReview), equalTo(true));
-  }
-
-  @Test
-  void whenExistingAndProposedDomainEqualsAndOneClusterReplicasChangedInvalid_acceptIt() {
-    existingDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    setExistingAndProposedDomain();
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
 
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
@@ -651,6 +527,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
+  @Disabled("Cluster replicas are no longer included in Domain specification")
   void whenClusterReplicasChangedUnsetAndReadDomainFailed404_rejectItWithException() {
     testSupport.defineResources(proposedDomain);
     existingCluster.getSpec().withReplicas(GOOD_REPLICAS);
@@ -705,15 +582,6 @@ class WebhookRestTest extends RestTestBase {
         .map(AdmissionReview::getResponse).map(AdmissionResponse::isAllowed).orElse(false);
   }
 
-  private String getWarnings(AdmissionReview admissionResponse) {
-    return Optional.ofNullable(admissionResponse)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getWarnings).map(this::perLine).orElse("");
-  }
-
-  private String perLine(List<String> messages) {
-    return String.join(lineSeparator(), messages);
-  }
-
   private String getResponseStatusMessage(AdmissionReview admissionResponse) {
     return Optional.ofNullable(admissionResponse).map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus)
         .map(AdmissionResponseStatus::getMessage).orElse("");
@@ -739,7 +607,16 @@ class WebhookRestTest extends RestTestBase {
     return Entity.entity(jsonStr, MediaType.APPLICATION_JSON);
   }
 
-  abstract static class RestBackendStub implements RestBackend {
+  abstract class RestBackendStub implements RestBackend {
+    public Object createOrReplaceCluster(Map<String, Object> body) {
+      ClusterResource cluster = readCluster(writeMap(body));
+      testSupport.defineResources(cluster);
+      return body;
+    }
+
+    public List<Map<String, Object>> listClusters(String namespace) {
+      return null; // TODO
+    }
   }
 
   abstract static class RestConfigStub implements RestConfig {
