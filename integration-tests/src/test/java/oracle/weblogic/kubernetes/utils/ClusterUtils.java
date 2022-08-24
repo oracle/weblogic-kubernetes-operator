@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -97,7 +98,7 @@ public class ClusterUtils {
    * @param namespace the namespace in which the domain exists
    * @param clusterName cluster resource name
    */
-  public static void deleteClusterCustomResource(String clusterName, String namespace) {
+  public static void deleteClusterCustomResourceAndVerify(String clusterName, String namespace) {
     //delete cluster resource in namespace and wait until it is deleted
     getLogger().info("deleting cluster custom resource {0} in namespace {1}", clusterName, namespace);
     Cluster.deleteClusterCustomResource(clusterName, namespace);

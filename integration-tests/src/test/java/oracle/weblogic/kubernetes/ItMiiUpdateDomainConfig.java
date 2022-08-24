@@ -627,9 +627,7 @@ class ItMiiUpdateDomainConfig {
     // Make sure that we can scale down upto replica count 1
     // since the MinDynamicClusterSize is set to 1
     logger.info("[Before Patching] updating the replica count to 1");
-    boolean p11Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
-        String.format("replica pacthing to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p11Success = scaleCluster("cluster-1", domainNamespace, 1);
     assertTrue(p11Success,
         String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -640,9 +638,7 @@ class ItMiiUpdateDomainConfig {
 
     // Bring back the cluster to originally configured replica count
     logger.info("[Before Patching] updating the replica count to 2");
-    boolean p2Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", replicaCount),
-        String.format("replica pacthing to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p2Success = scaleCluster("cluster-1", domainNamespace, replicaCount);
     assertTrue(p1Success,
         String.format("replica patching to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
@@ -726,9 +722,7 @@ class ItMiiUpdateDomainConfig {
     // count can not go below 2. So during the following scale down operation
     // only managed-server3 and managed-server4 pod should be removed.
     logger.info("[After Patching] updating the replica count to 1");
-    boolean p4Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p4Success = scaleCluster("cluster-1", domainNamespace, 1);
     assertTrue(p4Success,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
 
