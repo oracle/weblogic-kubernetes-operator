@@ -20,9 +20,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
-import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_TRIGGER_CHANGED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_REPLICAS_CANNOT_BE_HONORED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.operator.KubernetesConstants.AUXILIARY_IMAGES;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_INTROSPECT_VERSION;
@@ -137,9 +137,9 @@ public class DomainAdmissionChecker extends AdmissionChecker {
     boolean isValid =
         getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
     if (!isValid) {
-      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
+      messages.add(LOGGER.formatMessage(DOMAIN_REPLICAS_CANNOT_BE_HONORED,
           domainUid, status.getClusterName(), getClusterSize(status)));
-      warnings.add(LOGGER.formatMessage(CLUSTER_REPLICAS_TOO_HIGH,
+      warnings.add(LOGGER.formatMessage(DOMAIN_REPLICAS_TOO_HIGH,
           domainUid, status.getClusterName(), getClusterSize(status)));
     }
     return isValid;

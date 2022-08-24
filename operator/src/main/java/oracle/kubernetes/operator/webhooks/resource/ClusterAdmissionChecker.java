@@ -18,6 +18,8 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
+
 /**
  * AdmissionChecker provides the validation functionality for the validating webhook. It takes an existing resource and
  * a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
@@ -78,9 +80,15 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
   }
 
   private boolean isReplicaCountValid() {
-    return getClusterReplicaCount() != null
+    boolean isValid = getClusterReplicaCount() != null
         ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
         : isDomainReplicaCountValid();
+
+    if (!isValid) {
+      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
+          existingCluster.getClusterName(), getClusterSize(existingCluster.getStatus())));
+    }
+    return isValid;
   }
 
   private Integer getClusterReplicaCount() {
