@@ -430,9 +430,10 @@ class ItKubernetesDomainEvents {
       assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
               V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
       */
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
       boolean result = assertDoesNotThrow(() ->
                       scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace3,
-                              cluster1Name, 3, 12345),
+                              cluster1Name, 3, Integer.parseInt(introspectVersion)),
               String.format("Patching replica to 3 failed for domain %s in namespace %s", domainUid, domainNamespace3));
       assertFalse(result,
               String.format("Patching replica to 3 failed for domain %s in namespace %s", domainUid, domainNamespace3));
