@@ -550,7 +550,7 @@ The script will print the Administration Server address after a successful deplo
 
 Now that you have WLS running in AKS, you can test the cluster by deploying the sample application included in the repository.
 
-Firs, package the application with the following command:
+First, package the application with the following command:
 
 ```bash
 cd integration-tests/src/test/resources/bash-scripts
