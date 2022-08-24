@@ -60,7 +60,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVe
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterAndChangeIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
@@ -418,25 +417,16 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     try {
       logger.info("Scaling cluster using patching");
-      /*
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
       assertFalse(scaleCluster(cluster1Name, domainNamespace3, 3), "failed to scale cluster via patching");
       String patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
           + "]";
 
       logger.info("Updating introspect version  using patch string: {0}",  patchStr);
-      V1Patch patch = new V1Patch(patchStr);
       assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
               V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
-      */
-      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
-      boolean result = assertDoesNotThrow(() ->
-                      scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace3,
-                              cluster1Name, 3, Integer.parseInt(introspectVersion)),
-              String.format("Patching replica to 3 failed for domain %s in namespace %s", domainUid, domainNamespace3));
-      assertFalse(result,
-              String.format("Patching replica to 3 failed for domain %s in namespace %s", domainUid, domainNamespace3));
 
       logger.info("verify the Failed event is generated");
       checkFailedEvent(opNamespace, domainNamespace3, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);
