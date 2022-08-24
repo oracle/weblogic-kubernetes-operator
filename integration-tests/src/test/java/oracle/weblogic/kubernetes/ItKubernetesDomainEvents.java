@@ -930,17 +930,15 @@ class ItKubernetesDomainEvents {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace3);
 
-    List<String> clusterNames = new java.util.ArrayList<>();
-    clusterNames.add(cluster2Name);
     ClusterList clusters = listClusterCustomResources(domainNamespace3);
-    for (String clusterName : clusterNames) {
-      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domainNamespace3);
-      } else {
-        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace3);
-        createClusterAndVerify(createClusterResource(clusterName, domainNamespace3, replicaCount));
-      }
+
+    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(cluster2Name))) {
+      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", cluster2Name, domainNamespace3);
+    } else {
+      getLogger().info("Creating cluster {0} in namespace {1}", cluster2Name, domainNamespace3);
+      createClusterAndVerify(createClusterResource(cluster2Name, domainNamespace3, replicaCount));
     }
+
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
 
     logger.info("patch the domain resource with new cluster and introspectVersion");

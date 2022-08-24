@@ -138,20 +138,16 @@ public class ClusterUtils {
    * @return modified domain resource object
    */
   public static DomainResource addClusterToDomain(String clusterName, String namespace,
-                                                                         DomainResource domain, int replicas) {
-    java.util.List<String> clusterNames = new java.util.ArrayList<>();
-    clusterNames.add(clusterName);
+                                                  DomainResource domain, int replicas) {
     ClusterList clusters = listClusterCustomResources(namespace);
-    for (String testClusterName : clusterNames) {
-      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(testClusterName))) {
-        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", testClusterName, namespace);
-      } else {
-        getLogger().info("Creating cluster {0} in namespace {1}", testClusterName, namespace);
-        createClusterAndVerify(createClusterResource(testClusterName, namespace, replicas));
-      }
-      // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(testClusterName));
+    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+    } else {
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
+      createClusterAndVerify(createClusterResource(clusterName, namespace, replicas));
     }
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     return domain;
   }
 }
