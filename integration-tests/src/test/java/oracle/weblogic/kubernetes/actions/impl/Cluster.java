@@ -57,18 +57,18 @@ public class Cluster {
   }
 
   /**
-   * Scale the cluster in the specified namespace.
+   * Scale the cluster in the specified namespace by patching the ClusterResource.
    *
-   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param clusterRes name of the cluster resource to be scaled in the domain
    * @param namespace namespace in which the domain exists
    * @param numOfServers number of servers to be scaled to
    * @return true if patch domain custom resource succeeds, false otherwise
    */
-  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
+  public static boolean scaleCluster(String clusterRes, String namespace, int numOfServers) {
     LoggingFacade logger = getLogger();
-
-    if (!doesClusterExist(clusterName, CLUSTER_VERSION, namespace)) {
-      logger.info("Cluster {0} doesn't exist in namespace {1}.", clusterName, namespace);
+    logger.info("Looking for Cluster Resource {0} in NameSpace {1}", clusterRes, namespace);
+    if (!doesClusterExist(clusterRes, CLUSTER_VERSION, namespace)) {
+      logger.info("ClusterResource {0} not found in NameSpace {1}", clusterRes, namespace);
       return false;
     }
 
@@ -80,10 +80,10 @@ public class Cluster {
         .append(numOfServers)
         .append("}]");
     logger.info("Scaling cluster {0} using patch string: {1}",
-        clusterName, patchStr.toString());
+        clusterRes, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
-    return Kubernetes.patchClusterCustomResource(clusterName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    return Kubernetes.patchClusterCustomResource(clusterRes, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**
