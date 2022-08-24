@@ -118,6 +118,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * The common utility class for model-in-image tests.
  */
 public class CommonMiiTestUtils {
+  
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
