@@ -68,7 +68,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -620,14 +619,6 @@ public class CommonMiiTestUtils {
             .namespace(domNamespace))
         .spec(domainSpec);
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-        domainResourceName, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainResourceName, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-        + "for %s in namespace %s", domainResourceName, domNamespace));
-
     setPodAntiAffinity(domain);
     return domain;
   }
@@ -670,8 +661,8 @@ public class CommonMiiTestUtils {
     DomainResource domain = createDomainResourceWithLogHome(domainResourceName, domNamespace, imageName,
         adminSecretName, repoSecretName, encryptionSecretName, pvName, pvcName, configMapName,
         dbSecretName, allowReplicasBelowMinDynClusterSize, onlineUpdateEnabled, setDataHome);
-    domain.getSpec().replicas(replicaCount);
-    return domain;
+    DomainSpec spec = domain.getSpec().replicas(replicaCount);
+    return domain.spec(spec);
   }
 
   /**
