@@ -362,20 +362,14 @@ class ItIstioDomainInPV  {
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
 
-    boolean scalingSuccess = assertDoesNotThrow(() ->
-        scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
-        String.format("Scaling down cluster cluster-1 of domain %s in namespace %s failed",
-        domainUid, domainNamespace));
+    boolean scalingSuccess = scaleCluster("cluster-1", domainNamespace, 1);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     logger.info("Cluster is scaled down in absence of administration server");
     checkPodDeleted(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
     logger.info("Managed Server stopped in absence of administration server");
 
-    scalingSuccess = assertDoesNotThrow(() ->
-        scaleCluster(domainUid, domainNamespace, "cluster-1", 2),
-        String.format("Scaling up cluster cluster-1 of domain %s in namespace %s failed",
-        domainUid, domainNamespace));
+    scalingSuccess = scaleCluster("cluster-1", domainNamespace, 2);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     logger.info("Cluster is scaled up in absence of administration server");
