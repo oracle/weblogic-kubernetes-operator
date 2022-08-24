@@ -60,11 +60,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVe
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterAndChangeIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
@@ -416,6 +418,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     try {
       logger.info("Scaling cluster using patching");
+      /*
       assertFalse(scaleCluster(cluster1Name, domainNamespace3, 3), "failed to scale cluster via patching");
       String patchStr
           = "["
@@ -426,6 +429,13 @@ class ItKubernetesDomainEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
               V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+      */
+      boolean result = assertDoesNotThrow(() ->
+                      scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace3,
+                              cluster1Name, 3, 12345),
+              String.format("Patching replica to 3 failed for domain %s in namespace %s", domainUid, domainNamespace3));
+      assertFalse(result,
+              String.format("Patching replica to 3 failed for domain %s in namespace %s", domainUid, domainNamespace3));
 
       logger.info("verify the Failed event is generated");
       checkFailedEvent(opNamespace, domainNamespace3, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);
@@ -675,24 +685,6 @@ class ItKubernetesDomainEvents {
 
     //verify the includeServerOutInPodLog change causes the domain roll events to be logged
     verifyDomainRollAndPodCycleEvents(timestamp, domainNamespace3);
-  }
-
-  private static DomainResource addClusterToDomain(String testClusterName, String domainNamespace,
-                                         DomainResource domain, int replicaCount) {
-    List<String> clusterNames = new ArrayList<>();
-    clusterNames.add(testClusterName);
-    ClusterList clusters = listClusterCustomResources(domainNamespace);
-    for (String clusterName : clusterNames) {
-      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domainNamespace);
-      } else {
-        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
-        createClusterAndVerify(createClusterResource(clusterName, domainNamespace, replicaCount));
-      }
-      // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
-    }
-    return domain;
   }
 
   /**
