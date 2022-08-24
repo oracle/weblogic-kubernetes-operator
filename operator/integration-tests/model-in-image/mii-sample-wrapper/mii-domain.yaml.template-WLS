@@ -89,24 +89,7 @@ spec:
 
   # The desired behavior for starting a specific cluster's member servers
   clusters:
-  - clusterName: cluster-1
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -134,3 +117,18 @@ spec:
     # (the model yaml in the optional configMap or in the image)
     #secrets:
     #- @@DOMAIN_UID@@-datasource-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: @@DOMAIN_NAMESPACE@@
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID:  @@DOMAIN_UID@@
+spec:
+  clusterName: cluster-1
+  replicas: 2
