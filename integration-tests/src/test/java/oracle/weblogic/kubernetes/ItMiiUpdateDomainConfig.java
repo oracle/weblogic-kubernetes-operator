@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -51,7 +52,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -59,7 +59,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -67,9 +66,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterAndChangeIntrospectVersion;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -81,6 +80,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -200,19 +200,23 @@ class ItMiiUpdateDomainConfig {
     // create job to change permissions on PV hostPath
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
+    // create cluster object
+    String clusterName = "cluster-1";
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName, dbSecretName);
 
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
+    createDomainAndVerify(domain, domainNamespace);
   }
 
   /**
@@ -612,9 +616,7 @@ class ItMiiUpdateDomainConfig {
 
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
-    boolean p1Success = assertDoesNotThrow(() ->
-            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, 1234),
-        String.format("replica pacthing to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p1Success = scaleCluster("cluster-1", domainNamespace, 5);
     assertTrue(p1Success,
         String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -682,10 +684,8 @@ class ItMiiUpdateDomainConfig {
     // Scale the cluster to replica count 5
     // Here managed-server5 should not come up as new MaxClusterSize is 4
     logger.info("[After Patching] updating the replica count to 5");
-    boolean p3Success = assertDoesNotThrow(() ->
-            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, 5678),
-        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
-    assertTrue(p1Success,
+    boolean p3Success = scaleCluster("cluster-1", domainNamespace, 5);
+    assertTrue(p3Success,
         String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     //  Make sure the 3rd Managed server comes up
@@ -809,7 +809,7 @@ class ItMiiUpdateDomainConfig {
 
   // Add an environmental variable with special character
   // Make sure the variable is available in domain resource with right value
-  private static void createDomainResource(
+  private static DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName, String dbSecretName) {
@@ -865,15 +865,10 @@ class ItMiiUpdateDomainConfig {
                                     .domainType("WLS")
                                     .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
+                        .introspectorJobActiveDeadlineSeconds(300L))
+                .replicas(replicaCount));
     setPodAntiAffinity(domain);
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domNamespace));
+    return domain;
   }
 
   private void verifyManagedServerConfiguration(String managedServer) {
