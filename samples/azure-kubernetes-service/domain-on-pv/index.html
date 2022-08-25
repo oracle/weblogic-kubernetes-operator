@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1661458081" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1661458081" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1661458244" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1661458244" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1661458081"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1661458244"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1661458081"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1661458081"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1661458244"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1661458244"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1661458081"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1661458244"></script>
 
     
   </div>
@@ -3545,58 +3545,17 @@
 <p>This sample assumes the following prerequisite environment.</p>
 <ul>
 <li>Operating System: GNU/Linux, macOS or <a href="https://docs.microsoft.com/windows/wsl/install-win10">WSL2 for Windows 10</a>.</li>
-<li><a href="https://git-scm.com/downloads">Git</a>; use <code>git --version</code> to test if <code>git</code> works.  This document was tested with version 2.17.1.</li>
-<li><a href="https://docs.microsoft.com/cli/azure">Azure CLI</a>; use <code>az --version</code> to test if <code>az</code> works.  This document was tested with version 2.9.1.</li>
-<li><a href="https://www.docker.com/products/docker-desktop">Docker for Desktop</a>.  This document was tested with <code>Docker version 20.10.2, build 2291f61</code></li>
-<li><a href="https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/">kubectl</a>; use <code>kubectl version</code> to test if <code>kubectl</code> works.  This document was tested with version v1.16.3.</li>
-<li><a href="https://helm.sh/docs/intro/install/">Helm</a>, version 3.1 and later; use <code>helm version</code> to check the <code>helm</code> version.  This document was tested with version v3.2.5.</li>
+<li><a href="https://git-scm.com/downloads">Git</a>; use <code>git --version</code> to test if <code>git</code> works.  This document was tested with version 2.25.1.</li>
+<li><a href="https://docs.microsoft.com/cli/azure">Azure CLI</a>; use <code>az --version</code> to test if <code>az</code> works.  This document was tested with version 2.39.0.</li>
+<li><a href="https://www.docker.com/products/docker-desktop">Docker for Desktop</a>.  This document was tested with <code>Docker version 20.10.7</code></li>
+<li><a href="https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/">kubectl</a>; use <code>kubectl version</code> to test if <code>kubectl</code> works.  This document was tested with version v1.21.2.</li>
+<li><a href="https://helm.sh/docs/intro/install/">Helm</a>, version 3.1 and later; use <code>helm version</code> to check the <code>helm</code> version.  This document was tested with version v3.6.2.</li>
+<li>A Java JDK, Version 8 or 11. Azure recommends <a href="https://docs.microsoft.com/java/openjdk/download">Microsoft Build of OpenJDK</a>. Ensure that your <code>JAVA_HOME</code> environment variable is set correctly in the shells in which you run the commands.</li>
 </ul>
 
 
 
-<h5 id="create-a-service-principal-for-aks">Create a Service Principal for AKS</h5>
-<p>An AKS cluster requires either an <a href="https://docs.microsoft.com/azure/active-directory/develop/app-objects-and-service-principals">Azure Active Directory (AD) service principal</a> or a <a href="https://docs.microsoft.com/azure/aks/use-managed-identity">managed identity</a> to interact with Azure resources.</p>
-<p>We will use a service principal to create an AKS cluster. Follow the commands below to create a new service principal.</p>
-<p>Please run <code>az login</code> first. Do set the subscription you want to work with. You can get a list of your subscriptions by running <code>az account list</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># Login</span>
-$ az login
-
-<span style="color:#75715e"># Set your working subscription</span>
-$ export SUBSCRIPTION_ID<span style="color:#f92672">=</span>&lt;your-subscription-id&gt;
-$ az account set -s $SUBSCRIPTION_ID
-</code></pre></div><p>Create the new service principal with the following commands:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># Create Service Principal</span>
-$ export SP_NAME<span style="color:#f92672">=</span>myAKSClusterServicePrincipal
-$ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
-
-<span style="color:#75715e"># Copy the output to a file, we will use it later.</span>
-</code></pre></div><p>If you see an error similar to the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">Found an existing application instance of <span style="color:#e6db74">&#34;5pn2s201-nq4q-43n1-z942-p9r9571qr3rp&#34;</span>. We will patch it
-Insufficient privileges to complete the operation.
-</code></pre></div><p>The problem may be a pre-existing service principal with the same name.  Either delete the other service principal or pick a different name.</p>
-<p>Successful output will look like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-  <span style="color:#f92672">&#34;appId&#34;</span>: <span style="color:#e6db74">&#34;r3qnq743-61s9-4758-8163-4qpo87s72s54&#34;</span>,
-  <span style="color:#f92672">&#34;displayName&#34;</span>: <span style="color:#e6db74">&#34;myAKSClusterServicePrincipal&#34;</span>,
-  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;http://myAKSClusterServicePrincipal&#34;</span>,
-  <span style="color:#f92672">&#34;password&#34;</span>: <span style="color:#e6db74">&#34;TfhR~uOJ1C1ftD5NS_LzJJj6UOjS2OwXfz&#34;</span>,
-  <span style="color:#f92672">&#34;tenant&#34;</span>: <span style="color:#e6db74">&#34;82sr215n-0ns5-404e-9161-206r0oqyq999&#34;</span>
-}
-</code></pre></div><p>Grant your service principal with a contributor role to create AKS resources.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># Use the &lt;appId&gt; from the output of the last command</span>
-$ export SP_APP_ID<span style="color:#f92672">=</span>r3qnq743-61s9-4758-8163-4qpo87s72s54
-$ az role assignment create --assignee $SP_APP_ID --role Contributor
-</code></pre></div><p>Successful output will look like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-  <span style="color:#f92672">&#34;canDelegate&#34;</span>: <span style="color:#66d9ef">null</span>,
-  <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;/subscriptions/p7844r91-o11q-4n7s-np6s-996308sopqo9/providers/Microsoft.Authorization/roleAssignments/4oq396os-rs95-4n6s-n3qo-sqqpnpo91035&#34;</span>,
-  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;4oq396os-rs95-4n6s-n3qo-sqqpnpo91035&#34;</span>,
-  <span style="color:#f92672">&#34;principalId&#34;</span>: <span style="color:#e6db74">&#34;952551r8-n129-4on3-oqo9-231n0s6011n3&#34;</span>,
-  <span style="color:#f92672">&#34;principalType&#34;</span>: <span style="color:#e6db74">&#34;ServicePrincipal&#34;</span>,
-  <span style="color:#f92672">&#34;roleDefinitionId&#34;</span>: <span style="color:#e6db74">&#34;/subscriptions/p7844r91-o11q-4n7s-np6s-996308sopqo9/providers/Microsoft.Authorization/roleDefinitions/o24988np-6180-42n0-no88-20s7382qq24p&#34;</span>,
-  <span style="color:#f92672">&#34;scope&#34;</span>: <span style="color:#e6db74">&#34;/subscriptions/p7844r91-o11q-4n7s-np6s-996308sopqo9&#34;</span>,
-}
-</code></pre></div><h5 id="oracle-container-registry">Oracle Container Registry</h5>
+<h5 id="oracle-container-registry">Oracle Container Registry</h5>
 <p>You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.</p>
 <ul>
 <li>In a web browser, navigate to <a href="https://container-registry.oracle.com">https://container-registry.oracle.com</a> and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the <strong>Sign In</strong> link to create them.</li>
@@ -3616,9 +3575,31 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 
 
 <h5 id="clone-weblogic-kubernetes-operator-repository">Clone WebLogic Kubernetes Operator repository</h5>
-<p>Clone the <a href="https://github.com/oracle/weblogic-kubernetes-operator">WebLogic Kubernetes Operator repository</a> to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.3.7, but should work with the latest release.</p>
+<p>Clone the <a href="https://github.com/oracle/weblogic-kubernetes-operator">WebLogic Kubernetes Operator repository</a> to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.4.2, but should work with the latest release.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ git clone --branch v3.4.2 https://github.com/oracle/weblogic-kubernetes-operator.git
-</code></pre></div>
+</code></pre></div><h5 id="sign-in-with-azure-cli">Sign in with Azure CLI</h5>
+<p>The steps in this section show you how to sign in to the Azure CLI.</p>
+<ol>
+<li>
+<p>Open a Bash shell.</p>
+</li>
+<li>
+<p>Sign out and delete some authentication files to remove any lingering credentials.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az logout
+$ rm ~/.azure/accessTokens.json
+$ rm ~/.azure/azureProfile.json
+</code></pre></div></li>
+<li>
+<p>Sign in to your Azure CLI.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az login
+</code></pre></div></li>
+<li>
+<p>Set the subscription ID. Be sure to replace the placeholder with the appropriate value.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ export SUBSCRIPTION_ID<span style="color:#f92672">=</span>&lt;your-subscription-id&gt;
+$ az account set -s $SUBSCRIPTION_ID
+</code></pre></div></li>
+</ol>
+
 <div class="notices info" ><p>The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the <a href="#automation">Automation</a> section.</p>
 </div>
 
@@ -3634,8 +3615,6 @@ $ export TIMESTAMP<span style="color:#f92672">=</span><span style="color:#e6db74
 $ export AKS_CLUSTER_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">aks</span><span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 $ export AKS_PERS_RESOURCE_GROUP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">resourcegroup</span><span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 $ export AKS_PERS_LOCATION<span style="color:#f92672">=</span>eastus
-$ export SP_APP_ID<span style="color:#f92672">=</span>&lt;appId from the az ad sp create-for-rbac command&gt;
-$ export SP_CLIENT_SECRET<span style="color:#f92672">=</span>&lt;password from the az ad sp create-for-rbac command&gt;
 
 $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 $ az aks create <span style="color:#ae81ff">\
@@ -3646,8 +3625,7 @@ $ az aks create <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --nodepool-name nodepool1 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --node-vm-size Standard_DS2_v2 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --location $AKS_PERS_LOCATION <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --service-principal $SP_APP_ID <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --client-secret $SP_CLIENT_SECRET
+</span><span style="color:#ae81ff"></span>   --enable-managed-identity
 </code></pre></div><p>Successful output will be a JSON object with the entry <code>&quot;type&quot;: &quot;Microsoft.ContainerService/ManagedClusters&quot;</code>.</p>
 <p>After the deployment finishes, run the following command to connect to the AKS cluster. This command updates your local <code>~/.kube/config</code> so that subsequent <code>kubectl</code> commands interact with the named AKS cluster.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
@@ -3733,8 +3711,20 @@ $ az storage share-rm create <span style="color:#ae81ff">\
 </code></pre></div><p>The command provisions an NFS file share with NFS 4.1 or above.</p>
 </li>
 <li>
+<p>Assign the AKS cluster <strong>Contributor</strong> role to access the storage account.</p>
+<p>You must configure role assignment allowing access from AKS cluster to the storage account.</p>
+<p>Get <code>objectId</code> of the AKS cluster with the following command and save it with variable <code>AKS_OBJECT_ID</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ AKS_OBJECT_ID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>az aks show --name <span style="color:#e6db74">${</span>AKS_CLUSTER_NAME<span style="color:#e6db74">}</span> --resource-group <span style="color:#e6db74">${</span>AKS_PERS_RESOURCE_GROUP<span style="color:#e6db74">}</span> --query <span style="color:#e6db74">&#34;identity.principalId&#34;</span> -o tsv<span style="color:#66d9ef">)</span>
+</code></pre></div><p>Get Id of the storage account with the following command:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ STORAGE_ACCOUNT_ID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>az storage account show --name <span style="color:#e6db74">${</span>AKS_PERS_STORAGE_ACCOUNT_NAME<span style="color:#e6db74">}</span> --resource-group <span style="color:#e6db74">${</span>AKS_PERS_RESOURCE_GROUP<span style="color:#e6db74">}</span> --query <span style="color:#e6db74">&#34;id&#34;</span> -o tsv<span style="color:#66d9ef">)</span>
+</code></pre></div><p>Now, you are able to create a role assignment to grant the AKS cluster <strong>Contributor</strong> in the scope of the storage account. Then, the AKS cluster is able to access the file share.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az role assignment create --assignee <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>AKS_OBJECT_ID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --role <span style="color:#e6db74">&#34;Contributor&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --scope <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>STORAGE_ACCOUNT_ID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</code></pre></div></li>
+<li>
 <p>Configure network security.</p>
-<p>You must configure the network security allowing access from AKS cluster to the storage account.</p>
+<p>You must configure the network security allowing access from AKS cluster to the file share.</p>
 <p>First, you must get the virtual network name and the subnet name of the AKS cluster.</p>
 <p>Run the following commands to get network information:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># get the resource group name of the AKS managed resources</span>
@@ -3742,7 +3732,10 @@ $ aksMCRGName<span style="color:#f92672">=</span><span style="color:#66d9ef">$(<
 $ echo <span style="color:#e6db74">${</span>aksMCRGName<span style="color:#e6db74">}</span>
 
 <span style="color:#75715e"># get network name of AKS cluster</span>
-$ aksNetworkName<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>az resource list --resource-group <span style="color:#e6db74">${</span>aksMCRGName<span style="color:#e6db74">}</span> --resource-type Microsoft.Network/virtualNetworks -o tsv --query <span style="color:#e6db74">&#39;[*].name&#39;</span><span style="color:#66d9ef">)</span>
+$ aksNetworkName<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>az graph query -q <span style="color:#e6db74">&#34;Resources \
+</span><span style="color:#e6db74">    | where type =~ &#39;Microsoft.Network/virtualNetworks&#39; \
+</span><span style="color:#e6db74">    | where resourceGroup  =~ &#39;</span><span style="color:#e6db74">${</span>aksMCRGName<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; \
+</span><span style="color:#e6db74">    | project name = name&#34;</span> --query <span style="color:#e6db74">&#34;data[0].name&#34;</span>  -o tsv<span style="color:#66d9ef">)</span>
 $ echo <span style="color:#e6db74">${</span>aksNetworkName<span style="color:#e6db74">}</span>
 
 <span style="color:#75715e"># get subnet name of AKS agent pool</span>
@@ -4221,21 +4214,6 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
 </thead>
 <tbody>
 <tr>
-<td><code>azureServicePrincipalAppId</code></td>
-<td><code>nr086o75-pn59-4782-no5n-nq2op0rsr1q6</code></td>
-<td>Application ID of your service principal; refer to the application ID in the <a href="/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/#create-a-service-principal-for-aks">Create Service Principal</a> section.</td>
-</tr>
-<tr>
-<td><code>azureServicePrincipalClientSecret</code></td>
-<td><code>8693089o-q190-45ps-9319-or36252s3s90</code></td>
-<td>A client secret of your service principal; refer to the client secret in the <a href="/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/#create-a-service-principal-for-aks">Create Service Principal</a> section.</td>
-</tr>
-<tr>
-<td><code>azureServicePrincipalTenantId</code></td>
-<td><code>72s988os-86s1-cafe-babe-2q7pq011qo47</code></td>
-<td>Tenant (Directory ) ID of your service principal; refer to the client secret in the <a href="/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/#create-a-service-principal-for-aks">Create Service Principal</a> section.</td>
-</tr>
-<tr>
 <td><code>dockerEmail</code></td>
 <td><code>yourDockerEmail</code></td>
 <td>Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image.</td>
@@ -4269,20 +4247,38 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
 </div>
 
 <h4 id="deploy-sample-application">Deploy sample application</h4>
-<p>Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository:</p>
-<ol>
-<li>Go to the WebLogic Server Administration Console, Select &ldquo;Lock &amp; Edit&rdquo;.</li>
-<li>Select Deployments.</li>
-<li>Select Install.</li>
-<li>Select Upload your file(s).</li>
-<li>For the Deployment Archive, Select &ldquo;Choose File&rdquo;.</li>
-<li>Select the file <code>kubernetes/samples/charts/application/testwebapp.war</code>.</li>
-<li>Select Next. Choose &lsquo;Install this deployment as an application&rsquo;.</li>
-<li>Select Next. Select cluster-1 and All servers in the cluster.  Select Next.</li>
-<li>Accept the defaults in the next screen and select Next</li>
-<li>Select Finish.</li>
-<li>Select Activate Changes.</li>
-</ol>
+<p>Now that you have WLS running in AKS, you can test the cluster by deploying the sample application included in the repository.</p>
+<p>First, package the application with the following command:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cd integration-tests/src/test/resources/bash-scripts
+bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
+</code></pre></div><p>Successful output will look like the following:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Found source at ../apps/testwebapp/
+build /tmp/testwebapp/testwebapp.war with command jar -cvf /tmp/testwebapp/testwebapp.war *
+added manifest
+ignoring entry META-INF/
+ignoring entry META-INF/MANIFEST.MF
+adding: META-INF/maven/(in = 0) (out= 0)(stored 0%)
+adding: META-INF/maven/com.oracle.weblogic/(in = 0) (out= 0)(stored 0%)
+adding: META-INF/maven/com.oracle.weblogic/testwebapp/(in = 0) (out= 0)(stored 0%)
+adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.properties(in = 117) (out= 113)(deflated 3%)
+adding: META-INF/maven/com.oracle.weblogic/testwebapp/pom.xml(in = 1210) (out= 443)(deflated 63%)
+adding: WEB-INF/(in = 0) (out= 0)(stored 0%)
+adding: WEB-INF/web.xml(in = 951) (out= 428)(deflated 54%)
+adding: WEB-INF/weblogic.xml(in = 1140) (out= 468)(deflated 58%)
+adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
+-rw-r--r-- 1 user user 3528 Jul  5 14:25 /tmp/testwebapp/testwebapp.war
+</code></pre></div><p>Now, you are able to deploy the sample application in <code>/tmp/testwebapp/testwebapp.war</code> to the cluster. This sample uses WLS RESTful API <a href="https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html">/management/weblogic/latest/edit/appDeployments</a> to deploy the sample application. The WLS administration account and password in this sample are <code>weblogic:welcome1</code>, replace them with your value created in <a href="#create-secrets">Create WebLogic domain secrets</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ADMIN_SERVER_IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl get svc domain1-admin-server-external-lb -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].ip}&#39;</span><span style="color:#66d9ef">)</span>
+$ curl --user weblogic:welcome1 -H X-Requested-By:MyClient  -H Accept:application/json -s -v <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -H Content-Type:multipart/form-data  <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -F <span style="color:#e6db74">&#34;model={
+</span><span style="color:#e6db74">        name:    &#39;testwebapp&#39;,
+</span><span style="color:#e6db74">        targets: [ { identity: [ &#39;clusters&#39;, &#39;cluster-1&#39; ] } ]
+</span><span style="color:#e6db74">      }&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -F <span style="color:#e6db74">&#34;sourcePath=@/tmp/testwebapp/testwebapp.war&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Prefer:respond-async&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -X POST http://<span style="color:#e6db74">${</span>ADMIN_SERVER_IP<span style="color:#e6db74">}</span>:7001/management/weblogic/latest/edit/appDeployments
+</code></pre></div><p>After the successful deployment, you will find output similar to the following:</p>
 
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -4290,31 +4286,91 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
         <span>
         
     	
-    	Click here to view the application deployment screenshot.
+    	Click here to view the output.
     	
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <p><img src="../screenshot-deploy-test-app.png" alt="Deploy Application"></p>
-
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">*   Trying 52.226.101.43:7001...
+* TCP_NODELAY set
+* Connected to 52.226.101.43 (52.226.101.43) port 7001 (#0)
+* Server auth using Basic with user &#39;weblogic&#39;
+&gt; POST /management/weblogic/latest/edit/appDeployments HTTP/1.1
+&gt; Host: 52.226.101.43:7001
+&gt; Authorization: Basic d2VibG9naWM6d2VsY29tZTE=
+&gt; User-Agent: curl/7.68.0
+&gt; X-Requested-By:MyClient
+&gt; Accept:application/json
+&gt; Prefer:respond-async
+&gt; Content-Length: 3925
+&gt; Content-Type: multipart/form-data; boundary=------------------------cc76a2c2d819911f
+&gt; Expect: 100-continue
+&gt;
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 100 Continue
+* We are completely uploaded and fine
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 202 Accepted
+&lt; Date: Thu, 11 Aug 2022 08:32:56 GMT
+&lt; Location: http://domain1-admin-server:7001/management/weblogic/latest/domainRuntime/deploymentManager/deploymentProgressObjects/testwebapp
+&lt; Content-Length: 764
+&lt; Content-Type: application/json
+&lt; X-ORACLE-DMS-ECID: 6f205c83-e172-4c34-a638-7f0c6345ce45-00000055
+&lt; X-ORACLE-DMS-RID: 0
+&lt; Set-Cookie: JSESSIONID=NOCMCQBO7dxyA2lUfCYp4zSYIeFB0S3V1KRRzigmmoOUfmQmlLOh!-546081476; path=/; HttpOnly
+&lt; Vary: Accept-Encoding
+&lt;
+{
+    &#34;links&#34;: [{
+        &#34;rel&#34;: &#34;job&#34;,
+        &#34;href&#34;: &#34;http:\/\/domain1-admin-server:7001\/management\/weblogic\/latest\/domainRuntime\/deploymentManager\/deploymentProgressObjects\/testwebapp&#34;
+    }],
+    &#34;identity&#34;: [
+        &#34;deploymentManager&#34;,
+        &#34;deploymentProgressObjects&#34;,
+        &#34;testwebapp&#34;
+    ],
+    &#34;rootExceptions&#34;: [],
+    &#34;deploymentMessages&#34;: [],
+    &#34;name&#34;: &#34;testwebapp&#34;,
+    &#34;operationType&#34;: 3,
+    &#34;startTimeAsLong&#34;: 1660206785965,
+    &#34;state&#34;: &#34;STATE_RUNNING&#34;,
+    &#34;id&#34;: &#34;0&#34;,
+    &#34;type&#34;: &#34;DeploymentProgressObject&#34;,
+    &#34;targets&#34;: [&#34;cluster-1&#34;],
+    &#34;applicationName&#34;: &#34;testwebapp&#34;,
+    &#34;failedTargets&#34;: [],
+    &#34;progress&#34;: &#34;processing&#34;,
+    &#34;completed&#34;: false,
+    &#34;intervalToPoll&#34;: 1000,
+    &#34;startTime&#34;: &#34;2022-08-11T08:33:05.965Z&#34;
+* Connection #0 to host 52.226.101.43 left intact
+</code></pre></div>
     </div>
 </div>
-<p>Next you will need to start the application:</p>
-<ol>
-<li>Go to Deployments.</li>
-<li>Select Control.</li>
-<li>Select the check box next to <code>testwebapp</code>.</li>
-<li>Select Start.</li>
-<li>Select Servicing all requests.</li>
-<li>Select Yes.</li>
-</ol>
-<p>After the successful deployment, go to the application through the <code>domain1-cluster-1-lb</code> external IP.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl  get svc domain1-cluster-1-external-lb
-</code></pre></div><pre><code>NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
-domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   8001:32695/TCP   30m
-</code></pre><p>In the example, the application address is: <code>http://52.224.248.40:8001/testwebapp</code>.</p>
-<p>The test application will list the server host and server IP on the page.</p>
-<h4 id="validate-nfs-volume">Validate NFS volume</h4>
+<p>Now, you can go to the application through the <code>domain1-cluster-1-lb</code> external IP.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ CLUSTER_IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl get svc domain1-cluster-1-external-lb -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].ip}&#39;</span><span style="color:#66d9ef">)</span>
+
+$ curl http://<span style="color:#e6db74">${</span>CLUSTER_IP<span style="color:#e6db74">}</span>:8001/testwebapp/
+</code></pre></div><p>The test application will list the server host and server IP on the output, like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html"><span style="color:#75715e">&lt;!DOCTYPE html&gt;</span>
+&lt;<span style="color:#f92672">html</span>&gt;
+  &lt;<span style="color:#f92672">head</span>&gt;
+    &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">http-equiv</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Content-Type&#34;</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text/html; charset=UTF-8&#34;</span>&gt;
+
+    &lt;<span style="color:#f92672">link</span> <span style="color:#a6e22e">rel</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;stylesheet&#34;</span> <span style="color:#a6e22e">href</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/testwebapp/res/styles.css;jsessionid=9uiMDakndtPlZTyDB9A-OKZEFBBAPyIs_9bG3qC4uA3PYaI8DsH1!-1450005246&#34;</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text/css&#34;</span>&gt;
+    &lt;<span style="color:#f92672">title</span>&gt;Test WebApp&lt;/<span style="color:#f92672">title</span>&gt;
+  &lt;/<span style="color:#f92672">head</span>&gt;
+  &lt;<span style="color:#f92672">body</span>&gt;
+
+
+    &lt;<span style="color:#f92672">li</span>&gt;InetAddress: domain1-managed-server1/10.244.1.8
+    &lt;<span style="color:#f92672">li</span>&gt;InetAddress.hostname: domain1-managed-server1
+
+  &lt;/<span style="color:#f92672">body</span>&gt;
+&lt;/<span style="color:#f92672">html</span>&gt;
+</code></pre></div><h4 id="validate-nfs-volume">Validate NFS volume</h4>
 <p>There are several approaches to validate the NFS volume:</p>
 <ul>
 <li>Use Azure Storage browser. Make sure you have permission to access the NFS server, see <a href="https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal">Azure Storage firewalls and virtual networks document</a></li>
@@ -4341,7 +4397,6 @@ $ az group delete --yes --no-wait --name MC_ejb8191resourcegroup1597641911_ejb81
 
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az group delete --yes --no-wait --name $AKS_PERS_RESOURCE_GROUP
 $ az group delete --yes --no-wait --name <span style="color:#e6db74">&#34;MC_</span>$AKS_PERS_RESOURCE_GROUP<span style="color:#e6db74">&#34;</span>_<span style="color:#e6db74">&#34;</span>$AKS_CLUSTER_NAME<span style="color:#e6db74">&#34;</span>_<span style="color:#e6db74">&#34;</span>$AKS_PERS_LOCATION<span style="color:#e6db74">&#34;</span>
-$ az ad sp delete --id $SP_APP_ID
 </code></pre></div>
 
 <h4 id="troubleshooting">Troubleshooting</h4>
@@ -6668,19 +6723,19 @@ $ az ad sp delete --id $SP_APP_ID
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1661458081"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1661458244"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1661458081"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1661458081"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1661458244"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1661458244"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1661458081"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1661458244"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
