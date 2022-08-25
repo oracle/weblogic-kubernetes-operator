@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -16,6 +16,27 @@ source ${SCRIPTPATH}/utils_base.sh
 #   source ${SCRIPTPATH}/utils.sh
 #   [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 #
+
+#
+# Define helper fn to copy a file only if src & tgt differ
+#
+
+function copyIfChanged() {
+  [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
+  if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
+    trace "Copying '$1' to '$2'."
+    tmp_file=$(mktemp -p $(dirname $1))
+    cp $1 tmp_file
+    mv tmp_file $2
+    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
+    if [ -O "$2" ]; then
+      chmod 770 $2
+      [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && exitOrLoop
+    fi
+  else
+    trace "Skipping copy of '$1' to '$2' -- these files already match."
+  fi
+}
 
 # exportInstallHomes
 #   purpose:  export MW_HOME, WL_HOME, ORACLE_HOME
