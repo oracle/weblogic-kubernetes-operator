@@ -3,15 +3,22 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+
+import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -103,5 +110,45 @@ public class ClusterUtils {
         clusterName,
         namespace);
   }
+  
+  /**
+   * Scale cluster by patching cluster resource replicas.
+   *
+   * @param clusterName name of the cluster resource
+   * @param namespace namespace
+   * @param replicas scale to replicas
+   * @return true if patching succeeds otherwise false
+   */
+  public static boolean scaleCluster(String clusterName, String namespace, int replicas) {
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicas + "}"
+        + "]";
+    getLogger().info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    return patchClusterCustomResource(clusterName, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
 
+  /**
+   * Add cluster to domain resource.
+   *
+   * @param clusterName name of the cluster resource
+   * @param namespace namespace
+   * @param domain domain resource object
+   * @param replicas scale to replicas
+   * @return modified domain resource object
+   */
+  public static DomainResource addClusterToDomain(String clusterName, String namespace,
+                                                  DomainResource domain, int replicas) {
+    ClusterList clusters = listClusterCustomResources(namespace);
+    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+    } else {
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
+      createClusterAndVerify(createClusterResource(clusterName, namespace, replicas));
+    }
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    return domain;
+  }
 }
