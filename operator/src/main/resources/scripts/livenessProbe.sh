@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Kubernetes periodically calls this liveness probe script to determine whether
@@ -35,9 +35,9 @@ if [ ! "${DYNAMIC_CONFIG_OVERRIDE:-notset}" = notset ]; then
       tgt_file=$tgt_dir/$tgt_file             # add back in tgt dir path
       [ -f "$tgt_file" ] && [ -z "$(diff $local_fname $tgt_file 2>&1)" ] && continue  # nothing changed
       trace "Copying file '$local_fname' to '$tgt_file'."
-      cp $local_fname $tgt_file # TBD ignore any error?
+      copyIfChanged $local_fname $tgt_file
       if [ -O "$tgt_file" ]; then
-        chmod 770 $tgt_file # TBD ignore any error?
+        chmod 770 $tgt_file
       fi
     done
     for local_fname in ${tgt_dir}/*.xml ; do
