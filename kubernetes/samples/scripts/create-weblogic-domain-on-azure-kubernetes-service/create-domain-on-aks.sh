@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -29,7 +29,7 @@ scriptDir="$(cd "$(dirname "${script}")" && pwd)"
 source ${scriptDir}/../common/utility.sh
 source ${scriptDir}/../common/validate.sh
 
-function usage {
+usage() {
   echo usage: ${script} -i file -o dir [-u uid] [-e] [-d] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
@@ -91,7 +91,7 @@ fi
 #
 # Function to exit and print an error message
 # $1 - text of message
-function fail {
+fail() {
   echo [ERROR] $*
   exit 1
 }
@@ -100,7 +100,7 @@ function fail {
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initOutputDir {
+initOutputDir() {
   aksOutputDir="$outputDir/weblogic-on-aks"
 
   scOutput="${aksOutputDir}/azure-csi-nfs.yaml"
@@ -120,7 +120,7 @@ function initOutputDir {
 #
 # Function to setup the environment to run the create Azure resource and domain job
 #
-function initialize {
+initialize() {
 
   # Validate the required files exist
   validateErrors=false
@@ -179,7 +179,7 @@ function initialize {
 #
 # Function to generate the yaml files for creating Azure resources and WebLogic Server domain
 #
-function createYamlFiles {
+createYamlFiles() {
 
   # Create a directory for this domain's output files
   mkdir -p ${aksOutputDir}
@@ -271,19 +271,9 @@ function createYamlFiles {
   rm -f ${aksOutputDir}/*.yaml-e
 }
 
-function loginAzure {
-  # login with a service principal
-  az login --service-principal --username $azureServicePrincipalAppId \
-  --password $azureServicePrincipalClientSecret \
-  --tenant $azureServicePrincipalTenantId
-  echo Login Azure with Servie Principal successfully.
+createResourceGroup() {
+  az extension add --name resource-graph
 
-  if [ $? -ne 0 ]; then
-    fail "Login to Azure failed!"
-  fi
-}
-
-function createResourceGroup {
   # Create a resource group
   echo Check if ${azureResourceGroupName} exists
   ret=$(az group exists --name ${azureResourceGroupName})
@@ -295,7 +285,7 @@ function createResourceGroup {
   az group create --name $azureResourceGroupName --location $azureLocation
 }
 
-function createAndConnectToAKSCluster {
+createAndConnectToAKSCluster() {
   # Create aks cluster
   echo Check if ${aksClusterName} exists
   ret=$(az aks list -g ${azureResourceGroupName} | grep "${aksClusterName}")
@@ -312,22 +302,21 @@ function createAndConnectToAKSCluster {
   --nodepool-name ${azureKubernetesNodepoolName} \
   --node-vm-size ${azureKubernetesNodeVMSize} \
   --location $azureLocation \
-  --service-principal $azureServicePrincipalAppId \
-  --client-secret $azureServicePrincipalClientSecret
+  --enable-managed-identity
 
   # Connect to AKS cluster
   echo Connencting to Azure Kubernetes Service.
   az aks get-credentials --resource-group $azureResourceGroupName --name $aksClusterName
 }
 
-function createFileShare {
+createFileShare() {
   # Create a storage account
   echo Check if the storage account ${storageAccountName} exists.
   ret=$(az storage account check-name --name ${storageAccountName})
   nameAvailable=$(echo "$ret" | grep "nameAvailable" | grep "false")
   if [ -n "$nameAvailable" ]; then
     echo $ret
-    fail "Storage account ${aksClusterName} is unavailable."
+    fail "Storage account ${storageAccountName} is unavailable."
   fi
 
   echo Creating Azure Storage Account ${storageAccountName}.
@@ -365,13 +354,28 @@ function createFileShare {
   checkPvcState ${persistentVolumeClaimName} "Bound"
 }
 
-function configureStorageAccountNetwork {
+configureStorageAccountNetwork() {
+  local aksObjectId=$(az aks show --name ${aksClusterName} --resource-group ${azureResourceGroupName} --query "identity.principalId" -o tsv)
+  local storageAccountId=$(az storage account show --name ${storageAccountName} --resource-group ${azureResourceGroupName} --query "id" -o tsv)
+
+  az role assignment create --assignee "${aksObjectId}" \
+    --role "Contributor" \
+    --scope "${storageAccountId}"
+
+  if [ $? != 0 ]; then
+    fail "Failed to grant the AKS cluster with Contibutor role to access the storage account."
+  fi
+
   # get the resource group name of the AKS managed resources
   local aksMCRGName=$(az aks show --name $aksClusterName --resource-group $azureResourceGroupName -o tsv --query "nodeResourceGroup")
   echo ${aksMCRGName}
 
   # get network name of AKS cluster
-  local aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+  local aksNetworkName=$(az graph query -q "Resources \
+    | where type =~ 'Microsoft.Network/virtualNetworks' \
+    | where resourceGroup  =~ '${aksMCRGName}' \
+    | project name = name" --query "data[0].name"  -o tsv)
+
   echo ${aksNetworkName}
 
   # get subnet name of AKS agent pool
@@ -397,13 +401,13 @@ function configureStorageAccountNetwork {
   fi
 }
 
-function installWebLogicOperator {
+installWebLogicOperator() {
   echo $(helm version)
   helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
   helm install weblogic-operator weblogic-operator/weblogic-operator
 }
 
-function createWebLogicDomain {
+createWebLogicDomain() {
   # Create WebLogic Server Domain Credentials.
   echo Creating WebLogic Server Domain credentials, with user ${weblogicUserName}, domainUID ${domainUID}
   bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
@@ -425,7 +429,7 @@ function createWebLogicDomain {
   kubectl apply -f ${clusterLbOutput}
 }
 
-function waitForJobComplete {
+waitForJobComplete() {
   local attempts=0
   local svcState="running"
   while [ ! "$svcState" == "completed" ] && [ ! $attempts -eq 30 ]; do
@@ -476,7 +480,7 @@ function waitForJobComplete {
   fi
 }
 
-function printSummary {
+printSummary() {
   if [ "${executeIt}" = true ]; then
     regionJsonExcerpt=$(az group list --query "[?name=='${azureResourceGroupName}']" | grep location)
     tokens=($(
@@ -542,9 +546,6 @@ createYamlFiles
 
 # All done if the execute option is true
 if [ "${executeIt}" = true ]; then
-
-  # Login Azure with service principal
-  loginAzure
 
   # Create resource group
   createResourceGroup
