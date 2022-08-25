@@ -27,7 +27,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
 
 ##### Clone WebLogic Kubernetes Operator repository
 
-Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.4.2, but should work with the latest release.
+Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.4.3, but should work with the latest release.
 
 ```shell
 $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -79,7 +79,7 @@ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-ope
 ```
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.4.2 \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.4.3 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
@@ -98,7 +98,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `3.4.2` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `3.4.3` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
