@@ -25,6 +25,10 @@ function copyIfChanged() {
   [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
+    # Copy the source file to a temporary file in the same directory as the target and then
+    # move the temporary file to the target. This is done because the target file may be read by another
+    # process during the copy operation, such as can happen for situational configuration files stored in a
+    # domain home on a persistent volume.
     tmp_file=$(mktemp -p $(dirname $2))
     cp $1 $tmp_file
     mv $tmp_file $2
