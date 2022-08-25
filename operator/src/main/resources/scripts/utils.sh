@@ -25,7 +25,7 @@ function copyIfChanged() {
   [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
-    tmp_file=$(mktemp -p $(dirname $1))
+    tmp_file=$(mktemp -p $(dirname $2))
     cp $1 $tmp_file
     mv $tmp_file $2
     [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
