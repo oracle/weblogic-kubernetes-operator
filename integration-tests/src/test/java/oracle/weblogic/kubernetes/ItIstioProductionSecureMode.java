@@ -69,7 +69,7 @@ class ItIstioProductionSecureMode {
   private final String clusterName = "cluster-1"; // do not modify
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
-  private final int replicaCount = 2;
+  private final int replicaCount = 1;
   private static LoggingFacade logger = null;
 
   /**

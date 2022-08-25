@@ -142,7 +142,7 @@ class ItIstioTwoDomainsInImage {
   void testIstioTwoDomainsWithSingleIngress() {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
-    final int replicaCount = 2;
+    final int replicaCount = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster

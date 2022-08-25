@@ -104,7 +104,7 @@ class ItProductionSecureMode {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
   private static final String domainUid = "mii-default-admin";
   private static final String configMapName = "default-admin-configmap";
   private final String adminServerPodName = domainUid + "-admin-server";
