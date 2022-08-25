@@ -25,12 +25,14 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
@@ -75,6 +77,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -671,6 +675,17 @@ public class MonitoringUtils {
   /**
    * Create Domain Cr and verity.
    *
+   * @param adminSecretName WebLogic admin credentials
+   * @param repoSecretName image repository secret name
+   * @param encryptionSecretName model encryption secret name
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
    */
   public static void createDomainCrAndVerify(String adminSecretName,
                                              String repoSecretName,
@@ -726,6 +741,20 @@ public class MonitoringUtils {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
+    // add clusters to the domain resource
+    ClusterList clusters = Cluster.listClusterCustomResources(namespace);
+    String[] clusterNames = twoClusters 
+        ? new String[]{cluster1Name, cluster2Name} : new String[]{cluster1Name};
+    for (String clusterName : clusterNames) {
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+      } else {
+        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
+        createClusterAndVerify(createClusterResource(clusterName, namespace, replicaCount));
+      }
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    }    
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
@@ -750,11 +779,18 @@ public class MonitoringUtils {
     }
     createDomainAndVerify(domain, namespace);
   }
-
-
+  
   /**
    * create domain from provided image and monitoring exporter sidecar and verify it's start.
    *
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
    */
   public static void createAndVerifyDomain(String miiImage,
                                             String domainUid,
