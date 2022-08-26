@@ -341,6 +341,14 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
   public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
 
+  // Oracle RCU setup constants
+  public static final String ORACLE_RCU_SECRET_NAME = "oracle-rcu-secret";
+  public static final String ORACLE_RCU_SECRET_VOLUME = "oracle-rcu-volume";
+  public static final String ORACLE_RCU_SECRET_MOUNT_PATH = "/oracle-rcu";
+
+  // Oracle database "no operator" constant(s)
+  public static final String ORACLE_DB_SECRET_NAME = "oracle-db-secret";
+
   //Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
