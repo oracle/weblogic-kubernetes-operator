@@ -244,62 +244,6 @@ INPUT
   echo "$clusters"
 }
 
-# Verify if cluster is defined in clusters of the Custom Resource Domain
-# args:
-# $1 Custom Resource Domain
-is_defined_in_clusters() {
-  local DOMAIN="$1"
-  local in_cluster_startup="False"
-
-  if jq_available; then
-    local inClusterStartupCmd="(.spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
-    local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}"  2>> ${log_file_name})
-    if [ "${clusterDefinedInCRD}" != "" ]; then
-      in_cluster_startup="True"
-    fi
-  else
-cat > cmds-$$.py << INPUT
-import sys, json
-outer_loop_must_break = False
-for j in json.load(sys.stdin)["spec"]["clusters"]:
-  if j["clusterName"] == "$wls_cluster_name":
-    outer_loop_must_break = True
-    print (True)
-    break
-if outer_loop_must_break == False:
-  print (False)
-INPUT
-in_cluster_startup=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
-  fi
-  echo "$in_cluster_startup"
-}
-
-# Gets the current replica count of the cluster
-# args:
-# $1 Custom Resource Domain
-get_num_ms_in_cluster() {
-  local DOMAIN="$1"
-  local num_ms
-  if jq_available; then
-  local numManagedServersCmd="(.spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
-  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}"  2>> ${log_file_name})
-  else
-cat > cmds-$$.py << INPUT
-import sys, json
-for j in json.load(sys.stdin)["spec"]["clusters"]:
-  if j["clusterName"] == "$wls_cluster_name":
-    print((j["replicas"]))
-INPUT
-  num_ms=$(echo "${DOMAIN}" | python cmds-$$.py 2>> ${log_file_name})
-  fi
-
-  if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
-    num_ms=0
-  fi
-
-  echo "$num_ms"
-}
-
 # Gets the replicas value from the Cluster. Return -1 if no replicas configured in the Cluster.
 # args:
 # $1 Cluster Custom Resource
@@ -442,34 +386,6 @@ INPUT
   eval "$__result"="${maxReplicas}"
 }
 
-# Get the current replica count for the WLS cluster if defined in the CRD's Cluster
-# configuration.  If WLS cluster is not defined in the CRD then return the Domain
-# scoped replica value, if present.  Returns replica count = 0 if no replica count found.
-# args:
-# $1 "True" if WLS cluster configuration defined in CRD, "False" otherwise
-# $2 Custom Resource Domain
-get_replica_count() {
-  local in_cluster_startup="$1"
-  local DOMAIN="$2"
-  local num_ms
-  if [ "$in_cluster_startup" == "True" ]
-  then
-    trace "$wls_cluster_name defined in clusters"
-    num_ms=$(get_num_ms_in_cluster "$DOMAIN")
-  else
-    trace "$wls_cluster_name is NOT defined in clusters"
-    num_ms=$(get_num_ms_domain_scope "$DOMAIN")
-  fi
-
-  get_min_replicas "${DOMAIN}" "${wls_cluster_name}" minReplicas
-  if [[ "${num_ms}" -lt "${minReplicas}" ]]; then
-    # Reset managed server count to minimum replicas
-    num_ms=${minReplicas}
-  fi
-
-  echo "$num_ms"
-}
-
 # Get the current replica count for the WLS cluster if defined in the Cluster
 # resource. If not defined in the Cluster resource, return the default
 # replica count from the Domain resource.
@@ -498,40 +414,21 @@ get_replica_count_from_resources() {
 # $1 scaling action (scaleUp or scaleDown)
 # $2 current replica count
 # $3 scaling increment value
-calculate_new_ms_count() {
+calculate_new_replica_count() {
   local scaling_action="$1"
   local current_replica_count="$2"
   local scaling_size="$3"
-  local new_ms
+  local new_replica
   if [ "$scaling_action" == "scaleUp" ];
   then
     # Scale up by specified scaling size
     # shellcheck disable=SC2004
-    new_ms=$((current_replica_count + scaling_size))
+    new_replica=$((current_replica_count + scaling_size))
   else
     # Scale down by specified scaling size
-    new_ms=$((current_replica_count - scaling_size))
+    new_replica=$((current_replica_count - scaling_size))
   fi
-  echo "$new_ms"
-}
-
-# Verify if requested managed server scaling count is less than the configured
-# minimum replica count for the cluster.
-# args:
-# $1 Managed server count
-# $2 Custom Resource Domain
-# $3 Cluster name
-verify_minimum_ms_count_for_cluster() {
-  local new_ms="$1"
-  local domainJson="$2"
-  local clusterName="$3"
-  # check if replica count is less than minimum replicas
-  get_min_replicas "${domainJson}" "${clusterName}" minReplicas
-  if [ "${new_ms}" -lt "${minReplicas}" ]; then
-    trace "Scaling request to new managed server count $new_ms is less than configured minimum \
-    replica count $minReplicas"
-    exit 1
-  fi
+  echo "$new_replica"
 }
 
 # Verify if requested managed server scaling count is less than the configured
@@ -540,12 +437,12 @@ verify_minimum_ms_count_for_cluster() {
 # $1 Managed server count
 # $2 Cluster Custom Resource
 verify_minimum_replicas_for_cluster() {
-  local new_ms="$1"
+  local new_replica="$1"
   local clusterJson="$2"
   # check if replica count is less than minimum replicas
   get_min_replicas_from_cluster "${clusterJson}" minReplicas
-  if [ "${new_ms}" -lt "${minReplicas}" ]; then
-    trace "Scaling request to new managed server count $new_ms is less than configured minimum \
+  if [ "${new_replica}" -lt "${minReplicas}" ]; then
+    trace "Scaling request to new managed server count $new_replica is less than configured minimum \
 replica count of $minReplicas. Exiting."
     exit 1
   fi
@@ -557,72 +454,15 @@ replica count of $minReplicas. Exiting."
 # $1 Managed server count
 # $3 Cluster name
 verify_maximum_replicas_for_cluster() {
-  local new_ms="$1"
+  local new_replica="$1"
   local clusterJson="$2"
   # check if replica count is less than minimum replicas
   get_max_replicas_from_cluster "${clusterJson}" maxReplicas
-  if [ -n "$maxReplicas" ] && [ "${new_ms}" -gt "${maxReplicas}" ]; then
-    trace "Scaling request to new managed server count $new_ms is greater than configured maximum \
+  if [ -n "$maxReplicas" ] && [ "${new_replica}" -gt "${maxReplicas}" ]; then
+    trace "Scaling request to new managed server count $new_replica is greater than configured maximum \
 replica count of $maxReplicas. Exiting."
     exit 1
   fi
-}
-
-# calculate target replica count
-# args:
-# $1 sacling action - scaleUp or scaleDown
-# $2 scaling size
-# $3 Cluster Custom Resource
-# $4 Domain Custom Resource
-find_target_replicas() {
-  local scaling_action="$1"
-  local scaling_size="$2"
-  local CLUSTER="$3"
-  local DOMAIN="$4"
-  local new_ms
-
-  if [ -z "$CLUSTER" ]; then
-
-    # Cluster resource not found. Should not be allowed to scale this cluster.
-
-    # However, for the time being, we are keeping old code that use older domain
-    # resource with clusters config to avoid breaking existing tests.
-    # *** To be removed later. ***
-    trace "Cluster resource not found. Assuming clusters still defined in Domain resource"
-
-    # Determine if WLS cluster has configuration in Domain Resource
-    in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
-
-    # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
-    # depending on whether the specified cluster is defined in clusters
-    # or not.
-    current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
-    trace "current number of managed servers is $current_replica_count"
-
-    # Calculate new managed server count
-    new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
-
-    # Verify the requested new managed server count is not less than
-    # configured minimum replica count for the cluster
-    verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
-
-  else
-
-    trace "Cluster resource found."
-
-    # Retrieve replica count from Cluster or Domain Resource.
-    current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
-    trace "current number of managed servers is $current_replica_count"
-
-    # Calculate new managed server count
-    new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
-
-    # Verify the requested new managed server count
-    verify_minimum_replicas_for_cluster "$new_ms" "$CLUSTER"
-    verify_maximum_replicas_for_cluster "$new_ms" "$CLUSTER"
-
-  fi
-  echo "$new_ms"
 }
 
 # Create the REST endpoint CA certificate in PEM format
@@ -643,10 +483,10 @@ create_ssl_certificate_file() {
 # args:
 # $1 replica count
 get_request_body() {
-local new_ms="$1"
+local new_replica="$1"
 local request_body=$(cat <<EOF
 {
-    "managedServerCount": $new_ms
+    "managedServerCount": $new_replica
 }
 EOF
 )
@@ -740,13 +580,27 @@ DOMAIN=$(get_custom_resource_domain)
 cluster_api_version="v1"
 CLUSTER=$(find_cluster_resource_with_cluster_name "$DOMAIN" "$wls_cluster_name")
 
-new_ms=$(find_target_replicas "$scaling_action" "$scaling_size" "$CLUSTER" "$DOMAIN")
+if [ -z "${CLUSTER}" ]; then
+  trace "Cluster resource for ${wls_cluster_name} not found. Exiting."
+  exit 1
+fi
+
+# Retrieve replica count from Cluster or Domain Resource.
+current_replica_count=$(get_replica_count_from_resources "$CLUSTER" "$DOMAIN")
+trace "current number of managed servers is $current_replica_count"
+
+# Calculate new replica count
+new_replica=$(calculate_new_replica_count "$scaling_action" "$current_replica_count" "$scaling_size")
+
+# Verify the requested new managed server count
+verify_minimum_replicas_for_cluster "$new_replica" "$CLUSTER"
+verify_maximum_replicas_for_cluster "$new_replica" "$CLUSTER"
 
 # Cleanup cmds-$$.py
 [ -e cmds-$$.py ] && rm cmds-$$.py
 
 # Create the scaling request body
-request_body=$(get_request_body "$new_ms")
+request_body=$(get_request_body "$new_replica")
 
 content_type="Content-Type: application/json"
 requested_by="X-Requested-By: WLDF"
@@ -759,7 +613,7 @@ create_ssl_certificate_file "$pem_filename"
 # Operator Service REST URL for scaling
 operator_url="https://$operator_service_name.$operator_namespace.svc.cluster.local:$port/operator/v1/domains/$wls_domain_uid/clusters/$wls_cluster_name/scale"
 
-trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url "
+trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | oldReplica: $current_replica_count | newReplica: $new_replica | operator_url: $operator_url "
 
 # send REST request to Operator
 if [ -e $pem_filename ]
