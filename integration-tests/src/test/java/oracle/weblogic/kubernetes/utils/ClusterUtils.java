@@ -62,24 +62,6 @@ public class ClusterUtils {
   }
 
   /**
-   * Create cluster custom resource object.
-   *
-   * @param clusterResName cluster resource name
-   * @param domainUid uid of the domain to which the cluster belongs to
-   * @param namespace in which the cluster object exists
-   * @param clusterSpec cluster specification
-   * @return cluster resource object
-   */
-  public static ClusterResource createClusterResource(String clusterResName, String domainUid,
-                                                      String namespace, ClusterSpec clusterSpec) {
-    return new ClusterResource()
-        .withKind("Cluster")
-        .withApiVersion(CLUSTER_API_VERSION)
-        .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterResName))
-        .spec(clusterSpec);
-  }
-
-  /**
    * Create a cluster in the specified namespace and wait up to five minutes until the cluster exists.
    * @param cluster clusters.weblogic.oracle object to create cluster custom resource
    */
