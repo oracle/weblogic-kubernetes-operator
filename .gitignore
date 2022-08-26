@@ -45,3 +45,4 @@ dependency-reduced-pom.xml
 *.iws
 docs-source/docs
 .git/logs
+**/.hugo_build.lock
