@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -85,15 +86,20 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
   }
 
   private boolean isReplicaCountValid() {
-    boolean isValid = getClusterReplicaCount() != null
+    boolean isValid = skipReplicaCountValidation(proposedCluster.getStatus())
+        || (getClusterReplicaCount() != null
         ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
-        : isDomainReplicaCountValid();
+        : isDomainReplicaCountValid());
 
     if (!isValid) {
       messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
           existingCluster.getClusterName(), getClusterSize(existingCluster.getStatus())));
     }
     return isValid;
+  }
+
+  private boolean skipReplicaCountValidation(ClusterStatus clusterStatus) {
+    return getClusterSizeOptional(clusterStatus).isEmpty();
   }
 
   private Integer getClusterReplicaCount() {

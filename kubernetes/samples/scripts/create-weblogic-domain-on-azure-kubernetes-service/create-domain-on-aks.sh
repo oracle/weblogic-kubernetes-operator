@@ -271,19 +271,9 @@ createYamlFiles() {
   rm -f ${aksOutputDir}/*.yaml-e
 }
 
-loginAzure() {
-  # login with a service principal
-  az login --service-principal --username $azureServicePrincipalAppId \
-  --password $azureServicePrincipalClientSecret \
-  --tenant $azureServicePrincipalTenantId
-  echo Login Azure with Servie Principal successfully.
-
-  if [ $? -ne 0 ]; then
-    fail "Login to Azure failed!"
-  fi
-}
-
 createResourceGroup() {
+  az extension add --name resource-graph
+
   # Create a resource group
   echo Check if ${azureResourceGroupName} exists
   ret=$(az group exists --name ${azureResourceGroupName})
@@ -312,8 +302,7 @@ createAndConnectToAKSCluster() {
   --nodepool-name ${azureKubernetesNodepoolName} \
   --node-vm-size ${azureKubernetesNodeVMSize} \
   --location $azureLocation \
-  --service-principal $azureServicePrincipalAppId \
-  --client-secret $azureServicePrincipalClientSecret
+  --enable-managed-identity
 
   # Connect to AKS cluster
   echo Connencting to Azure Kubernetes Service.
@@ -327,7 +316,7 @@ createFileShare() {
   nameAvailable=$(echo "$ret" | grep "nameAvailable" | grep "false")
   if [ -n "$nameAvailable" ]; then
     echo $ret
-    fail "Storage account ${aksClusterName} is unavailable."
+    fail "Storage account ${storageAccountName} is unavailable."
   fi
 
   echo Creating Azure Storage Account ${storageAccountName}.
@@ -366,12 +355,27 @@ createFileShare() {
 }
 
 configureStorageAccountNetwork() {
+  local aksObjectId=$(az aks show --name ${aksClusterName} --resource-group ${azureResourceGroupName} --query "identity.principalId" -o tsv)
+  local storageAccountId=$(az storage account show --name ${storageAccountName} --resource-group ${azureResourceGroupName} --query "id" -o tsv)
+
+  az role assignment create --assignee "${aksObjectId}" \
+    --role "Contributor" \
+    --scope "${storageAccountId}"
+
+  if [ $? != 0 ]; then
+    fail "Failed to grant the AKS cluster with Contibutor role to access the storage account."
+  fi
+
   # get the resource group name of the AKS managed resources
   local aksMCRGName=$(az aks show --name $aksClusterName --resource-group $azureResourceGroupName -o tsv --query "nodeResourceGroup")
   echo ${aksMCRGName}
 
   # get network name of AKS cluster
-  local aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+  local aksNetworkName=$(az graph query -q "Resources \
+    | where type =~ 'Microsoft.Network/virtualNetworks' \
+    | where resourceGroup  =~ '${aksMCRGName}' \
+    | project name = name" --query "data[0].name"  -o tsv)
+
   echo ${aksNetworkName}
 
   # get subnet name of AKS agent pool
@@ -542,9 +546,6 @@ createYamlFiles
 
 # All done if the execute option is true
 if [ "${executeIt}" = true ]; then
-
-  # Login Azure with service principal
-  loginAzure
 
   # Create resource group
   createResourceGroup

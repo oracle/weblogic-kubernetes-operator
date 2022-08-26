@@ -8,17 +8,6 @@ version: create-domain-on-aks-inputs-v1
 # Parameters that must be changed from these values!
 #
 
-# The service principal is used to login to azure and create an azure kubernetes cluster.
-# If you don't have a service principal, please follow README.md
-# Application id of the service principal.
-azureServicePrincipalAppId: azure-service-principal-app-id
-
-# A client secret of the service principal.
-azureServicePrincipalClientSecret: azure-service-principal-client-secret
-
-# Tenant (Directory) id of the service principal.
-azureServicePrincipalTenantId: azure-service-principal-tenant-id
-
 # Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image.
 dockerEmail: docker-email
 

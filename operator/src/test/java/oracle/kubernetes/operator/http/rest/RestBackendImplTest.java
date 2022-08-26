@@ -335,6 +335,18 @@ class RestBackendImplTest {
   }
 
   @Test
+  void whenPerClusterResourceReplicaSetting_NullReplica_scaleClusterUpdatesClusterResource() {
+    final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, CLUSTER_1);
+    clusterResource.getSpec().setReplicas(null);
+    testSupport.defineResources(clusterResource);
+
+    configureDomain().withClusterReference(clusterResource.getMetadata().getName());
+    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
+
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
   void whenMultipleClusterResourceWithSameClusterName_scaleClusterUpdatesClusterInCorrectDomain() {
     defineClusterResources(new String[] {DOMAIN2, DOMAIN1, DOMAIN3}, new String[] {NS, NS, NS});
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
