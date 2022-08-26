@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -92,26 +92,9 @@ spec:
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The name of each Cluster resource
   clusters:
-  - clusterName: cluster-1
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: @@DOMAIN_UID@@-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -151,3 +134,19 @@ spec:
 
       # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
       #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: @@DOMAIN_UID@@-cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: @@DOMAIN_NAMESPACE@@
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID:  @@DOMAIN_UID@@
+spec:
+  # This must match a cluster name that is  specified in the WebLogic configuration
+  clusterName: cluster-1
+  replicas: 2
