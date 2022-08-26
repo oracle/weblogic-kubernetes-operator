@@ -89,7 +89,7 @@ spec:
 
   # The name of each Cluster resource
   clusters:
-  - name: sample-domain1-cluster-1
+  - name: sample-domain2-cluster-1
 
 
   # Change the restartVersion to force the introspector job to rerun
@@ -124,12 +124,12 @@ spec:
 apiVersion: "weblogic.oracle/v1"
 kind: Cluster
 metadata:
-  name: sample-domain1-cluster-1
+  name: sample-domain2-cluster-1
   # Update this with the namespace your domain will run in:
   namespace: sample-domain1-ns
   labels:
     # Update this with the `domainUID` of your domain:
-    weblogic.domainUID: sample-domain1
+    weblogic.domainUID: sample-domain2
 
 spec:
   # This must match a cluster name that is  specified in the WebLogic configuration
