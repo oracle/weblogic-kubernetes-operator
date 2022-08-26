@@ -37,7 +37,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILA
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -63,6 +62,7 @@ public class DomainStatus {
 
   @Description("The generation observed by the WebLogic operator.")
   private Long observedGeneration;
+
 
   /**
    * The number of introspector job failures since the last success.
@@ -155,7 +155,7 @@ public class DomainStatus {
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (newCondition.isNotValid()) {
       throw new IllegalArgumentException("May not add condition " + newCondition);
-    } else if (isRetriableFailure(newCondition)) {
+    } else if (newCondition.isRetriableFailure()) {
       lastFailureTime = newCondition.getLastTransitionTime();
     }
 
@@ -176,10 +176,6 @@ public class DomainStatus {
     return this;
   }
 
-  private boolean isRetriableFailure(DomainCondition selected) {
-    return selected.getType() == FAILED && selected.getSeverity() == SEVERE;
-  }
-
   private void unmarkMatchingCondition(DomainCondition newCondition) {
     conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMarkForDeletion);
   }
@@ -188,10 +184,23 @@ public class DomainStatus {
     final DomainCondition selected = getSummaryCondition();
     reason = Optional.ofNullable(selected.getReason()).map(DomainFailureReason::toString).orElse(null);
     message = selected.getMessage();
-    if (isRetriableFailure(selected)) {
+    if (selected.isRetriableFailure()) {
       initialFailureTime = Optional.ofNullable(initialFailureTime).orElse(selected.getLastTransitionTime());
     } else {
       initialFailureTime = lastFailureTime = null;
+    }
+  }
+
+  /**
+   * Updates the summary message with retry information, if applicable.
+   * @param retryMessageFactory an object which can create a summary message with retry information
+   */
+  public void updateSummaryMessage(RetryMessageFactory retryMessageFactory) {
+    DomainCondition selected = getSummaryCondition();
+    if (retryMessageFactory != null && selected.isRetriableFailure()) {
+      message = retryMessageFactory.createRetryMessage(this, selected);
+    } else {
+      message = selected.getMessage();
     }
   }
 
@@ -715,5 +724,4 @@ public class DomainStatus {
   private boolean isFatalIntrospectorMessage(String statusMessage) {
     return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
   }
-
 }

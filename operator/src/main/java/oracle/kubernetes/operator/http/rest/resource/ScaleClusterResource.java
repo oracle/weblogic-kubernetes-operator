@@ -41,7 +41,7 @@ public class ScaleClusterResource extends BaseResource {
   @Consumes(MediaType.APPLICATION_JSON)
   public void post(final ScaleClusterParamsModel params) {
     LOGGER.entering(href(), params);
-    getBackend().scaleCluster(getDomainUid(), getCluster(), params.getManagedServerCount());
+    getBackend().scaleCluster(getDomainUid(), getCluster(), params.getReplicas());
     LOGGER.exiting();
   }
 

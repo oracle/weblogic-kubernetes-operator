@@ -5,7 +5,7 @@ The following Azure resources have been created:
   Resource groups: ejb8191resourcegroup1597641911, MC_ejb8191resourcegroup1597641911_ejb8191akscluster1597641911_eastus
 ```
 
-Given the previously listed output, the following Azure CLI commands will delete the resource groups.
+Given the above output, the following Azure CLI commands will delete the resource groups.
 
 ```shell
 $ az group delete --yes --no-wait --name ejb8191resourcegroup1597641911
