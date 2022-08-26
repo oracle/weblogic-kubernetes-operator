@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.gson.Gson;
+import io.kubernetes.client.openapi.models.V1ScaleSpec;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
@@ -228,9 +229,23 @@ class OperatorRestTest extends RestTestBase {
     assertThat(restBackend.getNumManagedServers("uid1", "cluster1"), equalTo(3));
   }
 
+  @Test
+  void scaleExistingCluster_managedServerCount_request() {
+    defineClusters("uid1", "cluster1", "cluster2");
+
+    sendManagedServerCountScaleRequest("cluster1", 4);
+
+    assertThat(restBackend.getNumManagedServers("uid1", "cluster1"), equalTo(4));
+  }
+
   private Response sendScaleRequest(String cluster, int numManagedServers) {
     return createRequest(DOMAIN1_CLUSTERS_HREF + String.format("/%s/scale", cluster))
         .post(createScaleRequest(numManagedServers));
+  }
+
+  private Response sendManagedServerCountScaleRequest(String cluster, int numManagedServers) {
+    return createRequest(DOMAIN1_CLUSTERS_HREF + String.format("/%s/scale", cluster))
+        .post(createManagedServerCountScaleRequest(numManagedServers));
   }
 
   @Test
@@ -280,6 +295,16 @@ class OperatorRestTest extends RestTestBase {
   }
 
   private ScaleClusterParamsModel createScaleClusterParams(int count) {
+    ScaleClusterParamsModel params = new ScaleClusterParamsModel();
+    params.setSpec(new V1ScaleSpec().replicas(count));
+    return params;
+  }
+
+  private Entity<ScaleClusterParamsModel> createManagedServerCountScaleRequest(int count) {
+    return Entity.entity(createManagedServerCountScaleClusterParams(count), MediaType.APPLICATION_JSON);
+  }
+
+  private ScaleClusterParamsModel createManagedServerCountScaleClusterParams(int count) {
     ScaleClusterParamsModel params = new ScaleClusterParamsModel();
     params.setManagedServerCount(count);
     return params;
