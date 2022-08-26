@@ -138,7 +138,7 @@ public class CommonMiiTestUtils {
       int replicaCount
   ) {
     return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, 
-        adminServerPodName, managedServerPrefix, replicaCount, null);
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList("cluster-1"));
   }
   
   /**
