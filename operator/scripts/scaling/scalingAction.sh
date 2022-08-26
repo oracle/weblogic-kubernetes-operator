@@ -486,7 +486,10 @@ get_request_body() {
 local new_replica="$1"
 local request_body=$(cat <<EOF
 {
-    "managedServerCount": $new_replica
+  "spec":
+  {
+    "replicas": $new_replica
+  }
 }
 EOF
 )
@@ -607,7 +610,7 @@ requested_by="X-Requested-By: WLDF"
 authorization="Authorization: Bearer $access_token"
 pem_filename="weblogic_operator-$$.pem"
 
-# Create PEM file for Opertor SSL Certificate
+# Create PEM file for Operator SSL Certificate
 create_ssl_certificate_file "$pem_filename"
 
 # Operator Service REST URL for scaling
