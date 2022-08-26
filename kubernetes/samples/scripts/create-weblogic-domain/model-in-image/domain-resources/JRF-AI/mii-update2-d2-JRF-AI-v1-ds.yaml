@@ -92,9 +92,10 @@ spec:
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The name of each Cluster resource
   clusters:
-  - name: cluster-1
+  - name: sample-domain1-cluster-1
+
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -155,7 +156,7 @@ spec:
 apiVersion: "weblogic.oracle/v1"
 kind: Cluster
 metadata:
-  name: cluster-1
+  name: sample-domain1-cluster-1
   # Update this with the namespace your domain will run in:
   namespace: sample-domain1-ns
   labels:
@@ -163,4 +164,6 @@ metadata:
     weblogic.domainUID: sample-domain1
 
 spec:
+  # This must match a cluster name that is  specified in the WebLogic configuration
+  clusterName: cluster-1
   replicas: 2
