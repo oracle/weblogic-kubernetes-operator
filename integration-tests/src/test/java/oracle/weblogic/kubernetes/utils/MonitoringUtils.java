@@ -743,18 +743,18 @@ public class MonitoringUtils {
 
     // add clusters to the domain resource
     ClusterList clusters = Cluster.listClusterCustomResources(namespace);
-    if (twoClusters) {
-      for (String clusterName : new String[]{cluster1Name, cluster2Name}) {
-        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
-        } else {
-          getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
-          createClusterAndVerify(createClusterResource(clusterName, namespace, replicaCount));
-        }
-        // set cluster references
-        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    //if (twoClusters) {
+    for (String clusterName : new String[]{cluster1Name, cluster2Name}) {
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+      } else {
+        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
+        createClusterAndVerify(createClusterResource(clusterName, namespace, replicaCount));
       }
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     }
+    //}
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
