@@ -53,7 +53,6 @@ import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -73,9 +72,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_MOUNT_PATH;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_VOLUME;
-import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_MOUNT_PATH;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -1083,11 +1082,12 @@ public class DbUtils {
    * @return volume
    */
   private static V1Volume secretVolume(String volumeName, String secretName) {
-     return new V1Volume()
-                .name(volumeName)
-                .secret(new V1SecretVolumeSource()
-                            .secretName(secretName)
-                            .defaultMode(420));
+    return
+        new V1Volume()
+            .name(volumeName)
+            .secret(new V1SecretVolumeSource()
+                .secretName(secretName)
+                .defaultMode(420));
   }
 
   /**
@@ -1107,8 +1107,9 @@ public class DbUtils {
    * @return volume mount
    */
   private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
-    return new V1VolumeMount()
-               .name(volumeName)
-               .mountPath(mountPath);
+    return
+        new V1VolumeMount()
+            .name(volumeName)
+            .mountPath(mountPath);
   }
 }
