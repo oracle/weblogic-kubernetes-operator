@@ -45,8 +45,12 @@ public abstract class AdmissionChecker {
     return perLine(messages);
   }
 
+  Optional<Integer> getClusterSizeOptional(ClusterStatus clusterStatus) {
+    return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas);
+  }
+
   int getClusterSize(ClusterStatus clusterStatus) {
-    return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas).orElse(0);
+    return getClusterSizeOptional(clusterStatus).orElse(0);
   }
 
   int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
