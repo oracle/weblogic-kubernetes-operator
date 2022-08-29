@@ -348,7 +348,7 @@ public interface TestConstants {
   // Oracle RCU setup constants
   public static final String ORACLE_RCU_SECRET_NAME = "oracle-rcu-secret";
   public static final String ORACLE_RCU_SECRET_VOLUME = "oracle-rcu-volume";
-  public static final String ORACLE_RCU_SECRET_MOUNT_PATH = "/oracle-rcu";
+  public static final String ORACLE_RCU_SECRET_MOUNT_PATH = "/rcu-secret";
 
   // Oracle database "no operator" constant(s)
   public static final String ORACLE_DB_SECRET_NAME = "oracle-db-secret";
