@@ -41,6 +41,10 @@ public class ClusterResource implements KubernetesObject {
     return Optional.ofNullable(spec.getClusterName()).orElse(getMetadata().getName());
   }
 
+  public String getClusterResourceName() {
+    return metadata.getName();
+  }
+
   public Integer getReplicas() {
     return spec.getReplicas();
   }
