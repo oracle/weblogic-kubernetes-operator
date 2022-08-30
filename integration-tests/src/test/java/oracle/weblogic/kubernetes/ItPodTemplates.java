@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -130,7 +131,7 @@ class ItPodTemplates {
   private void createAndVerifyPodFromTemplate(String imageName,
                                               String domainHomeSource,
                                               String domainName,
-                                              String domainHome) throws io.kubernetes.client.openapi.ApiException {
+                                              String domainHome) throws ApiException {
     createAndVerifyDomain(imageName,  domainHomeSource, replicaCount);
     String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
     V1Pod managedServerPod = Kubernetes.getPod(domainNamespace, null, managedServerPodName);
@@ -298,7 +299,7 @@ class ItPodTemplates {
     logger.info(Yaml.dump(clusterSpec));
     ClusterResource cluster = 
          createClusterResource(clusterName, domainNamespace, clusterSpec);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterName, domainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
