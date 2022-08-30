@@ -67,19 +67,21 @@ public class ClusterUtils {
    */
   public static void createClusterAndVerify(ClusterResource cluster) {
     LoggingFacade logger = getLogger();
+
+    assertNotNull(cluster, "cluster is null");
     String clusterResourceName = cluster.getClusterResourceName();
     String namespace = cluster.getNamespace();
+
     // create the cluster CR
-    assertNotNull(cluster, "cluster is null");
     assertNotNull(cluster.getSpec(), "cluster spec is null");
     assertNotNull(clusterResourceName, "clusterResourceName is null");
 
-    logger.info("Creating cluster custom resource for clusterName {0} in namespace {1}",
+    logger.info("Creating cluster custom resource for clusterResourceName {0} in namespace {1}",
         clusterResourceName, namespace);
     assertTrue(assertDoesNotThrow(() -> createClusterCustomResource(cluster),
             String.format("Create cluster custom resource failed with ApiException for %s in namespace %s",
                 clusterResourceName, namespace)),
-        String.format("Create cluster custom resource failed with ApiException for %s in namespace %s",
+        String.format("Create cluster custom resource failed for %s in namespace %s",
             clusterResourceName, namespace));
 
     // wait for the cluster to exist
