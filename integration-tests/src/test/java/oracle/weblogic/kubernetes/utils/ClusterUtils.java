@@ -67,28 +67,30 @@ public class ClusterUtils {
    */
   public static void createClusterAndVerify(ClusterResource cluster) {
     LoggingFacade logger = getLogger();
-    String clusterName = cluster.getSpec().getClusterName();
-    String namespace = cluster.getNamespace();
-    // create the cluster CR
-    assertNotNull(cluster, "cluster is null");
-    assertNotNull(cluster.getSpec(), "cluster spec is null");
-    assertNotNull(clusterName, "clusterName is null");
 
-    logger.info("Creating cluster custom resource for clusterName {0} in namespace {1}",
-        clusterName, namespace);
+    assertNotNull(cluster, "cluster is null");
+    String clusterResourceName = cluster.getClusterResourceName();
+    String namespace = cluster.getNamespace();
+
+    // create the cluster CR
+    assertNotNull(cluster.getSpec(), "cluster spec is null");
+    assertNotNull(clusterResourceName, "clusterResourceName is null");
+
+    logger.info("Creating cluster custom resource for clusterResourceName {0} in namespace {1}",
+        clusterResourceName, namespace);
     assertTrue(assertDoesNotThrow(() -> createClusterCustomResource(cluster),
             String.format("Create cluster custom resource failed with ApiException for %s in namespace %s",
-                clusterName, namespace)),
-        String.format("Create cluster custom resource failed with ApiException for %s in namespace %s",
-            clusterName, namespace));
+                clusterResourceName, namespace)),
+        String.format("Create cluster custom resource failed for %s in namespace %s",
+            clusterResourceName, namespace));
 
     // wait for the cluster to exist
     logger.info("Checking for cluster custom resource in namespace {0}", namespace);
     testUntil(
-        clusterExists(clusterName, CLUSTER_VERSION, namespace),
+        clusterExists(clusterResourceName, CLUSTER_VERSION, namespace),
         logger,
         "cluster {0} to be created in namespace {1}",
-        clusterName,
+        clusterResourceName,
         namespace);
   }  
   

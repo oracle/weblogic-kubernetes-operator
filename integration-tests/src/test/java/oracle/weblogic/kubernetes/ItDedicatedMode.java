@@ -37,9 +37,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -52,7 +51,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The current class verifies various use cases related to Dedicated
@@ -249,6 +247,8 @@ class ItDedicatedMode {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
+
+    domain = addClusterToDomain("cluster-1", domainNamespace, domain, replicaCount);
     setPodAntiAffinity(domain);
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
@@ -290,19 +290,4 @@ class ItDedicatedMode {
     }
   }
 
-  private void uninstallOperatorAndVerify() {
-    // uninstall operator
-    assertTrue(uninstallOperator(opHelmParams),
-        String.format("Uninstall operator failed in namespace %s", opNamespace));
-
-    // delete service account
-    assertTrue(deleteServiceAccount(opServiceAccount,opNamespace),
-        String.format("Delete service acct %s failed in namespace %s", opServiceAccount, opNamespace));
-
-    // delete secret/base-images-repo-secret
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete secret/base-images-repo-secret -n " + opNamespace + " --ignore-not-found"))
-        .execute();
-  }
 }

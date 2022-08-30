@@ -41,6 +41,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -400,6 +401,10 @@ public class IstioUtils {
                     .onlineUpdate(new OnlineUpdate().enabled(true))
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource
+    domain = addClusterToDomain(clusterName, domNamespace, domain, replicaCount);
+
     if (monexpConfig != null) {
       LoggingFacade logger = getLogger();
       logger.info("yaml config file path : " + monexpConfig);

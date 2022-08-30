@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createAndPushMiiImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainWithIstioMultiClusters;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -458,10 +459,17 @@ class ItIstioManagedCoherence {
                 .model(new Model()
                     .domainType("WLS"))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource in mii domain
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+      domain = addClusterToDomain(CLUSTER_NAME_PREFIX + i, domainInImageNamespace, domain, replicaCount);
+    }
     setPodAntiAffinity(domain);
+
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainInImageNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
+    DomainResource domain1 = domain;
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain1),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainInImageNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
