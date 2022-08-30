@@ -19,7 +19,7 @@ usage() {
     $(basename $0) [ -l count ] [ -u count ] [ -d count ] [ -s count ] [ -n ] [ -? ]
 
     -l count : Number of lower case characters (default $l_count_default).
-    -u count : Number of upper case characters (default $d_count_default).
+    -u count : Number of upper case characters (default $u_count_default).
     -d count : Number of digit characters (default $d_count_default).
     -s count : Number of special characters (default $s_count_default).
 
