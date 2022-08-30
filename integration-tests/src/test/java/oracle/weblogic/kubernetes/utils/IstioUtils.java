@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -41,6 +42,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
@@ -421,6 +424,12 @@ public class IstioUtils {
       logger.info("Created domain CR with Monitoring exporter configuration : "
           + domain.getSpec().getMonitoringExporter().toString());
     }
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+    getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     setPodAntiAffinity(domain);
     return domain;
   }
