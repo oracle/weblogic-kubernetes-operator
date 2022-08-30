@@ -53,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContains;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -373,24 +374,16 @@ class ItMiiDynamicUpdatePart3 {
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {
-    // verify the introspector pod is created
-    logger.info("Verifying introspector pod is created");
-    String introspectJobName = getIntrospectJobName(domainUid);
 
-    // check whether the introspector log contains the expected error message
-    logger.info("verifying that the introspector log contains the expected error message");
+    logger.info("Verifying operator pod log for introspector error messages");
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, helper.opNamespace));
     testUntil(
-        () -> podLogContainsExpectedErrorMsg(introspectJobName, helper.domainNamespace, expectedErrorMsg),
+        () -> assertDoesNotThrow(() -> checkPodLogContains(expectedErrorMsg, operatorPodName, helper.opNamespace),
+            String.format("Checking operator pod %s log failed", operatorPodName)),
         logger,
-        "Checking for the log of introspector pod contains the expected error msg {0}",
+        "Checking operator log for introspector logs contains the expected error msg {0}",
         expectedErrorMsg);
-
-    // check the status phase of the introspector pod is failed
-    logger.info("verifying the status phase of the introspector pod is failed");
-    testUntil(
-        () -> podStatusPhaseContainsString(helper.domainNamespace, introspectJobName, V1PodStatus.PhaseEnum.FAILED),
-        logger,
-        "Checking for status phase of introspector pod is failed");
 
     // check that the domain status message contains the expected error msg
     logger.info("verifying the domain status message contains the expected error msg");
