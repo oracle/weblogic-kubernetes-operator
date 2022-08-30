@@ -122,6 +122,10 @@ public interface TestConstants {
       DB_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
+  // WebLogic Base Image with Japanese Locale
+  public static final String LOCALE_IMAGE_NAME = "phx.ocir.io/weblogick8s/test-images/weblogic";
+  public static final String LOCALE_IMAGE_TAG = "12.2.1.4-jp";
+
   // For kind, replace repo name in image name with KIND_REPO, 
   // otherwise use the actual image name
   // For example, if the image name is
