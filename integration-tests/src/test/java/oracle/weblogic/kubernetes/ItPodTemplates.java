@@ -114,11 +114,11 @@ class ItPodTemplates {
           "Image",
           "domain1",
           WDT_BASIC_IMAGE_DOMAINHOME),
-        String.format("testPodTemplateUsingVariablesDomainInImage fails"));
+        String.format("Creating Domain resource with serverPod template failed"));
   }
 
   /**
-   * Create domain Domain resource with added labels and annotations to the 
+   * Create Domain resource with added labels and annotations to the 
    * serverPod section using following variables ...
    * $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID),
    * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME).
