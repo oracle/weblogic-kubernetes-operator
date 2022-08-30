@@ -317,7 +317,7 @@ public class CommonMiiTestUtils {
                 .introspectorJobActiveDeadlineSeconds(600L)));
 
     domain.spec().setImagePullSecrets(secrets);
-    
+
     ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
     if (clusterNames != null) {
       for (String clusterName : clusterNames) {
@@ -1503,11 +1503,11 @@ public class CommonMiiTestUtils {
     }
 
     // construct the cluster list used for domain custom resource
-    List<ClusterSpec> clusterSpecList = new ArrayList<>();
     List<V1LocalObjectReference> clusterRefList = new ArrayList<>();
     for (int i = numOfClusters; i >= 1; i--) {
+      String clusterName = "cluster-" + i;
       ClusterSpec clusterSpec = new ClusterSpec()
-          .clusterName("cluster-" + i)
+          .clusterName(clusterName)
           .replicas(replicaCount);
 
       if (serverPodLabels != null) {
@@ -1515,9 +1515,9 @@ public class CommonMiiTestUtils {
             .labels(serverPodLabels));
       }
 
-      clusterSpecList.add(clusterSpec);
+      clusterRefList.add(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
 
-      clusterRefList.add(new V1LocalObjectReference().name("cluster-" + i));
+      createClusterAndVerify(createClusterResource(domainUid + "-" + clusterName, domainNamespace, clusterSpec));
     }
 
     // set resource request and limit
