@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
@@ -681,9 +682,8 @@ class ItUsabilityOperatorHelmChart {
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
-      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
+      createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", op2Namespace);
-
 
       //upgrade operator to add domain
       OperatorParams opParams = new OperatorParams()
@@ -702,19 +702,21 @@ class ItUsabilityOperatorHelmChart {
             "can't start or verify domain in namespace " + domain2Namespace);
         isDomain2Running = true;
       }
+
       //verify operator can scale domain
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
           "Domain2 " + domain2Namespace + " scaling operation failed");
+
       String managedServerPodName2 = domain2Uid + managedServerPrefix + replicaCountDomain2;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
           managedServerPodName2, domain2Namespace);
+
       assertDoesNotThrow(() -> checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
           "operator failed to manage domain2, scaling was not succeeded for " + managedServerPodName2);
+
       --replicaCountDomain2;
       logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
-
-
     } finally {
       uninstallOperator(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
@@ -973,7 +975,11 @@ class ItUsabilityOperatorHelmChart {
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
+
+    // add cluster to the domain
+    domain = addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
     setPodAntiAffinity(domain);
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);

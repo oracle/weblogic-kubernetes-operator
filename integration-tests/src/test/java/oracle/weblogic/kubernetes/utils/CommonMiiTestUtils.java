@@ -138,7 +138,7 @@ public class CommonMiiTestUtils {
       int replicaCount
   ) {
     return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, 
-        adminServerPodName, managedServerPrefix, replicaCount, null);
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList("cluster-1"));
   }
   
   /**
@@ -319,16 +319,18 @@ public class CommonMiiTestUtils {
     domain.spec().setImagePullSecrets(secrets);
     
     ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
-    for (String clusterName : clusterNames) {
-      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
-      } else {
-        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
-        createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
+    if (clusterNames != null) {
+      for (String clusterName : clusterNames) {
+        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+        } else {
+          getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+          createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
+        }
+        // set cluster references
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
       }
-      // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
-    }   
+    }
 
     setPodAntiAffinity(domain);
     return domain;
