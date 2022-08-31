@@ -82,12 +82,11 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
    */
   @Override
   public boolean isProposedChangeAllowed() {
-    return isUnchanged() || isReplicaCountValid();
+    return isUnchanged() || skipValidation(proposedCluster.getStatus()) || isReplicaCountValid();
   }
 
   private boolean isReplicaCountValid() {
-    boolean isValid = skipReplicaCountValidation(proposedCluster.getStatus())
-        || (getClusterReplicaCount() != null
+    boolean isValid = (getClusterReplicaCount() != null
         ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
         : isDomainReplicaCountValid());
 
@@ -98,7 +97,7 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
     return isValid;
   }
 
-  private boolean skipReplicaCountValidation(ClusterStatus clusterStatus) {
+  private boolean skipValidation(ClusterStatus clusterStatus) {
     return getClusterSizeOptional(clusterStatus).isEmpty();
   }
 

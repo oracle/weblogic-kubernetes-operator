@@ -291,6 +291,42 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
+   * Test domain status condition with replicas set to more than maximum size of the WebLogic cluster created followed
+   * by changing it to a new value that is still too high.
+   * Verify the patching operation fails.
+   */
+  @Test
+  @DisplayName("Test domain patch operation fails when replicas set to more than available in cluster")
+  void testReplicasTooHighNegative() {
+    boolean testPassed = false;
+    String domainName = getDomainName();
+    String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+
+    logger.info("Creating domain resource with replicas=100");
+    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image);
+
+    logger.info("Creating domain");
+    createDomainAndVerify(domain, domainNamespace);
+
+    //check the desired completed, available and failed statuses
+    checkStatus(domainName, "False", "False", "True");
+
+    // remove after debug
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "]";
+    V1Patch patch = new V1Patch(patchStr);
+    logger.info("Patching cluster resource using patch string {0} ", patchStr);
+    assertTrue(!patchClusterCustomResource(clusterName, domainNamespace,
+        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
+
+    deleteDomainResource(domainNamespace, domainName);
+    deleteClusterCustomResource(clusterName, domainNamespace);
+  }
+
+  /**
    * Test domain status condition with non-existing image.
    * Verify the following conditions are generated
    * type: Failed, status: true

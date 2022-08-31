@@ -1088,6 +1088,7 @@ class DomainProcessorTest {
     domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
     testSupport.defineResources(createV20ExternalService());
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MAX_SERVERS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
 
