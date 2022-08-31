@@ -202,17 +202,15 @@ class ItUsabilityOperatorHelmChart {
     // Delete domain custom resource
     logger.info("Delete domain1 custom resource in namespace {0}", domain1Namespace);
     deleteDomainCustomResource(domain1Uid, domain1Namespace);
-    logger.info("Deleted Domain Custom Resource " + domain1Uid + " from " + domain1Namespace);
+    logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain1Uid, domain1Namespace);
 
     logger.info("Delete domain2 custom resource in namespace {0}", domain2Namespace);
     deleteDomainCustomResource(domain2Uid, domain2Namespace);
-    logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
+    logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain2Uid, domain2Namespace);
 
     logger.info("Delete domain3 custom resource in namespace {0}", domain2Namespace);
-
     deleteDomainCustomResource(domain3Uid, domain3Namespace);
-    logger.info("Deleted Domain Custom Resource " + domain3Uid + " from " + domain3Namespace);
-
+    logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain3Uid, domain3Namespace);
   }
 
   /**
@@ -328,15 +326,14 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = opNamespace + "-sa";
     try {
       // install operator
-
       HelmParams opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
           0, op1HelmParams, domain1Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
 
       if (!isDomain1Running) {
         logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain3Namespace, domain3Uid),
-            "can't start or verify domain in namespace " + domain3Namespace);
+        assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
+            "can't start or verify domain in namespace " + domain1Namespace);
         isDomain1Running = true;
       }
       // delete operator
@@ -348,13 +345,14 @@ class ItUsabilityOperatorHelmChart {
           null,"deployed", 0, opHelmParams, LIST_STRATEGY, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
-      String opExtRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+      createRouteForOKD("external-weblogic-operator-svc", opNamespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-      //check if can still manage domain1
+
+      //check if the operator can still manage domain1
       assertTrue(scaleClusterWithRestApi(domain1Uid, clusterName,replicaCountDomain1 - 1,
           externalRestHttpsPort,opNamespace, opServiceAccount),
           "Domain1 " + domain1Namespace + " scaling failed");
@@ -368,27 +366,26 @@ class ItUsabilityOperatorHelmChart {
 
     } finally {
       uninstallOperator(op1HelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
         cleanUpDomainSecrets(domain1Namespace);
       }
-
     }
   }
 
   /**
    * Install the Operator successfully.
-   * Create domain1 and verify the domain is started
-   * Upgrade the operator helm chart domainNamespaces to include namespace for domain2
+   * Create domain2 and verify the domain is started
+   * Upgrade the operator helm chart domainNamespaces to include namespace for domain3
    * Verify both domains are managed by the operator by making a REST API call
-   * Call helm upgrade to remove the first domain from operator domainNamespaces
+   * Call helm upgrade to remove the domain3 from operator domainNamespaces
    * Verify it can't be managed by operator anymore.
    * Test fails when an operator fails to manage the domains as expected
    */
   @Test
-  @DisplayName("Create domain1, managed by operator and domain2, upgrade operator to add domain2,"
-      + "delete domain1 , verify operator management for domain2 and no access to domain1")
+  @DisplayName("Create domain2, managed by operator and domain3, upgrade operator to add domain3,"
+      + "delete domain3namespace from operator , verify operator can manage domain2 and no access to domain3")
   void testAddRemoveDomainNameSpacesOnOperator() {
     HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(op2Namespace)
@@ -434,12 +431,14 @@ class ItUsabilityOperatorHelmChart {
           managedServerPodName1, domain3Namespace);
       assertDoesNotThrow(() ->
               checkPodExists(managedServerPodName1, domain3Uid, domain3Namespace),
-          "operator failed to manage domain1, scaling was not succeeded");
-
+          "operator failed to manage domain3, scaling was not succeeded");
       logger.info("Domain3 scaled to 3 servers");
+
+      // scale domain2
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 + 1,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain2 " + domain2Namespace + " scaling operation failed");
+          "Domain2 in namespace" + domain2Namespace + " scaling operation failed");
+
       String managedServerPodName2 = domain2Uid + managedServerPrefix + (replicaCountDomain2 + 1);
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
           managedServerPodName2, domain2Namespace);
@@ -447,6 +446,7 @@ class ItUsabilityOperatorHelmChart {
           "operator failed to manage domain2, scaling was not succeeded");
       ++replicaCountDomain2;
       logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
+
       // operator chart values for upgrade
       opParams = new OperatorParams()
           .helmParams(opHelmParams)
@@ -457,10 +457,12 @@ class ItUsabilityOperatorHelmChart {
           .domainNamespaces(List.of(domain2Namespace));
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
+      // scale domain2
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain2 " + domain2Namespace + " scaling execution failed");
-      // check new managed server pod exists in the namespace
+          "Domain2 in namespace " + domain2Namespace + " scaling execution failed");
+
+      // check new managed server pod does not exist in the namespace
       logger.info("Checking that the managed server pod {0} does not exist in namespace {1}",
           managedServerPodName2, domain2Namespace);
       assertDoesNotThrow(() -> checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
@@ -469,19 +471,20 @@ class ItUsabilityOperatorHelmChart {
       --replicaCountDomain2;
       logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
 
-      //verify operator can't scale domain1 anymore
+      //verify operator can't scale domain3 anymore
       assertTrue(scaleClusterWithRestApi(domain3Uid, clusterName,2,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain1 " + domain3Namespace + " scaling execution failed ");
+          externalRestHttpsPort, op2Namespace, opServiceAccount),
+          "Domain " + domain3Namespace + " scaling execution failed ");
+
       // check new managed server pod exists in the namespace
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
           managedServerPodName1, domain3Namespace);
       assertDoesNotThrow(() -> checkPodExists(managedServerPodName1, domain3Uid, domain3Namespace),
-          "operator can still manage domain1, scaling was succeeded for " + managedServerPodName1);
+          "operator can still manage domain3, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
       uninstallOperator(op1HelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
         cleanUpDomainSecrets(domain2Namespace);
@@ -526,7 +529,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
         cleanUpDomainSecrets(domain1Namespace);
@@ -571,7 +574,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       uninstallOperator(opHelmParams);
       uninstallOperator(op2HelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
@@ -615,13 +618,13 @@ class ItUsabilityOperatorHelmChart {
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, op2ServiceAccount,
           true, true, true,
           expectedError,"failed",
-          externalRestHttpsPort, op2HelmParams,  LIST_STRATEGY, domain2Namespace);
+          externalRestHttpsPort, op2HelmParams, LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
       uninstallOperator(op2HelmParams);
     } finally {
       uninstallOperator(opHelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
     }
@@ -659,7 +662,6 @@ class ItUsabilityOperatorHelmChart {
    * This is equivalent of QuickStart guide does when it installs the operator
    * with ' --set "domainNamespaces={}" '.
    * Add new domain namespace and make sure that the the WebLogic domain is activated by Operator.
-   *
    */
   @Test
   @DisplayName("Test to create the operator with empty string for domains namespace")
@@ -675,7 +677,7 @@ class ItUsabilityOperatorHelmChart {
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, true,
           true,null, "deployed", 0, op2HelmParams,
           LIST_STRATEGY, "");
-      assertNotNull(opHelmParam2, "FAILURE: Helm can't installs operator with empty set for target domainnamespaces ");
+      assertNotNull(opHelmParam2, "FAILURE: Helm can't install operator with empty set for target domain namespaces");
 
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
       assertNotEquals(-1, externalRestHttpsPort,
@@ -705,8 +707,8 @@ class ItUsabilityOperatorHelmChart {
 
       //verify operator can scale domain
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain2 " + domain2Namespace + " scaling operation failed");
+          externalRestHttpsPort, op2Namespace, opServiceAccount),
+          "Domain2 in namespace " + domain2Namespace + " scaling operation failed");
 
       String managedServerPodName2 = domain2Uid + managedServerPrefix + replicaCountDomain2;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -719,7 +721,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
     } finally {
       uninstallOperator(op2HelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
         cleanUpDomainSecrets(domain2Namespace);
@@ -794,7 +796,7 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       //uninstall operator helm chart
       uninstallOperator(opHelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(op2Namespace);
     }
   }
@@ -898,18 +900,15 @@ class ItUsabilityOperatorHelmChart {
         logger.info("Failed to collect operator log");
       }
       uninstallOperator(op1HelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op3Namespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op3Namespace);
       cleanUpSA(op3Namespace);
     }
   }
-
-
 
   private boolean createVerifyDomain(String domainNamespace, String domainUid) {
 
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
-
     createAndVerifyMiiDomain(domainNamespace, domainUid);
     return true;
   }

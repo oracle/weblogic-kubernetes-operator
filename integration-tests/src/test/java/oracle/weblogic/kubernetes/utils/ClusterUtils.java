@@ -143,7 +143,7 @@ public class ClusterUtils {
   public static DomainResource addClusterToDomain(String clusterName, String namespace,
                                                   DomainResource domain, int replicas) {
     ClusterList clusters = listClusterCustomResources(namespace);
-    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterName))) {
       getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
     } else {
       getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);

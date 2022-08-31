@@ -424,12 +424,7 @@ public class IstioUtils {
       logger.info("Created domain CR with Monitoring exporter configuration : "
           + domain.getSpec().getMonitoringExporter().toString());
     }
-    // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-    getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
-    createClusterAndVerify(cluster);
-    // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
     return domain;
   }
