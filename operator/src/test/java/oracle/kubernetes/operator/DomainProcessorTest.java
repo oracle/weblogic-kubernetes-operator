@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -286,8 +287,29 @@ class DomainProcessorTest {
     assertThat(getResourceVersion(updatedDomain), equalTo(getResourceVersion(newDomain)));
   }
 
+  @Test
+  void whenDomainSpecNotChanged_newInfoMissingCluster_dontRunMakeRight() {
+    domain.getMetadata().generation(getGeneration(newDomain));
+    ClusterResource clusterResource1 = createClusterResource(NS, CLUSTER);
+    configureDomain(domain).configureCluster(originalInfo, clusterResource1.getClusterName());
+    testSupport.defineResources(clusterResource1);
+    originalInfo.addClusterResource(clusterResource1);
+
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, newDomain.getDomainUid());
+    assertThat(getResourceVersion(updatedDomain), equalTo(getResourceVersion(newDomain)));
+  }
+
   private String getResourceVersion(DomainResource domain) {
     return Optional.of(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse("");
+  }
+
+  private Long getGeneration(KubernetesObject resource) {
+    return Optional.ofNullable(resource).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getGeneration).orElse(0L);
   }
 
   @Test
