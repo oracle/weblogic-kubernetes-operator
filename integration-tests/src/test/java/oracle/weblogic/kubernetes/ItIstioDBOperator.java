@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -69,6 +70,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
@@ -144,6 +147,7 @@ class ItIstioDBOperator {
   private String fmwDomainUid = "jrf-istio-db";
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
+  private String clusterName = "cluster-1";  
   private int replicaCount = 2;
   private String fmwAminSecretName = fmwDomainUid + "-weblogic-credentials";
   private String fmwEncryptionSecretName = fmwDomainUid + "-encryptionsecret";
@@ -309,6 +313,13 @@ class ItIstioDBOperator {
         configMapName
         );
 
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    
     createDomainAndVerify(domain, fmwDomainNamespace);
 
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
@@ -840,6 +851,15 @@ class ItIstioDBOperator {
             .name(domainResourceName)
             .namespace(domNamespace))
         .spec(domainSpec);
+    
+    setPodAntiAffinity(domain);
+
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));       
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainResourceName, domNamespace);
@@ -848,8 +868,7 @@ class ItIstioDBOperator {
             domainResourceName, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainResourceName, domNamespace));
-
-    setPodAntiAffinity(domain);
+    
     return domain;
   }
 
