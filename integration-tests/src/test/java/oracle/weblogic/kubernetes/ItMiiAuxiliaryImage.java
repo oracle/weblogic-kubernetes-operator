@@ -40,8 +40,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -387,8 +388,8 @@ class ItMiiAuxiliaryImage {
     //change image name to imageUpdate
     String imageTag = getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null ? KIND_REPO
-        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
+        + (WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
