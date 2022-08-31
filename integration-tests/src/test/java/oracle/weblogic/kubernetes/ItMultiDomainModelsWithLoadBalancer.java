@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -681,7 +680,6 @@ class ItMultiDomainModelsWithLoadBalancer {
    * Verify domain changed event is logged.
    * Disabled for now due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
   void testMiiMultiClustersRollingRestart() {
