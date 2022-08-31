@@ -513,7 +513,7 @@ class ItDBOperator {
     boolean result;
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
-    params.command("sh "
+    params.command("sh -x"
         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
