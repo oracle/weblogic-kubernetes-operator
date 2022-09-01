@@ -200,6 +200,25 @@ createPatchJsonToUnsetPolicyAndUpdateReplica() {
 }
 
 #
+# Function to create patch json string to unset policy
+
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be patched
+# $3 - Return value containing patch json string
+#
+createPatchJsonToUnsetPolicyUsingClusterResource() {
+  local domainJson=$1
+  local serverName=$2
+  local __result=$3
+
+  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
+  # Changed on 08/23/2022
+  #patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${serverStartPolicyPatch}"}}"
+  patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
+  eval $__result="'${patchJson}'"
+}
+
+#
 # Function to create patch json string to update policy
 # $1 - String containing start policy info
 # $2 - String containing json to patch domain resource
@@ -263,6 +282,22 @@ createPatchJsonToUpdateReplicaAndPolicy() {
   local __result=$3
 
   patchJson="{\"spec\": {\"clusters\": "${replicaInfo}",\"managedServers\": "${startPolicy}"}}"
+  eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json string to update replica and policy
+# Added on 08/20/2022
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be patched
+# $3 - Return value containing patch json string
+#
+createPatchJsonToUpdatePolicyUsingClusterResource() {
+  local replicaInfo=$1
+  local startPolicy=$2
+  local __result=$3
+
+  patchJson="{\"spec\": {\"managedServers\": "${startPolicy}"}}"
   eval $__result="'${patchJson}'"
 }
 
@@ -513,7 +548,9 @@ getReplicaCount() {
   local clusterName=$2
   local __replicaCount=$3
 
-  replicasCmd="(.spec.clusters[] \
+  # Changed on 08/24/2022
+  #replicasCmd="(.spec.clusters[] \
+  replicasCmd="(.status.clusters[] \
     | select (.clusterName == \"${clusterName}\")).replicas"
   replicaCount=$(echo ${domainJson} | jq "${replicasCmd}")
   if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
@@ -530,6 +567,35 @@ getReplicaCount() {
   fi
   eval $__replicaCount="'${replicaCount}'"
 
+}
+
+#
+# Get replica count for a cluster
+# Added on 08/19/2022
+# $1 - Domain resource in json format
+# $2 - Name of cluster
+# $3 - Return value containing replica count
+#
+getReplicaCountUsingClusterResource() {
+  local clusterJson=$1
+  local clusterName=$2
+  local __replicaCount=$3
+
+  replicasCmd="(.spec | select (.clusterName == \"${clusterName}\")).replicas"
+  replicaCount=$(echo ${clusterJson} | jq "${replicasCmd}")
+  if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
+    replicaCount=$(echo ${clusterJson} | jq .spec.replicas)
+  fi
+  if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
+    replicaCount=0
+  fi
+  # check if replica count is less than minimum replicas
+  getMinReplicasUsingClusterResource "${clusterJson}" "${clusterName}" minReplicas
+  if [ "${replicaCount}" -lt "${minReplicas}" ]; then
+    # Reset current replica count to minimum replicas
+    replicaCount=${minReplicas}
+  fi
+  eval $__replicaCount="'${replicaCount}'"
 }
 
 #
@@ -799,6 +865,27 @@ isReplicaCountEqualToMinReplicas() {
 }
 
 #
+# Function to check if cluster's replica count is same as min replicas
+# Aded on 08/25/2022
+# $1 - Domain resource in json format
+# $2 - Name of the cluster
+# $3 - Returns "true" or "false" indicating if replica count is equal to
+#      or greater than min replicas.
+#
+isClusterReplicaCountEqualToMinReplicas() {
+  local clusterJson=$1
+  local clusterName=$2
+  local __result=$3
+
+  eval $__result=false
+  getMinReplicasUsingClusterResource "${clusterJson}" "${clusterName}" minReplicas
+  getReplicaCountUsingClusterResource  "${clusterJson}" "${clusterName}" replica
+  if [ ${replica} -eq ${minReplicas} ]; then
+    eval $__result=true
+  fi
+}
+
+#
 # Function to check if provided replica count is in the allowed range
 # $1 - Domain resource in json format
 # $2 - Name of the cluster
@@ -844,8 +931,11 @@ isClusterReplicasInAllowedRange() {
   local rangeVal=""
 
   eval $__result=true
-  getClusterMinReplicas "${clusterJson}" "${clusterName}" minReplicas
-  getClusterMaxReplicas "${clusterJson}" "${clusterName}" maxReplicas
+  # Changed on 08/20/2022
+  #getClusterMinReplicas "${clusterJson}" "${clusterName}" minReplicas
+  #getClusterMaxReplicas "${clusterJson}" "${clusterName}" maxReplicas
+  getMinReplicasUsingClusterResource "${clusterJson}" "${clusterName}" minReplicas
+  getMaxReplicasUsingClusterResource "${clusterJson}" "${clusterName}" maxReplicas
   rangeVal="${minReplicas} to ${maxReplicas}"
   eval $__range="'${rangeVal}'"
   if [ ${replicas} -lt ${minReplicas} ] || [ ${replicas} -gt ${maxReplicas} ]; then
@@ -880,7 +970,7 @@ getMinReplicas() {
 # $2 - Name of the cluster
 # $3 - Return value containing minimum replica count
 #
-getClusterMinReplicas() {
+getMinReplicasUsingClusterResource() {
   local clusterJson=$1
   local clusterName=$2
   local __result=$3
@@ -919,7 +1009,7 @@ getMaxReplicas() {
 # $2 - Name of the cluster
 # $3 - Return value containing maximum replica count
 #
-getClusterMaxReplicas() {
+getMaxReplicasUsingClusterResource() {
   local clusterJson=$1
   local clusterName=$2
   local __result=$3
@@ -965,6 +1055,44 @@ Not increasing replica count value."
   cmd="(.spec.clusters[] | select (.clusterName == \"${clusterName}\") \
     | .replicas) |= ${replica}"
   replicaPatch=$(echo ${domainJson} | jq "${cmd}" | jq -cr '(.spec.clusters)')
+  eval $__result="'${replicaPatch}'"
+  eval $__replicaCount="'${replica}'"
+}
+
+#
+# Function to create patch string for updating replica count
+# Added 0n 08/19/2022
+# $1 - Domain resource in json format
+# $2 - Name of cluster whose replica count will be patched
+# $3 - operation string indicating whether to increment or decrement replica count.
+#      Valid values are "INCREMENT" and "DECREMENT"
+# $4 - Return value containing replica update patch string
+# $5 - Return value containing updated replica count
+#
+createReplicaPatchUsingClusterResource() {
+  local clusterJson=$1
+  local clusterName=$2
+  local operation=$3
+  local __result=$4
+  local __replicaCount=$5
+  local maxReplicas=""
+  local infoMessage="Current replica count value is same as or greater than maximum number of replica count. \
+Not increasing replica count value."
+
+  getReplicaCountUsingClusterResource  "${clusterJson}" "${clusterName}" replica
+  if [ "${operation}" == "DECREMENT" ]; then
+    replica=$((replica-1))
+  elif [ "${operation}" == "INCREMENT" ]; then
+    getMaxReplicasUsingClusterResource "${clusterJson}" "${clusterName}" maxReplicas
+    if [ ${replica} -ge ${maxReplicas} ]; then
+      printInfo "${infoMessage}"
+    else
+      replica=$((replica+1))
+    fi
+  fi
+
+  addClusterReplicasCmd="{\"clusterName\":\"${clusterName}\",\"replicas\":${replica}}"
+  replicaPatch="{\"spec\": "${addClusterReplicasCmd}"}"
   eval $__result="'${replicaPatch}'"
   eval $__replicaCount="'${replica}'"
 }
@@ -1231,4 +1359,49 @@ toDNS1123Legal() {
   local val=`echo "${name}" | tr "[:upper:]" "[:lower:]"`
   val=${val//"_"/"-"}
   eval $__result="'$val'"
+}
+
+#
+# Function to get maximum replica count for cluster
+# Added on 08/16/2022
+# $1 - Cluster resource in json format
+# $2 - Name of the cluster
+# $6 - Return value of "true" or "false" indicating if replica in Spec and Status fiels is same
+#
+varifyReplicasInClusterResourceMatch() {
+  local clusterJson=$1
+  local clusterName=$2
+  local __result=$3
+  local maxReplicaCmd=""
+  local maxReplicasVal=""
+
+  maxReplicaCmd="(.status | select (.clusterName == \"${clusterName}\")) | .maximumReplicas"
+  maxReplicasVal=$(echo ${clusterJson} | jq "${maxReplicaCmd}")
+  eval $__result=${maxReplicasVal:-0}
+}
+
+#
+# Function to check if cluster's replica count is same in Spec and Status fields
+# Aded on 08/31/2022
+# $1 - Cluster resource in json format
+# $2 - Name of the cluster
+# $3 - Returns "true" or "false" indicating if replica count is equal in both Spec and Status.
+#
+isReplicaInClusterResourceMatch() {
+  local clusterJson=$1
+  local clusterName=$2
+  local __result=$3
+
+  eval $__result=false
+  specReplicaCmd="(.spec | select (.clusterName == \"${clusterName}\")).replicas"
+  specReplicaCount=$(echo ${clusterJson} | jq "${specReplicaCmd}")
+  statusReplicaCmd="(.status | select (.clusterName == \"${clusterName}\")).replicas"
+  statusReplicaCount=$(echo ${clusterJson} | jq "${specReplicaCmd}")
+
+  printInfo "spec.replica count is: ${specReplicaCount}"
+  printInfo "status.replica count is: ${statusReplicaCount}"
+
+  if [[ ! -z "${specReplicaCount}" && ${specReplicaCount} -eq ${statusReplicaCount}  ]]; then
+    eval $__result=true
+  fi
 }

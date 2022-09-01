@@ -143,12 +143,14 @@ fi
 
 # Validate that specified server is either part of a cluster or is an independent managed server
 validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName isAdminServer
+
 if [ "${isValidServer}" != 'true' ]; then
   printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
   exit 1
 fi
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
     if [ "${effectivePolicy}" == "Never" ]; then
@@ -158,6 +160,13 @@ if [ "${isAdminServer}" == 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
+  # Added on 08/23/2022
+  clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+  printInfo "clusterJson content before changes: ${clusterJson}"
+  if [ -z "${clusterJson}" ]; then
+    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+    exit 1
+  fi
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
@@ -174,7 +183,9 @@ fi
 
 if [[ -n "${clusterName}" && "${keepReplicaConstant}" == 'false' ]]; then
   # check if replica count can decrease below current value
-  isReplicaCountEqualToMinReplicas "${domainJson}" "${clusterName}" replicasEqualsMinReplicas
+  # Changed on 08/23/2022
+  #isReplicaCountEqualToMinReplicas "${domainJson}" "${clusterName}" replicasEqualsMinReplicas
+  isClusterReplicaCountEqualToMinReplicas "${clusterJson}" "${clusterName}" replicasEqualsMinReplicas
   if [ "${replicasEqualsMinReplicas}" == 'true' ]; then
     printInfo "Not decreasing the replica count value: it is at its minimum. \
       (See 'domain.spec.allowReplicasBelowMinDynClusterSize' and \
@@ -186,6 +197,7 @@ fi
 # Create server start policy patch with Never value
 createServerStartPolicyPatch "${domainJson}" "${serverName}" "${serverStartPolicy}" neverStartPolicyPatch
 getServerPolicy "${domainJson}" "${serverName}" managedServerPolicy
+
 if [ -n "${managedServerPolicy}" ]; then
   effectivePolicy=${managedServerPolicy}
 fi
@@ -201,17 +213,26 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
   withReplicas="DECREASED"
   withPolicy="UNSET"
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
-  createReplicaPatch "${domainJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
-
+  # Changed on 08/24/2022
+  #createReplicaPatch "${domainJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
+  createReplicaPatchUsingClusterResource "${clusterJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
   if [[ -n ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting start policy and decrementing replica count, unset and decrement 
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
       and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
+    # Changed 08/24/2022
+    #createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
+    createPatchJsonToUnsetPolicyUsingClusterResource "${domainJson}" "${serverName}" patchJson
+    # Added on 08/24/2022
+    printInfo "Patching cluster: ${kubernetesCli} ${clusterName} ${domainNamespace} ${replicaPatch} ${verboseMode}"
+    executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
     printInfo "Updating replica count for cluster ${clusterName} to ${replicaCount}."
-    createPatchJsonToUpdateReplica "${replicaPatch}" patchJson
+    # Changed on 08/24/2022
+    #createPatchJsonToUpdateReplica "${replicaPatch}" patchJson
+    printInfo "Patching cluster: ${kubernetesCli} ${clusterName} ${domainNamespace} ${replicaPatch} ${verboseMode}"
+    executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
   elif [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
@@ -221,7 +242,12 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     # Patch server start policy to Never and decrement replica count
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Never' \
       and decrementing replica count for cluster '${clusterName}' to ${replicaCount}."
-    createPatchJsonToUpdateReplicaAndPolicy "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
+    # Added on 08/31/2022
+    printInfo "Patching cluster: ${kubernetesCli} ${clusterName} ${domainNamespace} ${replicaPatch} ${verboseMode}"
+    executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
+    # Changed on 08/31/2022
+    # createPatchJsonToUpdateReplicaAndPolicy "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
+    createPatchJsonToUpdatePolicyUsingClusterResource "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Server is part of a cluster and replica count needs to stay constant
@@ -243,6 +269,33 @@ else
   createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
 fi
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+if [ -n "${patchJson}" ]; then
+  printInfo "Patching domain in stopServer.sh: ${kubernetesCli} ${domainUid} ${domainNamespace} ${patchJson} ${verboseMode}"
+  executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+  printInfo "Patch domain command succeeded !"
+fi
 
-printInfo "Patch command succeeded !"
+printInfo "Waiting for 60 seconds for patching cluster resource to complete"
+sleep 60
+
+isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
+printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
+
+i=0
+while [ "${specReplicasEqualsStatusReplicas}" != "true" ]; do
+	printInfo "Waiting for 5 seconds for Spec.replicas equals Status.replicas"
+  sleep 5
+
+  isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
+  printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
+
+  if [[ "$i" == '12' ]]; then
+    printInfo "Waited 60 seconds. Exit"
+    break
+  fi
+  printInfo "Loop number $i"
+  ((i++))
+done
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+printInfo "clusterJson content after changes: ${clusterJson}"
