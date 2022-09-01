@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -36,6 +37,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster1;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster2;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -49,12 +52,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 
 class IntrospectionValidationTest {
-
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
+  private final ClusterResource[] clusters = new ClusterResource[] {cluster1, cluster2};
 
   @BeforeEach
   void setUp() throws NoSuchFieldException {
@@ -66,6 +69,8 @@ class IntrospectionValidationTest {
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.defineResources(domain);
+    DomainProcessorTestSetup.setupCluster(domain, clusters);
+    testSupport.defineResources(clusters);
   }
 
   @AfterEach
