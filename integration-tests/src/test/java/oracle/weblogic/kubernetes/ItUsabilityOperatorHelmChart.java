@@ -19,6 +19,8 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -75,7 +77,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
@@ -141,8 +144,6 @@ class ItUsabilityOperatorHelmChart {
   private final String managedServerPrefix = "-" + MANAGED_SERVER_NAME_BASE;
   private boolean isDomain1Running = false;
   private boolean isDomain2Running = false;
-  private int replicaCountDomain1 = 2;
-  private int replicaCountDomain2 = 2;
   private String adminSvcExtRouteHost = null;
 
   private static LoggingFacade logger = null;
@@ -208,9 +209,17 @@ class ItUsabilityOperatorHelmChart {
     deleteDomainCustomResource(domain2Uid, domain2Namespace);
     logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain2Uid, domain2Namespace);
 
-    logger.info("Delete domain3 custom resource in namespace {0}", domain2Namespace);
+    logger.info("Delete domain3 custom resource in namespace {0}", domain3Namespace);
     deleteDomainCustomResource(domain3Uid, domain3Namespace);
     logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain3Uid, domain3Namespace);
+
+    logger.info("Delete domain4 custom resource in namespace {0}", domain4Namespace);
+    deleteDomainCustomResource(domain4Uid, domain4Namespace);
+    logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain4Uid, domain4Namespace);
+
+    logger.info("Delete domain5 custom resource in namespace {0}", domain4Namespace);
+    deleteDomainCustomResource(domain5Uid, domain4Namespace);
+    logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domain5Uid, domain4Namespace);
   }
 
   /**
@@ -245,6 +254,7 @@ class ItUsabilityOperatorHelmChart {
 
       // get the managed server pods original creation timestamps
       logger.info("Getting managed server pods original creation timestamps");
+      int replicaCountDomain1 = 2;
       List<OffsetDateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
       for (int i = 1; i <= replicaCountDomain1; i++) {
         final String managedServerPodName = domain1Uid + managedServerPrefix + i;
@@ -305,7 +315,6 @@ class ItUsabilityOperatorHelmChart {
         cleanUpDomainSecrets(domain1Namespace);
       }
     }
-
   }
 
   /**
@@ -353,6 +362,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
       //check if the operator can still manage domain1
+      int replicaCountDomain1 = 2;
       assertTrue(scaleClusterWithRestApi(domain1Uid, clusterName,replicaCountDomain1 - 1,
           externalRestHttpsPort,opNamespace, opServiceAccount),
           "Domain1 " + domain1Namespace + " scaling failed");
@@ -435,9 +445,10 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain3 scaled to 3 servers");
 
       // scale domain2
+      int replicaCountDomain2 = 2;
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 + 1,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain2 in namespace" + domain2Namespace + " scaling operation failed");
+          "Domain2 in namespace " + domain2Namespace + " scaling operation failed");
 
       String managedServerPodName2 = domain2Uid + managedServerPrefix + (replicaCountDomain2 + 1);
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -706,6 +717,7 @@ class ItUsabilityOperatorHelmChart {
       }
 
       //verify operator can scale domain
+      int replicaCountDomain2 = 2;
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
           externalRestHttpsPort, op2Namespace, opServiceAccount),
           "Domain2 in namespace " + domain2Namespace + " scaling operation failed");
@@ -976,7 +988,15 @@ class ItUsabilityOperatorHelmChart {
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
     // add cluster to the domain
-    domain = addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
+    String clusterResName = domainUid + "-" + clusterName;
+    ClusterResource cluster = createClusterResource(clusterResName, domainNamespace,
+        new ClusterSpec().withClusterName(clusterName).replicas(replicaCount));
+    getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+
     setPodAntiAffinity(domain);
 
     // create model in image domain
