@@ -12,7 +12,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -217,9 +216,7 @@ class ItOperatorRestart {
    * restartVersion are updated, and the server pods are recreated, the server pods' weblogic.domainRestartVersion
    * label is updated, and the new credentials are valid and can be used to access WebLogic RESTful
    * Management Services.
-   * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
   void testOperatorRestartWhenPodRoll() {
