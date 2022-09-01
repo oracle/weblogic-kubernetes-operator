@@ -116,19 +116,25 @@ Now that you have created the AKS cluster, installed the operator, and verified 
 
 ##### Create secrets
 
-You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain credentials as a Kubernetes secret. Please run:
+You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:
 
 ```
 # cd kubernetes/samples/scripts/create-weblogic-domain-credentials
 ```
 ```shell
-$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
+$ ./create-weblogic-credentials.sh -u <a username> -p <a password> -d domain1
 ```
 ```
 secret/domain1-weblogic-credentials created
 secret/domain1-weblogic-credentials labeled
 The secret domain1-weblogic-credentials has been successfully created in the default namespace.
 ```
+
+Notes:
+- Replace `<a username>` and `<a password>` with a WebLogic administrator username and password of your choice.
+- The password should be at least eight characters long and include at least one digit.
+- Remember what you specified. These credentials may be needed again later.
+
 You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
 ```shell
@@ -455,7 +461,8 @@ You need to set up the domain configuration for the WebLogic domain.
    kubernetes                         ClusterIP      10.0.0.1      <none>           443/TCP              2d22h
    ```
 
-   In the example, the URL to access the Administration Server is: `http://52.188.176.103:7001/console`.  The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.
+   In the example, the URL to access the Administration Server is: `http://52.188.176.103:7001/console`.
+   The user name and password that you enter for the Administration Console must match the ones you specified for the `domain1-weblogic-credentials` secret in the [Create secrets](#create-secrets) step.
 
    If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
@@ -526,8 +533,12 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `wls` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
+| `weblogicUserName` | `yourWLAdminUserName` | Enter your choice for a WebLogic administration username. |
+| `weblogicAccountPassword` | `yourWLAdminPassword` | Enter your choice for a WebLogic administration password. It must be at least eight characters long and contain at least one digit. |
 
-If you don't want to change the other parameters, you can use the default values.  Please make sure no extra whitespaces are added!
+If you don't want to change the other parameters, you can use the default values.
+Please make sure no extra whitespaces are added!
+Please also remember the username and password that you chose for the WebLogic administrator account.
 
 ```
 # Use ~/azure as output directory, please change it according to your requirement.
@@ -541,7 +552,8 @@ $ cp create-domain-on-aks-inputs.yaml my-create-domain-on-aks-inputs.yaml
 $ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure -e
 ```
 
-The script will print the Administration Server address after a successful deployment.  The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.  To interact with the cluster using `kubectl`, use `az aks get-credentials` as shown in the script output.
+The script will print the Administration Server address after a successful deployment.
+To interact with the cluster using `kubectl`, use `az aks get-credentials` as shown in the script output.
 
 {{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
@@ -577,11 +589,11 @@ adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
 -rw-r--r-- 1 user user 3528 Jul  5 14:25 /tmp/testwebapp/testwebapp.war
 ```
 
-Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster. This sample uses WLS RESTful API [/management/weblogic/latest/edit/appDeployments](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html) to deploy the sample application. The WLS administration account and password in this sample are `weblogic:welcome1`, replace them with your value created in [Create WebLogic domain secrets](#create-secrets):
+Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster. This sample uses WLS RESTful API [/management/weblogic/latest/edit/appDeployments](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html) to deploy the sample application. Replace `wl-admin-user` and `wl-admin-pass` with the values you specified in [Create secrets](#create-secrets) or [Automation](#automation):
 
 ```bash
 $ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
-$ curl --user weblogic:welcome1 -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
+$ curl --user wl-admin-user:wl-admin-pass -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
   -H Content-Type:multipart/form-data  \
   -F "model={
         name:    'testwebapp',
@@ -602,7 +614,7 @@ After the successful deployment, you will find output similar to the following:
 * Server auth using Basic with user 'weblogic'
 > POST /management/weblogic/latest/edit/appDeployments HTTP/1.1
 > Host: 52.226.101.43:7001
-> Authorization: Basic d2VibG9naWM6d2VsY29tZTE=
+> Authorization: Basic ...=
 > User-Agent: curl/7.68.0
 > X-Requested-By:MyClient
 > Accept:application/json
