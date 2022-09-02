@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is a template for RCU Pod
@@ -18,5 +18,13 @@ spec:
     image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
     imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
     name: rcu
+    volumeMounts:
+    - name: rcu-secret-volume
+      mountPath: "/rcu-secret"
+      readOnly: true
+  volumes:
+  - name: rcu-secret-volume
+    secret:
+      secretName: %ORACLE_RCU_SECRET_NAME%
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%

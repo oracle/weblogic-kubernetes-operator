@@ -57,13 +57,20 @@ Here are the steps for this use case:
 1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the Domain YAML file.
 
    Run the following commands:
+
+   __NOTE:__ Substitute a password of your choice for MY_WEBLOGIC_ADMIN_PASSWORD. This
+   password should contain at least seven letters plus one digit.
+
+   __NOTE:__ Substitute a password of your choice for MY_RUNTIME_PASSWORD. It should
+   be unique and different than the admin password, but this is not required.
+
    ```
    # spec.webLogicCredentialsSecret
    ```
    ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-weblogic-credentials \
-      --from-literal=username=weblogic --from-literal=password=welcome1
+      --from-literal=username=weblogic --from-literal=password=MY_WEBLOGIC_ADMIN_PASSWORD
    ```
    ```shell
    $ kubectl -n sample-domain1-ns label  secret \
@@ -76,7 +83,7 @@ Here are the steps for this use case:
    ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-runtime-encryption-secret \
-      --from-literal=password=my_runtime_password
+      --from-literal=password=MY_RUNTIME_PASSWORD
    ```
    ```shell
    $ kubectl -n sample-domain1-ns label  secret \
@@ -114,11 +121,15 @@ Here are the steps for this use case:
 
    {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
+   __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
+   that you chose in the prequisite steps when
+   [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
+
    ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-rcu-access \
       --from-literal=rcu_prefix=FMW2 \
-      --from-literal=rcu_schema_password=Oradoc_db1 \
+      --from-literal=rcu_schema_password=MY_RCU_SCHEMA_PASSWORD \
       --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
    ```
    ```shell
@@ -126,10 +137,20 @@ Here are the steps for this use case:
      sample-domain2-rcu-access \
      weblogic.domainUID=sample-domain2
    ```
+
+   __NOTES__:
+   - Replace `MY_OPSS_WALLET_PASSWORD` with a password of your choice.
+     The password can contain letters and digits.
+   - The domain's JRF RCU schema will be automatically initialized
+     plus generate a JRF OPSS wallet file upon first use.
+     If you plan to save and reuse this wallet file,
+     as is necessary for reusing RCU schema data after a migration or restart,
+     then it will also be necessary to use this same password again.
+
    ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-opss-wallet-password-secret \
-      --from-literal=walletPassword=welcome1
+      --from-literal=walletPassword=MY_OPSS_WALLET_PASSWORD
    ```
    ```shell
    $ kubectl -n sample-domain1-ns label  secret \

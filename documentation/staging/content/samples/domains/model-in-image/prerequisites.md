@@ -214,9 +214,9 @@ A JRF domain requires an infrastructure database and requires initializing this 
 | database Kubernetes namespace | `default` |
 | database Kubernetes pod | `oracle-db` |
 | database image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
-| database password | `Oradoc_db1` |
+| database password | MY_DBA_PASSWORD |
 | infrastructure schema prefixes | `FMW1` and `FMW2` (for domain1 and domain2) |
-| infrastructure schema password | `Oradoc_db1` |
+| infrastructure schema password | MY_RCU_SCHEMA_PASSWORD |
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
 
@@ -228,6 +228,17 @@ A JRF domain requires an infrastructure database and requires initializing this 
      - In the local shell, `docker login container-registry.oracle.com`.
      - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
+   - Deploy a secret named `oracle-db-secret` with your desired Oracle DBA password for its `SYS` account.
+     - In the local shell:
+       ```shell
+       $ kubectl -n default create secret generic oracle-db-secret \
+         --from-literal='password=MY_DBA_PASSWORD'
+       ```
+     - Replace MY_DBA_PASSWORD with your desired value.
+     - Oracle Database passwords can contain upper case, lower case, digits, and special characters.
+       Use only `_` and `#` as special characters to eliminate potential parsing errors in Oracle connection strings.
+     - __Note__: Record or memorize the value you chose for MY_DBA_PASSWORD. It will be be needed again in other parts of this sample.
+
    - Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
      ```shell
@@ -237,7 +248,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
      $ start-db-service.sh
      ```
 
-     This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password `Oradoc_db1`.
+     This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password MY_DBA_PASSWORD.
 
      This step is based on the steps documented in [Run a Database]({{< relref "/samples/database/_index.md" >}}).
 
@@ -246,28 +257,51 @@ A JRF domain requires an infrastructure database and requires initializing this 
      **WARNING:** The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
-2. Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`).
+2. Use the sample script `create-rcu-schema.sh` in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`) in the database.
 
-   Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
+   This script starts a pod named `rcu` in the `default` namespace (the same namespace as the database)
+   and executes RCU setup script `createRepository.sh`.
+   It assumes that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` and the namespace is `default` by default.
 
-   ```shell
-   $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
-   ```
-   ```shell
-   $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
-   ```
-   ```shell
-   $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
-   ```
+   - First, create a secret in the `default` namespace
+     which contains the database's SYSDBA username and password
+     in the secret's `sys_username` and `sys_password` fields,
+     and also contains the password of your choice for RCU schemas:
+     - In the local shell:
+       ```shell
+       $ kubectl -n default create secret generic oracle-rcu-secret \
+         --from-literal='sys_username=sys' \
+         --from-literal='sys_password=MY_DBA_PASSWORD' \
+         --from-literal='password=MY_RCU_SCHEMA_PASSWORD'
+       ```
+     - Replace MY_DBA_PASSWORD with the same value that you chose when deploying the database.
+     - Replace MY_RCU_SCHEMA_PASSWORD with your choice of RCU schema password.
+     - Oracle passwords can contain upper case, lower case, digits, and special characters.
+       Use only `_` and `#` as special characters to eliminate potential parsing errors in Oracle connection strings.
+     - __Note__: Record or memorize the values you chose for MY_DBA_PASSWORD and MY_RCU_SCHEMA_PASSWORD. They will be be needed again in other parts of this sample.
 
-   __NOTE__: If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+   - Second, run the script twice, once for each RCU schema prefix:
+     ```shell
+     $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+     ```
+     ```shell
+     $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+     ```
+     ```shell
+     $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+     ```
 
-   __NOTE__: If you need to drop the repository, use this command:
-
-   ```shell
-   $ drop-rcu-schema.sh -s FMW1
-   ```
-
+   __NOTES__:
+   - If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+   - If you need to drop the repositories, use these commands:
+     ```shell
+     $ ./drop-rcu-schema.sh -s FMW1
+     ```
+     ```shell
+     $ ./drop-rcu-schema.sh -s FMW2
+     ```
+     The drop command implicitly uses the same `rcu` pod and the same database credentials `oracle-rcu-secret` secret that
+     you set up when you created the RCU schema.
 
 
 ##### Increase introspection job timeout
@@ -284,7 +318,7 @@ When you follow the instructions in the samples, avoid instructions that are `WL
 
 For example, in this sample:
 
-  - JRF Domain YAML files have an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with `walletPassword=welcome1`.
+  - JRF Domain YAML files have an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with a `walletPassword` of your choice.
 
   - JRF image models have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
