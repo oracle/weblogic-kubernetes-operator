@@ -26,7 +26,7 @@ while getopts ":u:p:s:e:" opt; do
     ;;
     e) email="${OPTARG}"
     ;;
-    s) secert="${OPTARG}"
+    s) secret="${OPTARG}"
     ;;
     h) usage 0
     ;;
