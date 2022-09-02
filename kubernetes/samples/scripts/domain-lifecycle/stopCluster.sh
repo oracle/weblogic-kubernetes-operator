@@ -14,13 +14,13 @@ usage() {
 
   This script stops a WebLogic cluster in a domain by patching
   'spec.clusters[<cluster-name>].serverStartPolicy' attribute of the domain
-  resource to 'Never'. This change will cause the operator to initiate shutdown
+  resource to 'NEVER'. This change will cause the operator to initiate shutdown
   of cluster's WebLogic server instance pods if the pods are running.
- 
+
   Usage:
- 
+
     $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid] [-m kubecli]
-  
+
     -c <cluster-name>   : Cluster name (required parameter).
 
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
@@ -33,7 +33,7 @@ usage() {
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
     -h                  : This help.
-   
+
 EOF
 exit $1
 }
@@ -69,7 +69,7 @@ set -eu
 #
 # Function to perform validations, read files and initialize workspace
 #
-initialize() {
+initialize {
 
   validateErrors=false
 
@@ -85,7 +85,7 @@ initialize() {
 
 initialize
 
-# Get the domain in json format. Changed made on 08/16/2022
+# Get the domain in json format
 domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
 if [ -z "${domainJson}" ]; then
   printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
@@ -99,36 +99,21 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content before changes: ${clusterJson}"
-if [ -z "${clusterJson}" ]; then
-  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
-  exit 1
-fi
-
-# Get server start policy for this server. Changed made on 08/16/2022
-#getClusterPolicy "${clusterJson}" "${clusterName}" startPolicy
-getClusterPolicyUsingClusterResource "${clusterJson}" "${clusterName}" startPolicy
+# Get server start policy for this server
+getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
 if [ -z "${startPolicy}" ]; then
   getDomainPolicy "${domainJson}" startPolicy
 fi
 
-if [[ "${startPolicy}" == 'Never' || "${startPolicy}" == 'AdminOnly' ]]; then
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'Never' or 'AdminOnly'."
+if [[ "${startPolicy}" == 'NEVER' || "${startPolicy}" == 'ADMIN_ONLY' ]]; then
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'NEVER' or 'ADMIN_ONLY'."
   exit 0
 fi
 
-# Set policy value to Never. Changed made on 08/16/2022
-printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'Never'."
-#createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "Never" patchJson
-createPatchJsonToUpdateClusterPolicyUsingClusterResource "${clusterJson}" "${clusterName}" "Never" patchJson
+# Set policy value to NEVER
+printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'NEVER'."
+createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "NEVER" patchJson
 
-# Changed made on 08/16/2022
-#executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
-executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content after changes: ${clusterJson}"
-
-printInfo "Successfully patched cluster '${clusterName}' with 'Never' start policy!"
+printInfo "Successfully patched cluster '${clusterName}' with 'NEVER' start policy!"

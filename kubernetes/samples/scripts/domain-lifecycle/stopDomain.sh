@@ -12,14 +12,14 @@ usage() {
   cat << EOF
 
   This script stops a deployed WebLogic domain by patching
-  'spec.serverStartPolicy' attribute of domain resource to 'Never'.
+  'spec.serverStartPolicy' attribute of domain resource to 'NEVER'.
   This change will cause the operator to initiate shutdown of the
   domain's WebLogic server instance pods if the pods are running.
- 
+
   Usage:
- 
+
     $(basename $0) [-n mynamespace] [-d mydomainuid] [-m kubecli]
-  
+
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
@@ -30,7 +30,7 @@ usage() {
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
     -h                  : This help.
-   
+
 EOF
 exit $1
 }
@@ -60,7 +60,7 @@ done
 set -eu
 set -o pipefail
 
-initialize() {
+initialize {
 
   validateErrors=false
 
@@ -81,15 +81,15 @@ fi
 
 getDomainPolicy "${domainJson}" serverStartPolicy
 
-if [ "${serverStartPolicy}" == 'Never' ]; then
-  printInfo "No changes needed, exiting. The domain '${domainUid}' is already stopped or stopping. The value of 'spec.serverStartPolicy' attribute on the domain resource is 'Never'."
+if [ "${serverStartPolicy}" == 'NEVER' ]; then
+  printInfo "No changes needed, exiting. The domain '${domainUid}' is already stopped or stopping. The value of 'spec.serverStartPolicy' attribute on the domain resource is 'NEVER'."
   exit 0
 fi
 
-printInfo "Patching domain '${domainUid}' in namespace '${domainNamespace}' from serverStartPolicy='${serverStartPolicy}' to 'Never'."
+printInfo "Patching domain '${domainUid}' in namespace '${domainNamespace}' from serverStartPolicy='${serverStartPolicy}' to 'NEVER'."
 
-createPatchJsonToUpdateDomainPolicy "Never" patchJson
+createPatchJsonToUpdateDomainPolicy "NEVER" patchJson
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'Never' start policy!"
+printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'NEVER' start policy!"

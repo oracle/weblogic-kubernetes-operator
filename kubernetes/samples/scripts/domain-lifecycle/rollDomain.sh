@@ -13,30 +13,30 @@ usage() {
   cat << EOF
 
   This script initiates a rolling restart of pods in a WebLogic domain by updating
-  the value of the 'spec.restartVersion' attribute of the domain resource. 
- 
+  the value of the 'spec.restartVersion' attribute of the domain resource.
+
   Usage:
- 
+
     $(basename $0) [-n mynamespace] [-d mydomainuid] [-r restartVersion] [-m kubecli]
-  
+
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -r <restartVersion> : Restart version. If this parameter is not provided, 
+    -r <restartVersion> : Restart version. If this parameter is not provided,
                           then the script will generate the 'restartVersion' by
-                          incrementing the existing value. If the 'spec.restartVersion' 
+                          incrementing the existing value. If the 'spec.restartVersion'
                           doesn't exist or its value is non-numeric, then the script
                           will set the 'spec.restartVersion' value to '1'.
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'
-                          if KUBERNETES_CLI env variable is not set. Otherwise 
+                          if KUBERNETES_CLI env variable is not set. Otherwise
                           the default is the value of the KUBERNETES_CLI env variable.
 
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
     -h                  : This help.
-   
+
 EOF
 exit $1
 }
@@ -73,7 +73,7 @@ set -eu
 #
 # Function to perform validations, read files and initialize workspace
 #
-initialize() {
+initialize {
 
   validateErrors=false
 

@@ -14,34 +14,34 @@ usage() {
 
   This script initiates a rolling restart of the WebLogic cluster server pods in a domain by updating
   the value of the 'spec.clusters[<cluster-name>].restartVersion' attribute of the domain resource.
- 
+
   Usage:
- 
+
     $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid] [-r restartVersion] [-m kubecli]
-  
+
     -c <cluster-name>   : Cluster name (required parameter).
 
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -r <restartVersion> : Restart version. If this parameter is not provided, 
-                          then the script will generate the 'restartVersion' 
-                          value of the cluster by incrementing the existing 
+    -r <restartVersion> : Restart version. If this parameter is not provided,
+                          then the script will generate the 'restartVersion'
+                          value of the cluster by incrementing the existing
                           value. If the 'restartVersion' value doesn't exist
                           for the cluster then it will use the incremented value of
                           domain 'restartVersion'. If the domain 'restartVersion' also
-                          doesn't exist or effective value is non-numeric, then 
+                          doesn't exist or effective value is non-numeric, then
                           the script will set the 'restartVersion' value to '1'.
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'
-                          if KUBERNETES_CLI env variable is not set. Otherwise 
+                          if KUBERNETES_CLI env variable is not set. Otherwise
                           the default is the value of the KUBERNETES_CLI env variable.
 
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
     -h                  : This help.
-   
+
 EOF
 exit $1
 }
@@ -80,7 +80,7 @@ set -eu
 #
 # Function to perform validations, read files and initialize workspace
 #
-initialize() {
+initialize {
 
   validateErrors=false
 
@@ -96,8 +96,12 @@ initialize() {
 
 initialize
 
-# Get the domain in json format. Changed made on 08/15/2022
-#domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+# Get the domain in json format
+domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${domainJson}" ]; then
+  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
+  exit 1
+fi
 
 isValidCluster=""
 validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
@@ -106,29 +110,14 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content before changes: ${clusterJson}"
-if [ -z "${clusterJson}" ]; then
-  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
-  exit 1
-fi
-
 # if the restartVersion is not provided, generate the value of restartVersion
 if [ -z "${restartVersion}" ]; then
-  generateClusterRestartVersion "${clusterJson}" "${clusterName}" restartVersion
+  generateClusterRestartVersion "${domainJson}" "${clusterName}" restartVersion
 fi
 
-# Changed made on 08/15/2022
 printInfo "Patching restartVersion for cluster '${clusterName}' to '${restartVersion}'."
-#createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
-createPatchJsonToUpdateClusterRestartVersionUsingClusterResource "${clusterJson}" "${clusterName}" "${restartVersion}" patchJson
+createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
 
-# Changed made on 08/15/2022
-#executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
-executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content after changes: ${clusterJson}"
+executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched restartVersion for cluster '${clusterName}'!"

@@ -16,11 +16,11 @@ usage() {
   'spec.clusters[<cluster-name>].replicas' attribute of the domain
   resource. This change will cause the operator to perform a scaling
   operation for the WebLogic cluster based on the value of replica count.
- 
+
   Usage:
- 
+
     $(basename $0) -c mycluster -r replicas [-n mynamespace] [-d mydomainuid] [-m kubecli]
-  
+
     -c <cluster-name>   : Cluster name parameter is required.
 
     -r <replicas>       : Replica count, parameter is required.
@@ -35,7 +35,7 @@ usage() {
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
     -h                  : This help.
-   
+
 EOF
 exit $1
 }
@@ -74,7 +74,7 @@ set -eu
 #
 # Function to perform validations, read files and initialize workspace
 #
-initialize() {
+initialize {
 
   validateErrors=false
 
@@ -94,8 +94,12 @@ initialize() {
 
 initialize
 
-# Get the cluster in json format. Changed made on 08/15/2022
-#domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+# Get the domain in json format
+domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${domainJson}" ]; then
+  printError "Unable to get domain resource for domain '${domainUid}' in namespace '${domainNamespace}'. Please make sure the 'domain_uid' and 'namespace' specified by the '-d' and '-n' arguments are correct. Exiting."
+  exit 1
+fi
 
 isValidCluster=""
 validateClusterName "${domainUid}" "${domainNamespace}" "${clusterName}" isValidCluster
@@ -104,32 +108,15 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content before changes: ${clusterJson}"
-if [ -z "${clusterJson}" ]; then
-  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
-  exit 1
-fi
-
-# Changed made on 08/15/2022
-#isReplicasInAllowedRange "${clusterJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
-isClusterReplicasInAllowedRange "${clusterJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
+isReplicasInAllowedRange "${domainJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
 if [ "${replicasInAllowedRange}" == 'false' ]; then
   printError "Replicas value is not in the allowed range of ${range}. Exiting."
   exit 1
 fi
 
-# Changed made on 08/15/2022
-printInfo "Patching replicas for cluster: '${clusterName}' to '${replicas}'."
-#createPatchJsonToUpdateReplicas "${clusterJson}" "${clusterName}" "${replicas}" patchJson
-createPatchJsonToUpdateReplicasUsingClusterResource "${clusterJson}" "${clusterName}" "${replicas}" patchJson
+printInfo "Patching replicas for cluster '${clusterName}' to '${replicas}'."
+createPatchJsonToUpdateReplicas "${domainJson}" "${clusterName}" "${replicas}" patchJson
 
-# Changed made on 08/15/2022
-#executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
-executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content after changes: ${clusterJson}"
+executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched replicas for cluster '${clusterName}'!"
