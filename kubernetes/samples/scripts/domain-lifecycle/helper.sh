@@ -821,6 +821,71 @@ checkStartedServers() {
 }
 
 #
+# Check servers started in a cluster based on server start policy and
+# replica count.
+# Added on 09/01/2022
+# $1 - Domain resource in json format
+# $2 - Cluster resource in json format
+# $3 - Name of server
+# $4 - Name of cluster
+# $5 - Indicates if replicas will stay constant, incremented or decremented.
+#      Valid values are "CONSTANT", "INCREMENT" and "DECREMENT"
+# $6 - Indicates if policy of current server will stay constant or unset.
+#      Valid values are "CONSTANT" and "UNSET"
+# $7 - Return value of "true" or "false" indicating if current server will be started
+#
+checkStartedServersUsingClusterResource() {
+  local domainJson=$1
+  local clusterJson=$2
+  local serverName=$3
+  local clusterName=$4
+  local withReplicas=$5
+  local withPolicy=$6
+  local __started=$7
+  local localServerName=""
+  local policy=""
+  local replicaCount=0
+  local currentReplicas=0
+  local startedServers=()
+  local sortedByAlwaysServers=()
+
+  # Get sorted list of servers in 'sortedByAlwaysServers' array
+  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${withPolicy}"
+  getReplicaCountUsingClusterResource  "${clusterJson}" "${clusterName}" replicaCount
+  # Increment or decrement the replica count based on 'withReplicas' input parameter
+  if [ "${withReplicas}" == "INCREASED" ]; then
+    replicaCount=$((replicaCount+1))
+  elif [ "${withReplicas}" == "DECREASED" ]; then
+    replicaCount=$((replicaCount-1))
+  fi
+  for localServerName in ${sortedByAlwaysServers[@]:-}; do
+    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    # Update policy when server name matches current server and unsetting
+    if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
+      policy=UNSET
+    fi
+
+    # check if server should start based on replica count, policy and current replicas
+    shouldStart "${currentReplicas}" "${policy}" "${replicaCount}" result
+    if [ "${result}" == 'true' ]; then
+      # server should start, increment current replicas and add server to list of started servers
+      currentReplicas=$((currentReplicas+1))
+      startedServers+=(${localServerName})
+    fi
+  done
+
+  startedSize=${#startedServers[@]}
+  if [ ${startedSize} -gt 0 ]; then
+    # check if current server is in the list of started servers
+    if checkStringInArray ${serverName} ${startedServers[@]}; then
+      eval $__started="true"
+      return
+    fi
+  fi
+  eval $__started="false"
+}
+
+#
 # Function to check if server should start based on policy and current replicas
 # $1 - Current number of replicas
 # $2 - Server start policy
@@ -1396,7 +1461,7 @@ isReplicaInClusterResourceMatch() {
   specReplicaCmd="(.spec | select (.clusterName == \"${clusterName}\")).replicas"
   specReplicaCount=$(echo ${clusterJson} | jq "${specReplicaCmd}")
   statusReplicaCmd="(.status | select (.clusterName == \"${clusterName}\")).replicas"
-  statusReplicaCount=$(echo ${clusterJson} | jq "${specReplicaCmd}")
+  statusReplicaCount=$(echo ${clusterJson} | jq "${statusReplicaCmd}")
 
   printInfo "spec.replica count is: ${specReplicaCount}"
   printInfo "status.replica count is: ${statusReplicaCount}"

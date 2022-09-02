@@ -167,8 +167,31 @@ if [ -n "${clusterName}" ]; then
     printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
     exit 1
   fi
+
+  isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
+  printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
+
+  loopindex=0
+  while [ "${specReplicasEqualsStatusReplicas}" != "true" ]; do
+  	printInfo "sleeping 5 seconds more for Spec.replicas equals Status.replicas. Ite [$loopindex/12]"
+    sleep 5
+
+    clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+    printInfo "clusterJson content in while loop: ${clusterJson}"
+    isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
+    printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
+
+    if [[ "$loopindex" == '12' ]]; then
+      printInfo "Waited 60 seconds. Exit"
+      break
+    fi
+    loopindex=`expr $loopindex + 1`
+  done
+
   # Server is part of a cluster, check currently started servers
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
+  # Changed on 09/01/2022
+  #checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
+  checkStartedServersUsingClusterResource "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
     printInfo "No changes needed, exiting. Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
     exit 0
@@ -205,14 +228,18 @@ if [[ -n "${clusterName}" && "${effectivePolicy}" == "Always" ]]; then
   # Server is part of a cluster and start policy is Always.
   withReplicas="CONSTANT"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenAlwaysPolicyReset
+  # Changed on 09/01/2022
+  #checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenAlwaysPolicyReset
+  checkStartedServersUsingClusterResource "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenAlwaysPolicyReset
 fi
 
 if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
   # server is part of a cluster and replica count will decrease
   withReplicas="DECREASED"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
+  # Changed on 09/01/2022
+  #checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
+  checkStartedServersUsingClusterResource "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
   # Changed on 08/24/2022
   #createReplicaPatch "${domainJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
   createReplicaPatchUsingClusterResource "${clusterJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
@@ -274,28 +301,6 @@ if [ -n "${patchJson}" ]; then
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
   printInfo "Patch domain command succeeded !"
 fi
-
-printInfo "Waiting for 60 seconds for patching cluster resource to complete"
-sleep 60
-
-isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
-printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
-
-i=0
-while [ "${specReplicasEqualsStatusReplicas}" != "true" ]; do
-	printInfo "Waiting for 5 seconds for Spec.replicas equals Status.replicas"
-  sleep 5
-
-  isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
-  printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
-
-  if [[ "$i" == '12' ]]; then
-    printInfo "Waited 60 seconds. Exit"
-    break
-  fi
-  printInfo "Loop number $i"
-  ((i++))
-done
 
 clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content after changes: ${clusterJson}"

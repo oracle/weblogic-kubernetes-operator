@@ -180,8 +180,31 @@ if [ -n "${clusterName}" ]; then
     printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
     exit 1
   fi
+
+  isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
+  printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
+
+  loopindex=0
+  while [ "${specReplicasEqualsStatusReplicas}" != "true" ]; do
+  	printInfo "sleeping 5 seconds more for Spec.replicas equals Status.replicas. Ite [$loopindex/12]"
+    sleep 5
+
+    clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+    printInfo "clusterJson content in while loop: ${clusterJson}"
+    isReplicaInClusterResourceMatch "${clusterJson}" "${clusterName}" specReplicasEqualsStatusReplicas
+    printInfo "specReplicasEqualsStatusReplicas: ${specReplicasEqualsStatusReplicas}"
+
+    if [[ "$loopindex" == '12' ]]; then
+      printInfo "Waited 60 seconds. Exit"
+      break
+    fi
+    loopindex=`expr $loopindex + 1`
+  done
+
   # Server is part of a cluster, check currently started servers
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
+  # Changed on 09/01/2022
+  #checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
+  checkStartedServersUsingClusterResource "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ ${effectivePolicy} == "IfNeeded" && ${serverStarted} == "true" ]]; then
     printInfo "No changes needed, exiting. The server should be already started or it's in the process of starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
     exit 0
@@ -205,7 +228,9 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   #check if server starts by increasing replicas and unsetting policy
   withReplicas="INCREASED"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
+  # Changed on 09/01/2022
+  #checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
+  checkStartedServersUsingClusterResource "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
   # Changed on /08/20/2022
   #createReplicaPatch "${domainJson}" "${clusterName}" "INCREMENT" incrementReplicaPatch replicaCount
   createReplicaPatchUsingClusterResource "${clusterJson}" "${clusterName}" "INCREMENT" incrementReplicaPatch replicaCount
@@ -241,7 +266,10 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Replica count needs to stay constant, check if server starts by unsetting policy
   withReplicas="CONSTANT"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
+  # Changed on 09/01/2022
+  #checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
+  checkStartedServersUsingClusterResource "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
+
   if [[ "${effectivePolicy}" == "Never" && ${startsByPolicyUnset} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
@@ -266,7 +294,5 @@ if [ -n "${patchJson}" ]; then
   printInfo "Patch domain command succeeded !"
 fi
 
-printInfo "Waiting for 30 seconds for patching cluster resource to complete"
-sleep 30
 clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content after changes: ${clusterJson}"
