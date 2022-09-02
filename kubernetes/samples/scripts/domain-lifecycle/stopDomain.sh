@@ -60,7 +60,7 @@ done
 set -eu
 set -o pipefail
 
-initialize {
+initialize() {
 
   validateErrors=false
 

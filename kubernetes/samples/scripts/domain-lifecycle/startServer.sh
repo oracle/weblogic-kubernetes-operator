@@ -119,7 +119,7 @@ done
 #
 # Function to perform validations, read files and initialize workspace
 #
-initialize {
+initialize() {
 
   # Validate the required files exist
   validateErrors=false
