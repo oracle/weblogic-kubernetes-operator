@@ -163,7 +163,7 @@ class ItUsabilityOperatorHelmChart {
     opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
-    logger.info("Getting a unique namespace for WebLogic domain");
+    logger.info("Getting a unique namespace for WebLogic domain 1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain1Namespace = namespaces.get(1);
     createTestRepoSecret(domain1Namespace);
@@ -238,11 +238,12 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Installing and verifying operator");
       HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
       if (!isDomain1Running) {
-        logger.info("Installing and verifying domain");
+        logger.info("Installing and verifying domain1 in {0}", domain1Namespace);
         assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
             "can't start or verify domain in namespace " + domain1Namespace);
         isDomain1Running = true;
       }
+
       // get the admin server pod original creation timestamp
       logger.info("Getting admin server pod original creation timestamp");
       String adminServerPodName = domain1Uid + adminServerPrefix;
@@ -263,6 +264,7 @@ class ItUsabilityOperatorHelmChart {
                 String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                     managedServerPodName, domain1Namespace)));
       }
+      
       // delete operator
       logger.info("Uninstalling operator");
       uninstallOperator(opHelmParams);
