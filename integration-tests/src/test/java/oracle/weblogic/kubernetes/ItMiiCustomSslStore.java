@@ -159,15 +159,16 @@ class ItMiiCustomSslStore {
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // Generate JKS Keystore using openssl before
     // managed server services and pods are ready
+    String uniquePath = "/shared/" + domainNamespace + "/" + domainUid;
     generateJksStores();
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "IdentityKeyStore.jks"),
-        Paths.get("/shared/IdentityKeyStore.jks")));
+        Paths.get(uniquePath + "/IdentityKeyStore.jks")));
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "TrustKeyStore.jks"),
-        Paths.get("/shared/TrustKeyStore.jks")));
+        Paths.get(uniquePath + "/TrustKeyStore.jks")));
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
