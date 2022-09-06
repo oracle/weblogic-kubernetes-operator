@@ -122,7 +122,7 @@ You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/
 # cd kubernetes/samples/scripts/create-weblogic-domain-credentials
 ```
 ```shell
-$ ./create-weblogic-credentials.sh -u <wl admin username> -p <wl admin password> -d domain1
+$ ./create-weblogic-credentials.sh -u <WebLogic admin username> -p <WebLogic admin password> -d domain1
 ```
 ```
 secret/domain1-weblogic-credentials created
@@ -131,7 +131,7 @@ The secret domain1-weblogic-credentials has been successfully created in the def
 ```
 
 Notes:
-- Replace `<wl admin username>` and `<wl admin password>` with a WebLogic administrator username and password of your choice.
+- Replace `<WebLogic admin username>` and `<WebLogic admin password>` with a WebLogic administrator username and password of your choice.
 - The password should be at least eight characters long and include at least one digit.
 - Remember what you specified. These credentials may be needed again later.
 
@@ -533,8 +533,8 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `wls` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
-| `weblogicUserName` | `<wl admin username>` | Enter your choice for a WebLogic administration username. |
-| `weblogicAccountPassword` | `<wl admin password>` | Enter your choice for a WebLogic administration password. It must be at least eight characters long and contain at least one digit. |
+| `weblogicUserName` | `<WebLogic admin username>` | Enter your choice for a WebLogic administration username. |
+| `weblogicAccountPassword` | `<WebLogic admin password>` | Enter your choice for a WebLogic administration password. It must be at least eight characters long and contain at least one digit. |
 
 If you don't want to change the other parameters, you can use the default values.
 Please make sure no extra whitespaces are added!
@@ -590,11 +590,11 @@ adding: index.jsp(in = 1001) (out= 459)(deflated 54%)
 ```
 
 Now, you are able to deploy the sample application in `/tmp/testwebapp/testwebapp.war` to the cluster. This sample uses WLS RESTful API [/management/weblogic/latest/edit/appDeployments](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlrer/op-management-weblogic-version-edit-appdeployments-x-operations-1.html) to deploy the sample application.
-Replace `<wl admin username>` and `<wl admin password>` with the values you specified in [Create secrets](#create-secrets) or [Automation](#automation):
+Replace `<WebLogic admin username>` and `<WebLogic admin password>` with the values you specified in [Create secrets](#create-secrets) or [Automation](#automation):
 
 ```bash
 $ ADMIN_SERVER_IP=$(kubectl get svc domain1-admin-server-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
-$ curl --user <wl admin username>:<wl admin password> -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
+$ curl --user <WebLogic admin username>:<WebLogic admin password> -H X-Requested-By:MyClient  -H Accept:application/json -s -v \
   -H Content-Type:multipart/form-data  \
   -F "model={
         name:    'testwebapp',
