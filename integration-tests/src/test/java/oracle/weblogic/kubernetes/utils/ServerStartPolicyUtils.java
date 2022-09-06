@@ -85,7 +85,6 @@ public class ServerStartPolicyUtils {
   public static final String DYNAMIC_CLUSTER = "cluster-1";
   public static final String CONFIG_CLUSTER = "cluster-2";
 
-
   private static final int replicaCount = 1;
 
   private static LoggingFacade logger = getLogger();

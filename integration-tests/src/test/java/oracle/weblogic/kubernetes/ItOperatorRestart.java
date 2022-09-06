@@ -296,7 +296,6 @@ class ItOperatorRestart {
 
     logger.info("Wait for domain {0} server pods in namespace {1} to be restarted",
         domainUid, domainNamespace);
-
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 

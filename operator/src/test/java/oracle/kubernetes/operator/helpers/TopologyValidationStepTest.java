@@ -5,8 +5,10 @@ package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
 
@@ -27,10 +29,14 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +71,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLIC
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -373,6 +380,7 @@ class TopologyValidationStepTest {
       for (ClusterCase cluster : clusterCases) {
         domainConfigurator.configureCluster(info, cluster.clusterName).withReplicas(cluster.numReplicas);
         cluster.addCluster(domainConfig);
+        testSupport.defineResources(info.getClusterResource(cluster.clusterName));
       }
     }
 
@@ -457,6 +465,16 @@ class TopologyValidationStepTest {
     assertTopologyMismatchReported(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
   }
 
+  @Test
+  void whenClusterExistInDomain_clusterStatusContainsMaxReplicas() {
+    defineScenario(TopologyCase.REPLICAS)
+        .withStaticCluster(10).withReplicas(5).build();
+    testSupport.defineResources();
+    runTopologyValidationStep();
+
+    assertMaxReplicasSet();
+  }
+
   private void runTopologyValidationStep() {
     testSupport.runSteps(DomainValidationSteps.createValidateDomainTopologySteps(terminalStep));
   }
@@ -469,6 +487,26 @@ class TopologyValidationStepTest {
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
             .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
+  }
+
+  private void assertMaxReplicasSet() {
+    DomainResource domain = testSupport.<DomainResource>getResources(KubernetesTestSupport.DOMAIN).get(0);
+    ClusterResource cluster = testSupport.<ClusterResource>getResources(KubernetesTestSupport.CLUSTER).get(0);
+    MatcherAssert.assertThat(getClusterStatusMaxReplicas(domain, cluster), equalTo(10));
+    MatcherAssert.assertThat(getClusterStatusMaxReplicas(cluster), equalTo(10));
+  }
+
+  private Integer getClusterStatusMaxReplicas(DomainResource domain, ClusterResource cluster) {
+    return Optional.ofNullable(domain.getStatus()).map(DomainStatus::getClusters).orElse(Collections.emptyList())
+        .stream().filter(c -> c.getClusterName().equals(cluster.getClusterName())).findAny()
+        .map(ClusterStatus::getMaximumReplicas).orElse(0);
+  }
+
+  private Integer getClusterStatusMaxReplicas(ClusterResource cluster) {
+    return Optional.ofNullable(cluster)
+        .map(ClusterResource::getStatus)
+        .map(ClusterStatus::getMaximumReplicas)
+        .orElse(0);
   }
 
   @Test

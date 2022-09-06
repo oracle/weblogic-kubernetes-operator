@@ -288,16 +288,7 @@ class ItIntrospectVersion {
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
-        + "]";
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchClusterCustomResource(cluster1Name, introDomainNamespace, patch,
-        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-
-    //verify the introspector pod is created and runs
+    // verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
     String introspectPodNameBase = getIntrospectJobName(domainUid);
     checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
@@ -313,6 +304,15 @@ class ItIntrospectVersion {
       }
       return false;
     }, logger, "Domain.status.clusters.{0}.maximumReplicas to be {1}", cluster1Name, 3);
+
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
+        + "]";
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchClusterCustomResource(cluster1Name, introDomainNamespace, patch,
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
     // verify the 3rd server pod comes up
     checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
