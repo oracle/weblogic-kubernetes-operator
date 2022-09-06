@@ -124,7 +124,7 @@ class ItWlsSamples {
       SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
-  private final String clusterResourceName = clusterName + "-" + domain1Name;
+  private final String clusterResourceName = domain1Name + "-" + clusterName;
   private final String managedServerNameBase = "managed-server";
   private final String managedServerPodNamePrefix = domain1Name + "-" + managedServerNameBase;
 
