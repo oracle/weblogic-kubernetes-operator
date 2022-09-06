@@ -210,7 +210,7 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     # Server shuts down by unsetting start policy and decrementing replica count, unset and decrement 
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
       and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" "${replicaPatch}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
     #echo "DEBUG: ANIL patchJson is $patchJson"
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
@@ -220,7 +220,7 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
      and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" "${replicaPatch}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
   else
     # Patch server start policy to Never and decrement replica count
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Never' \
@@ -232,7 +232,7 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   if [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server start policy is AlWAYS and server shuts down by unsetting the policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
   else
     # Patch server start policy to Never
     printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'Never'."
@@ -247,13 +247,14 @@ else
   createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
 fi
 
+if [ ! -z "${replicaPatch}" ]; then
+  echo "DEBUG: Before executePatchCommand.. replicaPatch is $replicaPatch"
+  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
+fi
 echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
 if [ ! -z "${patchJson}" ]; then
   echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-fi
-if [ ! -z "${replicaPatch}" ]; then
-  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
 fi
 
 printInfo "Patch command succeeded !"

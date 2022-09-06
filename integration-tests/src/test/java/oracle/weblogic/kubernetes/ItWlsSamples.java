@@ -300,14 +300,14 @@ class ItWlsSamples {
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainNamespace, 1);
+      checkClusterReplicaCountMatches(domain1Name + "-" + clusterName, domainNamespace, 1);
     });
 
     // Verify that startServer script execution starts server pod and replica count is incremented
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(domain1Name + "-" + clusterName, domainNamespace, 2);
     });
   }
 

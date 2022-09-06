@@ -95,6 +95,7 @@ serverStarted=""
 startsByPolicyUnset=""
 startsByReplicaIncreaseAndPolicyUnset=""
 isAdminServer=false
+incrementReplicaPatch=""
 
 while getopts "vkd:n:m:s:h" opt; do
   case $opt in
@@ -205,7 +206,7 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   if [[ -n ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count ${replicaCount}."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" "${incrementReplicaPatch}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
   elif [[ -z ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Start policy is not set, server starts by increasing replicas based on effective policy, increment replicas
     printInfo "Updating replica count for cluster '${clusterName}' to ${replicaCount}."
@@ -224,7 +225,7 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   if [[ "${effectivePolicy}" == "Never" && ${startsByPolicyUnset} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
   else
     # Patch server policy to always
     printInfo "Patching start policy for '${serverName}' to 'Always'."
@@ -236,16 +237,16 @@ elif [ "${isAdminServer}" == 'true' ]; then
 else
   # Server is an independent managed server
   printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
-  createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
+  createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
 fi
 
-echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
+if [ ! -z "${incrementReplicaPatch}" ]; then
+  echo "DEBUG: Before executeClusterPatchCommand incrementReplicaPatch is $incrementReplicaPatch"
+  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${incrementReplicaPatch}" "${verboseMode}"
+fi
 if [ ! -z "${patchJson}" ]; then
   echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-fi
-if [ ! -z "${incrementReplicaPatch}" ]; then
-  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${incrementReplicaPatch}" "${verboseMode}"
 fi
 
 printInfo "Patch command succeeded !"

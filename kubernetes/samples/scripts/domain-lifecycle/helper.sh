@@ -192,8 +192,7 @@ createPatchJsonToUnsetPolicy() {
   local domainJson=$1
   local clusterJson=$2
   local serverName=$3
-  local replicaPatch=$4
-  local __result=$5
+  local __result=$4
 
   #if [ -n "${clusterJson}" ]; then
   #  eval $__result="'${replicaPatch}'"
@@ -257,22 +256,6 @@ createPatchJsonToUpdateReplica() {
 }
 
 #
-# Function to create patch json string to unset policy
-# $1 - Domain resource in json format
-# $2 - Name of server whose policy will be patched
-# $3 - Return value containing patch json string
-#
-createPatchJsonToUnsetPolicy() {
-  local domainJson=$1
-  local serverName=$2
-  local __result=$3
-
-  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
-  patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
-  eval $__result="'${patchJson}'"
-}
-
-#
 # Function to create patch string with server start policy unset
 # $1 - Domain resource in json format
 # $2 - Name of server whose policy will be unset
@@ -287,6 +270,7 @@ unsetServerStartPolicy() {
   local removeNullCmd=""
   local unsetStartPolicyPatchNoNulls=""
 
+  echo "DEBUG: serverName is $serverName"
   unsetCmd="(.spec.managedServers[] | select (.serverName == \"${serverName}\") | del (.serverStartPolicy))"
   replacePolicyCmd=$(echo ${domainJson} | jq -cr "${unsetCmd}")
   replacePolicyCmdLen=$(echo "${replacePolicyCmd}" | jq -e keys_unsorted | jq length)
@@ -959,7 +943,8 @@ Not increasing replica count value."
   fi
 
   cmd="(.spec.replicas) |= ${replica}"
-  replicaPatch=$(echo ${clusterJson} | jq "${cmd}")
+  #replicaPatch=$(echo ${clusterJson} | jq "${cmd}")
+  replicaPatch="{\"spec\": {\"replicas\": "${replica}"}}"
   eval $__result="'${replicaPatch}'"
   eval $__replicaCount="'${replica}'"
 }
