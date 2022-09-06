@@ -134,23 +134,24 @@ public class ClusterUtils {
   /**
    * Add cluster to domain resource.
    *
-   * @param clusterName name of the cluster resource
+   * @param clusterResName name of the cluster resource
    * @param namespace namespace
    * @param domain domain resource object
    * @param replicas scale to replicas
    * @return modified domain resource object
    */
-  public static DomainResource addClusterToDomain(String clusterName, String namespace,
+  public static DomainResource addClusterToDomain(String clusterResName, String namespace,
                                                   DomainResource domain, int replicas) {
     ClusterList clusters = listClusterCustomResources(namespace);
-    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+    if (clusters != null
+        && clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
+      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, namespace);
     } else {
-      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
-      createClusterAndVerify(createClusterResource(clusterName, namespace, replicas));
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, namespace);
+      createClusterAndVerify(createClusterResource(clusterResName, namespace, replicas));
     }
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     return domain;
   }
 }
