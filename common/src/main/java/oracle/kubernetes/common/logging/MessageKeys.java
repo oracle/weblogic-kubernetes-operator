@@ -171,6 +171,7 @@ public class MessageKeys {
   public static final String CLUSTER_STATUS = "WLSKO-0230";
 
   // domain status messages
+  public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
   public static final String DUPLICATE_CLUSTER_NAME_FOUND = "WLSDO-0002";
   public static final String LOG_HOME_NOT_MOUNTED = "WLSDO-0003";
@@ -244,6 +245,10 @@ public class MessageKeys {
   public static final String CLUSTER_CREATED_EVENT_PATTERN = "WLSEO-0031";
   public static final String CLUSTER_DELETED_EVENT_PATTERN = "WLSEO-0032";
   public static final String CLUSTER_CHANGED_EVENT_PATTERN = "WLSEO-0033";
+  public static final String CLUSTER_AVAILABLE_EVENT_PATTERN = "WLSEO-0034";
+  public static final String CLUSTER_COMPLETED_EVENT_PATTERN = "WLSEO-0035";
+  public static final String CLUSTER_UNAVAILABLE_EVENT_PATTERN = "WLSEO-0036";
+  public static final String CLUSTER_INCOMPLETE_EVENT_PATTERN = "WLSEO-0037";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";

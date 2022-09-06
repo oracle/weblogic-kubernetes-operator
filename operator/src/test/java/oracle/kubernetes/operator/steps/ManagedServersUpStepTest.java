@@ -21,7 +21,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainStatusUpdater.UpdateCompletedConditionSteps;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -252,7 +252,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertThat(firstNonEventStep(createNextStep()), not(instanceOf(UpdateCompletedConditionSteps.class)));
+    assertThat(firstNonEventStep(createNextStep()), not(instanceOf(ClearCompletedConditionSteps.class)));
   }
 
   private void startNoServers() {
@@ -489,15 +489,15 @@ class ManagedServersUpStepTest {
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(info, "server1");
 
-    assertThat(firstNonEventAndNonUpdateCompleteConditionStep(createNextStep()),
+    assertThat(firstCoreStep(createNextStep()),
         instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
-  void whenShuttingDownAtLeastOneServer_prependUpdateCompleteConditionStep() {
+  void whenShuttingDownAtLeastOneServer_prependClearCompleteConditionStep() {
     addServer(info, "server1");
 
-    assertThat(firstNonEventStep(createNextStep()), instanceOf(UpdateCompletedConditionSteps.class));
+    assertThat(firstNonEventStep(createNextStep()), instanceOf(ClearCompletedConditionSteps.class));
   }
 
   @Test
@@ -507,7 +507,7 @@ class ManagedServersUpStepTest {
     addServer(info, "server3");
     addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventAndNonUpdateCompleteConditionStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
         "server1", "server3");
   }
 
@@ -520,7 +520,7 @@ class ManagedServersUpStepTest {
     addServer(info, "server3");
     addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventAndNonUpdateCompleteConditionStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
         "server1", "server3", ADMIN);
   }
 
@@ -528,7 +528,7 @@ class ManagedServersUpStepTest {
   void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
     configurator.setShuttingDown(true);
 
-    assertThat(firstNonEventAndNonUpdateCompleteConditionStep(createNextStepWithNullWlsDomainConfig()),
+    assertThat(firstCoreStep(createNextStepWithNullWlsDomainConfig()),
         instanceOf(ClusterServicesStep.class));
   }
 
@@ -673,10 +673,10 @@ class ManagedServersUpStepTest {
     return stepLocal;
   }
 
-  private static Step firstNonEventAndNonUpdateCompleteConditionStep(Step step) {
+  private static Step firstCoreStep(Step step) {
     Step stepLocal = step;
     while (stepLocal instanceof EventHelper.CreateEventStep
-        || stepLocal instanceof UpdateCompletedConditionSteps) {
+        || stepLocal instanceof ClearCompletedConditionSteps) {
       stepLocal = stepLocal.getNext();
     }
 

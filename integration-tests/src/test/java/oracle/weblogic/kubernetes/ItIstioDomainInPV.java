@@ -28,6 +28,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -43,6 +44,9 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -96,7 +100,7 @@ class ItIstioDomainInPV  {
   private static String domainNamespace = null;
 
   private final String wlSecretName = "weblogic-credentials";
-  private final String domainUid = "istio-div";
+  private final String domainUid = "istio-dpv";
   private final String clusterName = "cluster-1";
   private final String adminServerName = "admin-server";
   private final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -139,9 +143,11 @@ class ItIstioDomainInPV  {
 
   /**
    * Create a WebLogic domain using WLST in a persistent volume.
+   * Use WebLogic (12.2.1.4) base image with Japanese Locale.
    * Add istio configuration.
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
+   * Check WebLogic Server log for few Japanese characters.
    * Verify WebLogic console is accessible thru istio ingress http port
    * Verify WebLogic console is accessible thru kubectl forwarded port
    * Additionally, the test verifies that WebLogic cluster can be scaled down
@@ -151,7 +157,7 @@ class ItIstioDomainInPV  {
   @DisplayName("Create WebLogic domain in PV with Istio")
   void testIstioDomainHomeInPv() {
 
-    final String managedServerNameBase = "wlst-ms-";
+    final String managedServerNameBase = "managed-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort();
@@ -203,6 +209,15 @@ class ItIstioDomainInPV  {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
 
+    // Use the WebLogic(12.2.1.4) Base Image with Japanese Locale
+    // Add the LANG environment variable to ja_JP.utf8
+    String imageLocation = null;
+    if (KIND_REPO != null) {
+      imageLocation = KIND_REPO + "weblogick8s/test-images/weblogic:" + LOCALE_IMAGE_TAG;
+    } else {
+      imageLocation = LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG;
+    }
+
     // Enable istio in domain custom resource configuration object.
     // Add T3Channel Service with port assigned to Istio TCP ingress port.
     logger.info("Creating domain custom resource");
@@ -216,7 +231,7 @@ class ItIstioDomainInPV  {
             .domainUid(domainUid)
             .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .image(imageLocation)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
@@ -229,6 +244,9 @@ class ItIstioDomainInPV  {
             .dataHome("")
             .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("LANG")
+                    .value("ja_JP.utf8"))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
@@ -265,6 +283,8 @@ class ItIstioDomainInPV  {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
+    // Make sure Japanese character is found in server pod log
+    assertTrue(matchPodLog(),"LANG is not set to ja_JP.utf8");
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -387,6 +407,30 @@ class ItIstioDomainInPV  {
     checkPodReady(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
     logger.info("Managed Server started in absence of administration server");
   }
+
+
+  // Looks for some Japanese Character in Server Pod Logs
+  private boolean matchPodLog() {
+    String toMatch = "起動しました";
+    // toMatch = "起起起モードで起動しました"; test fails
+    String podLog = null;
+    try {
+      podLog = Kubernetes.getPodLog("istio-dpv-managed-1", domainNamespace, "weblogic-server");
+      logger.info("{0}", podLog);
+      logger.info("Looking for string [{0}] in Pod log", toMatch);
+      if (podLog.contains(toMatch))  {
+        logger.info("Found the string [{0}] in Pod log", toMatch);
+        return true;
+      } else {
+        logger.info("Matching string  [{0}] Not found in Pod log", toMatch);
+        return false;
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  } 
+
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.

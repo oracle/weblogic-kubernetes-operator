@@ -28,7 +28,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -46,6 +49,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.p
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -67,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JRF domain on pv sample using wlst and wdt")
 @IntegrationTest
 @Tag("samples")
+@Tag("oke-sequential")
 @Tag("olcne")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
@@ -76,7 +81,7 @@ public class ItFmwSample {
   private static String domainNamespace = null;
 
   private static final Path samplePath = get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = get(WORK_DIR, "fmw-sample-testing");
+  private static final Path dbSamplePath = get(WORK_DIR, "fmw-sample-testing", "db");
 
   private static final String ORACLEDBURLPREFIX = "oracle-db.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
@@ -162,11 +167,14 @@ public class ItFmwSample {
 
     String domainUid = model.split(":")[1];
     String script = model.split(":")[0];
+    Path testSamplePath = get(WORK_DIR, "fmw-sample-testing", domainNamespace, "fwmdomainInPV", domainUid, script);
 
-    setupSample();
+    setupSample(testSamplePath);
 
     // create persistent volume and persistent volume claims used by the samples
-    createPvPvc(domainUid);
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
+    createPvPvc(domainUid, testSamplePath, pvName, pvcName);
 
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
@@ -175,16 +183,17 @@ public class ItFmwSample {
     createRcuSecretWithUsernamePassword(domainUid + "-rcu-credentials", domainNamespace,
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
-    Path sampleBase = get(tempSamplePath.toString(),
+    Path sampleBase = get(testSamplePath.toString(),
         "scripts/create-fmw-infrastructure-domain/domain-home-on-pv");
 
     //update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainUid, sampleBase);
+    updateDomainInputsFile(domainUid, sampleBase, pvcName);
 
     // change image name
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
+              "createDomainFilesDir: wlst", "createDomainFilesDir: "
+                     + script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
               "image: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
@@ -246,10 +255,7 @@ public class ItFmwSample {
     checkAccessToEMconsole(adminServerPodName);
   }
 
-  private void createPvPvc(String domainUid) {
-
-    final String pvName = domainUid + "-weblogic-sample-pv";
-    final String pvcName = domainUid + "-weblogic-sample-pvc";
+  private void createPvPvc(String domainUid, Path testSamplePath, String pvName, String pvcName) {
 
     // delete pvc first if exists
     if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
@@ -268,37 +274,53 @@ public class ItFmwSample {
         assertDoesNotThrow(() -> pvNotExist(pvName, null),
             String.format("pvNotExists failed for pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
 
-    Path pvpvcBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
+    Path pvpvcBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
     // create pv and pvc
     assertDoesNotThrow(() -> {
       // when tests are running in local box the PV directories need to exist
-      Path pvHostPathBase;
-      pvHostPathBase = createDirectories(get(PV_ROOT, this.getClass().getSimpleName()));
-      Path pvHostPath;
-      pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
+      if (!OKE_CLUSTER) {
+        Path pvHostPathBase;
+        pvHostPathBase = createDirectories(get(PV_ROOT, this.getClass().getSimpleName()));
+        Path pvHostPath;
+        pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
 
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      deleteDirectory(pvHostPath.toFile());
-      createDirectories(pvHostPath);
-      String command1  = "chmod -R 777 " + pvHostPathBase;
-      logger.info("Command1 to be executed: " + command1);
-      assertTrue(Command
-          .withParams(new CommandParams()
-            .command(command1))
-          .execute(), "Failed to chmod " + PV_ROOT);
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
+        String command1 = "chmod -R 777 " + pvHostPathBase;
+        logger.info("Command1 to be executed: " + command1);
+        assertTrue(Command
+                .withParams(new CommandParams()
+                        .command(command1))
+                .execute(), "Failed to chmod " + PV_ROOT);
 
-      // set the pvHostPath in create-pv-pvc-inputs.yaml
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+      } else {
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + FSS_DIR);
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStorageNFSServer: nfsServer", "weblogicDomainStorageNFSServer: " + NFS_SERVER);
+        replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+        replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+      }
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
-      // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "domainUID:", "domainUID: " + domainUid);
+      replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pvc", pvcName);
+      replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pv", pvName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -344,25 +366,25 @@ public class ItFmwSample {
   }
 
   // copy samples directory to a temporary location
-  private static void setupSample() {
+  private static void setupSample(Path testSamplePath) {
     assertDoesNotThrow(() -> {
-      logger.info("Deleting and recreating {0}", tempSamplePath);
-      deleteDirectory(tempSamplePath.toFile());
-      createDirectories(tempSamplePath);
+      logger.info("Deleting and recreating {0}", testSamplePath);
+      deleteDirectory(testSamplePath.toFile());
+      createDirectories(testSamplePath);
 
-      logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
-      copyDirectory(samplePath.toFile(), tempSamplePath.toFile());
+      logger.info("Copying {0} to {1}", samplePath, testSamplePath);
+      copyDirectory(samplePath.toFile(), testSamplePath.toFile());
     });
 
-    String command = "chmod -R 755 " + tempSamplePath;
+    String command = "chmod -R 755 " + testSamplePath;
     logger.info("The command to be executed: " + command);
     assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
-        .execute(), "Failed to chmod tempSamplePath");
+        .execute(), "Failed to chmod testSamplePath");
   }
 
-  private void updateDomainInputsFile(String domainUid, Path sampleBase) {
+  private void updateDomainInputsFile(String domainUid, Path sampleBase, String pvcName) {
     // in general the node port range has to be between 30,100 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30172
@@ -371,6 +393,14 @@ public class ItFmwSample {
 
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
+      if (OKE_CLUSTER && sampleBase.toString().contains("domain-home-on-pv")) {
+        String chownCommand1 = "chown 1000:0 %DOMAIN_ROOT_DIR%"
+                + "/. && find %DOMAIN_ROOT_DIR%"
+                + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-job-template.yaml").toString(),
+                "chown -R 1000:0 %DOMAIN_ROOT_DIR%", chownCommand1);
+      }
+
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -389,6 +419,15 @@ public class ItFmwSample {
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + "/" + domainUid + "/domains");
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "logHome: /shared/logs", "logHome: /shared/"
+                      + domainNamespace + "/" + domainUid + "/logs");
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc",
+              "persistentVolumeClaimName: " + pvcName);
     });
   }
 
@@ -406,7 +445,7 @@ public class ItFmwSample {
        String dbNamespace, int dbPort) throws ApiException {
     LoggingFacade logger = getLogger();
 
-    setupSample();
+    setupSample(dbSamplePath);
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(dbNamespace);
@@ -424,9 +463,8 @@ public class ItFmwSample {
    * @param dbNamespace namespace where DB instance is going to start
    */
   private static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace) {
-    LoggingFacade logger = getLogger();
 
-    Path dbSamplePathBase = get(tempSamplePath.toString(), "/scripts/create-oracle-db-service/");
+    Path dbSamplePathBase = get(dbSamplePath.toString(), "/scripts/create-oracle-db-service/");
     String script = get(dbSamplePathBase.toString(),  "start-db-service.sh").toString();
     logger.info("Script for startOracleDB: {0}", script);
 
@@ -464,7 +502,7 @@ public class ItFmwSample {
 
     LoggingFacade logger = getLogger();
 
-    Path rcuSamplePathBase = get(tempSamplePath.toString(), "/scripts/create-rcu-schema");
+    Path rcuSamplePathBase = get(dbSamplePath.toString(), "/scripts/create-rcu-schema");
     String script = get(rcuSamplePathBase.toString(), "create-rcu-schema.sh").toString();
     String outputPath = get(rcuSamplePathBase.toString(), "rcuoutput").toString();
     logger.info("Script for createRcuSchema: {0}", script);

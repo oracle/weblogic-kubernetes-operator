@@ -64,15 +64,18 @@ In this URL format:
 *	`<domainUID>` is the unique identifier of the WebLogic domain.
 *	`<clusterName>` is the name of the WebLogic cluster to be scaled.
 
-The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `managedServerCount`; for example:
+The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body is the same as a Kubernetes autoscaling `ScaleSpec` item; for example:
 
 ```json
 {
-    "managedServerCount": 3
+    "spec":
+    {
+       "replicas": 3 
+    }
 }
 ```
 
-The `managedServerCount` value designates the number of Managed Server instances to scale to.  On a successful scaling request, the REST interface will return an HTTP response code of `204 (“No Content”)`.
+The `replicas` value designates the number of Managed Server instances to scale to.  On a successful scaling request, the REST interface will return an HTTP response code of `204 (“No Content”)`.
 
 When you POST to the `/scale` REST endpoint, you must send the following headers:
 
@@ -82,7 +85,7 @@ When you POST to the `/scale` REST endpoint, you must send the following headers
 For example, when using `curl`:
 
 ```shell
-$ curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
+$ curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "spec": {"replicas": 3 } }' https://.../scaling
 ```
 
 If you omit the header, you'll get a `400 (bad request)` response. If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.  If the service account or user associated with the `Bearer` token does not have permission to `patch` the WebLogic domain resource, then you'll get a `403 (Forbidden)` response.
@@ -350,7 +353,7 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
 -H Accept:application/json \
 -H "Content-Type:application/json" \
 -H "X-Requested-By:WLDF" \
--d "{\"managedServerCount\": $size}" \
+-d "{\"spec\": {\"replicas\": $size} }" \
 -X POST  https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale \
 -o operator.rest.response.body \
 --stderr operator.rest.stderr

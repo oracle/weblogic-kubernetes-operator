@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.DomainStatusUpdater.UpdateCompletedConditionSteps;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
@@ -76,7 +76,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     if (hasWorkToDo(steps, next)) {
-      insert(steps, new UpdateCompletedConditionSteps());
+      insert(steps, new ClearCompletedConditionSteps());
     }
     return Step.chain(steps.toArray(new Step[0]));
   }
@@ -257,7 +257,7 @@ public class ManagedServersUpStep extends Step {
     boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
-        int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        int configMaxClusterSize = clusterConfig.getClusterSize();
         return clusterConfig.hasDynamicServers()
             && clusterConfig.getServerConfigs().size() == configMaxClusterSize
             && info.getReplicaCount(clusterName) > configMaxClusterSize;
@@ -314,7 +314,7 @@ public class ManagedServersUpStep extends Step {
         String clusterName = clusterConfig.getClusterName();
         addReplicasTooHighValidationErrorWarning(
             info.getReplicaCount(clusterName),
-            clusterConfig.getMaxDynamicClusterSize(),
+            clusterConfig.getClusterSize(),
             clusterName);
       }
     }

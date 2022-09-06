@@ -51,6 +51,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
+import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -510,7 +512,7 @@ public class DomainStatusUpdater {
     }
 
     private void addFailureCondition(DomainStatus status, DomainCondition condition) {
-      status.addCondition(condition);
+      status.addCondition(condition).updateSummaryMessage(getDomain());
       addDomainEvent(condition);
     }
 
@@ -675,6 +677,7 @@ public class DomainStatusUpdater {
 
         void apply() {
           conditionList.forEach(newCondition -> addCondition(status, newCondition));
+          Arrays.stream(clusterChecks).forEach(ClusterCheck::addClusterConditions);
         }
 
         private void addCondition(DomainStatus status, DomainCondition newCondition) {
@@ -734,37 +737,17 @@ public class DomainStatusUpdater {
         }
 
         private boolean allStartedServersAreComplete() {
-          return expectedRunningServers.stream().allMatch(this::isServerComplete);
+          return expectedRunningServers.stream().allMatch(StatusUpdateContext.this::isServerComplete);
         }
 
         private boolean allNonStartedServersAreShutdown() {
-          return getNonStartedServersWithState().stream().allMatch(this::isShutDown);
+          return getNonStartedServersWithState().stream().allMatch(StatusUpdateContext.this::isShutDown);
         }
 
         private List<String> getNonStartedServersWithState() {
           return Optional.ofNullable(serverState).map(Map::keySet).orElse(Collections.emptySet())
               .stream().filter(this::isNonStartedServer)
               .collect(Collectors.toList());
-        }
-
-        // returns true if the server pod does not have a label indicating that it needs to be rolled
-        private boolean isNotMarkedForRoll(String serverName) {
-          return Optional.ofNullable(getInfo().getServerPod(serverName))
-              .map(V1Pod::getMetadata)
-              .map(V1ObjectMeta::getLabels)
-              .map(Map::keySet).orElse(Collections.emptySet()).stream()
-              .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
-        }
-
-        // A server is complete if it is ready, is in the WLS running state and
-        // does not need to roll to accommodate changes to the domain.
-        private boolean isServerComplete(@Nonnull String serverName) {
-          return isServerReady(serverName)
-              && isNotMarkedForRoll(serverName);
-        }
-
-        private boolean isShutDown(@Nonnull String serverName) {
-          return SHUTDOWN_STATE.equals(getRunningState(serverName));
         }
 
         private boolean isNonStartedServer(String serverName) {
@@ -786,13 +769,6 @@ public class DomainStatusUpdater {
 
         private boolean allNonClusteredServersRunning() {
           return getNonClusteredServers().stream().allMatch(StatusUpdateContext.this::isServerReady);
-        }
-
-        private Set<String> serversMarkedForRoll() {
-          return DomainPresenceInfo.fromPacket(packet)
-              .map(DomainPresenceInfo::getServersToRoll)
-              .map(Map::keySet)
-              .orElse(Collections.emptySet());
         }
 
         private boolean allIntendedServersReady() {
@@ -818,13 +794,17 @@ public class DomainStatusUpdater {
         private final int maxReplicaCount;
         private final int specifiedReplicaCount;
         private final List<String> startedServers;
+        private final List<String> nonStartedServers;
+        private final ClusterStatus clusterStatus;
 
         ClusterCheck(DomainStatus domainStatus, ClusterStatus clusterStatus) {
+          this.clusterStatus = clusterStatus;
           clusterName = clusterStatus.getClusterName();
           minReplicaCount = clusterStatus.getMinimumReplicas();
           maxReplicaCount = clusterStatus.getMaximumReplicas();
           specifiedReplicaCount = clusterStatus.getReplicasGoal();
           startedServers = getStartedServersInCluster(domainStatus, clusterName);
+          nonStartedServers = getNonStartedClusteredServers(domainStatus, clusterName);
         }
 
         private List<String> getStartedServersInCluster(DomainStatus domainStatus, String clusterName) {
@@ -835,12 +815,49 @@ public class DomainStatusUpdater {
               .collect(Collectors.toList());
         }
 
+        private List<String> getNonStartedClusteredServers(DomainStatus domainStatus, String clusterName) {
+          return domainStatus.getServers().stream()
+              .filter(s -> clusterName.equals(s.getClusterName()))
+              .map(ServerStatus::getServerName)
+              .filter(name -> !expectedRunningServers.contains(name))
+              .collect(Collectors.toList());
+        }
+
         boolean isAvailable() {
           return isClusterIntentionallyShutDown() || sufficientServersReady();
         }
 
+        private boolean isProcessingCompleted() {
+          return !hasTooManyReplicas() && allIntendedClusterServersReady();
+        }
+
         boolean hasTooManyReplicas() {
           return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
+        }
+
+        private boolean allIntendedClusterServersReady() {
+          return isClusterIntentionallyShutDown() || (allStartedClusterServersAreComplete()
+              && allNonStartedClusterServersAreShutdown()
+              && clusteredServersMarkedForRoll().isEmpty());
+        }
+
+        private boolean allStartedClusterServersAreComplete() {
+          return (startedServers.size() == specifiedReplicaCount)
+              && startedServers.stream().allMatch(StatusUpdateContext.this::isServerComplete);
+        }
+
+        private boolean allNonStartedClusterServersAreShutdown() {
+          return nonStartedServers.stream().allMatch(StatusUpdateContext.this::isShutDown);
+        }
+
+        private Set<String> clusteredServersMarkedForRoll() {
+          return serversMarkedForRoll().stream()
+              .filter(this::isServerInThisCluster)
+              .collect(Collectors.toSet());
+        }
+
+        private boolean isServerInThisCluster(String serverName) {
+          return clusterName.equals(getClusterName(serverName));
         }
 
         private boolean isClusterIntentionallyShutDown() {
@@ -871,6 +888,15 @@ public class DomainStatusUpdater {
 
         private int maxUnavailable() {
           return getInfo().getMaxUnavailable(clusterName);
+        }
+
+        void addClusterConditions() {
+          clusterStatus.addCondition(
+              new ClusterCondition(ClusterConditionType.AVAILABLE)
+                  .withStatus(isAvailable()));
+          clusterStatus.addCondition(
+              new ClusterCondition(ClusterConditionType.COMPLETED)
+                  .withStatus(isProcessingCompleted()));
         }
       }
 
@@ -1047,6 +1073,33 @@ public class DomainStatusUpdater {
       private boolean isServerReady(@Nonnull String serverName) {
         return RUNNING_STATE.equals(getRunningState(serverName))
               && PodHelper.hasReadyStatus(getInfo().getServerPod(serverName));
+      }
+
+      // A server is complete if it is ready, is in the WLS running state and
+      // does not need to roll to accommodate changes to the domain.
+      private boolean isServerComplete(@Nonnull String serverName) {
+        return isServerReady(serverName)
+            && isNotMarkedForRoll(serverName);
+      }
+
+      // returns true if the server pod does not have a label indicating that it needs to be rolled
+      private boolean isNotMarkedForRoll(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(Map::keySet).orElse(Collections.emptySet()).stream()
+            .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
+      }
+
+      private boolean isShutDown(@Nonnull String serverName) {
+        return SHUTDOWN_STATE.equals(getRunningState(serverName));
+      }
+
+      private Set<String> serversMarkedForRoll() {
+        return DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getServersToRoll)
+            .map(Map::keySet)
+            .orElse(Collections.emptySet());
       }
 
       private boolean isHasFailedPod() {
@@ -1249,7 +1302,7 @@ public class DomainStatusUpdater {
       final String clusterName = clusterConfig.getName();
       return new ClusterStatus()
           .withClusterName(clusterName)
-          .withMaximumReplicas(clusterConfig.getMaxClusterSize())
+          .withMaximumReplicas(clusterConfig.getClusterSize())
           .withMinimumReplicas(useMinimumClusterSize(clusterName) ? clusterConfig.getMinClusterSize() : 0)
           .withReplicasGoal(getClusterSizeGoal(clusterName));
     }
@@ -1332,8 +1385,8 @@ public class DomainStatusUpdater {
     }
   }
 
-  public static class UpdateCompletedConditionSteps extends StatusUpdateStep {
-    public UpdateCompletedConditionSteps() {
+  public static class ClearCompletedConditionSteps extends StatusUpdateStep {
+    public ClearCompletedConditionSteps() {
       super(null);
     }
 

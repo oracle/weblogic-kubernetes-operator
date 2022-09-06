@@ -132,7 +132,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `configuration` | Map | The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances. |
-| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.6 |
+| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7 |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `port` | integer | The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs). |
 
@@ -180,8 +180,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. |
+| `conditions` | Array of [Cluster Condition](#cluster-condition) | Current service state of the cluster. |
 | `maximumReplicas` | integer | The maximum number of cluster members. |
 | `minimumReplicas` | integer | The minimum number of cluster members. |
+| `observedGeneration` | integer | The generation observed by the WebLogic operator. |
 | `readyReplicas` | integer | The number of ready cluster members. |
 | `replicas` | integer | The number of currently running cluster members. |
 | `replicasGoal` | integer | The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero. |
@@ -266,6 +268,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `shutdownType` | string | Specifies how the operator will shut down server instances. Legal values are `Graceful` and `Forced`. Defaults to `Graceful`. |
 | `timeoutSeconds` | integer | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds. |
 | `waitForAllSessions` | Boolean | For graceful shutdown only, set to true to wait for all HTTP sessions during in-flight work handling; false to wait for non-persisted HTTP sessions only. Defaults to false. |
+
+### Cluster Condition
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
+| `message` | string | Human-readable message indicating details about last transition. |
+| `status` | string | The status of the condition. Can be True, False. |
+| `type` | string | The type of the condition. Valid types are Completed, Available, Failed, and Rolling. |
 
 ### Server Health
 
