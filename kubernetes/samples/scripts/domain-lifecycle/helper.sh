@@ -283,7 +283,7 @@ createPatchJsonToUpdateReplicaAndPolicy() {
 }
 
 #
-# Function to create patch json string to update replica and policy
+# Function to create patch json string to update policy
 # $1 - Domain resource in json format
 # $2 - Name of server whose policy will be patched
 # $3 - Return value containing patch json string
