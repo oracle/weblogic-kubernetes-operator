@@ -128,31 +128,16 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
-   * Returns true if the domain or any referenced cluster in this presence info has a later generation
+   * Returns true if the domain in this presence info has a later generation
    * than the passed-in cached info.
    * @param cachedInfo another presence info against which to compare this one.
    */
-  public boolean isGenerationChanged(DomainPresenceInfo cachedInfo) {
-    return isDomainGenerationChanged(cachedInfo) || isAnyClusterGenerationChanged(cachedInfo);
-  }
-
-  private boolean isDomainGenerationChanged(DomainPresenceInfo cachedInfo) {
+  public boolean isDomainGenerationChanged(DomainPresenceInfo cachedInfo) {
     return getGeneration(getDomain()).compareTo(getGeneration(cachedInfo.getDomain())) > 0;
   }
 
   private Long getGeneration(KubernetesObject resource) {
     return Optional.ofNullable(resource).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getGeneration).orElse(0L);
-  }
-
-  private boolean isAnyClusterGenerationChanged(DomainPresenceInfo cachedInfo) {
-    List<ClusterResource> cachedClusters = cachedInfo.getReferencedClusters();
-    List<ClusterResource> currentClusters = getReferencedClusters();
-    if (cachedClusters.size() != currentClusters.size()) {
-      return true;
-    }
-    return currentClusters.stream().anyMatch(x -> cachedClusters.stream()
-        .filter(y -> y.getClusterName().equals(x.getClusterName())).findFirst()
-        .map(y -> getGeneration(x).compareTo(getGeneration(y)) > 0).orElse(true));
   }
 
   /**

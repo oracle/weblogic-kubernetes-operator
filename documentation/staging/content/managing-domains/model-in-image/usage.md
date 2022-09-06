@@ -142,7 +142,7 @@ Example:
   ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     create secret generic MY-DOMAINUID-runtime-encrypt-secret \
-    --from-literal=password=welcome1
+    --from-literal=password=MY-RUNTIME-PASSWORD
   ```
   ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
@@ -205,7 +205,7 @@ For more information see:
 {{% notice info %}} This section applies only for a `JRF` domain type. Skip it if your domain type is `WLS` or `RestrictedJRF`.
 {{% /notice %}}
 
-A JRF domain requires an infrastructure database, initializing this database using RCU, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize it's OPSS schema tables in the database - a process that can take several minutes.
+A JRF domain requires an infrastructure database, initializing this database using RCU, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize its OPSS schema tables in the database - a process that can take several minutes.
 
 Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
@@ -256,11 +256,12 @@ Always back up your wallet file to a safe location that can be retrieved later. 
 {{% /notice %}}
 
 To reuse the wallet:
-  - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain. For example, assuming the password is `welcome1`:
+  - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain. For example, substitute
+    the password in place of `MY_WALLET_PASSWORD` below:
     ```shell
     $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-password-secret \
-      --from-literal=walletPassword=welcome1
+      --from-literal=walletPassword=MY_WALLET_PASSWORD
     ```
     ```shell
     $ kubectl -n MY_DOMAIN_NAMESPACE \

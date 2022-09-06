@@ -338,7 +338,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo) || liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return false;
-    } else if (operation.isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo)) {
+    } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;
     } else {
       cachedInfo.setDomain(liveInfo.getDomain());

@@ -12,6 +12,8 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -45,12 +47,15 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -125,6 +130,7 @@ class ItDBOperator {
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
+  private String clusterName = "cluster-1";
   private String fmwAminSecretName = fmwDomainUid + "-weblogic-credentials";
   private String fmwEncryptionSecretName = fmwDomainUid + "-encryptionsecret";
   private String rcuaccessSecretName = fmwDomainUid + "-rcu-access";
@@ -259,6 +265,13 @@ class ItDBOperator {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         fmwMiiImage);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
@@ -317,11 +330,26 @@ class ItDBOperator {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
+    DomainResource domainCR = createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
         dbSecretName, false, false, true);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, wlsDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, wlsDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
+    
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+        wlsDomainUid, wlsDomainNamespace);
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domainCR, DOMAIN_VERSION),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            wlsDomainUid, wlsDomainNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed "
+        + "for %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", wlsDomainNamespace);
@@ -485,7 +513,7 @@ class ItDBOperator {
     boolean result;
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
-    params.command("sh "
+    params.command("sh -x"
         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
