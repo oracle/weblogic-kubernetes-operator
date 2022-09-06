@@ -99,7 +99,7 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content before changes: ${clusterJson}"
 if [ -z "${clusterJson}" ]; then
   printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
@@ -126,9 +126,9 @@ createPatchJsonToUpdateClusterPolicyUsingClusterResource "${clusterJson}" "${clu
 # Changed made on 08/16/2022
 #executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
-executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content after changes: ${clusterJson}"
 
 printInfo "Successfully patched cluster '${clusterName}' with 'Never' start policy!"

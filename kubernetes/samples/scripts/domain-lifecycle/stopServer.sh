@@ -159,7 +159,7 @@ if [ "${isAdminServer}" == 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
-  clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+  clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
@@ -226,7 +226,6 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
       and decrementing replica count for cluster '${clusterName}' to ${replicaCount}."
     createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
   fi
-  executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Server is part of a cluster and replica count needs to stay constant
   if [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
@@ -251,6 +250,9 @@ echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
 if [ ! -z "${patchJson}" ]; then
   echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+fi
+if [ ! -z "${replicaPatch}" ]; then
+  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
 fi
 
 printInfo "Patch command succeeded !"

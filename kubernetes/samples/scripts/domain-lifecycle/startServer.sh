@@ -174,7 +174,7 @@ if [ "${isAdminServer}" == 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
-  clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+  clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ ${effectivePolicy} == "IfNeeded" && ${serverStarted} == "true" ]]; then
@@ -245,7 +245,7 @@ if [ ! -z "${patchJson}" ]; then
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 fi
 if [ ! -z "${incrementReplicaPatch}" ]; then
-  executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${incrementReplicaPatch}" "${verboseMode}"
+  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${incrementReplicaPatch}" "${verboseMode}"
 fi
 
 printInfo "Patch command succeeded !"
