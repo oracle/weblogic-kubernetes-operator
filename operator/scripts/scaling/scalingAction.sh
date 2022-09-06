@@ -434,8 +434,14 @@ port=$(get_operator_internal_rest_port)
 trace "port: $port"
 
 # Retrieve the api version of the deployed CRD
+# This script supports up to version v8 of Domain resource 
 domain_api_version=$(get_domain_api_version)
 trace "domain_api_version: $domain_api_version"
+version=$(echo ${domain_api_version} | grep -Eo '[0-9]+$')
+if [ $version -gt 8 ]; then
+  domain_api_version="v8"
+  trace "Setting domain_api_version to v8 which is the highest version supported by this script."
+fi
 
 # Retrieve the Domain configuration
 DOMAIN=$(get_custom_resource_domain)
