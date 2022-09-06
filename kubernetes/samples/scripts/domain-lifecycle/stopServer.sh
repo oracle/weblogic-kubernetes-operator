@@ -93,6 +93,7 @@ withPolicy="CONSTANT"
 patchJson=""
 isAdminServer=false
 clusterJson=""
+replicaPatch=""
 
 while getopts "vks:m:n:d:h" opt; do
   case $opt in

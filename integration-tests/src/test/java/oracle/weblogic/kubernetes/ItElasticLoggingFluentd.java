@@ -447,7 +447,7 @@ class ItElasticLoggingFluentd {
     // create cluster resource
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
       ClusterResource cluster =
-          createClusterResource(clusterName, domainNamespace, replicaCount);
+          createClusterResource(domainUid + "-" + clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));

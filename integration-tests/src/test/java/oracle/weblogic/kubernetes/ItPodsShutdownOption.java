@@ -495,7 +495,7 @@ class ItPodsShutdownOption {
 
 
     cluster = createClusterResource(
-            clusterName, domainNamespace, replicaCount);
+            domainUid + "-" + clusterName, domainNamespace, replicaCount);
     cluster.getSpec().serverPod(new ServerPod()
             .shutdown((shutDownObject[2])));
 

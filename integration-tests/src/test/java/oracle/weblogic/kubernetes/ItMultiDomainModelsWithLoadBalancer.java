@@ -821,9 +821,9 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // create cluster resource in mii domain
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
-      if (!Cluster.doesClusterExist(CLUSTER_NAME_PREFIX + i, CLUSTER_VERSION, domainNamespace)) {
+      if (!Cluster.doesClusterExist(miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i, CLUSTER_VERSION, domainNamespace)) {
         ClusterResource cluster =
-            createClusterResource(CLUSTER_NAME_PREFIX + i, domainNamespace, replicaCount);
+            createClusterResource(miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i, domainNamespace, replicaCount);
         createClusterAndVerify(cluster);
       }
       domain.getSpec().withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_PREFIX + i));

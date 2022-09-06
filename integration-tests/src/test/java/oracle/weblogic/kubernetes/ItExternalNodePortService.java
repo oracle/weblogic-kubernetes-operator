@@ -395,7 +395,7 @@ class ItExternalNodePortService {
     setPodAntiAffinity(domain);
     // create cluster object
     ClusterResource cluster = createClusterResource(
-        clusterName, domNamespace, replicaCount);
+        domainUid + "-" + clusterName, domNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}",clusterName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references

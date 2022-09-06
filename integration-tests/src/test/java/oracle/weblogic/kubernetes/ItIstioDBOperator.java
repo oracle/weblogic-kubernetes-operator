@@ -314,7 +314,7 @@ class ItIstioDBOperator {
         );
 
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(fmwDomainUid + "-" + clusterName, fmwDomainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
@@ -855,7 +855,7 @@ class ItIstioDBOperator {
     setPodAntiAffinity(domain);
 
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(domainResourceName + "-" + clusterName, domNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references

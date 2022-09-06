@@ -225,12 +225,12 @@ public class ServerStartPolicyUtils {
     List<String> securityList = new ArrayList<>();
 
     // create cluster object
-    ClusterResource configCluster = createClusterResource(CONFIG_CLUSTER, domNamespace, replicaCount);
+    ClusterResource configCluster = createClusterResource(domainUid + "-" + CONFIG_CLUSTER, domNamespace, replicaCount);
     logger.info("Creating config cluster {0} in namespace {1}",CONFIG_CLUSTER, domNamespace);
     createClusterAndVerify(configCluster);
 
     // create cluster object
-    ClusterResource dynamicCluster = createClusterResource(DYNAMIC_CLUSTER, domNamespace, replicaCount);
+    ClusterResource dynamicCluster = createClusterResource(domainUid + "-" + DYNAMIC_CLUSTER, domNamespace, replicaCount);
     logger.info("Creating dynamic cluster {0} in namespace {1}",DYNAMIC_CLUSTER, domNamespace);
     createClusterAndVerify(dynamicCluster);
 

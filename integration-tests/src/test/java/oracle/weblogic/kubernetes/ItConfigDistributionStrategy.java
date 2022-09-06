@@ -962,7 +962,7 @@ class ItConfigDistributionStrategy {
     
     // create cluster object
     ClusterResource cluster = createClusterResource(
-        clusterName, domainNamespace, replicaCount);
+        domainUid + "-" + clusterName, domainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references

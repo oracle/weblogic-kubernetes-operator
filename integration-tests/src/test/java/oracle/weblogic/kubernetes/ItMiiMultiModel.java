@@ -399,7 +399,7 @@ class ItMiiMultiModel {
     // create cluster object if not created earlier 
     if (cluster == null) {
       cluster = createClusterResource(
-            clusterName, domainNamespace, replicaCount);
+             domainUid + "-" + clusterName, domainNamespace, replicaCount);
       logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
       createClusterAndVerify(cluster);
       logger.info("Associate Cluster {0} and Domain resource {1}",clusterName, domainUid);

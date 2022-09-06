@@ -267,7 +267,7 @@ class ItDBOperator {
         fmwMiiImage);
     
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(fmwDomainUid + "-" + clusterName, fmwDomainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
@@ -337,7 +337,7 @@ class ItDBOperator {
         dbSecretName, false, false, true);
     
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, wlsDomainNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(wlsDomainUid + "-" + clusterName, wlsDomainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}", clusterName, wlsDomainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references

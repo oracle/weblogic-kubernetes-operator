@@ -298,7 +298,7 @@ class ItPodTemplates {
                 .labels(clusterLabelKeyValues));
     logger.info(Yaml.dump(clusterSpec));
     ClusterResource cluster = 
-         createClusterResource(clusterName, domainNamespace, clusterSpec);
+         createClusterResource(domainUid + "-" + clusterName, domainNamespace, clusterSpec);
     logger.info("Creating cluster resource {0} in namespace {1}", clusterName, domainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
