@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 TEST_OPERATOR_ROOT=/tmp/test/weblogic-operator
@@ -43,6 +43,25 @@ test_get_domain_api_version_jq() {
 
   assertEquals "Did not return expected api version" 'v8' "${result}"  
 }
+
+test_get_domain_api_version_set_to_v8() {
+  CURL_FILE="apis3.json"
+
+  result=$(get_domain_api_version)
+
+  assertEquals "Did not return expected api version" 'v8' "${result}"
+}
+
+test_get_domain_api_version_set_to_v8_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="apis3.json"
+
+  result=$(get_domain_api_version)
+
+  assertEquals "Did not return expected api version" 'v8' "${result}"
+}
+
 
 test_get_domain_api_version_without_weblogic_group() {
   CURL_FILE="apis2.json"
