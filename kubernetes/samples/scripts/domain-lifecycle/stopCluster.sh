@@ -130,7 +130,7 @@ createPatchJsonToUpdateClusterPolicyUsingClusterResource "${clusterJson}" "${clu
 # Changed made on 08/16/2022
 #executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
-executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content after changes: ${clusterJson}"
