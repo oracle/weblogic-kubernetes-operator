@@ -177,7 +177,6 @@ fi
 
 if [ -n "${clusterName}" ]; then
   getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
-  echo "clusterResource is $clusterResource"
 
   clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
   if [ -z "${clusterJson}" ]; then
@@ -219,12 +218,11 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   elif [[ -z ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Start policy is not set, server starts by increasing replicas based on effective policy, increment replicas
     printInfo "Updating replica count for cluster '${clusterName}' to ${replicaCount}."
-    #createPatchJsonToUpdateReplica "${incrementReplicaPatch}" patchJson
   else
     # Patch server policy to always and increment replicas
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Always' and \
 incrementing replica count for cluster '${clusterName}' to ${replicaCount}."
-    createPatchJsonToUpdatePolicy "${incrementReplicaPatch}" "${alwaysStartPolicyPatch}" patchJson
+    createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Replica count needs to stay constant, check if server starts by unsetting policy
@@ -250,11 +248,9 @@ else
 fi
 
 if [ ! -z "${incrementReplicaPatch}" ]; then
-  echo "DEBUG: Before executeClusterPatchCommand incrementReplicaPatch is $incrementReplicaPatch"
   executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${incrementReplicaPatch}" "${verboseMode}"
 fi
 if [ ! -z "${patchJson}" ]; then
-  echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 fi
 

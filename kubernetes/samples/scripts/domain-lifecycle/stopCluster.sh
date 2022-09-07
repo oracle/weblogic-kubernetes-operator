@@ -101,7 +101,6 @@ if [ "${isValidCluster}" != 'true' ]; then
 fi
 
 getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
-echo "clusterResource is $clusterResource"
 
 clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content before changes: ${clusterJson}"

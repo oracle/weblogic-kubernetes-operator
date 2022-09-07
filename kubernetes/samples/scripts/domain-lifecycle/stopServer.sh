@@ -162,7 +162,6 @@ fi
 
 if [ -n "${clusterName}" ]; then
   getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
-  echo "clusterResource is $clusterResource"
 
   clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
   if [ -z "${clusterJson}" ]; then
@@ -220,11 +219,9 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
       and decrementing replica count to ${replicaCount}."
     createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
-    #echo "DEBUG: ANIL patchJson is $patchJson"
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
     printInfo "Updating replica count for cluster ${clusterName} to ${replicaCount}."
-    #createPatchJsonToUpdateReplica "${replicaPatch}" patchJson
   elif [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
@@ -257,12 +254,9 @@ else
 fi
 
 if [ ! -z "${replicaPatch}" ]; then
-  echo "DEBUG: Before executePatchCommand.. replicaPatch is $replicaPatch"
   executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
 fi
-echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
 if [ ! -z "${patchJson}" ]; then
-  echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
   executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 fi
 

@@ -194,13 +194,9 @@ createPatchJsonToUnsetPolicy() {
   local serverName=$3
   local __result=$4
 
-  #if [ -n "${clusterJson}" ]; then
-  #  eval $__result="'${replicaPatch}'"
-  #else
   unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
   patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
   eval $__result="'${patchJson}'"
-  #fi
 }
 
 #
@@ -270,7 +266,6 @@ unsetServerStartPolicy() {
   local removeNullCmd=""
   local unsetStartPolicyPatchNoNulls=""
 
-  echo "DEBUG: serverName is $serverName"
   unsetCmd="(.spec.managedServers[] | select (.serverName == \"${serverName}\") | del (.serverStartPolicy))"
   replacePolicyCmd=$(echo ${domainJson} | jq -cr "${unsetCmd}")
   replacePolicyCmdLen=$(echo "${replacePolicyCmd}" | jq -e keys_unsorted | jq length)
@@ -489,9 +484,7 @@ getReplicaCount() {
   local __replicaCount=$4
 
   replicasCmd="(.spec.replicas)"
-  echo "DEBUG: 1. clusterJson is $clusterJson"
   replicaCount=$(echo ${clusterJson} | jq "${replicasCmd}")
-  echo "DEBUG: 1. replicaCount is $replicaCount"
   if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
     replicaCount=$(echo ${domainJson} | jq .spec.replicas)
   fi
@@ -700,7 +693,6 @@ checkStartedServers() {
   # Get sorted list of servers in 'sortedByAlwaysServers' array
   getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${withPolicy}"
   getReplicaCount "${domainJson}" "${clusterJson}" "${clusterName}" replicaCount
-  echo "DEBUG: replica count is $replicaCount"
   # Increment or decrement the replica count based on 'withReplicas' input parameter
   if [ "${withReplicas}" == "INCREASED" ]; then
     replicaCount=$((replicaCount+1))
@@ -943,7 +935,6 @@ Not increasing replica count value."
   fi
 
   cmd="(.spec.replicas) |= ${replica}"
-  #replicaPatch=$(echo ${clusterJson} | jq "${cmd}")
   replicaPatch="{\"spec\": {\"replicas\": "${replica}"}}"
   eval $__result="'${replicaPatch}'"
   eval $__replicaCount="'${replica}'"
@@ -1099,7 +1090,6 @@ getClusterResource() {
 
   clusterReferences=$(echo ${domainJson} | jq -r .spec.clusters[].name)
   for clusterReference in ${clusterReferences}; do
-    echo "clusterReference is $clusterReference"
     clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .spec.clusterName)
     if [ -z "${clusterNameFromReference}" ]; then
       clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
@@ -1170,7 +1160,6 @@ executePatchCommand() {
     printInfo "Executing command --> ${kubernetesCli} patch domain ${domainUid} \
       -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
   fi
-  #echo "DEBUG: patchJson is $patchJson"
   ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }
 
