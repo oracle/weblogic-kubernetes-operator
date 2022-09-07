@@ -79,7 +79,7 @@ class ItServerStartPolicyDynamicCluster {
   private static LoggingFacade logger = null;
   private static String ingressHost = null; //only used for OKD
   private static final String samplePath = "sample-testing-dynamic-cluster";
-  private static final String dynamicClusterResourceName = domainUid + "-" + DYNAMIC_CLUSTER;
+  private static final String dynamicClusterResourceName = DYNAMIC_CLUSTER;
   private static final String configuredClusterResourceName = domainUid + "-" + CONFIG_CLUSTER;
 
   /**
