@@ -373,12 +373,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-        if (callResponse.getResult() == null) {
-          return doNext(packet);
-        } else {
-          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
-              getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        if (callResponse != null) {
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+            callback.proceedFromWait(callResponse.getResult());
+            return null;
+          }
         }
+        return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+              getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
       }
     }
   }
