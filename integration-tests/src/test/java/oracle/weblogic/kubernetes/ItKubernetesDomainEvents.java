@@ -422,7 +422,7 @@ class ItKubernetesDomainEvents {
           + "]";
 
       logger.info("Updating introspect version  using patch string: {0}",  patchStr);
-      assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
               V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
 
       logger.info("verify the Failed event is generated");
