@@ -23,12 +23,12 @@ spec:
   image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "@@IMAGE_PULL_POLICY@@"
+  imagePullPolicy: @@IMAGE_PULL_POLICY@@
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: @@IMAGE_PULL_SECRET_NAME@@
   #- name: @@DOMAIN_IMAGE_PULL_SECRET_NAME@@
+  #- name: @@IMAGE_PULL_SECRET_NAME@@
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
@@ -91,21 +91,6 @@ spec:
   # The desired behavior for starting a specific cluster's member servers
   clusters:
   - clusterName: cluster-1
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
     # The number of managed servers to start for this cluster
     replicas: 2
 
@@ -123,7 +108,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: WLS
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
       # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory

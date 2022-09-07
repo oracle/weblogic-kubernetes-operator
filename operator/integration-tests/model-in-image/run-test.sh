@@ -134,7 +134,7 @@ usage() {
 
     -update3-image: Build image required for update3 use case.
                     Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2' if MODEL_IMAGE_TAG is not set.
-                    And is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG` if MODEL_IMAGE_TAG is set.'
+                    And is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' if MODEL_IMAGE_TAG is set.'
 
     -update3-main : Run update3 use case (update initial domain's app via new image).
                     Domain uid 'sample-domain1'.
