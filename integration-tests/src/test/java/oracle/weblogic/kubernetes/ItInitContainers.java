@@ -360,7 +360,7 @@ class ItInitContainers {
     if (!testCaseName.equals("clusters")) {
       // create cluster object
       ClusterResource cluster = createClusterResource(
-          domainUid + "-" + clusterName, domainNamespace, replicaCount);
+          clusterName, domainNamespace, replicaCount);
 
       logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
       createClusterAndVerify(cluster);
@@ -399,8 +399,7 @@ class ItInitContainers {
                     .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
         logger.info(Yaml.dump(clusterSpec));
-        ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName, 
-            domainNamespace, clusterSpec);
+        ClusterResource cluster = createClusterResource(clusterName, domainNamespace, clusterSpec);
         logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
         createClusterAndVerify(cluster);
         // set cluster references

@@ -221,7 +221,7 @@ class ItMiiDomain {
     // create cluster object
     String clusterName = "cluster-1";
     ClusterResource cluster = createClusterResource(
-        domainUid + "-" + clusterName, domainNamespace, replicaCount);
+        clusterName, domainNamespace, replicaCount);
 
     logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
     createClusterAndVerify(cluster);
@@ -352,7 +352,7 @@ class ItMiiDomain {
     // create cluster object
     String clusterName = "cluster-1";
     ClusterResource cluster = createClusterResource(
-        domainUid1 + "-" + clusterName, domainNamespace1, replicaCount);
+        clusterName, domainNamespace1, replicaCount);
 
     logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace1);
     createClusterAndVerify(cluster);

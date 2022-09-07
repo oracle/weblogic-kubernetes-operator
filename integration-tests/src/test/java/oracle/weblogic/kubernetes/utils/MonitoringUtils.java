@@ -749,7 +749,7 @@ public class MonitoringUtils {
         getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
       } else {
         getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
-        createClusterAndVerify(createClusterResource(domainUid + "-" + clusterName, namespace, replicaCount));
+        createClusterAndVerify(createClusterResource(clusterName, namespace, replicaCount));
       }
       // set cluster references
       domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));

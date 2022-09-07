@@ -634,7 +634,7 @@ public class DomainUtils {
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
-      ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName, domainNamespace, replicaCount);
+      ClusterResource cluster = createClusterResource(clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
@@ -944,8 +944,7 @@ public class DomainUtils {
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
-      ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName, domainNamespace,
-          replicaCount);
+      ClusterResource cluster = createClusterResource(clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));

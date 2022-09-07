@@ -496,7 +496,7 @@ class ItDiagnosticsFailedCondition {
       setPodAntiAffinity(domain);
 
       ClusterResource cluster = createClusterResource(
-          domainName + "-" + clusterName, domainNamespace, replicaCount);
+          clusterName, domainNamespace, replicaCount);
       logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
       createClusterAndVerify(cluster);
       // set cluster references
@@ -713,7 +713,7 @@ class ItDiagnosticsFailedCondition {
           fmwMiiImage,
           5L);
       getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
-      createClusterAndVerify(createClusterResource(domainName + "-" + clusterName, domainNamespace, replicaCount));
+      createClusterAndVerify(createClusterResource(clusterName, domainNamespace, replicaCount));
       // set cluster references
       domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
@@ -831,7 +831,7 @@ class ItDiagnosticsFailedCondition {
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
     
-    ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName, domNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
@@ -880,7 +880,7 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName, domNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
