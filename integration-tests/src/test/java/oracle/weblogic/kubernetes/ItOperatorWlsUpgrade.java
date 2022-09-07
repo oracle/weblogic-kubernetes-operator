@@ -80,7 +80,6 @@ import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAux
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -135,6 +134,8 @@ class ItOperatorWlsUpgrade {
   private String encryptionSecretName = "encryptionsecret";
   private String opNamespace;
   private String domainNamespace;
+  private Path srcDomainYaml = null;
+  private Path destDomainYaml = null;
   private static String miiAuxiliaryImageTag = "aux-explict-upgrade";
   private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
 
@@ -318,7 +319,6 @@ class ItOperatorWlsUpgrade {
     scaleClusterUpAndDown();
   }
 
-
   // After upgrade scale up/down the cluster
   private void scaleClusterUpAndDown() {
     String opServiceAccount = opNamespace + "-sa";
@@ -341,18 +341,6 @@ class ItOperatorWlsUpgrade {
         String.format("Patching replica to 1 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
 
-
-    // check domain can be managed from the operator by scaling the cluster
-    /*scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 3,
-        true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", null, null);
-
-    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 2,
-        true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", null, null);*/
-
   }
 
   private void installDomainResource(
@@ -366,10 +354,9 @@ class ItOperatorWlsUpgrade {
             domainUid, domainNamespace);
 
     // create WLS domain and verify
-    /*createWlsDomainAndVerify(domainType, domainNamespace, domainVersion,
-           externalServiceNameSuffix);/*/
+    createWlsDomainAndVerifyByDomainYaml(domainType, domainNamespace, externalServiceNameSuffix);
     // create domain
-    if (domainType.equalsIgnoreCase("Image")) {
+    /*if (domainType.equalsIgnoreCase("Image")) {
       logger.info("Domain home in image domain will be created ");
       createDomainHomeInImageAndVerify(
           domainNamespace, externalServiceNameSuffix);
@@ -377,7 +364,7 @@ class ItOperatorWlsUpgrade {
       logger.info("Model in image domain will be created ");
       createModelInImageDomainAndVerify(
           domainNamespace, externalServiceNameSuffix);
-    }
+    }*/
 
   }
 
@@ -463,25 +450,6 @@ class ItOperatorWlsUpgrade {
     // check domain status conditions
     checkDomainStatus(domainNamespace,domainUid);
 
-    /*int externalRestHttpsPort = getServiceNodePort(
-        opNamespace, "external-weblogic-operator-svc");
-    assertNotEquals(-1, externalRestHttpsPort,
-        "Could not get the Operator external service node port");
-    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-
-    // check domain can be managed from the operator by scaling the cluster
-    String clusterName = "cluster-1";
-    logger.info("Updating the replica count to 3");
-    boolean p1Success = scaleCluster(clusterName, domainNamespace,3);
-    assertTrue(p1Success,
-        String.format("Patching replica to 3 failed for cluster %s in namespace %s",
-            clusterName, domainNamespace));
-
-    logger.info("Updating the replica count to 1");
-    p1Success = scaleCluster(clusterName, domainNamespace,1);
-    assertTrue(p1Success,
-        String.format("Patching replica to 3 failed for cluster %s in namespace %s",
-            clusterName, domainNamespace));
 
 
     /*scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
@@ -785,6 +753,68 @@ class ItOperatorWlsUpgrade {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
         "Could not modify image name in the domain.yaml file");
 
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("kubectl create -f " + destDomainYaml))
+        .execute(), "kubectl create failed");
+
+    verifyDomain(domainUid, domainNamespace, externalServiceNameSuffix);
+
+  }
+
+  private void createWlsDomainAndVerifyByDomainYaml(String domainType,
+      String domainNamespace, String externalServiceNameSuffix) {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createSecrets();
+
+    // use the checked in domain.yaml to create domain for old releases
+    // copy domain.yaml to results dir
+    assertDoesNotThrow(() -> Files.createDirectories(
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
+        String.format("Could not create directory under %s", RESULTS_ROOT));
+
+    if (domainType.equalsIgnoreCase("Image")) {
+      logger.info("Domain home in image domain will be created ");
+      srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-v8.yaml");
+      destDomainYaml =
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
+      assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
+          "File copy failed for domain-v8.yaml");
+    } else {
+      logger.info("Model in image domain will be created ");
+      srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "mii-domain-v8.yaml");
+      destDomainYaml =
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "mii-domain.yaml");
+      assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
+          "File copy failed for mii-domain-v8.yaml");
+    }
+
+    // replace apiVersion, namespace and image in domain.yaml
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "domain1-ns", domainNamespace),
+        "Could not modify the namespace in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "domain1", domainUid),
+        "Could not modify the domainUid in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "domain1-weblogic-credentials", adminSecretName),
+        "Could not modify the webLogicCredentialsSecret in the domain.yaml file");
+    if (domainType.equalsIgnoreCase("Image")) {
+      assertDoesNotThrow(() -> replaceStringInFile(
+          destDomainYaml.toString(), "domain-home-in-image:14.1.1.0",
+          WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
+          "Could not modify image name in the domain.yaml file");
+    } else {
+      assertDoesNotThrow(() -> replaceStringInFile(
+          destDomainYaml.toString(), "domain1-runtime-encryption-secret", encryptionSecretName),
+          "Could not modify runtimeEncryptionSecret in the domain-v8.yaml file");
+      assertDoesNotThrow(() -> replaceStringInFile(
+          destDomainYaml.toString(), "model-in-image:WLS-v1",
+          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
+          "Could not modify image name in the mii-domain-v8.yaml file");
+    }
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command("kubectl create -f " + destDomainYaml))

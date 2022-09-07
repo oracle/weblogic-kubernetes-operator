@@ -59,7 +59,7 @@ spec:
     - name: CUSTOM_DOMAIN_NAME
       value: "domain1"
     - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
+      value: "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust"
     - name: USER_MEM_ARGS
       value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
     resources:

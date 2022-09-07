@@ -31,7 +31,7 @@ spec:
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   webLogicCredentialsSecret:
-    name: weblogic-credentials
+    name: domain1-weblogic-credentials
 
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
@@ -61,7 +61,7 @@ spec:
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
+      value: "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust"
     - name: USER_MEM_ARGS
       value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
     resources:
