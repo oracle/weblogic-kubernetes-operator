@@ -1088,6 +1088,31 @@ getTopology() {
   eval $__result="'${__jsonTopology}'"
 }
 
+getClusterResource() {
+  local domainJson=$1
+  local domainNamespace=$2
+  local clusterName=$3
+  local __result=$4
+  local clusterReferences=""
+  local clusterNameFromReference=""
+  local __clusterResource=""
+
+  clusterReferences=$(echo ${domainJson} | jq -r .spec.clusters[].name)
+  for clusterReference in ${clusterReferences}; do
+    echo "clusterReference is $clusterReference"
+    clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .spec.clusterName)
+    if [ -z "${clusterNameFromReference}" ]; then
+      clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
+    fi
+    if [ "${clusterNameFromReference}" == "${clusterName}" ]; then
+      __clusterResource=$clusterReference
+      break
+    fi
+  done
+  eval $__result="'${__clusterResource}'"
+}
+
+
 
 #
 # check if string passed as first argument is present in array passed as second argument

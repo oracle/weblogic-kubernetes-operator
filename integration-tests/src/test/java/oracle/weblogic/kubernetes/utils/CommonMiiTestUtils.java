@@ -331,7 +331,6 @@ public class CommonMiiTestUtils {
         domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
       }
     }
-
     setPodAntiAffinity(domain);
     return domain;
   }

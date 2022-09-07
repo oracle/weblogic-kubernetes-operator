@@ -44,6 +44,7 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
+clusterResource=""
 
 while getopts "vc:n:m:d:h" opt; do
   case $opt in
@@ -99,7 +100,10 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+echo "clusterResource is $clusterResource"
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content before changes: ${clusterJson}"
 if [ -z "${clusterJson}" ]; then
   printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
@@ -128,7 +132,7 @@ createPatchJsonToUpdateClusterPolicyUsingClusterResource "${clusterJson}" "${clu
 printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
 executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
 printInfo "clusterJson content after changes: ${clusterJson}"
 
 printInfo "Successfully patched cluster '${clusterName}' with 'Never' start policy!"

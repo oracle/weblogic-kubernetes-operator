@@ -94,6 +94,7 @@ patchJson=""
 isAdminServer=false
 clusterJson=""
 replicaPatch=""
+clusterResource=""
 
 while getopts "vks:m:n:d:h" opt; do
   case $opt in
@@ -160,7 +161,15 @@ if [ "${isAdminServer}" == 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
-  clusterJson=$(${kubernetesCli} get cluster ${domainUid}-${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
+  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+  echo "clusterResource is $clusterResource"
+
+  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${clusterJson}" ]; then
+    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+    exit 1
+  fi
+
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
@@ -249,7 +258,7 @@ fi
 
 if [ ! -z "${replicaPatch}" ]; then
   echo "DEBUG: Before executePatchCommand.. replicaPatch is $replicaPatch"
-  executeClusterPatchCommand "${kubernetesCli}" "${domainUid}"-"${clusterName}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
+  executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
 fi
 echo "DEBUG: Before executePatchCommand.. patchJson is $patchJson"
 if [ ! -z "${patchJson}" ]; then
