@@ -41,7 +41,9 @@ The following example shows how to set up an ephemeral Oracle database with the 
 | Kubernetes node port | `30011` |
 | Image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
 | DBA user (with full privileges) | `sys as sysdba` |
-| DBA password | `<the DBA user password>` |
+| DBA password | `<password placeholder>` |
+| Database Domain (not the same as a WebLogic Domain) | k8s |
+| Database PDB | devpdb |
 | Database URL inside Kubernetes cluster (from any namespace) | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 | Database URL outside Kubernetes cluster | `dns-name-that-resolves-to-node-location:30011/devpdb.k8s` |
 
@@ -86,11 +88,23 @@ The following example shows how to set up an ephemeral Oracle database with the 
 
       **WARNING**: The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker [Doc ID 2216342.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2216342.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
 
+1. Create a secret named `oracle-db-secret` in the default namespace
+   with your desired Oracle SYS DBA password in its `password` key.
+
+   - For example:
+     ```
+     $ kubectl -n default create secret generic oracle-db-secret \
+       --from-literal='password=<password placeholder>'
+     ```
+     (Replace `<password placeholder>` with your desired password.)
+   - Oracle Database passwords can contain upper case, lower case, digits, and special characters.
+     Use only "_" and "#" as special characters to eliminate potential parsing errors
+     for Oracle Database connection strings.
 
 1. Create a deployment using the database image:
 
    Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service`
-   to create an Oracle database running in the pod, `oracle-db`.
+   to create an Oracle database running in the deployment, `oracle-db`.
 
    ```shell
    $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
@@ -98,6 +112,11 @@ The following example shows how to set up an ephemeral Oracle database with the 
    ```shell
    $ start-db-service.sh
    ```
+
+   Notes:
+   - Call `start-db-service.sh -h` to see how to customize the namespace, node port, secret name, etc.
+   - Call `stop-db-service.sh` to shutdown and cleanup the `oracle-db` deployment.
+   - To troubleshoot, use the `kubectl describe pod DB_POD_NAME` and `kubectl logs DB_POD_NAME` commands on the database pod.
 
 ### MySQL database in Kubernetes
 
@@ -110,8 +129,8 @@ The following example shows how to set up an ephemeral MySQL database with the f
 | Kubernetes service name | `mysql-db` |
 | Kubernetes service port | `3306` |
 | Image | `mysql:5.6` |
-| Root user (with full privileges) | `root` |
-| Root password | `password` |
+| Root user (with full privileges) | `<user name placeholder>` |
+| Root password | `<password placeholder>` |
 | Database URL inside Kubernetes cluster (from any namespace) | `jdbc:mysql://mysql-db.default.svc.cluster.local:3306/mysql` |
 
 Copy the following YAML into a file named `mysql.yaml`:
@@ -161,11 +180,11 @@ data:
   root-password: <password placeholder>
 ```
 
-In file `mysql.yaml`, replace `<user placeholder>` and `<password placeholder>`, respectively, with the output from piping the
+In file `mysql.yaml`, replace `<user name placeholder>` and `<password placeholder>`, respectively, with the output from piping the
 root user name and password through base64:
 ```
-echo -n <the root user name> | base64
-echo -n <the root password> | base64
+echo -n <user name placeholder> | base64
+echo -n <password placeholder> | base64
 ```
 Deploy MySQL using the command `kubectl create -f mysql.yaml`.
 

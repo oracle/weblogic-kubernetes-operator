@@ -253,9 +253,9 @@ fi
 
 if [ "$DO_CLEANDB" = "true" ]; then
   doCommand -c "echo ====== CLEANDB ======"
-  # TBD call DB sample's cleanup script? 
   doCommand -c "kubectl -n $DB_NAMESPACE delete deployment oracle-db --ignore-not-found"
   doCommand -c "kubectl -n $DB_NAMESPACE delete service oracle-db --ignore-not-found"
+  doCommand -c "kubectl -n $DB_NAMESPACE delete secret oracle-db-secret --ignore-not-found"
 fi
 
 # 
@@ -294,12 +294,17 @@ fi
 
 if [ "$DO_DB" = "true" ]; then
   doCommand -c "echo ====== DB DEPLOY ======"
-  # TBD note that start-db (and maybe stop-db) seem to alter files right inside the source tree - 
-  #     this should be fixed to have a WORKDIR or similar, and means that they aren't suitable for multi-user/multi-ns environments
   if [ "$OKD" = "true" ]; then
     doCommand -c "echo adding scc to the DB namespace \$DB_NAMESPACE "
     doCommand -c "oc adm policy add-scc-to-user anyuid -z default -n \$DB_NAMESPACE"
   fi
+
+  echo "@@ Info: Creating db sys secret"
+  # password must match the value specified in ./mii-sample-wrapper/create-secrets.sh
+  secCommand="\$WORKDIR/utils/create-secret.sh -s oracle-db-secret -d \$DOMAIN_UID1 -n \$DB_NAMESPACE"
+  secCommand+=" -l \"password=Oradoc_db1\""
+  doCommand "$secCommand" | sed 's/word=\([^"]*\)/word=***/g'
+
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n \$DB_NAMESPACE"
   if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
     doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -s \$DB_IMAGE_PULL_SECRET"
@@ -309,15 +314,28 @@ if [ "$DO_DB" = "true" ]; then
 fi
 
 if [ "$DO_RCU" = "true" ]; then
+
+  doCommand -c "echo ====== DB RCU: Creating RCU setup secret"
+
+  # sys_password and password must match the values specified in ./mii-sample-wrapper/create-secrets.sh
+  secCommand="\$WORKDIR/utils/create-secret.sh -s oracle-rcu-secret -d \$DOMAIN_UID1 -n \$DB_NAMESPACE"
+  secCommand+=" -l \"sys_username=sys\""
+  secCommand+=" -l \"sys_password=Oradoc_db1\""
+  secCommand+=" -l \"password=Oradoc_db1\""
+  doCommand "$secCommand" | sed 's/word=\([^"]*\)/word=***/g'
+
+  defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
+  BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$defaultBaseImage}"
+  BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
+
+  # delete old rcu pod in case one is already running from an old test run
+  doCommand "kubectl -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
+
   for _custom_domain_name_ in domain1 domain2
   do
 
   doCommand -c "echo ====== DB RCU Schema Init for domain $_custom_domain_name_ ======"
   doCommand -c "cd \$SRCDIR/kubernetes/samples/scripts/create-rcu-schema"
-
-  defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
-  BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$defaultBaseImage}"
-  BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 
   rcuCommand="./create-rcu-schema.sh"
   rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/devpdb.k8s" # DB url
@@ -330,10 +348,12 @@ if [ "$DO_RCU" = "true" ]; then
   rcuCommand+=" -o \$WORKDIR/rcuoutput_${_custom_domain_name_}" # output directory for generated YAML
   doCommand "$rcuCommand"
 
+  done
+
   # The rcu command leaves a pod named 'rcu' running:
   doCommand "kubectl -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
+  doCommand -c "kubectl -n $DB_NAMESPACE delete secret oracle-rcu-secret --ignore-not-found"
 
-  done
 fi
 
 if [ "$DO_OPER" = "true" ]; then
