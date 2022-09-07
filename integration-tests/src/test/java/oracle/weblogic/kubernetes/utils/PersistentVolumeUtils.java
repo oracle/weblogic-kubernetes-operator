@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
@@ -123,7 +124,7 @@ public class PersistentVolumeUtils {
       v1pv.getSpec()
           .storageClassName("oci-fss")
           .nfs(new V1NFSVolumeSource()
-              .path(FSS_DIR)
+              .path(FSS_DIR[new Random().nextInt(FSS_DIR.length)])
               .server(NFS_SERVER)
               .readOnly(false));
     } else if (OKD) {
@@ -201,7 +202,7 @@ public class PersistentVolumeUtils {
       v1pv.getSpec()
               .storageClassName("oci-fss")
               .nfs(new V1NFSVolumeSource()
-                      .path(FSS_DIR)
+                      .path(FSS_DIR[new Random().nextInt(FSS_DIR.length)])
                       .server(NFS_SERVER)
                       .readOnly(false));
     } else if (OKD) {

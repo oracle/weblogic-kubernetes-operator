@@ -189,7 +189,6 @@ pipeline {
 
                 stage('Setup terraform property file  ') {
                     environment {
-                        FSS_DIR="/oketest"
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
                         NODE_SHAPE="VM.Standard2.4"
                         IMAGE_ID="${IMAGE_ID}"
@@ -219,7 +218,6 @@ pipeline {
 
 
                         export OKE_CLUSTER="true"
-                        export FSS_DIR="/oketest"
                         if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
                            VCN_CIDR_PREFIX="10.1"
                         else
@@ -437,7 +435,7 @@ EOF
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "/oketest"
+                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10"
 
                     }
                     steps {
