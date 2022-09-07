@@ -12,14 +12,14 @@ usage() {
   cat << EOF
 
   This script starts a deployed WebLogic domain by patching 'spec.serverStartPolicy'
-  attribute of the domain resource to 'IF_NEEDED'. This change will cause the operator
+  attribute of the domain resource to 'IfNeeded'. This change will cause the operator
   to initiate startup of domain's WebLogic server instance pods if the pods are not
   already running.
-
+ 
   Usage:
-
+ 
     $(basename $0) [-n mynamespace] [-d mydomainuid] [-m kubecli]
-
+  
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
@@ -30,7 +30,7 @@ usage() {
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
     -h                  : This help.
-
+   
 EOF
 exit $1
 }
@@ -74,7 +74,7 @@ initialize() {
 initialize
 
 # Get the domain in json format
-domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
 
 if [ -z "${domainJson}" ]; then
   printError "Domain resource for domain '${domainUid}' not found in namespace '${domainNamespace}'. Exiting."
@@ -83,15 +83,15 @@ fi
 
 getDomainPolicy "${domainJson}" serverStartPolicy
 
-if [ "${serverStartPolicy}" == 'IF_NEEDED' ]; then
-  printInfo "No changes needed, exiting. The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'."
+if [ "${serverStartPolicy}" == 'IfNeeded' ]; then
+  printInfo "No changes needed, exiting. The domain '${domainUid}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the domain resource is 'IfNeeded'."
   exit 0
 fi
 
-printInfo "Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IF_NEEDED'."
+printInfo "Patching domain '${domainUid}' from serverStartPolicy='${serverStartPolicy}' to 'IfNeeded'."
 
-createPatchJsonToUpdateDomainPolicy "IF_NEEDED" patchJson
+createPatchJsonToUpdateDomainPolicy "IfNeeded" patchJson
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'IF_NEEDED' start policy!"
+printInfo "Successfully patched domain '${domainUid}' in namespace '${domainNamespace}' with 'IfNeeded' start policy!"

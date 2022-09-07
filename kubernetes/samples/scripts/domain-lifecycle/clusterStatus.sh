@@ -70,7 +70,7 @@ clusterStatus() {
 
     local __val
     for __val in \
-      $($__kubernetes_cli $__ns_filter get domains.v8.weblogic.oracle \
+      $($__kubernetes_cli $__ns_filter get domains \
         -o=jsonpath='{range .items[*]}{.metadata.namespace}{","}{.metadata.name}{","}{.spec.domainUID}{"\n"}{end}')
     do
       local __ns_cur=$(  echo $__val | cut -d ',' -f 1)
@@ -97,7 +97,7 @@ clusterStatus() {
       __jp+='{"\n"}'
       __jp+='{end}'
 
-      $__kubernetes_cli -n "$__ns_cur" get domain.v8.weblogic.oracle "$__uid_cur" -o=jsonpath="$__jp"
+      $__kubernetes_cli -n "$__ns_cur" get domain "$__uid_cur" -o=jsonpath="$__jp"
 
     done | sed 's/~!\([0-9][0-9]*\)/\1/g'\
          | sed 's/~!/0/g' \
