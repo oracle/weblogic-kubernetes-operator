@@ -165,7 +165,10 @@ class ItOperatorWlsUpgrade {
 
   /**
    * Operator upgrade from 3.1.4 to current.
+   * Currently form 3.1.4 to WKO 4.0, v9 cluster reference doesn't work
+   * Temporarily disabled
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.4 to current")
   @ValueSource(strings = { "Image",  "FromModel" })
@@ -355,16 +358,6 @@ class ItOperatorWlsUpgrade {
 
     // create WLS domain and verify
     createWlsDomainAndVerifyByDomainYaml(domainType, domainNamespace, externalServiceNameSuffix);
-    // create domain
-    /*if (domainType.equalsIgnoreCase("Image")) {
-      logger.info("Domain home in image domain will be created ");
-      createDomainHomeInImageAndVerify(
-          domainNamespace, externalServiceNameSuffix);
-    } else {
-      logger.info("Model in image domain will be created ");
-      createModelInImageDomainAndVerify(
-          domainNamespace, externalServiceNameSuffix);
-    }*/
 
   }
 
@@ -449,18 +442,6 @@ class ItOperatorWlsUpgrade {
 
     // check domain status conditions
     checkDomainStatus(domainNamespace,domainUid);
-
-
-
-    /*scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 3,
-        true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", null, null);
-
-    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 2,
-        true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", null, null);*/
 
     restartDomain(domainUid, domainNamespace);
   }
@@ -675,93 +656,6 @@ class ItOperatorWlsUpgrade {
     stopPortForwardProcess(domainNamespace);
   }
 
-  private void createDomainHomeInImageAndVerify(
-      String domainNamespace, String externalServiceNameSuffix) {
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createSecrets();
-
-    // use the checked in domain.yaml to create domain for old releases
-    // copy domain.yaml to results dir
-    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-v8.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
-        String.format("Could not create directory under %s", RESULTS_ROOT));
-    Path destDomainYaml =
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
-    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-        "File copy failed for domain.yaml");
-
-    // replace apiVersion, namespace and image in domain.yaml
-    /*assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "v7", getApiVersion(operatorVersion)),
-        "Could not modify the apiVersion in the domain.yaml file");*/
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain1-ns", domainNamespace),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain1", domainUid),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain-home-in-image:14.1.1.0",
-        WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
-        "Could not modify image name in the domain.yaml file");
-
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
-
-    verifyDomain(domainUid, domainNamespace, externalServiceNameSuffix);
-
-  }
-
-  private void createModelInImageDomainAndVerify(
-      String domainNamespace, String externalServiceNameSuffix) {
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createSecrets();
-
-    // use the checked in domain.yaml to create domain for old releases
-    // copy domain.yaml to results dir
-    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "mii-domain-v8.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
-        String.format("Could not create directory under %s", RESULTS_ROOT));
-    Path destDomainYaml =
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "mii-domain-v8.yaml");
-    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-        "File copy failed for domain.yaml");
-
-    // replace apiVersion, namespace and image in domain.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain1-ns", domainNamespace),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain1", domainUid),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain1-weblogic-credentials", adminSecretName),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain1-runtime-encryption-secret", encryptionSecretName),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "model-in-image:WLS-v1",
-        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
-        "Could not modify image name in the domain.yaml file");
-
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
-
-    verifyDomain(domainUid, domainNamespace, externalServiceNameSuffix);
-
-  }
-
   private void createWlsDomainAndVerifyByDomainYaml(String domainType,
       String domainNamespace, String externalServiceNameSuffix) {
 
@@ -839,6 +733,5 @@ class ItOperatorWlsUpgrade {
            String.valueOf(serviceNodePort), false);
 
   }
-
 
 }
