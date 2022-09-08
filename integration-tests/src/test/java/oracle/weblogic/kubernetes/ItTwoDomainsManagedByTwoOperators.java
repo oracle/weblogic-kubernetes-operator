@@ -462,9 +462,10 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   private void scaleDomain1AndVerifyNoImpactOnDomain2() {
     // scale domain1
+    String clusterResName = domain1Uid + "-" + clusterName;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain1Uid, domain1Namespace, replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
+        clusterResName, domain1Uid, domain1Namespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterResName, domain1Uid, domain1Namespace,
         domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
@@ -706,16 +707,17 @@ class ItTwoDomainsManagedByTwoOperators {
   private void scaleDomain2AndVerifyNoImpactOnDomain1() {
     // scale domain2 from 2 servers to 3 servers
     replicasAfterScale = 3;
+    String clusterResName = domain2Uid + "-" + clusterName;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain2Uid, twoDomainsNamespace, replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domain2Uid, twoDomainsNamespace,
+        clusterResName, domain2Uid, twoDomainsNamespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterResName, domain2Uid, twoDomainsNamespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
     // scale domain2 from 3 servers to 2 servers
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain2Uid, twoDomainsNamespace, replicaCount);
-    scaleAndVerifyCluster(clusterName, domain2Uid, twoDomainsNamespace,
+        clusterResName, domain2Uid, twoDomainsNamespace, replicaCount);
+    scaleAndVerifyCluster(clusterResName, domain2Uid, twoDomainsNamespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicasAfterScale, replicaCount,
         null, null);
 
