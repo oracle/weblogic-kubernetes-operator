@@ -74,7 +74,6 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.deleteHostPathProvisioner
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
@@ -513,7 +512,7 @@ class ItDBOperator {
     boolean result;
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
-    params.command("sh -x"
+    params.command("sh -x "
         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
