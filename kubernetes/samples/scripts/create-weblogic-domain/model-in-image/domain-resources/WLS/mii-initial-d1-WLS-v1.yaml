@@ -77,7 +77,7 @@ spec:
     #  name: weblogic-domain-storage-volume
 
   # The desired behavior for starting the domain's administration server.
-  adminServer:
+  # adminServer:
     # Setup a Kubernetes node port for the administration server default channel
     #adminService:
     #  channels:

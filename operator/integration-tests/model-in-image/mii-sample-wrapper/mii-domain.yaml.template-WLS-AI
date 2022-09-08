@@ -23,12 +23,12 @@ spec:
   image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "@@IMAGE_PULL_POLICY@@"
+  imagePullPolicy: @@IMAGE_PULL_POLICY@@
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: @@IMAGE_PULL_SECRET_NAME@@
   #- name: @@DOMAIN_IMAGE_PULL_SECRET_NAME@@
+  #- name: @@IMAGE_PULL_SECRET_NAME@@
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
@@ -106,7 +106,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: WLS
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
       # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
@@ -148,4 +148,5 @@ metadata:
 spec:
   # This must match a cluster name that is  specified in the WebLogic configuration
   clusterName: cluster-1
+  # The number of managed servers to start for this cluster
   replicas: 2
