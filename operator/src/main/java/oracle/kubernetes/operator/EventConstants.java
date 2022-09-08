@@ -6,12 +6,16 @@ package oracle.kubernetes.operator;
 /** Constants used in Operator events. */
 public interface EventConstants {
 
+  String CLUSTER_AVAILABLE_EVENT = "ClusterAvailable";
+  String CLUSTER_CHANGED_EVENT = "ClusterChanged";
+  String CLUSTER_COMPLETED_EVENT = "ClusterCompleted";
+  String CLUSTER_CREATED_EVENT = "ClusterCreated";
+  String CLUSTER_DELETED_EVENT = "ClusterDeleted";
+  String CLUSTER_INCOMPLETE_EVENT = "ClusterIncomplete";
+  String CLUSTER_UNAVAILABLE_EVENT = "ClusterUnavailable";
   String DOMAIN_CHANGED_EVENT = "Changed";
   String DOMAIN_CREATED_EVENT = "Created";
   String DOMAIN_DELETED_EVENT = "Deleted";
-  String CLUSTER_CHANGED_EVENT = DOMAIN_CHANGED_EVENT;
-  String CLUSTER_CREATED_EVENT = DOMAIN_CREATED_EVENT;
-  String CLUSTER_DELETED_EVENT = DOMAIN_DELETED_EVENT;
   String DOMAIN_AVAILABLE_EVENT = "Available";
   String DOMAIN_COMPLETED_EVENT = "Completed";
   String DOMAIN_FAILED_EVENT = "Failed";
@@ -31,6 +35,7 @@ public interface EventConstants {
   String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";
   String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";
   String EVENT_KIND_POD = "Pod";
+  String EVENT_KIND_CLUSTER = "Cluster";
   String EVENT_KIND_DOMAIN = "Domain";
   String EVENT_KIND_NAMESPACE = "Namespace";
   String START_MANAGING_NAMESPACE_EVENT = "StartManagingNamespace";

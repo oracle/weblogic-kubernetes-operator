@@ -397,7 +397,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
-   --from-literal=username=weblogic --from-literal=password=welcome1
+   --from-literal=username=<wl admin username> \
+   --from-literal=password=<wl admin password>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -407,7 +408,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
-   --from-literal=password=my_runtime_password
+   --from-literal=password=<mii runtime encryption pass>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -416,6 +417,12 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```
 
   Some important details about these secrets:
+
+  - Choosing passwords and usernames:
+    - Replace `<wl admin username>` and `<wl admin password>` with a username and password of your choice.
+      The password should be at least eight characters long and include at least one digit.
+      Remember what you specified. These credentials may be needed again later.
+    - Replace `<mii runtime encryption pass>` with a password of your choice.
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
@@ -714,7 +721,8 @@ NAME                               CLASS    HOSTS   ADDRESS          PORTS   AGE
 sample-nginx-ingress-pathrouting   <none>   *       192.168.100.50   80      7m18s
 ```
 
-Access the Administration Console using the load balancer IP address, `http://192.168.100.50/console`
+Access the Administration Console using the load balancer IP address, `http://192.168.100.50/console`.
+The console login screen expects the WebLogic administration credentials that you specified in the [Secrets](#secrets).
 
 Access the sample application.
 

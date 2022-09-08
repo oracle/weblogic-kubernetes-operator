@@ -17,6 +17,31 @@ source ${UTILSSCRIPTPATH}/utils_base.sh
 #   [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 #
 
+#
+# Define helper fn to copy a file only if src & tgt differ
+#
+
+copyIfChanged() {
+  [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
+  if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
+    trace "Copying '$1' to '$2'."
+    # Copy the source file to a temporary file in the same directory as the target and then
+    # move the temporary file to the target. This is done because the target file may be read by another
+    # process during the copy operation, such as can happen for situational configuration files stored in a
+    # domain home on a persistent volume.
+    tmp_file=$(mktemp -p $(dirname $2))
+    cp $1 $tmp_file
+    mv $tmp_file $2
+    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
+    if [ -O "$2" ]; then
+      chmod 770 $2
+      [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && exitOrLoop
+    fi
+  else
+    trace "Skipping copy of '$1' to '$2' -- these files already match."
+  fi
+}
+
 # exportInstallHomes
 #   purpose:  export MW_HOME, WL_HOME, ORACLE_HOME
 #             with defaults as needed 
@@ -604,7 +629,7 @@ linkServerDefaultDir() {
     # Create the server's directory in $DOMAIN_HOME/servers
     if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME} ]; then
       trace "Creating directory '${DOMAIN_HOME}/servers/${SERVER_NAME}'"
-      createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}" "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop 
+      createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}" "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop
     else
       trace "'${DOMAIN_HOME}/servers/${SERVER_NAME}' already exists as a directory"
     fi

@@ -61,6 +61,9 @@ Here are the steps:
 
 1. Update the data source secret that you created in the Update 1 use case with the correct password as well as with an increased maximum pool capacity:
 
+   __NOTE:__ Replace MY_ORACLE_SYS_PASSWORD with the same database `sys` account password
+   that you chose (or plan to choose) when deploying the database.
+
    ```shell
    $ kubectl -n sample-domain1-ns delete secret sample-domain1-datasource-secret
    ```
@@ -68,7 +71,7 @@ Here are the steps:
    $ kubectl -n sample-domain1-ns create secret generic \
       sample-domain1-datasource-secret \
       --from-literal='user=sys as sysdba' \
-      --from-literal='password=Oradoc_db1' \
+      --from-literal='password=MY_ORACLE_SYS_PASSWORD' \
       --from-literal='max-capacity=10' \
       --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
    ```

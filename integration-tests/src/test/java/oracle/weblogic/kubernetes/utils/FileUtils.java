@@ -96,6 +96,20 @@ public class FileUtils {
   }
 
   /**
+   * Check if the required dir exists.
+   *
+   * @param dirName the name of the dir that needs to be checked
+   * @return true if a dir exists with the given dirName
+   */
+  public static boolean doesDirExist(String dirName) {
+    File dir = new File(dirName);
+    if (dir.exists() && dir.isDirectory()) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Remove the contents of the given directory.
    *
    * @param dir the directory to be cleaned up

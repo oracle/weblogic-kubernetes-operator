@@ -47,11 +47,11 @@
         <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
         <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
         <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>
+        <wko.it.node.ip>${env.NODE_IP}</wko.it.node.ip>
         <wko.it.fss.dir>${env.FSS_DIR}</wko.it.fss.dir>
         <wko.it.okd.cluster>${env.OKD}</wko.it.okd.cluster>
         <wko.it.oracle.db.operator.release>${env.ORACLE_DB_OPERATOR_RELEASE}</wko.it.oracle.db.operator.release>
         <wko.it.oraclelinux.test.version>${env.ORACLELINUX_TEST_VERSION}</wko.it.oraclelinux.test.version>
-        <wko.it.wdt.version>${wdt.version}</wko.it.wdt.version>
         <wko.it.wdt.download.url>${wdt.download.url}</wko.it.wdt.download.url>
         <wko.it.wit.download.url>${wit.download.url}</wko.it.wit.download.url>
         <wko.it.remoteconsole.download.url>${remoteconsole.download.url}</wko.it.remoteconsole.download.url>
@@ -229,7 +229,6 @@
                                 <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
                                 <wko.it.oracle.db.operator.release>${wko.it.oracle.db.operator.release}</wko.it.oracle.db.operator.release>
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
-                                <wko.it.wdt.version>${wko.it.wdt.version}</wko.it.wdt.version>
                                 <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>
                                 <wko.it.wit.download.url>${wko.it.wit.download.url}</wko.it.wit.download.url>
                                 <wko.it.remoteconsole.download.url>${wko.it.remoteconsole.download.url}</wko.it.remoteconsole.download.url>

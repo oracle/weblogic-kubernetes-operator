@@ -232,7 +232,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return maxUnavailable;
   }
 
-  void setMaxUnavailable(Integer maxUnavailable) {
+  public void setMaxUnavailable(Integer maxUnavailable) {
     this.maxUnavailable = maxUnavailable;
   }
 

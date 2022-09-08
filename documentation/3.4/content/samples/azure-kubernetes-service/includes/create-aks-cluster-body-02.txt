@@ -13,8 +13,6 @@ $ export TIMESTAMP=`date +%s`
 $ export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
 $ export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
 $ export AKS_PERS_LOCATION=eastus
-$ export SP_APP_ID=<appId from the az ad sp create-for-rbac command>
-$ export SP_CLIENT_SECRET=<password from the az ad sp create-for-rbac command>
 
 $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 $ az aks create \
@@ -25,8 +23,7 @@ $ az aks create \
    --nodepool-name nodepool1 \
    --node-vm-size Standard_DS2_v2 \
    --location $AKS_PERS_LOCATION \
-   --service-principal $SP_APP_ID \
-   --client-secret $SP_CLIENT_SECRET
+   --enable-managed-identity
 ```
 
 Successful output will be a JSON object with the entry `"type": "Microsoft.ContainerService/ManagedClusters"`.

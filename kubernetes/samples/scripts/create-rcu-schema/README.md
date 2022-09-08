@@ -6,45 +6,70 @@ The sample scripts in this directory demonstrate how to:
 
 ## Start an Oracle Database service in a Kubernetes cluster
 
-Use the script ``samples/scripts/create-oracle-db-service/start-db-service.sh``
-
-For creating a Fusion Middleware domain, you can use the Database connection string, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, as an `rcuDatabaseURL` parameter in the `domain.input.yaml` file.
-
-You can access the Database through the NodePort outside of the Kubernetes cluster, using the URL  `<hostmachine>:30011/devpdb.k8s`.
-
-**Note**: To create a Fusion Middleware domain image, the domain-in-image model needs a public Database URL as an `rcuDatabaseURL` parameter.
-
+An RCU schema requires an Oracle Database. For a sample with instructions about starting and accessing an Oracle Database,
+see `samples/scripts/create-oracle-db-service/README.md` about using its `start-db-service.sh` script.
 
 ## Create the RCU schema in the Oracle Database
 
-This script generates the RCU schema based `schemaPrefix` and `dburl`.
+The `create-rcu-schema.sh` script generates an RCU schema in an Oracle database by deploying a pod named `rcu`
+(if one isn't already deployed) and running a script named `createRepository.sh` in the pod.
 
-The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
+The `rcu` pod assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`,
+is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`.
+To create a secret for accessing `container-registry.oracle.com`, see `create-image-pull-secret.sh`.
 
+The `rcu` pod requires that you create a secret in the same namespace
+as the `rcu` pod which contains the database's SYSDBA username and password
+in its `sys_username` and `sys_password` fields,
+and also contains the password of your choice for RCU schemas
+in its `password field`.
+In the local shell:
+```shell
+$ kubectl -n default create secret generic oracle-rcu-secret \
+  --from-literal='sys_username=sys' \
+  --from-literal='sys_password=MY_SYS_PASSWORD' \
+  --from-literal='password=MY_RCU_SCHEMA_PASSWORD'
+```
+- Replace MY_DBA_PASSWORD with the same value that you chose when deploying the database.
+- Replace MY_RCU_SCHEMA_PASSWORD with your choice of RCU schema password.
+- Oracle passwords can contain upper case, lower case, digits, and special characters.
+  Use only `_` and `#` as special characters to eliminate potential parsing errors in Oracle connection strings.
+
+Here is a sample run of the script:
 ```shell
 $ ./create-rcu-schema.sh -h
-usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -u <imagePullPolicy> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]
+usage: ./create-rcu-schema.sh -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [-n <namespace>] [-c <credentialsSecretName>] [-p <docker-store>] [-i <image>] [-u <imagePullPolicy>] [-o <rcuOutputDir>] [-h]
   -s RCU Schema Prefix (required)
   -t RCU Schema Type (optional)
-      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb)
-  -d RCU Oracle Database URL (optional)
-      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
-  -p FMW Infrastructure ImagePullSecret (optional)
-      (default: none)
-  -i FMW Infrastructure Image (optional)
-      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4)
-  -u FMW Infrastructure ImagePullPolicy (optional)
-      (default: IfNotPresent)
+      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb) 
+  -d RCU Oracle Database URL (optional) 
+      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) 
   -n Namespace for RCU pod (optional)
       (default: default)
-  -q password for database SYSDBA user. (optional)
-      (default: Oradoc_db1)
-  -r password for all schema owner (regular user). (optional)
-      (default: Oradoc_db1)
+  -c Name of credentials secret (optional).
+       (default: oracle-rcu-secret)
+       Must contain SYSDBA username at key 'sys_username',
+       SYSDBA password at key 'sys_password',
+       and RCU schema owner password at key 'password'.
+  -p FMW Infrastructure ImagePullSecret (optional) 
+      (default: none) 
+  -i FMW Infrastructure Image (optional) 
+      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) 
+  -u FMW Infrastructure ImagePullPolicy (optional) 
+      (default: IfNotPresent) 
   -o Output directory for the generated YAML file. (optional)
       (default: rcuoutput)
   -h Help
 
+NOTE: The c, p, i, u, and o arguments are ignored if an rcu pod is already running in the namespace.
+```
+```shell
+$ kubectl -n MYNAMESPACE create secret generic oracle-rcu-secret \
+  --from-literal='sys_username=sys'
+  --from-literal='sys_password=MY_SYS_PASSWORD'
+  --from-literal='password=MY_RCU_SCHEMA_PASSWORD'
+```
+```shell
 $ ./create-rcu-schema.sh -s domain1
 ImagePullSecret[none] Image[container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s] rcuType[fmw]
 pod/rcu created
@@ -124,22 +149,60 @@ Repository Creation Utility - Create : Operation Completed
 
 ## Drop the RCU schema from the Oracle Database
 
-Use this script to drop the RCU schema based `schemaPrefix` and `dburl`.
+Use the `./drop-rcu-schema.sh` script to drop the RCU schema based `schemaPrefix` and `dburl`.
+The script works by deploying a pod named `rcu`
+(if one isn't already deployed) and running a script named `dropRepository.sh` in the pod.
+
+The `rcu` pod assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`,
+is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`.
+To create a secret for accessing `container-registry.oracle.com`, see `create-image-pull-secret.sh`.
+
+The `rcu` pod requires that you create a secret in the same namespace
+as the `rcu` pod which contains the database's SYSDBA username and password
+in its `sys_username` and `sys_password` fields,
+and also contains the password of your choice for RCU schemas
+in its `password` field.
+
+In the local shell:
 
 ```shell
 $ ./drop-rcu-schema.sh -h
-usage: ./drop-rcu-schema.sh -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]
+usage: ./drop-rcu-schema.sh -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [-n <namespace>] [-c <credentialsSecretName>] [-p <docker-store>] [-i <image>] [-u <imagePullPolicy>] [-o <rcuOutputDir>] [-h]
   -s RCU Schema Prefix (required)
-  -q password for database SYSDBA user. (required)
-  -r password for all schema owner (regular user). (required)
   -t RCU Schema Type (optional)
-      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb)
+      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb) 
   -d Oracle Database URL (optional)
-      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
+      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) 
   -n Namespace where RCU pod is deployed (optional)
-      (default: default)
+      (default: default) 
+  -c Name of credentials secret (optional).
+       (default: oracle-rcu-secret)
+       Must contain SYSDBA username at key 'sys_username',
+       SYSDBA password at key 'sys_password',
+       and RCU schema owner password at key 'password'.
+  -p FMW Infrastructure ImagePullSecret (optional) 
+      (default: none) 
+  -i FMW Infrastructure Image (optional) 
+      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) 
+  -u FMW Infrastructure ImagePullPolicy (optional) 
+      (default: IfNotPresent) 
+  -o Output directory for the generated YAML file. (optional)
+      (default: rcuoutput)
   -h Help
 
+NOTE: The c, p, i, u, and o arguments are ignored if an rcu pod is already running in the namespace.
+```
+
+```shell
+$ kubectl -n default create secret generic oracle-rcu-secret \
+  --from-literal='sys_username=sys' \
+  --from-literal='sys_password=MY_SYS_PASSWORD' \
+  --from-literal='password=MY_RCU_SCHEMA_PASSWORD'
+```
+- Replace MY_DBA_PASSWORD with the same value that you chose when deploying the database.
+- Replace MY_RCU_SCHEMA_PASSWORD with the same value you chose when creating the schema.
+
+```shell
 $ ./drop-rcu-schema.sh -s domain1
 CLASSPATH=/u01/jdk/lib/tools.jar:/u01/oracle/wlserver/modules/features/wlst.wls.classpath.jar:
 

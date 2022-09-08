@@ -106,6 +106,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -443,6 +445,7 @@ class DomainProcessorTest {
   @Test
   void whenMakeRightRun_updateClusterResourceStatus() {
     ClusterResource clusterResource = createClusterResource(UID, NS, CLUSTER);
+    clusterResource.getMetadata().generation(2L);
     testSupport.defineResources(clusterResource);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
 
@@ -453,6 +456,7 @@ class DomainProcessorTest {
     assertThat(updatedClusterResource.getStatus(), notNullValue());
     assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
     assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
+    assertThat(updatedClusterResource.getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
@@ -970,6 +974,22 @@ class DomainProcessorTest {
       assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  void whenClusterScaleDown_reportIncompleteEvent()
+      throws JsonProcessingException {
+    newDomain.getStatus().addCondition(new DomainCondition(COMPLETED).withStatus(true));
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    // now scale down the cluster
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+    logRecords.clear();
+
+    assertThat(testSupport, hasEvent(DOMAIN_INCOMPLETE_EVENT));
   }
 
   @Test
@@ -2209,8 +2229,14 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceModified_verifyDispatch() {
     consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
-    processor.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    final Response<ClusterResource> item = new Response<>("MODIFIED", createClusterResource(UID, NS, CLUSTER));
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.registerDomainPresenceInfo(info);
+    ClusterResource clusterResource1 = createClusterResource(UID, NS, CLUSTER);
+    testSupport.defineResources(clusterResource1);
+    info.addClusterResource(clusterResource1);
+    ClusterResource clusterResource2 = createClusterResource(UID, NS, CLUSTER);
+    clusterResource2.getMetadata().generation(2L);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource2);
 
     processor.dispatchClusterWatch(item);
 
@@ -2225,6 +2251,37 @@ class DomainProcessorTest {
     processor.dispatchClusterWatch(item);
 
     assertThat(logRecords, not(containsInfo(WATCH_CLUSTER)));
+  }
+
+  @Test
+  void whenClusterResourceModified_noGenerationChange_dontDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.registerDomainPresenceInfo(info);
+    ClusterResource clusterResource1 = createClusterResource(UID, NS, CLUSTER);
+    info.addClusterResource(clusterResource1);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource1);
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, not(containsFine(WATCH_CLUSTER)));
+  }
+
+  @Test
+  void whenClusterResourceModified_generationChanged_verifyDispatch() {
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.FINE);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.registerDomainPresenceInfo(info);
+    ClusterResource clusterResource1 = createClusterResource(UID, NS, CLUSTER);
+    testSupport.defineResources(clusterResource1);
+    info.addClusterResource(clusterResource1);
+    ClusterResource clusterResource2 = createClusterResource(UID, NS, CLUSTER);
+    clusterResource2.getMetadata().generation(2L);
+    final Response<ClusterResource> item = new Response<>("MODIFIED", clusterResource2);
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(logRecords, containsFine(WATCH_CLUSTER));
   }
 
   @Test
@@ -2264,7 +2321,7 @@ class DomainProcessorTest {
   @SuppressWarnings("SameParameterValue")
   private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
     return new ClusterResource()
-        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName).generation(1L))
         .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
   }
 }

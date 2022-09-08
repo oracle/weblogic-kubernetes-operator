@@ -3,28 +3,47 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
-# Drop the RCU schema based on schemaPreifix and Database URL
+# Drop the RCU schema based on schemaPrefix and Database URL
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
 usage() {
-  echo "usage: ${script} -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]"
+  echo "usage: ${script} -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [-n <namespace>] [-c <credentialsSecretName>] [-p <docker-store>] [-i <image>] [-u <imagePullPolicy>] [-o <rcuOutputDir>] [-h]"
   echo "  -s RCU Schema Prefix (required)"
-  echo "  -q password for database SYSDBA user. (required)"
-  echo "  -r password for all schema owner (regular user). (required)"
   echo "  -t RCU Schema Type (optional)"
   echo "      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb) "
   echo "  -d Oracle Database URL (optional)"
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
   echo "  -n Namespace where RCU pod is deployed (optional)"
   echo "      (default: default) "
+  echo "  -c Name of credentials secret (optional)."
+  echo "       (default: oracle-rcu-secret)"
+  echo "       Must contain SYSDBA username at key 'sys_username',"
+  echo "       SYSDBA password at key 'sys_password',"
+  echo "       and RCU schema owner password at key 'password'."
+  echo "  -p FMW Infrastructure ImagePullSecret (optional) "
+  echo "      (default: none) "
+  echo "  -i FMW Infrastructure Image (optional) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
+  echo "  -u FMW Infrastructure ImagePullPolicy (optional) "
+  echo "      (default: IfNotPresent) "
+  echo "  -o Output directory for the generated YAML file. (optional)"
+  echo "      (default: rcuoutput)"
   echo "  -h Help"
+  echo ""
+  echo "NOTE: The c, p, i, u, and o arguments are ignored if an rcu pod is already running in the namespace."
+  echo ""
   exit $1
 }
 
-while getopts ":h:s:d:t:n:q:r:" opt; do
+dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
+rcuType="fmw"
+namespace="default"
+createPodArgs=""
+
+while getopts ":s:t:d:n:c:p:i:u:o:h:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
@@ -34,9 +53,7 @@ while getopts ":h:s:d:t:n:q:r:" opt; do
     ;;
     n) namespace="${OPTARG}"
     ;;
-    q) sysPassword="${OPTARG}"
-    ;;
-    r) schemaPassword="${OPTARG}"
+    c|p|i|u|o) createPodArgs+=" -${opt} ${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -50,50 +67,17 @@ if [ -z "${schemaPrefix}" ]; then
   usage 1
 fi
 
-if [ -z "${dburl}" ]; then
-  dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
-fi
-
-if [ -z "${rcuType}" ]; then
-  rcuType="fmw"
-fi
-
-if [ -z "${namespace}" ]; then
-  namespace="default"
-fi
-
-if [ -z "${sysPassword}" ]; then
-  echo "${script}: -q <SYSDBA user password> must be specified."
-  usage 1
-fi
-
-if [ -z "${schemaPassword}" ]; then
-  echo "${script}: -r <schema owner password> must be specified."
-  usage 1
-fi
-
-rcupod=`kubectl get po -n ${namespace} | grep rcu | cut -f1 -d " " `
-if [ -z "${rcupod}" ]; then
-  echo "RCU deployment pod not found in [$namespace] Namespace"
-  exit -2
-fi
+# this creates the rcu pod if it doesn't already exist
+echo "[INFO] Calling '${scriptDir}/common/create-rcu-pod.sh -n $namespace $createPodArgs'"
+${scriptDir}/common/create-rcu-pod.sh -n $namespace $createPodArgs || exit -4
 
 #fmwimage=`kubectl get pod/rcu  -o jsonpath="{..image}"`
 
-echo "${sysPassword}" > pwd.txt
-echo "${schemaPassword}" >> pwd.txt
+kubectl exec -n $namespace -i rcu -- /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 
-kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/dropRepository.sh' < ${scriptDir}/common/dropRepository.sh
-kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt
-rm -rf dropRepository.sh pwd.txt
-
-kubectl exec -n $namespace -i rcu /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType} ${sysPassword}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not drop the RCU Repository based on dburl[${dburl}] schemaPrefix[${schemaPrefix}]  ";
  echo "######################";
  exit -3;
 fi
-
-kubectl delete pod rcu -n ${namespace}
-checkPodDelete rcu ${namespace}

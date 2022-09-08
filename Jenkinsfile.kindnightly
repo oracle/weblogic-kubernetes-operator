@@ -201,7 +201,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.6'
+               defaultValue: '2.0.7'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -450,18 +450,38 @@ EOF
                         TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
-                        sh '''
+                     script {
+                      def res = 0
+                      res = sh ( script: '''
+                         echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
+                         echo "Selected IT Tests [${IT_TEST}]"
+                        if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
+                           echo 'ERROR: All tests cannot be run with integration-tests profile'
+                           exit 1 
+                        else 
+                           echo 'Profile/ItTests Validation Passed'
+                           exit 0
+                         fi;
+                        ''' ,returnStatus:true)
+                       if (res != 0) {
+                          currentBuild.result = 'ABORTED'
+                          error('Profile/ItTests Validation Failed')
+                       }
+                     }
+                     sh '''
                             export PATH=${runtime_path}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
-
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
-
-                            if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
-                            elif [ ! -z "${IT_TEST}" ]; then
+                            if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
+                                echo 'Overriding the PARALLEL_RUN to false for kind-sequential profile'
+                                PARALLEL_RUN=false
+                            fi
+                            if [ ! -z "${IT_TEST}" ]; then
+                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
@@ -493,7 +513,6 @@ EOF
                             export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
                             export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
                             export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
-
                             if [ ! -z "${http_proxy}" ]; then
                                 export http_proxy
                             elif [ ! -z "${HTTP_PROXY}" ]; then
