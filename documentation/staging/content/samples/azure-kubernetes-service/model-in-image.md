@@ -444,7 +444,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
-   --from-literal=username=weblogic --from-literal=password=welcome1
+   --from-literal=username=<wl admin username> \
+   --from-literal=password=<wl admin password>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -454,7 +455,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
-   --from-literal=password=welcome1
+   --from-literal=password=<mii runtime encryption pass>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -463,6 +464,12 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```
 
   Some important details about these secrets:
+
+  - Choosing passwords and usernames:
+    - Replace `<wl admin username>` and `<wl admin password>` with a username and password of your choice.
+      The password should be at least eight characters long and include at least one digit.
+      Remember what you specified. These credentials may be needed again later.
+    - Replace `<mii runtime encryption pass>` with a password of your choice.
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
@@ -649,7 +656,10 @@ sample-domain1-managed-server1            ClusterIP      None           <none>  
 sample-domain1-managed-server2            ClusterIP      None           <none>           8001/TCP         7m52s
 ```
 
-In the example, the URL to access the Administration Server is: `http://52.191.234.149:7001/console`.  **IMPORTANT: You must ensure that any Network Security Group rules that govern access to the console allow inbound traffic on port 7001.** The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.
+In the example, the URL to access the Administration Server is: `http://52.191.234.149:7001/console`.
+The expected username and password must match the values that you chose during the [Kubernetes Secrets for WebLogic](#kubernetes-secrets-for-weblogic) step.
+
+**IMPORTANT:** You must ensure that any Network Security Group rules that govern access to the console allow inbound traffic on port 7001.
 
 If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
