@@ -121,10 +121,12 @@ public class PersistentVolumeUtils {
       assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
     }
     if (OKE_CLUSTER) {
+      String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
+      logger.info("Using FSS PV directory {0}", fssDir);
       v1pv.getSpec()
           .storageClassName("oci-fss")
           .nfs(new V1NFSVolumeSource()
-              .path(FSS_DIR[new Random().nextInt(FSS_DIR.length)])
+              .path(fssDir)
               .server(NFS_SERVER)
               .readOnly(false));
     } else if (OKD) {
@@ -199,10 +201,13 @@ public class PersistentVolumeUtils {
 
   private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv, String storageClassName) {
     if (OKE_CLUSTER) {
+      String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
+      LoggingFacade logger = getLogger();
+      logger.info("Using FSS PV directory {0}", fssDir);
       v1pv.getSpec()
               .storageClassName("oci-fss")
               .nfs(new V1NFSVolumeSource()
-                      .path(FSS_DIR[new Random().nextInt(FSS_DIR.length)])
+                      .path(fssDir)
                       .server(NFS_SERVER)
                       .readOnly(false));
     } else if (OKD) {

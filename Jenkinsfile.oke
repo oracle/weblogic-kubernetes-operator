@@ -5,7 +5,7 @@
 pipeline {
     agent { label 'VM.Standard2.8' }
     options {
-        timeout(time: 800, unit: 'MINUTES')
+        timeout(time: 1200, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
 
@@ -435,7 +435,7 @@ EOF
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10"
+                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15"
 
                     }
                     steps {

@@ -54,3 +54,29 @@ resource "oci_file_storage_file_system" "oketest_fs10" {
   availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
   compartment_id      = var.compartment_ocid
 }
+resource "oci_file_storage_file_system" "oketest_fs11" {
+  #Required
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
+  compartment_id      = var.compartment_ocid
+}
+resource "oci_file_storage_file_system" "oketest_fs12" {
+  #Required
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
+  compartment_id      = var.compartment_ocid
+}
+resource "oci_file_storage_file_system" "oketest_fs13" {
+  #Required
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
+  compartment_id      = var.compartment_ocid
+}
+resource "oci_file_storage_file_system" "oketest_fs14" {
+  #Required
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
+  compartment_id      = var.compartment_ocid
+}
+resource "oci_file_storage_file_system" "oketest_fs15" {
+  #Required
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
+  compartment_id      = var.compartment_ocid
+}
+

@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("okd-fmw-cert")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-sequential")
+@Tag("oke-parallel")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;

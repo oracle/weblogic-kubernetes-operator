@@ -62,4 +62,34 @@ resource "oci_file_storage_export" "oketest_export10" {
   file_system_id = oci_file_storage_file_system.oketest_fs10.id
   path           = "/oketest10"
 }
+resource "oci_file_storage_export" "oketest_export11" {
+  #Required
+  export_set_id  = oci_file_storage_export_set.oketest_export_set.id
+  file_system_id = oci_file_storage_file_system.oketest_fs11.id
+  path           = "/oketest11"
+}
+resource "oci_file_storage_export" "oketest_export12" {
+  #Required
+  export_set_id  = oci_file_storage_export_set.oketest_export_set.id
+  file_system_id = oci_file_storage_file_system.oketest_fs12.id
+  path           = "/oketest12"
+}
+resource "oci_file_storage_export" "oketest_export13" {
+  #Required
+  export_set_id  = oci_file_storage_export_set.oketest_export_set.id
+  file_system_id = oci_file_storage_file_system.oketest_fs13.id
+  path           = "/oketest13"
+}
+resource "oci_file_storage_export" "oketest_export14" {
+  #Required
+  export_set_id  = oci_file_storage_export_set.oketest_export_set.id
+  file_system_id = oci_file_storage_file_system.oketest_fs14.id
+  path           = "/oketest14"
+}
+resource "oci_file_storage_export" "oketest_export15" {
+  #Required
+  export_set_id  = oci_file_storage_export_set.oketest_export_set.id
+  file_system_id = oci_file_storage_file_system.oketest_fs15.id
+  path           = "/oketest15"
+}
 
