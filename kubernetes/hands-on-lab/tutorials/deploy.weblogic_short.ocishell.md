@@ -11,10 +11,13 @@ $ kubectl create namespace sample-domain1-ns
 Create a Kubernetes Secret containing the Administration Server boot credentials:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
-  --from-literal=username=<a user name> \
+  --from-literal=username=<a username> \
   --from-literal=password=<a password>
 ```
-where the actual username and password should be specified instead of `<a username>` and `<a password>`
+Notes:
+- Replace `<a username>` and `<a password>` with a username and password of your choice.
+- The password should be at least eight characters long and include at least one digit.
+- Remember what you specified. These credentials will be needed again later.
 
 Label the domain namespace:
 ```shell
@@ -113,7 +116,7 @@ $ kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk
 ```
 Construct the Administration Console URL and open it in a browser:
 
-Enter the administrative user credentials (weblogic/welcome1) and click **Login**.
+Enter the administrative user credentials that you chose in the [Prepare the Kubernetes cluster to run WebLogic Server domains](prepare-the-kubernetes-cluster-to-run-webLogic-server-domains) step, and click **Login**.
 
 ![](../images/deploy.domain/weblogic.console.login.png)
 
