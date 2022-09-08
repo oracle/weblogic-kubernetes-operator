@@ -171,7 +171,7 @@ class ItOperatorWlsUpgrade {
   @Disabled
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.4 to current")
-  @ValueSource(strings = { "Image",  "FromModel" })
+  @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom314ToCurrent(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "3.1.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
