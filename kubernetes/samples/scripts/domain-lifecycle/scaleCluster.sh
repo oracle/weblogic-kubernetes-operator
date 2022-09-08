@@ -47,6 +47,7 @@ domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
 replicas=""
+clusterResource=""
 
 while getopts "vc:n:m:d:r:h" opt; do
   case $opt in
@@ -104,32 +105,24 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content before changes: ${clusterJson}"
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
 if [ -z "${clusterJson}" ]; then
   printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
   exit 1
 fi
 
-# Changed made on 08/15/2022
-#isReplicasInAllowedRange "${clusterJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
 isClusterReplicasInAllowedRange "${clusterJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
 if [ "${replicasInAllowedRange}" == 'false' ]; then
   printError "Replicas value is not in the allowed range of ${range}. Exiting."
   exit 1
 fi
 
-# Changed made on 08/15/2022
 printInfo "Patching replicas for cluster: '${clusterName}' to '${replicas}'."
-#createPatchJsonToUpdateReplicas "${clusterJson}" "${clusterName}" "${replicas}" patchJson
 createPatchJsonToUpdateReplicasUsingClusterResource "${clusterJson}" "${clusterName}" "${replicas}" patchJson
 
-# Changed made on 08/15/2022
-#executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 printInfo "Patch command to execute is: ${kubernetesCli} ${clusterName} ${domainNamespace} ${patchJson} ${verboseMode}"
-executeClusterPatchCommand "${kubernetesCli}" "${clusterName}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
-
-clusterJson=$(${kubernetesCli} get cluster ${clusterName} -n ${domainNamespace} -o json --ignore-not-found)
-printInfo "clusterJson content after changes: ${clusterJson}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched replicas for cluster '${clusterName}'!"
