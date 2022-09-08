@@ -79,14 +79,14 @@ serverPodCpuLimit: "250m"
 persistentVolumeClaimNameSuffix: azurefile
 
 # Password for WebLogic account.
-weblogicAccountPassword: welcome1
+weblogicAccountPassword: weblogic-account-password
 
 # WebLogic Server image.
 # Parameter "image" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 weblogicDockerImage: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 
 # Name of weblogic user.
-weblogicUserName: weblogic
+weblogicUserName: weblogic-user-name
 
 
 
