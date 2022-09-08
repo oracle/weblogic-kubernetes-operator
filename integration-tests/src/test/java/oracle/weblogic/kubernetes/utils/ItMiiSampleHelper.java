@@ -175,6 +175,8 @@ public class ItMiiSampleHelper {
       logger.info("Docker registry secret {0} created successfully in namespace {1}",
               TestConstants.BASE_IMAGES_REPO_SECRET_NAME, dbNamespace);
     }
+
+    callCheckMiiSampleSource();
   }
 
   /**
@@ -213,7 +215,7 @@ public class ItMiiSampleHelper {
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
-  public void execTestScriptAndAssertSuccess(DomainType domainType,
+  private void execTestScriptAndAssertSuccess(DomainType domainType,
                                                     String args,
                                                     String errString) {
     for (String arg : args.split(",")) {
@@ -326,21 +328,25 @@ public class ItMiiSampleHelper {
   }
 
   /**
-   * Test MII sample WLS or JRF update1 use case.
+   * Verify that the "hard coded" sample domain resources in git
+   * align with the templates used by the tests.
    */
-  public void callCheckMiiSampleSource(String args,
-                                              String errString) {
-    final String baseImageNameKey = "BASE_IMAGE_NAME";
-    final String baseImageTagKey = "BASE_IMAGE_TAG";
-    final String origImageName = envMap.get(baseImageNameKey);
-    final String origImageTag = envMap.get(baseImageTagKey);
+  private void callCheckMiiSampleSource() {
+    Map<String, String> localMap = new HashMap<>();
+    localMap.put("WORKDIR", envMap.get("WORKDIR"));
+
+    Map<String, String> saveMap = envMap;
+    envMap = localMap;
     try {
-      envMap.remove(baseImageNameKey);
-      envMap.remove(baseImageTagKey);
-      execTestScriptAndAssertSuccess(domainType, args, errString);
+      logger.info("Comparing integration test domain resource templates to hard coded resources in the sample source.");
+      execTestScriptAndAssertSuccess(
+          DomainType.WLS,
+          "-check-sample",
+          "Error: the MII sample domain resources in git do not align with integration test templates."
+          + " To run this check locally: './operator/integration-tests/model-in-image/run-test.sh -check-sample'."
+      );
     } finally {
-      envMap.put(baseImageNameKey,origImageName);
-      envMap.put(baseImageTagKey,origImageTag);
+      envMap = saveMap;
     }
   }
 
