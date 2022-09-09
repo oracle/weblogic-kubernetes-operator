@@ -387,7 +387,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
       patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
           + "]";
       assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
           new V1Patch(patchStr), V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
