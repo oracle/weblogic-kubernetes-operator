@@ -88,7 +88,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -674,17 +673,23 @@ class ItMiiUpdateDomainConfig {
     // build the standalone JMS Client on Admin pod after rolling restart
     buildClientOnPod();
 
-    // Scale the cluster to replica count 5
-    // Here managed-server5 should not come up as new MaxClusterSize is 4
+    // Attempt to scale the cluster to replica count 5
+    // This scale request should be rejected and fail by admission webhook.
     logger.info("[After Patching] updating the replica count to 5");
     boolean p3Success = scaleCluster("cluster-1", domainNamespace, 5);
-    assertTrue(p3Success,
-        String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertFalse(p3Success,
+            String.format("replica count patching to 5 failed for domain %s in namespace %s",
+                    domainUid, domainNamespace));
 
-    //  Make sure the 3rd Managed server comes up
+    // Scale the cluster to new maximum replica count of 4
+    boolean p4Success = scaleCluster("cluster-1", domainNamespace, 4);
+    assertTrue(p4Success,
+            String.format("replica count patching to 4 succeeded for domain %s in namespace %s",
+                    domainUid, domainNamespace));
+
+    //  Make sure the 3rd and 4th Managed servers come up
     checkServiceExists(managedServerPrefix + "3", domainNamespace);
     checkServiceExists(managedServerPrefix + "4", domainNamespace);
-    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works inside pod before scaling the cluster
@@ -710,22 +715,6 @@ class ItMiiUpdateDomainConfig {
         logger,
         "Wait for t3 JMS Client to access WLS");
 
-    // Since the MinDynamicClusterSize is set to 2 in the configmap
-    // and allowReplicasBelowMinDynClusterSize is set false, the replica
-    // count can not go below 2. So during the following scale down operation
-    // only managed-server3 and managed-server4 pod should be removed.
-    logger.info("[After Patching] updating the replica count to 1");
-    boolean p4Success = scaleCluster("cluster-1", domainNamespace, 1);
-    assertTrue(p4Success,
-        String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
-
-    checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPrefix + "4", domainUid, domainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} available in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
     logger.info("New Dynamic Cluster Size attribute verified");
   }
 

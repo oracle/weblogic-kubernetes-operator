@@ -42,6 +42,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
@@ -68,6 +70,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -379,6 +383,17 @@ public class CommonLBTestUtils {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort)))));
+
+    // create cluster resource
+    String clusterResName = domainUid + "-" + clusterName;
+    ClusterResource cluster = createClusterResource(clusterResName, domainNamespace,
+        new ClusterSpec().withClusterName(clusterName).replicas(replicaCount));
+    getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+
     setPodAntiAffinity(domain);
     return domain;
   }
