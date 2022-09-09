@@ -124,7 +124,7 @@ class ItOperatorFmwUpgrade {
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 1;
+  private static final int replicaCount = 2;
 
   private static String latestOperatorImageName;
 
@@ -453,8 +453,7 @@ class ItOperatorFmwUpgrade {
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .replicas(1));
+                        .nodePort(t3ChannelPort)))));
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created
