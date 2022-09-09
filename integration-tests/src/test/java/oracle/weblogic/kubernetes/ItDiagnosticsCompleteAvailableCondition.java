@@ -377,8 +377,17 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
     try {
+      patchStr
+          = "["
+          + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
+          + "]";
+      logger.info("Removing replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+    
       int newReplicaCount = maxClusterSize + 1;
-      logger.info("patch the domain resource with new introspectVersion");
+      logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
       patchStr = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"},"
           + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
