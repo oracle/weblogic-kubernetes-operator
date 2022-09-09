@@ -376,21 +376,26 @@ class ItDiagnosticsCompleteAvailableCondition {
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
+    V1Patch patch;
     try {
-      logger.info("patch the domain resource with new introspectVersion");
-      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
+      patchStr
+          = "["
+          + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
+          + "]";
+      logger.info("Removing replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+    
+      int newReplicaCount = maxClusterSize + 1;
+      logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
+      patchStr = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
+          + "]";
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
-
-      int newReplicaCount = maxClusterSize + 1;
-      logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
-      patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
-          + "]";
-      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
-          new V1Patch(patchStr), V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -421,6 +426,14 @@ class ItDiagnosticsCompleteAvailableCondition {
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
     } finally {
+      patchStr
+          = "["
+          + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": 2}"
+          + "]";
+      logger.info("Adding replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       restoreDomainResource();
     }
   }
