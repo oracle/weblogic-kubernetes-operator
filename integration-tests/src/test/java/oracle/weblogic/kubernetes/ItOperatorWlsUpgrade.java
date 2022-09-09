@@ -656,6 +656,14 @@ class ItOperatorWlsUpgrade {
     stopPortForwardProcess(domainNamespace);
   }
 
+  /**
+   * Replace the fields in the pre-checked in domain yaml file with testing attributes.
+   * For example, namespace, domainUid,  and image. Then create domain using kubectl and
+   * verify the created domain
+   * @param domainType either domain in image(Image) or model in image (FromModel)
+   * @param domainNamespace namespace where domain exists
+   * @param externalServiceNameSuffix suffix of externalServiceName
+   */
   private void createWlsDomainAndVerifyByDomainYaml(String domainType,
       String domainNamespace, String externalServiceNameSuffix) {
 
@@ -685,7 +693,7 @@ class ItOperatorWlsUpgrade {
           "File copy failed for mii-domain-v8.yaml");
     }
 
-    // replace apiVersion, namespace and image in domain.yaml
+    // replace namespace, domainUid,  and image in domain.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
         destDomainYaml.toString(), "domain1-ns", domainNamespace),
         "Could not modify the namespace in the domain.yaml file");
