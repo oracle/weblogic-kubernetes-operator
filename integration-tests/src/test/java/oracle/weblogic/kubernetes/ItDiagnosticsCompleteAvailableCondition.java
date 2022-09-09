@@ -376,13 +376,14 @@ class ItDiagnosticsCompleteAvailableCondition {
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
+    V1Patch patch;
     try {
       patchStr
           = "["
           + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
           + "]";
       logger.info("Removing replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
+      patch = new V1Patch(patchStr);
       assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
     
@@ -425,6 +426,14 @@ class ItDiagnosticsCompleteAvailableCondition {
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
     } finally {
+      patchStr
+          = "["
+          + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": 2}"
+          + "]";
+      logger.info("Removing replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       restoreDomainResource();
     }
   }
