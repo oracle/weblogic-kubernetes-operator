@@ -65,9 +65,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -293,7 +293,8 @@ class ItKubernetesDomainEvents {
   @DisplayName("Test domain Failed event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
     OffsetDateTime timestamp = now();
-    createClusterAndVerify(createClusterResource("nonexisting-cluster", domainNamespace3, replicaCount));
+    createClusterAndVerify(createClusterResource(
+        domainUid + "-nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
     logger.info("patch the domain resource with new cluster");
     try {
       String patchStr
@@ -852,7 +853,8 @@ class ItKubernetesDomainEvents {
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))));
     setPodAntiAffinity(domain);
-    domain = addClusterToDomain(cluster1Name, domainNamespace, domain, replicaCount);
+    domain = createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + cluster1Name, cluster1Name, domainNamespace, domain, replicaCount);
     assertNotNull(domain, "Failed to add Cluster to domain");
     createDomainAndVerify(domain, domainNamespace);
     return domain;
@@ -930,7 +932,8 @@ class ItKubernetesDomainEvents {
       getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", cluster2Name, domainNamespace3);
     } else {
       getLogger().info("Creating cluster {0} in namespace {1}", cluster2Name, domainNamespace3);
-      createClusterAndVerify(createClusterResource(cluster2Name, domainNamespace3, replicaCount));
+      createClusterAndVerify(createClusterResource(
+          domainUid + "-" + cluster2Name, cluster2Name, domainNamespace3, replicaCount));
     }
 
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));

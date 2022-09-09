@@ -321,14 +321,16 @@ public class CommonMiiTestUtils {
     ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
     if (clusterNames != null) {
       for (String clusterName : clusterNames) {
-        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+        String clusterResName = domainResourceName + "-" + clusterName;
+        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
+          getLogger().info("!!!Cluster Resource {0} in namespace {1} already exists, skipping...",
+              clusterResName, domNamespace);
         } else {
-          getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
-          createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
+          getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
+          createClusterAndVerify(createClusterResource(clusterResName, clusterName, domNamespace, replicaCount));
         }
         // set cluster references
-        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
       }
     }
 

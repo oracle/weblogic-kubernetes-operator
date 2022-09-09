@@ -135,6 +135,7 @@ class ItConfigDistributionStrategy {
 
   final String domainUid = "mydomain";
   final String clusterName = "mycluster";
+  final String clusterResName = domainUid + "-" + clusterName;
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
@@ -961,12 +962,12 @@ class ItConfigDistributionStrategy {
     setPodAntiAffinity(domain);
     
     // create cluster object
-    ClusterResource cluster = createClusterResource(
+    ClusterResource cluster = createClusterResource(clusterResName,
         clusterName, domainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    logger.info("Creating cluster resource {0} in namespace {1}",clusterResName, domainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);

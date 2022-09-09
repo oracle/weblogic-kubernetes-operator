@@ -148,6 +148,8 @@ class ItDBOperator {
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
+  private final String fmwClusterResName = fmwDomainUid + "-" + clusterName;
+  private final String wlsClusterResName = wlsDomainUid + "-" + clusterName;
 
   /**
    * Start DB service and create RCU schema.
@@ -267,11 +269,12 @@ class ItDBOperator {
         fmwMiiImage);
     
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    ClusterResource cluster = createClusterResource(fmwClusterResName,
+        clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", fmwClusterResName, fmwDomainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(fmwClusterResName));
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
@@ -337,11 +340,11 @@ class ItDBOperator {
         dbSecretName, false, false, true);
     
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, wlsDomainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, wlsDomainNamespace);
+    ClusterResource cluster = createClusterResource(wlsClusterResName, clusterName, wlsDomainNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", wlsClusterResName, wlsDomainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(wlsClusterResName));
     
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         wlsDomainUid, wlsDomainNamespace);
@@ -425,7 +428,7 @@ class ItDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
+    boolean psuccess = scaleCluster(wlsClusterResName, wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));

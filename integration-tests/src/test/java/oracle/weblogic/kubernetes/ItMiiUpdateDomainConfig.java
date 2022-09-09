@@ -66,7 +66,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -207,7 +207,8 @@ class ItMiiUpdateDomainConfig {
         replicaCount, configMapName, dbSecretName);
 
     // add cluster to domain
-    addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
+    domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,
+        clusterName, domainNamespace, domain, replicaCount);
 
     createDomainAndVerify(domain, domainNamespace);
   }

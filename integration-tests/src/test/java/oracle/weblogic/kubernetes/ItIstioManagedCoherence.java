@@ -47,7 +47,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createAndPushMiiImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainWithIstioMultiClusters;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -462,7 +462,9 @@ class ItIstioManagedCoherence {
 
     // create cluster resource in mii domain
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      domain = addClusterToDomain(CLUSTER_NAME_PREFIX + i, domainInImageNamespace, domain, replicaCount);
+      domain = createClusterResourceAndAddReferenceToDomain(
+          domainUid + "-" + CLUSTER_NAME_PREFIX + i, CLUSTER_NAME_PREFIX + i,
+          domainInImageNamespace, domain, replicaCount);
     }
     setPodAntiAffinity(domain);
 

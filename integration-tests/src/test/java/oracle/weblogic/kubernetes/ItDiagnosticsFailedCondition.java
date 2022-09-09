@@ -67,6 +67,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -106,11 +107,12 @@ class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
   int replicaCount = 2;
-  String clusterName = "cluster-1";
+  static String clusterName = "cluster-1";
 
   private static String adminSecretName;
   private static String encryptionSecretName;
   private static final String domainUid = "diagnosticsdomain";
+  private static final String clusterResName = domainUid + "-" + clusterName;
 
   private static String opServiceAccount = null;
   private static String opNamespace = null;
@@ -495,12 +497,12 @@ class ItDiagnosticsFailedCondition {
                           .nodePort(getNextFreePort())))));
       setPodAntiAffinity(domain);
 
-      ClusterResource cluster = createClusterResource(
-          clusterName, domainNamespace, replicaCount);
-      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      ClusterResource cluster = createClusterResource(clusterResName,
+          clusterName,domainNamespace, replicaCount);
+      logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domainNamespace);
       createClusterAndVerify(cluster);
       // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));  
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
       // verify the domain custom resource is created
       createDomainAndVerify(domain, domainNamespace);
@@ -712,11 +714,9 @@ class ItDiagnosticsFailedCondition {
           replicaCount,
           fmwMiiImage,
           5L);
-      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
-      createClusterAndVerify(createClusterResource(clusterName, domainNamespace, replicaCount));
-      // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
+      domain = createClusterResourceAndAddReferenceToDomain(
+          domainName + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
       createDomainAndVerify(domain, domainNamespace);
 
       String adminServerPodName = domainName + "-admin-server";
@@ -787,6 +787,7 @@ class ItDiagnosticsFailedCondition {
                    String repoSecretName, String encryptionSecretName,
                    int replicaCount, String miiImage, String configmapName, Long introspectorDeadline) {
 
+    String clusterResName = domainUid + "-"  + clusterName;
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
@@ -831,11 +832,12 @@ class ItDiagnosticsFailedCondition {
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
     
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    ClusterResource cluster = createClusterResource(clusterResName,
+        clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
     return domain;
   }
@@ -880,11 +882,13 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName,
+        clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource{0} in namespace {1}",
+        domainUid + "-" + clusterName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));   
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
     return domain;
   }
 

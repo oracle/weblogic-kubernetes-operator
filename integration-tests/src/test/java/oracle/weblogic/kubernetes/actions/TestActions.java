@@ -378,13 +378,13 @@ public class TestActions {
   /**
    * Scale a cluster in a specified namespace by patching cluster resource.
    *
-   * @param clusterName cluster in the domain to be scaled
+   * @param clusterResName cluster resource name
    * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
    */
-  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
-    return Cluster.scaleCluster(clusterName, namespace, numOfServers);
+  public static boolean scaleCluster(String clusterResName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterResName, namespace, numOfServers);
   }
 
   /**

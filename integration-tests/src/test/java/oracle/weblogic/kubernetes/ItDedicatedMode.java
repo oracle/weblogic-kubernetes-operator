@@ -38,7 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -74,6 +74,7 @@ class ItDedicatedMode {
   // domain constants
   private final String domainUid = "dedicated-domain1";
   private final String clusterName = "cluster-1";
+  private final String clusterResName = domainUid + "-" + clusterName;
   private final int replicaCount = 2;
   private final String adminServerPodName =
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -248,7 +249,8 @@ class ItDedicatedMode {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    domain = addClusterToDomain("cluster-1", domainNamespace, domain, replicaCount);
+    domain = createClusterResourceAndAddReferenceToDomain(
+        clusterResName, clusterName, domainNamespace, domain, replicaCount);
     setPodAntiAffinity(domain);
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
