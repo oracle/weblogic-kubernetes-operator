@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -531,7 +532,8 @@ class ItWlsSamples {
       assertDoesNotThrow(() -> {
         // set the pvHostPath in create-pv-pvc-inputs.yaml
         replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + FSS_DIR);
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: "
+                        + FSS_DIR[new Random().nextInt(FSS_DIR.length)]);
         replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
                 "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
         replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),

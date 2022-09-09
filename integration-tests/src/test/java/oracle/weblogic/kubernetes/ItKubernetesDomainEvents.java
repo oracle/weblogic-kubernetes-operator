@@ -133,6 +133,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 @Tag("okd-wls-srg")
 @IntegrationTest
 @Tag("olcne")
