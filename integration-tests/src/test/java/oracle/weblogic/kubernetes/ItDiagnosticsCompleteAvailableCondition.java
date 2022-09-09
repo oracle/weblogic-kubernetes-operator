@@ -430,7 +430,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           = "["
           + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": 2}"
           + "]";
-      logger.info("Removing replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      logger.info("Adding replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       patch = new V1Patch(patchStr);
       assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
