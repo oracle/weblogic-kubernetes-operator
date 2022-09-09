@@ -420,15 +420,12 @@ class ItMiiDynamicUpdatePart1 {
         Paths.get(destLocation)));
     runJavacInsidePod(helper.adminServerPodName, helper.domainNamespace, destLocation);
 
-    // Scale the cluster using replica count 5, managed-server5 should not come up as new MaxClusterSize is 4
+    // Scale the cluster using replica count 5, patch cluster should fail as max size is 4
     logger.info("[After Patching] updating the replica count to 5");
     boolean p3Success = scaleCluster(clusterName, helper.domainNamespace, 5);
-    assertTrue(p3Success,
-        String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, helper.domainNamespace));
-    //  Make sure the 3rd Managed server comes up
-    checkServiceExists(helper.managedServerPrefix + "3", helper.domainNamespace);
-    checkServiceExists(helper.managedServerPrefix + "4", helper.domainNamespace);
-    checkPodDeleted(helper.managedServerPrefix + "5", domainUid, helper.domainNamespace);
+    assertFalse(p3Success,
+        String.format("replica patching to 5 should fail for domain %s in namespace %s",
+            domainUid, helper.domainNamespace));
 
     // Run standalone JMS Client inside the pod using weblogic.jar in classpath.
     // The client sends 300 messsage to a Uniform Distributed Queue.
@@ -436,7 +433,7 @@ class ItMiiDynamicUpdatePart1 {
     // and JMS connection is load balanced across all servers
     testUntil(
         runClientInsidePod(helper.adminServerPodName, helper.domainNamespace,
-          "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"),
+          "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "2", "true"),
         logger,
         "Wait for t3 JMS Client to access WLS");
 

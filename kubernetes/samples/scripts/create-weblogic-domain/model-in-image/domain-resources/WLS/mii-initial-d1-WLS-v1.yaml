@@ -77,7 +77,7 @@ spec:
     #  name: weblogic-domain-storage-volume
 
   # The desired behavior for starting the domain's administration server.
-  adminServer:
+  # adminServer:
     # Setup a Kubernetes node port for the administration server default channel
     #adminService:
     #  channels:
@@ -90,7 +90,6 @@ spec:
   # The name of each Cluster resource
   clusters:
   - name: sample-domain1-cluster-1
-
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -130,8 +129,8 @@ metadata:
   labels:
     # Update this with the `domainUID` of your domain:
     weblogic.domainUID: sample-domain1
-
 spec:
   # This must match a cluster name that is  specified in the WebLogic configuration
   clusterName: cluster-1
+  # The number of managed servers to start for this cluster
   replicas: 2

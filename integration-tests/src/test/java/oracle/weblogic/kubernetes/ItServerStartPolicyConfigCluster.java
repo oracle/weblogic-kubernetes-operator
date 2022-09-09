@@ -73,7 +73,7 @@ class ItServerStartPolicyConfigCluster {
 
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
-  private static final String clusterResourceName = domainUid + "-" + DYNAMIC_CLUSTER;
+  private static final String clusterResourceName = DYNAMIC_CLUSTER;
   private static LoggingFacade logger = null;
   private static final String samplePath = "sample-testing-config-cluster";
   private static String ingressHost = null; //only used for OKD
