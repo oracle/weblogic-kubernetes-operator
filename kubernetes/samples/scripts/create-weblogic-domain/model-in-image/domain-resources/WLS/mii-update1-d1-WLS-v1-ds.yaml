@@ -91,7 +91,6 @@ spec:
   clusters:
   - name: sample-domain1-cluster-1
 
-
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
   # roll of your domain's WebLogic Server pods.
@@ -130,8 +129,8 @@ metadata:
   labels:
     # Update this with the `domainUID` of your domain:
     weblogic.domainUID: sample-domain1
-
 spec:
   # This must match a cluster name that is  specified in the WebLogic configuration
   clusterName: cluster-1
+  # The number of managed servers to start for this cluster
   replicas: 2
