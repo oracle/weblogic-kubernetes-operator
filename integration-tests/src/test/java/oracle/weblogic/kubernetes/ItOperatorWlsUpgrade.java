@@ -165,7 +165,7 @@ class ItOperatorWlsUpgrade {
 
   /**
    * Operator upgrade from 3.1.4 to current.
-   * Currently form 3.1.4 to WKO 4.0, v9 cluster reference doesn't work
+   * Currently from 3.1.4 to WKO 4.0, v9 cluster reference doesn't work
    * Temporarily disabled
    */
   @Disabled
@@ -341,7 +341,7 @@ class ItOperatorWlsUpgrade {
     logger.info("Updating the cluster {0} replica count to 2");
     p1Success = scaleCluster(clusterName, domainNamespace,2);
     assertTrue(p1Success,
-        String.format("Patching replica to 1 failed for cluster %s in namespace %s",
+        String.format("Patching replica to 2 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
 
   }
@@ -657,11 +657,11 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Replace the fields in the pre-checked in domain yaml file with testing attributes.
+   * Replace the fields in domain yaml file with testing attributes.
    * For example, namespace, domainUid,  and image. Then create domain using kubectl and
-   * verify the created domain
+   * verify the domain is created
    * @param domainType either domain in image(Image) or model in image (FromModel)
-   * @param domainNamespace namespace where domain exists
+   * @param domainNamespace namespace in which to create domain
    * @param externalServiceNameSuffix suffix of externalServiceName
    */
   private void createWlsDomainAndVerifyByDomainYaml(String domainType,
