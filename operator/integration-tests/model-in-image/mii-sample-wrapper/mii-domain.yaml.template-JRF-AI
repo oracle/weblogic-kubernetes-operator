@@ -161,7 +161,7 @@ metadata:
   namespace: @@DOMAIN_NAMESPACE@@
   labels:
     # Update this with the `domainUID` of your domain:
-    weblogic.domainUID:  @@DOMAIN_UID@@
+    weblogic.domainUID: @@DOMAIN_UID@@
 spec:
   # This must match a cluster name that is  specified in the WebLogic configuration
   clusterName: cluster-1
