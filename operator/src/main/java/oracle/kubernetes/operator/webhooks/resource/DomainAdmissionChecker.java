@@ -93,7 +93,7 @@ public class DomainAdmissionChecker extends AdmissionChecker {
   }
 
   private boolean hasNoPreIntrospectionValidationErrors(DomainResource proposedDomain) {
-    List<String> failures = proposedDomain.getSimpleValidationFailures();
+    List<String> failures = proposedDomain.getFatalValidationFailures();
     messages.addAll(failures);
     return failures.isEmpty();
   }

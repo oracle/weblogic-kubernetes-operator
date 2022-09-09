@@ -796,8 +796,8 @@ public class DomainResource implements KubernetesObject {
   }
 
   // used by the validating webhook
-  public List<String> getSimpleValidationFailures() {
-    return new Validator().getSimpleValidationFailures();
+  public List<String> getFatalValidationFailures() {
+    return new Validator().getFatalValidationFailures();
   }
 
   // used by the operator
@@ -872,7 +872,7 @@ public class DomainResource implements KubernetesObject {
     private final Set<String> serverNames = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
-      getSimpleValidationFailures();
+      getFatalValidationFailures();
       getCrossReferenceValidationFailures(kubernetesResources);
       return failures;
     }
@@ -882,7 +882,7 @@ public class DomainResource implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
     }
 
-    List<String> getSimpleValidationFailures() {
+    List<String> getFatalValidationFailures() {
       addDuplicateNames();
       addInvalidMountPaths();
       addUnmappedLogHome();
