@@ -1186,7 +1186,9 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount) {
-      clusterSpec.setReplicas(replicaCount);
+      //clusterSpec.setReplicas(replicaCount);
+      Optional.ofNullable(clusterSpec)
+              .ifPresentOrElse(cs -> cs.setReplicas(replicaCount), () -> setReplicas(replicaCount));
     }
 
     @Override
