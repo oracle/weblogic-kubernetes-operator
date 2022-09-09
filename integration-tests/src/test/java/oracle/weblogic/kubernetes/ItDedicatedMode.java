@@ -64,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
 @Tag("kind-sequential")
+@Tag("oke-sequential")
 @Tag("okd-wls-mrg")
 @IntegrationTest
 @Tag("olcne")
