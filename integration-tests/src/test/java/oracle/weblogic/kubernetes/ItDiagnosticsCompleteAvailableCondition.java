@@ -16,6 +16,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -373,6 +374,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify no Failed type condition generated.
    */
   @Test
+  @Disabled
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
