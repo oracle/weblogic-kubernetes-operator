@@ -16,7 +16,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -374,25 +373,19 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify no Failed type condition generated.
    */
   @Test
-  @Disabled
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
     try {
+      int newReplicaCount = maxClusterSize + 1;
       logger.info("patch the domain resource with new introspectVersion");
-      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
+      patchStr = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
+          + "]";
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
-
-      int newReplicaCount = maxClusterSize + 1;
-      logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
-      patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
-          + "]";
-      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
-          new V1Patch(patchStr), V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
