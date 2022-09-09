@@ -151,6 +151,17 @@ if [ "${isValidServer}" != 'true' ]; then
   exit 1
 fi
 
+if [ -n "${clusterName}" ]; then
+  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${clusterJson}" ]; then
+    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+    exit 1
+  fi
+fi
+
+
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
@@ -161,14 +172,6 @@ if [ "${isAdminServer}" == 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
-  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
-
-  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
-  if [ -z "${clusterJson}" ]; then
-    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
-    exit 1
-  fi
-
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
@@ -218,7 +221,7 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     # Server shuts down by unsetting start policy and decrementing replica count, unset and decrement 
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
       and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
     printInfo "Updating replica count for cluster ${clusterName} to ${replicaCount}."
@@ -226,7 +229,7 @@ if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
      and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   else
     # Patch server start policy to Never and decrement replica count
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Never' \
@@ -238,7 +241,7 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   if [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server start policy is AlWAYS and server shuts down by unsetting the policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   else
     # Patch server start policy to Never
     printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'Never'."
