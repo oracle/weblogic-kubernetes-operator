@@ -27,7 +27,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
 
 ##### Clone WebLogic Kubernetes Operator repository
 
-Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
+Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.4.2, but should work with the latest release.
 
 ```shell
 $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -71,27 +71,34 @@ default                       1         9m24s
 sample-weblogic-operator-sa   1         9m5s
 ```
 
-Install the operator. Ensure your current directory is `weblogic-kubernetes-operator`. It may take you several minutes to install the operator.
+Install the operator. The operator’s Helm chart is located in the kubernetes/charts/weblogic-operator directory. This sample installs the operator using Helm charts from Github. It may take you several minutes to install the operator.
 
 ```
-# cd weblogic-kubernetes-operator
+helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 ```
-$ helm install weblogic-operator kubernetes/charts/weblogic-operator \
+$ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.4.2 \
   --set serviceAccount=sample-weblogic-operator-sa \
+  --set "enableClusterRoleBinding=true" \
+  --set "domainNamespaceSelectionStrategy=LabelSelector" \
+  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
 ```
+
+The output will show something similar to the following:
+
 ```
 NAME: weblogic-operator
-LAST DEPLOYED: Tue Nov 17 09:33:58 2020
+LAST DEPLOYED: Fri Aug 12 14:28:47 2022
 NAMESPACE: sample-weblogic-operator-ns
 STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `3.1.1` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `3.4.2` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -355,7 +362,7 @@ You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled
 
 AKS can pull images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
 
-Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps shown previously.  For simplicity, we use the resource group name as the name of the ACR instance.
+Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.
 
 ```shell
 $ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_PERS_RESOURCE_GROUP --sku Basic --admin-enabled true
@@ -379,14 +386,14 @@ $ az acr login --name $AKS_PERS_ACR
 Ensure Docker is running on your local machine.  Run the following commands to tag and push the image to your ACR.
 
 ```shell
-$ docker tag model-in-image:WLS-v1 $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks
+$ docker tag model-in-image:WLS-v1 $AKS_PERS_ACR/model-in-image-aks:1.0
 ```
 ```shell
-$ docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks
+$ docker push $AKS_PERS_ACR/model-in-image-aks:1.0
 ```
 ```
-The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/contosorgresourcegroup1610068510.azurecr.io]
-model-in-image-aks: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
+The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/model-in-image-aks]
+1.0: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
 ```
 
 Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS, see [Configure ACR integration for existing AKS clusters](https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters).
@@ -437,7 +444,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
-   --from-literal=username=weblogic --from-literal=password=welcome1
+   --from-literal=username=<wl admin username> \
+   --from-literal=password=<wl admin password>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -447,7 +455,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
-   --from-literal=password=welcome1
+   --from-literal=password=<mii runtime encryption pass>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -456,6 +464,12 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```
 
   Some important details about these secrets:
+
+  - Choosing passwords and usernames:
+    - Replace `<wl admin username>` and `<wl admin password>` with a username and password of your choice.
+      The password should be at least eight characters long and include at least one digit.
+      Remember what you specified. These credentials may be needed again later.
+    - Replace `<mii runtime encryption pass>` with a password of your choice.
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
@@ -477,63 +491,6 @@ $ kubectl -n sample-domain1-ns label  secret \
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-##### Kubernetes Secrets for Docker
-
-Deploy a corresponding Kubernetes `docker secret` to the same namespace to access the image during domain creation.
-
-Use `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` to create the secret.  Please invoke the script with the `-h` option to see the available switches and usage.
-
-```shell
-$ cd weblogic-kubernetes-operator
-```
-```shell
-$ cd kubernetes/samples/scripts/create-kubernetes-secrets
-```
-```shell
-$ ./create-docker-credentials-secret.sh -h
-```
-
-Get the password for the ACR and store it in the Kubernetes secret.
-
-```shell
-$ az acr credential show --name $AKS_PERS_ACR
-```
-```
-The login server endpoint suffix '.azurecr.io' is automatically omitted.
-{
-  "passwords": [
-    {
-      "name": "password",
-      "value": "f02Ls3jqnNQ0ToXIoyY2g8oJrVk0w5P/"
-    },
-    {
-      "name": "password2",
-      "value": "qbZx1bZT7=rha7Ta6Wa0zfCZqoNMNoj1"
-    }
-  ],
-  "username": "contosoresourcegroup1610068510"
-}
-```
-```shell
-$ export AKS_PERS_ACR_PASSWORD=<the-password-from-your-output>
-```
-
-Use the `create-docker-credentials-secret.sh` script to store the ACR credentials as a Kubernetes secret.
-
-```
-# cd kubernetes/samples/scripts/create-kubernetes-secrets
-```
-```shell
-$ export SECRET_NAME_DOCKER="regsecret"
-```
-```shell
-$ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e $AKS_PERS_RESOURCE_GROUP -p $AKS_PERS_ACR_PASSWORD -u $AKS_PERS_RESOURCE_GROUP -d $AKS_PERS_ACR -n sample-domain1-ns
-```
-```
-secret/regsecret created
-The secret regsecret has been successfully created in the sample-domain1-ns namespace.
-```
-
 ##### Domain resource
 
 Now, you create a Domain YAML file. Think of the Domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
@@ -547,12 +504,11 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-res
 $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
-Modify the Domain YAML file with your values.
+Modify the Domain YAML with your values.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-|`spec.image`|`$AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks`|Must be the same as the value to which you pushed the image to by running the command `docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks`.|
-|`spec.imagePullSecrets.name`|`regsecret`|Make sure its value is the same value with `${SECRET_NAME_DOCKER}`.|
+|`spec.image`|`$AKS_PERS_ACR/model-in-image-aks:1.0`|Must be the same as the value to which you pushed the image to by running the command `docker push $AKS_PERS_ACR/model-in-image-aks:1.0`.|
 
 Run the following command to create the domain custom resource:
 
@@ -700,7 +656,10 @@ sample-domain1-managed-server1            ClusterIP      None           <none>  
 sample-domain1-managed-server2            ClusterIP      None           <none>           8001/TCP         7m52s
 ```
 
-In the example, the URL to access the Administration Server is: `http://52.191.234.149:7001/console`.  **IMPORTANT: You must ensure that any Network Security Group rules that govern access to the console allow inbound traffic on port 7001.** The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.
+In the example, the URL to access the Administration Server is: `http://52.191.234.149:7001/console`.
+The expected username and password must match the values that you chose during the [Kubernetes Secrets for WebLogic](#kubernetes-secrets-for-weblogic) step.
+
+**IMPORTANT:** You must ensure that any Network Security Group rules that govern access to the console allow inbound traffic on port 7001.
 
 If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 

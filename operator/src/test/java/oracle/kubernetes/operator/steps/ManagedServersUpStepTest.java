@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -66,6 +67,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -242,6 +244,15 @@ class ManagedServersUpStepTest {
     invokeStepWithConfiguredServer();
 
     assertManagedServersUpStepNotCreated();
+  }
+
+  @Test
+  void whenNoServerStartRequested_dontPrependUpdateCompleteConditionStep() {
+    startNoServers();
+
+    invokeStepWithConfiguredServer();
+
+    assertThat(firstNonEventStep(createNextStep()), not(instanceOf(ClearCompletedConditionSteps.class)));
   }
 
   private void startNoServers() {
@@ -478,7 +489,15 @@ class ManagedServersUpStepTest {
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(info, "server1");
 
-    assertThat(firstNonEventStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
+    assertThat(firstCoreStep(createNextStep()),
+        instanceOf(ServerDownIteratorStep.class));
+  }
+
+  @Test
+  void whenShuttingDownAtLeastOneServer_prependClearCompleteConditionStep() {
+    addServer(info, "server1");
+
+    assertThat(firstNonEventStep(createNextStep()), instanceOf(ClearCompletedConditionSteps.class));
   }
 
   @Test
@@ -488,7 +507,7 @@ class ManagedServersUpStepTest {
     addServer(info, "server3");
     addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
         "server1", "server3");
   }
 
@@ -501,17 +520,17 @@ class ManagedServersUpStepTest {
     addServer(info, "server3");
     addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")), "server1",
-        "server3", ADMIN);
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
+        "server1", "server3", ADMIN);
   }
 
   @Test
   void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
     configurator.setShuttingDown(true);
 
-    assertThat(createNextStepWithNullWlsDomainConfig(), instanceOf(ClusterServicesStep.class));
+    assertThat(firstCoreStep(createNextStepWithNullWlsDomainConfig()),
+        instanceOf(ClusterServicesStep.class));
   }
-
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
@@ -648,6 +667,16 @@ class ManagedServersUpStepTest {
   private static Step firstNonEventStep(Step step) {
     Step stepLocal = step;
     while (stepLocal instanceof EventHelper.CreateEventStep) {
+      stepLocal = stepLocal.getNext();
+    }
+
+    return stepLocal;
+  }
+
+  private static Step firstCoreStep(Step step) {
+    Step stepLocal = step;
+    while (stepLocal instanceof EventHelper.CreateEventStep
+        || stepLocal instanceof ClearCompletedConditionSteps) {
       stepLocal = stepLocal.getNext();
     }
 

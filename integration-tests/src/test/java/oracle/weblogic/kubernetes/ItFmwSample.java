@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -32,11 +33,14 @@ import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -51,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createDbSecretWithPassword;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -179,7 +184,8 @@ public class ItFmwSample {
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    // create RCU credential secret
+
+    // create RCU credential secret for use by domain
     createRcuSecretWithUsernamePassword(domainUid + "-rcu-credentials", domainNamespace,
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
@@ -302,7 +308,8 @@ public class ItFmwSample {
       } else {
         // set the pvHostPath in create-pv-pvc-inputs.yaml
         replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + FSS_DIR);
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: "
+                        + FSS_DIR[new Random().nextInt(FSS_DIR.length)]);
         replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
                 "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
         replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
@@ -468,7 +475,11 @@ public class ItFmwSample {
     String script = get(dbSamplePathBase.toString(),  "start-db-service.sh").toString();
     logger.info("Script for startOracleDB: {0}", script);
 
+    deleteSecret(ORACLE_DB_SECRET_NAME, dbNamespace); // does nothing if missing
+    createDbSecretWithPassword(ORACLE_DB_SECRET_NAME, dbNamespace, RCUSYSPASSWORD); // throws an assertion if fails
+
     String command = script
+        + " -a " + ORACLE_DB_SECRET_NAME
         + " -i " + dbBaseImageName
         + " -p " + dbPort
         + " -s " + BASE_IMAGES_REPO_SECRET_NAME
@@ -502,11 +513,18 @@ public class ItFmwSample {
 
     LoggingFacade logger = getLogger();
 
+    // create RCU credential secret for use by rcu initialization
+    // all schemas share the same schema password
+    deleteSecret(ORACLE_RCU_SECRET_NAME, dbNamespace); // does nothing if missing
+    createRcuSecretWithUsernamePassword(ORACLE_RCU_SECRET_NAME, dbNamespace,
+        "", RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD); // throws if fails
+
     Path rcuSamplePathBase = get(dbSamplePath.toString(), "/scripts/create-rcu-schema");
     String script = get(rcuSamplePathBase.toString(), "create-rcu-schema.sh").toString();
     String outputPath = get(rcuSamplePathBase.toString(), "rcuoutput").toString();
     logger.info("Script for createRcuSchema: {0}", script);
     String command = script
+        + " -c " + ORACLE_RCU_SECRET_NAME
         + " -i " + fmwBaseImageName
         + " -p " + BASE_IMAGES_REPO_SECRET_NAME
         + " -s " + rcuPrefix

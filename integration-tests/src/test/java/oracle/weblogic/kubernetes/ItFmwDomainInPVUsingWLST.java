@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("okd-fmw-cert")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
@@ -189,7 +190,7 @@ class ItFmwDomainInPVUsingWLST {
     java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
     logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
     
-    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/" + domainUid + "/";
+    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/";
 
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME

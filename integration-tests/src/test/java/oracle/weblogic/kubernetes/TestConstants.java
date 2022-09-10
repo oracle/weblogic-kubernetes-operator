@@ -117,6 +117,10 @@ public interface TestConstants {
       DB_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
+  // WebLogic Base Image with Japanese Locale
+  public static final String LOCALE_IMAGE_NAME = "phx.ocir.io/weblogick8s/test-images/weblogic";
+  public static final String LOCALE_IMAGE_TAG = "12.2.1.4-jp";
+
   // For kind, replace repo name in image name with KIND_REPO, 
   // otherwise use the actual image name
   // For example, if the image name is
@@ -305,7 +309,7 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String NODE_IP = System.getProperty("wko.it.node.ip", "");
-  public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
+  public static final String [] FSS_DIR = System.getProperty("wko.it.fss.dir","").split(",");
   public static final ImagePullPolicyEnum IMAGE_PULL_POLICY = ImagePullPolicyEnum.IFNOTPRESENT;
 
   //OKD constants
@@ -340,6 +344,14 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
   public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
+
+  // Oracle RCU setup constants
+  public static final String ORACLE_RCU_SECRET_NAME = "oracle-rcu-secret";
+  public static final String ORACLE_RCU_SECRET_VOLUME = "oracle-rcu-volume";
+  public static final String ORACLE_RCU_SECRET_MOUNT_PATH = "/rcu-secret";
+
+  // Oracle database "no operator" constant(s)
+  public static final String ORACLE_DB_SECRET_NAME = "oracle-db-secret";
 
   //Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";

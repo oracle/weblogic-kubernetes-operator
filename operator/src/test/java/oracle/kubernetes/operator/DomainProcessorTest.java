@@ -106,6 +106,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -972,6 +974,22 @@ class DomainProcessorTest {
       assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  void whenClusterScaleDown_reportIncompleteEvent()
+      throws JsonProcessingException {
+    newDomain.getStatus().addCondition(new DomainCondition(COMPLETED).withStatus(true));
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    // now scale down the cluster
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+    logRecords.clear();
+
+    assertThat(testSupport, hasEvent(DOMAIN_INCOMPLETE_EVENT));
   }
 
   @Test
