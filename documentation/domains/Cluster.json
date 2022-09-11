@@ -235,6 +235,10 @@
           "description": "WebLogic cluster name.",
           "type": "string"
         },
+        "labelSelector": {
+          "description": "Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler.",
+          "type": "string"
+        },
         "readyReplicas": {
           "description": "The number of ready cluster members.",
           "type": "integer",

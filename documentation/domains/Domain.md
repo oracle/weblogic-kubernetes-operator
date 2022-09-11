@@ -164,6 +164,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. |
 | `conditions` | Array of [Cluster Condition](#cluster-condition) | Current service state of the cluster. |
+| `labelSelector` | string | Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler. |
 | `maximumReplicas` | integer | The maximum number of cluster members. |
 | `minimumReplicas` | integer | The minimum number of cluster members. |
 | `observedGeneration` | integer | The generation observed by the WebLogic operator. |

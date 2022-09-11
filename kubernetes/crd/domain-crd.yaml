@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: cff31c52509bbd44f9cea31bea09a25c06b7d5b5c0521f2ca9377727fb31af08
+    weblogic.sha256: f0c826f67ef899c489b9ea384a06a59e0ad7ff1095fe47b40b8e0c451d2a2419
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -9730,6 +9730,11 @@ spec:
                     clusterName:
                       description: WebLogic cluster name.
                       type: string
+                    labelSelector:
+                      description: Label selector that can be used to discover Pods
+                        associated with WebLogic managed servers belonging to this
+                        cluster. Must be set to work with HorizontalPodAutoscaler.
+                      type: string
                     readyReplicas:
                       description: The number of ready cluster members.
                       type: integer
@@ -9776,6 +9781,7 @@ spec:
     storage: true
     subresources:
       scale:
+        labelSelectorPath: .status.labelSelector
         specReplicasPath: .spec.replicas
         statusReplicasPath: .status.replicas
       status: {}
@@ -21252,6 +21258,7 @@ spec:
     storage: false
     subresources:
       scale:
+        labelSelectorPath: .status.labelSelector
         specReplicasPath: .spec.replicas
         statusReplicasPath: .status.replicas
       status: {}
