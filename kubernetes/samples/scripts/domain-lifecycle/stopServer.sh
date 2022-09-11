@@ -162,7 +162,7 @@ if [ -n "${clusterName}" ]; then
 fi
 
 
-getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+getEffectivePolicy "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
     if [ "${effectivePolicy}" == "Never" ]; then

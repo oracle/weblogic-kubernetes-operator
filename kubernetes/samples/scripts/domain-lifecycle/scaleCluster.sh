@@ -119,7 +119,7 @@ if [ -z "${clusterJson}" ]; then
   exit 1
 fi
 
-isReplicasInAllowedRange "${clusterJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
+isReplicasInAllowedRange "${domainJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
 if [ "${replicasInAllowedRange}" == 'false' ]; then
   printError "Replicas value is not in the allowed range of ${range}. Exiting."
   exit 1
