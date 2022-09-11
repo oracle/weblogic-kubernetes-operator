@@ -414,7 +414,7 @@ getSortedListOfServers() {
   fi
   # Create arrays of Always policy servers and other servers
   for localServerName in ${sortedServers[@]:-}; do
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    getEffectivePolicy "${domainJson}" "${clusterJson}" "${localServerName}" "${clusterName}" policy
     # Update policy when server name matches current server and unsetting
     if [[ "${withPolicy}" == "UNSET" && "${serverName}" == "${localServerName}" ]]; then
       policy=UNSET
@@ -454,7 +454,7 @@ getReplicaCount() {
     replicaCount=0
   fi
   # check if replica count is less than minimum replicas
-  getMinReplicas "${clusterJson}" "${clusterName}" minReplicas
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
   if [ "${replicaCount}" -lt "${minReplicas}" ]; then
     # Reset current replica count to minimum replicas
     replicaCount=${minReplicas}
@@ -662,7 +662,7 @@ checkStartedServers() {
     replicaCount=$((replicaCount-1))
   fi
   for localServerName in ${sortedByAlwaysServers[@]:-}; do
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    getEffectivePolicy "${domainJson}" "${clusterJson}" "${localServerName}" "${clusterName}" policy
     # Update policy when server name matches current server and unsetting
     if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
       policy=UNSET
@@ -724,8 +724,8 @@ isReplicaCountEqualToMinReplicas() {
   local __result=$4
 
   eval $__result=false
-  getMinReplicas "${clusterJson}" "${clusterName}" minReplicas
-  getMaxReplicas "${clusterJson}" "${clusterName}" replica
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  getMaxReplicas "${domainJson}" "${clusterName}" replica
   if [ ${replica} -eq ${minReplicas} ]; then
     eval $__result=true
   fi
@@ -749,8 +749,8 @@ isReplicasInAllowedRange() {
   local rangeVal=""
 
   eval $__result=true
-  getMinReplicas "${clusterJson}" "${clusterName}" minReplicas
-  getMaxReplicas "${clusterJson}" "${clusterName}" maxReplicas
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  getMaxReplicas "${domainJson}" "${clusterName}" maxReplicas
   rangeVal="${minReplicas} to ${maxReplicas}"
   eval $__range="'${rangeVal}'"
   if [ ${replicas} -lt ${minReplicas} ] || [ ${replicas} -gt ${maxReplicas} ]; then
@@ -760,38 +760,48 @@ isReplicasInAllowedRange() {
 
 #
 # Function to get minimum replica count for cluster
-# $1 - Cluster resource in json format
+# $1 - Domain resource in json format
 # $2 - Name of the cluster
 # $3 - Return value containing minimum replica count
 #
 getMinReplicas() {
-  local clusterJson=$1
+  local domainJson=$1
   local clusterName=$2
   local __result=$3
   local minReplicaCmd=""
   local minReplicasVal=""
 
   eval $__result=0
-  minReplicaCmd=".status.minimumReplicas"
-  minReplicasVal=$(echo ${clusterJson} | jq "${minReplicaCmd}")
+  minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+    | .minimumReplicas"
+  minReplicasVal=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  echo "minReplicasVal is $minReplicasVal"
+  if [ ${minReplicasVal} == null ]; then
+    minReplicasVal=""
+  fi
   eval $__result=${minReplicasVal:-0}
 }
 
 #
 # Function to get maximum replica count for cluster
-# $1 - Cluster resource in json format
+# $1 - Domain resource in json format
 # $2 - Name of the cluster
 # $3 - Return value containing maximum replica count
 #
 getMaxReplicas() {
-  local clusterJson=$1
+  local domainJson=$1
   local clusterName=$2
   local __result=$3
   local maxReplicaCmd=""
   local maxReplicasVal=""
 
-  maxReplicaCmd=".status.maximumReplicas"
-  maxReplicasVal=$(echo ${clusterJson} | jq "${maxReplicaCmd}")
+  maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+    | .maximumReplicas"
+  maxReplicasVal=$(echo ${domainJson} | jq "${maxReplicaCmd}")
+  if [ ${maxReplicasVal} == null ]; then
+    maxReplicasVal=""
+  fi
+
   eval $__result=${maxReplicasVal:-0}
 }
 
@@ -820,7 +830,7 @@ Not increasing replica count value."
   if [ "${operation}" == "DECREMENT" ]; then
     replica=$((replica-1))
   elif [ "${operation}" == "INCREMENT" ]; then
-    getMaxReplicas "${clusterJson}" "${clusterName}" maxReplicas
+    getMaxReplicas "${domainJson}" "${clusterName}" maxReplicas
     if [ ${replica} -ge ${maxReplicas} ]; then
       printInfo "${infoMessage}"
     else
