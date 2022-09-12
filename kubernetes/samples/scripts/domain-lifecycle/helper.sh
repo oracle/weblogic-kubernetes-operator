@@ -734,19 +734,21 @@ isReplicaCountEqualToMinReplicas() {
 
 #
 # Function to check if provided replica count is in the allowed range
-# $1 - Cluster resource in json format
-# $2 - Name of the cluster
-# $3 - Replica count
-# $4 - Returns "true" or "false" indicating if replica count is in
+# $1 - Domain resource in json format
+# $2 - Cluster resource in json format
+# $3 - Name of the cluster
+# $4 - Replica count
+# $5 - Returns "true" or "false" indicating if replica count is in
 #      the allowed range
-# $5 - Returns allowed range for replica count for the given cluster
+# $6 - Returns allowed range for replica count for the given cluster
 #
 isReplicasInAllowedRange() {
-  local clusterJson=$1
-  local clusterName=$2
-  local replicas=$3
-  local __result=$4
-  local __range=$5
+  local domainJson=$1
+  local clusterJson=$2
+  local clusterName=$3
+  local replicas=$4
+  local __result=$5
+  local __range=$6
   local rangeVal=""
 
   eval $__result=true
