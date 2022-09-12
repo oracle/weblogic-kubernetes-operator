@@ -631,6 +631,7 @@ class ItIntrospectVersion {
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewCluster() {
 
+    String clusterResName = domainUid + "-" + cluster2Name;
     logger.info("Getting port for default channel");
     int adminServerPort
         = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -654,9 +655,9 @@ class ItIntrospectVersion {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
     
-    ClusterResource cluster = createClusterResource(domainUid + "-" + cluster2Name, cluster2Name,
+    ClusterResource cluster = createClusterResource(clusterResName, cluster2Name,
         introDomainNamespace, 2);
-    getLogger().info("Creating cluster {0} in namespace {1}", cluster2Name, introDomainNamespace);
+    getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, introDomainNamespace);
     createClusterAndVerify(cluster);
 
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
@@ -664,7 +665,7 @@ class ItIntrospectVersion {
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
         = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + cluster2Name + "\"}"
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + clusterResName + "\"}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";

@@ -146,7 +146,7 @@ public class ServerStartPolicyUtils {
    *  Scaling cluster util method.
    * @param domainUid - domain uid
    * @param domainNamespace - domain namespace
-   * @param clusterName - cluster name
+   * @param clusterResName - cluster resource name
    * @param serverPodName -server pod name
    * @param replicaNum -number of servers to scale
    * @param regex - regex
@@ -154,13 +154,13 @@ public class ServerStartPolicyUtils {
    * @param samplePathDir - name of sample script dir
    */
   public static void scalingClusters(String domainUid, String domainNamespace,
-                                     String clusterName, String serverPodName, int replicaNum,
+                                     String clusterResName, String serverPodName, int replicaNum,
                                String regex, boolean checkPodExist, String samplePathDir) {
     // use scaleCluster.sh to scale a given cluster
-    logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterName);
+    logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterResName);
     String result =  assertDoesNotThrow(() ->
             executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
-                SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName, " -r " + replicaNum, false),
+                SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterResName, " -r " + replicaNum, false),
         String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
 
     if (checkPodExist) {
@@ -170,13 +170,13 @@ public class ServerStartPolicyUtils {
     }
 
     // verify that scaleCluster.sh does scale to a required replica number
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterResName,
         domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
-    testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterName, regex), logger,
-        "Checking for cluster status for cluster: " + clusterName);
-    logger.info("The cluster {0} scaled successfully.", clusterName);
+    testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterResName, regex), logger,
+        "Checking for cluster status for cluster: " + clusterResName);
+    logger.info("The cluster {0} scaled successfully.", clusterResName);
   }
 
   /**

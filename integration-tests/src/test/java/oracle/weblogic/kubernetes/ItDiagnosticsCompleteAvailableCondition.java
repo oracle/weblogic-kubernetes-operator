@@ -680,9 +680,11 @@ class ItDiagnosticsCompleteAvailableCondition {
     // patch the domain back to the original state
     String patchStr;
     String serverStartPolicy;
+    String clusterResName = domainUid + "-" + cluster1Name;
     logger.info("patch the domain and change the serverStartPolicy to IfNeeded");
     ClusterResource clusterResource = assertDoesNotThrow(()
-        -> Kubernetes.getClusterCustomResource(cluster1Name, domainNamespace1, CLUSTER_VERSION));
+        -> Kubernetes.getClusterCustomResource(
+            clusterResName, domainNamespace1, CLUSTER_VERSION));
     serverStartPolicy = clusterResource.getSpec().getServerStartPolicy() != null ? "replace" : "add";
     patchStr
         = "["
@@ -690,7 +692,7 @@ class ItDiagnosticsCompleteAvailableCondition {
         + "{\"op\": \"" + serverStartPolicy + "\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
+    assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
     patchStr

@@ -156,6 +156,7 @@ class ItKubernetesDomainEvents {
   static String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   static final int managedServerPort = 8001;
   static int replicaCount = 2;
+  String clusterRes1Name = domainUid + "-" + cluster1Name;
 
   static final String pvName1 = getUniqueName(domainUid + "-pv-");
   static final String pvcName1 = getUniqueName(domainUid + "-pvc-");
@@ -416,7 +417,7 @@ class ItKubernetesDomainEvents {
     try {
       logger.info("Scaling cluster using patching");
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
-      assertFalse(scaleCluster(cluster1Name, domainNamespace3, 3), "failed to scale cluster via patching");
+      assertFalse(scaleCluster(clusterRes1Name, domainNamespace3, 3), "failed to scale cluster via patching");
       String patchStr
           = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
@@ -432,7 +433,7 @@ class ItKubernetesDomainEvents {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
 
-      assertTrue(scaleCluster(cluster1Name, domainNamespace3, 2), "failed to scale cluster via patching");
+      assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 2), "failed to scale cluster via patching");
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
       for (int i = 1; i <= replicaCount; i++) {
@@ -466,6 +467,7 @@ class ItKubernetesDomainEvents {
   @Test
   void testDomainK8sEventsScaleBelowMin() {
     OffsetDateTime timestamp = now();
+
     try {
       String patchStr
           = "["
@@ -475,14 +477,14 @@ class ItKubernetesDomainEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-      assertTrue(scaleCluster(cluster1Name, domainNamespace3, 1),"decreased replica to 1");
+      assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 1),"decreased replica to 1");
       // No event will be created for this
       logger.info("verify the Failed event is NOT generated");
       assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,  DOMAIN_FAILED, "Warning", timestamp));
     } finally {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
-      assertTrue(scaleCluster(cluster1Name, domainNamespace3, 2), "failed to scale cluster to 2");
+      assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 2), "failed to scale cluster to 2");
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
       for (int i = 1; i <= replicaCount; i++) {

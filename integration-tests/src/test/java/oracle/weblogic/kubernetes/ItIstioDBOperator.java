@@ -508,7 +508,7 @@ class ItIstioDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
+    boolean psuccess = scaleCluster(wlsDomainUid + "-cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));

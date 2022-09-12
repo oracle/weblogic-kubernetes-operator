@@ -223,6 +223,7 @@ class ItDiagnosticsFailedCondition {
     boolean testPassed = false;
     String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+    String clusterResName = domainName + "-" + clusterName;
 
     logger.info("Creating domain resource with replicas=100");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
@@ -242,7 +243,7 @@ class ItDiagnosticsFailedCondition {
           + "]";
       V1Patch patch = new V1Patch(patchStr);
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       //end of debug
       
@@ -270,7 +271,7 @@ class ItDiagnosticsFailedCondition {
           + "]";
       patch = new V1Patch(patchStr);
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       testUntil(
           domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
@@ -288,7 +289,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -716,7 +717,7 @@ class ItDiagnosticsFailedCondition {
           5L);
 
       domain = createClusterResourceAndAddReferenceToDomain(
-          domainName + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
+          clusterResName, clusterName, domainNamespace, domain, replicaCount);
       createDomainAndVerify(domain, domainNamespace);
 
       String adminServerPodName = domainName + "-admin-server";
@@ -736,7 +737,7 @@ class ItDiagnosticsFailedCondition {
 
       logger.info("Shutting down cluster using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch cluster");
 
       for (int i = 1; i <= replicaCount; i++) {
@@ -759,7 +760,7 @@ class ItDiagnosticsFailedCondition {
 
       logger.info("Starting cluster using patch string: {0}", patchStr);
       patch = new V1Patch(patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch cluster");
 
       //check the desired completed, available and failed statuses
@@ -776,7 +777,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
       deleteDomainResource(domainNamespace, domainName);
     }
   }
@@ -787,7 +788,6 @@ class ItDiagnosticsFailedCondition {
                    String repoSecretName, String encryptionSecretName,
                    int replicaCount, String miiImage, String configmapName, Long introspectorDeadline) {
 
-    String clusterResName = domainUid + "-"  + clusterName;
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
