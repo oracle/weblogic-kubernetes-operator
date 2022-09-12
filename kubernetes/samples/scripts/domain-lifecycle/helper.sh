@@ -713,8 +713,9 @@ shouldStart() {
 #
 # Function to check if cluster's replica count is same as min replicas
 # $1 - Domain resource in json format
-# $2 - Name of the cluster
-# $3 - Returns "true" or "false" indicating if replica count is equal to
+# $2 - Cluster resource in json format
+# $3 - Name of the cluster
+# $4 - Returns "true" or "false" indicating if replica count is equal to
 #      or greater than min replicas.
 #
 isReplicaCountEqualToMinReplicas() {
@@ -725,7 +726,7 @@ isReplicaCountEqualToMinReplicas() {
 
   eval $__result=false
   getMinReplicas "${domainJson}" "${clusterJson}" "${clusterName}" minReplicas
-  getMaxReplicas "${domainJson}" "${clusterJson}" "${clusterName}" replica
+  getReplicaCount "${domainJson}" "${clusterJson}" "${clusterName}" replica
   if [ ${replica} -eq ${minReplicas} ]; then
     eval $__result=true
   fi
