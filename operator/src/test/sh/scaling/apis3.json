@@ -1,0 +1,28 @@
+{
+  "kind": "APIGroupList",
+  "apiVersion": "v1",
+  "groups": [
+    {
+      "name": "weblogic.oracle",
+      "versions": [
+        {
+          "groupVersion": "weblogic.oracle/v9",
+          "version": "v9"
+        },
+        {
+          "groupVersion": "weblogic.oracle/v8",
+          "version": "v8"
+        },
+        {
+          "groupVersion": "weblogic.oracle/v1",
+          "version": "v1"
+        }
+      ],
+      "preferredVersion": {
+        "groupVersion": "weblogic.oracle/v9",
+        "version": "v9"
+      }
+    }
+  ]
+}
+

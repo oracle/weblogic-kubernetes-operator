@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # script parameters
@@ -134,6 +134,13 @@ for i in json.load(sys.stdin)["groups"]:
     print((i["preferredVersion"]["version"]))
 INPUT
 domain_api_version=`echo ${APIS} | python cmds-$$.py 2>> ${log_file_name}`
+  fi
+
+  # This script only supports up to version v8 of Domain resource
+  version=$(echo "${domain_api_version}" | grep -Eo '[0-9]+$')
+  if [ -n "${version}" ] && [ "$version" -gt 8 ]; then
+    trace "Setting domain_api_version from $domain_api_version to v8"
+    domain_api_version="v8"
   fi
   echo "$domain_api_version"
 }
