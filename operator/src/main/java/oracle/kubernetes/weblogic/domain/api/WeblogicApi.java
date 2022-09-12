@@ -160,6 +160,50 @@ public class WeblogicApi extends CustomObjectsApi {
   }
 
   /**
+   * List clusters.
+   *
+   * @param namespace       namespace
+   * @param pretty          pretty flag
+   * @param cont            continuation
+   * @param fieldSelector   field selector
+   * @param labelSelector   label selector
+   * @param limit           limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds  timeout
+   * @param watch           if watch
+   * @return cluster list
+   * @throws ApiException on failure
+   */
+  public Object listNamespacedClusterUntyped(
+      String namespace,
+      String pretty,
+      String cont,
+      String fieldSelector,
+      String labelSelector,
+      Integer limit,
+      String resourceVersion,
+      Integer timeoutSeconds,
+      Boolean watch)
+      throws ApiException {
+    return listNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL, pretty,
+        null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
+        timeoutSeconds, watch);
+  }
+
+  /**
+   * Read cluster.
+   *
+   * @param name      name of the domain
+   * @param namespace namespace of the domain
+   * @return domain
+   * @throws ApiException on failure
+   */
+  public Object readNamespacedClusterUntyped(String name, String namespace)
+      throws ApiException {
+    return getNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL, name);
+  }
+
+  /**
    * List domains.
    *
    * @param namespace       namespace
@@ -266,6 +310,49 @@ public class WeblogicApi extends CustomObjectsApi {
     return listNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
         timeoutSeconds, watch, wrapForDomainList(callback));
+  }
+
+  /**
+   * Create Cluster Resource.
+   *
+   * @param namespace namespace
+   * @param body      cluster resource
+   * @return Cluster Resource
+   * @throws ApiException on failure
+   */
+  public ClusterResource createNamespacedCluster(String namespace, ClusterResource body)
+      throws ApiException {
+    return toCluster(createNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        body, null, null, null));
+  }
+
+  /**
+   * Create Cluster Resource.
+   *
+   * @param namespace namespace
+   * @param body      cluster resource
+   * @return Cluster Resource
+   * @throws ApiException on failure
+   */
+  public Object createNamespacedCluster(String namespace, Map<String, Object> body)
+      throws ApiException {
+    return createNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        body, null, null, null);
+  }
+
+  /**
+   * Replace cluster.
+   *
+   * @param name      name
+   * @param namespace namespace
+   * @param body      cluster
+   * @return domain
+   * @throws ApiException on failure
+   */
+  public Object replaceNamespacedCluster(String name, String namespace, Map<String, Object> body)
+      throws ApiException {
+    return replaceNamespacedCustomObject(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        name, body, null, null);
   }
 
   /**

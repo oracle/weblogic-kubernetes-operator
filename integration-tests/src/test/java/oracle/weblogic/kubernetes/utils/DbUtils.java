@@ -494,24 +494,8 @@ public class DbUtils {
     return podName;
   }
 
-  /**
-   * Check if the pod log contains the certain text.
-   * @param matchStr text to be searched in the log
-   * @param podName the name of the pod
-   * @param namespace namespace where pod exists
-   * @return true if the text exists in the log otherwise false
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean checkPodLogContains(String matchStr, String podName, String namespace)
-      throws ApiException {
-
-    return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
-
-  }
-
-  private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace)
-      throws ApiException {
-    return () -> checkPodLogContains(matchStr, podName, dbNamespace);
+  private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace) {
+    return () -> PodUtils.checkPodLogContains(matchStr, podName, dbNamespace);
   }
 
   /**

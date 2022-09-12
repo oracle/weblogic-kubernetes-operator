@@ -12,9 +12,8 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -143,7 +142,7 @@ class ItIstioTwoDomainsInImage {
   void testIstioTwoDomainsWithSingleIngress() {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
-    final int replicaCount = 2;
+    final int replicaCount = 1;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -320,9 +319,10 @@ class ItIstioTwoDomainsInImage {
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount) {
+
     // In case of istio "default" channel can not be exposed through nodeport.
     // No AdminService on domain resource.
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -345,9 +345,6 @@ class ItIstioTwoDomainsInImage {
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .addClustersItem(new Cluster()
-                            .clusterName(clusterName)
-                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS"))

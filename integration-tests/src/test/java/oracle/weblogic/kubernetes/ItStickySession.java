@@ -20,10 +20,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.ClusterService;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -105,8 +104,7 @@ class ItStickySession {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
-  private static int managedServerPort = 8001;
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
@@ -332,7 +330,7 @@ class ItStickySession {
     myClusterService.setSessionAffinity("ClientIP");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -361,10 +359,6 @@ class ItStickySession {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .clusterService(myClusterService))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -372,6 +366,7 @@ class ItStickySession {
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
     setPodAntiAffinity(domain);
+
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -439,8 +434,8 @@ class ItStickySession {
     }
 
     if (execResult.exitValue() == 0) {
-      assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null");
-      assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty");
+      assertNotNull(execResult.stdout(), "Primary server name should not be null");
+      assertFalse(execResult.stdout().isEmpty(), "Primary server name should not be empty");
       logger.info("\n HTTP response is \n " + execResult.stdout());
 
       for (String httpAttrKey : httpAttrArray) {

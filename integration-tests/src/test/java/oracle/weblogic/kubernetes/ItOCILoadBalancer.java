@@ -110,7 +110,7 @@ class ItOCILoadBalancer {
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     createMiiDomainAndVerify(domainNamespace,domainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, adminServerPodName,
-        managedServerPrefix,replicaCount);
+        managedServerPrefix,replicaCount, List.of(clusterName));
     
     int clusterHttpPort = 8001;
 

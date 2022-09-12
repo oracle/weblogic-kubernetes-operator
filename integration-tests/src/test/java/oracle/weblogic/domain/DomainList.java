@@ -30,7 +30,7 @@ public class DomainList implements KubernetesListObject {
 
   @ApiModelProperty(
       "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
-  private List<Domain> items = new ArrayList<Domain>();
+  private List<DomainResource> items = new ArrayList<DomainResource>();
 
   public DomainList apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
@@ -83,20 +83,20 @@ public class DomainList implements KubernetesListObject {
     this.metadata = metadata;
   }
 
-  public DomainList items(List<Domain> items) {
+  public DomainList items(List<DomainResource> items) {
     this.items = items;
     return this;
   }
 
-  public List<Domain> items() {
+  public List<DomainResource> items() {
     return items;
   }
 
-  public List<Domain> getItems() {
+  public List<DomainResource> getItems() {
     return items;
   }
 
-  public void setItems(List<Domain> items) {
+  public void setItems(List<DomainResource> items) {
     this.items = items;
   }
 

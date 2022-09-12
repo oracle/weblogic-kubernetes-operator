@@ -94,8 +94,8 @@ class ClusterServiceHelperTest extends ServiceHelperTest {
     }
 
     @Override
-    public ServiceConfigurator configureService(DomainConfigurator configurator) {
-      return configurator.configureCluster(getTestCluster());
+    public ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator) {
+      return configurator.configureCluster(info, getTestCluster());
     }
 
     @Override

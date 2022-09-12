@@ -73,6 +73,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
 import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -1296,6 +1297,7 @@ public class DomainStatusUpdater {
       final String clusterName = clusterConfig.getName();
       return new ClusterStatus()
           .withClusterName(clusterName)
+          .withLabelSelector(DOMAINUID_LABEL + "=" + info.getDomainUid() + "," + CLUSTERNAME_LABEL + "=" + clusterName)
           .withMaximumReplicas(clusterConfig.getClusterSize())
           .withMinimumReplicas(useMinimumClusterSize(clusterName) ? clusterConfig.getMinClusterSize() : 0)
           .withReplicasGoal(getClusterSizeGoal(clusterName));

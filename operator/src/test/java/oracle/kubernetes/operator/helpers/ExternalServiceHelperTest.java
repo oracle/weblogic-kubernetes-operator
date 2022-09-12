@@ -103,7 +103,7 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
     }
 
     @Override
-    ServiceConfigurator configureService(DomainConfigurator configurator) {
+    ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator) {
       return configurator.configureAdminServer().configureAdminService();
     }
 

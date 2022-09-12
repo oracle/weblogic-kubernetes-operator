@@ -224,7 +224,7 @@ class RollingHelperTest {
     consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
     initializeExistingPods();
     CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
-    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
@@ -238,7 +238,7 @@ class RollingHelperTest {
     CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
     getPods().forEach(this::setPodNotReady);
 
-    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
@@ -288,7 +288,7 @@ class RollingHelperTest {
     getPods().forEach(this::setPodNotReady);
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     DomainPresenceInfo.fromPacket(testSupport.getPacket()).ifPresent(dpi -> dpi.setServersToRoll(rolling));
-    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 

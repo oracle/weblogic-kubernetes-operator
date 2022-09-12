@@ -17,9 +17,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -48,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createAndPushMiiImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainWithIstioMultiClusters;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -430,16 +430,8 @@ class ItIstioManagedCoherence {
   }
 
   private static void createDomainCrAndVerify(String adminSecretName, String domImage) {
-    // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
-    for (int i = NUMBER_OF_CLUSTERS; i >= 1; i--) {
-      clusterList.add(new Cluster()
-          .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount));
-    }
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -463,15 +455,21 @@ class ItIstioManagedCoherence {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .clusters(clusterList)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS"))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource in mii domain
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+      domain = addClusterToDomain(CLUSTER_NAME_PREFIX + i, domainInImageNamespace, domain, replicaCount);
+    }
     setPodAntiAffinity(domain);
+
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainInImageNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
+    DomainResource domain1 = domain;
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain1),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainInImageNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "

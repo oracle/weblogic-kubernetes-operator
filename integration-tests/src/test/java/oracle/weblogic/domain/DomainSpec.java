@@ -203,8 +203,11 @@ public class DomainSpec {
   @ApiModelProperty("Configuration for individual Managed Servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
-  @ApiModelProperty("Configuration for the clusters.")
-  private List<Cluster> clusters = new ArrayList<>();
+  @ApiModelProperty("References to Cluster resources that describe the lifecycle options for all of the Managed Server "
+      + "members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and "
+      + "the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a "
+      + "cluster that already exists in the WebLogic domain configuration.")
+  private List<V1LocalObjectReference> clusters = new ArrayList<>();
 
   @ApiModelProperty("Experimental feature configurations.")
   private Experimental experimental;
@@ -611,35 +614,20 @@ public class DomainSpec {
     this.managedServers = managedServers;
   }
 
-  public DomainSpec clusters(List<Cluster> clusters) {
+  public DomainSpec clusters(List<V1LocalObjectReference> clusters) {
     this.clusters = clusters;
     return this;
   }
 
-  public List<Cluster> clusters() {
+  public List<V1LocalObjectReference> clusters() {
     return clusters;
   }
 
-  /**
-   * Adds cluster item.
-   * @param clustersItem Cluster
-   * @return this
-   */
-  public DomainSpec addClustersItem(Cluster clustersItem) {
-    if (clusters == null) {
-      clusters = new ArrayList<>();
-    }
-    clusters.add(clustersItem);
-    return this;
-  }
 
-  public List<Cluster> getClusters() {
+  public List<V1LocalObjectReference> getClusters() {
     return clusters;
   }
 
-  public void setClusters(List<Cluster> clusters) {
-    this.clusters = clusters;
-  }
 
   public DomainSpec experimental(Experimental experimental) {
     this.experimental = experimental;
@@ -738,6 +726,16 @@ public class DomainSpec {
     this.auxiliaryImageVolumes = auxiliaryImageVolumes;
   }
 
+  /**
+   * Adds a Cluster resource reference to the DomainSpec.
+   *
+   * @param reference The cluster reference to be added to this DomainSpec
+   * @return this object
+   */
+  public DomainSpec withCluster(V1LocalObjectReference reference) {
+    clusters.add(reference);
+    return this;
+  }
 
   @Override
   public String toString() {

@@ -90,7 +90,17 @@ public class ClusterResourceStatusUpdater {
       Step step = Optional.ofNullable(info.getDomain())
           .map(domain -> createUpdateClusterResourceStatusSteps(packet, info.getClusterResources()))
           .orElse(null);
-      return doNext(step != null ? step : getNext(), packet);
+      return doNext(chainStep(step, getNext()), packet);
+    }
+
+    private static Step chainStep(Step one, Step two) {
+      if (one == null) {
+        return two;
+      }
+      if (two == null) {
+        return one;
+      }
+      return Step.chain(one, two);
     }
   }
 

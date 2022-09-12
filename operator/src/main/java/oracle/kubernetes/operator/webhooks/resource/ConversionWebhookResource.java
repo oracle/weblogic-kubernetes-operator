@@ -3,16 +3,22 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.http.rest.RestConfig;
+import oracle.kubernetes.operator.http.rest.backend.RestBackend;
 import oracle.kubernetes.operator.http.rest.resource.BaseResource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -20,6 +26,7 @@ import oracle.kubernetes.operator.webhooks.model.ConversionRequest;
 import oracle.kubernetes.operator.webhooks.model.ConversionResponse;
 import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
 import oracle.kubernetes.operator.webhooks.model.Result;
+import org.glassfish.jersey.server.ResourceConfig;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
@@ -38,6 +45,9 @@ public class ConversionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   public static final String FAILED_STATUS = "Failed";
+
+  @Context
+  private Application application;
 
   /** Construct a ConversionWebhookResource. */
   public ConversionWebhookResource() {
@@ -61,7 +71,12 @@ public class ConversionWebhookResource extends BaseResource {
 
     try {
       conversionReview = readConversionReview(body);
-      conversionResponse = createConversionResponse(conversionReview.getRequest());
+
+      ResourceConfig rc = (ResourceConfig) application;
+      RestConfig r = (RestConfig) rc.getProperty(RestConfig.REST_CONFIG_PROPERTY);
+      RestBackend be = r.getBackend(null);
+
+      conversionResponse = createConversionResponse(conversionReview.getRequest(), be);
     } catch (Exception e) {
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
@@ -94,14 +109,27 @@ public class ConversionWebhookResource extends BaseResource {
   /**
    * Create the conversion review response.
    * @param conversionRequest The request to be converted.
+   * @param be REST backend
    * @return ConversionResponse The response to the conversion request.
    */
-  private ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
+  @SuppressWarnings("unchecked")
+  private ConversionResponse createConversionResponse(ConversionRequest conversionRequest,
+                                                      RestBackend be) {
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    List<Object> convertedDomains = conversionRequest.getDomains().stream()
-          .map(schemaConversionUtils::convertDomainSchema)
+    List<SchemaConversionUtils.Resources> convertedResources = conversionRequest.getDomains().stream()
+          .map(d -> schemaConversionUtils.convertDomainSchema(d, () -> {
+            String namespace = Optional.ofNullable((Map<String, Object>) d.get("metadata"))
+                .map(m -> (String) m.get("namespace")).orElse("default");
+            return be.listClusters(namespace);
+          }))
           .collect(Collectors.toList());
+
+    List<Object> convertedDomains = new ArrayList<>();
+    for (SchemaConversionUtils.Resources cr : convertedResources) {
+      convertedDomains.add(cr.domain);
+      cr.clusters.forEach(be::createOrReplaceCluster);
+    }
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())

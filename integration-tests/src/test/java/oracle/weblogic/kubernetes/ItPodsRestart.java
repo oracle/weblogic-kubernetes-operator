@@ -19,9 +19,8 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -149,7 +148,7 @@ class ItPodsRestart {
   void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
 
@@ -276,7 +275,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
   void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -333,7 +332,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
   void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
 
@@ -402,7 +401,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
         + "/spec/serverPod/podSecurityContext is null");
@@ -471,7 +470,7 @@ class ItPodsRestart {
     String pullPolicy = KIND_REPO != null 
         ? ImagePullPolicyEnum.NEVER.getValue() : ImagePullPolicyEnum.ALWAYS.getValue();
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -670,7 +669,7 @@ class ItPodsRestart {
     }
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -688,9 +687,6 @@ class ItPodsRestart {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()

@@ -47,6 +47,7 @@ domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
 replicas=""
+clusterResource=""
 
 while getopts "vc:n:m:d:r:h" opt; do
   case $opt in
@@ -108,15 +109,25 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
-isReplicasInAllowedRange "${domainJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
+# Get the cluster resource name
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+# Get the cluster in json format
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+  exit 1
+fi
+
+isReplicasInAllowedRange "${domainJson}" "${clusterJson}" "${clusterName}" "${replicas}" replicasInAllowedRange range
 if [ "${replicasInAllowedRange}" == 'false' ]; then
   printError "Replicas value is not in the allowed range of ${range}. Exiting."
   exit 1
 fi
 
-printInfo "Patching replicas for cluster '${clusterName}' to '${replicas}'."
-createPatchJsonToUpdateReplicas "${domainJson}" "${clusterName}" "${replicas}" patchJson
+printInfo "Patching replicas for cluster: '${clusterName}' to '${replicas}'."
+createPatchJsonToUpdateReplicas "${replicas}" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched replicas for cluster '${clusterName}'!"

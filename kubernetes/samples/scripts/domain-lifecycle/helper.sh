@@ -4,21 +4,18 @@
 #
 
 #
-# Function to get server start policy at cluster level
-# $1 - Domain resource in json format
-# $2 - Name of cluster
-# $3 - Return value for cluster level server start policy.
+# Function to get server start policy at cluster level using cluster resource
+# $1 - Cluster resource in json format
+# $2 - Return value for cluster level server start policy.
 #      Legal return values are "Never" or "IfNeeded" or "".
 #
 getClusterPolicy() {
-  local domainJson=$1
-  local clusterName=$2
-  local __clusterPolicy=$3
+  local clusterJson=$1
+  local __clusterPolicy=$2
   local effectivePolicy=""
 
-  clusterPolicyCmd="(.spec.clusters // empty | .[] \
-    | select (.clusterName == \"${clusterName}\")).serverStartPolicy"
-  effectivePolicy=$(echo ${domainJson} | jq "${clusterPolicyCmd}")
+  clusterPolicyCmd=".spec.serverStartPolicy"
+  effectivePolicy=$(echo ${clusterJson} | jq "${clusterPolicyCmd}")
   if [ "${effectivePolicy}" == "null" ]; then
     effectivePolicy=""
   fi
@@ -48,21 +45,23 @@ getDomainPolicy() {
 #
 # Function to get effective start policy of server
 # $1 - Domain resource in json format
-# $2 - Name of server
-# $3 - Name of cluster
-# $4 - Return value containing effective server start policy
+# $2 - Cluster resource in json format
+# $3 - Name of server
+# $4 - Name of cluster
+# $5 - Return value containing effective server start policy
 #      Legal return values are "Never" or "IfNeeded" or "Always".
 #
 getEffectivePolicy() {
   local domainJson=$1
-  local serverName=$2
-  local clusterName=$3
-  local __currentPolicy=$4
+  local clusterJson=$2
+  local serverName=$3
+  local clusterName=$4
+  local __currentPolicy=$5
   local currentPolicy=""
 
   getServerPolicy "${domainJson}" "${serverName}" currentPolicy
   if [ -z "${currentPolicy}" ]; then
-    getClusterPolicy "${domainJson}" "${clusterName}" currentPolicy
+    getClusterPolicy "${clusterJson}" currentPolicy
     if [ -z "${currentPolicy}" ]; then
       # Start policy is not set at cluster level, check at domain level
       getDomainPolicy "${domainJson}" currentPolicy
@@ -160,24 +159,6 @@ createServerStartPolicyPatch() {
 }
 
 #
-# Function to create patch json string to unset policy and update replica
-# $1 - Domain resource in json format
-# $2 - Name of server whose policy will be patched
-# $3 - String containing replica patch string
-# $4 - Return value containing patch json string
-#
-createPatchJsonToUnsetPolicyAndUpdateReplica() {
-  local domainJson=$1
-  local serverName=$2
-  local replicaPatch=$3
-  local __result=$4
-
-  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
-  patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${serverStartPolicyPatch}"}}"
-  eval $__result="'${patchJson}'"
-}
-
-#
 # Function to create patch json string to update policy
 # $1 - String containing start policy info
 # $2 - String containing json to patch domain resource
@@ -230,21 +211,6 @@ createPatchJsonToUpdateReplica() {
 }
 
 #
-# Function to create patch json string to update replica and policy
-# $1 - Domain resource in json format
-# $2 - Name of server whose policy will be patched
-# $3 - Return value containing patch json string
-#
-createPatchJsonToUpdateReplicaAndPolicy() {
-  local replicaInfo=$1
-  local startPolicy=$2
-  local __result=$3
-
-  patchJson="{\"spec\": {\"clusters\": "${replicaInfo}",\"managedServers\": "${startPolicy}"}}"
-  eval $__result="'${patchJson}'"
-}
-
-#
 # Function to create patch json string to unset policy
 # $1 - Domain resource in json format
 # $2 - Name of server whose policy will be patched
@@ -291,38 +257,19 @@ unsetServerStartPolicy() {
 
 #
 # Function to create patch json to update cluster server start policy
-# $1 - Domain resource in json format
-# $2 - Name of cluster whose policy will be patched
-# $3 - policy value of "IfNeeded" or "Never"
-# $4 - Return value containing patch json string
+# $1 - Name of cluster whose policy will be patched
+# $2 - policy value of "IfNeeded" or "Never"
+# $3 - Return value containing patch json string
 #
 createPatchJsonToUpdateClusterPolicy() {
-  local domainJson=$1
-  local clusterName=$2
-  local policy=$3
-  local __result=$4
-  local addClusterStartPolicyCmd=""
-  local mapCmd=""
-  local existingClusters=""
-  local patchJsonVal=""
+  local clusterName=$1
+  local policy=$2
+  local __result=$3
   local startPolicyPatch=""
+  local patchJsonVal=""
 
-  existingClusters=$(echo ${domainJson} | jq -cr '(.spec.clusters)')
-  if [ "${existingClusters}" == "null" ]; then
-    # cluster doesn't exist, add cluster with server start policy
-    addClusterStartPolicyCmd=".[.| length] |= . + {\"clusterName\":\"${clusterName}\", \
-      \"serverStartPolicy\":\"${policy}\"}"
-    startPolicyPatch=$(echo ${existingClusters} | jq -c "${addClusterStartPolicyCmd}")
-  else
-    mapCmd="\
-      . |= (map(.clusterName) | index (\"${clusterName}\")) as \$idx | \
-      if \$idx then \
-      .[\$idx][\"serverStartPolicy\"] = \"${policy}\" \
-      else .+  [{clusterName: \"${clusterName}\" , serverStartPolicy: \"${policy}\"}] end"
-    startPolicyPatch=$(echo ${existingClusters} | jq "${mapCmd}")
-  fi
-
-  patchJsonVal="{\"spec\": {\"clusters\": "${startPolicyPatch}"}}"
+  startPolicyPatch="{\"clusterName\":\"${clusterName}\", \"serverStartPolicy\":\"${policy}\"}"
+  patchJsonVal="{\"spec\": "${startPolicyPatch}"}"
   eval $__result="'${patchJsonVal}'"
 }
 
@@ -363,6 +310,20 @@ createPatchJsonToUpdateReplicas() {
 }
 
 #
+# Function to create patch json to update cluster replicas
+# $1 - replica count
+# $2 - Return value containing patch json string
+#
+createPatchJsonToUpdateReplicas() {
+  local replicas=$1
+  local __result=$2
+  local patchJsonVal=""
+
+  patchJsonVal="{\"spec\": {\"replicas\":${replicas}}}"
+  eval $__result="'${patchJsonVal}'"
+}
+
+#
 # Function to create patch json to update domain server start policy
 # $1 - policy value of "IfNeeded" or "Never"
 # $2 - Return value containing patch json string
@@ -379,16 +340,18 @@ createPatchJsonToUpdateDomainPolicy() {
 # Function to get sorted list of servers in a cluster.
 # The sorted list is created in 'sortedByAlwaysServers' array.
 # $1 - Domain resource in json format
-# $2 - Name of server
-# $3 - Name of cluster
-# $4 - Indicates if policy of current server would be unset.
+# $2 - Cluster resource in json format
+# $3 - Name of server
+# $4 - Name of cluster
+# $5 - Indicates if policy of current server would be unset.
 #      valid values are "UNSET" and "CONSTANT"
 #
 getSortedListOfServers() {
   local domainJson=$1
-  local serverName=$2
-  local clusterName=$3
-  local withPolicy=$4
+  local clusterJson=$2
+  local serverName=$3
+  local clusterName=$4
+  local withPolicy=$5
   local policy=""
   local sortedServers=()
   local otherServers=()
@@ -414,7 +377,7 @@ getSortedListOfServers() {
   fi
   # Create arrays of Always policy servers and other servers
   for localServerName in ${sortedServers[@]:-}; do
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    getEffectivePolicy "${domainJson}" "${clusterJson}" "${localServerName}" "${clusterName}" policy
     # Update policy when server name matches current server and unsetting
     if [[ "${withPolicy}" == "UNSET" && "${serverName}" == "${localServerName}" ]]; then
       policy=UNSET
@@ -435,17 +398,18 @@ getSortedListOfServers() {
 #
 # Get replica count for a cluster
 # $1 - Domain resource in json format
-# $2 - Name of cluster
-# $3 - Return value containing replica count
+# $2 - Cluster resource in json format
+# $3 - Name of cluster
+# $4 - Return value containing replica count
 #
 getReplicaCount() {
   local domainJson=$1
-  local clusterName=$2
-  local __replicaCount=$3
+  local clusterJson=$2
+  local clusterName=$3
+  local __replicaCount=$4
 
-  replicasCmd="(.spec.clusters[] \
-    | select (.clusterName == \"${clusterName}\")).replicas"
-  replicaCount=$(echo ${domainJson} | jq "${replicasCmd}")
+  replicasCmd="(.spec.replicas)"
+  replicaCount=$(echo ${clusterJson} | jq "${replicasCmd}")
   if [[ -z "${replicaCount}" || "${replicaCount}" == "null" ]]; then
     replicaCount=$(echo ${domainJson} | jq .spec.replicas)
   fi
@@ -453,7 +417,7 @@ getReplicaCount() {
     replicaCount=0
   fi
   # check if replica count is less than minimum replicas
-  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  getMinReplicas "${domainJson}" "${clusterJson}" "${clusterName}" minReplicas
   if [ "${replicaCount}" -lt "${minReplicas}" ]; then
     # Reset current replica count to minimum replicas
     replicaCount=${minReplicas}
@@ -513,20 +477,21 @@ generateDomainIntrospectVersion() {
 # In this case, if the restartVersion value at the domain level is
 # non-numeric, then it returns 1.
 # $1 - Domain resource in json format
-# $2 - Name of cluster
-# $3 - Return value containing the restart version.
+# $2 - Cluster resource in json format
+# $3 - Name of cluster
+# $4 - Return value containing the restart version.
 #
 generateClusterRestartVersion() {
   local domainJson=$1
-  local clusterName=$2
-  local __result=$3
+  local clusterJson=$2
+  local clusterName=$3
+  local __result=$4
   local __restartVersionCmd=""
   local __restartVersion=""
 
   eval $__result=""
-  __restartVersionCmd="(.spec.clusters // empty | .[] \
-    | select (.clusterName == \"${clusterName}\")).restartVersion"
-  __restartVersion=$(echo ${domainJson} | jq -cr "${__restartVersionCmd}")
+  __restartVersionCmd=".spec.restartVersion"
+  __restartVersion=$(echo ${clusterJson} | jq -cr "${__restartVersionCmd}")
   if [ "${__restartVersion}" == "null" ]; then
     __restartVersion=$(echo ${domainJson} | jq -cr .spec.restartVersion)
   fi
@@ -604,6 +569,26 @@ createPatchJsonToUpdateClusterRestartVersion() {
 }
 
 #
+# Function to create patch json to update cluster restartVersion
+# $1 - Cluster resource in json format
+# $2 - Name of the cluster whose restartVersion will be patched
+# $3 - restart version
+# $4 - Return value containing patch json string
+#
+createPatchJsonToUpdateClusterRestartVersionUsingClusterResource() {
+  local clusterJson=$1
+  local clusterName=$2
+  local restartVersion=$3
+  local __result=$4
+  local __restartVersionPatch=""
+  local __patchJsonVal=""
+
+  __restartVersionPatch="{\"clusterName\":\"${clusterName}\", \"restartVersion\":\"${restartVersion}\"}"
+  __patchJsonVal="{\"spec\": "${__restartVersionPatch}"}"
+  eval $__result="'${__patchJsonVal}'"
+}
+
+#
 # Check servers started in a cluster based on server start policy and
 # replica count.
 # $1 - Domain resource in json format
@@ -617,11 +602,12 @@ createPatchJsonToUpdateClusterRestartVersion() {
 #
 checkStartedServers() {
   local domainJson=$1
-  local serverName=$2
-  local clusterName=$3
-  local withReplicas=$4
-  local withPolicy=$5
-  local __started=$6
+  local clusterJson=$2
+  local serverName=$3
+  local clusterName=$4
+  local withReplicas=$5
+  local withPolicy=$6
+  local __started=$7
   local localServerName=""
   local policy=""
   local replicaCount=0
@@ -630,8 +616,8 @@ checkStartedServers() {
   local sortedByAlwaysServers=()
 
   # Get sorted list of servers in 'sortedByAlwaysServers' array
-  getSortedListOfServers "${domainJson}" "${serverName}" "${clusterName}" "${withPolicy}"
-  getReplicaCount "${domainJson}" "${clusterName}" replicaCount
+  getSortedListOfServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withPolicy}"
+  getReplicaCount "${domainJson}" "${clusterJson}" "${clusterName}" replicaCount
   # Increment or decrement the replica count based on 'withReplicas' input parameter
   if [ "${withReplicas}" == "INCREASED" ]; then
     replicaCount=$((replicaCount+1))
@@ -639,7 +625,7 @@ checkStartedServers() {
     replicaCount=$((replicaCount-1))
   fi
   for localServerName in ${sortedByAlwaysServers[@]:-}; do
-    getEffectivePolicy "${domainJson}" "${localServerName}" "${clusterName}" policy
+    getEffectivePolicy "${domainJson}" "${clusterJson}" "${localServerName}" "${clusterName}" policy
     # Update policy when server name matches current server and unsetting
     if [[ "${serverName}" == "${localServerName}" && "${withPolicy}" == "UNSET" ]]; then
       policy=UNSET
@@ -690,18 +676,20 @@ shouldStart() {
 #
 # Function to check if cluster's replica count is same as min replicas
 # $1 - Domain resource in json format
-# $2 - Name of the cluster
-# $3 - Returns "true" or "false" indicating if replica count is equal to
+# $2 - Cluster resource in json format
+# $3 - Name of the cluster
+# $4 - Returns "true" or "false" indicating if replica count is equal to
 #      or greater than min replicas.
 #
 isReplicaCountEqualToMinReplicas() {
   local domainJson=$1
-  local clusterName=$2
-  local __result=$3
+  local clusterJson=$2
+  local clusterName=$3
+  local __result=$4
 
   eval $__result=false
-  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
-  getReplicaCount  "${domainJson}" "${clusterName}" replica
+  getMinReplicas "${domainJson}" "${clusterJson}" "${clusterName}" minReplicas
+  getReplicaCount "${domainJson}" "${clusterJson}" "${clusterName}" replica
   if [ ${replica} -eq ${minReplicas} ]; then
     eval $__result=true
   fi
@@ -710,23 +698,25 @@ isReplicaCountEqualToMinReplicas() {
 #
 # Function to check if provided replica count is in the allowed range
 # $1 - Domain resource in json format
-# $2 - Name of the cluster
-# $3 - Replica count
-# $4 - Returns "true" or "false" indicating if replica count is in
+# $2 - Cluster resource in json format
+# $3 - Name of the cluster
+# $4 - Replica count
+# $5 - Returns "true" or "false" indicating if replica count is in
 #      the allowed range
-# $5 - Returns allowed range for replica count for the given cluster
+# $6 - Returns allowed range for replica count for the given cluster
 #
 isReplicasInAllowedRange() {
   local domainJson=$1
-  local clusterName=$2
-  local replicas=$3
-  local __result=$4
-  local __range=$5
+  local clusterJson=$2
+  local clusterName=$3
+  local replicas=$4
+  local __result=$5
+  local __range=$6
   local rangeVal=""
 
   eval $__result=true
-  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
-  getMaxReplicas "${domainJson}" "${clusterName}" maxReplicas
+  getMinReplicas "${domainJson}" "${clusterJson}" "${clusterName}" minReplicas
+  getMaxReplicas "${domainJson}" "${clusterJson}" "${clusterName}" maxReplicas
   rangeVal="${minReplicas} to ${maxReplicas}"
   eval $__range="'${rangeVal}'"
   if [ ${replicas} -lt ${minReplicas} ] || [ ${replicas} -gt ${maxReplicas} ]; then
@@ -737,66 +727,87 @@ isReplicasInAllowedRange() {
 #
 # Function to get minimum replica count for cluster
 # $1 - Domain resource in json format
-# $2 - Name of the cluster
-# $3 - Return value containing minimum replica count
+# $2 - Cluster resource in json format
+# $3 - Name of the cluster
+# $4 - Return value containing minimum replica count
 #
 getMinReplicas() {
   local domainJson=$1
-  local clusterName=$2
-  local __result=$3
+  local clusterJson=$2
+  local clusterName=$3
+  local __result=$4
   local minReplicaCmd=""
   local minReplicasVal=""
 
   eval $__result=0
-  minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
-    | .minimumReplicas"
-  minReplicasVal=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  minReplicaCmd=".status.minimumReplicas"
+  minReplicasVal=$(echo ${clusterJson} | jq "${minReplicaCmd}")
+  if [ ${minReplicasVal} == null ]; then
+    minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+      | .minimumReplicas"
+    minReplicasVal=$(echo ${domainJson} | jq "${minReplicaCmd}")
+    if [ ${minReplicasVal} == null ]; then
+      minReplicasVal=""
+    fi
+  fi
   eval $__result=${minReplicasVal:-0}
 }
 
 #
 # Function to get maximum replica count for cluster
 # $1 - Domain resource in json format
-# $2 - Name of the cluster
-# $3 - Return value containing maximum replica count
+# $2 - Cluster resource in json format
+# $3 - Name of the cluster
+# $4 - Return value containing maximum replica count
 #
 getMaxReplicas() {
   local domainJson=$1
-  local clusterName=$2
-  local __result=$3
+  local clusterJson=$2
+  local clusterName=$3
+  local __result=$4
   local maxReplicaCmd=""
   local maxReplicasVal=""
 
-  maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
-    | .maximumReplicas"
-  maxReplicasVal=$(echo ${domainJson} | jq "${maxReplicaCmd}")
+  maxReplicaCmd=".status.maximumReplicas"
+  maxReplicasVal=$(echo ${clusterJson} | jq "${maxReplicaCmd}")
+  if [ ${maxReplicasVal} == null ]; then
+    maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+      | .maximumReplicas"
+    maxReplicasVal=$(echo ${domainJson} | jq "${maxReplicaCmd}")
+    if [ ${maxReplicasVal} == null ]; then
+      maxReplicasVal=""
+    fi
+  fi
+
   eval $__result=${maxReplicasVal:-0}
 }
 
 #
 # Function to create patch string for updating replica count
 # $1 - Domain resource in json format
-# $2 - Name of cluster whose replica count will be patched
-# $3 - operation string indicating whether to increment or decrement replica count.
+# $2 - Cluster resource in json format
+# $3 - Name of cluster whose replica count will be patched
+# $4 - operation string indicating whether to increment or decrement replica count.
 #      Valid values are "INCREMENT" and "DECREMENT"
-# $4 - Return value containing replica update patch string
-# $5 - Return value containing updated replica count
+# $5 - Return value containing replica update patch string
+# $6 - Return value containing updated replica count
 #
 createReplicaPatch() {
   local domainJson=$1
-  local clusterName=$2
-  local operation=$3
-  local __result=$4
-  local __replicaCount=$5
+  local clusterJson=$2
+  local clusterName=$3
+  local operation=$4
+  local __result=$5
+  local __replicaCount=$6
   local maxReplicas=""
   local infoMessage="Current replica count value is same as or greater than maximum number of replica count. \
 Not increasing replica count value."
 
-  getReplicaCount  "${domainJson}" "${clusterName}" replica
+  getReplicaCount  "${domainJson}" "${clusterJson}" "${clusterName}" replica
   if [ "${operation}" == "DECREMENT" ]; then
     replica=$((replica-1))
   elif [ "${operation}" == "INCREMENT" ]; then
-    getMaxReplicas "${domainJson}" "${clusterName}" maxReplicas
+    getMaxReplicas "${domainJson}" "${clusterJson}" "${clusterName}" maxReplicas
     if [ ${replica} -ge ${maxReplicas} ]; then
       printInfo "${infoMessage}"
     else
@@ -804,9 +815,8 @@ Not increasing replica count value."
     fi
   fi
 
-  cmd="(.spec.clusters[] | select (.clusterName == \"${clusterName}\") \
-    | .replicas) |= ${replica}"
-  replicaPatch=$(echo ${domainJson} | jq "${cmd}" | jq -cr '(.spec.clusters)')
+  cmd="(.spec.replicas) |= ${replica}"
+  replicaPatch="{\"spec\": {\"replicas\": "${replica}"}}"
   eval $__result="'${replicaPatch}'"
   eval $__replicaCount="'${replica}'"
 }
@@ -950,6 +960,37 @@ getTopology() {
   eval $__result="'${__jsonTopology}'"
 }
 
+#
+# Function to get the cluster resource name for a given cluster name.
+# $1 - Domain resource in json format.
+# $2 - Domain namespace.
+# $3 - cluster name
+# $4 - Retrun value containing the cluster resource name.
+#
+getClusterResource() {
+  local domainJson=$1
+  local domainNamespace=$2
+  local clusterName=$3
+  local __result=$4
+  local clusterReferences=""
+  local clusterNameFromReference=""
+  local __clusterResource=""
+
+  clusterReferences=$(echo ${domainJson} | jq -r .spec.clusters[].name)
+  for clusterReference in ${clusterReferences}; do
+    clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .spec.clusterName)
+    if [ -z "${clusterNameFromReference}" ]; then
+      clusterNameFromReference=$(${kubernetesCli} get cluster "${clusterReference}" -n ${domainNamespace} -o json --ignore-not-found | jq -r .metadata.name)
+    fi
+    if [ "${clusterNameFromReference}" == "${clusterName}" ]; then
+      __clusterResource=$clusterReference
+      break
+    fi
+  done
+  eval $__result="'${__clusterResource}'"
+}
+
+
 
 #
 # check if string passed as first argument is present in array passed as second argument
@@ -1008,6 +1049,28 @@ executePatchCommand() {
       -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
   fi
   ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
+}
+
+#
+# Function to execute patch command and print verbose information in cluster resource
+# $1 - Kubernetes command line interface
+# $2 - Cluster resource name
+# $2 - Domain namespace
+# $4 - Json string to be used in 'patch' command
+# $5 - Verbose mode. Legal values are "true" or "false"
+#
+executeClusterPatchCommand() {
+  local kubernetesCli=$1
+  local clusterResource=$2
+  local domainNamespace=$3
+  local patchJson=$4
+  local verboseMode=$5
+
+  if [ "${verboseMode}" == "true" ]; then
+    printInfo "Executing command --> ${kubernetesCli} patch cluster ${clusterResource} \
+      -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
+  fi
+  ${kubernetesCli} patch cluster ${clusterResource} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }
 
 # timestamp

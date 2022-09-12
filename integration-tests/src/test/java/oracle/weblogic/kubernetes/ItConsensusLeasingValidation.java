@@ -5,7 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.util.List;
 
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -118,14 +118,13 @@ class ItConsensusLeasingValidation {
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         domainNamespace,
         consensusLeasingImageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        "cluster-1");
+        encryptionSecretName
+    );
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -153,14 +152,13 @@ class ItConsensusLeasingValidation {
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         domainNamespace,
         databaseLeasingImageName,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        "cluster-1");
+        encryptionSecretName
+    );
 
     createDomainAndVerify(domain, domainNamespace);
 

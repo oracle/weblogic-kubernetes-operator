@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
@@ -127,7 +128,7 @@ public class WlsConfigValidator {
   private void verifyDomainResourceReferences() {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
-    getClusters().stream()
+    info.getReferencedClusters().stream().map(ClusterResource::getSpec)
           .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
   }
 
@@ -148,10 +149,6 @@ public class WlsConfigValidator {
     if (loggingFacade != null) {
       loggingFacade.warning(messageKey, params);
     }
-  }
-
-  private List<ClusterSpec> getClusters() {
-    return info.getClusters();
   }
 
   private boolean isUnknownCluster(String clusterName) {
