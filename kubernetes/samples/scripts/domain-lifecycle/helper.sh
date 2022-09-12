@@ -777,12 +777,10 @@ getMinReplicas() {
   eval $__result=0
   minReplicaCmd=".status.minimumReplicas"
   minReplicasVal=$(echo ${clusterJson} | jq "${minReplicaCmd}")
-  echo "minReplicasVal is $minReplicasVal"
   if [ ${minReplicasVal} == null ]; then
     minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
       | .minimumReplicas"
     minReplicasVal=$(echo ${domainJson} | jq "${minReplicaCmd}")
-    echo "minReplicasVal is $minReplicasVal"
     if [ ${minReplicasVal} == null ]; then
       minReplicasVal=""
     fi
