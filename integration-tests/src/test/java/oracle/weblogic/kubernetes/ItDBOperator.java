@@ -509,16 +509,11 @@ class ItDBOperator {
 
   // Restart the managed-server
   private void restartManagedServer(String serverName) {
-    try {
-      Thread.sleep(1000 * 60 * 5);
-    } catch (Exception e) {
-      // do nothing
-    }
     String commonParameters = " -d " + wlsDomainUid + " -n " + wlsDomainNamespace;
     boolean result;
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
-    params.command("sh -x "
+    params.command("sh "
         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
