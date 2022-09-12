@@ -155,9 +155,7 @@ if [ "${isValidServer}" != 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
-  echo "cluster name is ${clusterName}"
   getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
-  echo "clusterResource name is ${clusterResource}"
 
   clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
   if [ -z "${clusterJson}" ]; then
