@@ -107,209 +107,6 @@ test_get_operator_internal_rest_port_operator_notfound_jq() {
   assertEquals "Did not return expected rest port" '' "${result}"
 }
 
-##### is_defined_in_clusters tests #####
-
-test_is_defined_in_clusters() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'True' "${result}"
-}
-
-test_is_defined_in_clusters_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'True' "${result}"
-}
-
-test_is_defined_in_clusters_2clusters() {
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result1=$(is_defined_in_clusters "${domain_json}")
-
-  wls_cluster_name='cluster-2'
-  result2=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'True' "${result1}"
-  assertEquals 'True' "${result2}"
-}
-
-test_is_defined_in_clusters_2clusters_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result1=$(is_defined_in_clusters "${domain_json}")
-
-  wls_cluster_name='cluster-2'
-  result2=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'True' "${result1}"
-  assertEquals 'True' "${result2}"
-}
-
-test_is_defined_in_clusters_no_matching() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='no-such-cluster'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'False' "${result}"
-}
-
-test_is_defined_in_clusters_no_matching_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='no-such-cluster'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'False' "${result}"
-}
-
-##### get_num_ms_in_cluster tests #####
-
-test_get_num_ms_in_cluster() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '1' "${result}"
-}
-
-test_get_num_ms_in_cluster_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '1' "${result}"
-}
-
-test_get_num_ms_in_cluster_2clusters() {
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_num_ms_in_cluster_2clusters_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_num_ms_in_cluster_no_replics() {
-
-  DOMAIN_FILE="${testdir}/cluster_noreplicas.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
-}
-
-test_get_num_ms_in_cluster_no_replicas_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster_noreplicas.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
-}
-
-test_get_num_ms_in_cluster_no_matching() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='no-such-cluster'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
-}
-
-test_get_num_ms_in_cluster_no_matching_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='no-such-cluster'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
-}
-
 ##### get_cluster_resource_names_from_domain tests #####
 
 test_get_cluster_resource_names_from_domain() {
@@ -591,120 +388,6 @@ test_get_num_ms_domain_scope_no_replicas_jq() {
   assertEquals '0' "${result}"
 }
 
-##### get_replica_count tests #####
-
-test_get_replica_count_from_cluster() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'True' "${domain_json}")
-
-  assertEquals '1' "${result}"
-}
-
-test_get_replica_count_from_cluster_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'True' "${domain_json}")
-
-  assertEquals '1' "${result}"
-}
-
-test_get_replica_count_from_cluster_2clusters() {
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_from_cluster_2clusters_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_from_domain() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
-
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_from_domain_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
-
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_set_to_minReplicas() {
-
-  DOMAIN_FILE="${testdir}/cluster_min3.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
-
-  assertEquals '3' "${result}"
-}
-
-test_get_replica_count_set_to_minReplicas_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster_min3.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
-
-  assertEquals '3' "${result}"
-}
-
 ##### get_replica_count_from_resources tests #####
 
 test_get_replica_count_from_resources_cluster() {
@@ -769,7 +452,7 @@ test_get_replica_count_from_resources_domain_jq() {
   assertEquals '2' "${result}"
 }
 
-##### find_target_replicas tests #####
+##### find_target_replicas tests (get_replica_count_from_resources and calculate_new_replica_count) #####
 
 test_find_target_replicas_scaleUp() {
 
@@ -781,7 +464,8 @@ test_find_target_replicas_scaleUp() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
   assertEquals '4' "${result}"
 }
 
@@ -796,7 +480,8 @@ test_find_target_replicas_scaleUp_jq() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
   assertEquals '4' "${result}"
 }
 
@@ -810,7 +495,8 @@ test_find_target_replicas_scaleDown() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(find_target_replicas "scaleDown" 1 "${cluster_json}" "${domain_json}")
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleDown" "${current_replica_count}" 1)
   assertEquals '2' "${result}"
 }
 
@@ -825,7 +511,8 @@ test_find_target_replicas_scaleDown_jq() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(find_target_replicas "scaleDown" 1 "${cluster_json}" "${domain_json}")
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleDown" "${current_replica_count}" 1)
   assertEquals '2' "${result}"
 }
 
@@ -839,7 +526,8 @@ test_find_target_replicas_no_replicas_in_cluster_resource() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
   assertEquals '3' "${result}"
 }
 
@@ -854,7 +542,8 @@ test_find_target_replicas_no_replicas_in_cluster_resource_jq() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
   assertEquals '3' "${result}"
 }
 
@@ -867,8 +556,9 @@ test_find_target_replicas_no_cluster_resource() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=""
 
-  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
-  assertEquals '2' "${result}"
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '3' "${result}"
 }
 
 test_find_target_replicas_no_cluster_resource_jq() {
@@ -881,8 +571,9 @@ test_find_target_replicas_no_cluster_resource_jq() {
   domain_json=`command cat ${DOMAIN_FILE}`
   cluster_json=''
 
-  result=$(find_target_replicas "scaleUp" 1 "${cluster_json}" "${domain_json}")
-  assertEquals '2' "${result}"
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '3' "${result}"
 }
 
 ##### get_cluster_resource_if_cluster_name_matches tests #####

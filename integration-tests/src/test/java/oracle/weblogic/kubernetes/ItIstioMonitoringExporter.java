@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -267,7 +267,7 @@ class ItIstioMonitoringExporter {
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = createIstioDomainResource(domainUid,
+    DomainResource domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,

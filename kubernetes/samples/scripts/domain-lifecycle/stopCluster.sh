@@ -44,6 +44,7 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
+clusterResource=""
 
 while getopts "vc:n:m:d:h" opt; do
   case $opt in
@@ -99,21 +100,29 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+  exit 1
+fi
+
 # Get server start policy for this server
-getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
+getClusterPolicy "${clusterJson}" startPolicy
 if [ -z "${startPolicy}" ]; then
   getDomainPolicy "${domainJson}" startPolicy
 fi
 
 if [[ "${startPolicy}" == 'Never' || "${startPolicy}" == 'AdminOnly' ]]; then
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'Never' or 'AdminOnly'."
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.serverStartPolicy attribute on the cluster resource is 'Never' or 'AdminOnly'."
   exit 0
 fi
 
 # Set policy value to Never
 printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'Never'."
-createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "Never" patchJson
+createPatchJsonToUpdateClusterPolicy "${clusterName}" "Never" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched cluster '${clusterName}' with 'Never' start policy!"

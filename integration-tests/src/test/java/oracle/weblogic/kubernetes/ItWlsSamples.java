@@ -125,6 +125,7 @@ class ItWlsSamples {
       SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
+  private final String clusterResourceName = domain1Name + "-" + clusterName;
   private final String managedServerNameBase = "managed-server";
   private final String managedServerPodNamePrefix = domain1Name + "-" + managedServerNameBase;
 
@@ -301,14 +302,14 @@ class ItWlsSamples {
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 1);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 1);
     });
 
     // Verify that startServer script execution starts server pod and replica count is incremented
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 2);
     });
   }
 
@@ -327,7 +328,7 @@ class ItWlsSamples {
     checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     checkPodExists(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 2);
     });
 
     // Verify that replica count is not changed when using "-k" parameter and replacement server is shutdown
@@ -335,7 +336,7 @@ class ItWlsSamples {
     checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domain1Name, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 2);
     });
   }
 

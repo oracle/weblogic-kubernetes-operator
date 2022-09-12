@@ -229,8 +229,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         .addToPacket(DOMAIN_TOPOLOGY, domainConfig)
         .addToPacket(SERVER_SCAN, serverConfig)
         .addDomainPresenceInfo(domainPresenceInfo);
-    testFacade.configureService(configureDomain()).withServiceLabel(OLD_LABEL, "value");
-    testFacade.configureService(configureDomain()).withServiceAnnotation(OLD_ANNOTATION, "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel(OLD_LABEL, "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceAnnotation(OLD_ANNOTATION, "value");
   }
 
   @AfterEach
@@ -574,19 +574,19 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   private void configureNewLabel() {
-    testFacade.configureService(configureDomain()).withServiceLabel("newLabel", "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel("newLabel", "value");
   }
 
   private void changeConfiguredLabel() {
-    testFacade.configureService(configureDomain()).withServiceLabel(OLD_LABEL, "newValue");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel(OLD_LABEL, "newValue");
   }
 
   private void configureNewAnnotation() {
-    testFacade.configureService(configureDomain()).withServiceAnnotation("newAnnotation", "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceAnnotation("newAnnotation", "value");
   }
 
   private void changeConfiguredAnnotation() {
-    testFacade.configureService(configureDomain()).withServiceLabel(OLD_ANNOTATION, "newValue");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel(OLD_ANNOTATION, "newValue");
   }
 
   private void changeConfiguredListenPort() {
@@ -746,7 +746,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       return expectedNapPorts;
     }
 
-    abstract ServiceConfigurator configureService(DomainConfigurator configurator);
+    abstract ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator);
 
     String getExpectedSelectorKey() {
       return LabelConstants.SERVERNAME_LABEL;
@@ -789,7 +789,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     @Override
-    public ServiceConfigurator configureService(DomainConfigurator configurator) {
+    public ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator) {
       return configurator.configureServer(getServerName());
     }
 

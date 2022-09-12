@@ -17,9 +17,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -105,7 +104,7 @@ class ItProductionSecureMode {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
   private static final String domainUid = "mii-default-admin";
   private static final String configMapName = "default-admin-configmap";
   private final String adminServerPodName = domainUid + "-admin-server";
@@ -359,8 +358,9 @@ class ItProductionSecureMode {
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -395,9 +395,6 @@ class ItProductionSecureMode {
                                     .addChannelsItem(new Channel()
                                             .channelName("default-admin")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")

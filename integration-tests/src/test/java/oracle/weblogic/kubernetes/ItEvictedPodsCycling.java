@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -118,7 +118,7 @@ class ItEvictedPodsCycling {
     checkServerPodsAndServiceReady();
   }
 
-  private static Domain createAndVerifyDomain() {
+  private static DomainResource createAndVerifyDomain() {
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
     logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
@@ -148,15 +148,14 @@ class ItEvictedPodsCycling {
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
-    Domain domain = createDomainResource(
+    DomainResource domain = createDomainResource(
         domainUid,
         domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName,
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-        encryptionSecretName,
-        replicaCount,
-        clusterName);
+        encryptionSecretName
+    );
 
     domain.spec()
         .serverPod()
@@ -164,6 +163,7 @@ class ItEvictedPodsCycling {
                 .requests(new HashMap<>())
                 .limits(new HashMap<>()));
 
+    domain.spec().replicas(replicaCount);
     createDomainAndVerify(domain, domainNamespace);
 
     checkServerPodsAndServiceReady();

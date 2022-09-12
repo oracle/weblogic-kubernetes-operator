@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -458,8 +459,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariables_createAdminPodStartupWithSubstitutions() {
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureAdminServer()
         .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
@@ -476,8 +477,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureAdminServer()
         .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
@@ -494,8 +495,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_createFailedEvent() {
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureAdminServer()
         .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)

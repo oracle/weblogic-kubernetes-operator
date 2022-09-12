@@ -13,9 +13,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -24,7 +24,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -43,9 +42,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -97,7 +96,9 @@ class ItMiiMultiModel {
   private static final String domainUid2 = "mii-mm-image-domain";
   private static final String domainUid3 = "mii-mm-image-cm-domain";
 
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
+  private String clusterName = "cluster-1";
+  private ClusterResource cluster = null;
 
   // There are four model files in this test case.
   // "multi-model-two-ds.yaml" and "multi-model-delete-one-ds.20.yaml" are in the MII image.
@@ -218,7 +219,6 @@ class ItMiiMultiModel {
 
     logger.info("Create domain {0} in namespace {1} with CM {2} that contains WDT models {3} and {4}",
         domainUid1, domainNamespace, configMapName, modelFileName3, modelFileName4);
-
     createDomainResourceAndVerify(
         domainUid1,
         domainNamespace,
@@ -393,8 +393,20 @@ class ItMiiMultiModel {
 
     logger.info("Create the domain resource {0} in namespace {1} with ConfigMap {2}",
         domainUid, domainNamespace, configMapName);
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
+
+    // create cluster object if not created earlier 
+    if (cluster == null) {
+      cluster = createClusterResource(
+            clusterName, domainNamespace, replicaCount);
+      logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+      createClusterAndVerify(cluster);
+      logger.info("Associate Cluster {0} and Domain resource {1}",clusterName, domainUid);
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    } else {
+      logger.info("Cluster resource ${0} is already created, Skipping the Cluster resource creation ",clusterName);
+    }
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -423,39 +435,16 @@ class ItMiiMultiModel {
 
   }
 
-  @AfterAll
-  public void tearDownAll() {
-    // Delete domain custom resources
-    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid1, domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace);
-
-    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid2, domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid2, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domainNamespace);
-
-    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid3, domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid3, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid3 + " from " + domainNamespace);
-
-    // delete the domain image created in the test class
-    if (miiImageMultiModel != null) {
-      deleteImage(miiImageMultiModel);
-    }
-  }
-
   /**
    * Construct a domain object with the given parameters that can be used to create a domain resource.
    */
-  private Domain createDomainResource(
+  private DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
       int replicaCount, String miiImage, String configMapName) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -465,6 +454,7 @@ class ItMiiMultiModel {
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(miiImage)
+                    .replicas(replicaCount)
                     .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
@@ -484,9 +474,6 @@ class ItMiiMultiModel {
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")

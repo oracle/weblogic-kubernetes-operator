@@ -272,8 +272,6 @@ class ClusterResourceStatusUpdaterTest {
     return new ClusterResource()
         .withMetadata(new V1ObjectMeta().namespace(DomainProcessorTestSetup.NS).name(
             ClusterResourceStatusUpdaterTest.NAME + '-' + clusterName))
-        .spec(new ClusterSpec()
-            .withDomainUid(ClusterResourceStatusUpdaterTest.NAME)
-            .withClusterName(clusterName));
+        .spec(new ClusterSpec().withClusterName(clusterName));
   }
 }

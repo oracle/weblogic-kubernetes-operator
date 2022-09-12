@@ -241,7 +241,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   final TerminalStep terminalStep = new TerminalStep();
   private final DomainResource domain = createDomain();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  protected final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
   protected final List<LogRecord> logRecords = new ArrayList<>();
