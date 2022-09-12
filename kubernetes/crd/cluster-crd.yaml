@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: a06c8b11a0616c9ded502a3185914472f622835e39dceee3bc98f07930423ef5
+    weblogic.sha256: 0899b78296a62fe59274760a57a4c1eb43c17109e3084b8eed4ed9d9e05f1a39
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2974,10 +2974,6 @@ spec:
                         type: object
                     type: object
                 type: object
-              domainUID:
-                description: Domain unique identifier. This domainUID is used to identify
-                  the Domain to which this Cluster is associated with.
-                type: string
               clusterService:
                 description: Customization affecting Kubernetes Service generated
                   for this WebLogic cluster.
@@ -3051,6 +3047,11 @@ spec:
               clusterName:
                 description: WebLogic cluster name.
                 type: string
+              labelSelector:
+                description: Label selector that can be used to discover Pods associated
+                  with WebLogic managed servers belonging to this cluster. Must be
+                  set to work with HorizontalPodAutoscaler.
+                type: string
               readyReplicas:
                 description: The number of ready cluster members.
                 minimum: 0
@@ -3094,6 +3095,7 @@ spec:
     storage: true
     subresources:
       scale:
+        labelSelectorPath: .status.labelSelector
         specReplicasPath: .spec.replicas
         statusReplicasPath: .status.replicas
       status: {}

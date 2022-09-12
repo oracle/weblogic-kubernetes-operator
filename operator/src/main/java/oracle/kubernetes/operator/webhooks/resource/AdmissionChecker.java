@@ -31,11 +31,10 @@ import static java.lang.System.lineSeparator;
 
 public abstract class AdmissionChecker {
   final List<String> messages = new ArrayList<>();
-  final String domainUid;
 
   /** Construct a AdmissionChecker. */
-  protected AdmissionChecker(@NotNull String domainUid) {
-    this.domainUid = domainUid;
+  protected AdmissionChecker() {
+    // no-op
   }
 
   abstract AdmissionResponse validate();
@@ -46,8 +45,12 @@ public abstract class AdmissionChecker {
     return perLine(messages);
   }
 
+  Optional<Integer> getClusterSizeOptional(ClusterStatus clusterStatus) {
+    return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas);
+  }
+
   int getClusterSize(ClusterStatus clusterStatus) {
-    return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas).orElse(0);
+    return getClusterSizeOptional(clusterStatus).orElse(0);
   }
 
   int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {

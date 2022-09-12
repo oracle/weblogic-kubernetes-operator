@@ -63,21 +63,7 @@ spec:
     adminChannelPortForwardingEnabled: false
   replicas: 1
   clusters:
-  - clusterName: cluster-1
-    serverPod:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: weblogic.clusterName
-                  operator: In
-                  values:
-                  - $(CLUSTER_NAME)
-              topologyKey: kubernetes.io/hostname
-    replicas: 2
+  - name: sample-domain1-cluster-1
   restartVersion: '1'
   introspectVersion: '1'
   configuration:
@@ -86,3 +72,26 @@ spec:
       modelHome: /auxiliary/models
       wdtInstallHome: /auxiliary/weblogic-deploy
       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: sample-domain1-cluster-1
+  namespace: sample-domain1-ns
+spec:
+  serverPod:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: weblogic.clusterName
+                    operator: In
+                    values:
+                      - $(CLUSTER_NAME)
+              topologyKey: kubernetes.io/hostname
+  replicas: 2

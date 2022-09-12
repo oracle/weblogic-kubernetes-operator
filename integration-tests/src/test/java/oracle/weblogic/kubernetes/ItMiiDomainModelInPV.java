@@ -24,7 +24,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -252,9 +252,9 @@ public class ItMiiDomainModelInPV {
     // create domain custom resource and verify all the pods came up
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName,
-        replicaCount, clusterName);
+        2, List.of(clusterName));
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
@@ -288,7 +288,7 @@ public class ItMiiDomainModelInPV {
   }
 
   // create domain resource and verify all the server pods are ready
-  private void createVerifyDomain(String domainUid, Domain domain,
+  private void createVerifyDomain(String domainUid, DomainResource domain,
       String adminServerPodName, String managedServerPodNamePrefix) {
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);

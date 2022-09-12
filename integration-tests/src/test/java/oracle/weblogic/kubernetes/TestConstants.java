@@ -38,6 +38,11 @@ public interface TestConstants {
   public static final String WEBLOGIC_IMAGE_TAGS =
       getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
 
+  // cluster constants
+  public static final String CLUSTER_VERSION =
+      getNonEmptySystemProperty("wko.it.cluster.version", "v1");
+  public static final String CLUSTER_API_VERSION = "weblogic.oracle/" + CLUSTER_VERSION;
+
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
   public static final String OPERATOR_CHART_DIR =

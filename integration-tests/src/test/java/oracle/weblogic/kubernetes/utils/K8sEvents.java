@@ -357,7 +357,7 @@ public class K8sEvents {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         Map<String, String> labels = event.getMetadata().getLabels();
-        if (event.getReason().contains(reason)
+        if (event.getReason().equals(reason)
             && labels.get("weblogic.domainUID").equals(domainUid)
             && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));

@@ -33,6 +33,10 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer replicas;
 
+  @Description("Label selector that can be used to discover Pods associated with WebLogic managed servers belonging "
+      + "to this cluster. Must be set to work with HorizontalPodAutoscaler.")
+  private String labelSelector;
+
   /** The number of ready cluster members. Required. */
   @Description("The number of ready cluster members.")
   @Range(minimum = 0)
@@ -66,6 +70,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   ClusterStatus(ClusterStatus other) {
     this.clusterName = other.clusterName;
     this.replicas = other.replicas;
+    this.labelSelector = other.labelSelector;
     this.readyReplicas = other.readyReplicas;
     this.maximumReplicas = other.maximumReplicas;
     this.minimumReplicas = other.minimumReplicas;
@@ -113,6 +118,19 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
 
   public ClusterStatus withReplicas(Integer replicas) {
     this.replicas = replicas;
+    return this;
+  }
+
+  public String getLabelSelector() {
+    return labelSelector;
+  }
+
+  public void setLabelSelector(String labelSelector) {
+    this.labelSelector = labelSelector;
+  }
+
+  public ClusterStatus withLabelSelector(String labelSelector) {
+    this.labelSelector = labelSelector;
     return this;
   }
 
@@ -174,6 +192,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return new ToStringBuilder(this)
         .append("clusterName", clusterName)
         .append("replicas", replicas)
+        .append("labelSelector", labelSelector)
         .append("readyReplicas", readyReplicas)
         .append("maximumReplicas", maximumReplicas)
         .append("minimumReplicas", minimumReplicas)
@@ -188,6 +207,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return new HashCodeBuilder()
         .append(clusterName)
         .append(replicas)
+        .append(labelSelector)
         .append(readyReplicas)
         .append(maximumReplicas)
         .append(minimumReplicas)
@@ -209,6 +229,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return new EqualsBuilder()
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)
+        .append(labelSelector, rhs.labelSelector)
         .append(readyReplicas, rhs.readyReplicas)
         .append(maximumReplicas, rhs.maximumReplicas)
         .append(minimumReplicas, rhs.minimumReplicas)

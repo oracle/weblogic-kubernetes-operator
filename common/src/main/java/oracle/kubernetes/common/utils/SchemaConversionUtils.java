@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.ReadContext;
 import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.CommonConstants;
@@ -38,11 +38,15 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
-
+  private static final String API_VERSION = "apiVersion";
   private static final String METADATA = "metadata";
+  private static final String NAMESPACE = "namespace";
+  private static final String NAME = "name";
   private static final String SPEC = "spec";
   private static final String STATUS = "status";
   private static final String TYPE = "type";
+  private static final String CLUSTERS = "clusters";
+  private static final String CLUSTER_NAME = "clusterName";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -85,20 +89,35 @@ public class SchemaConversionUtils {
     return new SchemaConversionUtils(targetAPIVersion);
   }
 
+  public interface ResourceLookup {
+    List<Map<String, Object>> listClusters();
+  }
+
+  public static class Resources {
+    public final Map<String, Object> domain;
+    public final List<Map<String, Object>> clusters;
+
+    public Resources(Map<String, Object> domain, List<Map<String, Object>> clusters) {
+      this.domain = domain;
+      this.clusters = clusters;
+    }
+  }
+
   /**
    * Convert the domain schema to desired API version.
    * @param domain Domain to be converted.
-   * @return Domain The converted domain.
+   * @param resourceLookup Related resource lookup
+   * @return The converted Domain and any associated Cluster resources
    */
   @SuppressWarnings("java:S112")
-  public Map<String, Object> convertDomainSchema(Map<String, Object> domain) {
+  public Resources convertDomainSchema(Map<String, Object> domain, ResourceLookup resourceLookup) {
     Map<String, Object> spec = getSpec(domain);
     if (spec == null) {
-      return domain;
+      return new Resources(domain, Collections.emptyList());
     }
     LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
-    String apiVersion = (String) domain.get("apiVersion");
+    String apiVersion = (String) domain.get(API_VERSION);
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     convertDomainStatus(domain);
@@ -109,9 +128,11 @@ public class SchemaConversionUtils {
     adjustReplicasDefault(spec, apiVersion);
     removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
 
-    Map<String, Object> toBePreserved = new HashMap<>();
+    Map<String, Object> toBePreserved = new LinkedHashMap<>();
     removeAndPreserveServerStartState(spec, toBePreserved);
     removeAndPreserveIstio(spec, toBePreserved);
+
+    integrateClusters(spec, resourceLookup);
 
     try {
       preserve(domain, toBePreserved, apiVersion);
@@ -120,9 +141,17 @@ public class SchemaConversionUtils {
       throw new RuntimeException(io); // need to use unchecked exception because of stream processing
     }
 
-    domain.put("apiVersion", targetAPIVersion);
-    LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
-    return domain;
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    generateClusters(domain, clusters, apiVersion);
+
+    domain.put(API_VERSION, targetAPIVersion);
+    if (clusters.isEmpty()) {
+      LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
+    } else {
+      LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain
+          + " and associated clusters are " + clusters);
+    }
+    return new Resources(domain, clusters);
   }
 
   /**
@@ -136,7 +165,14 @@ public class SchemaConversionUtils {
     options.setPrettyFlow(true);
     Yaml yaml = new Yaml(options);
     Object domain = yaml.load(domainYaml);
-    return yaml.dump(convertDomainSchema((Map<String, Object>) domain));
+    Resources convertedResources = convertDomainSchema((Map<String, Object>) domain, null);
+    StringBuilder result = new StringBuilder();
+    result.append(yaml.dump(convertedResources.domain));
+    for (Map<String, Object> cluster : convertedResources.clusters) {
+      result.append("\n\n---\n\n");
+      result.append(yaml.dump(cluster));
+    }
+    return result.toString();
   }
 
   private void adjustAdminPortForwardingDefault(Map<String, Object> spec, String apiVersion) {
@@ -374,7 +410,7 @@ public class SchemaConversionUtils {
   }
 
   private List<Object> getClusters(Map<String, Object> spec) {
-    return (List<Object>) spec.get("clusters");
+    return (List<Object>) spec.get(CLUSTERS);
   }
 
   private List<Object> getManagedServers(Map<String, Object> spec) {
@@ -590,7 +626,7 @@ public class SchemaConversionUtils {
   private void removeWebLogicCredentialsSecretNamespace(Map<String, Object> spec, String apiVersion) {
     if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
       Optional.ofNullable((Map<String, Object>) spec.get("webLogicCredentialsSecret"))
-          .ifPresent(wcs -> wcs.remove("namespace"));
+          .ifPresent(wcs -> wcs.remove(NAMESPACE));
     }
   }
 
@@ -614,7 +650,7 @@ public class SchemaConversionUtils {
 
   private void removeAndPreserveServerStartStateForCluster(Map<String, Object> cluster,
                                                  Map<String, Object> toBePreserved) {
-    Object name = cluster.get("clusterName");
+    Object name = cluster.get(CLUSTER_NAME);
     if (name != null) {
       removeAndPreserveServerStartState(cluster, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
     }
@@ -667,11 +703,94 @@ public class SchemaConversionUtils {
   }
 
   private List<Map<String, Object>> read(ReadContext context, JsonPath path) {
-    Object value = context.read(path);
-    if (value instanceof List) {
-      return (List<Map<String, Object>>) value;
-    }
+    try {
+      Object value = context.read(path);
+      if (value instanceof List) {
+        return (List<Map<String, Object>>) value;
+      }
 
-    return List.of((Map<String, Object>) value);
+      return List.of((Map<String, Object>) value);
+    } catch (JsonPathException pathException) {
+      return Collections.emptyList();
+    }
+  }
+
+  private void integrateClusters(Map<String, Object> spec, ResourceLookup resourceLookup) {
+    if (API_VERSION_V8.equals(targetAPIVersion)) {
+      List<Map<String, Object>> existing = (List<Map<String, Object>>) spec.remove(CLUSTERS);
+      if (existing != null) {
+        List<Map<String, Object>> clusterResources = Optional.ofNullable(resourceLookup)
+            .map(ResourceLookup::listClusters).orElse(Collections.emptyList());
+        List<Map<String, Object>> clusters = new ArrayList<>();
+        for (Map<String, Object> reference : existing) {
+          String name = (String) reference.get(NAME);
+          if (name != null) {
+            clusterResources.stream().filter(c -> nameMatches(c, name)).findFirst().ifPresent(c -> {
+              Map<String, Object> clusterSpec = getSpec(c);
+              Map<String, Object> cluster = new LinkedHashMap<>();
+              if (!clusterSpec.containsKey(CLUSTER_NAME)) {
+                cluster.put(CLUSTER_NAME, name);
+              }
+              cluster.putAll(clusterSpec);
+              clusters.add(cluster);
+            });
+          }
+        }
+        if (!clusters.isEmpty()) {
+          spec.put(CLUSTERS, clusters);
+        }
+      }
+    }
+  }
+
+  private boolean nameMatches(Map<String, Object> cluster, String name) {
+    Map<String, Object> clusterMeta = getMetadata(cluster);
+    return clusterMeta != null && name.equals(clusterMeta.get("name"));
+  }
+
+  private void generateClusters(Map<String, Object> domain, List<Map<String, Object>> clusters, String apiVersion) {
+    if (API_VERSION_V8.equals(apiVersion) && !API_VERSION_V8.equals(targetAPIVersion)) {
+      Map<String, Object> spec = getSpec(domain);
+      List<Map<String, Object>> existing = (List<Map<String, Object>>) spec.remove(CLUSTERS);
+      if (existing != null) {
+        Map<String, Object> domainMeta = getMetadata(domain);
+        List<Map<String, Object>> clusterReferences = new ArrayList<>();
+        for (Map<String, Object> c : existing) {
+          Map<String, Object> genCluster = generateCluster(domainMeta, c);
+          clusters.add(genCluster);
+          clusterReferences.add(generateClusterReference(genCluster));
+        }
+        if (!clusterReferences.isEmpty()) {
+          spec.put(CLUSTERS, clusterReferences);
+        }
+      }
+    }
+  }
+
+  public static String toDns1123LegalName(String value) {
+    return value.toLowerCase().replace('_', '-');
+  }
+
+  private Map<String, Object> generateCluster(Map<String, Object> domainMeta,
+                                              Map<String, Object> existingCluster) {
+    Map<String, Object> cluster = new LinkedHashMap<>();
+    cluster.put(API_VERSION, "weblogic.oracle/v1");
+    cluster.put("kind", "Cluster");
+    Map<String, Object> clusterMeta = new LinkedHashMap<>();
+    clusterMeta.put("name", domainMeta.get("name") + "-"
+        + toDns1123LegalName((String) existingCluster.get(CLUSTER_NAME)));
+    clusterMeta.put(NAMESPACE, domainMeta.get(NAMESPACE));
+    Map<String, Object> labels = new LinkedHashMap<>();
+    labels.put("weblogic.createdByOperator", "true");
+    clusterMeta.put("labels", labels);
+    cluster.put(METADATA, clusterMeta);
+    cluster.put(SPEC, existingCluster);
+    return cluster;
+  }
+
+  private Map<String, Object> generateClusterReference(Map<String, Object> clusterResource) {
+    Map<String, Object> reference = new LinkedHashMap<>();
+    reference.put("name", getMetadata(clusterResource).get("name"));
+    return reference;
   }
 }

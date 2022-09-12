@@ -29,9 +29,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -52,7 +51,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -60,7 +58,6 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -68,9 +65,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterAndChangeIntrospectVersion;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -82,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -91,7 +88,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -201,19 +197,18 @@ class ItMiiUpdateDomainConfig {
     // create job to change permissions on PV hostPath
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
+    // create cluster object
+    String clusterName = "cluster-1";
+
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName,
+    DomainResource domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName, dbSecretName);
 
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    // add cluster to domain
+    addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
+
+    createDomainAndVerify(domain, domainNamespace);
   }
 
   /**
@@ -248,7 +243,7 @@ class ItMiiUpdateDomainConfig {
   @Order(0)
   @DisplayName("Check environment variable with special characters")
   void testMiiCustomEnv() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     List<V1EnvVar> envList = domain1.getSpec().getServerPod().getEnv();
@@ -613,9 +608,7 @@ class ItMiiUpdateDomainConfig {
 
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
-    boolean p1Success = assertDoesNotThrow(() ->
-            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, 1234),
-        String.format("replica pacthing to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p1Success = scaleCluster("cluster-1", domainNamespace, 5);
     assertTrue(p1Success,
         String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -628,9 +621,7 @@ class ItMiiUpdateDomainConfig {
     // Make sure that we can scale down upto replica count 1
     // since the MinDynamicClusterSize is set to 1
     logger.info("[Before Patching] updating the replica count to 1");
-    boolean p11Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
-        String.format("replica pacthing to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p11Success = scaleCluster("cluster-1", domainNamespace, 1);
     assertTrue(p11Success,
         String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -641,9 +632,7 @@ class ItMiiUpdateDomainConfig {
 
     // Bring back the cluster to originally configured replica count
     logger.info("[Before Patching] updating the replica count to 2");
-    boolean p2Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", replicaCount),
-        String.format("replica pacthing to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p2Success = scaleCluster("cluster-1", domainNamespace, replicaCount);
     assertTrue(p1Success,
         String.format("replica patching to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
@@ -684,19 +673,23 @@ class ItMiiUpdateDomainConfig {
     // build the standalone JMS Client on Admin pod after rolling restart
     buildClientOnPod();
 
-    // Scale the cluster to replica count 5
-    // Here managed-server5 should not come up as new MaxClusterSize is 4
+    // Attempt to scale the cluster to replica count 5
+    // This scale request should be rejected and fail by admission webhook.
     logger.info("[After Patching] updating the replica count to 5");
-    boolean p3Success = assertDoesNotThrow(() ->
-            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, 5678),
-        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
-    assertTrue(p1Success,
-        String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean p3Success = scaleCluster("cluster-1", domainNamespace, 5);
+    assertFalse(p3Success,
+            String.format("replica count patching to 5 failed for domain %s in namespace %s",
+                    domainUid, domainNamespace));
 
-    //  Make sure the 3rd Managed server comes up
+    // Scale the cluster to new maximum replica count of 4
+    boolean p4Success = scaleCluster("cluster-1", domainNamespace, 4);
+    assertTrue(p4Success,
+            String.format("replica count patching to 4 succeeded for domain %s in namespace %s",
+                    domainUid, domainNamespace));
+
+    //  Make sure the 3rd and 4th Managed servers come up
     checkServiceExists(managedServerPrefix + "3", domainNamespace);
     checkServiceExists(managedServerPrefix + "4", domainNamespace);
-    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works inside pod before scaling the cluster
@@ -722,24 +715,6 @@ class ItMiiUpdateDomainConfig {
         logger,
         "Wait for t3 JMS Client to access WLS");
 
-    // Since the MinDynamicClusterSize is set to 2 in the configmap
-    // and allowReplicasBelowMinDynClusterSize is set false, the replica
-    // count can not go below 2. So during the following scale down operation
-    // only managed-server3 and managed-server4 pod should be removed.
-    logger.info("[After Patching] updating the replica count to 1");
-    boolean p4Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
-    assertTrue(p4Success,
-        String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
-
-    checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPrefix + "4", domainUid, domainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} available in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
     logger.info("New Dynamic Cluster Size attribute verified");
   }
 
@@ -816,14 +791,15 @@ class ItMiiUpdateDomainConfig {
 
   // Add an environmental variable with special character
   // Make sure the variable is available in domain resource with right value
-  private static void createDomainResource(
+  private static DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName, String dbSecretName) {
     List<String> securityList = new ArrayList<>();
     securityList.add(dbSecretName);
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -865,24 +841,16 @@ class ItMiiUpdateDomainConfig {
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount))
                     .configuration(new Configuration()
                             .secrets(securityList)
                             .model(new Model()
                                     .domainType("WLS")
                                     .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
+                        .introspectorJobActiveDeadlineSeconds(300L))
+                .replicas(replicaCount));
     setPodAntiAffinity(domain);
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domNamespace));
+    return domain;
   }
 
   private void verifyManagedServerConfiguration(String managedServer) {

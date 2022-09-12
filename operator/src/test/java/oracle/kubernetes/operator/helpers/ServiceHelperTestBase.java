@@ -10,6 +10,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterService;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -31,17 +32,19 @@ public class ServiceHelperTestBase {
   }
 
   private DomainPresenceInfo createPresenceInfo() {
-    return new DomainPresenceInfo(
+    DomainPresenceInfo dpi = new DomainPresenceInfo(
         new DomainResource()
             .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
             .withKind(KubernetesConstants.DOMAIN)
             .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
-            .withSpec(createDomainSpec()));
-  }
+            .withSpec(new DomainSpec().withDomainUid(UID)));
 
-  private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUid(UID)
-        .withCluster(new ClusterSpec().withClusterName(TEST_CLUSTER)
-            .withClusterService(new ClusterService().withSessionAffinity(V1ServiceSpec.SessionAffinityEnum.CLIENTIP)));
+    dpi.addClusterResource(new ClusterResource()
+        .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION)
+        .withKind(KubernetesConstants.CLUSTER)
+        .withMetadata(new V1ObjectMeta().namespace(NS).name(TEST_CLUSTER).uid(KUBERNETES_UID))
+        .spec(new ClusterSpec().withClusterName(TEST_CLUSTER)
+            .withClusterService(new ClusterService().withSessionAffinity(V1ServiceSpec.SessionAffinityEnum.CLIENTIP))));
+    return dpi;
   }
 }

@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -31,6 +32,8 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -151,15 +154,19 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   @Test
   void whenClustersMatchDomain_addToDomainPresenceInfo() {
     DomainResource domain = createDomain(UID1, NS);
-    ClusterResource cluster1 = createClusterResource(UID1, NS, CLUSTER_1);
-    ClusterResource cluster2 = createClusterResource(UID1, NS, CLUSTER_2);
-    ClusterResource cluster3 = createClusterResource(UID1, "ns2", CLUSTER_3);
+    ClusterResource cluster1 = createClusterResource(NS, CLUSTER_1);
+    ClusterResource cluster2 = createClusterResource(NS, CLUSTER_2);
+    ClusterResource cluster3 = createClusterResource("ns2", CLUSTER_3);
     testSupport.defineResources(domain, cluster1, cluster2, cluster3);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
+    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
+    configurator.configureCluster(info, CLUSTER_1);
+    configurator.configureCluster(info, CLUSTER_2);
+
     MatcherAssert.assertThat(info.getClusterResource(CLUSTER_1), notNullValue());
     MatcherAssert.assertThat(info.getClusterResource(CLUSTER_2), notNullValue());
     MatcherAssert.assertThat(info.getClusterResource(CLUSTER_3), nullValue());
@@ -167,15 +174,16 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenClusterResourceDeletedButAlreadyInPresence_deleteFromPresenceMap() {
-    testSupport.defineResources(domain);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
-      testSupport.defineResources(createClusterResource(UID1, NS, clusterName));
+      testSupport.defineResources(createClusterResource(NS, clusterName));
+      domain.getSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
     }
+    testSupport.defineResources(domain);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
     testSupport.deleteResources(
-        testSupport.<ClusterResource>getResourceWithName(CLUSTER, UID1 + '-' + CLUSTER_2));
+        testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     DomainPresenceInfo info = getDomainPresenceInfo(dp, UID1);
@@ -187,10 +195,13 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   @Test
   void whenMultipleClustersMatchTwoDomains_addToDomainPresenceInfo() {
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
-      testSupport.defineResources(createClusterResource(UID1, NS, clusterName));
+      testSupport.defineResources(createClusterResource(NS, clusterName));
+      domain.getSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
     }
-    testSupport.defineResources(domain, createDomain(UID2, NS),
-        createClusterResource(UID2, NS, CLUSTER_2));
+
+    DomainResource domain2 = createDomain(UID2, NS);
+    domain2.getSpec().getClusters().add(new V1LocalObjectReference().name(CLUSTER_2));
+    testSupport.defineResources(domain, domain2);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
@@ -215,11 +226,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   // tell dp - here are the actual clusters that exist.
   // dp goes through its active domains, remove clusters no longer present?
 
-  private ClusterResource createClusterResource(String uid, String namespace,
+  private ClusterResource createClusterResource(String namespace,
       String clusterName) {
     return new ClusterResource()
-        .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
-        .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterName))
+        .spec(new ClusterSpec().withClusterName(clusterName));
   }
 
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap(DomainProcessorStub dp) {

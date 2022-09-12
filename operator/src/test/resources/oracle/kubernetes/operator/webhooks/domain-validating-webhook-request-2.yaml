@@ -26,8 +26,7 @@
       "spec": {
         "clusters": [
           {
-            "clusterName": "cluster-1",
-            "replicas": 2
+            "name": "cluster-1"
           }
         ],
         "domainHome": "/u01/domains/sample-domain1",
@@ -62,8 +61,7 @@
         "spec": {
           "clusters": [
             {
-              "clusterName": "cluster-1",
-              "replicas": 2
+              "name": "cluster-1"
             }
           ],
           "domainHome": "/u01/domains/sample-domain1",
