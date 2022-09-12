@@ -115,7 +115,7 @@ if [ -z "${startPolicy}" ]; then
 fi
 
 if [[ "${startPolicy}" == 'Never' || "${startPolicy}" == 'AdminOnly' ]]; then
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.clusters[?(clusterName="${clusterName}"].serverStartPolicy attribute on the domain resource is 'Never' or 'AdminOnly'."
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already stopped or stopping. The effective value of spec.serverStartPolicy attribute on the cluster resource is 'Never' or 'AdminOnly'."
   exit 0
 fi
 

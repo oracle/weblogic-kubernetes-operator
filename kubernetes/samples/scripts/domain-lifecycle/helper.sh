@@ -257,43 +257,6 @@ unsetServerStartPolicy() {
 
 #
 # Function to create patch json to update cluster server start policy
-# $1 - Domain resource in json format
-# $2 - Name of cluster whose policy will be patched
-# $3 - policy value of "IfNeeded" or "Never"
-# $4 - Return value containing patch json string
-#
-createPatchJsonToUpdateClusterPolicy() {
-  local domainJson=$1
-  local clusterName=$2
-  local policy=$3
-  local __result=$4
-  local addClusterStartPolicyCmd=""
-  local mapCmd=""
-  local existingClusters=""
-  local patchJsonVal=""
-  local startPolicyPatch=""
-
-  existingClusters=$(echo ${domainJson} | jq -cr '(.spec.clusters)')
-  if [ "${existingClusters}" == "null" ]; then
-    # cluster doesn't exist, add cluster with server start policy
-    addClusterStartPolicyCmd=".[.| length] |= . + {\"clusterName\":\"${clusterName}\", \
-      \"serverStartPolicy\":\"${policy}\"}"
-    startPolicyPatch=$(echo ${existingClusters} | jq -c "${addClusterStartPolicyCmd}")
-  else
-    mapCmd="\
-      . |= (map(.clusterName) | index (\"${clusterName}\")) as \$idx | \
-      if \$idx then \
-      .[\$idx][\"serverStartPolicy\"] = \"${policy}\" \
-      else .+  [{clusterName: \"${clusterName}\" , serverStartPolicy: \"${policy}\"}] end"
-    startPolicyPatch=$(echo ${existingClusters} | jq "${mapCmd}")
-  fi
-
-  patchJsonVal="{\"spec\": {\"clusters\": "${startPolicyPatch}"}}"
-  eval $__result="'${patchJsonVal}'"
-}
-
-#
-# Function to create patch json to update cluster server start policy
 # $1 - Name of cluster whose policy will be patched
 # $2 - policy value of "IfNeeded" or "Never"
 # $3 - Return value containing patch json string

@@ -125,7 +125,7 @@ if [ -z "${startPolicy}" ]; then
 fi
 
 if [ "${startPolicy}" == 'IfNeeded' ]; then
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' attribute on the domain resource is 'IfNeeded'."
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the cluster resource is 'IfNeeded'."
   exit 0
 fi
 
