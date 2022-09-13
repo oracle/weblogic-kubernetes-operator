@@ -61,12 +61,6 @@ public class DomainSpec {
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
 
-  @ApiModelProperty("Whether to allow the number of running cluster member Managed Server instances to drop "
-      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
-      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
-  )
-  private Boolean allowReplicasBelowMinDynClusterSize;
-
   @ApiModelProperty(
       value = "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
       allowableValues = "range[0,infinity]")
@@ -348,23 +342,6 @@ public class DomainSpec {
 
   public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
-  }
-
-  public DomainSpec allowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
-    return this;
-  }
-
-  public Boolean allowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
-  }
-
-  public Boolean getAllowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
   public DomainSpec failureRetryIntervalSeconds(Long failureRetryIntervalSeconds) {
@@ -747,7 +724,6 @@ public class DomainSpec {
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
-            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("failureRetryIntervalSeconds", failureRetryIntervalSeconds)
             .append("failureRetryLimitMinutes", failureRetryLimitMinutes)
             .append("dataHome", dataHome)
@@ -783,7 +759,6 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret)
             .append(logHome)
             .append(logHomeEnabled)
-            .append(allowReplicasBelowMinDynClusterSize)
             .append(failureRetryIntervalSeconds)
             .append(failureRetryLimitMinutes)
             .append(dataHome)
@@ -827,7 +802,6 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
-            .append(allowReplicasBelowMinDynClusterSize, rhs.allowReplicasBelowMinDynClusterSize)
             .append(failureRetryIntervalSeconds, rhs.failureRetryIntervalSeconds)
             .append(failureRetryLimitMinutes, rhs.failureRetryLimitMinutes)
             .append(dataHome, rhs.dataHome)

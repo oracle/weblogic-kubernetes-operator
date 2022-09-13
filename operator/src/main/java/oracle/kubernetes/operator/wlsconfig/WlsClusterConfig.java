@@ -15,6 +15,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
+
 /** Contains configuration of a WLS cluster. */
 public class WlsClusterConfig {
 
@@ -94,12 +96,13 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the minimum size of the cluster.
-   * @return  For static clusters, the minimum size can be 0.  Dynamic servers will return the configured value.
+   * Returns the minimum size of the cluster. Note: Operator will now ignore the WLS configured minimum
+   * dynamic cluster size attribute.
+   * @return  For both staticand dynamic clusters, the minimum size is 0.
    */
   @JsonIgnore
   public int getMinClusterSize() {
-    return hasDynamicServers() ? getMinDynamicClusterSize() : 0;
+    return MINIMUM_CLUSTER_COUNT;
   }
 
   /**

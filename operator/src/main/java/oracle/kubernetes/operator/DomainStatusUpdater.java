@@ -72,6 +72,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
 import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -785,7 +786,6 @@ public class DomainStatusUpdater {
       private class ClusterCheck {
 
         private final String clusterName;
-        private final int minReplicaCount;
         private final int maxReplicaCount;
         private final int specifiedReplicaCount;
         private final List<String> startedServers;
@@ -795,7 +795,6 @@ public class DomainStatusUpdater {
         ClusterCheck(DomainStatus domainStatus, ClusterStatus clusterStatus) {
           this.clusterStatus = clusterStatus;
           clusterName = clusterStatus.getClusterName();
-          minReplicaCount = clusterStatus.getMinimumReplicas();
           maxReplicaCount = clusterStatus.getMaximumReplicas();
           specifiedReplicaCount = clusterStatus.getReplicasGoal();
           startedServers = getStartedServersInCluster(domainStatus, clusterName);
@@ -864,15 +863,11 @@ public class DomainStatusUpdater {
         }
 
         private long getSufficientServerCount() {
-          return max(1, minReplicas(), specifiedReplicaCount - maxUnavailable());
+          return max(1, MINIMUM_CLUSTER_COUNT, specifiedReplicaCount - maxUnavailable());
         }
 
         private int max(Integer... inputs) {
           return Arrays.stream(inputs).reduce(0, Math::max);
-        }
-
-        private int minReplicas() {
-          return getInfo().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
         private long numServersReady() {
@@ -1299,12 +1294,8 @@ public class DomainStatusUpdater {
           .withClusterName(clusterName)
           .withLabelSelector(DOMAINUID_LABEL + "=" + info.getDomainUid() + "," + CLUSTERNAME_LABEL + "=" + clusterName)
           .withMaximumReplicas(clusterConfig.getClusterSize())
-          .withMinimumReplicas(useMinimumClusterSize(clusterName) ? clusterConfig.getMinClusterSize() : 0)
+          .withMinimumReplicas(MINIMUM_CLUSTER_COUNT)
           .withReplicasGoal(getClusterSizeGoal(clusterName));
-    }
-
-    private boolean useMinimumClusterSize(String clusterName) {
-      return !info.isAllowReplicasBelowMinDynClusterSize(clusterName);
     }
 
     private Integer getClusterSizeGoal(String clusterName) {

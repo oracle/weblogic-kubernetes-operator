@@ -868,11 +868,6 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-      return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
-    }
-
-    @Override
     public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
       return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterSpec);
     }

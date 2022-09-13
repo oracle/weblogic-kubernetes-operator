@@ -236,10 +236,9 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void statusStep_definesClusterFromWlsConfig() {
-    configureDomain().withAllowReplicasBelowMinDynClusterSize(false);
     defineScenario()
           .withCluster("clusterA", "server3", "server4")
-          .withDynamicCluster("clusterB", 2, 8)
+          .withDynamicCluster("clusterB", 0, 8)
           .notStarting("server4")
           .build();
 
@@ -248,14 +247,13 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(),
           hasStatusForCluster("clusterA").withMinimumReplicas(0).withMaximumReplicas(2));
     assertThat(getRecordedDomain(),
-          hasStatusForCluster("clusterB").withMinimumReplicas(2).withMaximumReplicas(8));
+          hasStatusForCluster("clusterB").withMinimumReplicas(0).withMaximumReplicas(8));
   }
 
   @Test
   void statusStep_definesClusterReplicaGoalFromDomain() {
     configureDomain().configureCluster(info, "clusterA").withReplicas(3);
     configureDomain().configureCluster(info,"clusterB").withReplicas(5);
-    domain.getSpec().setAllowReplicasBelowMinDynClusterSize(false);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withDynamicCluster("clusterB", 2, 8)
@@ -1021,11 +1019,10 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountBelowMinReplicasForDynamicClusterAndNotAllowed_domainIsNotAvailable() {
-    configureDomain().withAllowReplicasBelowMinDynClusterSize(false);
+  void whenReplicaCountIsZero_domainIsNotAvailable() {
     defineScenario()
           .withDynamicCluster("cluster1", 3, 4)
-          .notStarting("ms3", "ms4")
+          .notStarting("ms1", "ms2", "ms3", "ms4")
           .build();
 
     updateDomainStatus();
