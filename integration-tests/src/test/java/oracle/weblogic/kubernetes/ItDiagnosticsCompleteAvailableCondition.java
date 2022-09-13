@@ -8,7 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
@@ -29,6 +32,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -122,7 +126,8 @@ class ItDiagnosticsCompleteAvailableCondition {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminServerPodName,
         managedServerPodNamePrefix,
-        replicaCount);
+        replicaCount, 
+        List.of(cluster1Name));
   }
 
   /**
@@ -256,12 +261,14 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithReplicaZero() {
     String patchStr;
     try {
-      logger.info("patch the domain resource with new cluster replica 0");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": 0}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
+      logger.info("patch the cluster resource with new cluster replica 0");      
+      patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 0}"
+          + "]";
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -303,12 +310,13 @@ class ItDiagnosticsCompleteAvailableCondition {
   void testCompleteAvailableConditionWithClusterNever() {
     String patchStr;
     try {
-      logger.info("patch the domain resource with cluster serverStartPolicy to Never");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"Never\"}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
+      logger.info("patch the cluster resource with cluster serverStartPolicy to Never");
+      patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"Never\"}]";
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -343,15 +351,16 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeWithoutChangingIntrospectVersion() {
-    String patchStr;
-    logger.info("patch the domain resource with replica larger than max size of cluster and change introspectVersion");
     int newReplicaCount = maxClusterSize + 1;
-    patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertFalse(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-        V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+    String patchStr;
+    logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
+        + "]";
+    V1Patch patch = new V1Patch(patchStr);
+    assertFalse(patchClusterCustomResource(cluster1Name, domainNamespace1,
+        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
   }
 
   /**
@@ -367,16 +376,27 @@ class ItDiagnosticsCompleteAvailableCondition {
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
+    V1Patch patch;
     try {
-      logger.info("patch the domain resource with replica larger than max size of cluster");
+      patchStr
+          = "["
+          + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
+          + "]";
+      logger.info("Removing replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+    
       int newReplicaCount = maxClusterSize + 1;
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "},"
-          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
-
+      logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
+      patchStr = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
+          + "]";
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+      
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
@@ -406,6 +426,14 @@ class ItDiagnosticsCompleteAvailableCondition {
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
     } finally {
+      patchStr
+          = "["
+          + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": 2}"
+          + "]";
+      logger.info("Adding replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1, patch,
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       restoreDomainResource();
     }
   }
@@ -425,11 +453,14 @@ class ItDiagnosticsCompleteAvailableCondition {
     try {
       logger.info("patch the domain resource with replica less than max size of cluster");
       int newReplicaCount = replicaCount - 1;
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
+      logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
+      patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
+          + "]";
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");     
 
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -613,7 +644,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           getPodCreationTime(domainNamespace1, managedServerPodNamePrefix + i));
     }
 
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
     //print out the original image name
     String imageName = domain.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
@@ -660,12 +691,24 @@ class ItDiagnosticsCompleteAvailableCondition {
 
   private void restoreDomainResource() {
     // patch the domain back to the original state
+    String patchStr;
+    String serverStartPolicy;
     logger.info("patch the domain and change the serverStartPolicy to IfNeeded");
-    String patchStr
+    ClusterResource clusterResource = assertDoesNotThrow(()
+        -> Kubernetes.getClusterCustomResource(cluster1Name, domainNamespace1, CLUSTER_VERSION));
+    serverStartPolicy = clusterResource.getSpec().getServerStartPolicy() != null ? "replace" : "add";
+    patchStr
         = "["
-        + "{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"},"
-        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": 2},"
-        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IfNeeded\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2},"
+        + "{\"op\": \"" + serverStartPolicy + "\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}"
+        + "]";
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchClusterCustomResource(cluster1Name, domainNamespace1,
+        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+
+    patchStr
+        = "["
+        + "{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}"
         + "]";
 
     logger.info("Updating domain configuration using patch string: {0}", patchStr);

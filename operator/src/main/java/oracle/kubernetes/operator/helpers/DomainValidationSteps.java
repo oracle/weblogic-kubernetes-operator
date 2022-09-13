@@ -4,12 +4,14 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -22,6 +24,8 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
@@ -39,6 +44,7 @@ public class DomainValidationSteps {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
+  private static final String CLUSTERS = "clusters";
 
   private DomainValidationSteps() {
   }
@@ -51,6 +57,7 @@ public class DomainValidationSteps {
     return Step.chain(
           createListSecretsStep(namespace),
           createListConfigMapsStep(namespace),
+          createListClustersStep(namespace),
           new DomainValidationStep());
   }
 
@@ -58,12 +65,12 @@ public class DomainValidationSteps {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
-  private static Step createListSecretsStep(String domainNamespace) {
-    return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
+  static Step createValidateDomainTopologySteps(Step next) {
+    return createStatusUpdateStep(new ValidateDomainTopologyStep(next));
   }
 
-  static Step createValidateDomainTopologySteps(Step next) {
-    return new ValidateDomainTopologyStep(next);
+  private static Step createListSecretsStep(String domainNamespace) {
+    return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {
@@ -99,6 +106,26 @@ public class DomainValidationSteps {
 
     static List<V1ConfigMap> getConfigMaps(Packet packet) {
       return Optional.ofNullable(packet.<List<V1ConfigMap>>getValue(CONFIGMAPS)).orElse(new ArrayList<>());
+    }
+  }
+
+  private static Step createListClustersStep(String domainNamespace) {
+    return new CallBuilder().listClusterAsync(domainNamespace, new ListClustersResponseStep());
+  }
+
+  static class ListClustersResponseStep extends DefaultResponseStep<ClusterList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
+      List<ClusterResource> list = getClusters(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(CLUSTERS, list);
+
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    static List<ClusterResource> getClusters(Packet packet) {
+      return Optional.ofNullable(packet.<List<ClusterResource>>getValue(CLUSTERS)).orElse(new ArrayList<>());
     }
   }
 
@@ -228,6 +255,19 @@ public class DomainValidationSteps {
     @Override
     public boolean isConfigMapExists(String name, String namespace) {
       return getConfigMaps(packet).stream().anyMatch(s -> isSpecifiedConfigMap(s, name, namespace));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ClusterResource> getClusters(Packet packet) {
+      return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getReferencedClusters)
+          .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
+    }
+
+    @Override
+    public ClusterResource findCluster(V1LocalObjectReference reference) {
+      return Optional.ofNullable(reference.getName()).flatMap(name -> getClusters(packet).stream()
+          .filter(cluster -> name.equals(cluster.getClusterName())).findFirst()).orElse(null);
     }
 
     boolean isSpecifiedConfigMap(V1ConfigMap configmap, String name, String namespace) {

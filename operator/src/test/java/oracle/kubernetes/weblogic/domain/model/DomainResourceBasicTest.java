@@ -177,6 +177,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
   @Test
   void whenNoReplicaCountSpecified_canChangeIt() {
+    configureCluster("cluster1");
     info.setReplicaCount("cluster1", 7);
 
     assertThat(info.getReplicaCount("cluster1"), equalTo(7));
@@ -209,6 +210,14 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1").withReplicas(5);
 
     assertThat(info.getMinAvailable("cluster1"), equalTo(4));
+  }
+
+  @Test
+  void afterReplicaCountSetForDomain_canReadIt() {
+    // set replica count on DomainSpec since Cluster Resource does not exist.
+    info.setReplicaCount("cluster1", 5);
+
+    assertThat(info.getReplicaCount("cluster1"), equalTo(5));
   }
 
   @Test

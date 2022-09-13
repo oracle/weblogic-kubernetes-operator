@@ -15,7 +15,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.meterware.pseudoserver.PseudoServer;
 import com.meterware.pseudoserver.PseudoServlet;
 import com.meterware.pseudoserver.WebResource;
@@ -190,7 +192,7 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
-  void listDomains_returnsListAsJson() throws ApiException {
+  void listDomainSync_returnsList() throws ApiException {
     DomainList list = new DomainList().withItems(Arrays.asList(new DomainResource(), new DomainResource()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
@@ -199,7 +201,7 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
-  void readDomains_returnsResourceAsJson() throws ApiException {
+  void readDomainSync_returnsResource() throws ApiException {
     DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID).namespace(NAMESPACE));
     defineHttpGetResponse(DOMAIN_RESOURCE, UID, domain);
 
@@ -323,11 +325,45 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void createClusterSyncUntyped_returnsNewResource() throws ApiException {
+    Map<String, Object> resource = toMap(new ClusterResource().withMetadata(createMetadata()));
+    defineHttpPostResponse(
+        CLUSTER_RESOURCE, resource, (json) -> fromJson(json, Map.class));
+
+    Object received = callBuilder.createClusterUntyped(NAMESPACE, resource);
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceClusterSyncUntyped_returnsUpdatedResource() throws ApiException {
+    Map<String, Object> resource = toMap(new ClusterResource().withMetadata(createMetadata()));
+    defineHttpPutResponse(
+        CLUSTER_RESOURCE, UID, resource, (json) -> fromJson(json, Map.class));
+
+    Object received = callBuilder.replaceClusterUntyped(UID, NAMESPACE, resource);
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void listClusters_returnsList() throws ApiException {
     ClusterList list = new ClusterList().withItems(Arrays.asList(new ClusterResource(), new ClusterResource()));
     defineHttpGetResponse(CLUSTER_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
     assertThat(callBuilder.withFieldSelector("xxx").listCluster(NAMESPACE), equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listClustersUntyped_returnsList() throws ApiException {
+    Map<String, Object> list = toMap(new ClusterList().withItems(
+        Arrays.asList(new ClusterResource(), new ClusterResource())));
+    defineHttpGetResponse(CLUSTER_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    assertThat(callBuilder.withFieldSelector("xxx").listClusterUntyped(NAMESPACE), equalTo(list));
   }
 
   @Test
@@ -450,6 +486,26 @@ class CallBuilderTest {
     assertThat(received, equalTo(resource));
   }
 
+  private JsonElement convertToJson(Object o) {
+    Gson gson = new GsonBuilder().create();
+    return gson.toJsonTree(o);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> toMap(Object o) {
+    Gson gson = new GsonBuilder().create();
+    return gson.fromJson(convertToJson(o), Map.class);
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readClusterUntyped_returnsResource() throws ApiException {
+    Map<String, Object> resource = toMap(new ClusterResource().withMetadata(createMetadata()));
+    defineHttpGetResponse(CLUSTER_RESOURCE, UID, resource);
+
+    assertThat(callBuilder.readClusterUntyped(UID, NAMESPACE), equalTo(resource));
+  }
+
   @Test
   @ResourceLock(value = "server")
   void replaceClusterStatusAsync_returnsUpdatedClusterResource() throws InterruptedException {
@@ -501,7 +557,7 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
-  void listServices_returnsListAsJson() throws InterruptedException {
+  void listService_returnsList() throws InterruptedException {
     V1ServiceList list = new V1ServiceList().items(Arrays.asList(new V1Service(), new V1Service()));
     defineHttpGetResponse(SERVICE_RESOURCE, list).expectingParameter("labelSelector", "yyy");
 
@@ -565,7 +621,7 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
-  void listSecrets_returnsListAsJson() throws InterruptedException {
+  void listSecret_returnsList() throws InterruptedException {
     V1SecretList list = new V1SecretList().items(Arrays.asList(new V1Secret(), new V1Secret()));
     defineHttpGetResponse(SECRET_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 

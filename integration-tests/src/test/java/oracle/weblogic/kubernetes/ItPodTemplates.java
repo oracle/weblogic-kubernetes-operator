@@ -7,16 +7,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -38,14 +41,13 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -66,8 +68,8 @@ class ItPodTemplates {
 
   // domain constants
   private static final int replicaCount = 1;
-  private static String domain1Namespace = null;
-  private static String domain1Uid = "itpodtemplates-domain-1";
+  private static String domainNamespace = null;
+  private static String domainUid = "itpodtemplates-domain";
   private static String clusterName = "cluster-1";
   private static LoggingFacade logger = null;
 
@@ -88,63 +90,56 @@ class ItPodTemplates {
 
     logger.info("Get a unique namespace for WebLogic domain1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    domain1Namespace = namespaces.get(1);
+    domainNamespace = namespaces.get(1);
 
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain1Namespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
   }
 
   /**
-   * Test pod templates using all the variables $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID),
-   * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME) in serverPod for Domain In Image. Make sure the domain comes up
-   * successfully.
-   *
-   * @throws Exception when the domain crd creation fails or when updating the serverPod with
-   *                   variables
+   * Test pod templates using supported variables.
+   * $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID), $(CLUSTER_NAME) 
+   * $(DOMAIN_HOME), $(LOG_HOME) in serverPod section of Domain Spec
+   * and Cluster Spec. Make sure the domain comes up successfully.
    */
   @Test
-  @DisplayName("Test pod templates using all the variables for domain in image.")
+  @DisplayName("Test pod templates using all supported variables in serverPod")
   void testPodTemplateUsingVariablesDomainInImage() throws Exception {
-    try {
-      logger.info("Add annotations to serverPod as $(DOMAIN_HOME) and $(LOG_HOME)");
-      logger.info("Add labels to serverPod as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");
-      logger.info("Add label to cluster serverPod for $(CLUSTER_NAME)");
-      logger.info("Create domain in image using pod template and verify that it's running");
-      String wdtImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-      createAndVerifyPodFromTemplate(wdtImage,
-          domain1Uid,
-          domain1Namespace,
+    String wdtImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+    logger.info("Add annotations to serverPod in Domain Spec as $(DOMAIN_HOME) and $(LOG_HOME)");
+    logger.info("Add labels to serverPod in Domain Spec as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");
+    logger.info("Add label to serverPod in Cluster Spec for $(CLUSTER_NAME)");
+    
+    assertDoesNotThrow(() -> 
+        createAndVerifyPodFromTemplate(wdtImage,
           "Image",
           "domain1",
-          WDT_BASIC_IMAGE_DOMAINHOME);
-
-    } finally {
-      logger.info("Shutting down domain");
-      shutdownDomain(domain1Uid, domain1Namespace);
-    }
+          WDT_BASIC_IMAGE_DOMAINHOME),
+        String.format("Creating Domain resource with serverPod template failed"));
   }
 
   /**
-   * Create domain CRD with added labels and annotations to the serverPod using variables :
+   * Create Domain resource with added labels and annotations to the 
+   * serverPod section using following variables ...
    * $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID),
    * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME).
-   * Create and verify domain and check that managed server pod labels and annotations are added
-   * and initialized for $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID), $(DOMAIN_HOME), $(CLUSTER_NAME).
-   * and not initialized for $(LOG_HOME) since logHomeEnable option set to false.
+   * Create and verify domain and check that managed server pod labels and 
+   * annotations are added for $(SERVER_NAME), $(DOMAIN_NAME), $(DOMAIN_UID), 
+   * $(DOMAIN_HOME), $(CLUSTER_NAME) and not added for $(LOG_HOME) since 
+   * logHomeEnable option set to false.
    */
-  private void createAndVerifyPodFromTemplate(String imageName, String domainUid, String domainNS,
+  private void createAndVerifyPodFromTemplate(String imageName,
                                               String domainHomeSource,
                                               String domainName,
-                                              String domainHome) throws io.kubernetes.client.openapi.ApiException {
-    createAndVerifyDomain(imageName, domainUid, domainNS, domainHomeSource, replicaCount);
+                                              String domainHome) throws ApiException {
+    createAndVerifyDomain(imageName,  domainHomeSource, replicaCount);
     String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
-    V1Pod managedServerPod = Kubernetes.getPod(domainNS, null, managedServerPodName);
+    V1Pod managedServerPod = Kubernetes.getPod(domainNamespace, null, managedServerPodName);
 
     //check that managed server pod is up and all applicable variable values are initialized.
-    assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNS);
+    assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
     String serverName = managedServerMetadata.getLabels().get("servername");
-
     logger.info("Checking that variables used in the labels and annotations "
         + "in the serverPod for servername, domainname, clustername are initialized");
     //check that label contains servername in the managed server pod
@@ -152,24 +147,21 @@ class ItPodTemplates {
     assertTrue(serverName.equalsIgnoreCase("managed-server1"),
         "Can't find or match label servername, real value is " + serverName);
 
-    String domainname = managedServerMetadata.getLabels()
-        .get("domainname");
+    String domainname = managedServerMetadata.getLabels().get("domainname");
 
     //check that label contains domainname in the managed server pod
     assertNotNull(domainname, "Can't find label domainname");
     assertTrue(domainName.equalsIgnoreCase(domainName),
         "Can't find expected value for  label domainname, real value is " + domainname);
 
-    String myclusterName = managedServerMetadata.getLabels()
-        .get("clustername");
+    String myclusterName = managedServerMetadata.getLabels().get("clustername");
 
     //check that label contains clustername in the managed server pod
     assertNotNull(myclusterName, "Can't find label clustername");
     assertTrue(myclusterName.equalsIgnoreCase(clusterName),
         "Can't find expected value for label clustername, real value is " + myclusterName);
 
-    String domainuid = managedServerMetadata.getLabels()
-        .get("domainuid");
+    String domainuid = managedServerMetadata.getLabels().get("domainuid");
 
     //check that label contains domainuid in the managed server pod
     assertNotNull(domainuid, "Can't find label domainuid");
@@ -178,82 +170,60 @@ class ItPodTemplates {
 
     logger.info("Checking that applicable variables used "
         + "in the annotations for domainhome and loghome are initialized");
-    String loghome = managedServerMetadata.getAnnotations()
-        .get("loghome");
+    String loghome = managedServerMetadata.getAnnotations().get("loghome");
     //check that annotation contains loghome in the pod
     assertNotNull(loghome, "Can't find annotation loghome");
     //value is not initialized since logHomeEnable = false in CRD
     assertTrue(loghome.equalsIgnoreCase("$(LOG_HOME)"),
         "Can't find expected value for annotation loghome, real value is " + loghome);
 
-    String domainhome = managedServerMetadata.getAnnotations()
-        .get("domainhome");
+    String domainhome = managedServerMetadata.getAnnotations().get("domainhome");
     //check that annotation contains domainhome in the managed server pod
     assertNotNull(domainhome, "Can't find annotation domainhome");
     assertTrue(domainhome.equalsIgnoreCase(domainHome),
         "Can't find expected value for annotation domainhome, retrieved value is :" + domainhome);
   }
 
-  //create domain from provided image and verify it's start
+  //create domain from provided image and verify all servers are started
   private static void createAndVerifyDomain(String imageName,
-                                            String domainUid,
-                                            String namespace,
                                             String domainHomeSource,
                                             int replicaCount) {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", namespace);
-    createTestRepoSecret(namespace);
+    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    createTestRepoSecret(domainNamespace);
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, namespace,
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc"),
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create domain {0} in namespace {1} using docker image {2}",
-        domainUid, namespace, imageName);
-    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, imageName,domainUid,
-        namespace, domainHomeSource, replicaCount);
+    logger.info("Create domain {0} in domainNamespace {1} using docker image {2}",
+        domainUid, domainNamespace, imageName);
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, 
+         encryptionSecretName, imageName, 
+         domainHomeSource, replicaCount);
     String adminServerPodName = domainUid + "-admin-server";
 
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, namespace);
-    checkServiceExists(adminServerPodName, namespace);
-
     // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, namespace);
-    checkPodReady(adminServerPodName, domainUid, namespace);
+    logger.info("Wait for admin server pod {0} is ready in domainNamespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    String managedServerPrefix = domainUid + "-managed-server";
     // check for managed server pods existence in the domain namespace
+    logger.info("Wait for managed pods are ready in namespace {0}",domainNamespace);
+    String managedServerPrefix = domainUid + "-managed-server";
     for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
-
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, namespace);
-      checkPodExists(managedServerPodName, domainUid, namespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, namespace);
-      checkPodReady(managedServerPodName, domainUid, namespace);
-
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, namespace);
-      checkServiceExists(managedServerPodName, namespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
   }
 
@@ -261,8 +231,6 @@ class ItPodTemplates {
                                               String repoSecretName,
                                               String encryptionSecretName,
                                               String imageName,
-                                              String domainUid,
-                                              String namespace,
                                               String domainHomeSource,
                                               int replicaCount) {
     // add labels to serverPod
@@ -271,8 +239,8 @@ class ItPodTemplates {
     labelKeyValues.put("domainname", "$(DOMAIN_NAME)");
     labelKeyValues.put("domainuid", "$(DOMAIN_UID)");
 
-    // add annotations to serverPod as DOMAIN_HOME and LOG_HOME contains "/" which is not allowed
-    // in labels
+    // add annotations to serverPod as DOMAIN_HOME and LOG_HOME 
+    // contains "/" which is not allowed in labels
     Map<String, String> annotationKeyValues = new HashMap<>();
     annotationKeyValues.put("domainhome", "$(DOMAIN_HOME)");
     annotationKeyValues.put("loghome", "$(LOG_HOME)");
@@ -280,14 +248,15 @@ class ItPodTemplates {
     // add label to cluster serverPod for CLUSTER_NAME
     Map<String, String> clusterLabelKeyValues = new HashMap<>();
     clusterLabelKeyValues.put("clustername", "$(CLUSTER_NAME)");
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
             .uid(domainUid)
-            .namespace(namespace))
+            .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
@@ -315,28 +284,29 @@ class ItPodTemplates {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    domain.getSpec().getClusters()
-        .stream()
-        .forEach(
-            cluster -> {
-                if (cluster.getClusterName().equals(clusterName)) {
-                  cluster.getServerPod().labels(clusterLabelKeyValues);
-                }
-            }
-    );
-    // create domain using model in image
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, namespace, imageName);
-    createDomainAndVerify(domain, namespace);
+
+    ClusterSpec clusterSpec = new ClusterSpec()
+            .withClusterName(clusterName)
+            .replicas(replicaCount)
+            .serverPod(new ServerPod()
+                .labels(clusterLabelKeyValues));
+    logger.info(Yaml.dump(clusterSpec));
+    ClusterResource cluster = 
+         createClusterResource(clusterName, domainNamespace, clusterSpec);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    // create domain resource
+    logger.info("Create domain {0} in namespace {1} using docker image {2}",
+        domainUid, domainNamespace, imageName);
+    createDomainAndVerify(domain, domainNamespace);
   }
 
 }

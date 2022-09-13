@@ -48,6 +48,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -144,7 +145,7 @@ public class JobHelper {
 
     // Returns true if any cluster is configured to start.
     private boolean willStartACluster() {
-      return getDomainSpec().getClusters().stream().anyMatch(this::shouldStart);
+      return getClusters().stream().map(ClusterResource::getSpec).anyMatch(this::shouldStart);
     }
 
     // Returns true if any server is configured to start.
@@ -170,6 +171,10 @@ public class JobHelper {
 
     private DomainResource getDomain() {
       return info.getDomain();
+    }
+
+    private List<ClusterResource> getClusters() {
+      return info.getReferencedClusters();
     }
   }
 

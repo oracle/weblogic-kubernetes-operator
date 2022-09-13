@@ -3,10 +3,14 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -15,8 +19,13 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.jetbrains.annotations.NotNull;
+
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
 
 /**
  * AdmissionChecker provides the validation functionality for the validating webhook. It takes an existing resource and
@@ -41,7 +50,6 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
 
   /** Construct a ClusterAdmissionChecker. */
   public ClusterAdmissionChecker(@NotNull ClusterResource existingCluster, @NotNull ClusterResource proposedCluster) {
-    super(existingCluster.getDomainUid());
     this.existingCluster = existingCluster;
     this.proposedCluster = proposedCluster;
   }
@@ -74,13 +82,23 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
    */
   @Override
   public boolean isProposedChangeAllowed() {
-    return isUnchanged() || isReplicaCountValid();
+    return isUnchanged() || skipValidation(proposedCluster.getStatus()) || isReplicaCountValid();
   }
 
   private boolean isReplicaCountValid() {
-    return getClusterReplicaCount() != null
+    boolean isValid = (getClusterReplicaCount() != null
         ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
-        : isDomainReplicaCountValid();
+        : isDomainReplicaCountValid());
+
+    if (!isValid) {
+      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
+          existingCluster.getClusterName(), getClusterSize(existingCluster.getStatus())));
+    }
+    return isValid;
+  }
+
+  private boolean skipValidation(ClusterStatus clusterStatus) {
+    return getClusterSizeOptional(clusterStatus).isEmpty();
   }
 
   private Integer getClusterReplicaCount() {
@@ -89,8 +107,8 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
 
   private boolean isDomainReplicaCountValid() {
     try {
-      DomainResource domain = getDomainResource(proposedCluster);
-      return getDomainReplicaCount(domain) <= getClusterSize(proposedCluster.getStatus());
+      return getDomainResources(proposedCluster).stream()
+          .allMatch(domain -> getDomainReplicaCount(domain) <= getClusterSize(proposedCluster.getStatus()));
     } catch (ApiException e) {
       exception = e;
       return false;
@@ -102,8 +120,22 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
     return exception != null;
   }
 
-  private DomainResource getDomainResource(ClusterResource proposedCluster) throws ApiException {
-    return new CallBuilder().readDomain(proposedCluster.getDomainUid(), getNamespace(proposedCluster));
+  private List<DomainResource> getDomainResources(ClusterResource proposedCluster) throws ApiException {
+    return referencingDomains(proposedCluster, new CallBuilder().listDomain(getNamespace(proposedCluster)));
+  }
+
+  private List<DomainResource> referencingDomains(ClusterResource proposedCluster, DomainList domains) {
+    String name = proposedCluster.getMetadata().getName();
+    List<DomainResource> referencingDomains = new ArrayList<>();
+    Optional.ofNullable(domains).map(DomainList::getItems).ifPresent(list -> list.stream()
+        .filter(item -> referencesCluster(name, item)).forEach(referencingDomains::add));
+    return referencingDomains;
+  }
+
+  private boolean referencesCluster(String name, DomainResource domain) {
+    List<V1LocalObjectReference> refs = Optional.ofNullable(domain).map(DomainResource::getSpec)
+        .map(DomainSpec::getClusters).orElse(Collections.emptyList());
+    return refs.stream().anyMatch(item -> name.equals(item.getName()));
   }
 
   private String getNamespace(ClusterResource cluster) {

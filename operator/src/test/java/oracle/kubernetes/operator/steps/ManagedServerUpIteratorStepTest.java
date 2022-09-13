@@ -410,7 +410,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName);
+    return configurator.configureCluster(info, clusterName);
   }
 
   private void addWlsServers(String... serverNames) {

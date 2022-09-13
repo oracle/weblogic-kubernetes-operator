@@ -29,7 +29,7 @@ rules:
 {{- end }}
 - apiGroups: ["weblogic.oracle"]
   resources: ["clusters", "domains", "domains/status", "clusters/status"]
-  verbs: ["get", "list", "watch", "update", "patch"]
+  verbs: ["get", "create", "list", "watch", "update", "patch"]
 - apiGroups: ["authentication.k8s.io"]
   resources: ["tokenreviews"]
   verbs: ["create"]

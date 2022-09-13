@@ -12,7 +12,9 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Domain;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -45,12 +47,15 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -125,6 +130,7 @@ class ItDBOperator {
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
+  private String clusterName = "cluster-1";
   private String fmwAminSecretName = fmwDomainUid + "-weblogic-credentials";
   private String fmwEncryptionSecretName = fmwDomainUid + "-encryptionsecret";
   private String rcuaccessSecretName = fmwDomainUid + "-rcu-access";
@@ -197,6 +203,7 @@ class ItDBOperator {
   @Test
   @DisplayName("Create FMW Domain model in image")
   void  testFmwModelInImageWithDbOperator() {
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(fmwDomainNamespace);
@@ -250,15 +257,21 @@ class ItDBOperator {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
         fmwEncryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         fmwMiiImage);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
@@ -317,11 +330,26 @@ class ItDBOperator {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
+    DomainResource domainCR = createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
+        pvName, pvcName, configMapName,
         dbSecretName, false, false, true);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, wlsDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, wlsDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
+    
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+        wlsDomainUid, wlsDomainNamespace);
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domainCR, DOMAIN_VERSION),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            wlsDomainUid, wlsDomainNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed "
+        + "for %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", wlsDomainNamespace);
@@ -397,9 +425,7 @@ class ItDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = assertDoesNotThrow(()
-        -> scaleCluster(wlsDomainUid, wlsDomainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
+    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));

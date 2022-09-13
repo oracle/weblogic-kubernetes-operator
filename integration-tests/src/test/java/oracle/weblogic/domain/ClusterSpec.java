@@ -9,8 +9,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+
 @ApiModel(description = "An element representing a cluster in the domain configuration.")
-public class Cluster {
+public class ClusterSpec {
 
   @ApiModelProperty("The name of this cluster. Required")
   private String clusterName;
@@ -47,7 +48,7 @@ public class Cluster {
           + " the required servers.")
   private String restartVersion;
 
-  public Cluster clusterName(String clusterName) {
+  public ClusterSpec clusterName(String clusterName) {
     this.clusterName = clusterName;
     return this;
   }
@@ -64,7 +65,12 @@ public class Cluster {
     this.clusterName = clusterName;
   }
 
-  public Cluster replicas(Integer replicas) {
+  public ClusterSpec withClusterName(String clusterName) {
+    setClusterName(clusterName);
+    return this;
+  }
+
+  public ClusterSpec replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
   }
@@ -81,7 +87,7 @@ public class Cluster {
     this.replicas = replicas;
   }
 
-  public Cluster serverStartPolicy(String serverStartPolicy) {
+  public ClusterSpec serverStartPolicy(String serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
     return this;
   }
@@ -98,7 +104,7 @@ public class Cluster {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  public Cluster maxUnavailable(Integer maxUnavailable) {
+  public ClusterSpec maxUnavailable(Integer maxUnavailable) {
     this.maxUnavailable = maxUnavailable;
     return this;
   }
@@ -115,7 +121,7 @@ public class Cluster {
     this.maxUnavailable = maxUnavailable;
   }
 
-  public Cluster clusterService(ClusterService clusterService) {
+  public ClusterSpec clusterService(ClusterService clusterService) {
     this.clusterService = clusterService;
     return this;
   }
@@ -132,7 +138,7 @@ public class Cluster {
     this.clusterService = clusterService;
   }
 
-  public Cluster serverPod(ServerPod serverPod) {
+  public ClusterSpec serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
   }
@@ -157,7 +163,7 @@ public class Cluster {
     this.serverService = serverService;
   }
 
-  public Cluster restartVersion(String restartVersion) {
+  public ClusterSpec restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
   }
@@ -197,7 +203,7 @@ public class Cluster {
     if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    Cluster rhs = (Cluster) other;
+    ClusterSpec rhs = (ClusterSpec) other;
     return new EqualsBuilder()
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)

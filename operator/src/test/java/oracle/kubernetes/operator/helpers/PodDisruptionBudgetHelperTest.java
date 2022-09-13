@@ -116,7 +116,7 @@ class PodDisruptionBudgetHelperTest {
 
   @SuppressWarnings("SameParameterValue")
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
+    return configureDomain().configureCluster(domainPresenceInfo, clusterName);
   }
 
   @AfterEach

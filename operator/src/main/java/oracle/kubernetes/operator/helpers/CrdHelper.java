@@ -355,7 +355,8 @@ public class CrdHelper {
           .scale(
               new V1CustomResourceSubresourceScale()
                   .specReplicasPath(".spec.replicas")
-                  .statusReplicasPath(".status.replicas"));
+                  .statusReplicasPath(".status.replicas")
+                  .labelSelectorPath(".status.labelSelector"));
     }
 
     List<V1CustomResourceDefinitionVersion> getCrdVersions() {

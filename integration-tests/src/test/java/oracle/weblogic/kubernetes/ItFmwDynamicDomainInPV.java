@@ -22,8 +22,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -102,7 +101,7 @@ class ItFmwDynamicDomainInPV {
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private String adminSvcExtHost = null;
 
   /**
@@ -196,9 +195,10 @@ class ItFmwDynamicDomainInPV {
   private void createDomainCrAndVerify(String pvName,
                                        String pvcName,
                                        int t3ChannelPort) {
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -241,10 +241,7 @@ class ItFmwDynamicDomainInPV {
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)));
+                        .nodePort(t3ChannelPort)))));
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created

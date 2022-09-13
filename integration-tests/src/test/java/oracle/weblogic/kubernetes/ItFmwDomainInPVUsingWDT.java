@@ -13,7 +13,7 @@ import java.util.Properties;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -90,7 +90,7 @@ class ItFmwDomainInPVUsingWDT {
   private static final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
 
   private final String wdtCreateDomainScript = "setup_wdt.sh";
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-wdt";
@@ -178,7 +178,7 @@ class ItFmwDomainInPVUsingWDT {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResourceOnPv(domainUid,
+    DomainResource domain = createDomainResourceOnPv(domainUid,
                                              domainNamespace,
                                              wlSecretName,
                                              clusterName,

@@ -12,6 +12,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -19,7 +20,6 @@ import oracle.kubernetes.operator.webhooks.resource.ClusterAdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.DomainAdmissionChecker;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
@@ -37,11 +37,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
@@ -138,69 +136,6 @@ class AdmissionCheckerTest {
   void whenLogHomeChangedAndDomainReplicasInvalid_returnFalse() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().setLogHome("/home/dir");
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenOneClusterReplicasChangedAloneAndValid_returnTrue() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenOneClusterReplicasChangedAloneAndInvalid_returnFalse() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenIntrospectionVersionChangedAndOneClusterReplicasInvalid_returnTrue() {
-    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenImageChangedAndOneClusterReplicasInvalid_returnTrue() {
-    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenLogHomeChangedAndOneClusterReplicasChangedInvalid_returnFalse() {
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenDomainReplicasChangedInvalidAndOneClusterReplicasChangedValid_returnFalse() {
-    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(1);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
-  void whenDomainReplicasChangedInvalidAndBothClusterReplicasChangedValid_returnTrue() {
-    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(1).withReplicas(GOOD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenDomainReplicasChangedValidAndOneClusterReplicasChangedInvalid_returnFalse() {
-    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }
@@ -351,8 +286,8 @@ class AdmissionCheckerTest {
 
   @Test
   void whenDomainHasDuplicateClusterNames_returnFalse() {
-    proposedDomain.getSpec().getClusters().add(new ClusterSpec().withClusterName(DUPLICATE_CLUSTER_NAME));
-    proposedDomain.getSpec().getClusters().add(new ClusterSpec().withClusterName(DUPLICATE_CLUSTER_NAME));
+    proposedDomain.getSpec().getClusters().add(new V1LocalObjectReference().name(DUPLICATE_CLUSTER_NAME));
+    proposedDomain.getSpec().getClusters().add(new V1LocalObjectReference().name(DUPLICATE_CLUSTER_NAME));
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }
@@ -409,14 +344,6 @@ class AdmissionCheckerTest {
   }
 
   @Test
-  void whenDomainClusterHasReservedEnvs_returnFalse() {
-    List<V1EnvVar> list = createEnvVarListWithRerservedName();
-    proposedDomain.getSpec().getCluster(CLUSTER_NAME_1).setEnv(list);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
   void whenDomainHasIllegalSitConfigForMII_returnFalse() {
     proposedDomain.getSpec().setDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     proposedDomain.getSpec().setConfiguration(new Configuration().withOverridesConfigMap("my-config-map"));
@@ -439,13 +366,6 @@ class AdmissionCheckerTest {
   }
 
   @Test
-  void whenDomainClusterHasReservedContainerPortName_returnFalse() {
-    proposedDomain.getSpec().getCluster(CLUSTER_NAME_1).getContainers().add(new V1Container().name(WLS_CONTAINER_NAME));
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  @Test
   void whenDomainASHasInvalidContainerPortName_returnFalse() {
     setASInvalidContainerPortName();
 
@@ -454,18 +374,6 @@ class AdmissionCheckerTest {
 
   private void setASInvalidContainerPortName() {
     proposedDomain.getSpec().getOrCreateAdminServer().getContainers()
-        .add(new V1Container().name(GOOD_CONTAINER_NAME).addPortsItem(new V1ContainerPort().name(BAD_PORT_NAME)));
-  }
-
-  @Test
-  void whenDomainClusterHasInvalidContainerPortName_returnFalse() {
-    setClusterInvalidContainerPortName();
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  private void setClusterInvalidContainerPortName() {
-    proposedDomain.getSpec().getCluster(CLUSTER_NAME_1).getContainers()
         .add(new V1Container().name(GOOD_CONTAINER_NAME).addPortsItem(new V1ContainerPort().name(BAD_PORT_NAME)));
   }
 
@@ -520,20 +428,6 @@ class AdmissionCheckerTest {
   }
 
   @Test
-  void whenDomainClusterHasMountPathConflictsWithAuxiliaryImages_returnFalse() {
-    setAuxiliaryImages(proposedDomain, List.of(new AuxiliaryImage()));
-    setDomainClusterMountPathUsingDefaultAuxImageMountPath();
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
-  }
-
-  private void setDomainClusterMountPathUsingDefaultAuxImageMountPath() {
-    proposedDomain.getSpec().getCluster(CLUSTER_NAME_1).getAdditionalVolumeMounts()
-        .add(new V1VolumeMount().mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH));
-  }
-
-
-  @Test
   void whenDomainHasMountPathConflictsWithoutAuxiliaryImages_returnTrue() {
     setDomainSpecMountPathUsingDefaultAuxImageMountPath();
 
@@ -580,6 +474,16 @@ class AdmissionCheckerTest {
   }
 
   @Test
+  void whenClusterReplicasChanged_proposedClusterHasNoStatus_returnTrue() {
+    testSupport.defineResources(proposedDomain);
+    proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
+    proposedCluster.setStatus(null);
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(clusterChecker.hasException(), equalTo(false));
+  }
+
+  @Test
   void whenClusterReplicasChangedToUnsetAndDomainReplicasValid_returnTrue() {
     testSupport.defineResources(proposedDomain);
     proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
@@ -608,7 +512,7 @@ class AdmissionCheckerTest {
     existingCluster.getSpec().withReplicas(2);
     proposedCluster.getSpec().withReplicas(null);
 
-    testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
+    testSupport.failOnList(KubernetesTestSupport.DOMAIN, NS, HTTP_FORBIDDEN);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
     assertThat(clusterChecker.hasException(), equalTo(true));

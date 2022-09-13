@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -95,7 +95,7 @@ class ItFmwMiiDomain {
   private String domainUid = "fmwdomain-mii";
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPrefix = domainUid + "-managed-server";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSecretName = domainUid + "-weblogic-credentials";
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
@@ -214,14 +214,13 @@ class ItFmwMiiDomain {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(domainUid,
+    DomainResource domain = FmwUtils.createDomainResource(domainUid,
         fmwDomainNamespace,
         adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         fmwMiiImage);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
