@@ -16,8 +16,10 @@ import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1KeyToPath;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
@@ -388,17 +390,8 @@ class ItHDFC {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.kernel.debug=true "
-                        + "-Dweblogic.debug.DebugMessaging=true "
-                        + "-Dweblogic.debug.DebugConnection=true "
-                        + "-Dweblogic.debug.DebugUnicastMessaging=true "
-                        + "-Dweblogic.debug.DebugClusterHeartbeats=true "
-                        + "-Dweblogic.debug.DebugJNDI=true "
-                        + "-Dweblogic.debug.DebugJNDIResolution=true "
-                        + "-Dweblogic.debug.DebugCluster=true "
-                        + "-Dweblogic.ResolveDNSName=true "
-                        + "-Dweblogic.MaxMessageSize=20000000"))
+                    .value("-Dweblogic.debug.DebugConfigurationEdit=true "
+                        + "-Dweblogic.debug.DebugDeployment=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -406,6 +399,18 @@ class ItHDFC {
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
                         .claimName(pvcName)))
+                .addVolumesItem(new V1Volume()
+                    .name("config")
+                    .configMap(new V1ConfigMapVolumeSource()
+                        .name("patchJar")
+                        .addItemsItem(new V1KeyToPath()
+                            .key("com.oracle.weblogic.management.provider.internal.jar")
+                            .path(Paths.get(RESOURCE_DIR, "com.oracle.weblogic.management.provider.internal.jar")
+                                .toString()))))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .name("config")
+                    .mountPath("/u01/oracle/wlserver/modules/com.oracle.weblogic.management.provider.internal.jar")
+                    .subPath("com.oracle.weblogic.management.provider.internal.jar"))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/shared")
                     .name(pvName)))
@@ -489,7 +494,6 @@ class ItHDFC {
     verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
 
   }
-
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
