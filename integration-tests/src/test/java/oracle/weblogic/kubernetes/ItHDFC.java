@@ -20,10 +20,8 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1KeyToPath;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
@@ -370,7 +368,7 @@ class ItHDFC {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
 
-    createPatchJarConfigMap(introDomainNamespace);
+    //createPatchJarConfigMap(introDomainNamespace);
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -383,7 +381,7 @@ class ItHDFC {
             .domainUid(domainUid)
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .image("phx.ocir.io/weblogick8s/test-images/weblogic-hfdc-providerinteral:sankar")
             .imagePullPolicy("IfNotPresent")
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
@@ -397,7 +395,9 @@ class ItHDFC {
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.debug.DebugConfigurationEdit=true "
-                        + "-Dweblogic.debug.DebugDeployment=true"))
+                        + "-Dweblogic.debug.DebugDeployment=true "
+                        + "-Dweblogic.StdoutDebugEnabled=true "
+                        + "-Dweblogic.debug.DebugSituationalConfig=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -405,17 +405,6 @@ class ItHDFC {
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
                         .claimName(pvcName)))
-                .addVolumesItem(new V1Volume()
-                    .name("config")
-                    .configMap(new V1ConfigMapVolumeSource()
-                        .name("patchjar")
-                        .addItemsItem(new V1KeyToPath()
-                            .key("com.oracle.weblogic.management.provider.internal.jar")
-                            .path("com.oracle.weblogic.management.provider.internal.jar"))))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .name("config")
-                    .mountPath("/u01/oracle/wlserver/modules/com.oracle.weblogic.management.provider.internal.jar")
-                    .subPath("com.oracle.weblogic.management.provider.internal.jar"))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/shared")
                     .name(pvName)))
@@ -517,6 +506,21 @@ class ItHDFC {
 
     assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Failed to create configmap %s with files", configMap));
+    
+    /*
+    
+                .addVolumesItem(new V1Volume()
+                    .name("config")
+                    .configMap(new V1ConfigMapVolumeSource()
+                        .name("patchjar")
+                        .addItemsItem(new V1KeyToPath()
+                            .key("com.oracle.weblogic.management.provider.internal.jar")
+                            .path("com.oracle.weblogic.management.provider.internal.jar"))))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .name("config")
+                    .mountPath("/u01/oracle/wlserver/modules/com.oracle.weblogic.management.provider.internal.jar")
+                    .subPath("com.oracle.weblogic.management.provider.internal.jar"))
+    */
   }
   
   /**
