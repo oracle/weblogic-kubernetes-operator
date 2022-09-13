@@ -541,7 +541,6 @@ public class JobHelper {
 
       private void processIntrospectionResult(Packet packet, String result) {
         LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
-        LOGGER.info("DEBUG: +++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
         convertJobLogsToOperatorLogs(result);
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
         MakeRightDomainOperation.recordInspection(packet);
