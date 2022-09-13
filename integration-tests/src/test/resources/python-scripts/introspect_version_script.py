@@ -80,6 +80,7 @@ def create_static_cluster():
     for count in range(1, int(server_count) + 1):
       server = server_prefix + str(count)
       cd('/')
+      print 'Creating server' + server
       cmo.createServer(server)
 
       cd('/Servers/' + server)
