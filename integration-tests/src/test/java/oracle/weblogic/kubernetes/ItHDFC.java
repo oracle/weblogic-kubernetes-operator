@@ -408,7 +408,7 @@ class ItHDFC {
                 .addVolumesItem(new V1Volume()
                     .name("config")
                     .configMap(new V1ConfigMapVolumeSource()
-                        .name("patchJar")
+                        .name("patchjar")
                         .addItemsItem(new V1KeyToPath()
                             .key("com.oracle.weblogic.management.provider.internal.jar")
                             .path("com.oracle.weblogic.management.provider.internal.jar"))))
@@ -506,11 +506,11 @@ class ItHDFC {
     assertDoesNotThrow(() -> {
       binaryData.put("com.oracle.weblogic.management.provider.internal.jar",
           Base64.getMimeEncoder()
-              .encode(Files.readAllBytes(Paths.get("tmp", "com.oracle.weblogic.management.provider.internal.jar"))));
+              .encode(Files.readAllBytes(Paths.get("/tmp", "com.oracle.weblogic.management.provider.internal.jar"))));
     });
 
     V1ObjectMeta meta = new V1ObjectMeta()
-        .name("patchJar")
+        .name("patchjar")
         .namespace(namespace);
     V1ConfigMap configMap = new V1ConfigMap()
         .data(data)
