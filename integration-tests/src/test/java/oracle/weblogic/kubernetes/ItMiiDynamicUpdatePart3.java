@@ -145,6 +145,7 @@ class ItMiiDynamicUpdatePart3 {
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
     checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, helper.domainNamespace);
+    checkOperatorLogIntrospectorMsg();
   }
 
   /**
@@ -249,9 +250,7 @@ class ItMiiDynamicUpdatePart3 {
    * the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true',
    * but there are unsupported model changes for online update.
    */
-  @Test
-  @DisplayName("verify the operator logs introspector job messages")
-  void testOperatorLogIntrospectorMsg() {
+  void checkOperatorLogIntrospectorMsg() {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, helper.opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
