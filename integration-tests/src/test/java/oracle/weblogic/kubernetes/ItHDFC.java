@@ -6,16 +6,20 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -59,6 +63,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -365,6 +370,7 @@ class ItHDFC {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
 
+    createPatchJarConfigMap(introDomainNamespace);
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -405,8 +411,7 @@ class ItHDFC {
                         .name("patchJar")
                         .addItemsItem(new V1KeyToPath()
                             .key("com.oracle.weblogic.management.provider.internal.jar")
-                            .path(Paths.get(RESOURCE_DIR, "com.oracle.weblogic.management.provider.internal.jar")
-                                .toString()))))
+                            .path("com.oracle.weblogic.management.provider.internal.jar"))))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .name("config")
                     .mountPath("/u01/oracle/wlserver/modules/com.oracle.weblogic.management.provider.internal.jar")
@@ -495,6 +500,27 @@ class ItHDFC {
 
   }
 
+  private static void createPatchJarConfigMap(String namespace) {
+    Map<String, String> data = new HashMap<>();
+    Map<String, byte[]> binaryData = new HashMap<>();
+    assertDoesNotThrow(() -> {
+      binaryData.put("com.oracle.weblogic.management.provider.internal.jar",
+          Base64.getMimeEncoder()
+              .encode(Files.readAllBytes(Paths.get("tmp", "com.oracle.weblogic.management.provider.internal.jar"))));
+    });
+
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .name("patchJar")
+        .namespace(namespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .binaryData(binaryData)
+        .metadata(meta);
+
+    assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Failed to create configmap %s with files", configMap));
+  }
+  
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
    * Create a configmap containing WLST script and property file.
