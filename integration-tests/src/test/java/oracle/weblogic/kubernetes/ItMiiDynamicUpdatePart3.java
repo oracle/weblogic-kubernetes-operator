@@ -260,7 +260,10 @@ class ItMiiDynamicUpdatePart3 {
     if (!WEBLOGIC_SLIM) {
       assertTrue(operatorPodLog.contains("Version check passed"));
     }
-    assertTrue(operatorPodLog.contains(domainUid + " introspect job failed"));
+    String expectedMsg = "The domain " + domainUid + " introspect job failed";
+
+    assertTrue(operatorPodLog.contains(expectedMsg), "Can't find expected msg "
+            + expectedMsg + " in the operator log");
     assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
 
