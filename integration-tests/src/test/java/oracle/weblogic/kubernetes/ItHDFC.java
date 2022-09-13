@@ -501,7 +501,6 @@ class ItHDFC {
   }
 
   private static void createPatchJarConfigMap(String namespace) {
-    Map<String, String> data = new HashMap<>();
     Map<String, byte[]> binaryData = new HashMap<>();
     assertDoesNotThrow(() -> {
       binaryData.put("com.oracle.weblogic.management.provider.internal.jar",
@@ -513,7 +512,6 @@ class ItHDFC {
         .name("patchjar")
         .namespace(namespace);
     V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
         .binaryData(binaryData)
         .metadata(meta);
 
