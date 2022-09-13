@@ -275,7 +275,7 @@ class ItHDFC {
     String clusterBaseName = "sdcluster";
     int replicaCount = 2;
 
-    for (int j = 1; j < 15; j++) {
+    for (int j = 1; j <= 15; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "ms";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
