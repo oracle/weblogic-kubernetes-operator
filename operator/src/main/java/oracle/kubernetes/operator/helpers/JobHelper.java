@@ -78,6 +78,8 @@ public class JobHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   public static final String INTROSPECTOR_LOG_PREFIX = "Introspector Job Log: ";
   private static final String EOL_PATTERN = "\\r?\\n";
+  public static final String UNABLE_TO_RETRIEVE_CONTAINER_LOGS_FOR_CONTAINER =
+      "unable to retrieve container logs for container";
 
   private JobHelper() {
   }
@@ -539,6 +541,7 @@ public class JobHelper {
 
       private void processIntrospectionResult(Packet packet, String result) {
         LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
+        LOGGER.info("DEBUG: +++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
         convertJobLogsToOperatorLogs(result);
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
         MakeRightDomainOperation.recordInspection(packet);
@@ -586,6 +589,9 @@ public class JobHelper {
           if (line.startsWith("@[")) {
             logToOperator();
             logMessage = new StringBuilder(INTROSPECTOR_LOG_PREFIX).append(line.trim());
+          } else if (line.startsWith(UNABLE_TO_RETRIEVE_CONTAINER_LOGS_FOR_CONTAINER)) {
+            logToOperator();
+            logMessage = new StringBuilder(INTROSPECTOR_LOG_PREFIX).append("[SEVERE] " + line.trim());
           } else if (logMessage.length() > 0) {
             logMessage.append(System.lineSeparator()).append(line.trim());
           }

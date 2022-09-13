@@ -109,6 +109,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
+import static oracle.kubernetes.operator.helpers.JobHelper.UNABLE_TO_RETRIEVE_CONTAINER_LOGS_FOR_CONTAINER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasLegacyAuxiliaryImageInitContainer;
@@ -702,6 +703,17 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
+  void whenNewFailedJobExistsAndUnableToReadContainerLogs_reportFailure() {
+    ignoreIntrospectorFailureLogs();
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithUnableToReadContainerLogs();
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(getUpdatedDomain(), hasCondition(FAILED));
+  }
+
+  @Test
   void whenNewJobSucceededOnFailedDomain_clearFailedCondition() {
     consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
@@ -721,6 +733,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private void defineFailedIntrospection() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, SEVERE_MESSAGE);
+  }
+
+  private void defineFailedIntrospectionWithUnableToReadContainerLogs() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        UNABLE_TO_RETRIEVE_CONTAINER_LOGS_FOR_CONTAINER + " containerd://9295e63");
   }
 
   private void defineFailedFluentdContainerInIntrospection() {
