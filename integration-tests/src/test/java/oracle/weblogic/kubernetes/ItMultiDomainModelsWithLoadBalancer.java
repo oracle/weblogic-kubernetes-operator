@@ -495,7 +495,7 @@ class ItMultiDomainModelsWithLoadBalancer {
           checkSampleAppReady(domainUid, domainNamespace, serverNamePrefix + i),
           logger,
           "sample app is accessible from server {0} in namespace {1}",
-          serverNamePrefix + i, 
+          serverNamePrefix + i,
           domainNamespace);
     }
 
@@ -1254,11 +1254,11 @@ class ItMultiDomainModelsWithLoadBalancer {
 
   private Callable<Boolean> checkSampleAppReady(String domainUid, String domainNamespace, String serverName) {
     return () -> {
-      String curlCmd1 = "curl http://" + serverName + ":" + MANAGED_SERVER_PORT + "/sample-war/index.jsp";
+      String curlCmd = String.format("curl http://%s:%s/sample-war/index.jsp", serverName, MANAGED_SERVER_PORT);
       String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
       ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
-          true, "/bin/sh", "-c", curlCmd1),
-          String.format("Failed to execute curl command %s in pod %s namespace %s", curlCmd1,
+          true, "/bin/sh", "-c", curlCmd),
+          String.format("Failed to execute curl command %s from pod %s in namespace %s", curlCmd,
               adminServerPodName, domainNamespace));
       return execResult.stdout().contains(serverName.substring(domainUid.length() + 1));
     };
