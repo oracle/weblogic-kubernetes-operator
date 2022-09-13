@@ -583,6 +583,8 @@ public class JobHelper {
       //  - assumes any lines that don't start with '@[' are part
       //    of the previous log message
       //  - ignores all lines in the log up to the first line that starts with '@['
+      //  - The case where the introspector job log message starts with
+      //    "unable to retrieve container log" is treated as a SEVERE error.
       private void convertJobLogsToOperatorLogs(String jobLogs) {
         for (String line : jobLogs.split(EOL_PATTERN)) {
           if (line.startsWith("@[")) {
