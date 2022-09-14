@@ -5,9 +5,44 @@
 set -eu
 set -o pipefail
 
-DOMAIN_UID="sample-domain1"
-DOMAIN_NAMESPACE="sample-domain1-ns"
-timeout_secs=1000
+timestamp() {
+  date --utc '+%Y-%m-%dT%H:%M:%S'
+}
+
+tempfile() {
+  mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
+}
+
+trace() {
+  echo "@@ [$(timestamp)][seconds=$SECONDS]" "$@"
+}
+
+tracen() {
+  echo -n "@@ [$(timestamp)][seconds=$SECONDS]" "$@"
+}
+
+syntaxError() {
+  trace "Syntax Error: \"${1:-}\". Pass '-?' for usage."
+  exit 1
+}
+
+initGlobals() {
+  DOMAIN_UID_DEFAULT="sample-domain1"
+  DOMAIN_NAMESPACE_DEFAULT="sample-domain1-ns"
+  timeout_secs_default=1000
+
+  expected=0
+  verbose=true
+  ignore_failures=false
+  report_interval=120
+  timeout_secs=$timeout_secs_default
+  DOMAIN_UID=$DOMAIN_UID_DEFAULT
+  DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE_DEFAULT
+
+  tmpfileorig=$(tempfile)
+  tmpfilecur=$(tempfile)
+  trap "rm -f $tmpfileorig $tmpfilecur" EXIT
+}
 
 usage() {
 
@@ -16,27 +51,32 @@ usage() {
   Usage:
 
     $(basename $0) [-n mynamespace] [-d mydomainuid] \\
-       [-p 0|Completed] [-t timeout_secs] [-q]
+       [-p 0|Completed] [-t timeout_secs] [-q] [-i]
 
   Description:
 
-    This utility script exits successfully when a domain UID
-    has reached zero pods (the default), or when the
-    domain resource status 'Completed' condition is True.
+    This utility script exits successfully either:
+    - When a domain UID has reached zero pods (the '-p 0' default).
+    - Or when the domain resource status 'Completed' condition is True
+      and all domain and cluster resources are fully up-to-date
+      (the '-p Completed' option).
 
-    A domain resource is completed when exactly the expected
-    number of WebLogic Server pods reach a 'ready' state
-    and have 'restartVersion', 'introspectVersion',
-    'spec.image', and 'spec.configuration.model.auxiliaryImages.image'
-    values that match their corresponding values in their domain resource.
-    If the Completed condition state expects the number of pods to be zero,
-    such as when 'domain.spec.serverStartPolicy' is set to 'Never',
-    then the '-p Completed' option exits successfully when all pods for
-    the given domain have exited.
+    In detail, the '-p Completed' Completed condition and
+    up-to-date checks require:
+    - Exactly the expected number of WebLogic Server pods reach a 'ready'
+      state and have 'restartVersion', 'introspectVersion',
+      'spec.image', and 'spec.configuration.model.auxiliaryImages.image'
+      values that match their corresponding values in their domain resource.
+    - The 'metadata.generation' matches 'status.observedGeneration'
+      for the domain resource and each cluster resource.
+    - If the Completed condition state expects the number of pods to be zero,
+      such as when 'domain.spec.serverStartPolicy' is set to 'Never',
+      then the '-p Completed' option exits successfully when all pods for
+      the given domain have exited.
 
     This script exits non-zero if:
     - A configurable timeout is reached before the target pod count
-      is reached (default $timeout_secs seconds).
+      is reached (default $timeout_secs_default seconds).
     - The '-p Completed' option is specified and the specified domain
       cannot be found.
     - When the domain resource '.apiVersion' is less than 9.
@@ -44,12 +84,12 @@ usage() {
 
   Parameters:
 
-    -d <domain_uid> : WKO Domain UID. Defaults to '$DOMAIN_UID'.
+    -d <domain_uid> : WKO Domain UID. Defaults to '$DOMAIN_UID_DEFAULT'.
 
     -n <namespace>  : Kubernetes namespace.
-                      Defaults to '$DOMAIN_NAMESPACE'.
+                      Defaults to '$DOMAIN_NAMESPACE_DEFAULT'.
 
-    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs'.
+    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_default'.
 
     -p 0            : Expect no pods. This works even when the
                       domain resource is deleted. The default.
@@ -66,81 +106,56 @@ usage() {
 EOF
 }
 
-timestamp() {
-  date --utc '+%Y-%m-%dT%H:%M:%S'
-}
+processCommandLine() {
+  while [ ! "${1:-}" = "" ]; do
 
-trace() {
-  echo "@@ [$(timestamp)][seconds=$SECONDS]" "$@"
-}
+    key="${1}"
+    val="${2:-}"
 
-tracen() {
-  echo -n "@@ [$(timestamp)][seconds=$SECONDS]" "$@"
-}
+    case "$key" in
+      -q|-i|'-?') 
+         shift
+         ;;
 
+      -n|-d|-t|-p)
+         [ "$val" = "" ] && syntaxError "$key is missing an argument"
+         shift
+         shift
+         ;;
 
-syntaxError() {
-  trace "Syntax Error: \"${1:-}\". Pass '-?' for usage."
-  exit 1
-}
+      *) syntaxError "unrecognized argument '$key'" ;;
+    esac
 
-expected=0
-verbose=true
-ignore_failures=false
-report_interval=120
+    case "$key" in
+      -n) DOMAIN_NAMESPACE="${val}" ;;
 
-while [ ! "${1:-}" = "" ]; do
+      -d) DOMAIN_UID="${val}" ;;
 
-  key="${1}"
-  val="${2:-}"
+      -t) timeout_secs="${val}"
+          case "${val}" in
+            ''|*[!0-9]*) syntaxError "-t requires a positive integer but got '${val}'" ;;
+          esac
+          ;;
 
-  case "$key" in
-    -q|-i|'-?') 
-       shift
-       ;;
+      -p) case "$val" in
+            0|none) expected='0' ;;
+            completed|Completed|COMPLETED) expected='Completed' ;;
+            *) syntaxError '-p requires value "0" or "Completed"' ;;
+          esac
+          ;;
 
-    -n|-d|-t|-p)
-       [ "$val" = "" ] && syntaxError "$key is missing an argument"
-       shift
-       shift
-       ;;
+      -q) verbose=false
+          report_interval=30
+          ;;
 
-    *) syntaxError "unrecognized argument '$key'" ;;
-  esac
+      -i) ignore_failures=true
+          ;;
 
-  case "$key" in
-    -n) DOMAIN_NAMESPACE="${val}" ;;
-
-    -d) DOMAIN_UID="${val}" ;;
-
-    -t) timeout_secs="${val}"
-        case "${val}" in
-          ''|*[!0-9]*) syntaxError "-t requires a positive integer but got '${val}'" ;;
-        esac
-        ;;
-
-    -p) case "$val" in
-          0|none) expected='0' ;;
-          completed|Completed|COMPLETED) expected='Completed' ;;
-          *) syntaxError '-p requires value "0" or "Completed"' ;;
-        esac
-        ;;
-
-    -q) verbose=false
-        report_interval=30
-        ;;
-
-    -i) ignore_failures=true
-        ;;
-
-    '-?') usage
-        exit 0
-        ;;
-  esac
-done
-
-tempfile() {
-  mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
+      '-?') usage
+          exit 0
+          ;;
+    esac
+  done
 }
 
 sortlist() {
@@ -291,6 +306,7 @@ getDomainInfo() {
 
   clusters=$( echo "$clusters" | sed 's/"name"//g' | tr -d '[]{}:' | sortlist | sed 's/,/ /') # convert to sorted space separated list
 
+  # gather observed and goal generation for each cluster:
   cl_observed_generations=""
   cl_goal_generations=""
   local lgen
@@ -305,11 +321,7 @@ getDomainInfo() {
     cl_goal_generations="$cl_goal_generations $lgen"
   done
 
-  for cl in $clusters EOL; do
-    [ "$cl" = "EOL" ] && break
-  done
-
-  # Get goal generation last in case gen changed while checking the above...
+  # Get domain goal generation last in case gen changed while checking the above...
   getDomainValue    goal_generation        ".metadata.generation"
 
   all_goals_current="${goal_RV_current}
@@ -364,10 +376,8 @@ getPodInfo() {
 }
 
 # report timeout setting, criteria, generation, observedGeneration, Failed state, and Completed state
+# this information is gathered by 'getDomainInfo' and 'processCommandLine'
 reportBasics() {
-  local lead_string
-  local criteria
-  local criterion
   if [ "$expected" = "0" ]; then
     trace "Info: Waiting up to $timeout_secs seconds for there to be no (0) WebLogic Server pods that match the following criteria:"
     trace "Info:   namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
@@ -390,197 +400,199 @@ reportBasics() {
     trace "Info:     cluster.status.observedGeneration(s)='$cl_observed_generations'"
     trace "Info: Completed='$condition_completed'"
   fi
-  echo
   trace "Info: Failure conditions (if any): '${condition_failed_str}'."
+  echo
 }
 
-tmpfileorig=$(tempfile)
-tmpfilecur=$(tempfile)
+main() {
+  local pod_count=0
+  local reported="false"
+  local last_report_secs=$SECONDS
+  local all_goals_orig="--not-known--"
+  local is_done="false"
 
-trap "rm -f $tmpfileorig $tmpfilecur" EXIT
+  # Loop until we reach the desired pod count for pods at the desired restart version,
+  # introspect version, and image -- or until we reach the timeout.
 
-pod_count=0
-reported="false"
-last_report_secs=$SECONDS
-all_goals_orig="--not-known--"
+  while [ 1 -eq 1 ]; do
 
+    # Populate info about current domain into globals.
+    #   If any gets fail then the following implicitly occurs:
+    #   - we assume that the domain resource was not found
+    #   - silently set the global to "" when expected = '0'
+    #   - "exit 1" and report an error when expected = 'Completed'
 
-# Loop until we reach the desired pod count for pods at the desired restart version,
-# introspect version, and image -- or until we reach the timeout.
+    getDomainInfo
 
-while [ 1 -eq 1 ]; do
+    #
+    # This script only works in v9+, so let's check the 'api_version' global
+    #
 
-  # Populate info about current domain into globals.
-  #   If any gets fail then the following implicitly occurs:
-  #   - we assume that the domain resource was not found
-  #   - silently set the global to "" when expected = '0'
-  #   - "exit 1" and report an error when expected = 'Completed'
+    local version_str=${api_version:-weblogic.oracle/v9}  # if domain resource is missing, api_version is blank
+    local version_num=$(echo "$version_str" | sed 's/[^0-9]//g')
+    if [ $version_num -lt 9 ]; then
+      trace "Error: Unexpected domain resource '.apiVersion' of '$api_version'. Expected version 9 or higher."
+      exit 1
+    fi
 
-  getDomainInfo
+    #
+    # Force new reporting for the rare case where the domain unexpectedly changes while we're looping
+    #
 
-  #
-  # This script only works in v9+, so let's check the 'api_version' global
-  #
+    if [ ! "$all_goals_orig" = "$all_goals_current" ]
+    then
+      [ "$reported" = "true" ] && echo
+      reported="false"
+      all_goals_orig="$all_goals_current"
+    fi
 
-  version_str=${api_version:-weblogic.oracle/v9}  # if domain resource is missing, api_version is blank
-  version_num=$(echo "$version_str" | sed 's/[^0-9]//g')
-  if [ $version_num -lt 9 ]; then
-    trace "Error: Unexpected domain resource '.apiVersion' of '$api_version'. Expected version 9 or higher."
-    exit 1
-  fi
+    # Get the current number of pods that match target criteria and also
+    # determine if we have reached our goal.
+    #
+    #   If expected = 'Completed'
+    #    - get the number of ready pods that match the target image, restart version, etc.
+    #    - we have reached our goal if the Completed condition is true
+    #      AND .metadata.generation equals .status.conditions.observedGeneration
+    #
+    #   If expected = '0'
+    #    - get the current number of pods regardless of their
+    #      restart version, introspect version, image, etc.
+    #    - we have reached our goal if the pod count is 0
+    #
 
-  #
-  # Force new reporting for the rare case where the domain unexpectedly changes while we're looping
-  #
+    is_done="false"
 
-  if [ ! "$all_goals_orig" = "$all_goals_current" ]
-  then
-    [ "$reported" = "true" ] && echo
-    reported="false"
-    all_goals_orig="$all_goals_current"
-  fi
+    if [ "$expected" = "0" ]; then
 
-  # Get the current number of pods that match target criteria and also
-  # determine if we have reached our goal.
-  #
-  #   If expected = 'Completed'
-  #    - get the number of ready pods that match the target image, restart version, etc.
-  #    - we have reached our goal if the Completed condition is true
-  #      AND .metadata.generation equals .status.conditions.observedGeneration
-  #
-  #   If expected = '0'
-  #    - get the current number of pods regardless of their
-  #      restart version, introspect version, image, etc.
-  #    - we have reached our goal if the pod count is 0
-  #
+      pod_count=$( getPodInfo | wc -l )
 
-  is_done="false"
+      [ $pod_count -eq 0 ] && is_done="true"
 
-  if [ "$expected" = "0" ]; then
+    else
 
-    pod_count=$( getPodInfo | wc -l )
+      # NOTE: this regex must correspond with the jpath in the 'getPodInfo' function
+      local regex="domainRestartVersion=;$goal_RV_current;"
+      regex+=" introspectVersion=;$goal_IV_current;"
+      regex+=" image=;$goal_image_current;"
+      regex+=" aiimages=;$goal_aiimages_current;"
+      regex+=" ready=;true;"
 
-    [ $pod_count -eq 0 ] && is_done="true"
+      set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
+      pod_count=$( getPodInfo | grep "$regex" | wc -l )
+      set -e
 
-  else
-
-    # NOTE: this regex must correspond with the jpath in the 'getPodInfo' function
-    regex="domainRestartVersion=;$goal_RV_current;"
-    regex+=" introspectVersion=;$goal_IV_current;"
-    regex+=" image=;$goal_image_current;"
-    regex+=" aiimages=;$goal_aiimages_current;"
-    regex+=" ready=;true;"
-
-    set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
-    pod_count=$( getPodInfo | grep "$regex" | wc -l )
-    set -e
-
-    [ "$condition_completed" = "True" ] \
-      && [ "$goal_generation" = "$observed_generation" ] \
-      && [ "$cl_goal_generations" = "$cl_observed_generations" ] \
-      && is_done="true"
-
-  fi
-
-  #
-  # Report the current state to stdout.
-  #
-
-  if [ "$verbose" = "false" ]; then
-
-    # "quiet" reporting:
-    # - show the goal criteria once plus any time they happen to change
-    # - append the count of matching pods to a single line "... = 3 3 2" when it changes
-    #   or when a report_interval has passed
-
-    if [ "$reported" = "false" ]; then
-
-      reportBasics # report goal 'lead_string' and criteria, generation, Failed state, and Completed state
-
-      tracen "Info: Current pods that match the above criteria ="
-      echo -n " $pod_count"
-      reported="true"
-      last_report_secs=$SECONDS
-
-    elif [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
-         || [ "$is_done" = "true" ]; then
-
-      echo -n " $pod_count"
-      last_report_secs=$SECONDS
+      [ "$condition_completed" = "True" ] \
+        && [ "$goal_generation" = "$observed_generation" ] \
+        && [ "$cl_goal_generations" = "$cl_observed_generations" ] \
+        && is_done="true"
 
     fi
-  else
 
-    # verbose reporting:
-    # - show the goal criteria
-    # - show the state of each pod in table form
-    # - output above again when any pod state changes or 'report_interval' is exceeded
+    #
+    # Report the current state to stdout.
+    #
 
-    getPodInfo > $tmpfilecur
+    if [ "$verbose" = "false" ]; then
 
-    set +e
-    diff -q $tmpfilecur $tmpfileorig 2>&1 > /dev/null
-    diff_res=$?
-    set -e
-    if [ $diff_res -ne 0 ] \
-       || [ "$reported" = "false" ] \
-       || [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
-       || [ "$is_done" = "true" ]; then
+      # "quiet" reporting:
+      # - show the goal criteria once plus any time they happen to change
+      # - append the count of matching pods to a single line "... = 3 3 2" when it changes
+      #   or when a report_interval has passed
 
       if [ "$reported" = "false" ]; then
-        echo
-        reportBasics # report goal 'lead_string' and criteria, generation, Failed state, and Completed state
-        echo
+
+        reportBasics # report goal criteria, generation, Failed state, and Completed state
+
+        tracen "Info: Current pods that match the above criteria ="
+        echo -n " $pod_count"
         reported="true"
+        last_report_secs=$SECONDS
+
+      elif [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
+           || [ "$is_done" = "true" ]; then
+
+        echo -n " $pod_count"
+        last_report_secs=$SECONDS
+
       fi
+    else
 
-      trace "Info: '$pod_count' WebLogic Server pods currently match all criteria."
-      trace "Info: Introspector and WebLogic Server pods with same namespace and domain-uid:"
-      echo
+      # verbose reporting:
+      # - show the goal criteria
+      # - show the state of each pod in table form
+      # - output above again when any pod state changes or 'report_interval' is exceeded
 
-      # print results as a table
-      #  - first strip out the var= and replace with "val".
-      #  - note that the quotes are necessary so that 'print_table'
-      #    doesn't get confused by col entries that are missing values
-      (
-        # column headers must line up with the jpath in getPodInfo
-        echo "NAME RVER IVER IMAGE AIIMAGES READY PHASE"
-        echo "---- ---- ---- ----- -------- ----- -----"
-        cat $tmpfilecur | sed "s|[^ ]*=;\([^;]*\);|'\1'|g"
-      ) | column -t
-      echo
+      getPodInfo > $tmpfilecur
 
-      cp $tmpfilecur $tmpfileorig
-      last_report_secs=$SECONDS
+      set +e
+      diff -q $tmpfilecur $tmpfileorig 2>&1 > /dev/null
+      diff_res=$?
+      set -e
+      if [ $diff_res -ne 0 ] \
+         || [ "$reported" = "false" ] \
+         || [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
+         || [ "$is_done" = "true" ]; then
+
+        if [ "$reported" = "false" ]; then
+          echo
+          reportBasics # report goal and criteria, generation, Failed state, and Completed state
+          echo
+          reported="true"
+        fi
+
+        trace "Info: '$pod_count' WebLogic Server pods currently match all criteria."
+        trace "Info: Introspector and WebLogic Server pods with same namespace and domain-uid:"
+        echo
+
+        # print results as a table
+        #  - first strip out the var= and replace with "val".
+        #  - note that the quotes are necessary so that 'print_table'
+        #    doesn't get confused by col entries that are missing values
+        (
+          # column headers must line up with the jpath in getPodInfo
+          echo "NAME RVER IVER IMAGE AIIMAGES READY PHASE"
+          echo "---- ---- ---- ----- -------- ----- -----"
+          cat $tmpfilecur | sed "s|[^ ]*=;\([^;]*\);|'\1'|g"
+        ) | column -t
+        echo
+
+        cp $tmpfilecur $tmpfileorig
+        last_report_secs=$SECONDS
+      fi
     fi
-  fi
 
-  #
-  # Exit 1 if domain resource is reporting a failure and "ignore_failures" is "false" (the default)
-  #
-  if [ "${ignore_failures}" = "false" ] && [ ! -z "${condition_failed_str}" ]; then
-    echo
-    trace "Error: The domain resource has a failure condition: '${condition_failed_str}'. If you want this script to ignore failure conditions and keep trying regardless, then specify '-i' on the commmand line."
-    exit 1
-  fi
+    #
+    # Exit 1 if domain resource is reporting a failure and "ignore_failures" is "false" (the default)
+    #
+    if [ "${ignore_failures}" = "false" ] && [ ! -z "${condition_failed_str}" ]; then
+      echo
+      trace "Error: The domain resource has a failure condition: '${condition_failed_str}'. If you want this script to ignore failure conditions and keep trying regardless, then specify '-i' on the commmand line."
+      exit 1
+    fi
 
-  #
-  # Exit 0 if we've reached our goal
-  #
-  if [ "$is_done" = "true" ]; then
-    echo
-    trace "Info: Success!"
-    exit 0
-  fi
+    #
+    # Exit 0 if we've reached our goal
+    #
+    if [ "$is_done" = "true" ]; then
+      echo
+      trace "Info: Success!"
+      exit 0
+    fi
 
-  #
-  # Exit 1 if too much time has passed.
-  #
-  if [ $SECONDS -ge $timeout_secs ]; then
-    echo
-    trace "Error: Timeout after waiting more than $timeout_secs seconds."
-    exit 1
-  fi
+    #
+    # Exit 1 if too much time has passed.
+    #
+    if [ $SECONDS -ge $timeout_secs ]; then
+      echo
+      reportBasics
+      trace "Error: Timeout after waiting more than $timeout_secs seconds."
+      exit 1
+    fi
 
-  sleep 1
-done
+    sleep 1
+  done
+}
+
+initGlobals
+processCommandLine "${@}"
+main
