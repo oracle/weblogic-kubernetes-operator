@@ -375,11 +375,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
         if (callResponse.getResult() == null || callback.didResumeFiber()) {
           callback.proceedFromWait(callResponse.getResult());
-          LOGGER.info("DEBUG: In WaitForDeleteResponseStep.. next step is " + getNext() + ", returning null.");
           return null;
         } else {
-          LOGGER.info("DEBUG: In WaitForDeleteResponseStep.. delaying since pod not deleted. res -> "
-              + callResponse.getResult());
           return doDelay(createReadAndIfReadyCheckStep(callback), packet,
               getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
         }
