@@ -92,6 +92,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("Test to validate on-prem to k8s use case")
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
 @IntegrationTest
@@ -414,7 +415,7 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(filePath,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
       replaceStringInFile(filePath,
-          "\\{\\{\\{domainHome\\}\\}\\}", "/u01/domains/" + domainUid);
+          "\\{\\{\\{domainHome\\}\\}\\}", "/u01/" + domainNamespace + "/domains/" + domainUid);
       replaceStringInFile(filePath,
           "\\{\\{\\{domainHomeSourceType\\}\\}\\}", "FromModel");
       replaceStringInFile(filePath,

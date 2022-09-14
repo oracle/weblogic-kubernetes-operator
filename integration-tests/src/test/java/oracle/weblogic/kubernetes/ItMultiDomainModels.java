@@ -27,12 +27,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.impl.Domain.scaleAllClusters;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-// import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
@@ -148,7 +147,7 @@ class ItMultiDomainModels {
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers);
-    assertDoesNotThrow(() -> scaleAllClusters(domainUid,domainNamespace,
+    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
         numberOfServers), "Could not scale up the cluster");
     // check managed server pods are ready
     for (int i = 1; i <= numberOfServers; i++) {
@@ -164,9 +163,9 @@ class ItMultiDomainModels {
 
          "Dynamic managed server pod must not be restated");
     // then scale cluster back to 1 server
-    logger.info("Scaling bacck cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+    logger.info("Scaling back cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
-    assertDoesNotThrow(() -> scaleAllClusters(domainUid,domainNamespace,
+    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
         replicaCount), "Could not scale down the cluster");
     for (int i = (replicaCount + 1); i <= numberOfServers; i++) {
       logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",

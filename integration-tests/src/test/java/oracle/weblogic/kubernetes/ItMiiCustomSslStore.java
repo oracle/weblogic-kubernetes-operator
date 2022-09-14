@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -36,6 +37,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -64,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test verifies usage of CustomIdentityCustomTrust on PV")
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 @Tag("okd-wls-mrg")
 
 @IntegrationTest
@@ -124,9 +127,19 @@ class ItMiiCustomSslStore {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     String configMapName = "mii-ssl-configmap";
+    // Copy the model file to RESULTS_ROOT
+    assertDoesNotThrow(() -> java.nio.file.Files.copy(
+                    Paths.get(MODEL_DIR, "mii.ssl.yaml"),
+                    Paths.get(RESULTS_ROOT, "mii.ssl.yaml"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING),
+            "Copy mii.ssl.yaml to RESULTS_ROOT failed");
+    assertDoesNotThrow(() ->
+              replaceStringInFile(get(RESULTS_ROOT, "mii.ssl.yaml").toString(),
+                      "/shared/", "/shared/" + domainNamespace + "/" + domainUid + "/"));
+
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/mii.ssl.yaml"));
+        Arrays.asList(RESULTS_ROOT + "/mii.ssl.yaml"));
 
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace);
@@ -154,15 +167,16 @@ class ItMiiCustomSslStore {
 
     // Generate JKS Keystore using openssl before
     // managed server services and pods are ready
+    String uniquePath = "/shared/" + domainNamespace + "/" + domainUid;
     generateJksStores();
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "IdentityKeyStore.jks"),
-        Paths.get("/shared/IdentityKeyStore.jks")));
+        Paths.get(uniquePath + "/IdentityKeyStore.jks")));
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "TrustKeyStore.jks"),
-        Paths.get("/shared/TrustKeyStore.jks")));
+        Paths.get(uniquePath + "/TrustKeyStore.jks")));
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
@@ -202,7 +216,8 @@ class ItMiiCustomSslStore {
 
     StringBuffer extOpts = new StringBuffer("");
     extOpts.append("-Dweblogic.security.SSL.ignoreHostnameVerification=true ");
-    extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/TrustKeyStore.jks ");
+    extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/"
+            + domainNamespace + "/" + domainUid + "/TrustKeyStore.jks ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStorePassPhrase=changeit ");
     testUntil(
         runClientInsidePod(adminServerPodName, domainNamespace,

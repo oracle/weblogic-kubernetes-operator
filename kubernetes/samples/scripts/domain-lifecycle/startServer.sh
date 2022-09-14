@@ -154,7 +154,17 @@ if [ "${isValidServer}" != 'true' ]; then
   exit 1
 fi
 
-getClusterPolicy "${domainJson}" "${clusterName}" clusterPolicy
+if [ -n "${clusterName}" ]; then
+  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${clusterJson}" ]; then
+    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+    exit 1
+  fi
+fi
+
+getClusterPolicy "${clusterJson}" clusterPolicy
 if [ "${clusterPolicy}" == 'Never' ]; then
   printError "Cannot start server '${serverName}', the server's parent cluster '.spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' in the domain resource is set to 'Never'."
   exit 1
@@ -166,7 +176,7 @@ if [ "${domainPolicy}" == 'Never' ] || [[ "${domainPolicy}" == 'AdminOnly' && "$
   exit 1
 fi
 
-getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+getEffectivePolicy "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
     if [[ "${effectivePolicy}" == "IfNeeded" || "${effectivePolicy}" == "Always" ]]; then
@@ -176,14 +186,6 @@ if [ "${isAdminServer}" == 'true' ]; then
 fi
 
 if [ -n "${clusterName}" ]; then
-  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
-
-  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
-  if [ -z "${clusterJson}" ]; then
-    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
-    exit 1
-  fi
-
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ ${effectivePolicy} == "IfNeeded" && ${serverStarted} == "true" ]]; then
@@ -214,7 +216,7 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   if [[ -n ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count ${replicaCount}."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   elif [[ -z ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Start policy is not set, server starts by increasing replicas based on effective policy, increment replicas
     printInfo "Updating replica count for cluster '${clusterName}' to ${replicaCount}."
@@ -232,7 +234,7 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   if [[ "${effectivePolicy}" == "Never" && ${startsByPolicyUnset} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
-    createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   else
     # Patch server policy to always
     printInfo "Patching start policy for '${serverName}' to 'Always'."
@@ -244,7 +246,7 @@ elif [ "${isAdminServer}" == 'true' ]; then
 else
   # Server is an independent managed server
   printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
-  createPatchJsonToUnsetPolicy "${domainJson}" "${clusterJson}" "${serverName}" patchJson
+  createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
 fi
 
 if [ ! -z "${incrementReplicaPatch}" ]; then

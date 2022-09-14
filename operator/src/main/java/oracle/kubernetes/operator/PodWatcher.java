@@ -199,7 +199,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new CallBuilder().readPodAsync(name, namespace, domainUid, responseStep);
     }
 
-    protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
+    protected ResponseStep<V1Pod> resumeIfReady(Callback callback) {
       return new DefaultResponseStep<>(getNext()) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
@@ -325,6 +325,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     @Override
+    protected ResponseStep<V1Pod> resumeIfReady(Callback callback) {
+      return new WaitForDeleteResponseStep(callback);
+    }
+
+    @Override
     protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
       return false;
     }
@@ -355,6 +360,27 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     @Override
     protected void removeCallback(String podName, Consumer<V1Pod> callback) {
       removeOnDeleteCallback(podName, callback);
+    }
+
+    private class WaitForDeleteResponseStep extends DefaultResponseStep<V1Pod> {
+
+      private final WaitForReadyStep<V1Pod>.Callback callback;
+
+      WaitForDeleteResponseStep(Callback callback) {
+        super(WaitForPodDeleteStep.this.getNext());
+        this.callback = callback;
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+        if (callResponse.getResult() == null || callback.didResumeFiber()) {
+          callback.proceedFromWait(callResponse.getResult());
+          return doNext(packet);
+        } else {
+          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+              getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        }
+      }
     }
   }
 }

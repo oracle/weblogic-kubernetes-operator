@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.removeReplicasSettingAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -132,6 +133,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 @Tag("okd-wls-srg")
 @IntegrationTest
 @Tag("olcne")
@@ -415,17 +417,20 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsScalePastMaxAndChangeIntrospectVersion() {
     OffsetDateTime timestamp = now();
     try {
-      logger.info("Scaling cluster using patching");
+      removeReplicasSettingAndVerify(domainUid, cluster1Name, domainNamespace3, replicaCount,
+          managedServerPodNamePrefix);
+
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
-      assertFalse(scaleCluster(clusterRes1Name, domainNamespace3, 3), "failed to scale cluster via patching");
       String patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
           + "]";
 
       logger.info("Updating introspect version  using patch string: {0}",  patchStr);
-      assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
-              V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+
 
       logger.info("verify the Failed event is generated");
       checkFailedEvent(opNamespace, domainNamespace3, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);

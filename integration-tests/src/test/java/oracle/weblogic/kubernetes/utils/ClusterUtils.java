@@ -21,6 +21,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomR
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -158,5 +159,26 @@ public class ClusterUtils {
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     return domain;
+  }
+
+  /**
+   * Remove the replicas setting from a cluster resource.
+   *  @param domainUid uid of the domain
+   * @param clusterName name of the cluster resource
+   * @param namespace namespace
+   * @param replicaCount original replicaCount
+   * @param msPodNamePrefix prefix of managed server pod names
+   * */
+  public static void removeReplicasSettingAndVerify(String domainUid, String clusterName, String namespace,
+                                                    int replicaCount, String msPodNamePrefix) {
+    getLogger().info("Remove replicas setting from cluster resource {0} in namespace {1}", clusterName, namespace);
+    String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/replicas\"}]";
+    assertTrue(patchClusterCustomResource(clusterName, namespace, new V1Patch(patchStr),
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster resource failed");
+
+    // verify there is no pod created larger than max size of cluster
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(msPodNamePrefix + i, domainUid, namespace);
+    }
   }
 }

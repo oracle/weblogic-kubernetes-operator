@@ -34,6 +34,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
@@ -75,6 +77,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -109,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 class ItTwoDomainsManagedByTwoOperators {
 
@@ -458,9 +462,10 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   private void scaleDomain1AndVerifyNoImpactOnDomain2() {
     // scale domain1
+    String clusterResName = domain1Uid + "-" + clusterName;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain1Uid, domain1Namespace, replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
+        clusterResName, domain1Uid, domain1Namespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterResName, domain1Uid, domain1Namespace,
         domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
@@ -681,6 +686,17 @@ class ItTwoDomainsManagedByTwoOperators {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort)))));
+
+    // add cluster to the domain
+    String clusterResName = domainUid + "-" + clusterName;
+    ClusterResource cluster = createClusterResource(clusterResName, domainNamespace,
+        new ClusterSpec().withClusterName(clusterName).replicas(replicaCount));
+    getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+
     setPodAntiAffinity(domain);
     return domain;
   }
@@ -691,16 +707,17 @@ class ItTwoDomainsManagedByTwoOperators {
   private void scaleDomain2AndVerifyNoImpactOnDomain1() {
     // scale domain2 from 2 servers to 3 servers
     replicasAfterScale = 3;
+    String clusterResName = domain2Uid + "-" + clusterName;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain2Uid, twoDomainsNamespace, replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domain2Uid, twoDomainsNamespace,
+        clusterResName, domain2Uid, twoDomainsNamespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterResName, domain2Uid, twoDomainsNamespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
     // scale domain2 from 3 servers to 2 servers
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain2Uid, twoDomainsNamespace, replicaCount);
-    scaleAndVerifyCluster(clusterName, domain2Uid, twoDomainsNamespace,
+        clusterResName, domain2Uid, twoDomainsNamespace, replicaCount);
+    scaleAndVerifyCluster(clusterResName, domain2Uid, twoDomainsNamespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicasAfterScale, replicaCount,
         null, null);
 
