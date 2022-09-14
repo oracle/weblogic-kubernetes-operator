@@ -25,7 +25,6 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.Matchers;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -397,7 +396,7 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     }
   }
 
-  @Ignore
+  @Test
   void whenPodNotFound_waitForDeleteDoesNotRecordKubernetesFailure() {
     final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     final AtomicBoolean stopping = new AtomicBoolean(false);
