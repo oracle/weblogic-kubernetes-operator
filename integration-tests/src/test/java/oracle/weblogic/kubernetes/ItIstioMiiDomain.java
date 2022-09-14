@@ -191,7 +191,6 @@ class ItIstioMiiDomain {
                                       encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
                               configMapName);
-
     domain = createClusterResourceAndAddReferenceToDomain(
         domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 

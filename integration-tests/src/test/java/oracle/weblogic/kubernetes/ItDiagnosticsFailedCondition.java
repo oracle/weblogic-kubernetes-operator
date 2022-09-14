@@ -715,6 +715,9 @@ class ItDiagnosticsFailedCondition {
           replicaCount,
           fmwMiiImage,
           5L);
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
       domain = createClusterResourceAndAddReferenceToDomain(
           clusterResName, clusterName, domainNamespace, domain, replicaCount);
@@ -831,7 +834,7 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
-    
+
     ClusterResource cluster = createClusterResource(clusterResName,
         clusterName, domNamespace, replicaCount);
     logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);

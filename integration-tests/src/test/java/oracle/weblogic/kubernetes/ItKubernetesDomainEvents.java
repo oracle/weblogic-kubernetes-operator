@@ -483,6 +483,7 @@ class ItKubernetesDomainEvents {
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
       assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 1),"decreased replica to 1");
+
       // No event will be created for this
       logger.info("verify the Failed event is NOT generated");
       assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,  DOMAIN_FAILED, "Warning", timestamp));

@@ -216,6 +216,7 @@ class ItMiiDomain {
         + "         ListenPort: '" + adminServerSecurePort + "' \n";
     createModelConfigMap(configMapName, yamlString, domainUid);
 
+    // create cluster object
     String clusterName = "cluster-1";
 
     // create the domain object
@@ -340,7 +341,6 @@ class ItMiiDomain {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace1,
             "weblogicenc", "weblogicenc");
-
 
     String clusterName = "cluster-1";
     // create the domain object

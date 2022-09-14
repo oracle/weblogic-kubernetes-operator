@@ -220,7 +220,7 @@ public class ServerStartPolicyUtils {
       String encryptionSecretName,
       String configmapName) {
     List<String> securityList = new ArrayList<>();
-
+    
     // create the domain CR
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)

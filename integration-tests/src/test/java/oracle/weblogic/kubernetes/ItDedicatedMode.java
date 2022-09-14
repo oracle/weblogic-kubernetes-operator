@@ -252,6 +252,7 @@ class ItDedicatedMode {
 
     domain = createClusterResourceAndAddReferenceToDomain(
         clusterResName, clusterName, domainNamespace, domain, replicaCount);
+
     setPodAntiAffinity(domain);
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",

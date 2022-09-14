@@ -654,7 +654,7 @@ class ItIntrospectVersion {
     // changet the admin server port to a different value to force pod restart
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
-    
+
     ClusterResource cluster = createClusterResource(clusterResName, cluster2Name,
         introDomainNamespace, 2);
     getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, introDomainNamespace);
