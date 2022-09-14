@@ -590,9 +590,6 @@ public class JobHelper {
           if (line.startsWith("@[")) {
             logToOperator();
             logMessage = new StringBuilder(INTROSPECTOR_LOG_PREFIX).append(line.trim());
-          } else if (line.startsWith(UNABLE_TO_RETRIEVE_CONTAINER_LOGS_FOR_CONTAINER)) {
-            logToOperator();
-            logMessage = new StringBuilder(INTROSPECTOR_LOG_PREFIX).append("[SEVERE] " + line.trim());
           } else if (logMessage.length() > 0) {
             logMessage.append(System.lineSeparator()).append(line.trim());
           }
@@ -770,7 +767,8 @@ public class JobHelper {
 
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
-        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
+        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)
+            || jobPodContainerTerminatedWithErrorCode(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (isJobPodTimedOut(jobPod)) {
           // process job pod timed out same way as job timed out, which is to
@@ -818,6 +816,20 @@ public class JobHelper {
         return Optional.ofNullable(getJobPodContainerWaitingReason(pod))
               .map(IntrospectionStatus::isImagePullError)
               .orElse(false);
+      }
+
+
+      private boolean jobPodContainerTerminatedWithErrorCode(V1Pod pod) {
+        return Optional.ofNullable(getJobPodContainerTerminated(pod))
+            .map(termintated -> termintated.getExitCode() == 1 && "Error".equals(termintated.getReason()))
+            .orElse(false);
+      }
+
+      private V1ContainerStateTerminated getJobPodContainerTerminated(V1Pod pod) {
+        return Optional.ofNullable(pod).map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+            .map(V1ContainerStatus::getState).map(V1ContainerState::getTerminated)
+            .orElse(null);
       }
 
       private String getJobPodContainerWaitingReason(V1Pod pod) {
