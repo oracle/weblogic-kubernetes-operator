@@ -64,6 +64,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospection
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
@@ -525,10 +526,20 @@ public class JobHelper {
 
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
         if (severeStatuses.isEmpty()) {
+          if (!isDomainIntrospectionComplete(callResponse)) {
+            severeStatuses.add(ProcessingConstants.DOMAIN_INTROSPECTION_INCOMPLETE + callResponse.getResult());
+            return handleFailure(packet, domainIntrospectorJob);
+          }
           return doNext(createRemoveSelectedFailuresStep(getNext(), INTROSPECTION), packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
         }
+      }
+
+      @NotNull
+      private Boolean isDomainIntrospectionComplete(CallResponse<String> callResponse) {
+        return Optional.ofNullable(callResponse).map(res -> res.getResult())
+            .map(r -> r.contains(DOMAIN_INTROSPECTION_COMPLETE)).orElse(false);
       }
 
       // Note: fluentd container log can be huge, may not be a good idea to read the container log.
