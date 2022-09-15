@@ -879,7 +879,7 @@ public class DomainUtils {
    * @param wlSecretName wls admin secret name
    * @param clusterName cluster name
    * @param replicaCount replica count of the cluster
-   * @param args value for failure retry limit minutes
+   * @param failureRetryLimitMinutesArgs value for failure retry limit minutes
    * @return oracle.weblogic.domain.Domain object
    */
   public static Domain createDomainResourceForDomainInImage(String domainUid,
@@ -888,8 +888,9 @@ public class DomainUtils {
                                                             String wlSecretName,
                                                             String clusterName,
                                                             int replicaCount,
-                                                            Long... args) {
-    Long failureRetryLimitMinutes = (args.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : args[0];
+                                                            Long... failureRetryLimitMinutesArgs) {
+    Long failureRetryLimitMinutes =
+        (failureRetryLimitMinutesArgs.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : failureRetryLimitMinutesArgs[0];
 
     // create the domain custom resource
     Domain domain = new Domain()

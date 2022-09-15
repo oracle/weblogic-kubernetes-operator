@@ -37,6 +37,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -92,7 +93,7 @@ class ItRetryImprovements {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    // get unique namespaces for three different type of domains
+    // get unique namespaces for domains
     logger.info("Getting unique namespaces for three different type of domains");
     assertNotNull(namespaces.get(1));
     domainNamespace = namespaces.get(1);
@@ -133,7 +134,7 @@ class ItRetryImprovements {
         .append(FAILURE_RETRY_INTERVAL_SECONDS)
         .append("\\s*seconds\\s*afterward\\s*until.*\\s*if\\s*the\\s*failure\\s*is\\s*not\\s*resolved").toString();
 
-    testUntil(() -> findStringInDomainMessage(retryOccurRegex), logger, "retry occurs as expected");
+    testUntil(() -> findStringInDomainStatusMessage(retryOccurRegex), logger, "retry occurs as expected");
 
     // verify that the operator stops retrying when the maximum retry time is reached
     String retryMaxValueRegex = new StringBuffer(".*operator\\s*failed\\s*after\\s*retrying\\s*for\\s*.*")
@@ -141,7 +142,7 @@ class ItRetryImprovements {
         .append(".*\\s*minutes.*\\s*Please\\s*resolve.*error\\s*and.*update\\s*domain.spec.introspectVersion")
         .append(".*to\\s*force\\s*another\\s*retry\\s*.*").toString();
 
-    testUntil(() -> findStringInDomainMessage(retryMaxValueRegex),
+    testUntil(() -> findStringInDomainStatusMessage(retryMaxValueRegex),
         logger, "retry ends as expected after {0} minutes retry", failureRetryLimitMinutes);
 
     // verify that SEVERE level error message is logged in the Operator log
@@ -152,9 +153,6 @@ class ItRetryImprovements {
         .append(domainNamespace).toString();
 
     testUntil(() -> findStringInOperatorLog(opLogSevereErrRegex), logger, "SEVERE error found in Operator log");
-
-    // restore env
-    //deleteDomainResource(domainNamespace, domainUid);
   }
 
   /**
@@ -176,7 +174,7 @@ class ItRetryImprovements {
         .append(FAILURE_RETRY_INTERVAL_SECONDS)
         .append("\\s*seconds\\s*afterward\\s*until.*\\s*if\\s*the\\s*failure\\s*is\\s*not\\s*resolved").toString();
 
-    testUntil(() -> findStringInDomainMessage(retryOccurRegex), logger, "retry occurs as expected");
+    testUntil(() -> findStringInDomainStatusMessage(retryOccurRegex), logger, "retry occurs as expected");
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -208,7 +206,7 @@ class ItRetryImprovements {
     }
   }
 
-  private boolean findStringInDomainMessage(String regex) {
+  private boolean findStringInDomainStatusMessage(String regex) {
     // get the domain status message
     StringBuffer getDomainInfoCmd = new StringBuffer("kubectl get domain/");
     getDomainInfoCmd
@@ -238,22 +236,12 @@ class ItRetryImprovements {
     logger.info("Operator pod name {0}", operatorPodName);
 
     // get the Operator logs
-    StringBuffer getOpLogsCmd = new StringBuffer("kubectl logs ");
-    getOpLogsCmd
-        .append(operatorPodName)
-        .append(" -n ")
-        .append(opNamespace)
-        .append(" --since=30s");
-    logger.info("Command to get Operator log: " + getOpLogsCmd);
-
-    CommandParams params = new CommandParams().defaults();
-    params.command(getOpLogsCmd.toString());
-    ExecResult execResult = Command.withParams(params).executeAndReturnResult();
-    logger.info("Search: {0} in Operator log", regex);
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
 
     // match regex in Operator log
+    logger.info("Search: {0} in Operator log", regex);
     Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(execResult.stdout());
+    Matcher matcher = pattern.matcher(operatorPodLog);
 
     return matcher.find();
   }
