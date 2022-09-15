@@ -1634,7 +1634,7 @@ public class CommonTestUtils {
   ) throws RuntimeException {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
-      actualLocation = location + downloadDir + "/" + getInstallerFileName(type);
+      actualLocation = location + "/download/" + getInstallerFileName(type);
     }
     getLogger().info("The actual download location for {0} is {1}", type, actualLocation);
     return actualLocation;
