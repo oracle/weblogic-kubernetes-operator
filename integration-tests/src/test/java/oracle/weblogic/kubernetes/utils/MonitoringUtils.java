@@ -78,7 +78,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -111,48 +110,44 @@ public class MonitoringUtils {
    */
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
-    String monitoringExporterWebAppVersion = MONITORING_EXPORTER_WEBAPP_VERSION;
-
-    String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", applicationDir, monitoringExporterWebAppVersion);
-    checkDirectory(applicationDir);
-    logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
-    String monitoringExporterRelease =
-        monitoringExporterWebAppVersion.equals("2.0") ? "2.0.0" : monitoringExporterWebAppVersion;
+    String monitoringExporterRelease = MONITORING_EXPORTER_WEBAPP_VERSION;
+    String monitoringExporterWebAppScriptVersion = monitoringExporterRelease.substring(0,
+            monitoringExporterRelease.length() - 2);
     String curlDownloadCmd = String.format("cd %s && "
-            + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
-        applicationDir,
-        monitoringExporterRelease,
-        monitoringExporterWebAppVersion);
+                    + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
+            applicationDir,
+            monitoringExporterRelease,
+            monitoringExporterWebAppScriptVersion);
+    String monitoringExporterBuildFile = String.format(
+            "%s/get%s.sh", applicationDir, monitoringExporterWebAppScriptVersion);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(Command
-        .withParams(new CommandParams()
-            .command(curlDownloadCmd))
-        .execute(), "Failed to download monitoring exporter webapp");
+            .withParams(new CommandParams()
+                    .command(curlDownloadCmd))
+            .execute(), "Failed to download monitoring exporter webapp");
     String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
     assertTrue(Command
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(), "Failed to download monitoring exporter webapp");
+            .withParams(new CommandParams()
+                    .command(command))
+            .execute(), "Failed to download monitoring exporter webapp");
 
     String command1 = String.format("cd %s && %s  %s",
-        applicationDir,
-        monitoringExporterBuildFile,
-        configFile);
-
+            applicationDir,
+            monitoringExporterBuildFile,
+            configFile);
     testUntil(
-        (() -> Command
-          .withParams(
-              new CommandParams()
-              .verbose(true)
-              .command(command1))
-          .executeAndVerify("adding: config.yml")
-        ),
-        logger,
-        "Downloading monitoring exporter webapp");
+            (() -> Command
+                    .withParams(
+                            new CommandParams()
+                                    .verbose(true)
+                                    .command(command1))
+                    .executeAndVerify("adding: config.yml")
+            ),
+            logger,
+            "Downloading monitoring exporter webapp");
 
     assertDoesNotThrow(() -> checkFile(applicationDir + "/wls-exporter.war"),
-        "Monitoring Exporter web application file was not found");
+            "Monitoring Exporter web application file was not found");
   }
 
   /**
