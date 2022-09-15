@@ -25,8 +25,8 @@ spec:
   imagePullPolicy: "IfNotPresent"
 
   # Identify which Secret contains the credentials for pulling an image
-  #imagePullSecrets:
-  #- name: 
+  imagePullSecrets:
+    - name: test-images-repo-secret
 
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
