@@ -82,7 +82,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -1635,67 +1634,7 @@ public class CommonTestUtils {
   ) throws RuntimeException {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
-      String version = "";
-      String command = String.format(
-          "curl -fL %s -o %s/%s-%s",
-          location,
-          downloadDir,
-          type,
-          TMP_FILE_NAME);
-
-      CommandParams params =
-          defaultCommandParams()
-              .command(command)
-              .saveResults(true);
-      if (!Command.withParams(params).execute()) {
-        RuntimeException exception =
-            new RuntimeException(String.format("Failed to get the latest %s release information.", type));
-        getLogger().severe(
-            String.format(
-                "Failed to get the latest %s release information. The stderr is %s",
-                type,
-                params.stderr()),
-            exception);
-        throw exception;
-      }
-
-      command = String.format(
-          "cat %s/%s-%s | grep 'releases/download' | awk '{ split($0,a,/href=\"/);%s | %s",
-          downloadDir,
-          type,
-          TMP_FILE_NAME,
-          " print a[2] }'",
-          " cut -d/ -f 6");
-
-      params =
-          defaultCommandParams()
-          .command(command)
-          .saveResults(true)
-          .redirect(true);
-
-      // the command is considered successful only if we have got back a real version number in params.stdout()
-      if (Command.withParams(params).execute()
-          && params.stdout() != null
-          && params.stdout().length() != 0) {
-        // Because I've updated the name of the logging exporter to remove the version number in the name, but
-        // also preserved the original, there will be two entries located. Take the first.
-        version = params.stdout().lines().findFirst().get().trim();
-      } else {
-        RuntimeException exception =
-            new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
-        getLogger().severe(
-            String.format(
-                "Failed to get the version number of the requested %s release. The stderr is %s",
-                type,
-                params.stderr()),
-            exception);
-        throw exception;
-      }
-
-      if (version != null) {
-        actualLocation = location.replace("latest",
-            String.format("download/%s/%s", version, getInstallerFileName(type)));
-      }
+      actualLocation = location + downloadDir + "/" + getInstallerFileName(type);
     }
     getLogger().info("The actual download location for {0} is {1}", type, actualLocation);
     return actualLocation;
