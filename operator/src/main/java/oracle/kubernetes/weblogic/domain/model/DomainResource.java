@@ -892,13 +892,13 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
 
-    List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
-      getFatalValidationFailures();
-      getCrossReferenceValidationFailures(kubernetesResources);
+    private List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+      addFatalValidationFailures();
+      addCrossReferenceValidationFailures(kubernetesResources);
       return failures;
     }
 
-    private void getCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    private void addCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addMissingSecrets(kubernetesResources);
       addMissingModelConfigMap(kubernetesResources);
       addDuplicateNamesClusters(kubernetesResources);
@@ -910,7 +910,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       whenAuxiliaryImagesDefinedVerifyMountPathNotInUseClusters(kubernetesResources);
     }
 
-    List<String> getFatalValidationFailures() {
+    private void addFatalValidationFailures() {
       addDuplicateNamesManagedServers();
       addDuplicateNamesClusterReferences();
       addInvalidMountPathsManagedServers();
@@ -925,6 +925,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+    }
+
+    private List<String> getFatalValidationFailures() {
+      addFatalValidationFailures();
       return failures;
     }
 
