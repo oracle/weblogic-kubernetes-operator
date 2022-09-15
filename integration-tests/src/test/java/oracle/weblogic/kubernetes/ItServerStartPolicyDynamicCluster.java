@@ -79,8 +79,8 @@ class ItServerStartPolicyDynamicCluster {
   private static LoggingFacade logger = null;
   private static String ingressHost = null; //only used for OKD
   private static final String samplePath = "sample-testing-dynamic-cluster";
-  private static final String dynamicClusterResourceName = DYNAMIC_CLUSTER;
-  private static final String configuredClusterResourceName = CONFIG_CLUSTER;
+  private static final String dynamicClusterResourceName = domainUid + "-" + DYNAMIC_CLUSTER;
+  private static final String configuredClusterResourceName = domainUid + "-" + CONFIG_CLUSTER;
 
   /**
    * Install Operator.
@@ -530,13 +530,13 @@ class ItServerStartPolicyDynamicCluster {
     // cluster        min  max  goal  current  ready
     // clusterName     1    5    1     1      1
     String regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace, DYNAMIC_CLUSTER,
+    scalingClusters(domainUid, domainNamespace, dynamicClusterResourceName,
         dynamicServerPodName, replicaCount, regex, false, samplePath);
     // String regex matches below
     // cluster        min  max  goal  current  ready
     // clusterName     0    2    1     1      1
     regex = ".*" + CONFIG_CLUSTER + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace, CONFIG_CLUSTER, configServerPodName,
+    scalingClusters(domainUid, domainNamespace, configuredClusterResourceName, configServerPodName,
         replicaCount, regex, false, samplePath);
 
     // use scaleCluster.sh to scale a dynamic cluster and
@@ -545,7 +545,7 @@ class ItServerStartPolicyDynamicCluster {
     // cluster        min  max  goal  current  ready
     // clusterName     1    5    2       2      2
     regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)2(\\s+)2(\\s+)2";
-    scalingClusters(domainUid, domainNamespace, DYNAMIC_CLUSTER,
+    scalingClusters(domainUid, domainNamespace, dynamicClusterResourceName,
         dynamicServerPodName, newReplicaCount, regex, true, samplePath);
 
     // check managed server from config cluster are not affected
@@ -559,7 +559,7 @@ class ItServerStartPolicyDynamicCluster {
     // cluster        min  max  goal  current  ready
     // clusterName     1    5    1     1      1
     regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace,DYNAMIC_CLUSTER, dynamicServerPodName,
+    scalingClusters(domainUid, domainNamespace,dynamicClusterResourceName, dynamicServerPodName,
         replicaCount, regex, false, samplePath);
   }
 

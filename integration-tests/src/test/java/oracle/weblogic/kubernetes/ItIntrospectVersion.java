@@ -311,7 +311,7 @@ class ItIntrospectVersion {
         + "]";
     logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
     patch = new V1Patch(patchStr);
-    assertTrue(patchClusterCustomResource(cluster1Name, introDomainNamespace, patch,
+    assertTrue(patchClusterCustomResource(domainUid + "-" + cluster1Name, introDomainNamespace, patch,
         V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
     // verify the 3rd server pod comes up
