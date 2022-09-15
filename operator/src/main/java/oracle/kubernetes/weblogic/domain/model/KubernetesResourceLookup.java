@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.List;
+
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 
 /**
@@ -34,4 +36,12 @@ public interface KubernetesResourceLookup {
    * @return Cluster resource or null, if cluster resource is not found
    */
   ClusterResource findCluster(V1LocalObjectReference reference);
+
+  /**
+   * Returns all domain resources in the given namespace.
+   *
+   * @param namespace the containing namespace
+   * @return list of DomainResources
+   */
+  List<DomainResource> getDomains(String namespace);
 }

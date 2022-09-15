@@ -57,6 +57,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.clusterInUse;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
@@ -766,6 +767,12 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return startTime.plus(getFailureRetryIntervalSeconds(), ChronoUnit.SECONDS);
   }
 
+  private boolean doesReferenceCluster(@Nonnull String clusterName) {
+    return Optional.of(getSpec())
+        .map(DomainSpec::getClusters).orElse(new ArrayList<>())
+        .stream().map(V1LocalObjectReference::getName).anyMatch(clusterName::equals);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -908,6 +915,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyContainerNameValidInPodSpecClusters(kubernetesResources);
       verifyContainerPortNameValidInPodSpecClusters(kubernetesResources);
       whenAuxiliaryImagesDefinedVerifyMountPathNotInUseClusters(kubernetesResources);
+      verifyClusterResourcesNotInUse(kubernetesResources);
     }
 
     List<String> getSimpleValidationFailures() {
@@ -964,12 +972,13 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void addDuplicateNamesClusterReferences() {
       Set<String> references = new HashSet<>();
-      getSpec().getClusters().stream().map(V1LocalObjectReference::getName).forEach(ref -> {
-        if (references.contains(ref)) {
-          failures.add(DomainValidationMessages.duplicateClusterName(ref));
-        }
-        references.add(ref);
-      });
+      Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
+          .stream().map(V1LocalObjectReference::getName).filter(Objects::nonNull).forEach(ref -> {
+            if (references.contains(ref)) {
+              failures.add(DomainValidationMessages.duplicateClusterName(ref));
+            }
+            references.add(ref);
+          });
     }
 
     private void addDuplicateNamesClusters(KubernetesResourceLookup kubernetesResources) {
@@ -1169,6 +1178,31 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
                 prefix + "." + name,
                 port.getName()));
       }
+    }
+
+    private void verifyClusterResourcesNotInUse(
+        KubernetesResourceLookup kubernetesResources) {
+      getSpec().getClusters().forEach(cluster ->
+          Optional.ofNullable(kubernetesResources.findCluster(cluster))
+              .ifPresent(cr -> verifyClusterInUseByAnotherDomain(kubernetesResources, cr)));
+    }
+
+    private void verifyClusterInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
+                                                   ClusterResource cluster) {
+      String domainAlreadyReferenceCluster =
+          getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getClusterName());
+
+      if (domainAlreadyReferenceCluster != null) {
+        failures.add(clusterInUse(cluster.getClusterName(), domainAlreadyReferenceCluster));
+      }
+    }
+
+    private String getReferencingDomains(KubernetesResourceLookup kubernetesResources,
+                                               String namespace, String clusterName) {
+      return Optional.ofNullable(kubernetesResources.getDomains(namespace)).orElse(new ArrayList<>()).stream()
+          .filter(domain -> domain.doesReferenceCluster(clusterName))
+          .map(DomainResource::getDomainUid)
+          .filter(domainUid -> !domainUid.equals(getDomainUid())).findFirst().orElse(null);
     }
 
     @Nonnull

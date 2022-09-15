@@ -210,6 +210,7 @@ public class MessageKeys {
   public static final String CYCLING_POD_EVICTED = "WLSDO-0042";
   public static final String CYCLING_POD_SPEC_CHANGED = "WLSDO-0043";
   public static final String PODS_NOT_RUNNING = "WLSDO-0044";
+  public static final String CLUSTER_IN_USE = "WLSDO-0045";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
