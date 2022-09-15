@@ -38,10 +38,6 @@ initGlobals() {
   timeout_secs=$timeout_secs_default
   DOMAIN_UID=$DOMAIN_UID_DEFAULT
   DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE_DEFAULT
-
-  tmpfileorig=$(tempfile)
-  tmpfilecur=$(tempfile)
-  trap "rm -f $tmpfileorig $tmpfilecur" EXIT
 }
 
 usage() {
@@ -410,6 +406,8 @@ main() {
   local last_report_secs=$SECONDS
   local all_goals_orig="--not-known--"
   local is_done="false"
+  local pod_info_orig=""
+  local pod_info_cur=""
 
   # Loop until we reach the desired pod count for pods at the desired restart version,
   # introspect version, and image -- or until we reach the timeout.
@@ -522,13 +520,9 @@ main() {
       # - show the state of each pod in table form
       # - output above again when any pod state changes or 'report_interval' is exceeded
 
-      getPodInfo > $tmpfilecur
+      pod_info_cur=$(getPodInfo) || exit 1
 
-      set +e
-      diff -q $tmpfilecur $tmpfileorig 2>&1 > /dev/null
-      diff_res=$?
-      set -e
-      if [ $diff_res -ne 0 ] \
+      if [ "$pod_info_cur" != "$pod_info_orig" ] \
          || [ "$reported" = "false" ] \
          || [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
          || [ "$is_done" = "true" ]; then
@@ -552,11 +546,11 @@ main() {
           # column headers must line up with the jpath in getPodInfo
           echo "NAME RVER IVER IMAGE AIIMAGES READY PHASE"
           echo "---- ---- ---- ----- -------- ----- -----"
-          cat $tmpfilecur | sed "s|[^ ]*=;\([^;]*\);|'\1'|g"
+          cat <<< "$pod_info_cur" | sed "s|[^ ]*=;\([^;]*\);|'\1'|g"
         ) | column -t
         echo
 
-        cp $tmpfilecur $tmpfileorig
+        pod_info_orig="$pod_info_cur"
         last_report_secs=$SECONDS
       fi
     fi
