@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-//import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -118,7 +117,6 @@ class ItRetryImprovements {
    * Also log a clear message in the domain Failed condition with the cause,
    * actions to fix the problem, and indicates that the next retry time and when the retry will stop.
    */
-  //@Disabled("")
   @Test
   @DisplayName("Create a domain without WLS secret. Verify that retry occurs and handles SEVERE error as designed.")
   void testRetryOccursAsExpectedAndThrowSevereFailures() {
