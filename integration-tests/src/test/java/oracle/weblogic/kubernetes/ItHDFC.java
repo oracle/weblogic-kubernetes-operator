@@ -272,19 +272,19 @@ class ItHDFC {
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewClustersDontStart() {
-
+    String patchStr;
+    V1Patch patch;
     logger.info("Getting port for default channel");
     int adminServerPort
         = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     String clusterBaseName = "sdcluster";
     int replicaCount = 2;
-
-    for (int j = 1; j <= 15; j++) {
+    int numOfClusters = 15;
+    for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "ms";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-
       // create a temporary WebLogic WLST property file
       File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
           "Creating WLST properties file failed");
@@ -299,33 +299,37 @@ class ItHDFC {
       p.setProperty("server_count", String.valueOf(replicaCount));
       assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
           "Failed to write the WLST properties to file");
-
       // changet the admin server port to a different value to force pod restart
       Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
       executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
-
-      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
-
       logger.info("patch the domain resource with new cluster and introspectVersion");
-      String patchStr
+      patchStr
           = "["
           + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
           + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": "
-          + replicaCount + ", \"serverStartPolicy\": \"NEVER\"}"
-          + "},"
-          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-          + "]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
+          + replicaCount + ", \"serverStartPolicy\": \"IF_NEEDED\"}"
+          + "}]";
+      patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-
-      //verify the introspector pod is created and runs
-      String introspectPodNameBase = getIntrospectJobName(domainUid);
-
-      checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
-      checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
     }
+    logger.info("Restarting admin server");
+    restartAS();
+
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("patch the domain resource with new cluster and introspectVersion");
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
   }
 
   /**
