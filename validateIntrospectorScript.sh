@@ -3,7 +3,6 @@
 # Copyright (c) 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-found_error=0
 
 declare -a filesToCheck=("src/main/resources/scripts/introspectDomain.sh" 
                 "src/main/java/oracle/kubernetes/operator/ProcessingConstants.java"
@@ -17,6 +16,4 @@ do
   fi
 done
 
-found_error=$?
-
-exit $found_error
+exit 0
