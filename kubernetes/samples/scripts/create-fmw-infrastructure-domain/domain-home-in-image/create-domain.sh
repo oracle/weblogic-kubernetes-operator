@@ -263,6 +263,11 @@ createDomainHome() {
     echo @@ "Info: dumping output of ${domainPropertiesOutput}"
     sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g;s/RCU_SCHEMA_PASSWORD=[^{].*/RCU_SCHEMA_PASSWORD=********/g' ${domainPropertiesOutput}
 
+    echo @@ "Info: getting host infor of running instance"
+    cat /etc/resolv.conf && cat /etc/hosts
+    echo @@ "Info: getting host infor inside the container"
+    echo @@ "image name: ${domainHomeImageBase}"
+    docker run ${domainHomeImageBase} /bin/bash -c "cat /etc/resolv.conf && cat /etc/hosts"
     cmd="
       $WIT_DIR/imagetool/bin/imagetool.sh update
         --fromImage \"$domainHomeImageBase\"
