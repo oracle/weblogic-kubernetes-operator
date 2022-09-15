@@ -56,6 +56,7 @@ import oracle.kubernetes.weblogic.domain.model.Server;
 import org.jetbrains.annotations.NotNull;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_INCOMPLETE;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -79,8 +80,6 @@ public class JobHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   public static final String INTROSPECTOR_LOG_PREFIX = "Introspector Job Log: ";
   private static final String EOL_PATTERN = "\\r?\\n";
-  public static final String UNABLE_TO_RETRIEVE_CONTAINER_LOGS_FOR_CONTAINER =
-      "unable to retrieve container logs for container";
 
   private JobHelper() {
   }
@@ -527,7 +526,8 @@ public class JobHelper {
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
         if (severeStatuses.isEmpty()) {
           if (!isDomainIntrospectionComplete(callResponse)) {
-            severeStatuses.add(ProcessingConstants.DOMAIN_INTROSPECTION_INCOMPLETE + callResponse.getResult());
+            LOGGER.severe(DOMAIN_INTROSPECTION_INCOMPLETE, callResponse.getResult());
+            severeStatuses.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_INCOMPLETE, callResponse.getResult()));
             return handleFailure(packet, domainIntrospectorJob);
           }
           return doNext(createRemoveSelectedFailuresStep(getNext(), INTROSPECTION), packet);
@@ -594,8 +594,6 @@ public class JobHelper {
       //  - assumes any lines that don't start with '@[' are part
       //    of the previous log message
       //  - ignores all lines in the log up to the first line that starts with '@['
-      //  - The case where the introspector job log message starts with
-      //    "unable to retrieve container log" is treated as a SEVERE error.
       private void convertJobLogsToOperatorLogs(String jobLogs) {
         for (String line : jobLogs.split(EOL_PATTERN)) {
           if (line.startsWith("@[")) {

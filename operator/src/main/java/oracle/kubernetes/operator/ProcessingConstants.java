@@ -62,6 +62,4 @@ public interface ProcessingConstants {
 
   String SHUTDOWN_WITH_HTTP_SUCCEEDED = "SHUTDOWN_WITH_HTTP_SUCCEEDED";
   String DOMAIN_INTROSPECTION_COMPLETE = "Domain introspection complete";
-  String DOMAIN_INTROSPECTION_INCOMPLETE = "[SEVERE] Domain introspection is incomplete. "
-      + "Check the introspector job logs for possible errors. Job logs are -> ";
 }
