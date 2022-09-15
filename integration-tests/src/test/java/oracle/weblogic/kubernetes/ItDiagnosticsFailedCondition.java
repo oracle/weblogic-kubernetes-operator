@@ -206,7 +206,7 @@ class ItDiagnosticsFailedCondition {
       }
       deleteDomainResource(domainNamespace, domainName);
       deleteConfigMap(badModelFileCm, domainNamespace);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -322,11 +322,11 @@ class ItDiagnosticsFailedCondition {
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching cluster resource using patch string {0} ", patchStr);
-    assertTrue(!patchClusterCustomResource(clusterName, domainNamespace,
+    assertTrue(!patchClusterCustomResource(clusterResName, domainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
 
     deleteDomainResource(domainNamespace, domainName);
-    deleteClusterCustomResource(clusterName, domainNamespace);
+    deleteClusterCustomResource(clusterResName, domainNamespace);
   }
 
   /**
@@ -361,7 +361,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -397,7 +397,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -436,7 +436,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -516,7 +516,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
       deleteDomainResource(domainNamespace, domainName);
     }
   }
@@ -552,7 +552,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -595,7 +595,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -632,7 +632,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
