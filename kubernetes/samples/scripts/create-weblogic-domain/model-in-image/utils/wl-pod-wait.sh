@@ -538,10 +538,10 @@ main() {
         trace "Info: Introspector and WebLogic Server pods with same namespace and domain-uid:"
         echo
 
-        # print results as a table
-        #  - first strip out the var= and replace with "val".
-        #  - note that the quotes are necessary so that 'print_table'
-        #    doesn't get confused by col entries that are missing values
+        # print results as a table:
+        #   convert each "var=val;" in $pod_info_cur to just "'val'".
+        #   (the single quotes around val are necessary so that 'column -t'
+        #    doesn't get confused by var entries that have empty values)
         (
           # column headers must line up with the jpath in getPodInfo
           echo "NAME RVER IVER IMAGE AIIMAGES READY PHASE"
