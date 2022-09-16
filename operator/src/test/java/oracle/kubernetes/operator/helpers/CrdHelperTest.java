@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -235,6 +236,19 @@ class CrdHelperTest {
     Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsWarning(ASYNC_NO_RETRY));
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenNotAuthorizedToReadCrdAndWarningNotEnabled_DontLogWarningInOnFailureNoRetry(TestSubject testSubject) {
+    LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger().setLevel(Level.SEVERE);
+    consoleHandlerMemento.collectLogMessages(logRecords, ASYNC_NO_RETRY);
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnResource(CUSTOM_RESOURCE_DEFINITION, null, null, HTTP_UNAUTHORIZED);
+
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
+    testSupport.runSteps(scriptCrdStep);
+    assertThat(logRecords, not(containsWarning(ASYNC_NO_RETRY)));
   }
 
   @ParameterizedTest
