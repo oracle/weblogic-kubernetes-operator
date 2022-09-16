@@ -11,7 +11,7 @@ adminPort: 7001
 adminServerName: admin-server
 
 # Unique ID identifying a domain.
-# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains
+# This ID must not contain an underscore ("_"), and must be lowercase and unique across all domains
 # in a Kubernetes cluster.
 domainUID: domain1
 

@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
@@ -24,6 +25,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -31,8 +33,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.OperatorUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static java.util.Comparator.comparing;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodServerName;
@@ -74,7 +75,26 @@ public class ManagedServersUpStep extends Step {
       insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
     }
 
+    if (hasWorkToDo(steps, next)) {
+      insert(steps, new ClearCompletedConditionSteps());
+    }
     return Step.chain(steps.toArray(new Step[0]));
+  }
+
+  private static boolean hasWorkToDo(List<Step> steps, Step next) {
+    return getNonNullStepNum(steps) > getExpectedNumber(next);
+  }
+
+  private static int getExpectedNumber(Step next) {
+    return next == null ? 0 : 1;
+  }
+
+  private static boolean isNotNull(Step step) {
+    return step != null;
+  }
+
+  private static int getNonNullStepNum(List<Step> steps) {
+    return (int) steps.stream().filter(ManagedServersUpStep::isNotNull).count();
   }
 
   private static List<ServerShutdownInfo> getServersToStop(
@@ -136,6 +156,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     info.getServerPods().filter(pod -> podShouldNotBeRunning(pod, factory))
+            .filter(pod -> podNotAlreadyMarkedForShutdown(pod, factory))
             .filter(pod -> !getPodServerName(pod).equals(wlsDomainConfig.getAdminServerName()))
             .forEach(pod -> shutdownServersNotPresentInDomainConfig(factory, pod));
   }
@@ -144,9 +165,13 @@ public class ManagedServersUpStep extends Step {
     return !factory.getServers().contains(getPodServerName(pod));
   }
 
+  private boolean podNotAlreadyMarkedForShutdown(V1Pod pod, ServersUpStepFactory factory) {
+    return factory.getShutdownInfos().stream().noneMatch(ssi -> ssi.getServerName().equals(getPodServerName(pod)));
+  }
+
   private void shutdownServersNotPresentInDomainConfig(ServersUpStepFactory factory, V1Pod pod) {
     WlsServerConfig serverConfig = new WlsServerConfig(getPodServerName(pod), PodHelper.getPodName(pod), 0);
-    factory.addShutdownInfo(new ServerShutdownInfo(serverConfig, pod.getMetadata().getClusterName(), null, false));
+    factory.addShutdownInfo(new ServerShutdownInfo(serverConfig, PodHelper.getPodClusterName(pod), null, false));
   }
 
   private void addClusteredServersToFactory(
@@ -171,7 +196,7 @@ public class ManagedServersUpStep extends Step {
 
   static class ServersUpStepFactory {
     final WlsDomainConfig domainTopology;
-    final Domain domain;
+    final DomainResource domain;
     final DomainPresenceInfo info;
     List<ServerStartupInfo> startupInfos;
     List<ServerShutdownInfo> shutdownInfos = new ArrayList<>();
@@ -192,7 +217,7 @@ public class ManagedServersUpStep extends Step {
      * @return True if we should pre-create server service for the given managed server, false
      *         otherwise.
      */
-    boolean shouldPrecreateServerService(ServerSpec server) {
+    boolean shouldPrecreateServerService(EffectiveServerSpec server) {
       if (Boolean.TRUE.equals(server.isPrecreateServerService())) {
         // skip pre-create if admin server and managed server are both shutting down
         return ! (domain.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
@@ -207,7 +232,7 @@ public class ManagedServersUpStep extends Step {
       }
 
       String clusterName = getClusterName(clusterConfig);
-      ServerSpec server = domain.getServer(serverName, clusterName);
+      EffectiveServerSpec server = info.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
         addServerToStart(serverConfig, clusterName, server);
@@ -219,7 +244,8 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addServerToStart(@Nonnull WlsServerConfig serverConfig, String clusterName, ServerSpec server) {
+    private void addServerToStart(@Nonnull WlsServerConfig serverConfig, String clusterName,
+                                  EffectiveServerSpec server) {
       servers.add(serverConfig.getName());
       if (shouldPrecreateServerService(server)) {
         preCreateServers.add(serverConfig.getName());
@@ -231,10 +257,10 @@ public class ManagedServersUpStep extends Step {
     boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
-        int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        int configMaxClusterSize = clusterConfig.getClusterSize();
         return clusterConfig.hasDynamicServers()
             && clusterConfig.getServerConfigs().size() == configMaxClusterSize
-            && domain.getReplicaCount(clusterName) > configMaxClusterSize;
+            && info.getReplicaCount(clusterName) > configMaxClusterSize;
       }
       return false;
     }
@@ -287,8 +313,8 @@ public class ManagedServersUpStep extends Step {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
         addReplicasTooHighValidationErrorWarning(
-            domain.getReplicaCount(clusterName),
-            clusterConfig.getMaxDynamicClusterSize(),
+            info.getReplicaCount(clusterName),
+            clusterConfig.getClusterSize(),
             clusterName);
       }
     }
@@ -297,13 +323,13 @@ public class ManagedServersUpStep extends Step {
       if (lessThanMinConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
         LOGGER.warning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
-            domain.getReplicaCount(clusterName),
+            info.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
 
         // Reset current replica count so we don't scale down less than minimum
         // dynamic cluster size
-        domain.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
+        info.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
       }
     }
 
@@ -315,9 +341,9 @@ public class ManagedServersUpStep extends Step {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
         if (clusterConfig.hasDynamicServers()
-            && !domain.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
+            && !info.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
           int configMinClusterSize = clusterConfig.getMinDynamicClusterSize();
-          return domain.getReplicaCount(clusterName) < configMinClusterSize;
+          return info.getReplicaCount(clusterName) < configMinClusterSize;
         }
       }
       return false;
@@ -337,7 +363,7 @@ public class ManagedServersUpStep extends Step {
         return;
       }
       String clusterName = getClusterName(wlsClusterConfig);
-      ServerSpec server = domain.getServer(serverName, clusterName);
+      EffectiveServerSpec server = info.getServer(serverName, clusterName);
       if (server.alwaysStart()) {
         addServerToStart(wlsServerConfig, clusterName, server);
       } else {

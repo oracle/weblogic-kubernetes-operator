@@ -5,10 +5,10 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -16,6 +16,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.FATAL;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
@@ -27,13 +28,8 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Description(
       "The type of the condition. Valid types are Completed, "
           + "Available, Failed, Rolling, and ConfigChangesPendingRestart.")
-  @NotNull
+  @Nonnull
   private final DomainConditionType type;
-
-  @Description("Last time we probed the condition.")
-  @SerializedName("lastProbeTime")
-  @Expose
-  private OffsetDateTime lastProbeTime;
 
   @Description("Last time the condition transitioned from one status to another.")
   @SerializedName("lastTransitionTime")
@@ -53,7 +49,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Description("The status of the condition. Can be True, False, Unknown.")
   @SerializedName("status")
   @Expose
-  @NotNull
+  @Nonnull
   private String status = "True";
 
   // internal: used to select failure conditions for deletion
@@ -67,38 +63,19 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * Creates a new domain condition, initialized with its type.
    * @param conditionType the enum that designates the condition type
    */
-  public DomainCondition(DomainConditionType conditionType) {
+  public DomainCondition(@Nonnull DomainConditionType conditionType) {
     lastTransitionTime = SystemClock.now();
     type = conditionType;
   }
 
   DomainCondition(DomainCondition other) {
     this.type = other.type;
-    this.lastProbeTime = other.lastProbeTime;
     this.lastTransitionTime = other.lastTransitionTime;
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
     this.markedForDeletion = other.markedForDeletion;
     this.severity = other.severity;
-  }
-
-  /**
-   * Last time we probed the condition.
-   *
-   * @return time
-   */
-  public OffsetDateTime getLastProbeTime() {
-    return lastProbeTime;
-  }
-
-  /**
-   * Last time we probed the condition.
-   *
-   * @param lastProbeTime time
-   */
-  public void setLastProbeTime(OffsetDateTime lastProbeTime) {
-    this.lastProbeTime = lastProbeTime;
   }
 
   /**
@@ -126,7 +103,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this
    */
   public DomainCondition withLastTransitionTime(OffsetDateTime lastTransitionTime) {
-    this.lastTransitionTime = lastTransitionTime;
+    setLastTransitionTime(lastTransitionTime);
     return this;
   }
 
@@ -145,8 +122,8 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @param message message
    * @return this
    */
-  public DomainCondition withMessage(String message) {
-    lastTransitionTime = SystemClock.now();
+  public DomainCondition withMessage(@Nonnull String message) {
+    setLastTransitionTime(SystemClock.now());
     this.message = message;
     if (reason != null && DomainFailureReason.isFatalError(reason, message)) {
       severity = FATAL;
@@ -174,7 +151,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
       throw new IllegalStateException("May not set reason after message");
     }
     
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.reason = reason;
     this.severity = Optional.ofNullable(reason).map(DomainFailureReason::getDefaultSeverity).orElseThrow();
     return this;
@@ -185,7 +162,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    *
    * @return status
    */
-  public String getStatus() {
+  public @Nonnull String getStatus() {
     return status;
   }
 
@@ -196,7 +173,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(String status) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.status = status;
     return this;
   }
@@ -207,7 +184,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(boolean status) {
-    lastTransitionTime = SystemClock.now();
+    setLastTransitionTime(SystemClock.now());
     this.status = status ? TRUE : FALSE;
     return this;
   }
@@ -217,7 +194,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    *
    * @return type
    */
-  public DomainConditionType getType() {
+  public @Nonnull DomainConditionType getType() {
     return type;
   }
 
@@ -241,6 +218,10 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type == this.type;
   }
 
+  public boolean isRetriableFailure() {
+    return getType() == FAILED && getSeverity() == SEVERE;
+  }
+
   boolean isMarkedForDeletion() {
     return markedForDeletion;
   }
@@ -261,8 +242,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("at ").append(lastTransitionTime).append(" ");
-    Optional.ofNullable(type).ifPresent(sb::append);
-    Optional.ofNullable(status).ifPresent(s -> sb.append("/").append(s));
+    sb.append(type).append('/').append(status);
     Optional.ofNullable(reason).ifPresent(r -> sb.append(" reason: ").append(r));
     Optional.ofNullable(severity).ifPresent(m -> sb.append(" severity: ").append(m));
     Optional.ofNullable(message).ifPresent(m -> sb.append(" message: ").append(m));

@@ -100,7 +100,6 @@ sys.path.append(tmp_scriptdir)
 from utils import *
 from weblogic.management.configuration import LegalHelper
 
-ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
 
 class OfflineWlstEnv(object):
 
@@ -114,7 +113,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
-    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'BY_SERVERS')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -251,6 +250,31 @@ class OfflineWlstEnv(object):
       ret = None
     return ret
 
+  # Work-around bug in off-line WLST where cluster.getDynamicServers() may throw
+  # when there are no 'real' DynamicServers.  Exception looks like:
+  #     at com.sun.proxy.$Proxy46.getDynamicServers(Unknown Source)
+  #     at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+  #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+  #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  #     at java.lang.reflect.Method.invoke(Method.java:498)
+  def getDynamicServersOrNone(self,cluster):
+    ret = None
+    try:
+      cd('/Cluster/' + cluster.getName() + '/DynamicServers')
+      # DynamicServers MBean can be found under
+      # /Cluster/<clusterName>/DynamicServers/<clusterName>/
+      # or
+      # /Cluster/<clusterName>/DynamicServers/NO_NAME_0/
+      childObjs = ls(returnMap='true', returnType='c')
+      if not childObjs.isEmpty():
+        cd(childObjs[0])
+        if get('ServerTemplate') is not None:
+          # Cluster is a dynamic cluster if a ServerTemplate MBean is found
+          ret = cmo
+    except:
+      trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
+    return ret;
+
   def addGeneratedFile(self, filePath):
     self.generatedFiles.append(filePath)
 
@@ -381,23 +405,6 @@ class TopologyGenerator(Generator):
       self.close()
 
   # Work-around bug in off-line WLST where cluster.getDynamicServers() may throw
-  # when there are no 'real' DynamicServers.  Exception looks like:
-  #     at com.sun.proxy.$Proxy46.getDynamicServers(Unknown Source)
-  #     at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-  #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-  #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-  #     at java.lang.reflect.Method.invoke(Method.java:498)
-  def getDynamicServersOrNone(self,cluster):
-    try:
-      ret = cluster.getDynamicServers()
-      # Dynamic Servers must be configured with a ServerTemplate
-      if ret is not None:
-        if ret.getServerTemplate() is None:
-          ret = None
-    except:
-      trace("Ignoring getDynamicServers() exception, this is expected.")
-      ret = None
-    return ret
 
   def isConsensusLeasing(self, cluster):
     if cluster is not None and cluster.getMigrationBasis() == "consensus":
@@ -454,21 +461,22 @@ class TopologyGenerator(Generator):
   def validateDynamicClustersDuplicateServerNamePrefix(self):
     serverNamePrefixes = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersOrNone(cluster) is not None:
-        if cluster.getDynamicServers().getServerNamePrefix() is None:
+      dynamicServers = self.env.getDynamicServersOrNone(cluster)
+      if dynamicServers is not None:
+        if dynamicServers.getServerNamePrefix() is None:
           self.addError("The ServerNamePrefix is not set for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers. The ServerNamePrefix must be set for each WebLogic dynamic cluster.")
         else:
-          if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
-            self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+          if dynamicServers.getServerNamePrefix() in serverNamePrefixes:
+            self.addError("The ServerNamePrefix '" + dynamicServers.getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
           else:
-            serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
+            serverNamePrefixes.append(dynamicServers.getServerNamePrefix())
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
-    if self.getDynamicServersOrNone(cluster) is None:
+    if self.env.getDynamicServersOrNone(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
       self.validateDynamicCluster(cluster)
@@ -749,8 +757,10 @@ class TopologyGenerator(Generator):
         self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced by configured server " + self.name(server) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
-    if cluster.getDynamicServers().isCalculatedListenPorts() == True:
-      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
+    dynamicServers = self.env.getDynamicServersOrNone(cluster)
+    if dynamicServers is not None:
+      if dynamicServers.isCalculatedListenPorts() == True:
+        self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def validateServerCustomChannelName(self):
     reservedNames = ['default','default-secure','default-admin']
@@ -799,13 +809,13 @@ class TopologyGenerator(Generator):
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersOrNone(cluster) is None:
+      if self.env.getDynamicServersOrNone(cluster) is None:
         rtn.append(cluster)
     return rtn
 
   def addConfiguredCluster(self, cluster):
     self.writeln("- name: " + self.name(cluster))
-    dynamicServers = self.getDynamicServersOrNone(cluster)
+    dynamicServers = self.env.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       self.indent();
       self.writeln("dynamicServersConfig:")
@@ -892,7 +902,7 @@ class TopologyGenerator(Generator):
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersOrNone(cluster) is not None:
+      if self.env.getDynamicServersOrNone(cluster) is not None:
         rtn.append(cluster)
     return rtn
 
@@ -909,7 +919,7 @@ class TopologyGenerator(Generator):
 
   def getDynamicClusterServerTemplate(self, cluster):
     serverTemplate = None
-    dynamicServers = self.getDynamicServersOrNone(cluster)
+    dynamicServers = self.env.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       serverTemplate = dynamicServers.getServerTemplate()
     return serverTemplate
@@ -946,38 +956,15 @@ class TopologyGenerator(Generator):
       for nap in naps:
         self.addNetworkAccessPoint(server, nap, is_server_template)
 
-    added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
-    if len(naps) != 0 or added_istio_yaml:
+    if len(naps) != 0:
       self.undent()
 
   def addNetworkAccessPoint(self, server, nap, is_server_template):
 
     # Change the name to follow the istio port naming convention
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
-    if istio_enabled == 'true':
-      name = nap.getName()
-      if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
-          or name.startswith('https-'):
-        # skip istio ports already defined by WDT filtering for MII
-        return
-      http_protocol = [ 'http' ]
-      https_protocol = ['https','admin']
-      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
-      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
-      if nap_protocol in http_protocol:
-        name = 'http-' + nap.getName().replace(' ', '_')
-      elif nap_protocol in https_protocol:
-        name = 'https-' + nap.getName().replace(' ', '_')
-      elif nap_protocol in tcp_protocol:
-        name = 'tcp-' + nap.getName().replace(' ', '_')
-      elif nap_protocol in tls_protocol:
-        name = 'tls-' + nap.getName().replace(' ', '_')
-      else:
-        name = 'tcp-' + nap.getName().replace(' ', '_')
-    else:
-      name=self.name(nap)
+    name = nap.getName()
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
 
@@ -992,9 +979,6 @@ class TopologyGenerator(Generator):
     :param is_server_template:  true if it is from ServerTemplate
     :param added_nap:  true if there are existing nap section in the output
     '''
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return False
 
     if not added_nap:
       self.writeln("  networkAccessPoints:")
@@ -1264,9 +1248,6 @@ class SitConfigGenerator(Generator):
       self.customizeServer(server)
 
   def customizeIstioClusters(self):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return
     for cluster in self.env.getDomain().getClusters():
       repl_channel_name = cluster.getReplicationChannel()
       # Skip configuring replication channel if 'istiorepl' already defined
@@ -1278,7 +1259,6 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:cluster>")
       self.indent()
       self.writeln("<d:name>" + cluster.getName() + "</d:name>")
-      self.writeln("<d:replication-channel f:combine-mode='add'>" + 'istiorepl' + "</d:replication-channel>")
       self.undent()
       self.writeln("</d:cluster>")
 
@@ -1372,13 +1352,8 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
-    self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     if server.getName() == admin_server_name:
       self.addAdminChannelPortForwardNetworkAccessPoints(server)
-    else:
-      self.customizeIstioReplicationChannel(server, listen_address,
-                                            self.env.getEnvOrDef("ISTIO_REPLICATION_PORT", 4564),
-                                            is_server_template=False)
     if self.getCoherenceClusterSystemResourceOrNone(server) is not None:
       self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
@@ -1391,7 +1366,7 @@ class SitConfigGenerator(Generator):
 
   def customizeServerTemplate(self, template):
     name=template.getName()
-    server_name_prefix=template.getCluster().getDynamicServers().getServerNamePrefix()
+    server_name_prefix=self.env.getDynamicServersOrNone(template.getCluster()).getServerNamePrefix()
     listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server_name_prefix + "${id}")
     self.writeln("<d:server-template>")
     self.indent()
@@ -1401,10 +1376,6 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
-    self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
-    self.customizeIstioReplicationChannel(template, listen_address,
-                                          self.env.getEnvOrDef("ISTIO_REPLICATION_PORT", 4564),
-                                          is_server_template=True)
     if self.getCoherenceClusterSystemResourceOrNone(template) is not None:
       self.customizeCoherenceMemberConfig(template.getCoherenceMemberConfig(), listen_address)
     self.undent()
@@ -1421,15 +1392,7 @@ class SitConfigGenerator(Generator):
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
 
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
-    if istio_enabled  == 'true' and istio_use_localhost_bindings == 'true':
-      listen_address = '127.0.0.1'
-
     nap_name=nap.getName()
-    if nap_name in ISTIO_NAP_NAMES:
-      # skip customizing internal channels that were generated
-      return
 
     # replace listen address to bind to server pod IP
     if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
@@ -1472,43 +1435,6 @@ class SitConfigGenerator(Generator):
       sys.exit(1)
     else:
       return add_action, "add"
-
-  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol,
-        http_enabled="true", bind_to_localhost="true", use_fast_serialization='false',
-        tunneling_enabled='false', outbound_enabled='false'):
-
-    action, type = self._getNapConfigOverrideAction(server, "http-probe")
-
-    # For add, we must put the combine mode as add
-    # For replace, we must omit it
-    if type == "add":
-      self.writeln('<d:network-access-point %s>' % action)
-    else:
-      self.writeln('<d:network-access-point>')
-
-    self.indent()
-    if type == "add":
-      self.writeln('<d:name %s>%s</d:name>' % (action, name))
-    else:
-      self.writeln('<d:name>%s</d:name>' % name)
-
-    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
-    if bind_to_localhost == "true":
-      self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
-    else:
-      self.writeln('<d:listen-address %s>%s</d:listen-address>' % (action, listen_address))
-    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
-                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
-    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
-    self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
-                 (action, http_enabled))
-    # This needs to be enabled, since we are splitting from server default channel
-    self.writeln('<d:outbound-enabled %s>%s</d:outbound-enabled>' % (action, outbound_enabled))
-    self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:use-fast-serialization %s>%s</d:use-fast-serialization>' % (action, use_fast_serialization))
-    self.writeln('<d:tunneling-enabled %s>%s</d:tunneling-enabled>' % (action, tunneling_enabled))
-    self.undent()
-    self.writeln('</d:network-access-point>')
 
   def _getPortForwardNapConfigOverrideAction(self, svr, testname):
     add_action = 'f:combine-mode="add"'
@@ -1553,25 +1479,6 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
-  def _writeIstioReplicationChannelNAP(self, name, listen_address, listen_port,
-                                       bind_to_localhost="true"):
-    action = 'f:combine-mode="add"'
-    self.writeln('<d:network-access-point %s>' % action)
-    self.indent()
-    self.writeln('<d:name %s>%s</d:name>' % (action, name))
-    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, 't3'))
-    if bind_to_localhost == "true":
-      self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
-    else:
-      self.writeln('<d:listen-address %s>%s</d:listen-address>' % (action, listen_address))
-    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
-                                    self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
-    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
-    self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
-    self.writeln('<d:use-fast-serialization %s>true</d:use-fast-serialization>' % action)
-    self.undent()
-    self.writeln('</d:network-access-point>')
 
   def getCoherenceClusterSystemResourceOrNone(self, serverOrTemplate):
     try:
@@ -1604,119 +1511,9 @@ class SitConfigGenerator(Generator):
       self.undent()
       self.writeln('</d:coherence-member-config>')
 
-  def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return
-    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-    if istio_readiness_port is None:
-      return
-    admin_server_port = getRealListenPort(server)
-    # readiness probe
-    self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
-    # Generate NAP for each protocols
-    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-      self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='ldap')
-
-      self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='t3')
-
-      self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='http')
-
-      self._writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='snmp')
-
-      self._writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
-
-      self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='iiop')
-
-      ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
-
-      if ssl_listen_port is not None:
-        self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
-
-        self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='ldaps')
-
-        self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='t3s')
-
-        self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-        self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='iiops')
-
-      if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
-        self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
-                            listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
-    else:
-      self._writeIstioNAP(name='http-probe-ext', server=server, listen_address=listen_address,
-                          listen_port=istio_readiness_port, protocol='http', http_enabled="true",
-                          bind_to_localhost="false")
-
-  def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return
-    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-    if istio_readiness_port is None:
-      return
-    listen_port = getRealListenPort(template)
-    self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http')
-
-    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-      self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='t3', http_enabled='false')
-
-      self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='http')
-
-      self._writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='snmp')
-
-      self._writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='CLUSTER-BROADCAST')
-
-      self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='iiop')
-
-      ssl_listen_port = getSSLPortIfEnabled(template, self.env.getDomain())
-
-      if ssl_listen_port is not None:
-        self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='https')
-
-        self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='ldaps')
-
-        self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
-
-        self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-        self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='iiops')
-    else:
-      self._writeIstioNAP(name='http-probe-ext', server=template, listen_address=listen_address,
-                         listen_port=istio_readiness_port, protocol='http', bind_to_localhost="false")
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
-    admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-    if (admin_channel_port_forward_enabled == 'false') or \
-        (istio_enabled == 'true' and istio_use_localhost_bindings == 'true'):
-      return
 
     index = 0
     for nap in server.getNetworkAccessPoints():
@@ -1741,24 +1538,6 @@ class SitConfigGenerator(Generator):
         self._writeAdminChannelPortForwardNAP(name='internal-t3s', server=server,
                                               listen_port=ssl_listen_port, protocol='t3s')
 
-  def customizeIstioReplicationChannel(self, server, listen_address, listen_port, is_server_template):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false' or server.getCluster() is None :
-      return
-
-    repl_channel_name = server.getCluster().getReplicationChannel()
-    if repl_channel_name is not None and (repl_channel_name == 'istiorepl'
-                                          or repl_channel_name != 'ReplicationChannel'):
-      return
-
-    self._verify_replication_port_conflict(server, listen_port, is_server_template)
-
-    bind_to_localhost = 'false'
-    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-      bind_to_localhost = 'true'
-
-    self._writeIstioReplicationChannelNAP('istiorepl', listen_address, listen_port,
-                                          bind_to_localhost)
 
   def _verify_replication_port_conflict(self, server, replication_port, is_server_template):
     name = server.getName()
@@ -1811,7 +1590,7 @@ class SitConfigGenerator(Generator):
 
     self.writeln("<d:log" + logaction + ">")
     self.indent()
-    if self.env.getDomainLogHomeLayout() == 'FLAT':
+    if self.env.getDomainLogHomeLayout() == 'Flat':
       self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
     else:
       if not isDomainBean:
@@ -1883,7 +1662,7 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:web-server-log>")
       self.indent()
       # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
-      if self.env.getDomainLogHomeLayout() == 'FLAT':
+      if self.env.getDomainLogHomeLayout() == 'Flat':
         self.writeln("<d:file-name f:combine-mode=\"replace\">"
                      + logs_dir + "/" + name + "_access.log</d:file-name>")
       else:

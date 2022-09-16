@@ -8,26 +8,31 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.yaml.snakeyaml.Yaml;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V8;
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class SchemaConversionUtilsTest {
 
@@ -37,7 +42,8 @@ class SchemaConversionUtilsTest {
   private static final String DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML = "converted-domain-sample-2.yaml";
 
   private final List<Memento> mementos = new ArrayList<>();
-  private final ConversionAdapter converter = new ConversionAdapter();
+  private final ConversionAdapter converter = new ConversionAdapter(API_VERSION_V9);
+  private final ConversionAdapter converterv8 = new ConversionAdapter(API_VERSION_V8);
   private Map<String, Object> v8Domain;
 
   @BeforeEach
@@ -50,9 +56,12 @@ class SchemaConversionUtilsTest {
 
   @SuppressWarnings("unchecked")
   private static Map<String, Object> readAsYaml(String fileName) throws IOException {
+    return (Map<String, Object>) getYamlDocuments(fileName).iterator().next();
+  }
+
+  private static Iterable<Object> getYamlDocuments(String fileName) throws IOException {
     InputStream yamlStream = inputStreamFromClasspath(fileName);
-    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    return ((Map<String, Object>) yamlReader.readValue(yamlStream, Map.class));
+    return new Yaml().loadAll(yamlStream);
   }
 
   private static InputStream inputStreamFromClasspath(String path) {
@@ -65,15 +74,37 @@ class SchemaConversionUtilsTest {
   }
 
   static class ConversionAdapter {
-    private final SchemaConversionUtils utils = SchemaConversionUtils.create();
+
+    private final SchemaConversionUtils utils;
     private Map<String, Object> convertedDomain;
+    private List<Map<String, Object>> generatedClusters;
+
+    ConversionAdapter(String targetApiVersion) {
+      utils = SchemaConversionUtils.create(targetApiVersion);
+    }
 
     void convert(Map<String, Object> yaml) {
-      convertedDomain = utils.convertDomainSchema(yaml);
+      convert(yaml, null);
+    }
+
+    void convert(Map<String, Object> yaml, List<Map<String, Object>> clusters) {
+      assertDoesNotThrow(() -> {
+        SchemaConversionUtils.Resources convertedResources = utils.convertDomainSchema(yaml, toLookup(clusters));
+        convertedDomain = convertedResources.domain;
+        generatedClusters = convertedResources.clusters;
+      });
+    }
+
+    private SchemaConversionUtils.ResourceLookup toLookup(List<Map<String, Object>> clusters) {
+      return () -> clusters;
     }
 
     Map<String, Object> getDomain() {
       return convertedDomain;
+    }
+
+    List<Map<String, Object>> getClusters() {
+      return generatedClusters;
     }
   }
 
@@ -95,11 +126,29 @@ class SchemaConversionUtilsTest {
 
   @Test
   void testV8DomainUpgradeWithLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    final Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
+    final Object expectedDomain = yamlDocuments.next();
+    List<Object> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(clusters::add);
 
     converter.convert(readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML));
 
     assertThat(converter.getDomain(), equalTo(expectedDomain));
+    assertThat(clusters, equalTo(converter.getClusters()));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testV9DomainDowngrade() throws IOException {
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
+
+    converterv8.convert(domain, clusters);
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    assertThat(converterv8.getDomain().get("clusters"), equalTo(v8Domain.get("clusters")));
   }
 
   @Test
@@ -113,35 +162,41 @@ class SchemaConversionUtilsTest {
 
   @Test
   void whenOldDomainHasProgressingCondition_removeIt() {
-    addStatusCondition("Progressing", null, "in progress");
+    addStatusCondition("Progressing", "True", null, "in progress");
 
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
   }
 
-  private void addStatusCondition(String type, String reason, String message) {
+  private void addStatusCondition(String type, String status, String reason, String message) {
+    addStatusCondition(v8Domain, type, status, reason, message);
+  }
+
+  private void addStatusCondition(Map<String, Object> domain, String type, String status,
+                                  String reason, String message) {
     final Map<String, String> condition = new HashMap<>();
     condition.put("type", type);
+    condition.put("status", status);
     Optional.ofNullable(reason).ifPresent(r -> condition.put("reason", r));
     Optional.ofNullable(message).ifPresent(m -> condition.put("message", m));
-    getStatusConditions().add(condition);
+    getStatusConditions(domain).add(condition);
   }
 
   @SuppressWarnings("unchecked")
-  private List<Object> getStatusConditions() {
-    return (List<Object>) getStatus().computeIfAbsent("conditions", k -> new ArrayList<>());
+  private List<Object> getStatusConditions(Map<String, Object> domain) {
+    return (List<Object>) getStatus(domain).computeIfAbsent("conditions", k -> new ArrayList<>());
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String,Object> getStatus() {
-    return (Map<String, Object>) v8Domain.computeIfAbsent("status", k -> new HashMap<>());
+  private Map<String,Object> getStatus(Map<String, Object> domain) {
+    return (Map<String, Object>) domain.computeIfAbsent("status", k -> new HashMap<>());
   }
 
   @Test
   void whenOldDomainHasUnsupportedConditionReasons_removeThem() {
-    addStatusCondition("Completed", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "Internal", "whoops");
+    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
+    addStatusCondition("Failed", "True", "Internal", "whoops");
 
     converter.convert(v8Domain);
 
@@ -153,8 +208,8 @@ class SchemaConversionUtilsTest {
 
   @Test
   void whenOldDomainHasSupportedConditionReasons_dontRemoveThem() {
-    addStatusCondition("Completed", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "Internal", "whoops");
+    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
+    addStatusCondition("Failed", "True", "Internal", "whoops");
 
     converter.convert(v8Domain);
 
@@ -196,6 +251,32 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void whenOldDomainHasDesiredStateFields_renameAsStateGoal() {
+    addV8ServerStatus("ms1", "RUNNING", "UNKNOWN");
+    addV8ServerStatus("ms2", "RUNNING", "RUNNING");
+    addV8ServerStatus("ms2", "SHUTDOWN", "SHUTDOWN");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.servers[*].state", contains("UNKNOWN", "RUNNING", "SHUTDOWN")));
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.servers[*].stateGoal", contains("RUNNING", "RUNNING", "SHUTDOWN")));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.status.servers[0].desiredState"));
+  }
+
+  private void addV8ServerStatus(String serverName, String desiredState, String state) {
+    final Map<String, String> serverStatus
+        = Map.of("serverName", serverName, "state", state, "desiredState", desiredState);
+    getServerStatuses(v8Domain).add(new HashMap<>(serverStatus));
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Object> getServerStatuses(Map<String, Object> domain) {
+    return (List<Object>) getStatus(domain).computeIfAbsent("servers", k -> new ArrayList<>());
+  }
+
+  @Test
   void testV8DomainWithConfigOverrides_moveToOverridesConfigMap() {
     setConfigOverrides(v8Domain, "someMap");
 
@@ -224,6 +305,26 @@ class SchemaConversionUtilsTest {
   @SuppressWarnings("SameParameterValue")
   private void setOverridesConfigMap(Map<String, Object> v8Domain, String configMap) {
     getMapAtPath(v8Domain, "spec.configuration").put("overridesConfigMap", configMap);
+  }
+
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
+  private Map<String, Object> addCluster(Map<String, Object> v8Domain, String name) {
+    List<Map<String, Object>> clusters = (List<Map<String, Object>>) getDomainSpec(v8Domain)
+            .computeIfAbsent("clusters", k -> new ArrayList<>());
+    Map<String, Object> newCluster = new HashMap<>();
+    newCluster.put("clusterName", name);
+    clusters.add(newCluster);
+    return newCluster;
+  }
+
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
+  private Map<String, Object> addManagedServer(Map<String, Object> v8Domain, String name) {
+    List<Map<String, Object>> managedServers = (List<Map<String, Object>>) getDomainSpec(v8Domain)
+            .computeIfAbsent("managedServers", k -> new ArrayList<>());
+    Map<String, Object> newServer = new HashMap<>();
+    newServer.put("serverName", name);
+    managedServers.add(newServer);
+    return newServer;
   }
 
   @Test
@@ -256,4 +357,194 @@ class SchemaConversionUtilsTest {
     getMapAtPath(v8Domain, "spec.configuration").put("secrets", secrets);
   }
 
+  @Test
+  void testV8DomainWithSeverStartPolicy_changeToCamelCase() {
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasJsonPath("$.spec.serverStartPolicy", equalTo("IfNeeded")));
+  }
+
+  @Test
+  void testV8DomainClusterWithSeverStartPolicy_changeToCamelCase() {
+    Map<String, Object> cluster = addCluster(v8Domain, "cluster-2");
+    cluster.put("serverStartPolicy", "NEVER");
+
+    converter.convert(v8Domain);
+
+    assertThat(cluster, hasEntry("serverStartPolicy", "Never"));
+  }
+
+  @Test
+  void testV8DomainManagedServerWithSeverStartPolicy_changeToCamelCase() {
+    Map<String, Object> managedServer = addManagedServer(v8Domain, "ms-3");
+    managedServer.put("serverStartPolicy", "ALWAYS");
+
+    converter.convert(v8Domain);
+
+    assertThat(managedServer, hasEntry("serverStartPolicy", "Always"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testV8DomainWithAdminSeverStartPolicy_changeToCamelCase() {
+    Map<String, Object> adminServer = (Map<String, Object>) getDomainSpec(v8Domain)
+            .computeIfAbsent("adminServer", k -> new HashMap<>());
+    adminServer.put("serverStartPolicy", "IF_NEEDED");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.adminServer.serverStartPolicy", equalTo("IfNeeded")));
+  }
+
+  @Test
+  void testV8DomainWithOverrideDistributionStrategy_changeToCamelCase() {
+    getMapAtPath(v8Domain, "spec.configuration").put("overrideDistributionStrategy", "ON_RESTART");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.configuration.overrideDistributionStrategy", equalTo("OnRestart")));
+  }
+
+  @Test
+  void testV8DomainWithLogHomeLayout_changeToCamelCase() {
+    getMapAtPath(v8Domain, "spec").put("logHomeLayout", "BY_SERVERS");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+            hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
+  }
+
+  @Test
+  void testV8DomainWithoutReplicas_setToZero() {
+    getDomainSpec(v8Domain).remove("replicas");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.spec.replicas", equalTo(0)));
+  }
+
+  @Test
+  void testV8DomainServerStartState_preserved() {
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.adminServer.serverStartState"));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].serverStartState"));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
+        equalTo("{\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"},"
+            + "\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"serverStartState\":\"RUNNING\"}}")));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testV9DomainServerStartState_restored() throws IOException {
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
+
+    converterv8.convert(domain, clusters);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.adminServer.serverStartState",
+        equalTo("RUNNING")));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
+        equalTo("RUNNING")));
+  }
+
+  @Test
+  void testV9DomainCompletedIsFalse_toProgressing() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    addStatusCondition(v9Domain, "Completed", "False", "Something", "Hello");
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Progressing')].reason", contains("Something")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Progressing')].message", contains("Hello")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Progressing')].status", contains("True")));
+  }
+
+  @Test
+  void testV9DomainCompletedIsTrue_removeIt() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    addStatusCondition(v9Domain, "Completed", "True", "Something", "Hello");
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
+  }
+
+  @Test
+  void whenV9DomainHasServerStatusStateGoal_renameToDesiredState() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+
+    addV9ServerStatus(v9Domain, "ms1", "RUNNING", "UNKNOWN");
+    addV9ServerStatus(v9Domain, "ms2", "RUNNING", "RUNNING");
+    addV9ServerStatus(v9Domain, "ms2", "SHUTDOWN", "SHUTDOWN");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.servers[*].state", contains("UNKNOWN", "RUNNING", "SHUTDOWN")));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.servers[*].desiredState", contains("RUNNING", "RUNNING", "SHUTDOWN")));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.status.servers[0].stateGoal"));
+  }
+
+  private void addV9ServerStatus(Map<String, Object> v9Domain, String serverName, String stateGoal, String state) {
+    final Map<String, String> serverStatus
+        = Map.of("serverName", serverName, "state", state, "stateGoal", stateGoal);
+    getServerStatuses(v9Domain).add(new HashMap<>(serverStatus));
+  }
+
+  @Test
+  void testV8DomainIstio_preserved() {
+    // Simplify domain to focus on Istio
+    getDomainSpec(v8Domain).remove("adminServer");
+    getDomainSpec(v8Domain).remove("clusters");
+
+    // Add Istio configuration
+    Map<String, Object> istio = new LinkedHashMap<>();
+    istio.put("enabled", true);
+    istio.put("readinessPort", 9000);
+    getMapAtPath(v8Domain, "spec.configuration").put("istio", istio);
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.configuration.istio"));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
+        equalTo("{\"$.spec.configuration\":{\"istio\":{\"enabled\":true,\"readinessPort\":9000}}}")));
+  }
+
+  @Test
+  void testV9DomainIstio_restored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "metadata.annotations")
+        .put("weblogic.v8.preserved",
+            "{\"$.spec.configuration\":{\"istio\":{\"enabled\":true,\"readinessPort\":9000}}}");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.enabled",
+        equalTo(true)));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.configuration.istio.readinessPort",
+        equalTo(9000)));
+  }
+  
+  @SuppressWarnings("unchecked")
+  @Test
+  void testV8DomainWebLogicCredentialsSecretWithNamespace_remove() {
+    ((Map<String, Object>) getDomainSpec(v8Domain).get("webLogicCredentialsSecret")).put("namespace", "my-ns");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.webLogicCredentialsSecret.namespace"));
+  }
 }

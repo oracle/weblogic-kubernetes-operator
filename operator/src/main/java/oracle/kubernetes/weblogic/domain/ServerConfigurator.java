@@ -10,18 +10,13 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
 public interface ServerConfigurator extends ServiceConfigurator {
-  ServerConfigurator withDesiredState(ServerStartState desiredState);
-
   ServerConfigurator withEnvironmentVariable(String name, String value);
 
   ServerConfigurator withEnvironmentVariable(V1EnvVar envVar);
-
-  ServerConfigurator withServerStartState(ServerStartState state);
 
   ServerConfigurator withServerStartPolicy(ServerStartPolicy startNever);
 
@@ -123,6 +118,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withNodeName(String nodeName);
 
   ServerConfigurator withMaximumReadyWaitTimeSeconds(long waitTime);
+
+  ServerConfigurator withMaximumPendingWaitTimeSeconds(long waitTime);
 
   ServerConfigurator withSchedulerName(String schedulerName);
 

@@ -17,14 +17,12 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -32,14 +30,16 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
@@ -51,7 +51,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -69,6 +69,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-sequential")
+@Tag("okd-fmw-cert")
 class ItFmwDynamicDomainInPV {
 
   private static String opNamespace = null;
@@ -97,7 +101,7 @@ class ItFmwDynamicDomainInPV {
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private String adminSvcExtHost = null;
 
   /**
@@ -162,7 +166,7 @@ class ItFmwDynamicDomainInPV {
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create FMW domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -191,9 +195,10 @@ class ItFmwDynamicDomainInPV {
   private void createDomainCrAndVerify(String pvName,
                                        String pvcName,
                                        int t3ChannelPort) {
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -201,21 +206,20 @@ class ItFmwDynamicDomainInPV {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -231,19 +235,13 @@ class ItFmwDynamicDomainInPV {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")
-                ));
+                        .nodePort(t3ChannelPort)))));
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created
@@ -297,7 +295,7 @@ class ItFmwDynamicDomainInPV {
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/domains/");
+    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);

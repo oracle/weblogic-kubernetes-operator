@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
@@ -24,10 +25,11 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 
 /**
  * Configuration values shared by multiple levels: domain, admin server, managed server, and
@@ -45,12 +47,6 @@ public abstract class BaseConfiguration {
   @SerializedName("serverService")
   @Expose
   private final ServerService serverService = new ServerService();
-
-  /** Desired startup state. Legal values are RUNNING or ADMIN. */
-  @Description(
-      "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  private ServerStartState serverStartState;
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
@@ -77,9 +73,6 @@ public abstract class BaseConfiguration {
       return;
     }
 
-    if (serverStartState == null) {
-      serverStartState = other.getServerStartState();
-    }
     if (overrideStartPolicyFrom(other)) {
       setServerStartPolicy(other.getServerStartPolicy());
     }
@@ -104,15 +97,6 @@ public abstract class BaseConfiguration {
   }
 
   @Nullable
-  ServerStartState getServerStartState() {
-    return serverStartState;
-  }
-
-  void setServerStartState(@Nullable ServerStartState serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
-  @Nullable
   public List<V1EnvVar> getEnv() {
     return serverPod.getEnv();
   }
@@ -133,8 +117,8 @@ public abstract class BaseConfiguration {
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
+   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
    * to be started to get to the cluster's replica count..
    *
    * @since 2.0
@@ -179,7 +163,7 @@ public abstract class BaseConfiguration {
   }
 
   public V1Affinity getAffinity() {
-    return serverPod.getAffinity();
+    return Optional.ofNullable(serverPod.getAffinity()).orElse(getDefaultAntiAffinity());
   }
 
   void setAffinity(V1Affinity affinity) {
@@ -370,23 +354,29 @@ public abstract class BaseConfiguration {
     return restartVersion;
   }
 
-  void setRestartVersion(String restartVersion) {
+  public void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
   }
 
-
-  long getMaximumReadyWaitTimeSeconds() {
+  Long getMaximumReadyWaitTimeSeconds() {
     return serverPod.getMaxReadyWaitTimeSeconds();
+  }
+
+  Long getMaximumPendingWaitTimeSeconds() {
+    return serverPod.getMaxPendingWaitTimeSeconds();
   }
 
   public void setMaxReadyWaitTimeSeconds(long waitTime) {
     serverPod.setMaxReadyWaitTimeSeconds(waitTime);
   }
 
+  public void setMaxPendingWaitTimeSeconds(long waitTime) {
+    serverPod.setMaxPendingWaitTimeSeconds(waitTime);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .append("serverStartState", serverStartState)
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
@@ -408,7 +398,6 @@ public abstract class BaseConfiguration {
     return new EqualsBuilder()
         .append(serverPod, that.serverPod)
         .append(serverService, that.serverService)
-        .append(serverStartState, that.serverStartState)
         .append(restartVersion, that.restartVersion)
         .isEquals();
   }
@@ -418,7 +407,6 @@ public abstract class BaseConfiguration {
     return new HashCodeBuilder(17, 37)
         .append(serverPod)
         .append(serverService)
-        .append(serverStartState)
         .append(restartVersion)
         .toHashCode();
   }

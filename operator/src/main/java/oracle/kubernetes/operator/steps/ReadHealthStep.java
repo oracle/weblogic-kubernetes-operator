@@ -30,11 +30,11 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.http.HttpResponseStep;
+import oracle.kubernetes.operator.http.client.HttpResponseStep;
+import oracle.kubernetes.operator.http.rest.Scan;
+import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.Scan;
-import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -217,7 +217,9 @@ public class ReadHealthStep extends Step {
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       try {
-        new HealthResponseProcessing(packet, response).recordStateAndHealth();
+        HealthResponseProcessing responseProcessing = new HealthResponseProcessing(packet, response);
+        responseProcessing.recordStateAndHealth();
+        responseProcessing.resetHttpRequestFailureCount();
         decrementIntegerInPacketAtomically(packet, REMAINING_SERVERS_HEALTH_TO_READ);
 
         return doNext(packet);
@@ -246,7 +248,6 @@ public class ReadHealthStep extends Step {
       return doNext(packet);
     }
 
-
     static class HealthResponseProcessing {
       private final String serverName;
       private final Packet packet;
@@ -264,6 +265,8 @@ public class ReadHealthStep extends Step {
       }
 
       void recordFailedStateAndHealth() {
+        Optional.ofNullable(getServerName())
+            .ifPresent(s -> getDomainPresenceInfo().incrementHttpRequestFailureCount(s));
         recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
       }
 
@@ -381,6 +384,11 @@ public class ReadHealthStep extends Step {
 
       Packet getPacket() {
         return packet;
+      }
+
+      public void resetHttpRequestFailureCount() {
+        Optional.ofNullable(getServerName())
+            .ifPresent(s -> getDomainPresenceInfo().setHttpRequestFailureCount(s, 0));
       }
     }
   }

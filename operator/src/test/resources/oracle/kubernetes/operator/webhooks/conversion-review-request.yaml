@@ -1,0 +1,127 @@
+{
+  "kind": "ConversionReview",
+  "apiVersion": "apiextensions.k8s.io/v1",
+  "request": {
+    "uid": "177923b2-bb51-4496-9bf1-b793fdc81a88",
+    "desiredAPIVersion": "weblogic.oracle/v9",
+    "objects": [
+      {
+        "apiVersion": "weblogic.oracle/v8",
+        "kind": "Domain",
+        "metadata": {
+          "name": "sample-domain1",
+          "namespace": "sample-domain1-ns",
+          "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
+        },
+        "spec": {
+          "adminServer": {
+            "serverStartState": "RUNNING"
+          },
+          "auxiliaryImageVolumes": [
+            {
+              "mountPath": "/auxiliary",
+              "name": "auxiliaryImageVolume1"
+            }
+          ],
+          "clusters": [
+            {
+              "clusterName": "cluster-1",
+              "replicas": 2,
+              "serverPod": {
+                "affinity": {
+                  "podAntiAffinity": {
+                    "preferredDuringSchedulingIgnoredDuringExecution": [
+                      {
+                        "podAffinityTerm": {
+                          "labelSelector": {
+                            "matchExpressions": [
+                              {
+                                "key": "weblogic.clusterName",
+                                "operator": "In",
+                                "values": [
+                                  "$(CLUSTER_NAME)"
+                                ]
+                              }
+                            ]
+                          },
+                          "topologyKey": "kubernetes.io/hostname"
+                        },
+                        "weight": 100.0
+                      }
+                    ]
+                  }
+                }
+              },
+              "serverStartState": "RUNNING"
+            }
+          ],
+          "configuration": {
+            "model": {
+              "domainType": "WLS",
+              "modelHome": "/auxiliary/models",
+              "runtimeEncryptionSecret": "sample-domain1-runtime-encryption-secret",
+              "wdtInstallHome": "/auxiliary/weblogic-deploy"
+            }
+          },
+          "domainHome": "/u01/domains/sample-domain1",
+          "domainHomeSourceType": "FromModel",
+          "image": "container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+          "imagePullPolicy": "IfNotPresent",
+          "includeServerOutInPodLog": true,
+          "introspectVersion": "1",
+          "replicas": 1,
+          "restartVersion": "1",
+          "serverPod": {
+            "auxiliaryImages": [
+              {
+                "image": "model-in-image:WLS-AI-v1",
+                "imagePullPolicy": "IfNotPresent",
+                "volume": "auxiliaryImageVolume1"
+              }
+            ],
+            "env": [
+              {
+                "name": "CUSTOM_DOMAIN_NAME",
+                "value": "domain1"
+              },
+              {
+                "name": "JAVA_OPTIONS",
+                "value": "-Dweblogic.StdoutDebugEnabled=false"
+              },
+              {
+                "name": "USER_MEM_ARGS",
+                "value": "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "250m",
+                "memory": "768Mi"
+              }
+            }
+          },
+          "serverStartPolicy": "IF_NEEDED",
+          "webLogicCredentialsSecret": {
+            "name": "sample-domain1-weblogic-credentials"
+          }
+        },
+        "status": {
+            "conditions": [
+                {
+                    "lastTransitionTime": "2022-03-11T19:41:08.794468Z",
+                    "status": "True",
+                    "type": "Progressing"
+                }
+            ]
+       }
+      }
+    ]
+  },
+  "response": {
+    "uid": "",
+    "convertedObjects": null,
+    "result": {
+      "metadata": {}
+    }
+  }
+}

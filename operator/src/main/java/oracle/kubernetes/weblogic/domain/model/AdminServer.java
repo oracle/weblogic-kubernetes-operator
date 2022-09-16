@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -29,6 +30,7 @@ public class AdminServer extends Server {
           + " Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for"
           + " each existing admin protocol capable port. This allows external Administration Console and WLST 'T3'"
           + " access when using the 'kubectl port-forward' pattern. Defaults to true.")
+  @Default(boolDefault = true)
   private Boolean adminChannelPortForwardingEnabled = true;
 
   /**

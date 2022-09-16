@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -12,13 +11,14 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
@@ -39,18 +39,21 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -71,6 +74,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test server's pod init container feature")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItInitContainers {
 
   private static String opNamespace = null;
@@ -94,6 +101,7 @@ class ItInitContainers {
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
   private static LoggingFacade logger = null;
+
 
   /**
    * Get namespaces for operator, domains.
@@ -153,7 +161,7 @@ class ItInitContainers {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -171,9 +179,9 @@ class ItInitContainers {
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
    * WebLogic server pods don't go through initialization and ready state.
-   * The following introspect version usecase was added based on issue 
-   * reported by OFSS team. With initContainer configured, the WebLogic server 
-   * pod should not roll with modified introspect version without any update to 
+   * The following introspect version usecase was added based on issue
+   * reported by OFSS team. With initContainer configured, the WebLogic server
+   * pod should not roll with modified introspect version without any update to
    * domain resource.
    * Update the introspect version with out any change to domain resource
    * Make sure no WebLogic server pod get rolled.
@@ -213,7 +221,7 @@ class ItInitContainers {
     patchDomainResourceWithNewIntrospectVersion(domain1Uid,domain1Namespace);
     //verify the pods are not restarted in any introspectVersion update
     verifyPodsNotRolled(domain1Namespace, pods);
-   
+
   }
 
   private boolean checkPodLogContainMsg(String podName, String podNamespace, String domainUid, String msg) {
@@ -267,16 +275,17 @@ class ItInitContainers {
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
   @Tag("gate")
+  @Tag("crio")
   void testClusterInitContainer() {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
 
     //check if init container got executed
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server1",
-        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        domain3Namespace, "init-container").contains("Hi from Cluster"),
         "failed to init init-container container command for cluster's managed-server1"));
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server2",
-        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        domain3Namespace, "init-container").contains("Hi from Cluster"),
         "failed to init init-container container command for cluster's managed-server2"));
   }
 
@@ -313,17 +322,8 @@ class ItInitContainers {
    */
   private void createAndVerifyMiiDomain(String domainNamespace, String domainUid, String testCaseName) {
 
-
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount)
-        .serverStartState("RUNNING"));
-
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -333,13 +333,13 @@ class ItInitContainers {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -348,24 +348,32 @@ class ItInitContainers {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
+    if (!testCaseName.equals("clusters")) {
+      // create cluster object
+      ClusterResource cluster = createClusterResource(
+          clusterName, domainNamespace, replicaCount);
+
+      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      createClusterAndVerify(cluster);
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    }
 
     switch (testCaseName) {
       case "spec":
         domain.getSpec().getServerPod().addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from Domain\"")
             .name("init-container")
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG).addEnvItem(new V1EnvVar()
                                     .name("DOMAIN_NAME")
                                     .value("xyz")));
@@ -376,24 +384,26 @@ class ItInitContainers {
             .addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from AdminServer\"")
             .name("init-container")
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
         setPodAntiAffinity(domain);
         break;
       case "clusters":
-        clusters = domain.getSpec().getClusters();
-        assertNotNull(clusters, "Can't find clusters in CRD ");
-        Cluster mycluster = clusters.stream()
-            .filter(cluster -> clusterName.equals(cluster.getClusterName())).findAny()
-            .orElse(null);
-        assertNotNull(mycluster, "Can't find cluster " + clusterName);
-        setPodAntiAffinity(domain);
-        mycluster.getServerPod()
+        ClusterSpec clusterSpec = new ClusterSpec()
+            .withClusterName(clusterName)
+            .replicas(replicaCount)
+            .serverPod(new ServerPod()
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("init-container")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
-                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
+                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
+        logger.info(Yaml.dump(clusterSpec));
+        ClusterResource cluster = createClusterResource(clusterName, domainNamespace, clusterSpec);
+        logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+        createClusterAndVerify(cluster);
+        // set cluster references
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()
@@ -402,7 +412,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from managed-server1\"")
                     .name("init-container")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG))));
         setPodAntiAffinity(domain);
         break;

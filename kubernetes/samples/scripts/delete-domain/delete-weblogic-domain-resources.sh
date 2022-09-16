@@ -34,8 +34,9 @@ cat << EOF
 
   The script runs in phases:  
 
-    Phase 1:  Set the serverStartPolicy of each domain to NEVER if
-              it's not already NEVER.  This should cause each
+    Phase 1:  Set the serverStartPolicy of each domain. For v9 domains
+              set serverStartPolicy to Never. For v8 domains set the
+              serverStartPolicy to NEVER. This will cause each
               domain's operator to initiate a controlled shutdown
               of the domain.  Immediately proceed to phase 2.
 
@@ -116,7 +117,7 @@ getDomainResources() {
 #   deleteDomains domainA,domainB,... maxwaitsecs
 #
 # Internal helper function
-#   This function first sets the serverStartPolicy of each Domain to NEVER
+#   This function first sets the serverStartPolicy of each Domain to Never
 #   and waits up to half of $2 for pods to 'self delete'.  It then performs
 #   a helm delete on $1, and finally it directly deletes
 #   any remaining k8s resources for domain $1 (including any remaining pods)
@@ -165,20 +166,20 @@ deleteDomains() {
       exit $allcount
     fi
 
-    # In phase 1, set the serverStartPolicy of each domain to NEVER and then immediately
+    # In phase 1, set the serverStartPolicy of each domain to Never and then immediately
     # proceed to phase 2.  If there are no domains or WLS pods, we also immediately go to phase 2.
 
     if [ $phase -eq 1 ]; then
       phase=2
       if [ $podcount -gt 0 ]; then
-        echo @@ "Setting serverStartPolicy to NEVER on each domain (this should cause operator(s) to initiate a controlled shutdown of the domain's pods.)"
+        echo @@ "Setting serverStartPolicy to Never on each domain (this should cause operator(s) to initiate a controlled shutdown of the domain's pods.)"
         cat $tempfile | grep "^Domain" | while read line; do 
           local name="`echo $line | awk '{ print $2 }'`"
           local namespace="`echo $line | awk '{ print $4 }'`"
           if [ "$test_mode" = "true" ]; then
-            echo "kubectl patch domain $name -n $namespace -p '{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}' --type merge"
+            echo "kubectl patch domain $name -n $namespace -p '{\"spec\":{\"serverStartPolicy\":\"Never\"}}' --type merge"
           else
-            kubectl patch domain $name -n $namespace -p '{"spec":{"serverStartPolicy":"NEVER"}}' --type merge
+            kubectl patch domain $name -n $namespace -p '{"spec":{"serverStartPolicy":"Never"}}' --type merge
           fi
         done
       fi

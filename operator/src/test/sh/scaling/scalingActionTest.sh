@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# To run this test manually:
+# export SHUNIT2_PATH=<path of shunit2 binary>
+# export SCRIPTPATH=<path of directory containing scalingAction.sh>
+# sh scaling/scalingActionTest.sh
+#
 
 API_VERSION="v9"
 TEST_OPERATOR_ROOT=/tmp/test/weblogic-operator
@@ -101,207 +107,229 @@ test_get_operator_internal_rest_port_operator_notfound_jq() {
   assertEquals "Did not return expected rest port" '' "${result}"
 }
 
-##### is_defined_in_clusters tests #####
+##### get_cluster_resource_names_from_domain tests #####
 
-test_is_defined_in_clusters() {
+test_get_cluster_resource_names_from_domain() {
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
 
   domain_json=`command cat ${DOMAIN_FILE}`
 
-  result=$(is_defined_in_clusters "${domain_json}")
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
 
-  assertEquals 'True' "${result}"
+  if [[ "${result}" != "domain1-cluster-1"*"domain1-cluster-2" ]]; then
+    fail "get_cluster_resource_names_from_domain returned unexpected value: <${result}>"
+  fi
 }
 
-test_is_defined_in_clusters_jq() {
+test_get_cluster_resource_names_from_domain_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
 
   domain_json=`command cat ${DOMAIN_FILE}`
 
-  result=$(is_defined_in_clusters "${domain_json}")
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
 
-  assertEquals 'True' "${result}"
+  if [[ "${result}" != "domain1-cluster-1"*"domain1-cluster-2" ]]; then
+    fail "get_cluster_resource_names_from_domain returned unexpected value: <${result}>"
+  fi
 }
 
-test_is_defined_in_clusters_2clusters() {
+test_get_cluster_resource_names_from_domain_no_clusters() {
 
-  DOMAIN_FILE="${testdir}/2clusters.json"
+  DOMAIN_FILE="${testdir}/domain_0cr.json"
 
   domain_json=`command cat ${DOMAIN_FILE}`
 
-  wls_cluster_name='cluster-1'
-  result1=$(is_defined_in_clusters "${domain_json}")
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
 
-  wls_cluster_name='cluster-2'
-  result2=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'True' "${result1}"
-  assertEquals 'True' "${result2}"
+  assertEquals "" "${result}"
 }
 
-test_is_defined_in_clusters_2clusters_jq() {
+test_get_cluster_resource_names_from_domain_no_clusters_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/2clusters.json"
+  DOMAIN_FILE="${testdir}/domain_0cr.json"
 
   domain_json=`command cat ${DOMAIN_FILE}`
 
-  wls_cluster_name='cluster-1'
-  result1=$(is_defined_in_clusters "${domain_json}")
+  result=$(get_cluster_resource_names_from_domain "${domain_json}")
 
-  wls_cluster_name='cluster-2'
-  result2=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'True' "${result1}"
-  assertEquals 'True' "${result2}"
+  assertEquals "" "${result}"
 }
 
-test_is_defined_in_clusters_no_matching() {
+##### get_cluster_name_from_cluster tests #####
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
+test_get_cluster_name_from_cluster() {
 
-  wls_cluster_name='no-such-cluster'
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(is_defined_in_clusters "${domain_json}")
+  result=$(get_cluster_name_from_cluster "${cluster_json}")
 
-  assertEquals 'False' "${result}"
+  assertEquals 'cluster-1' "${result}"
 }
 
-test_is_defined_in_clusters_no_matching_jq() {
+test_get_cluster_name_from_cluster_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
 
-  wls_cluster_name='no-such-cluster'
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  result=$(get_cluster_name_from_cluster "${cluster_json}")
 
-  result=$(is_defined_in_clusters "${domain_json}")
-
-  assertEquals 'False' "${result}"
+  assertEquals 'cluster-1' "${result}"
 }
 
-##### get_num_ms_in_cluster tests #####
+##### get_replicas_from_cluster tests #####
 
-test_get_num_ms_in_cluster() {
+test_get_replicas_from_cluster() {
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '3' "${result}"
+}
+
+test_get_replicas_from_cluster_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
 
   wls_cluster_name='cluster-1'
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(get_num_ms_in_cluster "${domain_json}")
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '3' "${result}"
+}
+
+test_get_replicas_from_cluster_no_replicas() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '-1' "${result}"
+}
+
+test_get_replicas_from_cluster_no_replicas_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+
+  wls_cluster_name='cluster-1'
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replicas_from_cluster "${cluster_json}")
+
+  assertEquals '-1' "${result}"
+}
+
+##### get_min_replicas_from_cluster tests #####
+
+test_get_min_replicas_from_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_min_replicas_from_cluster "${cluster_json}" result
 
   assertEquals '1' "${result}"
 }
 
-test_get_num_ms_in_cluster_jq() {
+test_get_min_replicas_from_cluster_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
 
-  wls_cluster_name='cluster-1'
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
+  get_min_replicas_from_cluster "${cluster_json}" result
 
   assertEquals '1' "${result}"
 }
 
-test_get_num_ms_in_cluster_2clusters() {
+test_get_min_replicas_from_cluster_default() {
 
-  DOMAIN_FILE="${testdir}/2clusters.json"
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  wls_cluster_name='cluster-1'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '1' "${result}"
+  get_min_replicas_from_cluster "${cluster_json}" result
 
-  wls_cluster_name='cluster-2'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '2' "${result}"
+  assertEquals '0' "${result}"
 }
 
-test_get_num_ms_in_cluster_2clusters_jq() {
+test_get_min_replicas_from_cluster_default_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/2clusters.json"
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  wls_cluster_name='cluster-1'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_num_ms_in_cluster "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_num_ms_in_cluster_no_replics() {
-
-  DOMAIN_FILE="${testdir}/cluster_noreplicas.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_num_ms_in_cluster "${domain_json}")
+  get_min_replicas_from_cluster "${cluster_json}" result
 
   assertEquals '0' "${result}"
 }
 
-test_get_num_ms_in_cluster_no_replicas_jq() {
+##### get_max_replicas_from_cluster tests #####
+
+test_get_max_replicas_from_cluster() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  get_max_replicas_from_cluster "${cluster_json}" result
+
+  assertEquals '8' "${result}"
+}
+
+test_get_max_replicas_from_cluster_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/cluster_noreplicas.json"
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
 
-  wls_cluster_name='cluster-1'
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  get_max_replicas_from_cluster "${cluster_json}" result
 
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
+  assertEquals '8' "${result}"
 }
 
-test_get_num_ms_in_cluster_no_matching() {
+test_get_max_replicas_from_cluster_default() {
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
 
-  wls_cluster_name='no-such-cluster'
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  get_max_replicas_from_cluster "${cluster_json}" result
 
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
+  assertEquals '' "${result}"
 }
 
-test_get_num_ms_in_cluster_no_matching_jq() {
+test_get_max_replicas_from_cluster_default_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/cluster1.json"
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
 
-  wls_cluster_name='no-such-cluster'
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  domain_json=`command cat ${DOMAIN_FILE}`
+  get_max_replicas_from_cluster "${cluster_json}" result
 
-  result=$(get_num_ms_in_cluster "${domain_json}")
-
-  assertEquals '0' "${result}"
+  assertEquals '' "${result}"
 }
 
 ##### get_num_ms_domain_scope tests #####
@@ -360,118 +388,290 @@ test_get_num_ms_domain_scope_no_replicas_jq() {
   assertEquals '0' "${result}"
 }
 
-##### get_replica_count tests #####
+##### get_replica_count_from_resources tests #####
 
-test_get_replica_count_from_cluster() {
+test_get_replica_count_from_resources_cluster() {
 
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
   DOMAIN_FILE="${testdir}/cluster1.json"
 
   wls_cluster_name='cluster-1'
 
   domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(get_replica_count 'True' "${domain_json}")
-
-  assertEquals '1' "${result}"
-}
-
-test_get_replica_count_from_cluster_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'True' "${domain_json}")
-
-  assertEquals '1' "${result}"
-}
-
-test_get_replica_count_from_cluster_2clusters() {
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_from_cluster_2clusters_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/2clusters.json"
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  wls_cluster_name='cluster-1'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '1' "${result}"
-
-  wls_cluster_name='cluster-2'
-  result=$(get_replica_count 'True' "${domain_json}")
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_from_domain() {
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
-
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_from_domain_jq() {
-  skip_if_jq_not_installed
-
-  DOMAIN_FILE="${testdir}/cluster1.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
-
-  assertEquals '2' "${result}"
-}
-
-test_get_replica_count_set_to_minReplicas() {
-
-  DOMAIN_FILE="${testdir}/cluster_min3.json"
-
-  wls_cluster_name='cluster-1'
-
-  domain_json=`command cat ${DOMAIN_FILE}`
-
-  result=$(get_replica_count 'False' "${domain_json}")
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
 
   assertEquals '3' "${result}"
 }
 
-test_get_replica_count_set_to_minReplicas_jq() {
+test_get_replica_count_from_resources_cluster_jq() {
   skip_if_jq_not_installed
 
-  DOMAIN_FILE="${testdir}/cluster_min3.json"
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
 
   wls_cluster_name='cluster-1'
 
   domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
 
-  result=$(get_replica_count 'False' "${domain_json}")
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
 
   assertEquals '3' "${result}"
+}
+
+test_get_replica_count_from_resources_domain() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '2' "${result}"
+}
+
+test_get_replica_count_from_resources_domain_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  result=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+
+  assertEquals '2' "${result}"
+}
+
+##### find_target_replicas tests (get_replica_count_from_resources and calculate_new_replica_count) #####
+
+test_find_target_replicas_scaleUp() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '4' "${result}"
+}
+
+test_find_target_replicas_scaleUp_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '4' "${result}"
+}
+
+test_find_target_replicas_scaleDown() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleDown" "${current_replica_count}" 1)
+  assertEquals '2' "${result}"
+}
+
+test_find_target_replicas_scaleDown_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr1.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleDown" "${current_replica_count}" 1)
+  assertEquals '2' "${result}"
+}
+
+test_find_target_replicas_no_replicas_in_cluster_resource() {
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '3' "${result}"
+}
+
+test_find_target_replicas_no_replicas_in_cluster_resource_jq() {
+  skip_if_jq_not_installed
+
+  CLUSTER_FILE="${testdir}/cluster_cr0.json"
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=`command cat ${CLUSTER_FILE}`
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '3' "${result}"
+}
+
+test_find_target_replicas_no_cluster_resource() {
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=""
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '3' "${result}"
+}
+
+test_find_target_replicas_no_cluster_resource_jq() {
+  skip_if_jq_not_installed
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+  cluster_json=''
+
+  current_replica_count=$(get_replica_count_from_resources "${cluster_json}" "${domain_json}")
+  result=$(calculate_new_replica_count "scaleUp" "${current_replica_count}" 1)
+  assertEquals '3' "${result}"
+}
+
+##### get_cluster_resource_if_cluster_name_matches tests #####
+
+test_get_cluster_resource_if_cluster_name_matches() {
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource" "${expectedResult}" "${result}"
+}
+
+test_get_cluster_resource_if_cluster_name_matches_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource" "${expectedResult}" "${result}"
+}
+
+test_get_cluster_resource_if_cluster_name_matches_not_matching() {
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-2")
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
+}
+
+test_get_cluster_resource_if_cluster_name_matches_not_matching_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  result=$(get_cluster_resource_if_cluster_name_matches "domain1-cluster-1" "cluster-2")
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
+}
+
+##### find_cluster_resource_with_cluster_name tests #####
+
+test_find_cluster_resource_with_cluster_name() {
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource returned" "${expectedResult}" "${result}"
+}
+
+test_find_cluster_resource_with_cluster_name_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "cluster-1")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertEquals "Expected cluster resource returned" "${expectedResult}" "${result}"
+}
+
+test_find_cluster_resource_with_cluster_name_not_found() {
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "non-existing-cluster")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
+}
+
+test_find_cluster_resource_with_cluster_name_not_found_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="cluster_cr1.json"
+
+  DOMAIN_FILE="${testdir}/domain_2cr.json"
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(find_cluster_resource_with_cluster_name "${domain_json}" "non-existing-cluster")
+  expectedResult=$(cat ${testdir}/${CURL_FILE})
+
+  assertNull "Expected null when cluster resource does not contain WebLogic cluster name" "${result}"
 }
 
 ######################### Mocks for the tests ###############

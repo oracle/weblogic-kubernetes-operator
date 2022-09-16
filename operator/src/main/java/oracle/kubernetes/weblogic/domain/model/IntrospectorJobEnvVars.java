@@ -124,27 +124,7 @@ public class IntrospectorJobEnvVars {
    * Port forwarding enabled.
    */
   public static final String ADMIN_CHANNEL_PORT_FORWARDING_ENABLED = "ADMIN_CHANNEL_PORT_FORWARDING_ENABLED";
-
-  /**
-   * Istio readiness port.
-   */
-  public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";
-
-  /**
-   * Istio replication channel port.
-   */
-  public static final String ISTIO_REPLICATION_PORT = "ISTIO_REPLICATION_PORT";
-
-  /**
-   * Istio Version proxies traffic to localhost.
-   */
-  public static final String ISTIO_USE_LOCALHOST_BINDINGS = "ISTIO_USE_LOCALHOST_BINDINGS";
-
-  /**
-   * Istio pod namespace.
-   */
-  public static final String ISTIO_POD_NAMESPACE = "ISTIO_POD_NAMESPACE";
-
+  
   /** The path to the WDT model home. */
   public static final String WDT_MODEL_HOME = "WDT_MODEL_HOME";
 
@@ -163,8 +143,8 @@ public class IntrospectorJobEnvVars {
 
   private static final List<String> RESERVED_NAMES = Arrays.asList(
       NAMESPACE, INTROSPECT_HOME, CREDENTIALS_SECRET_NAME, OPSS_KEY_SECRET_NAME, OPSS_WALLETFILE_SECRET_NAME,
-      RUNTIME_ENCRYPTION_SECRET_NAME, WDT_DOMAIN_TYPE, DOMAIN_SOURCE_TYPE, ISTIO_ENABLED, ISTIO_READINESS_PORT,
-      ISTIO_POD_NAMESPACE, WDT_MODEL_HOME, MII_USE_ONLINE_UPDATE,
+      RUNTIME_ENCRYPTION_SECRET_NAME, WDT_DOMAIN_TYPE, DOMAIN_SOURCE_TYPE, ISTIO_ENABLED,
+      WDT_MODEL_HOME, MII_USE_ONLINE_UPDATE,
       MII_COMMIT_AND_ROLL, MII_COMMIT_ONLY, MII_WDT_CONNECT_TIMEOUT, MII_WDT_ACTIVATE_TIMEOUT, MII_WDT_DEPLOY_TIMEOUT,
       MII_WDT_REDEPLOY_TIMEOUT, MII_WDT_UNDEPLOY_TIMEOUT, MII_WDT_START_APPLICATION_TIMEOUT,
         MII_WDT_STOP_APPLICATION_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT,

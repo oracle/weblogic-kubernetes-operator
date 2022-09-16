@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class PodHelperTest {
   private static final String UID = "uid1";
@@ -47,7 +48,7 @@ class PodHelperTest {
 
 
   private DomainPresenceInfo createDomainPresenceInfo() {
-    return new DomainPresenceInfo(new Domain().withMetadata(new V1ObjectMeta().namespace(NS)));
+    return new DomainPresenceInfo(new DomainResource().withMetadata(new V1ObjectMeta().namespace(NS)));
   }
 
   @BeforeEach
@@ -110,6 +111,17 @@ class PodHelperTest {
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
     MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenInfoHasPodNoDomain_deletePodStepDoesNotThrowException() {
+    final DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
+    info.setServerPod(SERVER_NAME, pod);
+    testSupport.addDomainPresenceInfo(info);
+
+    assertDoesNotThrow(
+        () -> testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep)));
+
   }
 
   @Test

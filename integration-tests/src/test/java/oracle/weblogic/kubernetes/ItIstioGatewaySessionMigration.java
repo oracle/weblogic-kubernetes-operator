@@ -18,6 +18,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -26,11 +27,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.configIstioModelInImageDomain;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
@@ -53,6 +54,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test WLS Session Migration via istio enabled using Istio gateway")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItIstioGatewaySessionMigration {
 
   private static String opNamespace = null;
@@ -77,6 +81,7 @@ class ItIstioGatewaySessionMigration {
   private static String istioGatewayConfigFile = "istio-sessmigr-template.yaml";
   private static int replicaCount = 2;
   private static int istioIngressPort = 0;
+  private static String testWebAppWarLoc = null;
 
   private static LoggingFacade logger = null;
 
@@ -105,6 +110,9 @@ class ItIstioGatewaySessionMigration {
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+
+    // create testwebapp.war
+    testWebAppWarLoc = createTestWebAppWarFile(domainNamespace);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -144,7 +152,7 @@ class ItIstioGatewaySessionMigration {
   /**
    * When istio is enabled using Istio gateway, the test sends a HTTP request to set http session state(count number),
    * get the primary and secondary server name, session create time and session state and from the util method and
-   * save HTTP session info, then stop the primary server by changing ServerStartPolicy to NEVER and patching domain.
+   * save HTTP session info, then stop the primary server by changing serverStartPolicy to Never and patching domain.
    * Send another HTTP request to get http session state (count number), primary server and session create time.
    * Verify that a new primary server is selected and HTTP session state is migrated.
    */
@@ -172,7 +180,7 @@ class ItIstioGatewaySessionMigration {
         + "and session create time {2} before shutting down the primary server",
         origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
-    // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
+    // stop the primary server by changing ServerStartPolicy to Never and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
@@ -258,7 +266,7 @@ class ItIstioGatewaySessionMigration {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(testWebAppWarLoc);
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),

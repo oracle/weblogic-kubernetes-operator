@@ -19,12 +19,12 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -51,7 +51,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,14 +109,14 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return MS_PREFIX + n;
   }
 
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
 
   private final Step nextStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfoWithAdminServer();
+  private DomainPresenceInfo info = createDomainPresenceInfoWithAdminServer();
   private final WlsDomainConfig domainConfig = createDomainConfig();
   private final Collection<ServerStartupInfo> startupInfos = new ArrayList<>();
 
@@ -136,8 +136,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return dpi;
   }
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
             .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
             .withKind(KubernetesConstants.DOMAIN)
             .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
@@ -147,7 +147,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
             .withDomainUid(UID)
-            .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+            .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
             .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
             .withImage(LATEST_IMAGE);
   }
@@ -190,7 +190,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     testSupport.defineResources(domain);
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
-            .addDomainPresenceInfo(domainPresenceInfo);
+            .addDomainPresenceInfo(info);
     testSupport.doOnCreate(POD, p -> schedulePodUpdates((V1Pod) p));
     testSupport.addComponent(
             ProcessingConstants.PODWATCHER_COMPONENT_NAME,
@@ -248,7 +248,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
   @Nonnull
   private List<String> getStartedManagedServers() {
-    return domainPresenceInfo.getServerPods()
+    return info.getServerPods()
           .map(this::getServerName)
           .filter(name -> !ADMIN.equals(name))
           .collect(Collectors.toList());
@@ -318,10 +318,10 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
   private void createDomainPresenceInfoWithNoAdminServer() {
-    domainPresenceInfo = new DomainPresenceInfo(domain);
+    info = new DomainPresenceInfo(domain);
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
-            .addDomainPresenceInfo(domainPresenceInfo);
+            .addDomainPresenceInfo(info);
   }
 
   @Test
@@ -389,11 +389,11 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
     invokeStepWithServerStartupInfos();
 
-    assertThat(MS3 + " pod", domainPresenceInfo.getServerPod(MS3), notNullValue());
+    assertThat(MS3 + " pod", info.getServerPod(MS3), notNullValue());
   }
 
   private void addScheduledClusteredServer(String serverName) {
-    domainPresenceInfo.setServerPod(serverName,
+    info.setServerPod(serverName,
           new V1Pod().metadata(
                 withNames(new V1ObjectMeta().namespace(NS).putLabelsItem(CLUSTERNAME_LABEL, CLUSTER1), serverName))
                       .spec(new V1PodSpec().nodeName("scheduled")));
@@ -410,7 +410,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName);
+    return configurator.configureCluster(info, clusterName);
   }
 
   private void addWlsServers(String... serverNames) {
@@ -422,7 +422,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     startupInfos.add(
           new ServerStartupInfo(configSupport.getWlsServer(serverName),
               null,
-              domain.getServer(serverName, null))
+              info.getServer(serverName, null))
     );
   }
 
@@ -432,7 +432,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
             startupInfos.add(
                 new ServerStartupInfo(configSupport.getWlsServer(clusterName, server),
                     clusterName,
-                    domain.getServer(server, clusterName))
+                    info.getServer(server, clusterName))
             )
     );
 

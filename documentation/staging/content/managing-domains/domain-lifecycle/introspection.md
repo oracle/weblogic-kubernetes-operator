@@ -128,9 +128,9 @@ With operator 3.0.0, you can now change the configuration overrides and distribu
 
 We have introduced a new field, called `overrideDistributionStrategy` and located under `configuration`, that controls whether updated configuration overrides are distributed dynamically to already running WebLogic Server instances or if the new configuration overrides are only applied when servers are started or restarted.
 
-The default value for `overrideDistributionStrategy` is DYNAMIC, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances.
+The default value for `overrideDistributionStrategy` is `Dynamic`, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances.
 
-Alternately, you can set `overrideDistributionStrategy` to ON_RESTART, which means that the new configuration overrides will not be distributed to already running WebLogic Server instances, but will instead be applied only to servers as they start or restart. Use of this value will *not* cause WebLogic Server instances to restart absent changes to other fields, such as `restartVersion`.
+Alternately, you can set `overrideDistributionStrategy` to `OnRestart`, which means that the new configuration overrides will not be distributed to already running WebLogic Server instances, but will instead be applied only to servers as they start or restart. Use of this value will *not* cause WebLogic Server instances to restart absent changes to other fields, such as `restartVersion`.
 
 {{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
 {{% /notice %}}

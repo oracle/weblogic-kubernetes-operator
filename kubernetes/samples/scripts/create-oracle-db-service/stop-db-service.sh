@@ -16,6 +16,8 @@ usage() {
   exit $1
 }
 
+namespace=default
+
 while getopts ":h:n:" opt; do
   case $opt in
     n) namespace="${OPTARG}"
@@ -27,18 +29,12 @@ while getopts ":h:n:" opt; do
   esac
 done
 
-
-if [ -z ${namespace} ]; then
-  namespace=default
-fi
-
-
 dbpod=`kubectl get po -n ${namespace}  | grep oracle-db | cut -f1 -d " " `
 kubectl delete -f ${scriptDir}/common/oracle.db.${namespace}.yaml  --ignore-not-found
 rm ${scriptDir}/common/oracle.db.${namespace}.yaml  --force
 
-if [ -z ${dbpod} ]; then
-  echo "Couldn't find oracle-db pod in [${namespace}] namesapce"
+if [ -z "${dbpod}" ]; then
+  echo "Couldn't find oracle-db pod in namespace [${namespace}]."
 else
   checkPodDelete ${dbpod} ${namespace}
   kubectl delete svc/oracle-db -n ${namespace}  --ignore-not-found

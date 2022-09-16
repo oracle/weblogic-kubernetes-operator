@@ -16,6 +16,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -38,6 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("Test WLS Session Migration via istio enabled")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItIstioSessionMigration {
 
   private static String opNamespace = null;
@@ -138,7 +142,7 @@ class ItIstioSessionMigration {
   /**
    * In an istio enabled Environment, test sends a HTTP request to set http session state(count number),
    * get the primary and secondary server name, session create time and session state and from the util method
-   * and save HTTP session info, then stop the primary server by changing ServerStartPolicy to NEVER and
+   * and save HTTP session info, then stop the primary server by changing ServerStartPolicy to Never and
    * patching domain. Send another HTTP request to get http session state (count number), primary server
    * and session create time. Verify that a new primary server is selected and HTTP session state is migrated.
    */
@@ -167,7 +171,7 @@ class ItIstioSessionMigration {
         + "and session create time {2} before shutting down the primary server.",
         origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
-    // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
+    // stop the primary server by changing ServerStartPolicy to Never and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 

@@ -13,13 +13,14 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -30,8 +31,8 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
@@ -42,7 +43,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
@@ -59,7 +60,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
+@Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 @IntegrationTest
+@Tag("olcne")
 class ItFmwBigCMMiiDomain {
 
   private static String dbNamespace = null;
@@ -82,7 +86,7 @@ class ItFmwBigCMMiiDomain {
   private String domainUid = "jrfdomain-mii";
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPrefix = domainUid + "-managed-server";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSecretName = domainUid + "-weblogic-credentials";
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
@@ -147,7 +151,7 @@ class ItFmwBigCMMiiDomain {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(jrfDomainNamespace);
+    createTestRepoSecret(jrfDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -225,14 +229,13 @@ class ItFmwBigCMMiiDomain {
     dockerLoginAndPushImageToRegistry(jrfMii1Image);
 
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         jrfDomainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         jrfMii1Image);
 
     createDomainAndVerify(domain, jrfDomainNamespace);

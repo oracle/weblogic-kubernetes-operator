@@ -16,24 +16,23 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
@@ -50,18 +49,21 @@ import org.apache.commons.io.FileUtils;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -75,17 +77,18 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -114,19 +117,16 @@ public class MonitoringUtils {
    */
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
-    String monitoringExporterWebAppVersion = MONITORING_EXPORTER_WEBAPP_VERSION;
-
-    String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", applicationDir, monitoringExporterWebAppVersion);
-    checkDirectory(applicationDir);
-    logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
-    String monitoringExporterRelease =
-        monitoringExporterWebAppVersion.equals("2.0") ? "2.0.0" : monitoringExporterWebAppVersion;
+    String monitoringExporterRelease = MONITORING_EXPORTER_WEBAPP_VERSION;
+    String monitoringExporterWebAppScriptVersion = monitoringExporterRelease.substring(0,
+        monitoringExporterRelease.length() - 2);
     String curlDownloadCmd = String.format("cd %s && "
             + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
         applicationDir,
         monitoringExporterRelease,
-        monitoringExporterWebAppVersion);
+        monitoringExporterWebAppScriptVersion);
+    String monitoringExporterBuildFile = String.format(
+        "%s/get%s.sh", applicationDir, monitoringExporterWebAppScriptVersion);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(Command
         .withParams(new CommandParams()
@@ -304,26 +304,53 @@ public class MonitoringUtils {
   /**
    * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
    *
-   * @param promReleaseSuffix the prometheus release name unigue suffix
-   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promReleaseSuffix the prometheus release name unique suffix
+   * @param promNamespace the prometheus namespace in which the prometheus will be installed
    * @param promVersion the version of the prometheus helm chart
    * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
    *                            default is regex: default;domain1
    * @return the prometheus Helm installation parameters
    */
   public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
+                                                            String promNamespace,
+                                                            String promVersion,
+                                                            String prometheusRegexValue,
+                                                            String promHelmValuesFile) {
+    return installAndVerifyPrometheus(promReleaseSuffix,
+            promNamespace,
+            promVersion,
+            prometheusRegexValue,
+            promHelmValuesFile,
+            null);
+  }
+
+  /**
+   * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
+   *
+   * @param promReleaseSuffix the prometheus release name unigue suffix
+   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promVersion the version of the prometheus helm chart
+   * @param prometheusRegexValue string (namespace;domainuid) to manage specific domain,
+   *                            default is regex: default;domain1
+   * @param promHelmValuesFileDir path to prometheus helm values file directory
+   * @param webhookNS namespace for webhook namespace
+   * @return the prometheus Helm installation parameters
+   */
+  public static PrometheusParams installAndVerifyPrometheus(String promReleaseSuffix,
                                                       String promNamespace,
                                                       String promVersion,
-                                                      String prometheusRegexValue) {
+                                                      String prometheusRegexValue,
+                                                      String promHelmValuesFileDir,
+                                                      String webhookNS) {
     LoggingFacade logger = getLogger();
     String prometheusReleaseName = "prometheus" + promReleaseSuffix;
-    logger.info("create a staging location for monitoring creation scripts");
-    Path fileTemp = Paths.get(RESULTS_ROOT, "prometheus" + promReleaseSuffix, "createTempValueFile");
+    logger.info("create a staging location for prometheus scripts");
+    Path fileTemp = Paths.get(promHelmValuesFileDir);
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for prometheus");
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for prometheus");
 
-    logger.info("copy the promvalue.yaml to staging location");
+    logger.info("copy the promvalues.yaml to staging location");
     Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
     Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
@@ -338,6 +365,12 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "pvc-prometheus",
         "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    if (webhookNS != null) {
+      //replace with webhook ns
+      assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+              "webhook.webhook.svc.cluster.local",
+              String.format("webhook.%s.svc.cluster.local", webhookNS)), "Failed to replace String ");
+    }
     if (OKD) {
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
           "65534",
@@ -403,15 +436,32 @@ public class MonitoringUtils {
    *
    * @param grafanaReleaseName the grafana release name
    * @param grafanaNamespace the grafana namespace in which the operator will be installed
-   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaHelmValuesFileDir the grafana helm values.yaml file directory
    * @param grafanaVersion the version of the grafana helm chart
    * @return the grafana Helm installation parameters
    */
   public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
                                                       String grafanaNamespace,
-                                                      String grafanaValueFile,
+                                                      String grafanaHelmValuesFileDir,
                                                       String grafanaVersion) {
     LoggingFacade logger = getLogger();
+    logger.info("create a staging location for prometheus scripts");
+    Path fileTemp = Paths.get(grafanaHelmValuesFileDir);
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for grafana");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for grafana");
+
+    logger.info("copy the grafanavalues.yaml to staging location");
+    Path srcGrafanaFile = Paths.get(RESOURCE_DIR, "exporter", "grafanavalues.yaml");
+    Path targetGrafanaFile = Paths.get(fileTemp.toString(), "grafanavalues.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcGrafanaFile, targetGrafanaFile,
+            StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+            "pvc-grafana", "pvc-" + grafanaReleaseName));
+    if (!OKE_CLUSTER) {
+      assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+              "enabled: false", "enabled: true"));
+    }
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
@@ -419,7 +469,7 @@ public class MonitoringUtils {
         .repoUrl(GRAFANA_REPO_URL)
         .repoName(GRAFANA_REPO_NAME)
         .chartName("grafana")
-        .chartValuesFile(grafanaValueFile);
+        .chartValuesFile(targetGrafanaFile.toString());
 
     if (grafanaVersion != null) {
       grafanaHelmParams.chartVersion(grafanaVersion);
@@ -625,6 +675,17 @@ public class MonitoringUtils {
   /**
    * Create Domain Cr and verity.
    *
+   * @param adminSecretName WebLogic admin credentials
+   * @param repoSecretName image repository secret name
+   * @param encryptionSecretName model encryption secret name
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
    */
   public static void createDomainCrAndVerify(String adminSecretName,
                                              String repoSecretName,
@@ -638,8 +699,9 @@ public class MonitoringUtils {
                                              String monexpConfig,
                                              String exporterImage) {
     int t3ChannelPort = getNextFreePort();
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -651,11 +713,12 @@ public class MonitoringUtils {
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(namespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -665,7 +728,6 @@ public class MonitoringUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -673,21 +735,26 @@ public class MonitoringUtils {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster()
-                .clusterName(cluster1Name)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
-    if (twoClusters) {
-      domain.getSpec().getClusters().add(new Cluster()
-          .clusterName(cluster2Name)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+
+    // add clusters to the domain resource
+    ClusterList clusters = Cluster.listClusterCustomResources(namespace);
+    String[] clusterNames = twoClusters ? new String[]{cluster1Name, cluster2Name} : new String[]{cluster1Name};
+    for (String clusterName : clusterNames) {
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+      } else {
+        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
+        createClusterAndVerify(createClusterResource(clusterName, namespace, replicaCount));
+      }
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     }
+    
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
@@ -702,10 +769,9 @@ public class MonitoringUtils {
         e.printStackTrace();
       }
 
-      V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(exporterImage)
-          .imagePullPolicy(imagePullPolicy)
+          .imagePullPolicy(IMAGE_PULL_POLICY)
           .configuration(contents));
 
       logger.info("Created domain CR with Monitoring exporter configuration : "
@@ -713,11 +779,18 @@ public class MonitoringUtils {
     }
     createDomainAndVerify(domain, namespace);
   }
-
-
+  
   /**
    * create domain from provided image and monitoring exporter sidecar and verify it's start.
    *
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
    */
   public static void createAndVerifyDomain(String miiImage,
                                             String domainUid,
@@ -731,7 +804,7 @@ public class MonitoringUtils {
     // this secret is used only for non-kind cluster
     // create secret for admin credentials
     logger.info("Create docker registry secret in namespace {0}", namespace);
-    createOcirRepoSecret(namespace);
+    createTestRepoSecret(namespace);
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
@@ -748,7 +821,7 @@ public class MonitoringUtils {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
         namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig, exporterImage);
     String adminServerPodName = domainUid + "-admin-server";
 

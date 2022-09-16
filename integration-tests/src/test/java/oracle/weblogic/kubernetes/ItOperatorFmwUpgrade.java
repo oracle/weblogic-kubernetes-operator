@@ -18,14 +18,12 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -40,14 +38,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
+import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -68,7 +69,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUserna
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteDb;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -92,6 +93,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
+@Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItOperatorFmwUpgrade {
 
   private static String opNamespace = null;
@@ -121,7 +124,7 @@ class ItOperatorFmwUpgrade {
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
 
   private static String latestOperatorImageName;
 
@@ -186,10 +189,7 @@ class ItOperatorFmwUpgrade {
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
       CleanupUtil.cleanup(namespaces);
-      Command
-          .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
+      cleanUpCRD();
     }
   }
 
@@ -229,6 +229,15 @@ class ItOperatorFmwUpgrade {
     installAndUpgradeOperator("3.4.0", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
+  /**
+   * Operator upgrade from 3.4.1 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.4.1 to current")
+  void testOperatorFmwUpgradeFrom341ToCurrent() {
+    installAndUpgradeOperator("3.4.1", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
   private void installAndUpgradeOperator(
          String operatorVersion, String domainVersion,
          String externalServiceNameSuffix) {
@@ -245,10 +254,7 @@ class ItOperatorFmwUpgrade {
 
   private HelmParams installOperator(String operatorVersion) {
     // delete existing CRD if any
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+    cleanUpCRD();
 
     // build Helm params to install the Operator
     HelmParams opHelmParams =
@@ -354,7 +360,7 @@ class ItOperatorFmwUpgrade {
 
     // create pull secrets for domainNamespace when running in non-kind
     // Kubernetes cluster this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create FMW domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -401,9 +407,10 @@ class ItOperatorFmwUpgrade {
                                        String pvName,
                                        String pvcName,
                                        int t3ChannelPort) {
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion("weblogic.oracle/" + domainVersion)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -411,22 +418,21 @@ class ItOperatorFmwUpgrade {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod() //serverpod
+            .serverStartPolicy("v8".equals(domainVersion) ? "IF_NEEDED" : "IfNeeded")
+            .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
@@ -441,7 +447,6 @@ class ItOperatorFmwUpgrade {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -449,11 +454,7 @@ class ItOperatorFmwUpgrade {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")
-                ));
+            .replicas(1));
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created
@@ -507,7 +508,7 @@ class ItOperatorFmwUpgrade {
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/domains/");
+    p.setProperty("domainParentDir", "/shared/" + domainNamespace + "/domains/");
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
@@ -579,6 +580,21 @@ class ItOperatorFmwUpgrade {
       logger.info("Checking that managed server pod {0} doesn't exists in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
+    }
+  }
+
+  private void cleanUpCRD() {
+    boolean doesCrdExist = doesCrdExist();
+    if (doesCrdExist) {
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl patch crd/domains.weblogic.oracle"
+                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+              .execute();
+      Command
+              .withParams(new CommandParams()
+                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+              .execute();
     }
   }
 }

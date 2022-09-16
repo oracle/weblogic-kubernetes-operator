@@ -14,37 +14,42 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -62,15 +67,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Verify that when the primary server is down, another server takes on its 
- * clients to become the new primary server and HTTP session state is migrated 
- * to the new primary server. 
+ * Verify that when the primary server is down, another server takes on its
+ * clients to become the new primary server and HTTP session state is migrated
+ * to the new primary server.
  *
- * Also verify that an annotation containing a slash in the name propagates 
+ * Also verify that an annotation containing a slash in the name propagates
  * to the server pod
  */
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItSessionMigration {
 
   // constants for creating domain image using model in image
@@ -89,7 +98,7 @@ class ItSessionMigration {
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static String finalPrimaryServerName = null;
   // Since the ServerTemplate section of the model file model.sessmigr.yaml
-  // does not explicitly specify ListenPort, the introspector/wdt generated 
+  // does not explicitly specify ListenPort, the introspector/wdt generated
   // default ListenPort for each dynamic server is set to 7100
   private static int managedServerPort = 7100;
   private static int replicaCount = 2;
@@ -151,7 +160,7 @@ class ItSessionMigration {
   /**
    * The test sends a HTTP request to set http session state(count number), get the primary and secondary server name,
    * session create time and session state and from the util method and save HTTP session info,
-   * then stop the primary server by changing ServerStartPolicy to NEVER and patching domain.
+   * then stop the primary server by changing serverStartPolicy to Never and patching domain.
    * Send another HTTP request to get http session state (count number), primary server and
    * session create time. Verify that a new primary server is selected and HTTP session state is migrated.
    */
@@ -180,7 +189,7 @@ class ItSessionMigration {
             + "and session create time {2} before shutting down the primary server",
         origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
-    // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
+    // stop the primary server by changing ServerStartPolicy to Never and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
     shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
@@ -277,7 +286,7 @@ class ItSessionMigration {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     return miiImage;
   }
@@ -300,7 +309,7 @@ class ItSessionMigration {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage);
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage);
 
     // check that admin server pod exists in the domain namespace
     logger.info("Checking that admin server pod {0} exists in namespace {1}",
@@ -334,7 +343,7 @@ class ItSessionMigration {
     annotationKeyValues.put(annotationKey3, annotationValue3);
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -344,13 +353,14 @@ class ItSessionMigration {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .replicas(replicaCount)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .annotations(annotationKeyValues)
                 .addEnvItem(new V1EnvVar()
@@ -360,20 +370,24 @@ class ItSessionMigration {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster =
+          createClusterResource(clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -21,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -52,7 +52,6 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
@@ -161,6 +160,16 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   String getReferenceMiiConvertedAuxImagePodYaml_3_4() {
     return ReferenceObjects.ADMIN_MII_CONVERTED_AUX_IMAGE_POD_3_4;
+  }
+
+  @Override
+  String getReferenceMiiConvertedAuxImagePodYaml_3_4_1() {
+    return ReferenceObjects.ADMIN_MII_CONVERTED_AUX_IMAGE_POD_3_4_1;
+  }
+
+  @Override
+  String getReferenceIstioMonitoringExporterTcpProtocol() {
+    return ReferenceObjects.ADMIN_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL;
   }
 
   String getDomainValidationFailedKey() {
@@ -450,8 +459,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariables_createAdminPodStartupWithSubstitutions() {
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureAdminServer()
         .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
@@ -468,8 +477,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureAdminServer()
         .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
@@ -486,8 +495,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_createFailedEvent() {
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureAdminServer()
         .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
@@ -573,44 +582,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
             hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
-  }
-
-  @Test
-  void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator().configureAdminServer().withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
-    getConfigurator()
-        .withServerStartState(ServerStartState.RUNNING)
-        .configureAdminServer()
-        .withServerStartState(ServerStartState.ADMIN);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
-  }
-
-  @Test
-  void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
-    getConfigurator()
-        .withServerStartState(ServerStartState.ADMIN)
-        .configureAdminServer()
-        .withServerStartState(ServerStartState.RUNNING);
-
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
   }
 
   @Test

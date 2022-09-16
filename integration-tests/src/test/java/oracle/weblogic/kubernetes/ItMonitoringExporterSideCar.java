@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.MonitoringExporterConfiguration;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -26,15 +26,16 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -47,7 +48,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDo
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -82,6 +82,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify WebLogic Metric is processed as expected by "
     + "MonitoringExporter Side Car via Prometheus and Grafana")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItMonitoringExporterSideCar {
 
   // domain constants
@@ -172,10 +176,8 @@ class ItMonitoringExporterSideCar {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
-    assertDoesNotThrow(() -> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        "pvc-grafana", "pvc-" + grafanaReleaseName));
     exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
-        domain1Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
+        domain1Namespace, TEST_IMAGES_REPO_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     if (!OKD) {
       // install and verify NGINX
@@ -198,7 +200,7 @@ class ItMonitoringExporterSideCar {
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
     if (!OKD) {
-      String className = "ItMonitoringExporterSideCar";
+      String className = ItMonitoringExporterSideCar.class.getSimpleName();
       assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
       assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
       assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
@@ -233,7 +235,7 @@ class ItMonitoringExporterSideCar {
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
       }
-      Domain domain = getDomainCustomResource(domain3Uid, domain3Namespace);
+      DomainResource domain = getDomainCustomResource(domain3Uid, domain3Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
       assertTrue(monexpConfig.contains("openSessionsHighCount"));
@@ -265,7 +267,7 @@ class ItMonitoringExporterSideCar {
           domain3Uid + "-managed-server2"));
 
     } finally {
-      shutdownDomain(domain3Namespace, domain3Uid);
+      shutdownDomain(domain3Uid, domain3Namespace);
     }
 
   }
@@ -296,7 +298,7 @@ class ItMonitoringExporterSideCar {
     boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
     assertTrue(cmPatched, "patchDomainCustomResource(changeMonExporter) failed");
 
-    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource after patching");
@@ -344,7 +346,7 @@ class ItMonitoringExporterSideCar {
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
           cluster2Name + "-managed-server2",hostPortPrometheus);
     } finally {
-      shutdownDomain(domain1Namespace, domain1Uid);
+      shutdownDomain(domain1Uid, domain1Namespace);
     }
   }
 
@@ -376,7 +378,7 @@ class ItMonitoringExporterSideCar {
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
       }
 
-      Domain domain = getDomainCustomResource(domain2Uid,domain2Namespace);
+      DomainResource domain = getDomainCustomResource(domain2Uid,domain2Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
       assertTrue(monexpConfig.contains("openSessionsHighCount"));
@@ -385,7 +387,7 @@ class ItMonitoringExporterSideCar {
       assertTrue(verifyMonExpAppAccessSideCar("webapp_config_open_sessions_high_count",
           domain2Namespace, domain2Uid + "-managed-server2"));
     } finally {
-      shutdownDomain(domain2Namespace, domain2Uid);
+      shutdownDomain(domain2Uid, domain2Namespace);
     }
   }
 
@@ -401,10 +403,13 @@ class ItMonitoringExporterSideCar {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
       cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              "prometheus" + releaseSuffix).toString();
       promHelmParams = installAndVerifyPrometheus(releaseSuffix,
           monitoringNS,
           promChartVersion,
-          prometheusRegexValue);
+          prometheusRegexValue,
+          promHelmValuesFileDir);
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
@@ -423,11 +428,12 @@ class ItMonitoringExporterSideCar {
           + "-service", monitoringNS) + ":" + nodeportPrometheus;
     }
     if (grafanaHelmParams == null) {
-      //logger.info("Node Port for Grafana is " + nodeportgrafana);
+      String grafanaHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              grafanaReleaseName).toString();
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
-          monitoringNS,
-          monitoringExporterEndToEndDir + "/grafana/values.yaml",
-          grafanaChartVersion);
+              monitoringNS,
+              grafanaHelmValuesFileDir,
+              grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {

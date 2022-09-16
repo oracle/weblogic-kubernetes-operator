@@ -18,14 +18,12 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -35,14 +33,16 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_LISTEN_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -57,7 +57,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -76,6 +76,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test T3 channel deployment")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItT3Channel {
   // namespace constants
   private static String opNamespace = null;
@@ -127,7 +130,7 @@ class ItT3Channel {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // build the clusterview application
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
@@ -157,7 +160,7 @@ class ItT3Channel {
             File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", "/shared/" + domainNamespace + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
@@ -169,7 +172,7 @@ class ItT3Channel {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
-    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(() ->
             p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -205,7 +208,7 @@ class ItT3Channel {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -213,21 +216,21 @@ class ItT3Channel {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHome("/shared/" + domainNamespace + "/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .replicas(replicaCount)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only in non-kind cluster
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))  // this secret is used only in non-kind cluster
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -240,18 +243,13 @@ class ItT3Channel {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                        .nodePort(t3ChannelPort)))));
 
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);

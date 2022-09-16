@@ -18,15 +18,12 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
@@ -41,6 +38,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -53,12 +51,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAUL
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -71,10 +70,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
@@ -97,14 +99,13 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -124,6 +125,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create Istio enabled FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
+@Tag("oke-sequential")
+@Tag("kind-parallel")
 class ItIstioDBOperator {
 
   private static String dbNamespace = null;
@@ -144,6 +147,7 @@ class ItIstioDBOperator {
   private String fmwDomainUid = "jrf-istio-db";
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
+  private String clusterName = "cluster-1";  
   private int replicaCount = 2;
   private String fmwAminSecretName = fmwDomainUid + "-weblogic-credentials";
   private String fmwEncryptionSecretName = fmwDomainUid + "-encryptionsecret";
@@ -164,6 +168,8 @@ class ItIstioDBOperator {
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
+
+  private static String testWebAppWarLoc = null;
 
   private static String hostHeader;
 
@@ -196,8 +202,8 @@ class ItIstioDBOperator {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(fmwDomainNamespace);
-    createSecretForBaseImages(wlsDomainNamespace);
+    createBaseRepoSecret(fmwDomainNamespace);
+    createBaseRepoSecret(wlsDomainNamespace);
 
     // create PV, PVC for logs/data
     createPV(pvName, wlsDomainUid, ItIstioDBOperator.class.getSimpleName());
@@ -224,6 +230,9 @@ class ItIstioDBOperator {
     assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX,
         dbUrl, dbNamespace));
 
+    // create testwebapp.war
+    testWebAppWarLoc = createTestWebAppWarFile(wlsDomainNamespace);
+
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, fmwDomainNamespace, wlsDomainNamespace);
   }
@@ -235,9 +244,10 @@ class ItIstioDBOperator {
   @Test
   @DisplayName("Create Istio enabled FMW Domain model in image domain")
   void  testIstioEnabledFmwModelInImageWithDbOperator() {
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(fmwDomainNamespace);
+    createTestRepoSecret(fmwDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -291,10 +301,10 @@ class ItIstioDBOperator {
     createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         fmwEncryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
@@ -303,6 +313,13 @@ class ItIstioDBOperator {
         configMapName
         );
 
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    
     createDomainAndVerify(domain, fmwDomainNamespace);
 
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
@@ -362,7 +379,7 @@ class ItIstioDBOperator {
             + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
     }
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(testWebAppWarLoc);
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
@@ -385,6 +402,10 @@ class ItIstioDBOperator {
    */
   @Test
   void  testIstioWlsModelInImageWithDbOperator() {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(wlsDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -416,7 +437,7 @@ class ItIstioDBOperator {
     // create the domain CR with a pre-defined configmap
     createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, pvName, pvcName, "cluster-1", configMapName,
         dbSecretName, false, false, true);
 
@@ -486,9 +507,7 @@ class ItIstioDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = assertDoesNotThrow(()
-        -> scaleCluster(wlsDomainUid, wlsDomainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
+    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));
@@ -761,7 +780,7 @@ class ItIstioDBOperator {
     return istioIngressPort;
   }
 
-  private static Domain createDomainResourceWithLogHome(
+  private static DomainResource createDomainResourceWithLogHome(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -788,15 +807,15 @@ class ItIstioDBOperator {
         .domainHomeSourceType("FromModel")
         .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
             .name(repoSecretName))
-        .webLogicCredentialsSecret(new V1SecretReference()
-            .name(adminSecretName)
-            .namespace(domNamespace))
+        .webLogicCredentialsSecret(new V1LocalObjectReference()
+            .name(adminSecretName))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(Boolean.TRUE)
         .logHome("/shared/logs")
-        .serverStartPolicy("IF_NEEDED")
+        .serverStartPolicy("IfNeeded")
         .serverPod(new ServerPod()
             .addEnvItem(new V1EnvVar()
                 .name("JAVA_OPTIONS")
@@ -811,17 +830,7 @@ class ItIstioDBOperator {
             .addVolumeMountsItem(new V1VolumeMount()
                 .mountPath("/shared")
                 .name(pvName)))
-        .adminServer(new AdminServer()
-            .serverStartState("RUNNING"))
-        .addClustersItem(new Cluster()
-            .clusterName(clusterName)
-            .replicas(replicaCount)
-            .serverStartState("RUNNING"))
         .configuration(new Configuration()
-            .istio(new Istio()
-                .enabled(Boolean.TRUE)
-                .readinessPort(8888)
-                .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
             .secrets(securityList)
             .model(new Model()
                 .domainType("WLS")
@@ -835,13 +844,22 @@ class ItIstioDBOperator {
       domainSpec.dataHome("/shared/data");
     }
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainResourceName)
             .namespace(domNamespace))
         .spec(domainSpec);
+    
+    setPodAntiAffinity(domain);
+
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));       
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainResourceName, domNamespace);
@@ -850,8 +868,7 @@ class ItIstioDBOperator {
             domainResourceName, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainResourceName, domNamespace));
-
-    setPodAntiAffinity(domain);
+    
     return domain;
   }
 

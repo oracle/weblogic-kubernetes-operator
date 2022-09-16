@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -18,10 +18,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -34,7 +34,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -46,10 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OperatorUtils {
-
-  public static final String OPERATOR_VERSION_340 = "3.4.0";
-  public static final String OPERATOR_340_IMAGE_OWLS_99380 =
-      "phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:owls_99380";
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -445,13 +441,7 @@ public class OperatorUtils {
             .name(opServiceAccount))));
     logger.info("Created service account: {0}", opServiceAccount);
 
-    // get operator image name.
-    // For operator version 3.4.0, temporarily use the image with OWLS_99380 fix from OCIR.
-    if (OPERATOR_VERSION_340.equals(opHelmParams.getChartVersion())) {
-      operatorImage = OPERATOR_340_IMAGE_OWLS_99380;
-    } else {
-      operatorImage = getOperatorImageName();
-    }
+    operatorImage = getOperatorImageName();
 
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
@@ -459,11 +449,11 @@ public class OperatorUtils {
     // Create Docker registry secret in the operator namespace to pull the image from repository
     // this secret is used only for non-kind cluster
     logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
-    createOcirRepoSecret(opNamespace);
+    createTestRepoSecret(opNamespace);
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", OCIR_SECRET_NAME);
+    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
@@ -484,7 +474,7 @@ public class OperatorUtils {
     }
 
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
-    if ((opHelmParams.getRepoUrl() == null) || (OPERATOR_VERSION_340.equals(opHelmParams.getChartVersion()))) {
+    if (opHelmParams.getRepoUrl() == null)  {
       opParams.image(operatorImage);
     }
 

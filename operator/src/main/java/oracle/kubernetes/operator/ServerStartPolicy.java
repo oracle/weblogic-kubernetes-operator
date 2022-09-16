@@ -3,8 +3,11 @@
 
 package oracle.kubernetes.operator;
 
+import com.google.gson.annotations.SerializedName;
+
 public enum ServerStartPolicy {
-  ALWAYS {
+  @SerializedName("Always")
+  ALWAYS("Always") {
     @Override
     public boolean forDomain() {
       return false;
@@ -15,9 +18,12 @@ public enum ServerStartPolicy {
       return false;
     }
   },
-  NEVER,
-  IF_NEEDED,
-  ADMIN_ONLY {
+  @SerializedName("Never")
+  NEVER("Never"),
+  @SerializedName("IfNeeded")
+  IF_NEEDED("IfNeeded"),
+  @SerializedName("AdminOnly")
+  ADMIN_ONLY("AdminOnly") {
     @Override
     public boolean forCluster() {
       return false;
@@ -28,6 +34,17 @@ public enum ServerStartPolicy {
       return false;
     }
   };
+
+  private final String value;
+
+  ServerStartPolicy(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(this.value);
+  }
 
   public static ServerStartPolicy getDefaultPolicy() {
     return IF_NEEDED;

@@ -70,7 +70,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
-    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'BY_SERVERS')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -172,12 +172,6 @@ def filter_model(model):
         customizeNodeManagerCreds(topology)
         customizeDomainLogPath(topology)
 
-        if 'Cluster' in topology:
-          # If Istio enabled, inject replication channel for each cluster
-          # before creating the corresponding NAP for each server and
-          # server-template
-          customizeIstioClusters(model)
-
         if 'Server' in topology:
           customizeServers(model)
 
@@ -235,15 +229,10 @@ def customizeServerTemplate(topology, template, template_name):
   listen_address=env.toDNS1123Legal(domain_uid + "-" + server_name_prefix + "${id}")
   setServerListenAddress(template, listen_address)
   customizeNetworkAccessPoints(template, listen_address)
-  customizeManagedIstioNetworkAccessPoint(template, listen_address)
-  customizeIstioReplicationChannel(template, template_name, listen_address)
   if getCoherenceClusterSystemResourceOrNone(topology, template) is not None:
     customizeCoherenceMemberConfig(template, listen_address)
 
 def customizeIstioClusters(model):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false':
-    return
   if 'topology' in model and 'Cluster' in model['topology']:
     for cluster in model['topology']['Cluster']:
       if 'ReplicationChannel' not in model['topology']['Cluster'][cluster]:
@@ -297,7 +286,7 @@ def customizeLog(name, topologyOrServer, isDomainLog=False):
   if 'Log' not in topologyOrServer:
     topologyOrServer['Log'] = {}
 
-  if env.getDomainLogHomeLayout() == "FLAT":
+  if env.getDomainLogHomeLayout() == "Flat":
     topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
   else:
     if isDomainLog:
@@ -353,13 +342,10 @@ def customizeServer(model, server, name):
   customizeDefaultFileStore(server)
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
-  customizeServerIstioNetworkAccessPoint(server, listen_address)
   # If the admin server name is not provided in the WDT model,
   # use the default name 'AdminServer'.
   if (name == adminServer or  name == 'AdminServer'):
     addAdminChannelPortForwardNetworkAccessPoints(server)
-  else:
-    customizeIstioReplicationChannel(server, name, listen_address)
   if getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None:
     customizeCoherenceMemberConfig(server, listen_address)
 
@@ -460,213 +446,10 @@ def _get_ssl_listen_port(server):
     ssl_listen_port = "7002"
   return ssl_listen_port
 
-def customizeServerIstioNetworkAccessPoint(server, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false':
-    return
-  istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-  if istio_readiness_port is None:
-    return
-  admin_server_port = server['ListenPort']
-  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
-
-  if admin_server_port is None:
-    admin_server_port = 7001
-
-  # readiness probe
-  _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
-                   listen_port=istio_readiness_port, protocol='http', http_enabled="true")
-
-  # Generate NAP for each protocols
-  if istioVersionRequiresLocalHostBindings():
-    _writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
-                      listen_port=admin_server_port, protocol='ldap')
-
-    _writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
-                      listen_port=admin_server_port, protocol='t3')
-
-    _writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
-                      listen_port=admin_server_port, protocol='http')
-
-    _writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
-                      listen_port=admin_server_port, protocol='snmp')
-
-    _writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
-                      listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
-
-    _writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
-                      listen_port=admin_server_port, protocol='iiop')
-
-    ssl_listen_port = _get_ssl_listen_port(server)
-    model = env.getModel()
-
-    if ssl_listen_port is not None:
-      _writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
-                        listen_port=ssl_listen_port, protocol='https', http_enabled="true")
-
-      _writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
-                        listen_port=ssl_listen_port, protocol='ldaps')
-
-      _writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
-                        listen_port=ssl_listen_port, protocol='t3s')
-
-      _writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
-                        listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-      _writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
-                        listen_port=ssl_listen_port, protocol='iiops')
-
-    if isAdministrationPortEnabledForServer(server, model['topology']):
-      _writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
-                        listen_port=getAdministrationPort(server, model['topology']), protocol='https', http_enabled="true")
-  else:
-    # readiness probe NAP binding to server IP pod address Istio versions >= 1.10.x
-    _writeIstioNAP(name='http-probe-ext', server=server, listen_address=listen_address,
-                   listen_port=istio_readiness_port, protocol='http', http_enabled="true",
-                   bind_to_localhost="false")
-
-def customizeIstioReplicationChannel(server, name, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false' or server['Cluster'] is None:
-    return
-
-  # verify if server or server template is associated with a cluster
-  cluster_name = getClusterNameOrNone(server)
-  if cluster_name is None or len(cluster_name) == 0:
-    return
-
-  # verify cluster is defined in the topology of the model
-  model = env.getModel()
-  if model is None or 'topology' not in model:
-    return
-
-  topology = model['topology']
-  cluster = getClusterOrNone(topology, cluster_name)
-  if cluster is None:
-    return
-
-  # verify if a replication channel is defined for the cluster
-  if 'ReplicationChannel' not in cluster:
-    return
-
-  repl_channel = cluster['ReplicationChannel']
-  if repl_channel is not None and repl_channel != 'istiorepl':
-    return
-
-  istio_repl_listen_port = env.getEnvOrDef("ISTIO_REPLICATION_PORT", 4564)
-
-  verify_replication_port_conflict(server, name, istio_repl_listen_port)
-
-  if istioVersionRequiresLocalHostBindings():
-    _writeIstioNAP(name='istiorepl', server=server, listen_address=listen_address,
-                 listen_port=istio_repl_listen_port, protocol='t3', http_enabled="true",
-                 bind_to_localhost="true", use_fast_serialization='true',
-                 tunneling_enabled='false')
-  else:
-    _writeIstioNAP(name='istiorepl', server=server, listen_address=listen_address,
-                   listen_port=istio_repl_listen_port, protocol='t3', http_enabled="true",
-                   bind_to_localhost="false", use_fast_serialization='true',
-                   tunneling_enabled='false')
-
-def raise_replication_port_conflict(name, listen_port, replication_port, SSL):
-  raise ValueError('Server/ServerTemplate %s %s listen port %s conflicts with default replication channel port %s when '
-                   'istio is enabled, please specify a different replication port for istio in '
-                   'domain.spec.configuration.istio.replicationPort' % (name, SSL, listen_port, replication_port))
-
-def verify_replication_port_conflict(server, name, replication_port):
-  listen_port = server['ListenPort']
-  ssl_listen_port = _get_ssl_listen_port(server)
-
-  if listen_port == replication_port:
-    raise_replication_port_conflict(name, listen_port, replication_port, '')
-
-  if ssl_listen_port == replication_port:
-    raise_replication_port_conflict(name, ssl_listen_port, replication_port, 'SSL')
-
-  if 'NetworkAccessPoint' in server:
-    for nap_name in server['NetworkAccessPoint']:
-      nap = server['NetworkAccessPoint'][nap_name]
-      listen_port = nap['ListenPort']
-      ssl_listen_port = _get_ssl_listen_port(nap)
-
-      if listen_port == replication_port:
-        raise_replication_port_conflict(nap_name, listen_port, replication_port, '')
-
-      if ssl_listen_port == replication_port:
-        raise_replication_port_conflict(nap_name, ssl_listen_port, replication_port, 'SSL')
-
-def customizeManagedIstioNetworkAccessPoint(template, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false':
-    return
-  istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-  if istio_readiness_port is None:
-    return
-  listen_port = template['ListenPort']
-  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
-  if listen_port is None:
-    listen_port = 7001
-
-  # readiness probe
-  _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
-                   listen_port=istio_readiness_port, protocol='http', http_enabled="true")
-
-  # Generate NAP for each protocols
-  if istioVersionRequiresLocalHostBindings():
-    _writeIstioNAP(name='tcp-ldap', server=template, listen_address=listen_address,
-                 listen_port=listen_port, protocol='ldap')
-
-    _writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
-                 listen_port=listen_port, protocol='t3')
-
-    _writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
-                 listen_port=listen_port, protocol='http')
-
-    _writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
-                 listen_port=listen_port, protocol='snmp')
-
-    _writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
-                 listen_port=listen_port, protocol='CLUSTER-BROADCAST')
-
-    _writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
-                 listen_port=listen_port, protocol='iiop')
-
-    ssl = getSSLOrNone(template)
-    ssl_listen_port = None
-    model = env.getModel()
-    if ssl is not None and 'Enabled' in ssl and ssl['Enabled']:
-      ssl_listen_port = ssl['ListenPort']
-      if ssl_listen_port is None:
-        ssl_listen_port = "7002"
-    elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
-      ssl_listen_port = "7002"
-
-    if ssl_listen_port is not None:
-      _writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
-                   listen_port=ssl_listen_port, protocol='https', http_enabled="true")
-
-      _writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
-                   listen_port=ssl_listen_port, protocol='ldaps')
-
-      _writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
-                   listen_port=ssl_listen_port, protocol='t3s')
-
-      _writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
-                   listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-      _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
-                   listen_port=ssl_listen_port, protocol='iiops')
-  else:
-    # readiness probe NAP binding to pod IP address for Istio versions >= 1.10.x
-    _writeIstioNAP(name='http-probe-ext', server=template, listen_address=listen_address,
-                   listen_port=istio_readiness_port, protocol='http', http_enabled="true",
-                   bind_to_localhost="false")
 
 def addAdminChannelPortForwardNetworkAccessPoints(server):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-  if (admin_channel_port_forwarding_enabled == 'false') or \
-      (istio_enabled == 'true' and istioVersionRequiresLocalHostBindings()):
+  if (admin_channel_port_forwarding_enabled == 'false'):
     return
 
   admin_server_port = server['ListenPort']
@@ -743,10 +526,6 @@ def customizeNetworkAccessPoint(nap_name, nap, listen_address):
     # skip creating ISTIO channels
     return
 
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'true' and istioVersionRequiresLocalHostBindings():
-    listen_address = '127.0.0.1'
-
   # fix NAP listen address
   if 'ListenAddress' in nap:
     original_listen_address = nap['ListenAddress']
@@ -787,7 +566,7 @@ def customizeAccessLog(name, server):
     web_server_log = web_server['WebServerLog']
     if 'FileName' not in web_server_log:
       web_server_log['FileName'] = {}
-    if env.getDomainLogHomeLayout() == "FLAT":
+    if env.getDomainLogHomeLayout() == "Flat":
       web_server_log['FileName'] = logs_dir + "/" + name + "_access.log"
     else:
       web_server_log['FileName'] = "%s/servers/%s/logs/%s_access.log" % (logs_dir, name, name)
@@ -854,9 +633,6 @@ def getSecretManager():
   return secret_manager
 
 def istioVersionRequiresLocalHostBindings():
-  if env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-    return True
-
   return False
 
 

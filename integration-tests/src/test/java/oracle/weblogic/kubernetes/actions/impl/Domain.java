@@ -14,14 +14,15 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1Subject;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -68,7 +69,7 @@ public class Domain {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+  public static boolean createDomainCustomResource(DomainResource domain,
                                                    String... domainVersion) throws ApiException {
     return Kubernetes.createDomainCustomResource(domain, domainVersion);
   }   
@@ -91,12 +92,12 @@ public class Domain {
    */
   public static boolean shutdown(String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
+    // change the /spec/serverStartPolicy to Never to shut down all servers in the domain
     // create patch string to shut down the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
-        .append("\"value\": \"NEVER\"")
+        .append("\"value\": \"Never\"")
         .append("}]");
 
     logger.info("Shutting down domain {0} in namespace {1} using patch string: {2}",
@@ -116,12 +117,12 @@ public class Domain {
    */
   public static boolean start(String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain
+    // change the /spec/serverStartPolicy to IfNeeded to start all servers in the domain
     // create patch string to start the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
-        .append("\"value\": \"IF_NEEDED\"")
+        .append("\"value\": \"IfNeeded\"")
         .append("}]");
 
     logger.info("Restarting domain {0} in namespace {1} using patch string: {2}",
@@ -151,8 +152,8 @@ public class Domain {
    * @return domain custom resource or null if Domain does not exist
    * @throws ApiException if Kubernetes request fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace) throws ApiException {
     return Kubernetes.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -165,9 +166,9 @@ public class Domain {
    * @return domain custom resource or null if Domain does not exist
    * @throws ApiException if Kubernetes request fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace,
-                                                                      String domainVersion) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace,
+                                                       String domainVersion) throws ApiException {
     return Kubernetes.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
@@ -199,7 +200,7 @@ public class Domain {
       String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
     StringBuffer patchStr;
-    oracle.weblogic.domain.Domain res = assertDoesNotThrow(
+    DomainResource res = assertDoesNotThrow(
         () -> getDomainCustomResource(domainUid, namespace),
         String.format("Failed to get the introspectVersion of %s in namespace %s", domainUid, namespace));
     int introspectVersion = 2;
@@ -314,7 +315,7 @@ public class Domain {
       String domainUid, String namespace, String onNonDynamicChanges) {
     LoggingFacade logger = getLogger();
     StringBuffer patchStr;
-    oracle.weblogic.domain.Domain res = assertDoesNotThrow(
+    DomainResource res = assertDoesNotThrow(
         () -> getDomainCustomResource(domainUid, namespace),
         String.format("Failed to get the domain custom resource of %s in namespace %s", domainUid, namespace));
 
@@ -348,35 +349,38 @@ public class Domain {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace.
+   * Scale the cluster of the domain in the specified namespace and change introspect version.
    *
    * @param domainUid domainUid of the domain to be scaled
    * @param namespace namespace in which the domain exists
    * @param clusterName name of the WebLogic cluster to be scaled in the domain
    * @param numOfServers number of servers to be scaled to
+   * @param introspectVersion new introspectVersion value
    * @return true if patch domain custom resource succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
+  public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace,
+                                                               String clusterName, int numOfServers,
+                                                               int introspectVersion)
       throws ApiException {
     LoggingFacade logger = getLogger();
     // get the domain cluster list
-    oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
-
-    List<Cluster> clusters = new ArrayList<>();
+    DomainResource domain = getDomainCustomResource(domainUid, namespace);
+    List<V1LocalObjectReference> clusterSpecs = new ArrayList<>();
     if (domain.getSpec() != null) {
-      clusters = domain.getSpec().getClusters();
+      clusterSpecs = domain.getSpec().getClusters();
     }
 
     // get the index of the cluster with clusterName in the cluster list
     int index = 0;
-    for (int i = 0; i < clusters.size(); i++) {
-      if (clusters.get(i).getClusterName().equals(clusterName)) {
+    for (int i = 0; i < clusterSpecs.size(); i++) {
+      if (clusterSpecs.get(i).getName().equals(clusterName)) {
         index = i;
         break;
       }
     }
 
+    // TODO: Below needs to be modified for v9
     // construct the patch string for scaling the cluster in the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
@@ -385,7 +389,9 @@ public class Domain {
         .append("/replicas\", ")
         .append("\"value\": ")
         .append(numOfServers)
-        .append("}]");
+        .append("}, {\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"")
+        .append(introspectVersion)
+        .append("\"}]");
 
     logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
         clusterName, domainUid, patchStr.toString());
@@ -449,9 +455,9 @@ public class Domain {
         .append("-H Accept:application/json ")
         .append("-H Content-Type:application/json ")
         .append("-H X-Requested-By:MyClient ")
-        .append("-d '{\"managedServerCount\": ")
+        .append("-d '{\"spec\": {\"replicas\": ")
         .append(numOfServers)
-        .append("}' ")
+        .append("} }' ")
         .append("-X POST https://")
         .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
         .append("/operator/latest/domains/")
@@ -638,7 +644,7 @@ public class Domain {
    * @throws ApiException when getting domain resource fails
    */
   public static String getCurrentIntrospectVersion(String domainUid, String namespace) throws ApiException {
-    oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
+    DomainResource domain = getDomainCustomResource(domainUid, namespace);
     String introspectVersion = domain.getSpec().getIntrospectVersion();
 
     return introspectVersion;
@@ -722,6 +728,35 @@ public class Domain {
     return true;
   }
 
+
+  /**
+   * Scale all the cluster(s) of the domain in the specified namespace.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param replicaCount number of servers to be scaled to
+   * @return true if patch domain custom resource succeeds, false otherwise
+   */
+  public static boolean scaleAllClusters(String domainUid, String namespace, int replicaCount) {
+    LoggingFacade logger = getLogger();
+
+    // construct the patch string for scaling the cluster in the domain
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec")
+        .append("/replicas\", ")
+        .append("\"value\": ")
+        .append(replicaCount)
+        .append("}]");
+
+    logger.info("Scaling all cluster(s) in domain {0} using patch string: {1}",
+        domainUid, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
   /**
    * Create cluster role, cluster role binding and role binding used by WLDF script action.
    *
@@ -742,6 +777,7 @@ public class Domain {
               .name(WLDF_CLUSTER_ROLE_NAME))
           .addRulesItem(new V1PolicyRule()
               .addApiGroupsItem("weblogic.oracle")
+              .addResourcesItem("clusters")
               .addResourcesItem("domains")
               .addVerbsItem("get")
               .addVerbsItem("list")
@@ -994,4 +1030,5 @@ public class Domain {
             commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
 
   }
+
 }

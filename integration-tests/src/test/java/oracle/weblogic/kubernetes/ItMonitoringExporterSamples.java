@@ -5,8 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,22 +41,22 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -70,10 +68,10 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -107,7 +105,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via Prometheus
  */
 @DisplayName("Verify end to end sample, provided in the Monitoring Exporter github project")
+@Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 @IntegrationTest
+@Tag("olcne")
 class ItMonitoringExporterSamples {
 
   // domain constants
@@ -161,6 +163,7 @@ class ItMonitoringExporterSamples {
   private static  String monitoringExporterAppDir;
   private static String hostPortPrometheus;
 
+  private static String testWebAppWarLoc = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -174,7 +177,7 @@ class ItMonitoringExporterSamples {
   public static void initAll(@Namespaces(6) List<String> namespaces) {
 
     logger = getLogger();
-    monitoringExporterDir = monitoringExporterDir = Paths.get(RESULTS_ROOT,
+    monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterSamples", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
     monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end/").toString();
@@ -204,13 +207,14 @@ class ItMonitoringExporterSamples {
     assertNotNull(namespaces.get(5), "Namespace list is null");
     final String nginxNamespace = namespaces.get(5);
 
+    // create testwebapp.war
+    testWebAppWarLoc = createTestWebAppWarFile(domain1Namespace);
+
     logger.info("install and verify operator");
     installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
-    assertDoesNotThrow(() -> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        "pvc-grafana", "pvc-" + grafanaReleaseName));
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
@@ -307,8 +311,8 @@ class ItMonitoringExporterSamples {
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
       }
     } finally {
-      shutdownDomain(domain1Namespace, domain1Uid);
-      shutdownDomain(domain2Namespace, domain2Uid);
+      shutdownDomain(domain1Uid, domain1Namespace);
+      shutdownDomain(domain2Uid, domain2Namespace);
     }
   }
 
@@ -351,21 +355,18 @@ class ItMonitoringExporterSamples {
                                         String grafanaChartVersion,
                                         String domainNS,
                                         String domainUid
-  ) throws IOException, ApiException {
+  ) throws ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
-
-      //replace with webhook ns
-      replaceStringInFile(srcPromFile.toString(),
-          "webhook.webhook.svc.cluster.local",
-          String.format("webhook.%s.svc.cluster.local", webhookNS));
-
       cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+      String promHelmValuesFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              "prometheus" + releaseSuffix).toString();
       promHelmParams = installAndVerifyPrometheus(releaseSuffix,
           monitoringNS,
           promChartVersion,
-          prometheusRegexValue);
+          prometheusRegexValue,
+          promHelmValuesFileDir,
+          webhookNS);
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
@@ -385,10 +386,12 @@ class ItMonitoringExporterSamples {
     logger.info("Prometheus is running");
 
     if (grafanaHelmParams == null) {
+      String grafanaHelmValuesFileDir =  Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              grafanaReleaseName).toString();
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
-          monitoringNS,
-          monitoringExporterEndToEndDir + "/grafana/values.yaml",
-          grafanaChartVersion);
+              monitoringNS,
+              grafanaHelmValuesFileDir,
+              grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
@@ -409,7 +412,7 @@ class ItMonitoringExporterSamples {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        labelMap, OCIR_SECRET_NAME), "Failed to start webhook");
+        labelMap, BASE_IMAGES_REPO_SECRET_NAME), "Failed to start webhook");
   }
 
   /**
@@ -483,12 +486,12 @@ class ItMonitoringExporterSamples {
                                                            Map<String, String> labels,
                                                            String secretName) throws ApiException {
     //build webhook image
-    V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
+    V1Container.ImagePullPolicyEnum imagePullPolicy = IMAGE_PULL_POLICY;
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
-      createWebHook(webhookImage, imagePullPolicy, namespace, OCIR_SECRET_NAME);
+      createWebHook(webhookImage, imagePullPolicy, namespace, BASE_IMAGES_REPO_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
       coordinatorImage = image;
       createCoordinator(coordinatorImage, imagePullPolicy, namespace, "coordsecret");
@@ -720,7 +723,7 @@ class ItMonitoringExporterSamples {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String app1Path = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
-    String app2Path = String.format("%s/../operator/integration-tests/apps/testwebapp.war", ITTESTS_DIR);
+    String app2Path = testWebAppWarLoc;
 
     List<String> appList = new ArrayList<>();
     appList.add(app1Path);

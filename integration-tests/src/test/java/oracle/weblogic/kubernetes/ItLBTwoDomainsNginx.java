@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -38,7 +39,7 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleD
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyAdminServerAccess;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLoadbalancing;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyHeadersInAdminServerLog;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithTLSCertKey;
@@ -54,6 +55,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify Nginx load balancer handles traffic to two background WebLogic domains")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItLBTwoDomainsNginx {
 
   private static final int numberOfDomains = 2;
@@ -105,7 +109,7 @@ class ItLBTwoDomainsNginx {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
       domainUids.add("wls-nginx-domain-" + i);

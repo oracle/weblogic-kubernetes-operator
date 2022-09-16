@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -26,18 +27,20 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
+import static oracle.weblogic.kubernetes.actions.TestActions.inspectImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -122,7 +125,8 @@ public class ItMiiSampleHelper {
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
-    envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
+    envMap.put("IMAGE_PULL_SECRET_NAME", BASE_IMAGES_REPO_SECRET_NAME);
+    envMap.put("DOMAIN_IMAGE_PULL_SECRET_NAME", TEST_IMAGES_REPO_SECRET_NAME);
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("OKD", "" +  OKD);
     envMap.put("DO_AI", String.valueOf(imageType == ImageType.AUX));
@@ -133,7 +137,7 @@ public class ItMiiSampleHelper {
     }
 
     if (WIT_DOWNLOAD_URL != null) {
-      envMap.put("WIT_INSTALLER_URL", WDT_DOWNLOAD_URL);
+      envMap.put("WIT_INSTALLER_URL", WIT_DOWNLOAD_URL);
     }
 
     if (WDT_DOWNLOAD_URL != null) {
@@ -145,11 +149,17 @@ public class ItMiiSampleHelper {
     execTestScriptAndAssertSuccess(DomainType.WLS, "-traefik", "Traefik deployment failure");
 
     logger.info("Setting up docker secrets");
-    // Create the repo secret to pull the image
+    // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-    logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        OCIR_SECRET_NAME, domainNamespace);
+    createTestRepoSecret(domainNamespace);
+    logger.info("Docker registry secret {0} created for domain image successfully in namespace {1}",
+        TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
+    // Create the repo secret to pull the base image
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(domainNamespace);
+    logger.info("Docker registry secret {0} for base image created successfully in namespace {1}",
+        BASE_IMAGES_REPO_SECRET_NAME, domainNamespace);
+
 
     if (domainType.equals(DomainType.JRF)) {
       // install db for FMW test cases
@@ -161,10 +171,12 @@ public class ItMiiSampleHelper {
 
       // create ocr/ocir docker registry secret to pull the db images
       // this secret is used only for non-kind cluster
-      createSecretForBaseImages(dbNamespace);
+      createBaseRepoSecret(dbNamespace);
       logger.info("Docker registry secret {0} created successfully in namespace {1}",
-          BASE_IMAGES_REPO_SECRET, dbNamespace);
+              TestConstants.BASE_IMAGES_REPO_SECRET_NAME, dbNamespace);
     }
+
+    callCheckMiiSampleSource();
   }
 
   /**
@@ -203,7 +215,7 @@ public class ItMiiSampleHelper {
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
-  public void execTestScriptAndAssertSuccess(DomainType domainType,
+  private void execTestScriptAndAssertSuccess(DomainType domainType,
                                                     String args,
                                                     String errString) {
     for (String arg : args.split(",")) {
@@ -274,9 +286,15 @@ public class ItMiiSampleHelper {
       envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
       envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
       envMap.put("DB_NAMESPACE", dbNamespace);
-      envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
+      envMap.put("DB_IMAGE_PULL_SECRET", TestConstants.BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-
+      if (OKE_CLUSTER) {
+        String output = inspectImage(jrfBaseImageName, FMWINFRA_IMAGE_TAG);
+        assertNotNull(output, String.format("Can't inspect image %s:%s", jrfBaseImageName, FMWINFRA_IMAGE_TAG));
+        if (!output.contains("root")) {
+          envMap.put("CHOWN_ROOT","--chown oracle:oracle");
+        }
+      }
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
       execTestScriptAndAssertSuccess(domainType, "-db,-rcu", "DB/RCU creation failed");
@@ -310,21 +328,25 @@ public class ItMiiSampleHelper {
   }
 
   /**
-   * Test MII sample WLS or JRF update1 use case.
+   * Verify that the "hard coded" sample domain resources in git
+   * align with the templates used by the tests.
    */
-  public void callCheckMiiSampleSource(String args,
-                                              String errString) {
-    final String baseImageNameKey = "BASE_IMAGE_NAME";
-    final String baseImageTagKey = "BASE_IMAGE_TAG";
-    final String origImageName = envMap.get(baseImageNameKey);
-    final String origImageTag = envMap.get(baseImageTagKey);
+  private void callCheckMiiSampleSource() {
+    Map<String, String> localMap = new HashMap<>();
+    localMap.put("WORKDIR", envMap.get("WORKDIR"));
+
+    Map<String, String> saveMap = envMap;
+    envMap = localMap;
     try {
-      envMap.remove(baseImageNameKey);
-      envMap.remove(baseImageTagKey);
-      execTestScriptAndAssertSuccess(domainType, args, errString);
+      logger.info("Comparing integration test domain resource templates to hard coded resources in the sample source.");
+      execTestScriptAndAssertSuccess(
+          DomainType.WLS,
+          "-check-sample",
+          "Error: the MII sample domain resources in git do not align with integration test templates."
+          + " To run this check locally: './operator/integration-tests/model-in-image/run-test.sh -check-sample'."
+      );
     } finally {
-      envMap.put(baseImageNameKey,origImageName);
-      envMap.put(baseImageTagKey,origImageTag);
+      envMap = saveMap;
     }
   }
 

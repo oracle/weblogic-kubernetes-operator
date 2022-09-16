@@ -42,10 +42,14 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -54,6 +58,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -159,7 +164,7 @@ class KubernetesTestSupportTest {
 
   @Test
   void afterReplaceDomainWithTimeStampEnabled_timeStampIsChanged() {
-    Domain originalDomain = createDomain(NS, "domain1");
+    DomainResource originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
     testSupport.setAddCreationTimestamp(true);
 
@@ -167,26 +172,43 @@ class KubernetesTestSupportTest {
     Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, createDomain(NS, "domain1"), null);
     testSupport.runSteps(steps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(getCreationTimestamp(updatedDomain), not(equalTo(getCreationTimestamp(originalDomain))));
   }
 
   @Test
   void afterReplaceDomainWithTimeStampDisabled_timeStampIsNotChanged() {
-    Domain originalDomain = createDomain(NS, "domain1");
+    DomainResource originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
 
     SystemClockTestSupport.increment();
     Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, createDomain(NS, "domain1"), null);
     testSupport.runSteps(steps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
   }
 
   @Test
+  void afterClusterStatusReplaced_resourceVersionIsIncremented() {
+    ClusterResource originalCluster = createCluster(NS, "cluster1");
+    testSupport.defineResources(originalCluster);
+    originalCluster.getMetadata().setResourceVersion("123");
+
+    Step steps = new CallBuilder()
+        .replaceClusterStatusAsync("cluster1", NS,
+            createCluster(NS, "cluster1")
+                .withStatus(new ClusterStatus().withMaximumReplicas(8)),
+            null);
+    testSupport.runSteps(steps);
+
+    ClusterResource updatedCluster = testSupport.getResourceWithName(CLUSTER, "cluster1");
+    assertThat(updatedCluster.getMetadata().getResourceVersion(), equalTo("124"));
+  }
+
+  @Test
   void afterDomainStatusReplaced_resourceVersionIsIncremented() {
-    Domain originalDomain = createDomain(NS, "domain1");
+    DomainResource originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
     originalDomain.getMetadata().setResourceVersion("123");
 
@@ -197,13 +219,13 @@ class KubernetesTestSupportTest {
             null);
     testSupport.runSteps(steps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(updatedDomain.getMetadata().getResourceVersion(), equalTo("124"));
   }
 
   @Test
   void afterPatchDomainWithTimeStampEnabled_timeStampIsNotChanged() {
-    Domain originalDomain = createDomain(NS, "domain1");
+    DomainResource originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
     testSupport.setAddCreationTimestamp(true);
     SystemClockTestSupport.increment();
@@ -213,13 +235,13 @@ class KubernetesTestSupportTest {
     Step steps = new CallBuilder().patchDomainAsync("domain1", NS, new V1Patch(patchBuilder.build().toString()), null);
     testSupport.runSteps(steps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(getCreationTimestamp(updatedDomain), equalTo(getCreationTimestamp(originalDomain)));
   }
 
   @Test
   void afterPatchDomainAsynchronously_statusIsUnchanged() {
-    Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
+    DomainResource originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
@@ -234,7 +256,7 @@ class KubernetesTestSupportTest {
 
   @Test
   void afterPatchDomainSynchronously_statusIsUnchanged() throws ApiException {
-    Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
+    DomainResource originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
@@ -252,10 +274,11 @@ class KubernetesTestSupportTest {
 
   @Test
   void afterReplaceDomainAsync_statusIsUnchanged() {
-    Domain originalDomain = createDomain(NS, "domain1").withStatus(new DomainStatus().withMessage("leave this"));
+    DomainResource originalDomain
+        = createDomain(NS, "domain1").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
-    Domain newDomain = createDomain(NS, "domain1");
+    DomainResource newDomain = createDomain(NS, "domain1");
     Step steps = new CallBuilder().replaceDomainAsync("domain1", NS, newDomain, null);
     testSupport.runSteps(steps);
 
@@ -263,38 +286,38 @@ class KubernetesTestSupportTest {
   }
 
   private @Nonnull DomainStatus getDomainStatus(String name) {
-    return Optional.ofNullable((Domain) testSupport.getResourceWithName(DOMAIN, name))
-          .map(Domain::getStatus)
+    return Optional.ofNullable((DomainResource) testSupport.getResourceWithName(DOMAIN, name))
+          .map(DomainResource::getStatus)
           .orElse(new DomainStatus());
 
   }
 
   @Test
   void afterReplaceDomainStatusAsync_specIsUnchanged() {
-    Domain originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
+    DomainResource originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
     testSupport.defineResources(originalDomain);
 
-    Domain newDomain = createDomain(NS, "domain1");
+    DomainResource newDomain = createDomain(NS, "domain1");
     Step steps = new CallBuilder().replaceDomainStatusAsync("domain1", NS, newDomain, null);
     testSupport.runSteps(steps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(updatedDomain.getSpec().getReplicas(), equalTo(5));
   }
 
   @Test
   void afterReplaceDomainStatusSynchronously_specIsUnchanged() throws ApiException {
-    Domain originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
+    DomainResource originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
     testSupport.defineResources(originalDomain);
 
-    Domain newDomain = createDomain(NS, "domain1");
+    DomainResource newDomain = createDomain(NS, "domain1");
     new CallBuilder().replaceDomainStatus("domain1", NS, newDomain);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, "domain1");
     assertThat(updatedDomain.getSpec().getReplicas(), equalTo(5));
   }
 
-  private OffsetDateTime getCreationTimestamp(Domain domain) {
+  private OffsetDateTime getCreationTimestamp(DomainResource domain) {
     return domain.getMetadata().getCreationTimestamp();
   }
 
@@ -428,10 +451,43 @@ class KubernetesTestSupportTest {
   }
 
   @Test
+  void listClusterResource_returnsAllInNamespace() {
+    ClusterResource cluster1 = createCluster("ns1", "cluster1");
+    ClusterResource cluster2 = createCluster("ns1", "cluster2");
+    ClusterResource cluster3 = createCluster("ns2", "cluster3");
+    testSupport.defineResources(cluster1, cluster2, cluster3);
+
+    TestResponseStep<ClusterList> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().listClusterAsync("ns1", responseStep));
+
+    assertThat(responseStep.callResponse.getResult().getItems(),
+               containsInAnyOrder(cluster1, cluster2));
+  }
+
+  @Test
+  void afterReplaceClusterStatusAsync_specIsUnchanged() {
+    ClusterResource originalCluster = createCluster(NS, "cluster1").spec(new ClusterSpec().withReplicas(5));
+    testSupport.defineResources(originalCluster);
+
+    ClusterResource newCluster = createCluster(NS, "cluster1");
+    Step steps = new CallBuilder().replaceClusterStatusAsync("cluster1", NS, newCluster, null);
+    testSupport.runSteps(steps);
+
+    ClusterResource updatedCluster = testSupport.getResourceWithName(CLUSTER, "cluster1");
+    assertThat(updatedCluster.getSpec().getReplicas(), equalTo(5));
+  }
+
+  private ClusterResource createCluster(String namespace, String name) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name(name).namespace(namespace))
+        .withStatus(new ClusterStatus());
+  }
+
+  @Test
   void listDomain_returnsAllInNamespace() {
-    Domain dom1 = createDomain("ns1", "domain1");
-    Domain dom2 = createDomain("ns1", "domain2");
-    Domain dom3 = createDomain("ns2", "domain3");
+    DomainResource dom1 = createDomain("ns1", "domain1");
+    DomainResource dom2 = createDomain("ns1", "domain2");
+    DomainResource dom3 = createDomain("ns2", "domain3");
     testSupport.defineResources(dom1, dom2, dom3);
 
     TestResponseStep<DomainList> responseStep = new TestResponseStep<>();
@@ -440,8 +496,10 @@ class KubernetesTestSupportTest {
     assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(dom1, dom2));
   }
 
-  private Domain createDomain(String namespace, String name) {
-    return new Domain().withMetadata(new V1ObjectMeta().name(name).namespace(namespace)).withStatus(new DomainStatus());
+  private DomainResource createDomain(String namespace, String name) {
+    return new DomainResource()
+        .withMetadata(new V1ObjectMeta().name(name).namespace(namespace))
+        .withStatus(new DomainStatus());
   }
 
   @Test
@@ -529,8 +587,8 @@ class KubernetesTestSupportTest {
 
   @Test
   void deleteNamespace_deletesAllMatchingNamespacedResources() {
-    Domain dom1 = createDomain("ns1", "domain1");
-    Domain dom2 = createDomain("ns2", "domain2");
+    DomainResource dom1 = createDomain("ns1", "domain1");
+    DomainResource dom2 = createDomain("ns2", "domain2");
     V1Service s1 = createService("ns1", "service1");
     V1Service s2 = createService("ns2", "service2");
     V1Pod p1 = createPod("ns1", "pod1");

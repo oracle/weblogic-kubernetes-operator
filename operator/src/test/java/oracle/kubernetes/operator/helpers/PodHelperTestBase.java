@@ -54,7 +54,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -89,7 +88,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -241,8 +240,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   static final String DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH = "/auxiliary";
 
   final TerminalStep terminalStep = new TerminalStep();
-  private final Domain domain = createDomain();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  private final DomainResource domain = createDomain();
+  protected final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
   protected final List<LogRecord> logRecords = new ArrayList<>();
@@ -269,7 +268,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return consoleHandlerMemento;
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
   }
 
@@ -419,7 +418,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     testSupport.throwOnCompletionFailure();
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
   }
 
@@ -576,10 +575,23 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
-    defineExporterConfiguration().withIstio();
+  void afterUpgradeIstioMonitoringExporterPod_dontReplacePod() {
+    useProductionHash();
+    defineExporterConfiguration();
 
-    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    // Surprisingly, verifyPodPatched() is the correct assertion -- because the logic to adjust the recipe and
+    // generate hashes for pre-existing pods works correctly, the existing pod will not be replaced; however,
+    // it will be patched to update the weblogic.operatorVersion label and the annotation with the hash.
+    verifyPodPatched();
+  }
+
+  @Test
+  void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
+    defineExporterConfiguration();
+
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
@@ -657,10 +669,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey);
   }
 
+  V1Affinity getCreatePodAffinity() {
+    return Optional.ofNullable(getCreatedPod().getSpec()).map(V1PodSpec::getAffinity).orElse(new V1Affinity());
+  }
+
   abstract void setServerPort(int port);
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
         .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
         .withKind(DOMAIN)
         .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
@@ -670,7 +686,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
         .withDomainUid(UID)
-        .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }
@@ -734,6 +750,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
 
+  // Returns the YAML for a 3.4.1 Mii pod with converted aux image.
+  abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4_1();
+
+  abstract String getReferenceIstioMonitoringExporterTcpProtocol();
+
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
     useProductionHash();
@@ -791,6 +812,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     useProductionHash();
     initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWith3_4_1_ConvertedAuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4_1()));
 
     verifyPodPatched();
 
@@ -2517,6 +2557,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
         allOf(
             hasVolumeMount("volume1", "/destination-path1"),
             hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  void whenDomainHasNoAffinity_createdNonClusteredPodHasDefaultDomainUidVariableAffinity() {
+    assertThat(getCreatePodAffinity(), is(new AffinityHelper().domainUID(UID).getAntiAffinity()));
   }
 
   @Test

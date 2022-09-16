@@ -68,6 +68,7 @@ public class TuningParameters {
   public static final String STATUS_UPDATE_EVENTUAL_LONG_DELAY = "statusUpdateEventualLongDelay";
   public static final String SECRET_REREAD_INTERVAL_SECONDS = "weblogicCredentialsSecretRereadIntervalSeconds";
   public static final String MAX_READY_WAIT_TIME_SECONDS = "maxReadyWaitTimeSeconds";
+  public static final String MAX_PENDING_WAIT_TIME_SECONDS = "maxPendingWaitTimeSeconds";
   public static final String RESTART_EVICTED_PODS = "restartEvictedPods";
   public static final String INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = "introspectorJobActiveDeadlineSeconds";
   public static final String INTROSPECTOR_JOB_DEADLINE_INCREMENT_SECONDS = "introspectorJobDeadlineIncrementSeconds";
@@ -75,6 +76,11 @@ public class TuningParameters {
   public static final String KUBERNETES_PLATFORM_NAME = "kubernetesPlatform";
   public static final String FEATURE_GATES = "featureGates";
   public static final String SERVICE_ACCOUNT_NAME = "serviceaccount";
+  public static final String CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT = "crdPresenceFailureRetryMaxCount";
+  public static final String HTTP_REQUEST_FAILURE_COUNT_THRESHOLD = "httpRequestFailureCountThreshold";
+  public static final String SHUTDOWN_WITH_HTTP_POLLING_INTERVAL = "shutdownWithHttpPollingInterval";
+  public static final int DEFAULT_HTTP_REQUEST_FAILURE_COUNT_THRESHOLD = 10;
+  public static final int DEFAULT_SHUTDOWN_WITH_HTTP_POLLING_INTERVAL = 3;
 
   public static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
@@ -203,6 +209,10 @@ public class TuningParameters {
     return getParameter(MAX_READY_WAIT_TIME_SECONDS, 1800);
   }
 
+  public long getMaxPendingWaitTimeSeconds() {
+    return getParameter(MAX_PENDING_WAIT_TIME_SECONDS, 300);
+  }
+
   public boolean isRestartEvictedPods() {
     return getParameter(RESTART_EVICTED_PODS, true);
   }
@@ -217,6 +227,18 @@ public class TuningParameters {
 
   public long getActiveDeadlineMaxNumIncrements() {
     return getParameter(INTROSPECTOR_JOB_MAX_NUM_INCREMENTS, 5);
+  }
+
+  public int getCrdPresenceFailureRetryMaxCount() {
+    return getParameter(CRD_PRESENCE_FAILURE_RETRY_MAX_COUNT, 3);
+  }
+
+  public int getHttpRequestFailureCountThreshold() {
+    return getParameter(HTTP_REQUEST_FAILURE_COUNT_THRESHOLD, DEFAULT_HTTP_REQUEST_FAILURE_COUNT_THRESHOLD);
+  }
+
+  public int getShutdownWithHttpPollingInterval() {
+    return getParameter(SHUTDOWN_WITH_HTTP_POLLING_INTERVAL, DEFAULT_SHUTDOWN_WITH_HTTP_POLLING_INTERVAL);
   }
 
   /**

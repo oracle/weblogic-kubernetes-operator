@@ -9,7 +9,6 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -36,14 +35,14 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+          + "Legal values are AdminOnly, Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty(
       "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
           + " the username and password needed to boot WebLogic Server under the 'username' and "
           + "'password' fields.")
-  private V1SecretReference webLogicCredentialsSecret;
+  private V1LocalObjectReference webLogicCredentialsSecret;
 
   @ApiModelProperty(
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
@@ -52,8 +51,8 @@ public class DomainSpec {
 
   @ApiModelProperty(
       "Control how the log files under logHome is organized. "
-          + "FLAT - all files are under the logHome root directory. "
-          + "BY_SERVERS (default) - domain log file and introspector.out are at the logHome root level, all other files"
+          + "Flat - all files are under the logHome root directory. "
+          + "ByServers (default) - domain log file and introspector.out are at the logHome root level, all other files"
           + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
   private String logHomeLayout;
 
@@ -204,8 +203,11 @@ public class DomainSpec {
   @ApiModelProperty("Configuration for individual Managed Servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
-  @ApiModelProperty("Configuration for the clusters.")
-  private List<Cluster> clusters = new ArrayList<>();
+  @ApiModelProperty("References to Cluster resources that describe the lifecycle options for all of the Managed Server "
+      + "members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and "
+      + "the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a "
+      + "cluster that already exists in the WebLogic domain configuration.")
+  private List<V1LocalObjectReference> clusters = new ArrayList<>();
 
   @ApiModelProperty("Experimental feature configurations.")
   private Experimental experimental;
@@ -216,11 +218,6 @@ public class DomainSpec {
   @ApiModelProperty(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   private ServerService serverService;
-
-  @ApiModelProperty(
-      "The state in which the server is to be started. Use ADMIN if server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
 
   @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
@@ -289,20 +286,20 @@ public class DomainSpec {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  public DomainSpec webLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  public DomainSpec webLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
   }
 
-  public V1SecretReference webLogicCredentialsSecret() {
+  public V1LocalObjectReference webLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
-  public V1SecretReference getWebLogicCredentialsSecret() {
+  public V1LocalObjectReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
-  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+  public void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
@@ -617,35 +614,20 @@ public class DomainSpec {
     this.managedServers = managedServers;
   }
 
-  public DomainSpec clusters(List<Cluster> clusters) {
+  public DomainSpec clusters(List<V1LocalObjectReference> clusters) {
     this.clusters = clusters;
     return this;
   }
 
-  public List<Cluster> clusters() {
+  public List<V1LocalObjectReference> clusters() {
     return clusters;
   }
 
-  /**
-   * Adds cluster item.
-   * @param clustersItem Cluster
-   * @return this
-   */
-  public DomainSpec addClustersItem(Cluster clustersItem) {
-    if (clusters == null) {
-      clusters = new ArrayList<>();
-    }
-    clusters.add(clustersItem);
-    return this;
-  }
 
-  public List<Cluster> getClusters() {
+  public List<V1LocalObjectReference> getClusters() {
     return clusters;
   }
 
-  public void setClusters(List<Cluster> clusters) {
-    this.clusters = clusters;
-  }
 
   public DomainSpec experimental(Experimental experimental) {
     this.experimental = experimental;
@@ -698,23 +680,6 @@ public class DomainSpec {
     this.serverService = serverService;
   }
 
-  public DomainSpec serverStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-    return this;
-  }
-
-  public String serverStartState() {
-    return serverStartState;
-  }
-
-  public String getServerStartState() {
-    return serverStartState;
-  }
-
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public DomainSpec restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -761,6 +726,16 @@ public class DomainSpec {
     this.auxiliaryImageVolumes = auxiliaryImageVolumes;
   }
 
+  /**
+   * Adds a Cluster resource reference to the DomainSpec.
+   *
+   * @param reference The cluster reference to be added to this DomainSpec
+   * @return this object
+   */
+  public DomainSpec withCluster(V1LocalObjectReference reference) {
+    clusters.add(reference);
+    return this;
+  }
 
   @Override
   public String toString() {
@@ -789,7 +764,6 @@ public class DomainSpec {
             .append("managedServers", managedServers)
             .append("clusters", clusters)
             .append("experimental", experimental)
-            .append("serverStartState", serverStartState)
             .append("serverPod", serverPod)
             .append("serverService", serverService)
             .append("restartVersion", restartVersion)
@@ -828,7 +802,6 @@ public class DomainSpec {
             .append(experimental)
             .append(serverPod)
             .append(serverService)
-            .append(serverStartState)
             .append(restartVersion)
             .append(monitoringExporter)
             .append(fluentdSpecification);
@@ -873,7 +846,6 @@ public class DomainSpec {
             .append(experimental, rhs.experimental)
             .append(serverPod, rhs.serverPod)
             .append(serverService, rhs.serverService)
-            .append(serverStartState, rhs.serverStartState)
             .append(restartVersion, rhs.restartVersion)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(fluentdSpecification, rhs.fluentdSpecification);

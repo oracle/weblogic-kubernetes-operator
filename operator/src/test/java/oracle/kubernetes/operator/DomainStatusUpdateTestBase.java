@@ -21,6 +21,9 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -28,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -39,9 +43,11 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
+import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -51,7 +57,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -85,7 +90,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
@@ -102,10 +106,8 @@ abstract class DomainStatusUpdateTestBase {
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private List<String> liveServers;
 
   @BeforeEach
@@ -126,7 +128,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private V1ObjectMeta createPodMetadata(String serverName) {
-    return new V1ObjectMeta().namespace(NS).name(serverName);
+    return new V1ObjectMeta().namespace(NS).name(serverName).creationTimestamp(SystemClock.now());
   }
 
   @AfterEach
@@ -144,7 +146,8 @@ abstract class DomainStatusUpdateTestBase {
 
   void initializeDomainStatus(WlsDomainConfig domainConfig) {
     final DomainStatusUpdater.DomainStatusFactory domainStatusFactory
-          = new DomainStatusUpdater.DomainStatusFactory(getRecordedDomain(), domainConfig, this::isConfiguredToRun);
+          = new DomainStatusUpdater.DomainStatusFactory(info, domainConfig,
+              this::isConfiguredToRun);
 
     domainStatusFactory.setStatusDetails(info.getDomain().getOrCreateStatus());
   }
@@ -163,12 +166,14 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
+    // Observed generation is only updated during a make-right status update
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), nullValue());
     assertThat(
         getServerStatus(getRecordedDomain(), "server1"),
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withNodeName("node1")
                 .withServerName("server1")
                 .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
@@ -179,7 +184,7 @@ abstract class DomainStatusUpdateTestBase {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -193,7 +198,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   // Examines the domain status and returns the server status for the specified server, if it is defined
-  private ServerStatus getServerStatus(Domain domain, String serverName) {
+  private ServerStatus getServerStatus(DomainResource domain, String serverName) {
     return domain.getStatus().getServers().stream()
           .filter(status -> status.getServerName().equals(serverName))
           .findAny()
@@ -220,12 +225,12 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(),
           hasStatusForServer("server3")
                 .withState(RUNNING_STATE)
-                .withDesiredState(RUNNING_STATE)
+                .withStateGoal(RUNNING_STATE)
                 .withClusterName("clusterC"));
     assertThat(getRecordedDomain(),
           hasStatusForServer("server4")
                 .withState(SHUTDOWN_STATE)
-                .withDesiredState(SHUTDOWN_STATE)
+                .withStateGoal(SHUTDOWN_STATE)
                 .withClusterName("clusterC"));
   }
 
@@ -248,13 +253,14 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void statusStep_definesClusterReplicaGoalFromDomain() {
-    configureDomain().configureCluster("clusterA").withReplicas(3);
-    configureDomain().configureCluster("clusterB").withReplicas(5);
+    configureDomain().configureCluster(info, "clusterA").withReplicas(3);
+    configureDomain().configureCluster(info,"clusterB").withReplicas(5);
     domain.getSpec().setAllowReplicasBelowMinDynClusterSize(false);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withDynamicCluster("clusterB", 2, 8)
           .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -293,7 +299,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-          hasStatusForServer("server1").withState(SHUTDOWN_STATE).withDesiredState(SHUTDOWN_STATE));
+          hasStatusForServer("server1").withState(SHUTDOWN_STATE).withStateGoal(SHUTDOWN_STATE));
   }
 
   @Test
@@ -305,7 +311,7 @@ abstract class DomainStatusUpdateTestBase {
                 Collections.singletonList(
                     new ServerStatus()
                         .withState(SHUTDOWN_STATE)
-                        .withDesiredState(SHUTDOWN_STATE)
+                        .withStateGoal(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
               .addCondition(new DomainCondition(AVAILABLE).withStatus(false))
@@ -652,8 +658,9 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenRollInProcessAndReplicasTooHighAndAllServersRunning_removeRollingCondition() {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
-    domain.setReplicaCount("cluster1", 5);
+    configureDomain().configureCluster(info, "cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -663,8 +670,9 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenRollInProcessAndReplicasTooHighAndAllServersRunning_generateDomainRollCompletedEvent() {
     domain.getStatus().addCondition(new DomainCondition(ROLLING));
-    domain.setReplicaCount("cluster1", 5);
+    configureDomain().configureCluster(info, "cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -831,6 +839,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
     unreadyPod("server2");
 
+    SystemClockTestSupport.increment();
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(FAILED).withStatus(TRUE));
@@ -853,6 +862,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
     markPodRunningPhaseFalse("server2");
 
+    SystemClockTestSupport.increment();
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(FAILED).withStatus(TRUE));
@@ -937,6 +947,48 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenPodPendingForTooLong_reportServerPodFailure() {
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+
+    SystemClockTestSupport.increment(21);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(SERVER_POD).withMessageContaining("did not start"));
+  }
+
+  @Test
+  void whenPodPendingWithinTimeLimit_doNotReportServerPodFailure() {
+    TuningParametersStub.setParameter(TuningParameters.MAX_PENDING_WAIT_TIME_SECONDS, Long.toString(20));
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+
+    SystemClockTestSupport.increment(19);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
+  }
+
+  @Test
+  void whenPodPendingWithinTimeLimit_removePreviousServerPodFailures() {
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(SERVER_POD).withMessage("unit test"));
+    domain.getSpec().setMaxPendingWaitTimeSeconds(20);
+    defineScenario().withServers("ms1", "ms2")
+        .withServerState("ms1", new V1ContainerStateWaiting().reason("ImageBackOff"))
+        .build();
+
+    SystemClockTestSupport.increment(19);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
+  }
+
+  // todo remove server pod failures when OK
+
+  @Test
   void whenNoDynamicClusters_doNotAddReplicasTooHighFailure() {
     defineScenario().withCluster("cluster1", "ms1", "ms2").build();
 
@@ -946,53 +998,10 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_removeOldReplicasTooHighFailure() {
-    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH));
-    domain.setReplicaCount("cluster1", 4);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
-  }
-
-  @Test
-  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {
-    domain.setReplicaCount("cluster1", 4);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
-  }
-
-  @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
-    domain.setReplicaCount("cluster1", 5);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), hasCondition(FAILED)
-        .withReason(REPLICAS_TOO_HIGH).withMessageContaining("cluster1"));
-    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
-  }
-
-  @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_generateFailedEvent() {
-    domain.setReplicaCount("cluster1", 5);
-    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
-
-    updateDomainStatus();
-
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR)));
-  }
-
-  @Test
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_domainIsNotCompleted() {
-    configureDomain().configureCluster("cluster1").withReplicas(5);
+    configureDomain().configureCluster(info,"cluster1").withReplicas(5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1026,8 +1035,9 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountWithinMaxUnavailableOfReplicas_domainIsAvailable() {
-    configureDomain().configureCluster("cluster1").withReplicas(5).withMaxUnavailable(1);
+    configureDomain().configureCluster(info,"cluster1").withReplicas(5).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1036,12 +1046,140 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenReplicaCountNotWithinMaxUnavailableOfReplicas_domainIsNotAvailable() {
-    configureDomain().configureCluster("cluster1").withReplicas(20).withMaxUnavailable(1);
+    configureDomain().configureCluster(info,"cluster1").withReplicas(20).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
+  void whenReplicaCountWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionTrue() {
+    configureDomain().configureCluster(info,"cluster1").withReplicas(5).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenReplicaCountNotWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionFalse() {
+    configureDomain().configureCluster(info,"cluster1").withReplicas(20).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
+  void whenClusterIsIntentionallyShutdown_establishClusterAvailableConditionTrue() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(0).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 0).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenClusterIsIntentionallyShutdown_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(0).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 0).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition completedCondition = clusterStatus.getConditions().get(1);
+    assertThat(completedCondition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(completedCondition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenClusterHasTooManyReplicas_establishClusterCompletedConditionFalse() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(20).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
+  void whenAllDesiredServersRunning_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(4).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenAllDesiredServersRunningButSomeShutdown_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2", "server3", "server4")
+        .notStarting("server2", "server3")
+        .withServersReachingState(SHUTDOWN_STATE, "server2", "server3")
+        .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
+  void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishClusterCompletedConditionFalse() {
+    info.setServersToRoll(Map.of("server1", new Step.StepAndPacket(null, null)));
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2", "server3", "server4")
+        .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(FALSE));
   }
 
   @Test
@@ -1140,11 +1278,12 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenNoMoreThanMaxUnavailableServersNotRunningInACluster_domainIsAvailable() {
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server3", "server4")
           .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1154,11 +1293,12 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenTooManyServersNotRunningInACluster_domainIsNotAvailable() {
-    configureDomain().configureCluster("clusterA").withReplicas(4).withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withReplicas(4).withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server2", "server3", "server4")
           .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1168,12 +1308,13 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenNoServersReadyInCluster_domainIsNotAvailable() {
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
           .build();
     deactivateServer("server1");
     deactivateServer("server2");
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1184,12 +1325,13 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenDomainWasAvailableAndNoLongerIs_domainAvailableConditionIsChangedToFalse() {
     domain.getStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(TRUE));
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+    configureDomain().configureCluster(info,"clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
           .build();
     deactivateServer("server1");
     deactivateServer("server2");
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     updateDomainStatus();
 
@@ -1357,7 +1499,7 @@ abstract class DomainStatusUpdateTestBase {
     clearPacketServerStatusMaps();
 
     testSupport.runSteps(
-        Step.chain(processor.createPopulatePacketServerMapsStep(),
+        Step.chain(new DomainProcessorImpl.PopulatePacketServerMapsStep(),
             DomainStatusUpdater.createStatusUpdateStep(endStep)));
 
     assertThat(getRecordedDomain().getMetadata().getResourceVersion(), equalTo(cachedResourceVersion));
@@ -1379,7 +1521,7 @@ abstract class DomainStatusUpdateTestBase {
     testSupport.addToPacket(SERVER_HEALTH_MAP, null);
   }
 
-  private Domain getRecordedDomain() {
+  private DomainResource getRecordedDomain() {
     return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, NAME);
   }
 
@@ -1469,6 +1611,7 @@ abstract class DomainStatusUpdateTestBase {
     private final List<String> terminatingServers = new ArrayList<>();
     private final List<String> nonStartedServers = new ArrayList<>();
     private final Map<String,String[]> serverStates = new HashMap<>();
+    private final Map<String, V1ContainerStateWaiting> waitingStates = new HashMap<>();
 
     private ScenarioBuilder() {
       configSupport = new WlsDomainConfigSupport("testDomain");
@@ -1520,6 +1663,12 @@ abstract class DomainStatusUpdateTestBase {
 
     ScenarioBuilder withServersReachingState(String state, String... servers) {
       serverStates.put(state, servers);
+      return this;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    ScenarioBuilder withServerState(String serverName, V1ContainerStateWaiting waitingState) {
+      waitingStates.put(serverName, waitingState);
       return this;
     }
 
@@ -1590,9 +1739,23 @@ abstract class DomainStatusUpdateTestBase {
       final V1Pod pod = getPod(serverName);
 
       Objects.requireNonNull(pod.getSpec()).setNodeName(toNodeName(serverName));
-      pod.setStatus(new V1PodStatus()
-            .phase(V1PodStatus.PhaseEnum.RUNNING)
-            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+      if (waitingStates.containsKey(serverName)) {
+        pod.setStatus(new V1PodStatus()
+            .startTime(SystemClock.now())
+            .phase(V1PodStatus.PhaseEnum.PENDING)
+            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False"))
+            .addContainerStatusesItem(createContainerStatusItem(serverName))
+        );  
+      } else {
+        pod.setStatus(new V1PodStatus()
+              .startTime(SystemClock.now())
+              .phase(V1PodStatus.PhaseEnum.RUNNING)
+              .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+      }
+    }
+
+    private V1ContainerStatus createContainerStatusItem(String serverName) {
+      return new V1ContainerStatus().state(new V1ContainerState().waiting(waitingStates.get(serverName)));
     }
 
     private void markServerTerminating(String serverName) {
@@ -1605,7 +1768,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("unused")
-  static class ServerStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+  static class ServerStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResource> {
     private final String serverName;
     private final MultiFieldMatcher<ServerStatus> matcher;
 
@@ -1623,8 +1786,8 @@ abstract class DomainStatusUpdateTestBase {
       return this;
     }
 
-    ServerStatusMatcher withDesiredState(String expectedValue) {
-      matcher.addField("desired state", ServerStatus::getDesiredState, expectedValue);
+    ServerStatusMatcher withStateGoal(String expectedValue) {
+      matcher.addField("desired state", ServerStatus::getStateGoal, expectedValue);
       return this;
     }
 
@@ -1651,11 +1814,11 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Override
-    protected boolean matchesSafely(Domain domain, Description description) {
+    protected boolean matchesSafely(DomainResource domain, Description description) {
       return matcher.matches(getServerStatus(domain), description);
     }
 
-    private ServerStatus getServerStatus(Domain domain) {
+    private ServerStatus getServerStatus(DomainResource domain) {
       return getServerStatuses(domain).stream()
             .filter(serverStatus -> serverStatus.getServerName().equals(serverName))
             .findFirst()
@@ -1663,9 +1826,9 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Nonnull
-    private List<ServerStatus> getServerStatuses(Domain domain) {
+    private List<ServerStatus> getServerStatuses(DomainResource domain) {
       return Optional.ofNullable(domain)
-            .map(Domain::getStatus)
+            .map(DomainResource::getStatus)
             .map(DomainStatus::getServers)
             .orElse(Collections.emptyList());
     }
@@ -1677,7 +1840,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("unused")
-  static class ClusterStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+  static class ClusterStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResource> {
     private final String clusterName;
     private final MultiFieldMatcher<ClusterStatus> matcher;
 
@@ -1716,11 +1879,11 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Override
-    protected boolean matchesSafely(Domain domain, Description description) {
+    protected boolean matchesSafely(DomainResource domain, Description description) {
       return matcher.matches(getClusterStatus(domain), description);
     }
 
-    private ClusterStatus getClusterStatus(Domain domain) {
+    private ClusterStatus getClusterStatus(DomainResource domain) {
       return getClusterStatuses(domain).stream()
           .filter(clusterStatus -> clusterStatus.getClusterName().equals(clusterName))
           .findFirst()
@@ -1728,9 +1891,9 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Nonnull
-    private List<ClusterStatus> getClusterStatuses(Domain domain) {
+    private List<ClusterStatus> getClusterStatuses(DomainResource domain) {
       return Optional.ofNullable(domain)
-          .map(Domain::getStatus)
+          .map(DomainResource::getStatus)
           .map(DomainStatus::getClusters)
           .orElse(Collections.emptyList());
     }

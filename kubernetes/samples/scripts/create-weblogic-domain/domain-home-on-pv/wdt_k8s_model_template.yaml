@@ -6,7 +6,7 @@
 # extractDomainResource script to generate a domain.yaml
 #
 kubernetes:
-  apiVersion: "weblogic.oracle/v9"
+  apiVersion: "weblogic.oracle/v8"
   kind: Domain
   metadata:
     name: %DOMAIN_UID%
@@ -26,15 +26,14 @@ kubernetes:
     image: "%WEBLOGIC_IMAGE%"
 
     # imagePullPolicy defaults to "Always" if image version is :latest
-    imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
+    imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
 
     # Identify which Secret contains the credentials for pulling an image
-    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets: 
-    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%":
-
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  - name: "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%"
     # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
     # how to create that Secret at the end of this file)
-    webLogicCredentialsSecret: 
+    webLogicCredentialsSecret:
        name: '%WEBLOGIC_CREDENTIALS_SECRET_NAME%'
 
     # Whether to include the server out file into the pod's stdout, default is true
@@ -59,47 +58,37 @@ kubernetes:
     # - "NEVER" will not start any server in the domain
     # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
     # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
-    serverStartPolicy: "%SERVER_START_POLICY%"
+    serverStartPolicy: %SERVER_START_POLICY%
 
     serverPod:
       # an (optional) list of environment variable to be set on the servers
       env:
-        JAVA_OPTIONS:
+        - name: JAVA_OPTIONS
           value: "%JAVA_OPTIONS%"
-        USER_MEM_ARGS:
+        - name: USER_MEM_ARGS
           value: "-Djava.security.egd=file:/dev/./urandom "
       %OPTIONAL_SERVERPOD_RESOURCES%
       %LOG_HOME_ON_PV_PREFIX%volumes:
-      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
-      %LOG_HOME_ON_PV_PREFIX%     persistentVolumeClaim:
+      %LOG_HOME_ON_PV_PREFIX%  - name: 'weblogic-domain-storage-volume'
+      %LOG_HOME_ON_PV_PREFIX%    persistentVolumeClaim:
       %LOG_HOME_ON_PV_PREFIX%       claimName: '%DOMAIN_PVC_NAME%'
       %LOG_HOME_ON_PV_PREFIX%volumeMounts:
-      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
-      %LOG_HOME_ON_PV_PREFIX%     mountPath: %DOMAIN_ROOT_DIR%
-
+      %LOG_HOME_ON_PV_PREFIX%  - name: 'weblogic-domain-storage-volume'
+      %LOG_HOME_ON_PV_PREFIX%    mountPath: %DOMAIN_ROOT_DIR%
+             
     # adminServer is used to configure the desired behavior for starting the administration server.
     adminServer:
-      # serverStartState legal values are "RUNNING" or "ADMIN"
-      # "RUNNING" means the listed server will be started up to "RUNNING" mode
-      # "ADMIN" means the listed server will be start up to "ADMIN" mode
-      serverStartState: "RUNNING"
       %EXPOSE_ANY_CHANNEL_PREFIX%adminService:
       %EXPOSE_ANY_CHANNEL_PREFIX%  channels:
       # The Admin Server's NodePort
-      %EXPOSE_ANY_CHANNEL_PREFIX%    default:
-      %EXPOSE_ADMIN_PORT_PREFIX%       nodePort: %ADMIN_NODE_PORT%
+      %EXPOSE_ANY_CHANNEL_PREFIX%  - channelName: default
+      %EXPOSE_ADMIN_PORT_PREFIX%    nodePort: %ADMIN_NODE_PORT%
       # Uncomment to export the T3Channel as a service
-      %EXPOSE_T3_CHANNEL_PREFIX%    T3Channel:
+      %EXPOSE_T3_CHANNEL_PREFIX%  - channelName: T3Channel
 
     # clusters is used to configure the desired behavior for starting member servers of a cluster.
     # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
-    #clusters:
-    # '@@PROP:clusterName@@':
-    #   serverStartState: "RUNNING"
-    #   replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
+    clusters:
+    - clusterName: %CLUSTER_NAME%
+      replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
 
-    # Istio service mesh support is experimental.
-    %ISTIO_PREFIX%configuration:
-    %ISTIO_PREFIX%  istio:
-    %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
-    %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%

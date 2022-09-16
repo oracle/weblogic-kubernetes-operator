@@ -78,7 +78,7 @@ The operator automatically updates the `status` section of a deployed domain res
 Here are some references you can use for the fields in these sections:
 
 - See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
-- See the Domain Custom Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+- See the Domain Custom Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
 - Use [kubectl explain](#using-kubectl-explain) from the command line.
 
 #### Using `kubectl explain`
@@ -126,9 +126,9 @@ Elements related to logging:
 * `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false. See also `logHomeLayout`.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
 * `logHomeLayout`: Specifies how log files are organized under the `logHome` directory when `logHomeEnabled` is set to `true`.
-  Defaults to `BY_SERVER`, where domain logs and `introspector.out` are placed at root level
+  Defaults to `ByServers`, where domain logs and `introspector.out` are placed at root level
   and all other log files are organized under `logHome/servers/<server-name>/logs`.
-  If `FLAT` is specified, then all files are placed at root level.
+  If `Flat` is specified, then all files are placed at root level.
 * `httpAccessLogInLogHome`: Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.
 
 Elements related to security:
@@ -138,12 +138,11 @@ Elements related to security:
 
 Elements related to domain [startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}):
 
-* `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED.
-* `serverStartState`: The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING.
+* `serverStartPolicy`: The strategy for [deciding whether to start]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded.
 * `restartVersion`: Changes to this field cause the [operator to restart]({{< relref "/managing-domains/domain-lifecycle/startup#restarting-servers" >}}) WebLogic Server instances.
 * `replicas`: The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field.
    * For each cluster, first the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9".
-   * Then, the operator will start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. Note that if cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0.
+   * Then, the operator will start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. Note that if cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 1.
 * `maxClusterConcurrentStartup`: The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0.
 * `allowReplicasBelowMinDynClusterSize`: Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.
 * `introspectVersion`: Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration (see [Initiating introspection]({{< relref "/managing-domains/domain-lifecycle/introspection/_index.md#initiating-introspection" >}})). Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is FromModel. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the FromModel `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields [listed here]({{< relref "/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}}). See also `overrideDistributionStrategy`.
@@ -153,7 +152,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
 * These elements are under `configuration`.
 
   * `overridesConfigMap`: The name of the ConfigMap for WebLogic [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
-  * `overrideDistributionStrategy`: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to DYNAMIC.
+  * `overrideDistributionStrategy`: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are Dynamic, which means that the operator will distribute updated configuration overrides dynamically to running servers, and OnRestart, which means that servers will use updated configuration overrides only after the server's next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to `Dynamic`.
   * `secrets`: A list of names of the Secrets for WebLogic [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}) or model.
   * `introspectorJobActiveDeadlineSeconds`: The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.
 
@@ -214,7 +213,7 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 * `clusters`: Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.
 * `managedServers`: Lifecycle options for individual Managed Servers, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic domain configuration or that matches a dynamic cluster member based on the server template.
 
-The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
+The elements `serverStartPolicy`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
 
 Elements related to the customization of liveness and readiness probes:
 * See [Liveness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
@@ -323,7 +322,7 @@ spec:
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: "IF_NEEDED"
+  serverStartPolicy: IfNeeded
   serverPod:
     env:
     - name: JAVA_OPTIONS
@@ -331,25 +330,9 @@ spec:
     - name: USER_MEM_ARGS
       value: "-Djava.security.egd=file:/dev/./urandom "
 
-  adminServer:
-    serverStartState: "RUNNING"
-
   clusters:
   - clusterName: cluster-1
-    serverStartState: "RUNNING"
     serverPod:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                      - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
       volumes:
       - name: $(SERVER_NAME)-volume
         emptyDir: {}

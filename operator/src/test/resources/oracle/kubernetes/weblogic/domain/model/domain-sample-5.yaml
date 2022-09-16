@@ -1,6 +1,7 @@
 # Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+apiVersion: weblogic.oracle/v9
 kind: Domain
 metadata:
   name: domain1
@@ -80,7 +81,6 @@ spec:
             image: busybox
             command: ['sh', '-c', 'echo managed server && sleep 120']
     - serverName: server2
-      serverStartState: ADMIN
       restartVersion: "3"
       serverPod:
         shutdown:
@@ -89,37 +89,46 @@ spec:
 
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-    - clusterName: cluster2
-      desiredState: "RUNNING"
-      replicas: 5
-      serverPod:
-        priorityClassName: high-priority
-        affinity:
-          podAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
+    - name: domain1-cluster2
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: domain1-cluster2
+  namespace: domain_ns
+spec:
+  clusterName: cluster2
+  replicas: 5
+  serverPod:
+    priorityClassName: high-priority
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
                 - key: security
                   operator: In
                   values:
-                  - S1
-              topologyKey: failure-domain.beta.kubernetes.io/zone
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
+                    - S1
+            topologyKey: failure-domain.beta.kubernetes.io/zone
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
                   - key: security
                     operator: In
                     values:
-                    - S2
-                topologyKey: failure-domain.beta.kubernetes.io/zone
-        tolerations:
-        - key: "node.kubernetes.io/unreachable"
-          operator: "Exists"
-          effect: "NoExecute"
-          tolerationSeconds: 6000
-        shutdown:
-          ignoreSessions: true
-      restartVersion: "2"
+                      - S2
+              topologyKey: failure-domain.beta.kubernetes.io/zone
+    tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 6000
+    shutdown:
+      ignoreSessions: true
+  restartVersion: "2"

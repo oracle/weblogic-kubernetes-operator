@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -40,13 +41,16 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -175,6 +179,28 @@ public class PodHelper {
         .filter(PodHelper::isReadyNotTrueCondition).findFirst().orElse(null);
   }
 
+  /**
+   * Get the server state From the domain resource.
+   * @param domain domain resource.
+   * @param serverName Name of the server.
+   * @return server state, if exists, otherwise null.
+   */
+  public static String getServerState(DomainResource domain, String serverName) {
+    return Optional.ofNullable(domain)
+        .map(DomainResource::getStatus)
+        .map(s -> getServerStatus(s, serverName))
+        .map(ServerStatus::getState).orElse(null);
+  }
+
+  private static ServerStatus getServerStatus(DomainStatus domainStatus, String serverName) {
+    return domainStatus.getServers().stream().filter(s -> matchingServerName(s, serverName))
+        .findAny().orElse(null);
+  }
+
+  private static boolean matchingServerName(ServerStatus serverStatus, String serverName) {
+    return serverStatus.getServerName().equals(serverName);
+  }
+
   private static boolean isRunning(@Nonnull V1PodStatus status) {
     return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
   }
@@ -212,17 +238,28 @@ public class PodHelper {
   }
 
   /**
-   * Check if pod is in failed state.
-   * @param pod pod
-   * @return true, if pod is in failed state
+   * Returns true if the specified pod is in the failed state.
+   * @param pod the pod to check
    */
   public static boolean isFailed(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null && V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())) {
+    if (V1PodStatus.PhaseEnum.FAILED.equals(getPhase(pod))) {
       LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
       return true;
     }
     return false;
+  }
+
+  /**
+   * Returns true if the specified pod is in the pending state.
+   * @param pod the pod to check
+   */
+  public static boolean isPending(V1Pod pod) {
+    return V1PodStatus.PhaseEnum.PENDING.equals(getPhase(pod));
+  }
+
+  @Nullable
+  private static V1PodStatus.PhaseEnum getPhase(V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse(null);
   }
 
   /**
@@ -266,17 +303,29 @@ public class PodHelper {
   }
 
   /**
+   * Returns the pod's cluster-name.
+   * The cluster-name is the value of the weblogic.clusterName label in the given pod.
+   *
+   * @param pod the pod
+   * @return cluster name.
+   */
+  public static String getPodClusterName(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(CLUSTERNAME_LABEL)).orElse(null);
+  }
+
+  /**
    * get pod's server name.
    * @param pod pod
    * @return server name
    */
   public static String getPodServerName(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.SERVERNAME_LABEL);
-    }
-    return null;
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(SERVERNAME_LABEL)).orElse(null);
   }
 
   /**
@@ -365,7 +414,7 @@ public class PodHelper {
     }
 
     @Override
-    ServerSpec getServerSpec() {
+    EffectiveServerSpec getServerSpec() {
       return getDomain().getAdminServerSpec();
     }
 
@@ -487,8 +536,8 @@ public class PodHelper {
     }
 
     @Override
-    ServerSpec getServerSpec() {
-      return getDomain().getServer(getServerName(), getClusterName());
+    EffectiveServerSpec getServerSpec() {
+      return info.getServer(getServerName(), getClusterName());
     }
 
     @Override
@@ -581,7 +630,7 @@ public class PodHelper {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
         patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
         new CallBuilder()
-            .patchPod(getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
+            .patchPod(super.getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
       } catch (ApiException ignored) {
         /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
       }
@@ -677,37 +726,49 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      V1Pod oldPod = info.getServerPod(serverName);
+      final DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      final V1Pod oldPod = info.getServerPod(serverName);
 
-      long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
-      String clusterName = null;
-      if (oldPod != null) {
-        Map<String, String> labels = oldPod.getMetadata().getLabels();
-        if (labels != null) {
-          clusterName = labels.get(CLUSTERNAME_LABEL);
-        }
-
-        ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
-        if (serverSpec != null) {
-          // We add a 10 second fudge factor here to account for the fact that WLST takes
-          // ~6 seconds to start, so along with any other delay in connecting and issuing
-          // the shutdown, the actual server instance has the full configured timeout to
-          // gracefully shutdown before the container is destroyed by this timeout.
-          // We will remove this fudge factor when the operator connects via REST to shutdown
-          // the server instance.
-          gracePeriodSeconds =
-              serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
-        }
-
-        String name = oldPod.getMetadata().getName();
+      if (oldPod == null || info.getDomain() == null) {
+        return doNext(packet);
+      } else {
         info.setServerPodBeingDeleted(serverName, Boolean.TRUE);
+        final String clusterName = getClusterName(oldPod);
+        final String name = oldPod.getMetadata().getName();
+        long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
+        if (isServerShutdown(getServerState(info.getDomain(), serverName))) {
+          gracePeriodSeconds = 0;
+        }
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
             packet);
-      } else {
-        return doNext(packet);
       }
+    }
+
+    @Nonnull
+    private Boolean isServerShutdown(String serverState) {
+      return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
+    }
+
+    @Nullable
+    private String getClusterName(V1Pod oldPod) {
+      return Optional.ofNullable(oldPod.getMetadata().getLabels()).map(l -> l.get(CLUSTERNAME_LABEL)).orElse(null);
+    }
+
+    private long getGracePeriodSeconds(DomainPresenceInfo info, String clusterName) {
+      return Optional.ofNullable(info.getServer(serverName, clusterName))
+          .map(this::getConfiguredGracePeriodSeconds)
+          .orElse(Shutdown.DEFAULT_TIMEOUT);
+    }
+
+    // We add a 10 second fudge factor here to account for the fact that WLST takes
+    // ~6 seconds to start, so along with any other delay in connecting and issuing
+    // the shutdown, the actual server instance has the full configured timeout to
+    // gracefully shutdown before the container is destroyed by this timeout.
+    // We will remove this fudge factor when the operator connects via REST to shutdown
+    // the server instance.
+    private long getConfiguredGracePeriodSeconds(EffectiveServerSpec effectiveServerSpec) {
+      return effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
     }
 
     private Step deletePod(String name, String namespace, String domainUid, long gracePeriodSeconds, Step next) {

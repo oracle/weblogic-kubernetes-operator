@@ -10,13 +10,12 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -25,7 +24,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -35,17 +33,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -53,7 +52,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -69,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test multiple WDT model files in a model-in-image domain are processed in the expected order.
- * 
+ *
  * <p>There are three test methods in this class, covering three basic scenarios. </p>
  *
  * <ul>
@@ -81,6 +80,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-srg")
 class ItMiiMultiModel {
 
   private static String domainNamespace = null;
@@ -92,9 +96,11 @@ class ItMiiMultiModel {
   private static final String domainUid2 = "mii-mm-image-domain";
   private static final String domainUid3 = "mii-mm-image-cm-domain";
 
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
+  private String clusterName = "cluster-1";
+  private ClusterResource cluster = null;
 
-  // There are four model files in this test case. 
+  // There are four model files in this test case.
   // "multi-model-two-ds.yaml" and "multi-model-delete-one-ds.20.yaml" are in the MII image.
   // "multi-model-two-ds.10.yaml" and "multi-model-two-ds.10.yaml" are in the domain's ConfigMap.
 
@@ -145,8 +151,7 @@ class ItMiiMultiModel {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -172,8 +177,8 @@ class ItMiiMultiModel {
     miiImageMultiModel = createMiiImageAndVerify(
         "mii-test-multi-model-image",
         Arrays.asList(
-            MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE, 
-            MODEL_DIR + "/" + modelFileName2, 
+            MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE,
+            MODEL_DIR + "/" + modelFileName2,
             MODEL_DIR + "/" + modelFileName1),
         Collections.singletonList(MII_BASIC_APP_NAME));
 
@@ -189,7 +194,7 @@ class ItMiiMultiModel {
    * Verify that the effective configuration of the domain is as expected. </p>
    *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
-   * MaxCapacity set to 30 and 40 respectively. In addition, the first model file also 
+   * MaxCapacity set to 30 and 40 respectively. In addition, the first model file also
    * specifies a second DataSource "TestDataSource3" with the maxCapacity set to 5. </p>
    *
    * <p>According to the ordering rules, the resultant configuration should have two DataSources,
@@ -214,18 +219,17 @@ class ItMiiMultiModel {
 
     logger.info("Create domain {0} in namespace {1} with CM {2} that contains WDT models {3} and {4}",
         domainUid1, domainNamespace, configMapName, modelFileName3, modelFileName4);
-
     createDomainResourceAndVerify(
         domainUid1,
         domainNamespace,
         adminServerPodName,
-        managedServerPrefix, 
+        managedServerPrefix,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         configMapName);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid1, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
@@ -234,7 +238,7 @@ class ItMiiMultiModel {
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
+    assertEquals(expectedMaxCapacityDS3, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid1, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
@@ -251,7 +255,7 @@ class ItMiiMultiModel {
    * Verify that the effective configuration of the domain is as expected. </p>
    *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
-   * MaxCapacity set to 15 and 20 respectively. In addition, the first model defines a second 
+   * MaxCapacity set to 15 and 20 respectively. In addition, the first model defines a second
    * DataSource "TestDataSource2", which is deleted by the second model. </p>
    *
    * <p>According to the ordering rules, When the two model files are applied, the resultant domain should
@@ -270,13 +274,13 @@ class ItMiiMultiModel {
         domainUid2,
         domainNamespace,
         adminServerPodName,
-        managedServerPrefix, 
+        managedServerPrefix,
         miiImageMultiModel,
         null);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid2, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
@@ -303,7 +307,7 @@ class ItMiiMultiModel {
    * Verify that the effective configuration of the domain is as expected. Note that the model files
    * in the image are ordered independently from the model files in the domain's ConfigMap. </p>
    *
-   * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with 
+   * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with
    * the connection pool's MaxCapacity set to 15 and 20 respectively.
    * In addition, the first model defines a second DataSource "TestDataSource2", which is deleted by
    * the second model. When the two model files are applied, the resultant domain will only have
@@ -314,7 +318,7 @@ class ItMiiMultiModel {
    * and, in addition, the first model defines another DataSource "TestDataSource3" with MaxCapacity
    * set to 5. </p>
    *
-   * <p>According to the ordering rules, the effective domain should contain "TestDataSource" with 
+   * <p>According to the ordering rules, the effective domain should contain "TestDataSource" with
    * MaxCapacity set to 40, "TestDataSource3" with MaxCapacity set to "5", and "TestDataSource2"
    * should not exist after all four model files are processed by the WebLogic Deploy Tooling. </p>
    */
@@ -342,13 +346,13 @@ class ItMiiMultiModel {
         domainUid3,
         domainNamespace,
         adminServerPodName,
-        managedServerPrefix, 
+        managedServerPrefix,
         miiImageMultiModel,
         configMapName);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid3, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
@@ -357,7 +361,7 @@ class ItMiiMultiModel {
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
+    assertEquals(expectedMaxCapacityDS3, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid3, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
@@ -371,7 +375,7 @@ class ItMiiMultiModel {
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid3, domainNamespace, dsName2));
-    
+
     ingressHost = null;
   }
 
@@ -389,9 +393,21 @@ class ItMiiMultiModel {
 
     logger.info("Create the domain resource {0} in namespace {1} with ConfigMap {2}",
         domainUid, domainNamespace, configMapName);
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
-    
+    DomainResource domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
+
+    // create cluster object if not created earlier 
+    if (cluster == null) {
+      cluster = createClusterResource(
+            clusterName, domainNamespace, replicaCount);
+      logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+      createClusterAndVerify(cluster);
+      logger.info("Associate Cluster {0} and Domain resource {1}",clusterName, domainUid);
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    } else {
+      logger.info("Cluster resource ${0} is already created, Skipping the Cluster resource creation ",clusterName);
+    }
+
     createDomainAndVerify(domain, domainNamespace);
 
     // check admin server pod is ready
@@ -419,39 +435,16 @@ class ItMiiMultiModel {
 
   }
 
-  @AfterAll
-  public void tearDownAll() {
-    // Delete domain custom resources
-    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid1, domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace);
-
-    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid2, domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid2, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domainNamespace);
-
-    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid3, domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid3, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid3 + " from " + domainNamespace);
-
-    // delete the domain image created in the test class
-    if (miiImageMultiModel != null) {
-      deleteImage(miiImageMultiModel);
-    }
-  }
-
   /**
    * Construct a domain object with the given parameters that can be used to create a domain resource.
    */
-  private Domain createDomainResource(
+  private DomainResource createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount, String miiImage, String configMapName) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -461,13 +454,14 @@ class ItMiiMultiModel {
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(miiImage)
+                    .replicas(replicaCount)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
+                    .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
@@ -476,15 +470,10 @@ class ItMiiMultiModel {
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
                     .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")
@@ -535,7 +524,7 @@ class ItMiiMultiModel {
         "Get max capacity of data source");
     return params.stdout();
   }
-  
+
   /**
    * Check if a DataSource does not exist.
    */
@@ -574,5 +563,5 @@ class ItMiiMultiModel {
         "Get max capacity of data source");
     return true;
   }
-  
+
 }

@@ -21,7 +21,7 @@ public class ManagedServer {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
+          + "Legal values are Always, Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty("Configuration affecting server pods.")
@@ -30,11 +30,6 @@ public class ManagedServer {
   @ApiModelProperty(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   private ServerService serverService;
-
-  @ApiModelProperty(
-      "The state in which the server is to be started. Use ADMIN if server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
 
   @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
@@ -109,23 +104,6 @@ public class ManagedServer {
     this.serverService = serverService;
   }
 
-  public ManagedServer serverStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-    return this;
-  }
-
-  public String serverStartState() {
-    return serverStartState;
-  }
-
-  public String getServerStartState() {
-    return serverStartState;
-  }
-
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public ManagedServer restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -148,7 +126,6 @@ public class ManagedServer {
     return new ToStringBuilder(this)
         .append("serverName", serverName)
         .append("serverStartPolicy", serverStartPolicy)
-        .append("serverStartState", serverStartState)
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
@@ -168,7 +145,6 @@ public class ManagedServer {
     return new EqualsBuilder()
         .append(serverName, rhs.serverName)
         .append(serverStartPolicy, rhs.serverStartPolicy)
-        .append(serverStartState, rhs.serverStartState)
         .append(serverPod, rhs.serverPod)
         .append(serverService, rhs.serverService)
         .append(restartVersion, rhs.restartVersion)
@@ -180,7 +156,6 @@ public class ManagedServer {
     return new HashCodeBuilder(17, 37)
         .append(serverName)
         .append(serverStartPolicy)
-        .append(serverStartState)
         .append(serverPod)
         .append(serverService)
         .append(restartVersion)

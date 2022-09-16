@@ -25,13 +25,13 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
+import oracle.kubernetes.operator.http.rest.OperatorRestServer;
+import oracle.kubernetes.operator.http.rest.RestConfigImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.rest.OperatorRestServer;
-import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -42,7 +42,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -154,11 +153,6 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public boolean mayRetry(@NotNull DomainPresenceInfo domainPresenceInfo) {
-      return true;
-    }
-
-    @Override
     public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
       return crdRefernce;
     }
@@ -178,8 +172,8 @@ public class OperatorMain extends BaseMain {
       // now we just wait until the pod is terminated
       operatorMain.waitForDeath();
 
-      // stop the REST server
-      stopRestServer();
+      operatorMain.stopRestServer();
+      operatorMain.stopMetricsServer();
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
@@ -276,8 +270,8 @@ public class OperatorMain extends BaseMain {
 
   private void completeBegin() {
     try {
-      // start the REST server
-      startRestServer();
+      startMetricsServer(container);
+      startRestServer(container);
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
@@ -336,7 +330,7 @@ public class OperatorMain extends BaseMain {
     @Override
     public NextAction apply(Packet packet) {
       return doNext(new CallBuilder().readCustomResourceDefinitionAsync(
-              KubernetesConstants.CRD_NAME, createReadResponseStep(getNext())), packet);
+              KubernetesConstants.DOMAIN_CRD_NAME, createReadResponseStep(getNext())), packet);
     }
   }
 
@@ -403,12 +397,10 @@ public class OperatorMain extends BaseMain {
   }
 
   @Override
-  protected void startRestServer()
-      throws Exception {
-    OperatorRestServer.create(
+  protected BaseRestServer createRestServer() {
+    return OperatorRestServer.create(
         new RestConfigImpl(mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
                 new Certificates(mainDelegate)));
-    OperatorRestServer.getInstance().start(container);
   }
 
   // -----------------------------------------------------------------------------
@@ -417,11 +409,6 @@ public class OperatorMain extends BaseMain {
   // after watch events are received.
   //
   // -----------------------------------------------------------------------------
-
-  private static void stopRestServer() {
-    OperatorRestServer.getInstance().stop();
-    OperatorRestServer.destroy();
-  }
 
   @Override
   protected void logStartingLivenessMessage() {

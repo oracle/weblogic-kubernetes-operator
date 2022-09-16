@@ -30,16 +30,15 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -54,14 +53,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -81,6 +82,8 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -92,7 +95,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFro
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
@@ -121,7 +124,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
+@Tag("oke-sequential")
 @IntegrationTest
+@Tag("olcne")
 class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
@@ -185,7 +192,7 @@ class ItConfigDistributionStrategy {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
 
     //start two MySQL database instances
@@ -278,7 +285,7 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test server configuration and JDBC datasource configurations are overridden dynamically when
-   * /spec/configuration/overrideDistributionStrategy: field is not set. By default it should be DYNAMIC.
+   * /spec/configuration/overrideDistributionStrategy: field is not set. By default, it should be Dynamic.
    *
    * <p>Test sets the /spec/configuration/overridesConfigMap and with new configuration for config.xml and datasources.
    *
@@ -434,9 +441,9 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test server configuration and datasource configurations are dynamically overridden when
-   * /spec/configuration/overrideDistributionStrategy is set to DYNAMIC.
+   * /spec/configuration/overrideDistributionStrategy is set to Dynamic.
    *
-   * <p>Test sets the above field to DYNAMIC and overrides the /spec/configuration/overridesConfigMap
+   * <p>Test sets the above field to Dynamic and overrides the /spec/configuration/overridesConfigMap
    * with new configuration.
    *
    * <p>Verifies after introspector runs and the server configuration and JDBC datasource configurations are
@@ -444,13 +451,13 @@ class ItConfigDistributionStrategy {
    */
   @Order(3)
   @Test
-  @DisplayName("Test overrideDistributionStrategy value DYNAMIC")
+  @DisplayName("Test overrideDistributionStrategy value Dyanmic")
   void testDynamicOverride() {
 
-    //patching the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: Dynamic
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"DYNAMIC\"}"
+        + "\"value\": \"Dynamic\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -508,9 +515,9 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test server configuration and JDBC datasource configurations are overridden on restart of pods when
-   * /spec/configuration/overrideDistributionStrategy is set to ON_RESTART.
+   * /spec/configuration/overrideDistributionStrategy is set to OnRestart.
    *
-   * <p>Test sets the above field to ON_RESTART and overrides the /spec/configuration/overridesConfigMap and
+   * <p>Test sets the above field to OnRestart and overrides the /spec/configuration/overridesConfigMap and
    * /spec/configuration/secrets with new configuration and new secrets.
    *
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
@@ -518,13 +525,13 @@ class ItConfigDistributionStrategy {
    */
   @Order(4)
   @Test
-  @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
+  @DisplayName("Test overrideDistributionStrategy value OnRestart")
   void testOnRestartOverride() {
 
-    //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
+    //patching the domain with /spec/configuration/overrideDistributionStrategy: OnRestart
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
-        + "\"value\": \"ON_RESTART\"}"
+        + "\"value\": \"OnRestart\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -616,9 +623,9 @@ class ItConfigDistributionStrategy {
 
   /**
    * Test patching the domain with values for /spec/configuration/overrideDistributionStrategy field anything other than
-   * DYNAMIC or ON_RESTART fails.
+   * Dynamic or OnRestart fails.
    *
-   * <p>Test tries to set the above field to RESTART and asserts the patching fails.
+   * <p>Test tries to set the above field to OnRestart and asserts the patching fails.
    */
   @Order(5)
   @Test
@@ -774,24 +781,50 @@ class ItConfigDistributionStrategy {
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName1;
     String dsOverrideTestUrl = baseUri + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:10"), "Did get getMaxCapacity:10");
-      assertTrue(response.body().contains("getInitialCapacity:4"), "Did get getInitialCapacity:4");
-      assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-      assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl1);
-    }
+    testUntil(
+        () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
+          if (configUpdated) {
+            if (!(response.body().contains("getMaxCapacity:10"))) {
+              logger.info("Did get getMaxCapacity:10");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:4"))) {
+              logger.info("Did get getInitialCapacity:4");
+              return false;
+            }
+            if (!(response.body().contains("Url:" + dsUrl2))) {
+              logger.info("Didn't get Url:" + dsUrl2);
+              return false;
+            }
+          } else {
+            if (!(response.body().contains("getMaxCapacity:15"))) {
+              logger.info("Did get getMaxCapacity:15");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:1"))) {
+              logger.info("Did get getInitialCapacity:1");
+              return false;
+            }
+            if (!(response.body().contains("Url:" + dsUrl1))) {
+              logger.info("Didn't get Url:" + dsUrl1);
+              return false;
+            }
+          }
+          return true;
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
     }
@@ -877,7 +910,7 @@ class ItConfigDistributionStrategy {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -885,24 +918,23 @@ class ItConfigDistributionStrategy {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC")
+                .overrideDistributionStrategy("Dynamic")
                 .introspectorJobActiveDeadlineSeconds(300L))
             .domainUid(domainUid)
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME))) // this secret is used only in non-kind cluster
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -923,16 +955,20 @@ class ItConfigDistributionStrategy {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                        .nodePort(getNextFreePort())))));
     setPodAntiAffinity(domain);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
@@ -973,7 +1009,7 @@ class ItConfigDistributionStrategy {
         domainNamespace);
   }
 
-  //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
+  //restart pods by manipulating the serverStartPolicy to Never and IfNeeded
   private void restartDomain() {
     logger.info("Restarting domain {0}", domainNamespace);
     shutdownDomain(domainUid, domainNamespace);

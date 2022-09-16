@@ -3,7 +3,14 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +47,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -48,6 +56,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
+import org.glassfish.grizzly.http.server.HttpHandlerRegistration;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
@@ -67,6 +77,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLA
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.BaseMain.container;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
@@ -97,13 +108,17 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasValue;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OperatorMainTest extends ThreadFactoryTestBase {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
@@ -627,6 +642,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void afterReadingExistingResourcesForNamespace_WatchersAreDefined() {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
 
+    assertThat(domainNamespaces.getClusterWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getDomainWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getEventWatcher(NS), notNullValue());
@@ -706,6 +722,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private void verifyWatchersNotDefined(DomainNamespaces domainNamespaces, String ns) {
+    assertThat(domainNamespaces.getClusterWatcher(ns), nullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(ns), nullValue());
     assertThat(domainNamespaces.getDomainWatcher(ns), nullValue());
     assertThat(domainNamespaces.getEventWatcher(ns), nullValue());
@@ -744,6 +761,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private void verifyWatchersDefined(DomainNamespaces domainNamespaces, String ns) {
+    assertThat(domainNamespaces.getClusterWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getConfigMapWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getDomainWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getEventWatcher(ns), notNullValue());
@@ -1140,6 +1158,33 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     assertThat("Confirm that the event maps for the namespace are empty",
         eventMapsEmpty(OP_NS), is(true));
+  }
+
+  @Test
+  void whenOperatorStarted_startMetricsServer() throws UnrecoverableKeyException, CertificateException, IOException,
+      NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    operatorMain.startMetricsServer(container, 9001);
+    assertNotNull(operatorMain.getMetricsServer());
+    assertInstanceOf(MetricsServer.class, operatorMain.getMetricsServer());
+    HttpServer httpServer = ((MetricsServer) operatorMain.getMetricsServer()).getMetricsHttpServer();
+    assertNotNull(httpServer);
+    assertThat(httpServer.getServerConfiguration().getHttpHandlersWithMapping(),
+        hasValue(new HttpHandlerRegistration[] {
+            new HttpHandlerRegistration.Builder().contextPath("").urlPattern("/metrics").build() }));
+    assertTrue(httpServer.isStarted());
+  }
+
+  @Test
+  void whenOperatorStopping_stopMetricsServer() throws UnrecoverableKeyException, CertificateException, IOException,
+      NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    operatorMain.startMetricsServer(container, 9000);
+    HttpServer httpServer = ((MetricsServer) operatorMain.getMetricsServer()).getMetricsHttpServer();
+    assertNotNull(httpServer);
+    assertTrue(httpServer.isStarted());
+
+    operatorMain.stopMetricsServer();
+    assertNull(operatorMain.getMetricsServer());
+    assertFalse(httpServer.isStarted());
   }
 
   private boolean eventMapsEmpty(String ns) {

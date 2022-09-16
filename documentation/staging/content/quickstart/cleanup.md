@@ -2,25 +2,26 @@
 title: "Clean up"
 date: 2019-02-22T15:44:42-05:00
 draft: false
-weight: 7
+weight: 4
 ---
 
 
 #### Remove the domain.
 
-1.	Remove the domain's ingress by using `helm`:
+1.	Remove the domain's ingress routes by using `kubectl`.
 
     ```shell
-    $ helm uninstall sample-domain1-ingress -n sample-domain1-ns
+    $ kubectl delete ingressroute quickstart -n sample-domain1-ns
+    $ kubectl delete ingressroute console -n sample-domain1-ns
     ```
 
-1.	Remove the Kubernetes resources associated with the domain by using the sample [`delete-weblogic-domain-resources`](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script:
+1.	Use `kubectl` to delete the domain.
 
     ```shell
-    $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+    $ kubectl delete domain sample-domain1 -n sample-domain1-ns
     ```
 
-1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone:
+1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone.
 
     ```shell
     $ kubectl get pods -n sample-domain1-ns
@@ -29,8 +30,16 @@ weight: 7
     $ kubectl get domains -n sample-domain1-ns
     ```
 
+1.	Remove the Kubernetes Secrets associated with the domain.
+
+    ```shell
+    $ kubectl -n sample-domain1-ns delete secret sample-domain1-weblogic-credentials
+    $ kubectl -n sample-domain1-ns delete secret sample-domain1-runtime-encryption-secret
+    ```
+
+
 #### Remove the domain namespace.
-1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace:
+1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace.
 
     ```shell
     $ helm upgrade traefik-operator traefik/traefik \
@@ -39,7 +48,7 @@ weight: 7
         --set "kubernetes.namespaces={traefik}"
     ```
 
-1.	Delete the domain namespace:
+1.	Delete the domain namespace.
 
     ```shell
     $ kubectl delete namespace sample-domain1-ns
@@ -48,13 +57,13 @@ weight: 7
 
 #### Remove the operator.
 
-1.	Remove the operator:
+1.	Remove the operator.
 
     ```shell
     $ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
     ```
 
-1.	Remove the operator's namespace:
+1.	Remove the operator's namespace.
 
     ```shell
     $ kubectl delete namespace sample-weblogic-operator-ns
@@ -62,31 +71,14 @@ weight: 7
 
 #### Remove the ingress controller.
 
-1.	Remove the Traefik ingress controller:
+1.	Remove the Traefik ingress controller.
 
     ```shell
     $ helm uninstall traefik-operator -n traefik
     ```
 
-1.	Remove the Traefik namespace:
+1.	Remove the Traefik namespace.
 
     ```shell
     $ kubectl delete namespace traefik
-    ```
-
-#### Delete the generated image.
-
-1.  When no longer needed, delete the generated image by using the `docker rmi` command.
-    Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
-
-    ```shell
-    $ docker rmi domain-home-in-image:12.2.1.4
-    ```
-
-#### Delete the tools directory.
-
-1.  When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
-
-    ```shell
-    $ rm -rf /tmp/dhii-sample/tools/
     ```

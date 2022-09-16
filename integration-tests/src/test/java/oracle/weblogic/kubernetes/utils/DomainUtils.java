@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -29,32 +28,26 @@ import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
@@ -66,17 +59,20 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -101,18 +97,23 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusServerStatusHasExpectedPodStatus;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
@@ -134,7 +135,7 @@ public class DomainUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @param domVersion custom resource's version
    */
-  public static void createDomainAndVerify(Domain domain,
+  public static void createDomainAndVerify(DomainResource domain,
                                            String domainNamespace,
                                            String... domVersion) {
     String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
@@ -174,7 +175,7 @@ public class DomainUtils {
    * @param managedServerPodNamePrefix managed server pod prefix
    * @param replicaCount replica count
    */
-  public static void createDomainAndVerify(String domainUid, Domain domain,
+  public static void createDomainAndVerify(String domainUid, DomainResource domain,
                                            String domainNamespace, String adminServerPodName,
                                            String managedServerPodNamePrefix, int replicaCount) {
     LoggingFacade logger = getLogger();
@@ -199,19 +200,18 @@ public class DomainUtils {
   }
 
   /**
-   * Check the status reason of the domain matches the given reason.
+   * Check the status reason of the domainUid matches the given reason.
    *
-   * @param domain  oracle.weblogic.domain.Domain object
-   * @param namespace the namespace in which the domain exists
-   * @param statusReason the expected status reason of the domain
+   * @param domainUid  domain uid
+   * @param namespace the namespace in which the domainUid exists
+   * @param statusReason the expected status reason of the domainUid
    */
-  public static void checkDomainStatusReasonMatches(Domain domain, String namespace, String statusReason) {
+  public static void checkDomainStatusReasonMatches(String domainUid, String namespace, String statusReason) {
     LoggingFacade logger = getLogger();
-    testUntil(
-        assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)),
+    testUntil(assertDoesNotThrow(() -> domainStatusReasonMatches(domainUid, namespace, statusReason)),
         logger,
         "the status reason of the domain {0} in namespace {1}",
-        domain,
+        domainUid,
         namespace,
         statusReason);
   }
@@ -333,7 +333,7 @@ public class DomainUtils {
                                                                     String domainNamespace,
                                                                     String conditionType,
                                                                     String domainVersion) {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace,
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace,
               domainVersion));
 
     if (domain != null && domain.getStatus() != null) {
@@ -379,30 +379,32 @@ public class DomainUtils {
    * @param newImageName new auxiliary image name
    * @param domainUid uid of the domain
    * @param domainNamespace domain namespace
+   * @param replicaCount replica count to verify
    */
   public static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
-                                                            String domainUid, String domainNamespace) {
+                                                            String domainUid, String domainNamespace,
+                                                            int replicaCount) {
     patchDomainWithAuxiliaryImageAndVerify(oldImageName, newImageName, domainUid,
-        domainNamespace, true);
+        domainNamespace, true, replicaCount);
   }
 
   /**
    * Patch a domain with auxiliary image and verify pods are rolling restarted.
-   *
-   * @param oldImageName         old auxiliary image name
+   *  @param oldImageName         old auxiliary image name
    * @param newImageName         new auxiliary image name
    * @param domainUid            uid of the domain
    * @param domainNamespace      domain namespace
    * @param verifyRollingRestart verify if the pods are rolling restarted
+   * @param replicaCount replica count to verify
    */
   public static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
                                                             String domainUid, String domainNamespace,
-                                                            boolean verifyRollingRestart) {
+                                                            boolean verifyRollingRestart, int replicaCount) {
 
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
     Map<String, OffsetDateTime> podsWithTimeStamps = null;
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
@@ -433,7 +435,7 @@ public class DomainUtils {
     //get current timestamp before domain rolling restart to verify domain roll events
     if (verifyRollingRestart) {
       podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
-          managedServerPrefix, 2);
+          managedServerPrefix, replicaCount);
     }
     V1Patch patch = new V1Patch((patchStr).toString());
 
@@ -475,12 +477,12 @@ public class DomainUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static Domain createDomainOnPvUsingWdt(String domainUid,
-                                                String domainNamespace,
-                                                String wlSecretName,
-                                                String clusterName,
-                                                int replicaCount,
-                                                String testClassName) {
+  public static DomainResource createDomainOnPvUsingWdt(String domainUid,
+                                                        String domainNamespace,
+                                                        String wlSecretName,
+                                                        String clusterName,
+                                                        int replicaCount,
+                                                        String testClassName) {
 
     int t3ChannelPort = getNextFreePort();
 
@@ -489,46 +491,39 @@ public class DomainUtils {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    Path pvHostPath = get(PV_ROOT, testClassName, pvcName);
 
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RECYCLE))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(pvName)
-            .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUid", domainUid));
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .volumeName(pvName)
-            .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(pvcName)
-            .withNamespace(domainNamespace)
-            .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUid", domainUid));
+    createPV(pvName, domainUid, testClassName);
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace,
-        domainUid + "-weblogic-domain-storage-class", pvHostPath);
+    LoggingFacade logger = getLogger();
+    // check the persistent volume and persistent volume claim exist
+    testUntil(
+            assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+                    String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+            logger,
+            "persistent volume {0} exists",
+            pvName);
+
+    testUntil(
+            assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+                    String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                            pvcName, domainNamespace)),
+            logger,
+            "persistent volume claim {0} exists in namespace {1}",
+            pvcName,
+            domainNamespace);
+
 
     // create a temporary WebLogic domain property file as a input for WDT model file
-    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv", "properties"),
+    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv" + domainUid, "properties"),
         "Failed to create domain properties file");
 
     Properties p = new Properties();
@@ -557,7 +552,7 @@ public class DomainUtils {
     runCreateDomainOnPVJobUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
         domainUid, pvName, pvcName, domainNamespace, testClassName);
 
-    Domain domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
+    DomainResource domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
         clusterName, replicaCount);
 
     // Verify the domain custom resource is created.
@@ -580,17 +575,18 @@ public class DomainUtils {
    * @param replicaCount - repica count of the clsuter
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainResourceForDomainOnPV(String domainUid,
-                                                         String domainNamespace,
-                                                         String wlSecretName,
-                                                         String pvName,
-                                                         String pvcName,
-                                                         String clusterName,
-                                                         int replicaCount) {
+  public static DomainResource createDomainResourceForDomainOnPV(String domainUid,
+                                                                 String domainNamespace,
+                                                                 String wlSecretName,
+                                                                 String pvName,
+                                                                 String pvcName,
+                                                                 String clusterName,
+                                                                 int replicaCount) {
     String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
+
     // create the domain custom resource
     getLogger().info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -599,20 +595,22 @@ public class DomainUtils {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(uniquePath)
+            .replicas(replicaCount)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs")
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -629,15 +627,18 @@ public class DomainUtils {
                     .mountPath("/u01/shared")
                     .name(pvName)))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                        .nodePort(getNextFreePort())))));
+
+    // create cluster resource for the domain
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
 
     return domain;
@@ -774,7 +775,7 @@ public class DomainUtils {
         .addContainersItem(jobContainer  // container containing WLST or WDT details
                .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
                         .volumeMounts(Arrays.asList(
@@ -797,7 +798,7 @@ public class DomainUtils {
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME)));  // this secret is used only for non-kind cluster
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/u01/shared")));
     }
@@ -851,13 +852,13 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createAndVerifyDomainInImageUsingWdt(String domainUid,
-                                                            String domainNamespace,
-                                                            String wdtModelFileForDomainInImage,
-                                                            List<String> appSrcDirList,
-                                                            String wlSecretName,
-                                                            String clusterName,
-                                                            int replicaCount) {
+  public static DomainResource createAndVerifyDomainInImageUsingWdt(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String wdtModelFileForDomainInImage,
+                                                                    List<String> appSrcDirList,
+                                                                    String wlSecretName,
+                                                                    String clusterName,
+                                                                    int replicaCount) {
 
     // create secret for admin credentials
     getLogger().info("Create secret for admin credentials");
@@ -876,7 +877,7 @@ public class DomainUtils {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     return createDomainInImageAndVerify(domainUid, domainNamespace, domainInImageWithWDTImage, wlSecretName,
         clusterName, replicaCount);
@@ -893,14 +894,15 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainResourceForDomainInImage(String domainUid,
-                                                            String domainNamespace,
-                                                            String imageName,
-                                                            String wlSecretName,
-                                                            String clusterName,
-                                                            int replicaCount) {
+  public static DomainResource createDomainResourceForDomainInImage(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String imageName,
+                                                                    String wlSecretName,
+                                                                    String clusterName,
+                                                                    int replicaCount) {
+
     // create the domain custom resource
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -911,14 +913,17 @@ public class DomainUtils {
             .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
             .dataHome("/u01/mydata")
             .domainHomeSourceType("Image")
+            .replicas(replicaCount)
             .image(imageName)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -928,19 +933,22 @@ public class DomainUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource for the domain
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     setPodAntiAffinity(domain);
 
     return domain;
@@ -957,14 +965,14 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainInImageAndVerify(String domainUid,
-                                                    String domainNamespace,
-                                                    String imageName,
-                                                    String wlSecretName,
-                                                    String clusterName,
-                                                    int replicaCount) {
+  public static DomainResource createDomainInImageAndVerify(String domainUid,
+                                                            String domainNamespace,
+                                                            String imageName,
+                                                            String wlSecretName,
+                                                            String clusterName,
+                                                            int replicaCount) {
     // create the domain custom resource
-    Domain domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, imageName, wlSecretName,
+    DomainResource domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, imageName, wlSecretName,
         clusterName, replicaCount);
 
     createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
@@ -1003,8 +1011,8 @@ public class DomainUtils {
    * @param domainUid the UID
    */
   @NotNull
-  public static Domain getAndValidateInitialDomain(String domainNamespace, String domainUid) {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+  public static DomainResource getAndValidateInitialDomain(String domainNamespace, String domainUid) {
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
 
@@ -1014,9 +1022,10 @@ public class DomainUtils {
     return domain;
   }
 
-  private static boolean domainHasRollingCondition(Domain domain) {
+  private static boolean domainHasRollingCondition(DomainResource domain) {
     return Optional.ofNullable(domain.getStatus())
           .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
           .map(DomainCondition::getType).anyMatch("Rolling"::equals);
   }
+
 }

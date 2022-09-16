@@ -3,8 +3,25 @@
 
 package oracle.kubernetes.operator;
 
+import com.google.gson.annotations.SerializedName;
+
 public enum OverrideDistributionStrategy {
-  DYNAMIC, ON_RESTART;
+  @SerializedName("Dynamic")
+  DYNAMIC("Dynamic"),
+
+  @SerializedName("OnRestart")
+  ON_RESTART("OnRestart");
 
   public static final OverrideDistributionStrategy DEFAULT = DYNAMIC;
+
+  private final String value;
+
+  OverrideDistributionStrategy(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(this.value);
+  }
 }

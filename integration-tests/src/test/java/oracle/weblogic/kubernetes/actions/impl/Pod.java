@@ -4,6 +4,8 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.time.OffsetDateTime;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
@@ -137,7 +139,7 @@ public class Pod {
 
   /**
    * Patch domain to shutdown a WebLogic  server by changing the value of
-   * its serverStartPolicy property to NEVER.
+   * its serverStartPolicy property to Never.
    *
    * @param domainUid  unique domain identifier
    * @param namespace  name of the namespace
@@ -148,12 +150,12 @@ public class Pod {
   public static boolean shutdownManagedServerUsingServerStartPolicy(String domainUid,
                                                                     String namespace,
                                                                     String serverName) throws ApiException {
-    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "NEVER");
+    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "Never");
   }
 
   /**
    * Patch domain to start a WebLogic server by changing the value of
-   * its serverStartPolicy property to IF_NEEDED.
+   * its serverStartPolicy property to IfNeeded.
    *
    * @param domainUid  unique domain identifier
    * @param namespace  name of the namespace
@@ -164,7 +166,7 @@ public class Pod {
   public static boolean startManagedServerUsingServerStartPolicy(String domainUid,
                                                                  String namespace,
                                                                  String serverName) throws ApiException {
-    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "IF_NEEDED");
+    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName, "IfNeeded");
   }
 
   /**
@@ -196,5 +198,20 @@ public class Pod {
     V1Patch patch = new V1Patch(new String(patchData));
 
     return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
+  }
+
+  /**
+   * search WLS server pod evicted status in Operator log.
+   *
+   * @param operatorLog operator log
+   * @param regex the regular expression to which this string is to be matched
+   * @return true if found match, otherwise false
+   */
+  public static boolean isPodEvictedStatusLoggedInOperator(String operatorLog, String regex) {
+    // search WLS server pod evicted status in Operator log
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(operatorLog);
+
+    return matcher.find();
   }
 }

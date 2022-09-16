@@ -1,5 +1,5 @@
-# !/bin/sh
-# Copyright (c) 2021,2022, Oracle and/or its affiliates.
+#!/bin/sh
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -53,6 +53,7 @@ domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
 restartVersion=""
+clusterResource=""
 
 while getopts "vc:n:m:d:r:h" opt; do
   case $opt in
@@ -110,14 +111,24 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
+# Get the cluster resource name
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+# Get the cluster in json format
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+  exit 1
+fi
+
 # if the restartVersion is not provided, generate the value of restartVersion
 if [ -z "${restartVersion}" ]; then
-  generateClusterRestartVersion "${domainJson}" "${clusterName}" restartVersion 
+  generateClusterRestartVersion "${domainJson}" "${clusterJson}" "${clusterName}" restartVersion
 fi
 
 printInfo "Patching restartVersion for cluster '${clusterName}' to '${restartVersion}'."
-createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
+createPatchJsonToUpdateClusterRestartVersionUsingClusterResource "${clusterJson}" "${clusterName}" "${restartVersion}" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched restartVersion for cluster '${clusterName}'!"

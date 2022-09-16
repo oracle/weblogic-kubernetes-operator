@@ -30,10 +30,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
@@ -41,7 +37,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILA
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
-import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -65,6 +60,15 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @Description("The generation observed by the WebLogic operator.")
+  private Long observedGeneration;
+
+
+  /**
+   * The number of introspector job failures since the last success.
+   *
+   * @deprecated
+   **/
   @SuppressWarnings("unused")
   @Description(
       "Non-zero if the introspector job fails for any reason. "
@@ -121,6 +125,7 @@ public class DomainStatus {
   public DomainStatus(DomainStatus that) {
     message = that.message;
     reason = that.reason;
+    observedGeneration = that.observedGeneration;
     conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
     servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
     clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
@@ -150,7 +155,7 @@ public class DomainStatus {
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (newCondition.isNotValid()) {
       throw new IllegalArgumentException("May not add condition " + newCondition);
-    } else if (isRetriableFailure(newCondition)) {
+    } else if (newCondition.isRetriableFailure()) {
       lastFailureTime = newCondition.getLastTransitionTime();
     }
 
@@ -171,10 +176,6 @@ public class DomainStatus {
     return this;
   }
 
-  private boolean isRetriableFailure(DomainCondition selected) {
-    return selected.getType() == FAILED && selected.getSeverity() == SEVERE;
-  }
-
   private void unmarkMatchingCondition(DomainCondition newCondition) {
     conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMarkForDeletion);
   }
@@ -182,11 +183,24 @@ public class DomainStatus {
   private void setStatusSummary() {
     final DomainCondition selected = getSummaryCondition();
     reason = Optional.ofNullable(selected.getReason()).map(DomainFailureReason::toString).orElse(null);
-    message = failedIntrospectionUid != null ? createDomainStatusMessage(selected.getMessage()) : selected.getMessage();
-    if (isRetriableFailure(selected)) {
+    message = selected.getMessage();
+    if (selected.isRetriableFailure()) {
       initialFailureTime = Optional.ofNullable(initialFailureTime).orElse(selected.getLastTransitionTime());
     } else {
       initialFailureTime = lastFailureTime = null;
+    }
+  }
+
+  /**
+   * Updates the summary message with retry information, if applicable.
+   * @param retryMessageFactory an object which can create a summary message with retry information
+   */
+  public void updateSummaryMessage(RetryMessageFactory retryMessageFactory) {
+    DomainCondition selected = getSummaryCondition();
+    if (retryMessageFactory != null && selected.isRetriableFailure()) {
+      message = retryMessageFactory.createRetryMessage(this, selected);
+    } else {
+      message = selected.getMessage();
     }
   }
 
@@ -334,6 +348,14 @@ public class DomainStatus {
   public DomainStatus withReason(String reason) {
     this.reason = reason;
     return this;
+  }
+
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
   }
 
   /**
@@ -601,6 +623,7 @@ public class DomainStatus {
         .append("conditions", conditions)
         .append("message", message)
         .append("reason", reason)
+        .append("observedGeneration", observedGeneration)
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
@@ -614,12 +637,13 @@ public class DomainStatus {
   public int hashCode() {
     return new HashCodeBuilder()
         .append(reason)
+        .append(observedGeneration)
         .append(startTime)
         .append(initialFailureTime)
         .append(lastFailureTime)
-        .append(Domain.sortOrNull(servers))
-        .append(Domain.sortOrNull(clusters))
-        .append(Domain.sortOrNull(conditions))
+        .append(DomainResource.sortList(servers))
+        .append(DomainResource.sortList(clusters))
+        .append(DomainResource.sortList(conditions))
         .append(message)
         .append(failedIntrospectionUid)
         .toHashCode();
@@ -636,12 +660,13 @@ public class DomainStatus {
     DomainStatus rhs = ((DomainStatus) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
+        .append(observedGeneration, rhs.observedGeneration)
         .append(startTime, rhs.startTime)
         .append(initialFailureTime, rhs.initialFailureTime)
         .append(lastFailureTime, rhs.lastFailureTime)
         .append(servers, rhs.servers)
-        .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
-        .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
+        .append(DomainResource.sortList(clusters), DomainResource.sortList(rhs.clusters))
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .append(message, rhs.message)
         .append(failedIntrospectionUid, rhs.failedIntrospectionUid)
         .isEquals();
@@ -660,32 +685,6 @@ public class DomainStatus {
 
   public void createPatchFrom(JsonPatchBuilder builder, @Nullable DomainStatus oldStatus) {
     statusPatch.createPatch(builder, "/status", oldStatus, this);
-  }
-
-  public String createDomainStatusMessage(String message) {
-    return LOGGER.formatMessage(getMessageKey(failedIntrospectionUid, message), message);
-  }
-
-  @NotNull
-  private String getMessageKey(String jobUid, String message) {
-    return getFailureLevel(jobUid, message).getMessageKey();
-  }
-
-  @NotNull
-  private FailureLevel getFailureLevel(String jobUid, String message) {
-    if (jobUid == null) {
-      return FailureLevel.NON_INTROSPECTION;
-    } else if (isAborted()) {
-      return FailureLevel.RETRIES_EXCEEDED;
-    } else if (isFatalError(message)) {
-      return FailureLevel.FATAL;
-    } else {
-      return FailureLevel.WILL_RETRY;
-    }
-  }
-
-  private boolean isFatalError(String message) {
-    return Optional.ofNullable(message).map(m -> m.contains(FATAL_INTROSPECTOR_ERROR)).orElse(false);
   }
 
   /**
@@ -724,35 +723,5 @@ public class DomainStatus {
 
   private boolean isFatalIntrospectorMessage(String statusMessage) {
     return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
-  }
-
-  private enum FailureLevel {
-    NON_INTROSPECTION,
-    FATAL {
-      @NotNull
-      @Override
-      String getMessageKey() {
-        return DOMAIN_FATAL_ERROR;
-      }
-    },
-    WILL_RETRY {
-      @NotNull
-      @Override
-      String getMessageKey() {
-        return NON_FATAL_INTROSPECTOR_ERROR;
-      }
-    },
-    RETRIES_EXCEEDED {
-      @NotNull
-      @Override
-      String getMessageKey() {
-        return INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-      }
-    };
-
-    @NotNull
-    String getMessageKey() {
-      return NO_FORMATTING;
-    }
   }
 }

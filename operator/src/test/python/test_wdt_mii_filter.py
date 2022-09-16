@@ -132,7 +132,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_log_filename, "Expected log file to be at \'/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log\'")
 
   def test_customize_log_in_server_template_flatstructure(self):
-    os.environ['LOG_HOME_LAYOUT'] = 'FLAT'
+    os.environ['LOG_HOME_LAYOUT'] = 'Flat'
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
@@ -140,7 +140,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_log_filename = server_template['Log']['FileName']
     self.assertEqual('/u01/logs/sample-domain1/managed-server${id}.log',
                      template_log_filename, "Expected log file to be at \'/u01/logs/sample-domain1/managed-server${id}.log\'")
-    os.environ['LOG_HOME_LAYOUT'] = 'BY_SERVERS'
+    os.environ['LOG_HOME_LAYOUT'] = 'ByServers'
 
 
   def test_customize_access_log_in_server_template(self):
@@ -154,7 +154,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
 
   def test_customize_access_log_in_server_template_flatstructure(self):
-    os.environ['LOG_HOME_LAYOUT'] = 'FLAT'
+    os.environ['LOG_HOME_LAYOUT'] = 'Flat'
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
@@ -162,7 +162,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_access_log = server_template['WebServer']['WebServerLog']['FileName']
     self.assertEqual('/u01/logs/sample-domain1/managed-server${id}_access.log',
                      template_access_log, "Expected log file at \'/u01/logs/sample-domain1/managed-server${id}_access.log\'")
-    os.environ['LOG_HOME_LAYOUT'] = 'BY_SERVERS'
+    os.environ['LOG_HOME_LAYOUT'] = 'ByServers'
 
   def test_customize_default_filestore_in_server_template(self):
     model = self.getModel()
@@ -171,19 +171,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model_wdt_mii_filter.customizeDefaultFileStore(server_template)
     default_filestore = server_template['DefaultFileStore']['Directory']
     self.assertEqual('/u01/datahome', default_filestore, "Expected default file store directory to be \'/u01/datahome\'")
-
-
-  def test_customize_network_access_points_in_server_template_istio_localhost_binding(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-
-      server_template = self.getServerTemplate(model)
-      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
-      nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
-      self.assertEqual('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
 
   def test_customize_network_access_points_in_server_template_istio_1_10_or_higher(self):
     try:
@@ -199,36 +186,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
       del os.environ['ISTIO_ENABLED']
       del os.environ['ISTIO_USE_LOCALHOST_BINDINGS']
 
-  def test_customize_istio_enabled_network_access_points_in_server_template(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-
-      server_template = self.getServerTemplate(model)
-      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
-      nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
-      self.assertEqual('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-
-  def test_customize_managed_istio_network_access_point_in_server_template(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      os.environ['ISTIO_READINESS_PORT'] = '8088'
-      model = self.getModel()
-
-      template_name = 'cluster-1-template'
-      server_template = self.getServerTemplate(model)
-      model_wdt_mii_filter.customizeManagedIstioNetworkAccessPoint(server_template, 'sample-domain1-managed-server${id}')
-      naps = server_template.get('NetworkAccessPoint')
-      self.assertGreater(len(naps), 1)
-      names = list(naps.keys())
-      names.remove('T3Channel')
-      for name in names:
-        self.assertIn(name, WdtUpdateFilterCase.ISTIO_NAP_NAMES)
-    finally:
-      del os.environ['ISTIO_ENABLED']
-      del os.environ['ISTIO_READINESS_PORT']
 
   def test_customize_port_forward_network_access_point_admin_port_enabled(self):
     model = self.getModel()
@@ -365,96 +322,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
   def test_istioVersionRequiresLocalHostBindings(self):
     model = self.getModel()
-    self.assertTrue(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())
-
-  def test_customizeIstioClusters(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-
-      # Add replication channel
-      model['topology']['Cluster']['cluster-1']['ReplicationChannel'] = 'replicator'
-
-      model_wdt_mii_filter.customizeIstioClusters(model)
-      channel = model['topology']['Cluster']['cluster-1']['ReplicationChannel']
-      self.assertEqual('replicator', channel, "Expected replication channel name to be \'replicator\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-
-  def test_customizeIstioClusters_inject_replication_channel(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-
-      model_wdt_mii_filter.customizeIstioClusters(model)
-      channel = model['topology']['Cluster']['cluster-1']['ReplicationChannel']
-      self.assertEqual('istiorepl', channel, "Expected replication channel name to be \'istiorepl\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-
-  def test_customizeIstioReplicationChannel(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-
-      # define 'istiorepl' replication channel in the cluster
-      model_wdt_mii_filter.customizeIstioClusters(model)
-
-      server_template = self.getServerTemplate(model)
-
-      # generate the NAP named 'istiorepl'
-      model_wdt_mii_filter.customizeIstioReplicationChannel(server_template, 'cluster-1-template', 'sample-domain1-managed-server${id}')
-
-      istiorepl_nap = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['istiorepl']
-      self.assertIsNotNone(istiorepl_nap, "Expected a NAP named \'istiorepl\' to be defined")
-
-      nap_listen_address = istiorepl_nap['ListenAddress']
-      self.assertEqual('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-
-  def test_customizeIstioReplicationChannel_not_injected(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-
-      # Add replication channel
-      model['topology']['Cluster']['cluster-1']['ReplicationChannel'] = 'replicator'
-
-      server_template = self.getServerTemplate(model)
-
-      # generate the NAP named 'istiorepl'
-      model_wdt_mii_filter.customizeIstioReplicationChannel(server_template, 'cluster-1-template', 'sample-domain1-managed-server${id}')
-
-      nap = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']
-      self.assertNotIn('istiorepl', nap, "Did not expect a NAP named \'istiorepl\' to be defined")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-
-  def test_customizeIstioReplicationChannel_version_1_10(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      os.environ['ISTIO_USE_LOCALHOST_BINDINGS'] = 'false'
-      model = self.getModel()
-
-      # define 'istiorepl' replication channel in the cluster
-      model_wdt_mii_filter.customizeIstioClusters(model)
-
-      server_template = self.getServerTemplate(model)
-
-      # generate the NAP named 'istiorepl'
-      model_wdt_mii_filter.customizeIstioReplicationChannel(server_template, 'cluster-1-template', 'sample-domain1-managed-server${id}')
-
-      istiorepl_nap = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['istiorepl']
-      self.assertIsNotNone(istiorepl_nap, "Expected a NAP named \'istiorepl\' to be defined")
-
-      self.assertEqual(istiorepl_nap['TunnelingEnabled'], 'false')
-      nap_listen_address = istiorepl_nap['ListenAddress']
-      self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address,
-                       "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-      del os.environ['ISTIO_USE_LOCALHOST_BINDINGS']
+    self.assertFalse(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 

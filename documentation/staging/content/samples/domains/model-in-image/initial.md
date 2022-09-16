@@ -391,10 +391,16 @@ First, create the secrets needed by both `WLS` and `JRF` type model domains. In 
 
 Run the following `kubectl` commands to deploy the required secrets:
 
+  __NOTE:__ Substitute a password of your choice for MY_WEBLOGIC_ADMIN_PASSWORD. This
+  password should contain at least seven letters plus one digit.
+
+  __NOTE:__ Substitute a password of your choice for MY_RUNTIME_PASSWORD. It should
+  be unique and different than the admin password, but this is not required.
+
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
-     --from-literal=username=weblogic --from-literal=password=welcome1
+     --from-literal=username=weblogic --from-literal=password=MY_WEBLOGIC_ADMIN_PASSWORD
   ```
   ```shell
   $ kubectl -n sample-domain1-ns label  secret \
@@ -404,7 +410,7 @@ Run the following `kubectl` commands to deploy the required secrets:
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-runtime-encryption-secret \
-     --from-literal=password=my_runtime_password
+     --from-literal=password=MY_RUNTIME_PASSWORD
   ```
   ```shell
   $ kubectl -n sample-domain1-ns label  secret \
@@ -438,11 +444,15 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
+  __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
+  that you chose in the prequisite steps when
+  [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
+
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-rcu-access \
      --from-literal=rcu_prefix=FMW1 \
-     --from-literal=rcu_schema_password=Oradoc_db1 \
+     --from-literal=rcu_schema_password=MY_RCU_SCHEMA_PASSWORD \
      --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
   ```
   ```shell
@@ -450,10 +460,20 @@ Run the following `kubectl` commands to deploy the required secrets:
     sample-domain1-rcu-access \
     weblogic.domainUID=sample-domain1
   ```
+
+  __NOTES__:
+  - Replace `MY_OPSS_WALLET_PASSWORD` with a password of your choice.
+    The password can contain letters and digits.
+  - The domain's JRF RCU schema will be automatically initialized
+    plus generate a JRF OPSS wallet file upon first use.
+    If you plan to save and reuse this wallet file,
+    as is necessary for reusing RCU schema data after a migration or restart,
+    then it will also be necessary to use this same password again.
+
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-opss-wallet-password-secret \
-     --from-literal=walletPassword=welcome1
+     --from-literal=walletPassword=MY_OPSS_WALLET_PASSWORD
   ```
   ```shell
   $ kubectl -n sample-domain1-ns label  secret \
@@ -470,259 +490,274 @@ Now, you create a Domain YAML file. A Domain is the key resource that tells the 
 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
-  {{%expand "Click here to view the WLS Domain YAML file." %}}
-  ```yaml
-    #
-    # This is an example of how to define a Domain resource.
-    #
-    apiVersion: "weblogic.oracle/v9"
-    kind: Domain
-    metadata:
-      name: sample-domain1
-      namespace: sample-domain1-ns
-      labels:
-        weblogic.domainUID: sample-domain1
+{{%expand "Click here to view the WLS Domain YAML file." %}}
+```yaml
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to define a Domain resource.
+#
+apiVersion: "weblogic.oracle/v9"
+kind: Domain
+metadata:
+  name: sample-domain1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.domainUID: sample-domain1
 
-    spec:
-      # Set to 'FromModel' to indicate 'Model in Image'.
-      domainHomeSourceType: FromModel
+spec:
+  # Set to 'FromModel' to indicate 'Model in Image'.
+  domainHomeSourceType: FromModel
 
-      # The WebLogic Domain Home, this must be a location within
-      # the image for 'Model in Image' domains.
-      domainHome: /u01/domains/sample-domain1
+  # The WebLogic Domain Home, this must be a location within
+  # the image for 'Model in Image' domains.
+  domainHome: /u01/domains/sample-domain1
 
-      # The WebLogic Server image that the Operator uses to start the domain
-      image: "model-in-image:WLS-v1"
+  # The WebLogic Server image that the Operator uses to start the domain
+  image: "model-in-image:WLS-v1"
 
-      # Defaults to "Always" if image tag (version) is ':latest'
-      imagePullPolicy: "IfNotPresent"
+  # Defaults to "Always" if image tag (version) is ':latest'
+  imagePullPolicy: IfNotPresent
 
-      # Identify which Secret contains the credentials for pulling an image
-      #imagePullSecrets:
-      #- name: regsecret
+  # Identify which Secret contains the credentials for pulling an image
+  #imagePullSecrets:
+  #- name: regsecret
 
-      # Identify which Secret contains the WebLogic Admin credentials,
-      # the secret must contain 'username' and 'password' fields.
-      webLogicCredentialsSecret:
-        name: sample-domain1-weblogic-credentials
+  # Identify which Secret contains the WebLogic Admin credentials,
+  # the secret must contain 'username' and 'password' fields.
+  webLogicCredentialsSecret:
+    name: sample-domain1-weblogic-credentials
 
-      # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
-      includeServerOutInPodLog: true
+  # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
+  includeServerOutInPodLog: true
 
-      # Whether to enable overriding your log file location, see also 'logHome'
-      #logHomeEnabled: false
+  # Whether to enable overriding your log file location, see also 'logHome'
+  #logHomeEnabled: false
 
-      # The location for domain log, server logs, server out, introspector out, and Node Manager log files
-      # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
-      #logHome: /shared/logs/sample-domain1
+  # The location for domain log, server logs, server out, introspector out, and Node Manager log files
+  # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
+  #logHome: /shared/logs/sample-domain1
 
-      # Set which WebLogic Servers the Operator will start
-      # - "NEVER" will not start any server in the domain
-      # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-      # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-      serverStartPolicy: "IF_NEEDED"
+  # Set which WebLogic Servers the Operator will start
+  # - "Never" will not start any server in the domain
+  # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+  # - "IfNeeded" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+  serverStartPolicy: IfNeeded
 
-      # Settings for all server pods in the domain including the introspector job pod
-      serverPod:
-        # Optional new or overridden environment variables for the domain's pods
-        # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
-        #   to set the WebLogic domain name
-        env:
-        - name: CUSTOM_DOMAIN_NAME
-          value: "domain1"
-        - name: JAVA_OPTIONS
-          value: "-Dweblogic.StdoutDebugEnabled=false"
-        - name: USER_MEM_ARGS
-          value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+  # Settings for all server pods in the domain including the introspector job pod
+  serverPod:
+    # Optional new or overridden environment variables for the domain's pods
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
+    #   to set the WebLogic domain name
+    env:
+    - name: CUSTOM_DOMAIN_NAME
+      value: "domain1"
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "768Mi"
 
-        # Optional volumes and mounts for the domain's pods. See also 'logHome'.
-        #volumes:
-        #- name: weblogic-domain-storage-volume
-        #  persistentVolumeClaim:
-        #    claimName: sample-domain1-weblogic-sample-pvc
-        #volumeMounts:
-        #- mountPath: /shared
-        #  name: weblogic-domain-storage-volume
+    # Optional volumes and mounts for the domain's pods. See also 'logHome'.
+    #volumes:
+    #- name: weblogic-domain-storage-volume
+    #  persistentVolumeClaim:
+    #    claimName: sample-domain1-weblogic-sample-pvc
+    #volumeMounts:
+    #- mountPath: /shared
+    #  name: weblogic-domain-storage-volume
 
-      # The desired behavior for starting the domain's administration server.
-      adminServer:
-        # The serverStartState legal values are "RUNNING" or "ADMIN"
-        # "RUNNING" means the listed server will be started up to "RUNNING" mode
-        # "ADMIN" means the listed server will be start up to "ADMIN" mode
-        serverStartState: "RUNNING"
-        # Setup a Kubernetes node port for the administration server default channel
-        #adminService:
-        #  channels:
-        #  - channelName: default
-        #    nodePort: 30701
+  # The desired behavior for starting the domain's administration server.
+  # adminServer:
+    # Setup a Kubernetes node port for the administration server default channel
+    #adminService:
+    #  channels:
+    #  - channelName: default
+    #    nodePort: 30701
 
-      # The number of managed servers to start for unlisted clusters
-      replicas: 1
+  # The number of managed servers to start for unlisted clusters
+  replicas: 1
 
-      # The desired behavior for starting a specific cluster's member servers
-      clusters:
-      - clusterName: cluster-1
-        serverStartState: "RUNNING"
-        replicas: 2
+  # The desired behavior for starting a specific cluster's member servers
+  clusters:
+  - clusterName: cluster-1
+    # The number of managed servers to start for this cluster
+    replicas: 2
 
-      # Change the `restartVersion` to force the introspector job to rerun
-      # and apply any new model configuration, to also force a subsequent
-      # roll of your domain's WebLogic Server pods.
-      restartVersion: '1'
+  # Change the restartVersion to force the introspector job to rerun
+  # and apply any new model configuration, to also force a subsequent
+  # roll of your domain's WebLogic Server pods.
+  restartVersion: '1'
 
-      configuration:
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
 
-        # Settings for domainHomeSourceType 'FromModel'
-        model:
-          # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-          domainType: "WLS"
+  configuration:
 
-          # Optional configmap for additional models and variable files
-          #configMap: sample-domain1-wdt-config-map
+    # Settings for domainHomeSourceType 'FromModel'
+    model:
+      # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
+      domainType: WLS
 
-          # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
-          runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+      # Optional configmap for additional models and variable files
+      #configMap: sample-domain1-wdt-config-map
 
-        # Secrets that are referenced by model yaml macros
-        # (the model yaml in the optional configMap or in the image)
-        #secrets:
-        #- sample-domain1-datasource-secret
-  ```
-  {{% /expand %}}
+      # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+      runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 
-  {{%expand "Click here to view the JRF Domain YAML file." %}}
-  ```yaml
-  # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
-  # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-  #
-  # This is an example of how to define a Domain resource.
-  #
-  apiVersion: "weblogic.oracle/v9"
-  kind: Domain
-  metadata:
-    name: sample-domain1
-    namespace: sample-domain1-ns
-    labels:
-      weblogic.domainUID: sample-domain1
+    # Secrets that are referenced by model yaml macros
+    # (the model yaml in the optional configMap or in the image)
+    #secrets:
+    #- sample-domain1-datasource-secret
+```
+{{% /expand %}}
 
-  spec:
-    # Set to 'FromModel' to indicate 'Model in Image'.
-    domainHomeSourceType: FromModel
+{{%expand "Click here to view the JRF Domain YAML file." %}}
+```yaml
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to define a Domain resource.
+#
+apiVersion: "weblogic.oracle/v9"
+kind: Domain
+metadata:
+  name: sample-domain1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.domainUID: sample-domain1
 
-    # The WebLogic Domain Home, this must be a location within
-    # the image for 'Model in Image' domains.
-    domainHome: /u01/domains/sample-domain1
+spec:
+  # Set to 'FromModel' to indicate 'Model in Image'.
+  domainHomeSourceType: FromModel
 
-    # The WebLogic Server image that the Operator uses to start the domain
-    image: "model-in-image:JRF-v1"
+  # The WebLogic Domain Home, this must be a location within
+  # the image for 'Model in Image' domains.
+  domainHome: /u01/domains/sample-domain1
 
-    # Defaults to "Always" if image tag (version) is ':latest'
-    imagePullPolicy: "IfNotPresent"
+  # The WebLogic Server image that the Operator uses to start the domain
+  image: "model-in-image:JRF-v1"
 
-    # Identify which Secret contains the credentials for pulling an image
-    #imagePullSecrets:
-    #- name: regsecret
+  # Defaults to "Always" if image tag (version) is ':latest'
+  imagePullPolicy: IfNotPresent
 
-    # Identify which Secret contains the WebLogic Admin credentials,
-    # the secret must contain 'username' and 'password' fields.
-    webLogicCredentialsSecret:
-      name: sample-domain1-weblogic-credentials
+  # Identify which Secret contains the credentials for pulling an image
+  #imagePullSecrets:
+  #- name: regsecret
 
-    # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
-    includeServerOutInPodLog: true
+  # Identify which Secret contains the WebLogic Admin credentials,
+  # the secret must contain 'username' and 'password' fields.
+  webLogicCredentialsSecret:
+    name: sample-domain1-weblogic-credentials
 
-    # Whether to enable overriding your log file location, see also 'logHome'
-    #logHomeEnabled: false
+  # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
+  includeServerOutInPodLog: true
 
-    # The location for domain log, server logs, server out, introspector out, and Node Manager log files
-    # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
-    #logHome: /shared/logs/sample-domain1
+  # Whether to enable overriding your log file location, see also 'logHome'
+  #logHomeEnabled: false
 
-    # Set which WebLogic Servers the Operator will start
-    # - "NEVER" will not start any server in the domain
-    # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-    # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-    serverStartPolicy: "IF_NEEDED"
+  # The location for domain log, server logs, server out, introspector out, and Node Manager log files
+  # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
+  #logHome: /shared/logs/sample-domain1
 
-    # Settings for all server pods in the domain including the introspector job pod
+  # Set which WebLogic Servers the Operator will start
+  # - "Never" will not start any server in the domain
+  # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+  # - "IfNeeded" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+  serverStartPolicy: IfNeeded
+
+  # Settings for all server pods in the domain including the introspector job pod
+  serverPod:
+    # Optional new or overridden environment variables for the domain's pods
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
+    #   to set the WebLogic domain name
+    env:
+    - name: CUSTOM_DOMAIN_NAME
+      value: "domain1"
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m "
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1280Mi"
+
+    # Optional volumes and mounts for the domain's pods. See also 'logHome'.
+    #volumes:
+    #- name: weblogic-domain-storage-volume
+    #  persistentVolumeClaim:
+    #    claimName: sample-domain1-weblogic-sample-pvc
+    #volumeMounts:
+    #- mountPath: /shared
+    #  name: weblogic-domain-storage-volume
+
+  # The desired behavior for starting the domain's administration server.
+  adminServer:
+    # Setup a Kubernetes node port for the administration server default channel
+    #adminService:
+    #  channels:
+    #  - channelName: default
+    #    nodePort: 30701
     serverPod:
-      # Optional new or overridden environment variables for the domain's pods
-      # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
-      #   to set the WebLogic domain name
+      # Optional new or overridden environment variables for the admin pods
       env:
-      - name: CUSTOM_DOMAIN_NAME
-        value: "domain1"
-      - name: JAVA_OPTIONS
-        value: "-Dweblogic.StdoutDebugEnabled=false"
       - name: USER_MEM_ARGS
-        value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
 
-      # Optional volumes and mounts for the domain's pods. See also 'logHome'.
-      #volumes:
-      #- name: weblogic-domain-storage-volume
-      #  persistentVolumeClaim:
-      #    claimName: sample-domain1-weblogic-sample-pvc
-      #volumeMounts:
-      #- mountPath: /shared
-      #  name: weblogic-domain-storage-volume
+  # The number of managed servers to start for unlisted clusters
+  replicas: 1
 
-    # The desired behavior for starting the domain's administration server.
-    adminServer:
-      # The serverStartState legal values are "RUNNING" or "ADMIN"
-      # "RUNNING" means the listed server will be started up to "RUNNING" mode
-      # "ADMIN" means the listed server will be start up to "ADMIN" mode
-      serverStartState: "RUNNING"
-      # Setup a Kubernetes node port for the administration server default channel
-      #adminService:
-      #  channels:
-      #  - channelName: default
-      #    nodePort: 30701
+  # The desired behavior for starting a specific cluster's member servers
+  clusters:
+  - clusterName: cluster-1
+    # The number of managed servers to start for this cluster
+    replicas: 2
 
-    # The number of managed servers to start for unlisted clusters
-    replicas: 1
+  # Change the restartVersion to force the introspector job to rerun
+  # and apply any new model configuration, to also force a subsequent
+  # roll of your domain's WebLogic Server pods.
+  restartVersion: '1'
 
-    # The desired behavior for starting a specific cluster's member servers
-    clusters:
-    - clusterName: cluster-1
-      serverStartState: "RUNNING"
-      replicas: 2
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
 
-    # Change the restartVersion to force the introspector job to rerun
-    # and apply any new model configuration, to also force a subsequent
-    # roll of your domain's WebLogic Server pods.
-    restartVersion: '1'
+  configuration:
 
-    configuration:
+    # Settings for domainHomeSourceType 'FromModel'
+    model:
+      # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
+      domainType: JRF
 
-      # Settings for domainHomeSourceType 'FromModel'
-      model:
-        # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-        domainType: "JRF"
+      # Optional configmap for additional models and variable files
+      #configMap: sample-domain1-wdt-config-map
 
-        # Optional configmap for additional models and variable files
-        #configMap: sample-domain1-wdt-config-map
+      # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+      runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 
-        # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
-        runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+    # Secrets that are referenced by model yaml macros
+    # (the model yaml in the optional configMap or in the image)
+    secrets:
+    #- sample-domain1-datasource-secret
+    - sample-domain1-rcu-access
 
-      # Secrets that are referenced by model yaml macros
-      # (the model yaml in the optional configMap or in the image)
-      secrets:
-      #- sample-domain1-datasource-secret
-      - sample-domain1-rcu-access
+    # Increase the introspector job active timeout value for JRF use cases
+    introspectorJobActiveDeadlineSeconds: 600
 
-      # Increase the introspector job active timeout value for JRF use cases
-      introspectorJobActiveDeadlineSeconds: 300
+    opss:
 
-      opss:
+      # Name of secret with walletPassword for extracting the wallet, used for JRF domains
+      walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 
-        # Name of secret with walletPassword for extracting the wallet, used for JRF domains
-        walletPasswordSecret: sample-domain1-opss-wallet-password-secret
-
-        # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
-        #walletFileSecret: sample-domain1-opss-walletfile-secret
-  ```
-  {{% /expand %}}
+      # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
+      #walletFileSecret: sample-domain1-opss-walletfile-secret
+```
+{{% /expand %}}
 
   **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 

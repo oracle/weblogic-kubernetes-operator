@@ -17,6 +17,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -27,7 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyOCILoadBalancer;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify the sample-app app can be accessed from "
     + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
+@Tag("oke-parallel")
 class ItOCILoadBalancer {
   // domain constants
   private static final int replicaCount = 2;
@@ -103,12 +105,12 @@ class ItOCILoadBalancer {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     createMiiDomainAndVerify(domainNamespace,domainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, adminServerPodName,
-        managedServerPrefix,replicaCount);
+        managedServerPrefix,replicaCount, List.of(clusterName));
     
     int clusterHttpPort = 8001;
 

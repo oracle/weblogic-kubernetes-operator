@@ -38,7 +38,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,7 +74,7 @@ class ServerDownIteratorStepTest {
     return MS_PREFIX + n;
   }
 
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
 
@@ -168,9 +168,9 @@ class ServerDownIteratorStepTest {
 
   @Test
   void withConcurrencyOf2_bothClusteredServersShutdownConcurrently() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
@@ -182,9 +182,9 @@ class ServerDownIteratorStepTest {
 
   @Test
   void withConcurrencyOf0_clusteredServersShutdownConcurrently() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
     configureCluster(CLUSTER).withMaxConcurrentShutdown(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
@@ -196,9 +196,9 @@ class ServerDownIteratorStepTest {
 
   @Test
   void whenClusterShutdown_concurrencySettingIsIgnored() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
@@ -210,9 +210,9 @@ class ServerDownIteratorStepTest {
 
   @Test
   void whenMaxConcurrentShutdownSet_limitNumberOfServersShuttingDownAtOnce() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4);
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
@@ -226,11 +226,11 @@ class ServerDownIteratorStepTest {
 
   @Test
   void withMultipleClusters_concurrencySettingIsIgnoredForShuttingDownClusterAndHonoredForShrinkingCluster() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4, MS5, MS6);
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
     configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3);
     addWlsCluster(CLUSTER2, PORT, MS4, MS5, MS6);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4, MS5, MS6);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
@@ -243,11 +243,11 @@ class ServerDownIteratorStepTest {
 
   @Test
   void withMultipleClusters_differentClusterScheduleAndShutdownDifferently() {
+    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4);
     configureCluster(CLUSTER).withMaxConcurrentShutdown(0).withReplicas(1);
     configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     addWlsCluster(CLUSTER2, PORT, MS3, MS4);
-    domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2,MS3,MS4);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
 
     createShutdownInfos()
@@ -312,7 +312,7 @@ class ServerDownIteratorStepTest {
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName);
+    return configurator.configureCluster(domainPresenceInfo, clusterName);
   }
 
   private void addWlsServers(String... serverNames) {

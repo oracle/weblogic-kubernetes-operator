@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import oracle.kubernetes.operator.DomainFailureMessages;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -20,7 +21,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +35,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_C
 import static oracle.kubernetes.common.logging.MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 
 public class WlsConfigValidator {
@@ -47,7 +50,7 @@ public class WlsConfigValidator {
   }
 
   private final String domainUid;
-  private final List<String> failures = new ArrayList<>();
+  private final List<String> topologyFailures = new ArrayList<>();
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainConfig;
   private LoggingFacade loggingFacade;
@@ -111,22 +114,22 @@ public class WlsConfigValidator {
    *
    * @return a list of strings that describe the failures.
    */
-  List<String> getFailures() {
+  List<String> getTopologyFailures() {
     if (domainConfig != null) {
       verifyDomainResourceReferences();
       verifyGeneratedResourceNames();
       verifyServerPorts();
       reportIfExporterPortConflicts();
     }
-    return failures;
+    return topologyFailures;
   }
 
   // Ensure that all clusters and servers configured by the domain resource actually exist in the topology.
   private void verifyDomainResourceReferences() {
     getManagedServers().stream()
           .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
-    getClusters().stream()
-          .map(Cluster::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
+    info.getReferencedClusters().stream().map(ClusterResource::getSpec)
+          .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
   }
 
   private List<ManagedServer> getManagedServers() {
@@ -142,14 +145,10 @@ public class WlsConfigValidator {
   }
 
   private void reportFailure(String messageKey, Object... params) {
-    failures.add(LOGGER.formatMessage(messageKey, params));
+    topologyFailures.add(LOGGER.formatMessage(messageKey, params));
     if (loggingFacade != null) {
       loggingFacade.warning(messageKey, params);
     }
-  }
-
-  private List<Cluster> getClusters() {
-    return info.getDomain().getSpec().getClusters();
   }
 
   private boolean isUnknownCluster(String clusterName) {
@@ -286,5 +285,43 @@ public class WlsConfigValidator {
           .map(NetworkAccessPoint::getListenPort)
           .filter(Objects::nonNull)
           .collect(Collectors.toList());
+  }
+
+  List<String> getReplicaTooHighFailures() {
+    final List<String> failures = new ArrayList<>();
+
+    for (String clusterName : getTopologyClusterNames()) {
+      new ClusterReplicaCheck(failures, clusterName).validateCluster();
+    }
+    return failures;
+  }
+
+  class ClusterReplicaCheck {
+    private final List<String> failures;
+    private final String clusterName;
+    private final int replicaCount;
+    private final int clusterSize;
+
+    ClusterReplicaCheck(List<String> failures, String clusterName) {
+      this.failures = failures;
+      this.clusterName = clusterName;
+      this.replicaCount = info.getReplicaCount(clusterName);
+      this.clusterSize = domainConfig.getClusterConfig(clusterName).getClusterSize();
+    }
+
+    private void validateCluster() {
+      if (replicaCount > clusterSize) {
+        failures.add(DomainFailureMessages.createReplicaFailureMessage(clusterName, replicaCount, clusterSize));
+        if (loggingFacade != null) {
+          loggingFacade.warning(TOO_MANY_REPLICAS_FAILURE, replicaCount, clusterName, clusterSize);
+        }
+      }
+    }
+
+  }
+
+  @NotNull
+  private String[] getTopologyClusterNames() {
+    return Optional.ofNullable(domainConfig).map(WlsDomainConfig::getClusterNames).orElse(new String[0]);
   }
 }

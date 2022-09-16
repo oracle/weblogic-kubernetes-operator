@@ -23,7 +23,7 @@ spec:
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "IfNotPresent"
+  imagePullPolicy: IfNotPresent
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
@@ -48,7 +48,7 @@ spec:
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-  serverStartPolicy: "IF_NEEDED"
+  serverStartPolicy: IF_NEEDED
 
   # Settings for auxiliary image volume(s), see also 'serverPod.auxiliaryImages'.
   auxiliaryImageVolumes:
@@ -141,7 +141,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
+      domainType: WLS
       modelHome: "/auxiliary/models"
       wdtInstallHome: "/auxiliary/weblogic-deploy"
 

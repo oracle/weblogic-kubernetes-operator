@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -41,7 +41,9 @@ class JsonSchemaMojoTest extends MojoTestBase {
   private static final File SCHEMA_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".json");
   private static final File MARKDOWN_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".md");
   private static final File CLASS_FILE = createFile("/classes", TEST_ROOT_CLASS, ".class");
-  private static final String SPECIFIED_FILE_NAME = "specifiedFile.json";
+  public static final String SPECIFIED_FILE_BASE_NAME = "SpecifiedFile";
+  public static final String SPECIFIED_FILE_PATH = "/path/to/" + SPECIFIED_FILE_BASE_NAME;
+  private static final String SPECIFIED_FILE_NAME = SPECIFIED_FILE_PATH + ".json";
   private static final File SPECIFIED_FILE = new File(TARGET_DIR + "/" + SPECIFIED_FILE_NAME);
 
   private final TestFileSystem fileSystem = new TestFileSystem();
@@ -147,7 +149,7 @@ class JsonSchemaMojoTest extends MojoTestBase {
     assertThat(supportObjectReferencesField.getType(), equalTo(boolean.class));
     assertThat(
         fieldAnnotations.get(supportObjectReferencesField), hasKey(toDescription(Parameter.class)));
-    assertThat(getMojoParameter("generateMarkdown"), is(false));
+    assertThat(getMojoParameter("generateMarkdown"), is(Boolean.FALSE));
   }
 
   @Test
@@ -295,6 +297,15 @@ class JsonSchemaMojoTest extends MojoTestBase {
     executeMojo();
 
     assertThat(main.getSchemaFile(), equalTo(SPECIFIED_FILE));
+  }
+
+  @Test
+  void whenMarkdownFileGenerated_rootNameIsDerivedFromClassName() throws Exception {
+    setMojoParameter("generateMarkdown", true);
+    setMojoParameter("outputFile", SPECIFIED_FILE_NAME);
+    executeMojo();
+
+    assertThat(this.<JsonSchemaMojo>getMojo().getRootName(), equalTo(SPECIFIED_FILE_BASE_NAME));
   }
 
   @Test

@@ -15,6 +15,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
@@ -28,8 +29,8 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +75,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureSteps;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
@@ -104,11 +106,11 @@ import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.NamespaceTest.createDomainNamespaces;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILURE_RESOLVED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
@@ -134,7 +136,7 @@ class EventHelperTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
@@ -312,7 +314,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("ADDED", domain));
 
     assertThat("Found DOMAIN_CREATED event",
         containsEvent(getEvents(testSupport), DOMAIN_CREATED_EVENT), is(true));
@@ -320,7 +322,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("ADDED", domain));
 
     assertThat("Found DOMAIN_CREATED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -330,7 +332,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
 
     assertThat("Found DOMAIN_CHANGED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_CHANGED_EVENT), is(true));
@@ -338,7 +340,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("MODIFIED", domain));
 
     assertThat("Found DOMAIN_CHANGED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -361,15 +363,25 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
+    processor.dispatchDomainWatch(new Watch.Response<>("DELETED", domain));
 
     assertThat("Found DOMAIN_DELETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_DELETED_EVENT), is(true));
   }
 
   @Test
+  void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
+    processor.dispatchDomainWatch(new Watch.Response<>("DELETED", domain));
+
+    assertThat("Found DOMAIN_DELETED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            EventConstants.DOMAIN_DELETED_EVENT,
+            getFormattedMessage(DOMAIN_DELETED_EVENT_PATTERN, UID)), is(true));
+  }
+
+  @Test
   void whenMakeRightCalled_withCompletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_COMPLETE, null).execute();
+    createMakeRightWithEvent(DOMAIN_COMPLETE).execute();
 
     assertThat("Found DOMAIN_COMPLETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -377,14 +389,8 @@ class EventHelperTest {
             getFormattedMessage(DOMAIN_COMPLETED_EVENT_PATTERN, UID)), is(true));
   }
 
-  @Test
-  void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
-
-    assertThat("Found DOMAIN_DELETED event with expected message",
-        containsEventWithMessage(getEvents(testSupport),
-            EventConstants.DOMAIN_DELETED_EVENT,
-            getFormattedMessage(DOMAIN_DELETED_EVENT_PATTERN, UID)), is(true));
+  private MakeRightDomainOperation createMakeRightWithEvent(EventHelper.EventItem eventItem) {
+    return makeRightOperation.withEventData(new EventData(eventItem));
   }
 
   @Test
@@ -419,7 +425,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withAvailableEventData_domainAvailableEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_AVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_AVAILABLE).execute();
 
     assertThat("Found DOMAIN_AVAILABLE event",
         containsEvent(getEvents(testSupport), DOMAIN_AVAILABLE_EVENT), is(true));
@@ -427,7 +433,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withAvailableEventData_domainAvailableEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_AVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_AVAILABLE).execute();
 
     assertThat("Found DOMAIN_AVAILABLE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -437,7 +443,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withUnavailableEventData_domainUnavailableEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_UNAVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_UNAVAILABLE).execute();
 
     assertThat("Found DOMAIN_UNAVAILABLE event",
         containsEvent(getEvents(testSupport), DOMAIN_UNAVAILABLE_EVENT), is(true));
@@ -445,7 +451,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withUnavailableEventData_domainUnavailableEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_UNAVAILABLE, null).execute();
+    createMakeRightWithEvent(DOMAIN_UNAVAILABLE).execute();
 
     assertThat("Found DOMAIN_UNAVAILABLE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -455,7 +461,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withIncompleteEventData_domainIncompleteEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_INCOMPLETE, null).execute();
+    createMakeRightWithEvent(DOMAIN_INCOMPLETE).execute();
 
     assertThat("Found DOMAIN_INCOMPLETE event",
         containsEvent(getEvents(testSupport), DOMAIN_INCOMPLETE_EVENT), is(true));
@@ -463,7 +469,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withIncompleteEventData_domainIncompleteEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_INCOMPLETE, null).execute();
+    createMakeRightWithEvent(DOMAIN_INCOMPLETE).execute();
 
     assertThat("Found DOMAIN_INCOMPLETE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -473,7 +479,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withFailureResolvedEventData_domainFailureResolvedEventCreated() {
-    makeRightOperation.withEventData(DOMAIN_FAILURE_RESOLVED, null).execute();
+    createMakeRightWithEvent(DOMAIN_FAILURE_RESOLVED).execute();
 
     assertThat("Found DOMAIN_FAILURE_RESOLVED event",
         containsEvent(getEvents(testSupport), DOMAIN_FAILURE_RESOLVED_EVENT), is(true));
@@ -481,7 +487,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withFailureResolvedEventData_domainFailureResolvedEventCreatedWithExpectedMessage() {
-    makeRightOperation.withEventData(DOMAIN_FAILURE_RESOLVED, null).execute();
+    createMakeRightWithEvent(DOMAIN_FAILURE_RESOLVED).execute();
 
     assertThat("Found DOMAIN_FAILURE_RESOLVED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -889,6 +895,34 @@ class EventHelperTest {
         containsEventWithMessage(getEvents(testSupport),
             POD_CYCLE_STARTING_EVENT,
             getFormattedMessage(POD_CYCLE_STARTING_EVENT_PATTERN, "12345", "abcde")), is(true));
+  }
+
+  @Test
+  void whenClusterAvailableEventCreatedTwice_verifyEventReplaced() {
+    testSupport.runSteps(EventHelper.createClusterResourceEventStep(new EventData(CLUSTER_AVAILABLE)));
+    dispatchAddedEventWatches();
+    testSupport.runSteps(EventHelper.createClusterResourceEventStep(new EventData(CLUSTER_AVAILABLE)));
+
+    assertThat("Found CLUSTER_AVAILABLE event with unexpected count",
+        containsOneEventWithCount(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT, 2), is(true));
+  }
+
+  @Test
+  void whenClusterAvailableEventCreatedTwice_fail409OnReplace_eventCreatedOnceWithExpectedCount() {
+    testSupport.addRetryStrategy(retryStrategy);
+    Step eventStep = EventHelper.createClusterResourceEventStep(new EventData(CLUSTER_AVAILABLE)
+        .namespace(NS).resourceName(NS));
+    testSupport.runSteps(eventStep);
+    dispatchAddedEventWatches();
+
+    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), CLUSTER_AVAILABLE_EVENT);
+    testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
+
+    testSupport.runSteps(eventStep);
+
+    assertThat("Found 2 CLUSTER_AVAILABLE event with expected count 1",
+        containsEventsWithCountOne(getEvents(testSupport),
+            CLUSTER_AVAILABLE_EVENT, 2), is(true));
   }
 
   private void dispatchAddedEventWatches() {

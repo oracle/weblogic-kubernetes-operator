@@ -17,14 +17,12 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -32,14 +30,16 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
@@ -50,7 +50,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -66,7 +66,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Tests to create JRF domain in persistent volume using WLST.
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
+@Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
@@ -147,7 +151,7 @@ class ItFmwDomainInPVUsingWLST {
     final String managedServerNameBase = "wlst-ms-";
     final int managedServerPort = 8001;
     final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 2;
+    final int replicaCount = 1;
     final int t3ChannelPort = getNextFreePort();
 
     final String pvName = getUniqueName(domainUid + "-pv-");
@@ -155,7 +159,7 @@ class ItFmwDomainInPVUsingWLST {
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(jrfDomainNamespace);
+    createBaseRepoSecret(jrfDomainNamespace);
 
 
     // create JRF domain credential secret
@@ -221,7 +225,7 @@ class ItFmwDomainInPVUsingWLST {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -232,18 +236,17 @@ class ItFmwDomainInPVUsingWLST {
             .domainHome(uniquePath + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(jrfDomainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -259,19 +262,13 @@ class ItFmwDomainInPVUsingWLST {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")
-                ));
+                        .nodePort(t3ChannelPort)))));
 
     setPodAntiAffinity(domain);
 

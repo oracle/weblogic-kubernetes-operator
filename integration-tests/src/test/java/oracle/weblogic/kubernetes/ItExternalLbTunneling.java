@@ -14,13 +14,11 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -37,6 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -45,14 +44,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -69,7 +69,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
@@ -104,8 +104,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 @DisplayName("Test external RMI access through loadbalncer tunneling")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 @DisabledOnSlimImage
+@Tag("olcne")
 class ItExternalLbTunneling {
 
   private static String opNamespace = null;
@@ -156,7 +159,7 @@ class ItExternalLbTunneling {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -190,7 +193,7 @@ class ItExternalLbTunneling {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -205,7 +208,7 @@ class ItExternalLbTunneling {
       logger.info("Installing Traefik controller using helm");
       traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
     }
-    
+
     // Create SSL certificate and key using openSSL with SAN extension
     createCertKeyFiles(K8S_NODEPORT_HOST);
     // Create kubernates secret using genereated certificate and key
@@ -240,8 +243,8 @@ class ItExternalLbTunneling {
    * Queue using load balancer HTTP url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    * Verify RMI access to WLS through Traefik LoadBalancer.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -277,7 +280,7 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to non-tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service = 
+    String service =
          TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpTunnelingPort =
@@ -287,7 +290,7 @@ class ItExternalLbTunneling {
     logger.info("HttpTunnelingPort for Traefik {0}", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtClient(httpTunnelingPort, 2, false);
     logger.info("External RMI tunneling works for Traefik");
   }
@@ -297,8 +300,8 @@ class ItExternalLbTunneling {
    * Queue using load balancer HTTPS url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each destination member gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    * Verify tls RMI access to WLS through Traefik LoadBalancer.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -335,7 +338,7 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service = 
+    String service =
          TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpsTunnelingPort =
@@ -392,7 +395,7 @@ class ItExternalLbTunneling {
              "Could not get the cluster custom channel port");
     logger.info("Found the administration service nodePort {0}", httpsTunnelingPort);
 
-    assertDoesNotThrow(() -> 
+    assertDoesNotThrow(() ->
                   setTlsEdgeTerminationForRoute(clusterServiceName, domainNamespace, tlsKeyFile, tlsCertFile));
     // In OKD cluster, we need to set the target port of the route to be the httpTunnelingport
     // By default, when a service is exposed as a route, the endpoint is set to the default port.
@@ -400,7 +403,7 @@ class ItExternalLbTunneling {
     String routeHost = clusterSvcRouteHost + ":443";
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtHttpsClient(routeHost, 0, 2, false);
     logger.info("External RMI https tunneling works for route");
   }
@@ -632,8 +635,9 @@ class ItExternalLbTunneling {
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -642,14 +646,15 @@ class ItExternalLbTunneling {
             .spec(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
+                    .replicas(replicaCount)
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
+                    .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
@@ -658,15 +663,10 @@ class ItExternalLbTunneling {
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
                     .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")

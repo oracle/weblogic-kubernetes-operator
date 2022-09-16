@@ -11,27 +11,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -40,7 +41,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
@@ -62,6 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test the monitoring WebLogic Domain via istio provided Prometheus")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItIstioMonitoringExporter {
 
   private static String opNamespace = null;
@@ -81,6 +85,8 @@ class ItIstioMonitoringExporter {
   private static String oldRegex;
   private static String sessionAppPrometheusSearchKey =
       "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+
+  private static String testWebAppWarLoc = null;
 
   /**
    * Install Operator.
@@ -109,6 +115,9 @@ class ItIstioMonitoringExporter {
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+
+    // create testwebapp.war
+    testWebAppWarLoc = createTestWebAppWarFile(domain1Namespace);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
@@ -172,7 +181,7 @@ class ItIstioMonitoringExporter {
     String monitoringExporterSrcDir = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir").toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
     String exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
-        domain2Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
+        domain2Namespace, TEST_IMAGES_REPO_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     String exporterConfig = RESOURCE_DIR + "/exporter/exporter-config.yaml";
     String managedServerPrefix = domain2Uid + "-managed-server";
@@ -232,7 +241,7 @@ class ItIstioMonitoringExporter {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -258,10 +267,10 @@ class ItIstioMonitoringExporter {
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = createIstioDomainResource(domainUid,
+    DomainResource domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         miiImage,
@@ -337,7 +346,7 @@ class ItIstioMonitoringExporter {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(testWebAppWarLoc);
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),

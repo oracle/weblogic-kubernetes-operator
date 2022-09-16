@@ -32,11 +32,6 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStateRunning;
-import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
@@ -52,8 +47,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
@@ -78,6 +71,7 @@ import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.RetryStrategy;
+import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Component;
@@ -86,8 +80,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -96,10 +92,8 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
@@ -107,6 +101,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String NAMESPACE = "Namespace";
+  public static final String CLUSTER = "Cluster";
+  public static final String CLUSTER_STATUS = "ClusterStatus";
   public static final String DOMAIN = "Domain";
   public static final String EVENT = "Event";
   public static final String JOB = "Job";
@@ -158,7 +154,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
         V1ValidatingWebhookConfiguration.class, this::createValidatingWebhookConfigurationList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
-    supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
+    supportNamespaced(CLUSTER, ClusterResource.class, this::createClusterList).withStatusSubresource();
+    supportNamespaced(DOMAIN, DomainResource.class, this::createDomainList).withStatusSubresource();
     supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
@@ -171,11 +168,15 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new KubernetesTestSupportMemento();
   }
 
+  private ClusterList createClusterList(List<ClusterResource> items) {
+    return new ClusterList().withMetadata(createListMeta()).withItems(items);
+  }
+
   private V1ConfigMapList createConfigMapList(List<V1ConfigMap> items) {
     return new V1ConfigMapList().metadata(createListMeta()).items(items);
   }
 
-  private DomainList createDomainList(List<Domain> items) {
+  private DomainList createDomainList(List<DomainResource> items) {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
   }
 
@@ -329,44 +330,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   /**
-   * define the introspector job pod container status.
-   * @param jobPod jobPad object
-   * @param jobName job name
-   * @param terminateJobContainer set introspector container with terminate status if true, otherwise running.
-   * @param terminateFluentd set inrospector fluentd container with terminate status if true, otherwise running.
-   */
-  public void defineFluentdJobContainersCompleteStatus(V1Pod jobPod, String jobName, boolean terminateJobContainer,
-                                                       boolean terminateFluentd) {
-    Map<String, String> labels = new HashMap<>();
-    labels.put(JOBNAME_LABEL, jobName);
-    jobPod.getMetadata().setLabels(labels);
-    jobPod.spec(new V1PodSpec());
-    jobPod.getSpec().addContainersItem(new V1Container().name(FLUENTD_CONTAINER_NAME));
-    jobPod.getSpec().addContainersItem(new V1Container().name(jobName));
-    V1PodStatus podStatus = new V1PodStatus();
-    V1ContainerState jobContainerState = new V1ContainerState();
-    if (terminateJobContainer) {
-      jobContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(0));
-    } else {
-      jobContainerState.setRunning(new V1ContainerStateRunning());
-    }
-    podStatus.addContainerStatusesItem(new V1ContainerStatus()
-            .name(jobName).state(jobContainerState));
-
-    V1ContainerState fluentdContainerState = new V1ContainerState();
-    if (terminateFluentd) {
-      fluentdContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(1));
-    } else {
-      fluentdContainerState.setRunning(new V1ContainerStateRunning());
-    }
-    podStatus.addContainerStatusesItem(new V1ContainerStatus()
-            .name(FLUENTD_CONTAINER_NAME).state(fluentdContainerState));
-
-    jobPod.setStatus(podStatus);
-
-  }
-
-  /**
    * Deletes the specified namespace and all resources in that namespace.
    * @param namespaceName the name of the namespace to delete
    */
@@ -392,6 +355,32 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   public void doOnDelete(String resourceType, Consumer<Integer> consumer) {
     selectRepository(resourceType).addDeleteAction(consumer);
+  }
+
+
+  /**
+   * Specifies that a read operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnRead(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.read, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a list operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnList(String resourceType, String namespace, int httpStatus) {
+    failure = new Failure(Operation.list, resourceType, null, namespace, httpStatus);
   }
 
   /**
@@ -429,6 +418,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public void failOnReplace(String resourceType, String name, String namespace, int httpStatus) {
     failure = new Failure(Operation.replace, resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnReplaceStatus(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.replaceStatus, resourceType, name, namespace, httpStatus);
   }
 
   /**
@@ -1267,7 +1269,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
-  private class SimulatedResponseStep extends Step {
+  private class SimulatedResponseStep extends Step implements SimulatedStep {
     private final CallContext callContext;
 
     SimulatedResponseStep(

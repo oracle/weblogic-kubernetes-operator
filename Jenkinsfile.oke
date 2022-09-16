@@ -4,11 +4,8 @@
 
 pipeline {
     agent { label 'VM.Standard2.8' }
-    triggers {
-        cron('H 5 * * *')
-    }
     options {
-        timeout(time: 800, unit: 'MINUTES')
+        timeout(time: 1200, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
 
@@ -49,17 +46,15 @@ pipeline {
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
+
+        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mtcluster' : 'mkcluster'}"
+        MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}"
+        availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'}"
+        PARALLEL_RUN = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? true : false}"
     }
 
     parameters {
-        choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                choices: [
-                        'oke-cert',
-                        'integration-tests',
-                        'toolkits-srg'
-                ]
-        )
+
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
@@ -67,11 +62,15 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.21.5'
+               defaultValue: '1.23.4'
         )
+        string(name: 'IMAGE_ID',
+                       description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
+                )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.21.5'
+                       defaultValue: '1.23.4'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -81,21 +80,18 @@ pipeline {
                description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
                defaultValue: '1.10.4'
         )
-        booleanParam(name: 'PARALLEL_RUN',
-                     description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
-                     defaultValue: false
-        )
+
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
                defaultValue: "3"
         )
         string(name: 'WDT_DOWNLOAD_URL',
                description: 'URL to download WDT.',
-               defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
+               defaultValue: 'https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/weblogic-deploy-main.zip'
         )
         string(name: 'WIT_DOWNLOAD_URL',
                description: 'URL to download WIT.',
-               defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
+               defaultValue: 'https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/imagetool-main.zip'
         )
         string(name: 'REPO_REGISTRY',
                description: '',
@@ -104,6 +100,10 @@ pipeline {
         choice(name: 'BASE_IMAGES_REPO',
                choices: ['phx.ocir.io', 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
+        )
+        string(name: 'TEST_IMAGES_REPO',
+               description: '',
+               defaultValue: 'phx.ocir.io'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
@@ -135,7 +135,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.5'
+               defaultValue: '2.0.7'
         )
 
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
@@ -177,6 +177,7 @@ pipeline {
                 stage('GitHub Checkout') {
                     steps {
                         sh "sudo rm -rf ${WORKSPACE}/*"
+                        sh "sudo rm -rf ${WORKSPACE}/.mvn"
                         checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
                                   doGenerateSubmoduleConfigurations: false,
                                   extensions: [], submoduleCfg: [],
@@ -188,11 +189,9 @@ pipeline {
 
                 stage('Setup terraform property file  ') {
                     environment {
-                        FSS_DIR="/oketest"
-                        VCN_CIDR_PREFIX="10.1"
-                        OKE_CLUSTER_NAME="mtcluster"
+                        OKE_CLUSTER_NAME="${CLUSTER_NAME}"
                         NODE_SHAPE="VM.Standard2.4"
-                        LINUX_VER="Oracle-Linux-7.4"
+                        IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
                         OCIPK_FILE = credentials("${ocipk_file}")
@@ -219,13 +218,16 @@ pipeline {
 
 
                         export OKE_CLUSTER="true"
-                        export FSS_DIR="/oketest"
-
+                        if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
+                           VCN_CIDR_PREFIX="10.1"
+                        else
+                           VCN_CIDR_PREFIX="10.3"
+                        fi
                         export VCN_CIDR_PREFIX=${VCN_CIDR_PREFIX}
 
                         export OKE_CLUSTER_NAME=${OKE_CLUSTER_NAME}
                         export NODE_SHAPE=${NODE_SHAPE}
-                        export LINUX_VER=${LINUX_VER}
+                        export IMAGE_ID=${IMAGE_ID}
 
                         export OCI_PROP_FILE=${OCI_PROP_FILE}
 
@@ -249,7 +251,7 @@ pipeline {
                         vcn.cidr.prefix=${VCN_CIDR_PREFIX}
                         vcn.cidr=${VCN_CIDR_PREFIX}.0.0/16
                         nodepool.shape=${NODE_SHAPE}
-                        nodepool.imagename=${LINUX_VER}
+                        nodepool.imagename=${IMAGE_ID}
                         k8s.version=v${KUBE_VERSION}
                         nodepool.ssh.pubkey=${WKOBUILD_PUBLIC_CERT}
                         terraform.installdir=${WORKSPACE}/terraform/terraforminstall
@@ -287,7 +289,6 @@ EOF
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            sudo yum install -y python36
                             mkdir -p ${WORKSPACE}/oci
                             cd ${WORKSPACE}/oci
                             curl -LO https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
@@ -341,7 +342,7 @@ EOF
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
-                        KUBECONFIG ="${WORKSPACE}/terraform/mtcluster_kubeconfig"
+                        KUBECONFIG ="${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
                     }
@@ -355,11 +356,13 @@ EOF
                             sed -i -e "s:@WORKSPACE@:${WORKSPACE}:g" ${WORKSPACE}/oci/config
                             export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                             export OCI_CLI_PROFILE=WKOBUILD
-                            echo 'Create a OKE cluster'
+                            echo 'Create a OKE cluster ${CLUSTER_NAME}'
 
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
-                            cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
-                            cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
+                            if [ "${MAVEN_PROFILE_NAME}" = 'oke-parallel' ]; then
+                                cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
+                                cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
+                            fi
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh
@@ -374,9 +377,9 @@ EOF
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:${WORKSPACE}/terraform/terraforminstall"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
-                                        clusterName = "mtcluster"
+                                        clusterName = "${CLUSTER_NAME}"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
-                                        availability_domain = "VPGL:PHX-AD-1"
+
 
                                     }
                                     steps {
@@ -394,7 +397,7 @@ EOF
                                         echo "Creating Storage Class to mount OFSS"
                                         cat << EOF | kubectl apply -f -
 kind: StorageClass
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 metadata:
   name: oci-fss
 provisioner: oracle.com/oci-fss
@@ -419,15 +422,20 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
+                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                         DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
                         DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
-                        availability_domain = "VPGL:PHX-AD-1"
                         DOMAIN_IMAGES_REPO = "phx.ocir.io"
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
-                        clusterName = "mtcluster"
-                        FSS_DIR = "/oketest"
+                        clusterName = "${CLUSTER_NAME}"
+                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15"
 
                     }
                     steps {
@@ -446,16 +454,25 @@ EOF
                             fi
 
                             export K8S_NODEPORT_HOST=${NODE_IP}
+                            NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| head -n2 | tail -n1`
+                            echo "second node external IP ${NODE_IP}"
+                            export NODE_IP=${NODE_IP}
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
-                            mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
+                           
+                            mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
 
+                            if [ -z "${mt_private_ip}" ]; then
+                               echo "Mount Target was not setup properly , clean up Kubernetes cluster"
+                               sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+                               exit -1
+                            fi
                             export NFS_SERVER=$mt_private_ip
                             export FSS_DIR=${FSS_DIR}
                             echo "Using NFS Server ${NFS_SERVER}"
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
 
                             if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                echo "-Dit.test=\"!!ItExternalRmiTunneling, !ItSamples, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMiiSample, !ItMonitoringExporter*, !ItPodRestart\"" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dit.test=\"${IT_TEST}, !ItExternalRmiTunneling, !ItMiiSampleWlsMain, !ItSamples, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMiiSample, !ItMonitoringExporter*, !ItAuxV8DomainImplicitUpgrade, !ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItMiiSampleFmwMain\"" >> ${WORKSPACE}/.mvn/maven.config
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
@@ -476,6 +493,7 @@ EOF
                             echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
@@ -493,6 +511,11 @@ EOF
                             export DOMAIN_IMAGES_REPO=${DOMAIN_IMAGES_REPO}
                             export BASE_IMAGES_REPO=${BASE_IMAGES_REPO}
                             export OKE_CLUSTER="true"
+                            export OKD="false"
+                            export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
+                            export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
+                            export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
+
 
                             if [ ! -z "${http_proxy}" ]; then
                                 export http_proxy
@@ -514,9 +537,6 @@ EOF
 
                             if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
                                 echo "integration-tests failed"
-                            fi
-                            if [ "${MAVEN_PROFILE_NAME}" = "integration-test" ]; then
-                                mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter*, !ItPodRestart, !ItResilience"  -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"
                             fi
                         '''
                     }

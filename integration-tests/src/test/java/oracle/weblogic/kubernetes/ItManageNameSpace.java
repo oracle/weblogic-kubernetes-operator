@@ -12,11 +12,9 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -40,13 +38,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
@@ -57,12 +55,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -84,6 +83,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];
@@ -191,6 +194,7 @@ class ItManageNameSpace {
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
   @Tag("gate")
+  @Tag("crio")
   void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];
@@ -488,7 +492,7 @@ class ItManageNameSpace {
 
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
-    Domain domain = createDomainResource(domainNamespace, domainUid);
+    DomainResource domain = createDomainResource(domainNamespace, domainUid);
     assertDoesNotThrow(() -> createVerifyDomain(domainNamespace, domainUid, miiImage, domain));
     return true;
   }
@@ -496,17 +500,10 @@ class ItManageNameSpace {
   /**
    * Create a model in image domain resource.
    */
-  private Domain createDomainResource(String domainNamespace, String domainUid) {
-
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount)
-        .serverStartState("RUNNING"));
+  private DomainResource createDomainResource(String domainNamespace, String domainUid) {
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -515,14 +512,15 @@ class ItManageNameSpace {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
+            .replicas(replicaCount)
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -531,18 +529,17 @@ class ItManageNameSpace {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
+    domain = addClusterToDomain(clusterName, domainNamespace, domain, replicaCount);
     return domain;
   }
 
@@ -550,7 +547,7 @@ class ItManageNameSpace {
     // create docker registry secret to pull the image from registry
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     if (!domainNamespace.equals("default")) {
-      createOcirRepoSecret(domainNamespace);
+      createTestRepoSecret(domainNamespace);
     }
 
     // create secret for admin credentials
@@ -565,7 +562,7 @@ class ItManageNameSpace {
   private static void deleteSecrets(String domainNamespace) {
     logger.info("Deleting docker registry secret in namespace {0}", domainNamespace);
     if (!domainNamespace.equals("default")) {
-      deleteSecret(OCR_SECRET_NAME, domainNamespace);
+      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
     }
 
     // delete secret for admin credentials
@@ -577,7 +574,7 @@ class ItManageNameSpace {
     deleteSecret(encryptionSecretName, domainNamespace);
   }
 
-  private void createVerifyDomain(String domainNamespace, String domainUid, String miiImage, Domain domain) {
+  private void createVerifyDomain(String domainNamespace, String domainUid, String miiImage, DomainResource domain) {
     // create domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -600,7 +597,7 @@ class ItManageNameSpace {
   }
 
   private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
-    Domain domain = createDomainResource(domNamespace, domainUid);
+    DomainResource domain = createDomainResource(domNamespace, domainUid);
     assertNotNull(domain, "Failed to create domain CRD in namespace " + domNamespace);
     createDomainAndVerify(domain, domNamespace);
     checkPodDoesNotExist(podName,domainUid, domNamespace);

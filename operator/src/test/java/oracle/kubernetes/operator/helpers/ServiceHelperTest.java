@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +41,7 @@ import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -85,6 +86,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -227,8 +229,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         .addToPacket(DOMAIN_TOPOLOGY, domainConfig)
         .addToPacket(SERVER_SCAN, serverConfig)
         .addDomainPresenceInfo(domainPresenceInfo);
-    testFacade.configureService(configureDomain()).withServiceLabel(OLD_LABEL, "value");
-    testFacade.configureService(configureDomain()).withServiceAnnotation(OLD_ANNOTATION, "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel(OLD_LABEL, "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceAnnotation(OLD_ANNOTATION, "value");
   }
 
   @AfterEach
@@ -237,6 +239,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     testSupport.throwOnCompletionFailure();
   }
+
 
   private AdminServerConfigurator configureAdminServer() {
     return configureDomain().configureAdminServer();
@@ -248,6 +251,33 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   protected WlsServerConfig getServerConfig() {
     return serverConfig;
+  }
+
+  public void setUpServicePortPatterns() {
+    configureAdminServer()
+        .configureAdminService();
+
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport
+        .addWlsServer(ADMIN_SERVER, ADMIN_PORT)
+        .addNetworkAccessPoint(NAP_1, NAP_PORT_1)
+        .addNetworkAccessPoint(NAP_2, NAP_PORT_2);
+
+    configSupport
+        .addWlsServer(TEST_SERVER, TEST_PORT)
+        .setAdminPort(ADMIN_PORT)
+        .addNetworkAccessPoint(NAP_3, NAP_PORT_3);
+    configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
+    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
+    serverConfig = domainConfig.getServerConfig(testFacade.getServerName());
+    testSupport
+        .addToPacket(CLUSTER_NAME, TEST_CLUSTER)
+        .addToPacket(SERVER_NAME, testFacade.getServerName())
+        .addToPacket(DOMAIN_TOPOLOGY, domainConfig)
+        .addToPacket(SERVER_SCAN, serverConfig)
+        .addDomainPresenceInfo(domainPresenceInfo);
   }
 
   @Test
@@ -302,7 +332,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     V1Service model = createService();
 
     for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet()) {
-      assertThat(model, containsPort(entry.getKey(), getExpectedProtocol(entry.getKey()), entry.getValue()));
+      assertThat(model, containsPort(entry.getKey(), getExpectedProtocol(entry.getKey()),
+          getExpectedAppProtocol(entry.getKey()), entry.getValue()));
     }
   }
 
@@ -310,13 +341,24 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return portName.startsWith("udp-") ? V1ServicePort.ProtocolEnum.UDP : V1ServicePort.ProtocolEnum.TCP;
   }
 
+  private String getExpectedAppProtocol(String portName) {
+    if (portName.equals("udp-sip-secure") || portName.equals("default-admin") || portName.equals("sip-secure")) {
+      return "tls";
+    } else {
+      return "tcp";
+    }
+  }
+
   @Test
   void whenCreated_modelIncludesStandardListenPorts() {
     V1Service model = createService();
 
-    assertThat(model, containsPort("default", testFacade.getExpectedListenPort()));
-    assertThat(model, containsPort("default-secure", testFacade.getExpectedSslListenPort()));
-    assertThat(model, containsPort("default-admin", testFacade.getExpectedAdminPort()));
+    assertThat(model, containsPort("default", "tcp",
+        testFacade.getExpectedListenPort()));
+    assertThat(model, containsPort("default-secure", "https",
+        testFacade.getExpectedSslListenPort()));
+    assertThat(model, containsPort("default-admin", "tls",
+        testFacade.getExpectedAdminPort()));
   }
 
   @Test
@@ -359,6 +401,37 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     assertThat(
         testFacade.getRecordedService(domainPresenceInfo),
         is(serviceWithName(testFacade.getServiceName())));
+  }
+
+  @Test
+  void verifyPortNamesAreNormalizedWithAppProtocolSet() {
+    consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
+    setUpServicePortPatterns();
+    List<String> portNames = new ArrayList<>(Arrays.asList("nap-1", "nap-2", "nap-3", "default"));
+
+    runServiceHelper();
+    List<V1ServicePort> ports = testFacade.getRecordedService(domainPresenceInfo).getSpec().getPorts();
+    for (V1ServicePort port: ports) {
+      assertThat(port.getAppProtocol(), notNullValue());
+      if (port.getName().equals("default-admin")) {
+        assertThat(port.getAppProtocol(), equalTo("tls"));
+      } else if (portNames.contains(port.getName())) {
+        assertThat(port.getAppProtocol(), equalTo("tcp"));
+      }
+    }
+  }
+
+  @Test
+  void testGetAppProtocol() {
+    assertThat(ServiceHelper.getAppProtocol("unknown"), equalTo("tcp"));
+    assertThat(ServiceHelper.getAppProtocol("http"), equalTo("http"));
+    assertThat(ServiceHelper.getAppProtocol("https"), equalTo("https"));
+    assertThat(ServiceHelper.getAppProtocol("t3s"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("ldaps"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("iiops"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("cbts"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("sips"), equalTo("tls"));
+    assertThat(ServiceHelper.getAppProtocol("admin"), equalTo("tls"));
   }
 
   @Test
@@ -438,8 +511,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
-  private Domain getDomain() {
-    return (Domain) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
+  private DomainResource getDomain() {
+    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
   }
 
   @Test
@@ -501,19 +574,19 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   private void configureNewLabel() {
-    testFacade.configureService(configureDomain()).withServiceLabel("newLabel", "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel("newLabel", "value");
   }
 
   private void changeConfiguredLabel() {
-    testFacade.configureService(configureDomain()).withServiceLabel(OLD_LABEL, "newValue");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel(OLD_LABEL, "newValue");
   }
 
   private void configureNewAnnotation() {
-    testFacade.configureService(configureDomain()).withServiceAnnotation("newAnnotation", "value");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceAnnotation("newAnnotation", "value");
   }
 
   private void changeConfiguredAnnotation() {
-    testFacade.configureService(configureDomain()).withServiceLabel(OLD_ANNOTATION, "newValue");
+    testFacade.configureService(domainPresenceInfo, configureDomain()).withServiceLabel(OLD_ANNOTATION, "newValue");
   }
 
   private void changeConfiguredListenPort() {
@@ -673,7 +746,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       return expectedNapPorts;
     }
 
-    abstract ServiceConfigurator configureService(DomainConfigurator configurator);
+    abstract ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator);
 
     String getExpectedSelectorKey() {
       return LabelConstants.SERVERNAME_LABEL;
@@ -716,7 +789,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     @Override
-    public ServiceConfigurator configureService(DomainConfigurator configurator) {
+    public ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator) {
       return configurator.configureServer(getServerName());
     }
 
@@ -765,6 +838,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private final String expectedName;
     private final V1ServicePort.ProtocolEnum expectedProtocol;
+    private final String expectedAppProtocol;
     private final Integer expectedValue;
 
     private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
@@ -773,8 +847,18 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
                         Integer expectedValue) {
+      this(expectedName, expectedProtocol, null, expectedValue);
+    }
+
+    private PortMatcher(@Nonnull String expectedName, String expectedAppProtocol, Integer expectedValue) {
+      this(expectedName, V1ServicePort.ProtocolEnum.TCP, expectedAppProtocol, expectedValue);
+    }
+
+    private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
+                        String expectedAppProtocol, Integer expectedValue) {
       this.expectedName = expectedName;
       this.expectedProtocol = expectedProtocol;
+      this.expectedAppProtocol = expectedAppProtocol;
       this.expectedValue = expectedValue;
     }
 
@@ -787,6 +871,17 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       return new PortMatcher(expectedName, expectedProtocol, expectedValue);
     }
 
+    static PortMatcher containsPort(@Nonnull String expectedName,
+                                    @Nonnull V1ServicePort.ProtocolEnum expectedProtocol,
+                                    @Nonnull String expectedAppProtocol,Integer expectedValue) {
+      return new PortMatcher(expectedName, expectedProtocol, expectedAppProtocol, expectedValue);
+    }
+
+    static PortMatcher containsPort(@Nonnull String expectedName,
+                                    @Nonnull String expectedAppProtocol, Integer expectedValue) {
+      return new PortMatcher(expectedName, expectedAppProtocol, expectedValue);
+    }
+
     @Override
     protected boolean matchesSafely(V1Service item, Description mismatchDescription) {
       V1ServicePort matchingPort = getPortWithName(item);
@@ -797,7 +892,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
       } else {
-        if (matchesSelectedProtocol(matchingPort) && matchesSelectedPort(matchingPort)) {
+        if (matchesSelectedProtocol(matchingPort)
+            && matchesSelectedPort(matchingPort)
+            && matchesSelectedAppProtocol(matchingPort)) {
           return true;
         }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
@@ -811,6 +908,10 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     private boolean matchesSelectedPort(V1ServicePort matchingPort) {
       return Objects.equals(expectedValue, matchingPort.getPort());
+    }
+
+    private boolean matchesSelectedAppProtocol(V1ServicePort matchingPort) {
+      return Objects.equals(expectedAppProtocol, matchingPort.getAppProtocol());
     }
 
     private V1ServicePort getPortWithName(V1Service item) {

@@ -17,22 +17,29 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.impl.Pod.isPodEvictedStatusLoggedInOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitialized;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -93,16 +100,17 @@ public class PodUtils {
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    testUntil(
-        assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-          String.format("podReady failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace)),
-        logger,
-        "pod {0} to be ready in namespace {1}",
-        podName,
-        domainNamespace);
-  }
 
+    testUntil(
+            withLongRetryPolicy,
+            assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+                    String.format("podReady failed with ApiException for pod %s in namespace %s",
+                            podName, domainNamespace)),
+            logger,
+            "pod {0} to be ready in namespace {1}",
+            podName,
+            domainNamespace);
+  }
 
   /**
    * Check pod is ready.
@@ -257,17 +265,21 @@ public class PodUtils {
    *
    * @param domain custom resource object
    */
-  public static synchronized void setPodAntiAffinity(Domain domain) {
+  public static synchronized void setPodAntiAffinity(DomainResource domain) {
     domain.getSpec()
         .getClusters()
         .stream()
         .forEach(
-            cluster -> {
-              ServerPod serverPod = cluster.getServerPod();
-              if (serverPod == null) {
+            clusterRef -> {
+              ClusterResource clusterResource =
+                  assertDoesNotThrow(() -> Kubernetes.getClusterCustomResource(clusterRef.getName(),
+                  domain.getMetadata().getNamespace(), CLUSTER_VERSION),
+                  "Could not find the cluster resource by name " + clusterRef.getName());
+              ServerPod serverPod = clusterResource.getSpec().getServerPod();
+              if (clusterResource.getSpec().getServerPod() == null) {
                 serverPod = new ServerPod();
               }
-              cluster
+              clusterResource.getSpec()
                   .serverPod(serverPod
                       .affinity(new V1Affinity().podAntiAffinity(
                           new V1PodAntiAffinity()
@@ -336,6 +348,7 @@ public class PodUtils {
     }
   }
 
+
   /**
    * Verify introspector log contains the error message.
    * @param domainUid domain uid of the domain
@@ -343,21 +356,36 @@ public class PodUtils {
    * @param expectedErrorMsg error message
    */
   public static void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
-                                                                String namespace,
-                                                                String expectedErrorMsg) {
+                                                                      String namespace,
+                                                                      String expectedErrorMsg) {
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg, null);
+  }
+
+  /**
+   * Verify introspector log contains the error message.
+   * @param domainUid domain uid of the domain
+   * @param namespace domain namespace in which introspector runs
+   * @param expectedErrorMsg error message
+   * @param follow whether to follow the log stream of the Pod
+   */
+  public static void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
+                                                                      String namespace,
+                                                                      String expectedErrorMsg,
+                                                                      Boolean follow) {
     final LoggingFacade logger = getLogger();
     // wait and check whether the introspector log contains the expected error message
     logger.info("verifying that the introspector log contains the expected error message");
     testUntil(
-        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg),
+        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg, follow),
         logger,
         "Checking for the log of introspector pod contains the expected error msg {0}",
         expectedErrorMsg);
   }
 
   private static boolean introspectorPodLogContainsExpectedErrorMsg(String domainUid,
-                                                             String namespace,
-                                                             String errormsg) {
+                                                                    String namespace,
+                                                                    String errormsg,
+                                                                    Boolean follow) {
     String introspectPodName;
     V1Pod introspectorPod;
     final LoggingFacade logger = getLogger();
@@ -381,7 +409,7 @@ public class PodUtils {
 
     String introspectorLog;
     try {
-      introspectorLog = getPodLog(introspectPodName, namespace);
+      introspectorLog = Kubernetes.getPodLog(introspectPodName, namespace, null, null, null, follow);
       logger.info("introspector log: {0}", introspectorLog);
     } catch (ApiException apiEx) {
       logger.severe("got ApiException while getting pod log: {0}", apiEx);
@@ -389,5 +417,41 @@ public class PodUtils {
     }
 
     return introspectorLog.contains(errormsg);
+  }
+
+  /**
+   * Check if pod Evicted status is logged in Operator log.
+   *
+   * @param opNamespace in which the pod is running
+   * @param regex the regular expression to which this string is to be matched
+   * @return true if pod Evicted status is logged in Operator log, otherwise false
+   */
+  public static Callable<Boolean> checkPodEvictedStatusInOperatorLogs(String opNamespace, String regex) {
+    return () -> {
+      String operatorPodName =
+          assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+          "Can't get operator's pod name");
+
+      String operatorLog =
+          assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace, OPERATOR_RELEASE_NAME),
+          "Can't get operator log");
+
+      return isPodEvictedStatusLoggedInOperator(operatorLog, regex);
+    };
+  }
+
+  /**
+   * Check if the pod log contains the certain text.
+   * @param matchStr text to be searched in the log
+   * @param podName the name of the pod
+   * @param namespace namespace where pod exists
+   * @return true if the text exists in the log otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean checkPodLogContains(String matchStr, String podName, String namespace)
+      throws ApiException {
+
+    return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
+
   }
 }

@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/sh
 # Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -119,7 +119,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   \
   create secret generic \
   $SECRET_NAME $LITERALS $FILENAMES \
-  --dry-run -o yaml \
+  --dry-run=client -o yaml \
   \
   | sed -e '/ name:/a\
   labels:' \

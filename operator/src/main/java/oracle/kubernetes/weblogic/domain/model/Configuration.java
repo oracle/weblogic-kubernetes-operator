@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
+import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -30,21 +31,20 @@ public class Configuration {
   @Description("The introspector job timeout value in seconds. If this field is specified, "
           + "then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. "
           + "Defaults to 120 seconds.")
+  @Default(intDefault = 120)
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
       "Determines how updated configuration overrides are distributed to already running WebLogic Server instances "
       + "following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides "
       + "are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain "
-      + "topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration "
-      + "overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated "
-      + "configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause "
+      + "topology. Legal values are `Dynamic`, which means that the operator will distribute updated configuration "
+      + "overrides dynamically to running servers, and `OnRestart`, which means that servers will use updated "
+      + "configuration overrides only after the server's next restart. The selection of `OnRestart` will not cause "
       + "servers to restart when there are updated configuration overrides available. See also "
-      + "`domains.spec.introspectVersion`. Defaults to DYNAMIC.")
+      + "`domains.spec.introspectVersion`. Defaults to `Dynamic`.")
+  @Default(strDefault = "Dynamic")
   private OverrideDistributionStrategy overrideDistributionStrategy;
-
-  @Description("The Istio service mesh integration settings.")
-  private Istio istio;
 
   public Model getModel() {
     return model;
@@ -109,19 +109,6 @@ public class Configuration {
     return overrideDistributionStrategy;
   }
 
-  public Istio getIstio() {
-    return istio;
-  }
-
-  public void setIstio(Istio istio) {
-    this.istio = istio;
-  }
-
-  public Configuration withIstio(Istio istio) {
-    this.istio = istio;
-    return this;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -131,8 +118,7 @@ public class Configuration {
             .append("secrets", secrets)
             .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
-            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
-            .append("istio", istio);
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
 
     return builder.toString();
   }
@@ -145,8 +131,7 @@ public class Configuration {
           .append(secrets)
           .append(overrideDistributionStrategy)
           .append(overridesConfigMap)
-          .append(introspectorJobActiveDeadlineSeconds)
-          .append(istio);
+          .append(introspectorJobActiveDeadlineSeconds);
 
     return builder.toHashCode();
   }
@@ -167,8 +152,7 @@ public class Configuration {
             .append(secrets, rhs.secrets)
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
-            .append(istio, rhs.istio);
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
 
     return builder.isEquals();
   }

@@ -18,8 +18,6 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -28,32 +26,24 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -67,36 +57,28 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listJobs;
-import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -105,10 +87,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
@@ -129,22 +112,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-parallel")
 class ItTwoDomainsManagedByTwoOperators {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String defaultSharingPvcName = getUniqueName("default-sharing-pvc-");
-  private static final String defaultSharingPvName = getUniqueName("default-sharing-pv-");
-  private static String defaultNamespace = "default";
   private static String domain1Uid = null;
   private static String domain2Uid = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
+  private static String twoDomainsNamespace = null;
   private static List<String> opNamespaces = new ArrayList<>();
   private static List<String> domainNamespaces = new ArrayList<>();
   private static List<String> domainUids = new ArrayList<>();
-  private static HelmParams operatorHelmParams = null;
   private static LoggingFacade logger = null;
 
   // domain constants
@@ -165,7 +148,7 @@ class ItTwoDomainsManagedByTwoOperators {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
     // get unique operator namespaces
     logger.info("Get unique namespaces for operator1 and operator2");
@@ -181,20 +164,24 @@ class ItTwoDomainsManagedByTwoOperators {
       domainNamespaces.add(namespaces.get(i));
     }
 
+    assertNotNull(namespaces.get(numberOfOperators + numberOfDomains), "Namespace list is null");
+    twoDomainsNamespace = namespaces.get(numberOfOperators + numberOfDomains);
+
+    domain1Namespace = domainNamespaces.get(0);
+    domain2Namespace = domainNamespaces.get(1);
+
     // install and verify operator
-    operatorHelmParams =
-        installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace).getHelmParams();
-    installAndVerifyOperator(opNamespaces.get(1), domainNamespaces.get(1));
+    installAndVerifyOperator(opNamespaces.get(0), domain1Namespace, twoDomainsNamespace);
+    installAndVerifyOperator(opNamespaces.get(1), domain2Namespace);
 
     // initiate domainUid list for two domains
+    String domainPrefix = getUniqueName("tdlbs-domain-");
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("tdlbs-domain" + i);
+      domainUids.add(domainPrefix + i);
     }
 
     domain1Uid = domainUids.get(0);
     domain2Uid = domainUids.get(1);
-    domain1Namespace = domainNamespaces.get(0);
-    domain2Namespace = domainNamespaces.get(1);
 
     if (KIND_REPO != null) {
       // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
@@ -203,8 +190,7 @@ class ItTwoDomainsManagedByTwoOperators {
       //   2. docker pull
       //   3. docker tag with the KIND_REPO value
       //   4. docker push to KIND_REPO
-      testUntil(
-          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+      testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
           "docker login to be successful");
     }
@@ -240,7 +226,7 @@ class ItTwoDomainsManagedByTwoOperators {
   }
 
   /**
-   * Create domain domain1 and domain2 with a dynamic cluster in each domain in default namespace, managed by operator1.
+   * Create domain domain1 and domain2 with a dynamic cluster in each domain in a same namespace, managed by operator1.
    * Both domains share one PV.
    * Verify scaling for domain2 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1.
    * Shut down and restart domain1, and make sure there is no impact on domain2.
@@ -248,88 +234,24 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   @Test
   @Tag("gate")
+  @Tag("crio")
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
     createMultipleDomainsSharingPVUsingWlstAndVerify(
-        defaultNamespace, wlSecretName, ItTwoDomainsManagedByTwoOperators.class.getSimpleName(), numberOfDomains,
+        twoDomainsNamespace, wlSecretName, ItTwoDomainsManagedByTwoOperators.class.getSimpleName(), numberOfDomains,
         domainUids, replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
     // get the domain1 and domain2 pods original creation timestamps
     List<String> domainNamespaces = new ArrayList<>();
-    domainNamespaces.add(defaultNamespace);
-    domainNamespaces.add(defaultNamespace);
+    domainNamespaces.add(twoDomainsNamespace);
+    domainNamespaces.add(twoDomainsNamespace);
     getBothDomainsPodsOriginalCreationTimestamp(domainUids, domainNamespaces);
 
     // scale domain2 to 3 servers and back to 2 and verify no impact on domain1
     scaleDomain2AndVerifyNoImpactOnDomain1();
 
     // restart domain1 and verify no impact on domain2
-    restartDomain1AndVerifyNoImpactOnDomain2(replicaCount, defaultNamespace, defaultNamespace);
-  }
-
-  /**
-   * Cleanup all the remaining artifacts in default namespace created by the test.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    if (!SKIP_CLEANUP) {
-
-      // uninstall operator which manages default namespace
-      logger.info("uninstalling operator which manages default namespace");
-      if (operatorHelmParams != null) {
-        assertThat(uninstallOperator(operatorHelmParams))
-            .as("Test uninstallOperator returns true")
-            .withFailMessage("uninstallOperator() did not return true")
-            .isTrue();
-      }
-
-      for (int i = 1; i <= numberOfDomains; i++) {
-        String domainUid = domainUids.get(i - 1);
-        // delete domain
-        logger.info("deleting domain custom resource {0}", domainUid);
-        assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
-
-        // wait until domain was deleted
-        testUntil(
-            domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace),
-            logger,
-            "domain {0} to be created in namespace {1}",
-            domainUid,
-            defaultNamespace);
-
-        // delete configMap in default namespace
-        logger.info("deleting configMap {0}", "create-domain" + i + "-scripts-cm");
-        assertTrue(deleteConfigMap("create-domain" + i + "-scripts-cm", defaultNamespace));
-      }
-
-      // delete configMap weblogic-scripts-cm in default namespace
-      logger.info("deleting configMap weblogic-scripts-cm");
-      assertTrue(deleteConfigMap("weblogic-scripts-cm", defaultNamespace));
-
-      // Delete jobs
-      try {
-        for (var item : listJobs(defaultNamespace).getItems()) {
-          if (item.getMetadata() != null) {
-            deleteJob(item.getMetadata().getName(), defaultNamespace);
-          }
-        }
-
-        for (var item : listPods(defaultNamespace, null).getItems()) {
-          if (item.getMetadata() != null) {
-            deletePod(item.getMetadata().getName(), defaultNamespace);
-          }
-        }
-      } catch (ApiException ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to delete jobs");
-      }
-
-      // delete pv and pvc in default namespace
-      logger.info("deleting pvc {0}", defaultSharingPvcName);
-      assertTrue(deletePersistentVolumeClaim(defaultSharingPvcName, defaultNamespace));
-      logger.info("deleting pv {0}", defaultSharingPvName);
-      assertTrue(deletePersistentVolume(defaultSharingPvName));
-    }
+    restartDomain1AndVerifyNoImpactOnDomain2(replicaCount, twoDomainsNamespace, twoDomainsNamespace);
   }
 
   /**
@@ -338,7 +260,7 @@ class ItTwoDomainsManagedByTwoOperators {
   private void createTwoDomainsOnPVUsingWlstAndVerify() {
     for (int i = 0; i < numberOfDomains; i++) {
       // this secret is used only for non-kind cluster
-      createSecretForBaseImages(domainNamespaces.get(i));
+      createBaseRepoSecret(domainNamespaces.get(i));
 
       t3ChannelPort = getNextFreePort();
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
@@ -352,35 +274,26 @@ class ItTwoDomainsManagedByTwoOperators {
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
       // create persistent volume and persistent volume claims
-      Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume");
-
-      V1PersistentVolume v1pv = new V1PersistentVolume()
-          .spec(new V1PersistentVolumeSpec()
-              .addAccessModesItem("ReadWriteMany")
-              .volumeMode("Filesystem")
-              .putCapacityItem("storage", Quantity.fromString("2Gi"))
-              .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
-          .metadata(new V1ObjectMetaBuilder()
-              .withName(pvName)
-              .build()
-              .putLabelsItem("weblogic.domainUid", domainUid));
-
-      V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-          .spec(new V1PersistentVolumeClaimSpec()
-              .addAccessModesItem("ReadWriteMany")
-              .storageClassName(domainUid + "-weblogic-domain-storage-class")
-              .volumeName(pvName)
-              .resources(new V1ResourceRequirements()
-                  .putRequestsItem("storage", Quantity.fromString("2Gi"))))
-          .metadata(new V1ObjectMetaBuilder()
-              .withName(pvcName)
-              .withNamespace(domainNamespace)
-              .build()
-              .putLabelsItem("weblogic.domainUid", domainUid));
-
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
-      createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace,
-          domainUid + "-weblogic-domain-storage-class", pvHostPath);
+      createPV(pvName, domainUid, this.getClass().getSimpleName());
+      createPVC(pvName, pvcName, domainUid, domainNamespace);
+      LoggingFacade logger = getLogger();
+      // check the persistent volume and persistent volume claim exist
+      testUntil(
+              assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+                      String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+              logger,
+              "persistent volume {0} exists",
+              pvName);
+
+      testUntil(
+              assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+                      String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                              pvcName, domainNamespace)),
+              logger,
+              "persistent volume claim {0} exists in namespace {1}",
+              pvcName,
+              domainNamespace);
 
       // run create a domain on PV job using WLST
       runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace,
@@ -388,8 +301,8 @@ class ItTwoDomainsManagedByTwoOperators {
 
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
-      Domain domain =
-          createDomainCustomResource(domainUid, domainNamespace, pvName, pvcName, t3ChannelPort);
+      DomainResource domain =
+          createDomainCustomResource(domainUid, domainNamespace, pvName, pvcName, t3ChannelPort,replicaCount);
 
       logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
       createDomainAndVerify(domain, domainNamespace);
@@ -437,7 +350,7 @@ class ItTwoDomainsManagedByTwoOperators {
                                                String createDomainInPVJobName) {
 
     logger.info("Creating a staging location for domain creation scripts");
-    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV");
+    Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV", domainNamespace);
     assertDoesNotThrow(() -> deleteDirectory(pvTemp.toFile()),"deleteDirectory failed with IOException");
     assertDoesNotThrow(() -> createDirectories(pvTemp), "createDirectories failed with IOException");
 
@@ -449,7 +362,7 @@ class ItTwoDomainsManagedByTwoOperators {
 
     logger.info("Creating WebLogic domain properties file");
     Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
-    createDomainProperties(domainPropertiesFile, domainUid);
+    createDomainProperties(domainPropertiesFile, domainUid, domainNamespace);
 
     logger.info("Adding files to a ConfigMap for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -474,6 +387,7 @@ class ItTwoDomainsManagedByTwoOperators {
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .ports(Collections.singletonList(new V1ContainerPort()
                             .containerPort(ADMIN_SERVER_PORT)))
                         .volumeMounts(Arrays.asList(
@@ -502,7 +416,7 @@ class ItTwoDomainsManagedByTwoOperators {
                                     .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
                     .imagePullSecrets(Collections.singletonList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME))))));  // this secret is used only for non-kind cluster
 
     assertNotNull(jobBody.getMetadata());
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
@@ -514,13 +428,14 @@ class ItTwoDomainsManagedByTwoOperators {
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
+   * @param domainNamespace   the WebLogic domain namespace
    */
   private void createDomainProperties(Path wlstPropertiesFile,
-                                      String domainUid) {
+                                      String domainUid, String domainNamespace) {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", "/shared/" + domainNamespace + "/" + domainUid + "/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
@@ -532,7 +447,7 @@ class ItTwoDomainsManagedByTwoOperators {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
-    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/" + domainUid + "/logs" + domainUid);
     p.setProperty("production_mode_enabled", "true");
 
     FileOutputStream fileOutputStream =
@@ -547,9 +462,10 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   private void scaleDomain1AndVerifyNoImpactOnDomain2() {
     // scale domain1
+    String clusterResName = domain1Uid + "-" + clusterName;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain1Uid, domain1Namespace, replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
+        clusterResName, domain1Uid, domain1Namespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterResName, domain1Uid, domain1Namespace,
         domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
@@ -713,12 +629,14 @@ class ItTwoDomainsManagedByTwoOperators {
    * @param t3ChannelPort t3 channel port for admin server
    * @return oracle.weblogic.domain.Domain object
    */
-  private Domain createDomainCustomResource(String domainUid,
-                                            String domainNamespace,
-                                            String pvName,
-                                            String pvcName,
-                                            int t3ChannelPort) {
-    Domain domain = new Domain()
+  private DomainResource createDomainCustomResource(String domainUid,
+                                                    String domainNamespace,
+                                                    String pvName,
+                                                    String pvcName,
+                                                    int t3ChannelPort,
+                                                    int replicaCount) {
+
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -726,20 +644,21 @@ class ItTwoDomainsManagedByTwoOperators {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)
+            .replicas(replicaCount)
+            .domainHome("/shared/" + domainNamespace + "/" + domainUid + "/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only for non-kind cluster
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))  // this secret is used only for non-kind cluster
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/" + domainNamespace + "/" + domainUid + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -760,18 +679,24 @@ class ItTwoDomainsManagedByTwoOperators {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                        .nodePort(t3ChannelPort)))));
+
+    // add cluster to the domain
+    String clusterResName = domainUid + "-" + clusterName;
+    ClusterResource cluster = createClusterResource(clusterResName, domainNamespace,
+        new ClusterSpec().withClusterName(clusterName).replicas(replicaCount));
+    getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+
     setPodAntiAffinity(domain);
     return domain;
   }
@@ -782,16 +707,17 @@ class ItTwoDomainsManagedByTwoOperators {
   private void scaleDomain2AndVerifyNoImpactOnDomain1() {
     // scale domain2 from 2 servers to 3 servers
     replicasAfterScale = 3;
+    String clusterResName = domain2Uid + "-" + clusterName;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain2Uid, defaultNamespace, replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domain2Uid, defaultNamespace,
+        clusterResName, domain2Uid, twoDomainsNamespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterResName, domain2Uid, twoDomainsNamespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
     // scale domain2 from 3 servers to 2 servers
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domain2Uid, defaultNamespace, replicaCount);
-    scaleAndVerifyCluster(clusterName, domain2Uid, defaultNamespace,
+        clusterResName, domain2Uid, twoDomainsNamespace, replicaCount);
+    scaleAndVerifyCluster(clusterResName, domain2Uid, twoDomainsNamespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicasAfterScale, replicaCount,
         null, null);
 
@@ -807,23 +733,23 @@ class ItTwoDomainsManagedByTwoOperators {
     String domain1AdminServerPodName = domainAdminServerPodNames.get(0);
 
     logger.info("Checking that domain1 admin server pod state was not changed");
-    assertThat(podStateNotChanged(domain1AdminServerPodName, domain1Uid, defaultNamespace,
+    assertThat(podStateNotChanged(domain1AdminServerPodName, domain1Uid, twoDomainsNamespace,
         domainAdminPodOriginalTimestamps.get(0)))
         .as("Test state of pod {0} was not changed in namespace {1}",
-            domain1AdminServerPodName, defaultNamespace)
+            domain1AdminServerPodName, twoDomainsNamespace)
         .withFailMessage("State of pod {0} was changed in namespace {1}",
-            domain1AdminServerPodName, defaultNamespace)
+            domain1AdminServerPodName, twoDomainsNamespace)
         .isTrue();
 
     logger.info("Checking that domain1 managed server pods states were not changed");
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
-      assertThat(podStateNotChanged(managedServerPodName, domain1Uid, defaultNamespace,
+      assertThat(podStateNotChanged(managedServerPodName, domain1Uid, twoDomainsNamespace,
           domain1ManagedServerPodOriginalTimestampList.get(i - 1)))
           .as("Test state of pod {0} was not changed in namespace {1}",
-              managedServerPodName, defaultNamespace)
+              managedServerPodName, twoDomainsNamespace)
           .withFailMessage("State of pod {0} was changed in namespace {1}",
-              managedServerPodName, defaultNamespace)
+              managedServerPodName, twoDomainsNamespace)
           .isTrue();
     }
   }

@@ -1,9 +1,12 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -23,6 +26,15 @@ public class SystemClockTestSupport {
   }
 
   /**
+   * If installed, returns the start time of the current test on the simulated clock. This will always be truncated
+   * to milliseconds. If not installed, will return null.
+   */
+  @Nullable
+  public static OffsetDateTime getTestStartTime() {
+    return Optional.ofNullable(clock).map(TestSystemClock::getTestStartTime).orElse(null);
+  }
+
+  /**
    * Increments the system clock by the specified number of seconds.
    * @param numSeconds the number of seconds by which to advance the system clock
    */
@@ -37,8 +49,16 @@ public class SystemClockTestSupport {
     clock.increment(1L);
   }
 
+  /**
+   * Sets the new time on the system clock.
+   * @param time the new time
+   */
+  public static void setCurrentTime(OffsetDateTime time) {
+    clock.setCurrentTime(time);
+  }
+
   static class TestSystemClock extends SystemClock {
-    private final OffsetDateTime testStartTime = SystemClock.now();
+    private final OffsetDateTime testStartTime = SystemClock.now().truncatedTo(ChronoUnit.SECONDS);
     private OffsetDateTime currentTime = testStartTime;
 
     @Override
@@ -48,6 +68,14 @@ public class SystemClockTestSupport {
 
     void increment(long numSeconds) {
       currentTime = currentTime.plusSeconds(numSeconds);
+    }
+
+    void setCurrentTime(OffsetDateTime time) {
+      currentTime = time;
+    }
+
+    OffsetDateTime getTestStartTime() {
+      return testStartTime;
     }
   }
 

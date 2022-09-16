@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,9 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.ActionResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.DeleteServiceListStep;
@@ -35,12 +39,9 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -65,6 +66,11 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final String PROTOCOL_HTTP = "http";
+  private static final String PROTOCOL_HTTPS = "https";
+  private static final String PROTOCOL_TCP = "tcp";
+  private static final String PROTOCOL_TLS = "tls";
+  private static final String PROTOCOL_ADMIN = "admin";
 
   private ServiceHelper() {
   }
@@ -177,6 +183,22 @@ public class ServiceHelper {
     return new ExternalServiceStepContext(null, packet).createModel();
   }
 
+  static String getAppProtocol(String protocol) {
+    List<String> httpProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTP));
+    List<String> httpsProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTPS));
+    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", PROTOCOL_ADMIN));
+
+    String appProtocol = PROTOCOL_TCP;
+    if (httpProtocols.contains(protocol)) {
+      appProtocol = PROTOCOL_HTTP;
+    } else if (httpsProtocols.contains(protocol)) {
+      appProtocol = PROTOCOL_HTTPS;
+    } else if (tlsProtocols.contains(protocol)) {
+      appProtocol = PROTOCOL_TLS;
+    }
+    return appProtocol;
+  }
+
   private static class ForServerStep extends ServiceHelperStep {
     private final boolean isPreserveServices;
 
@@ -255,8 +277,8 @@ public class ServiceHelper {
       return metadata;
     }
 
-    private ServerSpec getServerSpec() {
-      return getDomain().getServer(getServerName(), getClusterName());
+    private EffectiveServerSpec getServerSpec() {
+      return info.getServer(getServerName(), getClusterName());
     }
 
     @Override
@@ -328,10 +350,9 @@ public class ServiceHelper {
       if (port == null) {
         return;
       }
-
-      addServicePortIfNeeded(ports, createServicePort(portName, port));
+      addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       if (isSipProtocol(protocol)) {
-        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
+        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port, getAppProtocol(protocol)));
       }
     }
 
@@ -407,21 +428,16 @@ public class ServiceHelper {
       for (NetworkAccessPoint networkAccessPoint : getNetworkAccessPoints(serverConfig)) {
         addNapServicePort(ports, networkAccessPoint);
       }
-      if (!isIstioEnabled()) {
-        addServicePortIfNeeded(ports, "default", serverConfig.getListenPort());
-        addServicePortIfNeeded(ports, "default-secure", serverConfig.getSslListenPort());
-        addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
-      }
+
+      addServicePortIfNeeded(ports, "default", PROTOCOL_TCP, serverConfig.getListenPort());
+      addServicePortIfNeeded(ports, "default-secure", PROTOCOL_HTTPS, serverConfig.getSslListenPort());
+      addServicePortIfNeeded(ports, "default-admin", PROTOCOL_ADMIN, serverConfig.getAdminPort());
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, getMetricsPortName(), specification.getRestPort());
+          addServicePortIfNeeded(ports, "metrics", PROTOCOL_HTTP, specification.getRestPort());
         }
       });
-    }
-
-    private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -462,21 +478,20 @@ public class ServiceHelper {
       return one.getProtocol().equals(two.getProtocol());
     }
 
-    V1ServicePort createServicePort(String portName, Integer port) {
+    V1ServicePort createServicePort(String portName, Integer port, String appProtocol) {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
+          .appProtocol(appProtocol)
           .port(port)
+          .appProtocol(appProtocol)
           .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 
-    V1ServicePort createSipUdpServicePort(String portName, Integer port) {
-      if (isIstioEnabled()) {
-        // The introspector will have already prefixed the portName with either "tcp-" or "tls-". Remove the prefix.
-        portName = portName.substring(4);
-      }
+    V1ServicePort createSipUdpServicePort(String portName, Integer port, String appProtocol) {
 
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
+          .appProtocol(appProtocol)
           .port(port)
           .protocol(V1ServicePort.ProtocolEnum.UDP);
     }
@@ -506,7 +521,7 @@ public class ServiceHelper {
       return domainTopology.getName();
     }
 
-    Domain getDomain() {
+    DomainResource getDomain() {
       return info.getDomain();
     }
 
@@ -516,10 +531,6 @@ public class ServiceHelper {
 
     String getNamespace() {
       return info.getNamespace();
-    }
-
-    boolean isIstioEnabled() {
-      return getDomain().isIstioEnabled();
     }
 
     protected abstract String createServiceName();
@@ -790,10 +801,10 @@ public class ServiceHelper {
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
       if (port != null) {
-        addServicePortIfNeeded(ports, createServicePort(portName, port));
+        addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       }
       if (isSipProtocol(protocol)) {
-        V1ServicePort udpPort = createSipUdpServicePort(portName, port);
+        V1ServicePort udpPort = createSipUdpServicePort(portName, port, getAppProtocol(protocol));
         addServicePortIfNeeded(ports, udpPort);
       }
     }
@@ -847,8 +858,8 @@ public class ServiceHelper {
       return CLUSTER_SERVICE_REPLACED;
     }
 
-    ClusterSpec getClusterSpec() {
-      return getDomain().getCluster(clusterName);
+    EffectiveClusterSpec getClusterSpec() {
+      return info.getCluster(clusterName);
     }
 
     @Override
@@ -967,21 +978,15 @@ public class ServiceHelper {
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
-
-      if (channel == null && isIstioEnabled() && channelName != null) {
-        String[] tokens = channelName.split("-");
-        if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-              || "tls".equals(tokens[0])) {
-          int index = channelName.indexOf('-');
-          channel = getChannel(channelName.substring(index + 1));
-        }
+      if (channel == null && channelName != null) {
+        channel = getChannel(channelName);
       }
       if (channel == null || internalPort == null) {
         return;
       }
 
       addServicePortIfNeeded(ports,
-          createServicePort(channelName, internalPort)
+          createServicePort(channelName, internalPort, getAppProtocol(protocol))
             .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 
@@ -991,7 +996,7 @@ public class ServiceHelper {
 
     private Optional<AdminService> getNullableAdminService() {
       return Optional.ofNullable(getDomain().getAdminServerSpec())
-          .map(AdminServerSpec::getAdminService);
+          .map(EffectiveAdminServerSpec::getAdminService);
     }
   }
 }

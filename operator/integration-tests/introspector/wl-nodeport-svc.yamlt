@@ -18,6 +18,12 @@ spec:
     port: ${SERVICE_INTERNAL_PORT}
     protocol: TCP
     targetPort: ${SERVICE_INTERNAL_PORT}
+    name: server-port
+  - nodePort: ${SERVICE_EXTERNAL_DEFAULT_SECURE}
+    port: ${DEFAULT_SECURE_PORT}
+    protocol: TCP
+    targetPort: ${DEFAULT_SECURE_PORT}
+    name: default-secure
   publishNotReadyAddresses: true
   selector:
     weblogic.createdByOperator: "true"

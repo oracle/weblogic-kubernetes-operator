@@ -26,6 +26,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
@@ -69,7 +70,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPodUsingK8s
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.searchStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyKibana;
@@ -110,6 +111,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItElasticLogging {
 
   // constants for creating domain image using model in image
@@ -144,6 +149,8 @@ class ItElasticLogging {
 
   private static String sourceConfigFile = ITTESTS_DIR + "/../kubernetes/charts/weblogic-operator/logstash.conf";
   private static String destConfigFile = WORK_DIR + "/logstash.conf";
+  private static String sourceSettingsFile = ITTESTS_DIR + "/../kubernetes/charts/weblogic-operator/logstash.yml";
+  private static String destSettingsFile = WORK_DIR + "/logstash.yml";
 
   /**
    * Install Elasticsearch, Kibana and Operator.
@@ -419,9 +426,12 @@ class ItElasticLogging {
 
     assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(destConfigFile)),
         "copy logstash.conf failed");
+    assertDoesNotThrow(() -> copy(Paths.get(sourceSettingsFile), Paths.get(destSettingsFile)),
+        "copy logstash.yml failed");
 
     List<Path> logstashConfigFiles = new ArrayList<>();
     logstashConfigFiles.add(Paths.get(destConfigFile));
+    logstashConfigFiles.add(Paths.get(destSettingsFile));
 
     //create config map for logstash config
     createConfigMapFromFiles(configMapName, logstashConfigFiles, opNamespace2);
@@ -472,7 +482,7 @@ class ItElasticLogging {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     return miiImage;
   }
@@ -481,13 +491,16 @@ class ItElasticLogging {
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace);
+    List<String> clusterNames = new ArrayList();
+    clusterNames.add("cluster-1");
     createMiiDomainAndVerify(
         domainNamespace,
         domainUid,
         miiImage,
         adminServerPodName,
         managedServerPodPrefix,
-        replicaCount);
+        replicaCount,
+        clusterNames);
   }
 
   private void verifyServerRunningInSearchResults(String serverName) {

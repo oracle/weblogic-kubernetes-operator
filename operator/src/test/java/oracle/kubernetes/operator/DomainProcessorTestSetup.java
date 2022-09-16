@@ -5,12 +5,16 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
@@ -20,14 +24,19 @@ import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
  * should run this in their setup, before trying to create and execute 
- * a {@link DomainProcessorImpl.MakeRightDomainOperationImpl}.
+ * a {@link MakeRightDomainOperationImpl}.
  */
 public class DomainProcessorTestSetup {
   public static final String UID = "test-domain";
   public static final String NS = "namespace";
   public static final String SECRET_NAME = "secret-name";
   public static final String KUBERNETES_UID = "12345";
+  public static final String KUBERNETES_CLUSTER_UID = "678910";
   public static final String NODE_NAME = "Node1";
+  private static final String CLUSTER_1_NAME = "cluster-1";
+  private static final String CLUSTER_2_NAME = "cluster-2";
+  public static final ClusterResource cluster1 = DomainProcessorTestSetup.createTestCluster(CLUSTER_1_NAME);
+  public static final ClusterResource cluster2 = DomainProcessorTestSetup.createTestCluster(CLUSTER_2_NAME);
 
   public static void defineRequiredResources(KubernetesTestSupport testSupport) {
     testSupport.defineResources(createSecret());
@@ -53,7 +62,7 @@ public class DomainProcessorTestSetup {
    *
    * @return a domain
    */
-  public static Domain createTestDomain() {
+  public static DomainResource createTestDomain() {
     return createTestDomain(UID);
   }
 
@@ -63,7 +72,7 @@ public class DomainProcessorTestSetup {
    * @param generation Generation value
    * @return a domain
    */
-  public static Domain createTestDomain(Long generation) {
+  public static DomainResource createTestDomain(Long generation) {
     return createTestDomain(UID, generation);
   }
 
@@ -74,7 +83,7 @@ public class DomainProcessorTestSetup {
    * @return a domain
 
    */
-  public static Domain createTestDomain(String uid) {
+  public static DomainResource createTestDomain(String uid) {
     return createTestDomain(uid, 1L);
 
   }
@@ -87,18 +96,46 @@ public class DomainProcessorTestSetup {
    * @return a domain
 
    */
-  public static Domain createTestDomain(String uid, Long generation) {
+  public static DomainResource createTestDomain(String uid, Long generation) {
     DomainSpec ds = new DomainSpec()
         .withDomainUid(uid)
-        .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
+        .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(SECRET_NAME));
     ds.setNodeName(NODE_NAME);
-    return new Domain()
+    return new DomainResource()
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .withKind(KubernetesConstants.DOMAIN)
         .withMetadata(withTimestamps(
             new V1ObjectMeta().name(uid).namespace(NS).uid(KUBERNETES_UID).generation(generation)))
         .withSpec(ds)
         .withStatus(new DomainStatus());
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @return a cluster
+   */
+  public static ClusterResource createTestCluster(String clusterName) {
+    return createTestCluster(clusterName,1L);
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @param generation Generation value
+   * @return a domain
+
+   */
+  public static ClusterResource createTestCluster(String clusterName, Long generation) {
+    ClusterSpec cs = new ClusterSpec().withClusterName(clusterName).withReplicas(2);
+    return new ClusterResource().spec(cs)
+        .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION)
+        .withKind(KubernetesConstants.CLUSTER)
+        .withMetadata(withTimestamps(
+            new V1ObjectMeta().name(clusterName).namespace(NS).uid(KUBERNETES_CLUSTER_UID).generation(generation)))
+        .withStatus(new ClusterStatus());
   }
 
   /**
@@ -111,5 +148,18 @@ public class DomainProcessorTestSetup {
                       .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
                       .data(Map.of(USERNAME_KEY, "user".getBytes(),
                             PASSWORD_KEY, "password".getBytes())));
+  }
+
+  /**
+   * Set up cluster resources for a domain.
+   *
+   * @param domain a DomainResource instance
+   * @param clusters a list of clusters
+   */
+  public static void setupCluster(DomainResource domain, ClusterResource[] clusters) {
+    for (int i = 0; i < clusters.length; i++) {
+      domain.getSpec()
+          .withCluster(new V1LocalObjectReference().name(clusters[i].getClusterName()));
+    }
   }
 }

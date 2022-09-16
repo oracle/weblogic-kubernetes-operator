@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -45,7 +46,7 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +67,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -83,7 +85,7 @@ class ManagedServersUpStepTest {
   private static final String NS = "namespace";
   private static final String UID = "uid1";
   private static final String ADMIN = "asName";
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
 
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
@@ -91,7 +93,7 @@ class ManagedServersUpStepTest {
   private final Step nextStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final DomainPresenceInfo info = createDomainPresenceInfo();
   private final ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private Memento factoryMemento;
@@ -116,8 +118,8 @@ class ManagedServersUpStepTest {
     return new DomainPresenceInfo(domain);
   }
 
-  private Domain createDomain() {
-    return new Domain().withMetadata(createMetaData()).withSpec(createDomainSpec());
+  private DomainResource createDomain() {
+    return new DomainResource().withMetadata(createMetaData()).withSpec(createDomainSpec());
   }
 
   private V1ObjectMeta createMetaData() {
@@ -133,7 +135,7 @@ class ManagedServersUpStepTest {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(factoryMemento = TestStepFactory.install());
     mementos.add(testSupport.install());
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addDomainPresenceInfo(info);
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
@@ -159,7 +161,7 @@ class ManagedServersUpStepTest {
   }
 
   private void addRunningServer(String serverName) {
-    addServer(domainPresenceInfo, serverName);
+    addServer(info, serverName);
   }
 
   private void addWlsCluster(String clusterName, String... serverNames) {
@@ -242,6 +244,15 @@ class ManagedServersUpStepTest {
     invokeStepWithConfiguredServer();
 
     assertManagedServersUpStepNotCreated();
+  }
+
+  @Test
+  void whenNoServerStartRequested_dontPrependUpdateCompleteConditionStep() {
+    startNoServers();
+
+    invokeStepWithConfiguredServer();
+
+    assertThat(firstNonEventStep(createNextStep()), not(instanceOf(ClearCompletedConditionSteps.class)));
   }
 
   private void startNoServers() {
@@ -460,7 +471,7 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
-    assertThat(domainPresenceInfo.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+    assertThat(info.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
   }
 
   @Test
@@ -476,19 +487,27 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
-    addServer(domainPresenceInfo, "server1");
+    addServer(info, "server1");
 
-    assertThat(firstNonEventStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
+    assertThat(firstCoreStep(createNextStep()),
+        instanceOf(ServerDownIteratorStep.class));
+  }
+
+  @Test
+  void whenShuttingDownAtLeastOneServer_prependClearCompleteConditionStep() {
+    addServer(info, "server1");
+
+    assertThat(firstNonEventStep(createNextStep()), instanceOf(ClearCompletedConditionSteps.class));
   }
 
   @Test
   void whenExclusionsSpecified_doNotAddToListOfServers() {
-    addServer(domainPresenceInfo, "server1");
-    addServer(domainPresenceInfo, "server2");
-    addServer(domainPresenceInfo, "server3");
-    addServer(domainPresenceInfo, ADMIN);
+    addServer(info, "server1");
+    addServer(info, "server2");
+    addServer(info, "server3");
+    addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
         "server1", "server3");
   }
 
@@ -496,22 +515,22 @@ class ManagedServersUpStepTest {
   void whenShuttingDown_allowAdminServerNameInListOfServers() {
     configurator.setShuttingDown(true);
 
-    addServer(domainPresenceInfo, "server1");
-    addServer(domainPresenceInfo, "server2");
-    addServer(domainPresenceInfo, "server3");
-    addServer(domainPresenceInfo, ADMIN);
+    addServer(info, "server1");
+    addServer(info, "server2");
+    addServer(info, "server3");
+    addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")), "server1",
-        "server3", ADMIN);
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
+        "server1", "server3", ADMIN);
   }
 
   @Test
   void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
     configurator.setShuttingDown(true);
 
-    assertThat(createNextStepWithNullWlsDomainConfig(), instanceOf(ClusterServicesStep.class));
+    assertThat(firstCoreStep(createNextStepWithNullWlsDomainConfig()),
+        instanceOf(ClusterServicesStep.class));
   }
-
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
@@ -567,7 +586,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(2, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(2, equalTo(info.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -579,7 +598,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(0, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(0, equalTo(info.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -592,7 +611,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(3, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(3, equalTo(info.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -654,6 +673,16 @@ class ManagedServersUpStepTest {
     return stepLocal;
   }
 
+  private static Step firstCoreStep(Step step) {
+    Step stepLocal = step;
+    while (stepLocal instanceof EventHelper.CreateEventStep
+        || stepLocal instanceof ClearCompletedConditionSteps) {
+      stepLocal = stepLocal.getNext();
+    }
+
+    return stepLocal;
+  }
+
   private void assertStoppingServers(Step step, String... servers) {
     assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
@@ -670,19 +699,19 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domainPresenceInfo);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, info);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
-    domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
+    info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
     serversUpStepFactory.shutdownInfos.addAll(ssi);
-    return factory.createServerStep(domainPresenceInfo, config, serversUpStepFactory, nextStep);
+    return factory.createServerStep(info, config, serversUpStepFactory, nextStep);
   }
 
   private Step createNextStepWithNullWlsDomainConfig() {
     configSupport.setAdminServerName(ADMIN);
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo);
-    return factory.createServerStep(domainPresenceInfo, null, serversUpStepFactory, nextStep);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, info);
+    return factory.createServerStep(info, null, serversUpStepFactory, nextStep);
   }
 
   private void addShutdownServerInfo(String serverName, List<String> servers,
@@ -701,11 +730,12 @@ class ManagedServersUpStepTest {
   }
 
   private void setCluster1Replicas(int replicas) {
-    configurator.configureCluster("cluster1").withReplicas(replicas);
+    configurator.configureCluster(info, "cluster1").withReplicas(replicas);
   }
 
   private void setCluster1AllowReplicasBelowMinDynClusterSize(boolean allowReplicasBelowMinDynClusterSize) {
-    configurator.configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
+    configurator.configureCluster(info,"cluster1")
+        .withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
   }
 
   private void configureServers(String... serverNames) {
@@ -751,7 +781,7 @@ class ManagedServersUpStepTest {
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName).withReplicas(1);
+    return configurator.configureCluster(info, clusterName).withReplicas(1);
   }
 
   private void assertManagedServersUpStepNotCreated() {

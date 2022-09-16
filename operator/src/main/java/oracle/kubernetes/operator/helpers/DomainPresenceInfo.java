@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,15 +26,20 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
@@ -41,13 +47,16 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.PrivateDomainApi;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -60,14 +69,15 @@ public class DomainPresenceInfo implements PacketComponent {
   private static final String COMPONENT_KEY = "dpi";
   private final String namespace;
   private final String domainUid;
-  private final AtomicReference<Domain> domain;
+  private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ClusterResource> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1Service> clusterServices = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
@@ -82,7 +92,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param domain Domain
    */
-  public DomainPresenceInfo(Domain domain) {
+  public DomainPresenceInfo(DomainResource domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.domainUid = domain.getDomainUid();
@@ -115,6 +125,89 @@ public class DomainPresenceInfo implements PacketComponent {
       }
     }
     return false;
+  }
+
+  /**
+   * Returns true if the domain in this presence info has a later generation
+   * than the passed-in cached info.
+   * @param cachedInfo another presence info against which to compare this one.
+   */
+  public boolean isDomainGenerationChanged(DomainPresenceInfo cachedInfo) {
+    return getGeneration(getDomain()).compareTo(getGeneration(cachedInfo.getDomain())) > 0;
+  }
+
+  private Long getGeneration(KubernetesObject resource) {
+    return Optional.ofNullable(resource).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getGeneration).orElse(0L);
+  }
+
+  /**
+   * Returns true if the state of the current domain presence info, when compared with the cached info for the same
+   * domain, indicates that the make-right should not be run. The user has a number of options to resume processing
+   * the domain.
+   * @param cachedInfo the version of the domain presence info previously processed.
+   */
+  public boolean isDomainProcessingHalted(DomainPresenceInfo cachedInfo) {
+    return isDomainProcessingAborted() && versionsUnchanged(cachedInfo);
+  }
+
+  private boolean isDomainProcessingAborted() {
+    return Optional.ofNullable(getDomain())
+            .map(DomainResource::getStatus)
+            .map(DomainStatus::isAborted)
+            .orElse(false);
+  }
+
+  private boolean versionsUnchanged(DomainPresenceInfo cachedInfo) {
+    return hasSameIntrospectVersion(cachedInfo)
+        && hasSameRestartVersion(cachedInfo)
+        && hasSameIntrospectImage(cachedInfo);
+  }
+
+  /**
+   * Returns true if the make-right operation was triggered by a domain event and the reported domain
+   * is older than the value already cached. That indicates that the event is old and should be ignored.
+   * @param operation the make-right operation.
+   * @param cachedInfo the cached domain presence info.
+   */
+  public boolean isFromOutOfDateEvent(MakeRightDomainOperation operation, DomainPresenceInfo cachedInfo) {
+    return operation.wasStartedFromEvent() && !isNewerThan(cachedInfo);
+  }
+
+  private boolean isNewerThan(DomainPresenceInfo cachedInfo) {
+    return getDomain() == null
+        || !KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), getDomain().getMetadata());
+  }
+
+  private boolean hasSameIntrospectVersion(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectVersion(), cachedInfo.getIntrospectVersion());
+  }
+
+  private String getIntrospectVersion() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getIntrospectVersion)
+        .orElse(null);
+  }
+
+  private boolean hasSameRestartVersion(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getRestartVersion(), cachedInfo.getRestartVersion());
+  }
+
+  private String getRestartVersion() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getRestartVersion)
+        .orElse(null);
+  }
+
+  private boolean hasSameIntrospectImage(DomainPresenceInfo cachedInfo) {
+    return Objects.equals(getIntrospectImage(), cachedInfo.getIntrospectImage());
+  }
+
+  private String getIntrospectImage() {
+    return Optional.ofNullable(getDomain())
+        .map(DomainResource::getSpec)
+        .map(DomainSpec::getImage)
+        .orElse(null);
   }
 
   public ThreadLoggingContext setThreadContext() {
@@ -264,6 +357,38 @@ public class DomainPresenceInfo implements PacketComponent {
 
   public void setServerPodBeingDeleted(String serverName, Boolean isBeingDeleted) {
     getSko(serverName).isPodBeingDeleted().set(isBeingDeleted);
+  }
+
+  /**
+   * Returns a count of HTTP request failures for an operator-managed server.
+   * The failures during a REST HTTP call could be timing related such as when
+   * the server is shutting down. We shouldn't log warning message for such
+   * failures until there have been a sufficient number of failures.
+   *
+   * @param serverName the name of the server
+   * @return HTTP request failure count for the given server.
+   */
+  public int getHttpRequestFailureCount(String serverName) {
+    return getSko(serverName).getHttpRequestFailureCount().get();
+  }
+
+  /**
+   * Sets the HTTP request failure count for an operator-managed server.
+   *
+   * @param serverName the name of the server
+   * @param failureCount the failure count
+   */
+  public void setHttpRequestFailureCount(String serverName, int failureCount) {
+    getSko(serverName).getHttpRequestFailureCount().set(failureCount);
+  }
+
+  /**
+   * Increments the HTTP request failure count for an operator-managed server.
+   *
+   * @param serverName the name of the server
+   */
+  public void incrementHttpRequestFailureCount(String serverName) {
+    getSko(serverName).getHttpRequestFailureCount().getAndIncrement();
   }
 
   /**
@@ -437,15 +562,15 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   void removeClusterService(String clusterName) {
-    clusters.remove(clusterName);
+    clusterServices.remove(clusterName);
   }
 
   public V1Service getClusterService(String clusterName) {
-    return clusters.get(clusterName);
+    return clusterServices.get(clusterName);
   }
 
   void setClusterService(String clusterName, V1Service service) {
-    clusters.put(clusterName, service);
+    clusterServices.put(clusterName, service);
   }
 
   void setPodDisruptionBudget(String clusterName, V1PodDisruptionBudget pdb) {
@@ -494,12 +619,12 @@ public class DomainPresenceInfo implements PacketComponent {
       return;
     }
 
-    clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
+    clusterServices.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
 
   boolean deleteClusterServiceFromEvent(String clusterName, V1Service event) {
     return removeIfPresentAnd(
-        clusters,
+        clusterServices,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
@@ -596,7 +721,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @return Domain
    */
-  public Domain getDomain() {
+  public DomainResource getDomain() {
     return domain.get();
   }
 
@@ -605,7 +730,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param domain Domain
    */
-  public void setDomain(Domain domain) {
+  public void setDomain(DomainResource domain) {
     this.domain.set(domain);
   }
 
@@ -681,7 +806,7 @@ public class DomainPresenceInfo implements PacketComponent {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
-    Domain d = getDomain();
+    DomainResource d = getDomain();
     if (d != null) {
       sb.append(
           String.format(
@@ -701,24 +826,6 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public void addValidationWarning(String validationWarning) {
     validationWarnings.add(validationWarning);
-  }
-
-  /**
-   * Clear all validation warnings.
-   */
-  void clearValidationWarnings() {
-    validationWarnings.clear();
-  }
-
-  /**
-   * Return all validation warnings as a String.
-   * @return validation warnings as a String, or null if there is no validation warnings
-   */
-  public String getValidationWarningsAsString() {
-    if (validationWarnings.isEmpty()) {
-      return null;
-    }
-    return String.join(lineSeparator(), validationWarnings);
   }
 
   /**
@@ -747,11 +854,157 @@ public class DomainPresenceInfo implements PacketComponent {
     this.serversToRoll = serversToRoll;
   }
 
+  /**
+   * Looks up cluster resource for the given cluster name.
+   * @param clusterName Cluster name
+   * @return Cluster resource, if found
+   */
+  public ClusterResource getClusterResource(String clusterName) {
+    if (clusterName != null) {
+      return clusters.get(clusterName);
+    }
+    return null;
+  }
+
+  public boolean doesReferenceCluster(String cluster) {
+    return Optional.ofNullable(getDomain()).map(DomainResource::getSpec).map(DomainSpec::getClusters)
+        .map(list -> doesReferenceCluster(list, cluster)).orElse(false);
+  }
+
+  private boolean doesReferenceCluster(List<V1LocalObjectReference> refs, String cluster) {
+    return refs.stream().anyMatch(ref -> cluster.equals(ref.getName()));
+  }
+
+
+  public List<ClusterResource> getReferencedClusters() {
+    return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList())
+        .stream().map(this::findCluster).filter(Objects::nonNull).collect(Collectors.toList());
+  }
+
+  private ClusterResource findCluster(V1LocalObjectReference reference) {
+    return Optional.ofNullable(reference.getName())
+        .flatMap(name -> clusters.values().stream().filter(cluster -> name.equals(cluster.getMetadata().getName()))
+            .findFirst()).orElse(null);
+  }
+
+  /**
+   * Add a ClusterResource resource.
+   * @param clusterResource ClusterResource object.
+   */
+  public void addClusterResource(ClusterResource clusterResource) {
+    Optional.ofNullable(clusterResource)
+        .map(ClusterResource::getClusterName)
+        .ifPresent(name -> clusters.put(name, clusterResource));
+  }
+
+  /**
+   * Remove a named cluster resource.
+   * @param clusterName the name of the resource to remove.
+   */
+  public ClusterResource removeClusterResource(String clusterName) {
+    return Optional.ofNullable(clusterName).map(clusters::remove).orElse(null);
+  }
+
+  /**
+   * Updates cluster references.
+   * @param resources list of cluster resources.
+   */
+  public void adjustClusterResources(Collection<ClusterResource> resources) {
+    Map<String, ClusterResource> updated = new HashMap<>();
+    resources.forEach(cr -> updated.put(cr.getClusterName(), cr));
+    clusters.keySet().retainAll(updated.keySet());
+    clusters.putAll(updated);
+  }
+
+  /**
+   * Returns all clusters associated with this domain presence.
+   */
+  public List<V1LocalObjectReference> getClusters() {
+    return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList());
+  }
+
+  /**
+   * Get the effective configuration of the server, based on Kubernetes resources.
+   * @param serverName name of the WLS server.
+   * @param clusterName name of the WLS cluster, or null for a non-clustered server.
+   * @return the effective server spec.
+   */
+  public EffectiveServerSpec getServer(@Nonnull String serverName, @Nullable String clusterName) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getServer(serverName, clusterName, clusterSpec);
+  }
+
+  private PrivateDomainApi getDomainApi() {
+    return getDomain().getPrivateApi();
+  }
+
+  /**
+   * Get the effective configuration of the cluster, based on Kubernetes resources.
+   * @param clusterName name of WLS cluster.
+   * @return the effective cluster spec.
+   */
+  public EffectiveClusterSpec getCluster(@Nonnull String clusterName) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getCluster(clusterSpec);
+  }
+
+  @Nullable
+  private ClusterSpec getClusterSpecFromClusterResource(@Nullable String clusterName) {
+    return Optional.ofNullable(getClusterResource(clusterName))
+        .map(ClusterResource::getSpec)
+        .orElse(null);
+  }
+
+  public int getReplicaCount(@Nonnull String clusterName) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getReplicaCount(clusterSpec);
+  }
+
+  public void setReplicaCount(@Nonnull String clusterName, int replicaLimit) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    getDomainApi().setReplicaCount(clusterName, clusterSpec, replicaLimit);
+  }
+
+  /**
+   * Returns the minimum number of replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMinAvailable(@Nonnull String clusterName) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getMinAvailable(clusterSpec);
+  }
+
+  public int getMaxUnavailable(@Nonnull String clusterName) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getMaxUnavailable(clusterSpec);
+  }
+
+  public boolean isAllowReplicasBelowMinDynClusterSize(@Nonnull String clusterName) {
+    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
+  }
+
+  public int getMaxConcurrentStartup(@Nonnull String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getMaxConcurrentStartup(clusterSpec);
+  }
+
+  public int getMaxConcurrentShutdown(@Nonnull String clusterName) {
+    ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
+    return getDomainApi().getMaxConcurrentShutdown(clusterSpec);
+  }
+
+  public Collection<ClusterResource> getClusterResources() {
+    return clusters.values();
+  }
+
   /** Details about a specific managed server. */
   public static class ServerInfo {
     public final WlsServerConfig serverConfig;
     protected final String clusterName;
-    protected final ServerSpec serverSpec;
+    protected final EffectiveServerSpec effectiveServerSpec;
     protected final boolean isServiceOnly;
 
     /**
@@ -759,17 +1012,17 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
+     * @param effectiveServerSpec the server startup configuration
      * @param isServiceOnly true, if only the server service should be created
      */
     public ServerInfo(
         @Nonnull WlsServerConfig serverConfig,
         @Nullable String clusterName,
-        ServerSpec serverSpec,
+        EffectiveServerSpec effectiveServerSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
-      this.serverSpec = serverSpec;
+      this.effectiveServerSpec = effectiveServerSpec;
       this.isServiceOnly = isServiceOnly;
     }
 
@@ -786,7 +1039,7 @@ public class DomainPresenceInfo implements PacketComponent {
     }
 
     public List<V1EnvVar> getEnvironment() {
-      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
+      return effectiveServerSpec == null ? Collections.emptyList() : effectiveServerSpec.getEnvironmentVariables();
     }
 
     /**
@@ -809,7 +1062,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new ToStringBuilder(this)
           .append("serverConfig", serverConfig)
           .append("clusterName", clusterName)
-          .append("serverSpec", serverSpec)
+          .append("serverSpec", effectiveServerSpec)
           .append("isServiceOnly", isServiceOnly)
           .toString();
     }
@@ -829,7 +1082,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new EqualsBuilder()
           .append(serverConfig, that.serverConfig)
           .append(clusterName, that.clusterName)
-          .append(serverSpec, that.serverSpec)
+          .append(effectiveServerSpec, that.effectiveServerSpec)
           .append(isServiceOnly, that.isServiceOnly)
           .isEquals();
     }
@@ -839,7 +1092,7 @@ public class DomainPresenceInfo implements PacketComponent {
       return new HashCodeBuilder(17, 37)
           .append(serverConfig)
           .append(clusterName)
-          .append(serverSpec)
+          .append(effectiveServerSpec)
           .append(isServiceOnly)
           .toHashCode();
     }
@@ -854,11 +1107,11 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
+     * @param effectiveServerSpec the server startup configuration
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
-      super(serverConfig, clusterName, serverSpec, false);
+        WlsServerConfig serverConfig, String clusterName, EffectiveServerSpec effectiveServerSpec) {
+      super(serverConfig, clusterName, effectiveServerSpec, false);
     }
   }
 
@@ -879,13 +1132,13 @@ public class DomainPresenceInfo implements PacketComponent {
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
-     * @param serverSpec Server specifications
+     * @param effectiveServerSpec Server specifications
      * @param isServiceOnly If service needs to be preserved
      */
     public ServerShutdownInfo(
             WlsServerConfig serverConfig, String clusterName,
-            ServerSpec serverSpec, boolean isServiceOnly) {
-      super(serverConfig, clusterName, serverSpec, isServiceOnly);
+            EffectiveServerSpec effectiveServerSpec, boolean isServiceOnly) {
+      super(serverConfig, clusterName, effectiveServerSpec, isServiceOnly);
     }
 
     public boolean isServiceOnly() {

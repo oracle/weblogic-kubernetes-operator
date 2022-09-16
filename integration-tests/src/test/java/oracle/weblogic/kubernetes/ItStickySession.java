@@ -17,14 +17,12 @@ import java.util.regex.Pattern;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.ClusterService;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -38,6 +36,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -45,9 +44,10 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -60,7 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -83,6 +83,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test sticky sessions management with Traefik and ClusterService")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItStickySession {
 
   // constants for creating domain image using model in image
@@ -100,8 +104,7 @@ class ItStickySession {
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
-  private static int managedServerPort = 8001;
-  private static int replicaCount = 2;
+  private static int replicaCount = 1;
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
@@ -277,7 +280,7 @@ class ItStickySession {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     return miiImage;
   }
@@ -300,7 +303,7 @@ class ItStickySession {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage);
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage);
 
     // check that admin server pod is ready and the service exists in the domain namespace
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
@@ -327,7 +330,7 @@ class ItStickySession {
     myClusterService.setSessionAffinity("ClientIP");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -337,13 +340,13 @@ class ItStickySession {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -352,16 +355,10 @@ class ItStickySession {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .clusterService(myClusterService)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -369,6 +366,7 @@ class ItStickySession {
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
     setPodAntiAffinity(domain);
+
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
@@ -436,8 +434,8 @@ class ItStickySession {
     }
 
     if (execResult.exitValue() == 0) {
-      assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null");
-      assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty");
+      assertNotNull(execResult.stdout(), "Primary server name should not be null");
+      assertFalse(execResult.stdout().isEmpty(), "Primary server name should not be empty");
       logger.info("\n HTTP response is \n " + execResult.stdout());
 
       for (String httpAttrKey : httpAttrArray) {

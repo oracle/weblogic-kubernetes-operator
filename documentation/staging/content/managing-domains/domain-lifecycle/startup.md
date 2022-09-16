@@ -59,52 +59,42 @@ The operator monitors these fields and creates or deletes the corresponding WebL
 You can specify the `serverStartPolicy` property at the domain, cluster, and server levels. Each level supports a different set of values.
 
 #### Available `serverStartPolicy` values
-| Level | Default Value | Supported Values |
-| --- | --- | --- |
-| Domain | `IF_NEEDED` | `IF_NEEDED`, `ADMIN_ONLY`, `NEVER` |
-| Cluster | `IF_NEEDED` | `IF_NEEDED`, `NEVER` |
-| Server | `IF_NEEDED` | `IF_NEEDED`, `ALWAYS`, `NEVER` |
+| Level | Default Value | Supported Values                 |
+| --- |---------------|----------------------------------|
+| Domain | `IfNeeded`    | `IfNeeded`, `AdminOnly`, `Never` |
+| Cluster | `IfNeeded`   | `IfNeeded`, `Never`              |
+| Server | `IfNeeded`   | `IfNeeded`, `Always`, `Never`    |
 
 #### Administration Server start and stop rules
 | Domain | Admin Server | Started / Stopped |
 | --- | --- | --- |
-| `NEVER` | any value | Stopped |
-| `ADMIN_ONLY`, `IF_NEEDED` | `NEVER` | Stopped |
-| `ADMIN_ONLY`, `IF_NEEDED` | `IF_NEEDED`, `ALWAYS` | Started |
+| `Never` | any value | Stopped |
+| `AdminOnly`, `IfNeeded` | `Never` | Stopped |
+| `AdminOnly`, `IfNeeded` | `IfNeeded`, `Always` | Started |
 
 #### Standalone Managed Server start and stop rules
 | Domain | Standalone Server | Started / Stopped |
 | --- | --- | --- |
-| `ADMIN_ONLY`, `NEVER` | any value | Stopped |
-| `IF_NEEDED` | `NEVER` | Stopped |
-| `IF_NEEDED` | `IF_NEEDED`, `ALWAYS` | Started |
+| `AdminOnly`, `Never` | any value | Stopped |
+| `IfNeeded` | `Never` | Stopped |
+| `IfNeeded` | `IfNeeded`, `Always` | Started |
 
 #### Clustered Managed Server start and stop rules
 | Domain | Cluster | Clustered Server | Started / Stopped |
 | --- | --- | --- | --- |
-| `ADMIN_ONLY`, `NEVER` | any value | any value | Stopped |
-| `IF_NEEDED` | `NEVER` | any value | Stopped |
-| `IF_NEEDED` | `IF_NEEDED` | `NEVER` | Stopped |
-| `IF_NEEDED` | `IF_NEEDED` | `ALWAYS` | Started |
-| `IF_NEEDED` | `IF_NEEDED` | `IF_NEEDED` | Started if needed to get to the cluster's `replicas` count |
+| `AdminOnly`, `Never` | any value | any value | Stopped |
+| `IfNeeded` | `Never` | any value | Stopped |
+| `IfNeeded` | `IfNeeded` | `Never` | Stopped |
+| `IfNeeded` | `IfNeeded` | `Always` | Started |
+| `IfNeeded` | `IfNeeded` | `IfNeeded` | Started if needed to get to the cluster's `replicas` count |
 
 {{% notice note %}}
-Servers configured as `ALWAYS` count toward the cluster's `replicas` count.
+Servers configured as `Always` count toward the cluster's `replicas` count.
 {{% /notice %}}
 
 {{% notice note %}}
-If more servers are configured as `ALWAYS` than the cluster's `replicas` count, they will all be started and the `replicas` count will be exceeded.
+If more servers are configured as `Always` than the cluster's `replicas` count, they will all be started and the `replicas` count will be exceeded.
 {{% /notice %}}
-
-### Server start state
-
-For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server instances
-so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
-field, which is available at domain, cluster, and server levels. When `serverStartState` is set to `ADMIN`, then servers will
-progress only to the administrative state.  Then you could use the WebLogic Server Administration Console, REST API, or a WLST script to make any necessary
-updates before advancing the server to the running state.
-
-Changes to the `serverStartState` property do not affect already started servers.
 
 ### Common starting and stopping scenarios
 
@@ -129,7 +119,7 @@ Sometimes you need to completely shut down the domain (for example, take it out 
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "NEVER"
+    serverStartPolicy: Never
     ...
 ```
 
@@ -140,12 +130,12 @@ Sometimes you want to start the Administration Server only, that is, take the Ma
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "ADMIN_ONLY"
+    serverStartPolicy: AdminOnly
     ...
 ```
 
 #### Shut down a cluster
-To shut down a cluster (for example, take it out of service), add it to the Domain and set its `serverStartPolicy` to `NEVER`.
+To shut down a cluster (for example, take it out of service), add it to the Domain and set its `serverStartPolicy` to `Never`.
 ```
   kind: Domain
   metadata:
@@ -153,12 +143,12 @@ To shut down a cluster (for example, take it out of service), add it to the Doma
   spec:
     clusters:
     - clusterName: "cluster1"
-      serverStartPolicy: "NEVER"
+      serverStartPolicy: Never
     ...
 ```
 
 #### Shut down a specific standalone server
-To shut down a specific standalone server, add it to the Domain and set its `serverStartPolicy` to `NEVER`.
+To shut down a specific standalone server, add it to the Domain and set its `serverStartPolicy` to `Never`.
 ```
   kind: Domain
   metadata:
@@ -166,11 +156,11 @@ To shut down a specific standalone server, add it to the Domain and set its `ser
   spec:
     managedServers:
     - serverName: "server1"
-      serverStartPolicy: "NEVER"
+      serverStartPolicy: Never
     ...
 ```
 {{% notice note %}}
-The Administration Server can be shut down by setting the `serverStartPolicy` of the `adminServer` to `NEVER`.
+The Administration Server can be shut down by setting the `serverStartPolicy` of the `adminServer` to `Never`.
 Care should be taken when shutting down the Administration Server. If a Managed Server cannot connect
 to the Administration Server during startup, it will try to start up in
 [*Managed Server Independence (MSI)* mode](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/start/failures.html#GUID-CA4696B6-B462-4FD8-92A9-F27DEA8A2E87)
@@ -184,7 +174,7 @@ from the Managed Server pod.
 Normally, all of the Managed Servers members in a cluster are identical and it doesn't matter which ones are running as long as the operator starts enough of them to get to the cluster's `replicas` count.
 However, sometimes some of the Managed Servers are different (for example, support some extra services that the other servers in the cluster use) and need to always be started.
 
-This is done by adding the server to the Domain and setting its `serverStartPolicy` to `ALWAYS`.
+This is done by adding the server to the Domain and setting its `serverStartPolicy` to `Always`.
 ```
   kind: Domain
   metadata:
@@ -192,12 +182,12 @@ This is done by adding the server to the Domain and setting its `serverStartPoli
   spec:
     managedServers:
     - serverName: "cluster1_server1"
-      serverStartPolicy: "ALWAYS"
+      serverStartPolicy: Always
     ...
 ```
 
 {{% notice note %}}
-The server will count toward the cluster's `replicas` count.  Also, if you configure more than the `replicas` servers count to `ALWAYS`, they will all be started, even though the `replicas` count will be exceeded.
+The server will count toward the cluster's `replicas` count.  Also, if you configure more than the `replicas` servers count to `Always`, they will all be started, even though the `replicas` count will be exceeded.
 {{%/ notice %}}
 
 ### Shutdown options
@@ -422,27 +412,27 @@ then restart them.  Unlike rolling restarts, the operator cannot detect and init
 
 To manually initiate a full domain restart:
 
-1. Change the domain-level `serverStartPolicy` on the Domain to `NEVER`.
+1. Change the domain-level `serverStartPolicy` on the Domain to `Never`.
 ```
   kind: Domain
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "NEVER"
+    serverStartPolicy: Never
     ...
 ```
 
 2. Wait for the operator to stop ALL the servers for that domain.
 
-3. To restart the domain, set the domain level `serverStartPolicy` back to `IF_NEEDED`. Alternatively, you do not
-have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
+3. To restart the domain, set the domain level `serverStartPolicy` back to `IfNeeded`. Alternatively, you do not
+have to specify the `serverStartPolicy` as the default value is `IfNeeded`.
 
 ```
   kind: Domain
   metadata:
     name: domain1
   spec:
-    serverStartPolicy: "IF_NEEDED"
+    serverStartPolicy: IfNeeded
     ...
 ```
 

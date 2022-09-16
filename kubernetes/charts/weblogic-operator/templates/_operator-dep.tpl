@@ -20,9 +20,9 @@ spec:
   replicas: 1
   template:
     metadata:
-      {{- with .annotations }}
       annotations:
-      {{- end }}
+        prometheus.io/port: '8083'
+        prometheus.io/scrape: 'true'
       {{- range $key, $value := .annotations }}
         {{ $key }}: {{ $value | quote }}
       {{- end }}
@@ -34,6 +34,10 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
+      {{- if .runAsUser }}
+      securityContext:
+        runAsUser: {{ .runAsUser }}
+      {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -134,13 +138,20 @@ spec:
         volumeMounts:
         - name: "log-dir"
           mountPath: "/logs"
-        - name: "logstash-config-cm-volume"
+        - name: "logstash-pipeline-volume"
           mountPath: "/usr/share/logstash/pipeline"
+        - name: "logstash-config-volume"
+          mountPath: "/usr/share/logstash/config/logstash.yml"
+          subPath: "logstash.yml"
+        - name: "logstash-certs-secret-volume"
+          mountPath: "/usr/share/logstash/config/certs"
         env:
         - name: "ELASTICSEARCH_HOST"
           value: {{ .elasticSearchHost | quote }}
         - name: "ELASTICSEARCH_PORT"
           value: {{ .elasticSearchPort | quote }}
+        - name: "ELASTICSEARCH_PROTOCOL"
+          value: {{ .elasticSearchProtocol | quote }}
       {{- end }}
       {{- if .imagePullSecrets }}
       imagePullSecrets:
@@ -161,12 +172,22 @@ spec:
       - name: "log-dir"
         emptyDir:
           medium: "Memory"
-      - name: "logstash-config-cm-volume"
+      - name: "logstash-pipeline-volume"
         configMap:
           name: "weblogic-operator-logstash-cm"
           items:
           - key: logstash.conf
             path: logstash.conf
+      - name: "logstash-config-volume"
+        configMap:
+          name: "weblogic-operator-logstash-cm"
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+      - name: "logstash-certs-secret-volume"
+        secret:
+          secretName: "logstash-certs-secret"
+          optional: true
       {{- end }}
 {{- end }}
 ---
@@ -208,9 +229,9 @@ spec:
       replicas: 1
       template:
         metadata:
-          {{- with .annotations }}
           annotations:
-          {{- end }}
+            prometheus.io/port: '8083'
+            prometheus.io/scrape: 'true'
           {{- range $key, $value := .annotations }}
             {{ $key }}: {{ $value | quote }}
           {{- end }}
@@ -222,6 +243,10 @@ spec:
           {{- end }}
         spec:
           serviceAccountName: {{ .serviceAccount | quote }}
+          {{- if .runAsUser }}
+          securityContext:
+            runAsUser: {{ .runAsUser }}
+          {{- end }}
           {{- with .nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 8 }}
@@ -309,13 +334,20 @@ spec:
             volumeMounts:
             - name: "log-dir"
               mountPath: "/logs"
-            - name: "logstash-config-cm-volume"
+            - name: "logstash-pipeline-volume"
               mountPath: "/usr/share/logstash/pipeline"
+            - name: "logstash-config-volume"
+              mountPath: "/usr/share/logstash/config/logstash.yml"
+              subPath: "logstash.yml"
+            - name: "logstash-certs-secret-volume"
+              mountPath: "/usr/share/logstash/config/certs"
             env:
             - name: "ELASTICSEARCH_HOST"
               value: {{ .elasticSearchHost | quote }}
             - name: "ELASTICSEARCH_PORT"
               value: {{ .elasticSearchPort | quote }}
+            - name: "ELASTICSEARCH_PROTOCOL"
+              value: {{ .elasticSearchProtocol | quote }}
           {{- end }}
           {{- if .imagePullSecrets }}
           imagePullSecrets:
@@ -332,12 +364,22 @@ spec:
           - name: "log-dir"
             emptyDir:
               medium: "Memory"
-          - name: "logstash-config-cm-volume"
+          - name: "logstash-pipeline-volume"
             configMap:
               name: "weblogic-operator-logstash-cm"
               items:
               - key: logstash.conf
                 path: logstash.conf
+          - name: "logstash-config-volume"
+            configMap:
+              name: "weblogic-operator-logstash-cm"
+              items:
+              - key: logstash.yml
+                path: logstash.yml
+          - name: "logstash-certs-secret-volume"
+            secret:
+              secretName: "logstash-certs-secret"
+              optional: true
           {{- end }}
   {{- end }}
 {{- end }}

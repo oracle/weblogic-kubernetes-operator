@@ -12,8 +12,10 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
  * An abstraction for processing a domain.
@@ -29,20 +31,26 @@ public interface DomainProcessor {
   MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
 
   /**
-   * Handles a watch event for domains in the managed namespaces.
-   * @param item a Kubernetes watch even
+   * Handles a watch event for clusters in the managed namespaces.
+   * @param item a Kubernetes watch event
    */
-  void dispatchDomainWatch(Watch.Response<Domain> item);
+  void dispatchClusterWatch(Response<ClusterResource> item);
+
+  /**
+   * Handles a watch event for domains in the managed namespaces.
+   * @param item a Kubernetes watch event
+   */
+  void dispatchDomainWatch(Watch.Response<DomainResource> item);
 
   /**
    * Handles a watch event for pods in the managed namespaces.
-   * @param item a Kubernetes watch even
+   * @param item a Kubernetes watch event
    */
   void dispatchPodWatch(Watch.Response<V1Pod> item);
 
   /**
    * Handles a watch event for services in the managed namespaces.
-   * @param item a Kubernetes watch even
+   * @param item a Kubernetes watch event
    */
   void dispatchServiceWatch(Watch.Response<V1Service> item);
 
@@ -54,13 +62,13 @@ public interface DomainProcessor {
 
   /**
    * Handles a watch event for config maps in the managed namespaces.
-   * @param item a Kubernetes watch even
+   * @param item a Kubernetes watch event
    */
   void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item);
 
   /**
    * Handles a watch event for events in the managed namespaces.
-   * @param item a Kubernetes watch even
+   * @param item a Kubernetes watch event
    */
   void dispatchEventWatch(Watch.Response<CoreV1Event> item);
 

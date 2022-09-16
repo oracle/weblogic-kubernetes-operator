@@ -24,9 +24,9 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 /**
@@ -37,17 +37,17 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 @SuppressWarnings("UnusedReturnValue")
 public abstract class DomainConfigurator {
 
-  private Domain domain;
+  private DomainResource domain;
 
   protected DomainConfigurator() {
     // no-op
   }
 
-  protected DomainConfigurator(Domain domain) {
+  protected DomainConfigurator(DomainResource domain) {
     this.domain = domain;
   }
 
-  public abstract DomainConfigurator createFor(Domain domain);
+  public abstract DomainConfigurator createFor(DomainResource domain);
 
   /**
    * Sets the home for the domain.
@@ -233,8 +233,23 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withMaximumReadyWaitTimeSeconds(Long readyWaitTimeSeconds) {
+    getDomainSpec().setMaxReadyWaitTimeSeconds(readyWaitTimeSeconds);
+    return this;
+  }
+
+  public DomainConfigurator withMaximumPendingWaitTimeSeconds(Long pendingWaitTimeSeconds) {
+    getDomainSpec().setMaxPendingWaitTimeSeconds(pendingWaitTimeSeconds);
+    return this;
+  }
+
   public DomainConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
     getDomainSpec().setMaxClusterConcurrentShutdown(maxConcurrentShutdown);
+    return this;
+  }
+
+  public DomainConfigurator withClusterReference(String clusterResourceName) {
+    getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterResourceName));
     return this;
   }
 
@@ -308,20 +323,12 @@ public abstract class DomainConfigurator {
   public abstract void withDefaultLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold);
 
   /**
-   * Sets the default server start policy ("ALWAYS", "NEVER" or "IF_NEEDED") for the domain.
+   * Sets the default server start policy ("Always", "Never" or "IfNeeded") for the domain.
    *
    * @param startPolicy the new default policy
    * @return this object
    */
   public abstract DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy);
-
-  /**
-   * Sets the server start state ("RUNNING" or "ADMIN") for the domain.
-   *
-   * @param startState the server start state
-   * @return this object
-   */
-  public abstract DomainConfigurator withServerStartState(ServerStartState startState);
 
   /**
    * Add an environment variable with the given name and value to the domain.
@@ -379,10 +386,11 @@ public abstract class DomainConfigurator {
   /**
    * Adds a default cluster configuration to the domain, if not already present.
    *
+   * @param info Domain processor info
    * @param clusterName the name of the server to add
    * @return an object to add additional configurations
    */
-  public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
+  public abstract ClusterConfigurator configureCluster(DomainPresenceInfo info, @Nonnull String clusterName);
 
   public abstract void setShuttingDown(boolean start);
 
@@ -470,10 +478,9 @@ public abstract class DomainConfigurator {
   /**
    * Defines a secret reference for the domain.
    * @param secretName the name of the secret
-   * @param namespace the namespace containing the secret
    * @return this object
    */
-  public abstract DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace);
+  public abstract DomainConfigurator withWebLogicCredentialsSecret(String secretName);
 
   /**
    * Set affinity for the pod configuration.
@@ -601,27 +608,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
-
-  /**
-   * Add Istio for the domain resource.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstio();
-
-  /**
-   * Add Istio for the domain resource and enable localhostBindingsEnabled attribute.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstioLocalhostBindingsEnabled(Boolean localhostBindingsEnabled);
-
-  /**
-   * Add Istio for the domain resource and set replication channel port.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withIstioReplicationChannelPort(Integer replicationChannelPort);
 
   /**
    * Add domain type for the domain resource.

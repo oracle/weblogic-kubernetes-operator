@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -22,6 +23,7 @@ public class WlsClusterConfig {
   private WlsDynamicServersConfig dynamicServersConfig;
 
   // owner -- don't include in toString, hashCode, equals
+  @JsonIgnore
   private WlsDomainConfig wlsDomainConfig;
 
   public WlsClusterConfig() {
@@ -80,18 +82,22 @@ public class WlsClusterConfig {
    *
    * @return The number of servers that are statically configured in this cluster
    */
-  public synchronized int getClusterSize() {
+  @JsonIgnore
+  public synchronized int getConfiguredClusterSize() {
     return servers.size();
   }
 
-  public synchronized int getMaxClusterSize() {
-    return hasDynamicServers() ? getClusterSize() + getMaxDynamicClusterSize() : getClusterSize();
+  @JsonIgnore
+  public synchronized int getClusterSize() {
+    return hasDynamicServers()
+        ? getConfiguredClusterSize() + getDynamicClusterSizeOrZero() : getConfiguredClusterSize();
   }
 
   /**
    * Returns the minimum size of the cluster.
    * @return  For static clusters, the minimum size can be 0.  Dynamic servers will return the configured value.
    */
+  @JsonIgnore
   public int getMinClusterSize() {
     return hasDynamicServers() ? getMinDynamicClusterSize() : 0;
   }
@@ -101,6 +107,7 @@ public class WlsClusterConfig {
    *
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
+  @JsonIgnore
   public String getClusterName() {
     return name;
   }
@@ -111,7 +118,7 @@ public class WlsClusterConfig {
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
   public String getName() {
-    return name;
+    return getClusterName();
   }
 
   public WlsDynamicServersConfig getDynamicServersConfig() {
@@ -181,31 +188,31 @@ public class WlsClusterConfig {
    * Returns the current size of the dynamic cluster (the number of dynamic server instances allowed
    * to be created).
    *
-   * @return the current size of the dynamic cluster, or -1 if there is no dynamic servers in this
-   *     cluster
+   * @return the current size of the dynamic cluster, or -1 if there is no dynamic servers in this cluster
    */
+  @JsonIgnore
   public int getDynamicClusterSize() {
     return dynamicServersConfig != null ? dynamicServersConfig.getDynamicClusterSize() : -1;
   }
 
   /**
-   * Returns the maximum size of the dynamic cluster.
+   * Returns the size of the dynamic cluster.
    *
-   * @return the maximum size of the dynamic cluster, or -1 if there is no dynamic servers in this
-   *     cluster
+   * @return the size of the dynamic cluster, or 0 if there are no dynamic servers in this cluster
    */
-  public int getMaxDynamicClusterSize() {
-    return dynamicServersConfig != null ? dynamicServersConfig.getMaxDynamicClusterSize() : -1;
+  @JsonIgnore
+  public int getDynamicClusterSizeOrZero() {
+    return Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getDynamicClusterSize).orElse(0);
   }
 
   /**
    * Returns the minimum size of the dynamic cluster.
    *
-   * @return the minimum size of the dynamic cluster, or -1 if there is no dynamic servers in this
-   *     cluster
+   * @return the minimum size of the dynamic cluster, or 0 if there are no dynamic servers in this cluster
    */
+  @JsonIgnore
   public int getMinDynamicClusterSize() {
-    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : -1;
+    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : 0;
   }
 
   /**

@@ -43,6 +43,8 @@ import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1RollingUpdateDeployment;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretKeySelector;
+import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServicePort;
@@ -51,6 +53,7 @@ import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -62,12 +65,17 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_MOUNT_PATH;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_VOLUME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -81,8 +89,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -90,18 +98,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-
 /**
  * Utility class to start DB service and RCU schema.
  */
 public class DbUtils {
 
   private static final String CREATE_REPOSITORY_SCRIPT = "createRepository.sh";
-  private static final String PASSWORD_FILE = "pwd.txt";
   private static final String RCUTYPE = "fmw";
   private static final String RCUPODNAME = "rcu";
+  private static final String SYSUSERNAME = "sys";
   private static final String SYSPASSWORD = "Oradoc_db1";
+  private static final String RCUPASSWORD = "Oradoc_db1";
 
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
@@ -125,7 +132,7 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(dbNamespace);
+    createBaseRepoSecret(dbNamespace);
 
     if (OKD) {
       addSccToDBSvcAccount("default", dbNamespace);
@@ -152,6 +159,8 @@ public class DbUtils {
   public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace,
       int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
+
+    String dbPodNamePrefix = "oracledb";
 
     if (OKD) {
       addSccToDBSvcAccount("default", dbNamespace);
@@ -196,6 +205,9 @@ public class DbUtils {
     assertTrue(serviceCreated, String.format(
         "Create service failed for OracleDbService in namespace %s dbListenerPort %s ", dbNamespace, dbListenerPort));
 
+    Kubernetes.deleteSecret(ORACLE_DB_SECRET_NAME, dbNamespace); // does nothing if missing
+    createDbSecretWithPassword(ORACLE_DB_SECRET_NAME, dbNamespace, SYSPASSWORD); // throws an assertion if fails
+
     //create V1Deployment for Oracle DB
     logger.info("Configure V1Deployment in namespace {0} using image {1} dbListenerPort {2}", dbNamespace,
         dbBaseImageName, dbListenerPort);
@@ -225,9 +237,14 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_PDB").value("devpdb"))
                             .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
+                            .addEnvItem(new V1EnvVar().name("DB_PASSWD").valueFrom(
+                               new V1EnvVarSource()
+                                  .secretKeyRef(new V1SecretKeySelector()
+                                  .name(ORACLE_DB_SECRET_NAME)
+                                  .key("password"))))
                             .image(dbBaseImageName)
-                            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
-                            .name("oracledb")
+                            .imagePullPolicy(IMAGE_PULL_POLICY)
+                            .name(dbPodNamePrefix)
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
                                 .containerPort(dbListenerPort)
@@ -245,7 +262,7 @@ public class DbUtils {
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));
+                            .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0} dbListenerPost {1}",
         dbNamespace, dbListenerPort);
@@ -264,7 +281,7 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
-    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
+    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
@@ -298,6 +315,11 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     logger.info("Create RCU pod for for namespace: {0}, RCU prefix: {1}, "
          + "dbUrl: {2},  fmwImage: {3} ", dbNamespace, rcuPrefix, dbUrl, fmwBaseImageName);
+
+    Kubernetes.deleteSecret(ORACLE_RCU_SECRET_NAME, dbNamespace);
+    createRcuSecretWithUsernamePassword(ORACLE_RCU_SECRET_NAME, dbNamespace,
+                                        "", RCUPASSWORD, SYSUSERNAME, SYSPASSWORD);
+
     assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace),
         String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, dbUrl: %s, "
                 + "in namespace: %s", fmwBaseImageName, rcuPrefix, dbUrl, dbNamespace));
@@ -318,7 +340,7 @@ public class DbUtils {
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace)
+  private static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace)
       throws ApiException {
     LoggingFacade logger = getLogger();
 
@@ -333,16 +355,18 @@ public class DbUtils {
             .namespace(dbNamespace)
             .labels(labels))
         .spec(new V1PodSpec()
+            .addVolumesItem(secretVolume(ORACLE_RCU_SECRET_VOLUME, ORACLE_RCU_SECRET_NAME))
             .containers(Arrays.asList(
                 new V1Container()
-                    .name("rcu")
+                    .name(RCUPODNAME)
                     .image(fmwBaseImageName)
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addArgsItem("sleep")
-                    .addArgsItem("infinity")))
+                    .addArgsItem("infinity")
+                    .addVolumeMountsItem(readOnlyVolumeMount(ORACLE_RCU_SECRET_VOLUME, ORACLE_RCU_SECRET_MOUNT_PATH))))
             .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
+                            .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))));  // secret for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
@@ -410,24 +434,20 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     // copy the script and helper files into the RCU pod
     Path createRepositoryScript = Paths.get(RESOURCE_DIR, "bash-scripts", CREATE_REPOSITORY_SCRIPT);
-    Path passwordFile = Paths.get(RESOURCE_DIR, "helper-files", PASSWORD_FILE);
     Path podCreateRepositoryScript = Paths.get("/u01/oracle", CREATE_REPOSITORY_SCRIPT);
-    Path podPasswordFile = Paths.get("/u01/oracle", PASSWORD_FILE);
 
     logger.info("source file is: {0}, target file is: {1}", createRepositoryScript, podCreateRepositoryScript);
     FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, createRepositoryScript, podCreateRepositoryScript);
-    logger.info("source file is: {0}, target file is: {1}", passwordFile, podPasswordFile);
-    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, passwordFile, podPasswordFile);
 
     String createRepository = "/u01/oracle/createRepository.sh";
-    logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3}, "
-        + "SYSPASSWORD: {4} ", createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE, SYSPASSWORD);
+    logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3} ",
+        createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE);
 
     /* TODO The original code without encountering SSLProtocolException. Rollback to this oneWhen the bug is fixed.
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(dbNamespace, RCUPODNAME,
             null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
-            RCUTYPE, SYSPASSWORD));
+            RCUTYPE));
     logger.info("Inside RCU pod command createRepository return value: {0}", execResult.exitValue());
     if (execResult.exitValue() != 0) {
       logger.info("Inside RCU pod command createRepository return error {0}", execResult.stderr());
@@ -436,7 +456,7 @@ public class DbUtils {
     try {
       execCommand(dbNamespace, RCUPODNAME,
           null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
-          RCUTYPE, SYSPASSWORD);
+          RCUTYPE);
 
     } catch (SSLProtocolException e) {
       /* TODO For Api 8.0.2 it looks that there is a bug on the web socket code or a timing bug
@@ -459,39 +479,23 @@ public class DbUtils {
    * @return pod name of database
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodNameOfDb(String dbNamespace) throws ApiException {
-
-    V1PodList  pod = null;
-    pod = Kubernetes.listPods(dbNamespace, null);
-
+  public static String getPodNameOfDb(String dbNamespace, String podPrefix) throws ApiException {
     String podName = null;
-
-    //There is only one pod in the given DB namespace
-    if (pod != null) {
-      podName = pod.getItems().get(0).getMetadata().getName();
+    V1PodList pods = null;
+    pods = Kubernetes.listPods(dbNamespace, null);
+    if (pods.getItems().size() != 0) {
+      for (V1Pod pod : pods.getItems()) {
+        if (pod != null && pod.getMetadata().getName().startsWith(podPrefix)) {
+          podName = pod.getMetadata().getName();
+          break;
+        }
+      }
     }
-
     return podName;
   }
 
-  /**
-   * Check if the pod log contains the certain text.
-   * @param matchStr text to be searched in the log
-   * @param podName the name of the pod
-   * @param namespace namespace where pod exists
-   * @return true if the text exists in the log otherwise false
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean checkPodLogContains(String matchStr, String podName, String namespace)
-      throws ApiException {
-
-    return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
-
-  }
-
-  private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace)
-      throws ApiException {
-    return () -> checkPodLogContains(matchStr, podName, dbNamespace);
+  private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace) {
+    return () -> PodUtils.checkPodLogContains(matchStr, podName, dbNamespace);
   }
 
   /**
@@ -587,7 +591,7 @@ public class DbUtils {
 
     Path sqlplusScript = Paths.get(WORK_DIR + "/sqlplus.sh");
     String sqlplusString = "#!/bin/bash\n"
-        + "$ORACLE_HOME/bin/sqlplus sys/Oradoc_db1@DEVPDB as sysdba < /u01/update.sql";
+        + "$ORACLE_HOME/bin/sqlplus sys/" + SYSPASSWORD + "@DEVPDB as sysdba < /u01/update.sql";
     getLogger().info("sqlCmd is: \n" + sqlplusString);
     assertDoesNotThrow(() -> Files.write(sqlplusScript, sqlplusString.getBytes()));
 
@@ -635,6 +639,24 @@ public class DbUtils {
     secretMap.put("password", password);
     secretMap.put("sys_username", sysUsername);
     secretMap.put("sys_password", sysPassword);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Create an Oracle DB secret with password in the specified namespace.
+   *
+   * @param password DB sys password
+   */
+  public static void createDbSecretWithPassword(String secretName, String namespace,
+                                                String password) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("password", password);
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
         .metadata(new V1ObjectMeta()
@@ -705,10 +727,11 @@ public class DbUtils {
     FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
     replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
-    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", OCIR_SECRET_NAME);
+    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
-        "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
-    createOcirRepoSecret(namespace);
+        "container-registry.oracle.com/database/operator:0.2.0", DB_OPERATOR_IMAGE);
+    createTestRepoSecret(namespace);
+    createBaseRepoSecret(namespace);
 
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + operatorYamlDestFile);
@@ -761,7 +784,7 @@ public class DbUtils {
       String namespace) throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
+    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + DB_19C_IMAGE_TAG;
     String hostPath = Paths.get(WORK_DIR, namespace, "oracledatabase").toString();
     String secretName = "db-password";
     String secretKey = "password";
@@ -774,7 +797,7 @@ public class DbUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
 
-    createOcirRepoSecret(namespace);
+    createTestRepoSecret(namespace);
 
     createHostPathProvisioner(namespace, hostPath);
 
@@ -788,8 +811,8 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCIR_SECRET_NAME);
-    replaceStringInFile(dbYaml.toString(), "storageClass: \"oci\"", "storageClass: dboperatorsc");
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "storageClass: \"oci-bv\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
     CommandParams params = new CommandParams().defaults();
@@ -991,7 +1014,7 @@ public class DbUtils {
                     .containers(Arrays.asList(new V1Container()
                         .name(name)
                         .image("mauilion/hostpath-provisioner:dev")
-                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .addEnvItem(new V1EnvVar()
                             .name("NODE_NAME")
                             .valueFrom(new V1EnvVarSource()
@@ -1036,4 +1059,41 @@ public class DbUtils {
     TestActions.deleteStorageClass("dboperatorsc");
   }
 
+  /**
+   * Return a volume that references a secret.
+   * @param volumeName volume name
+   * @param secretName secret name
+   * @return volume
+   */
+  private static V1Volume secretVolume(String volumeName, String secretName) {
+    return
+        new V1Volume()
+            .name(volumeName)
+            .secret(new V1SecretVolumeSource()
+                .secretName(secretName)
+                .defaultMode(420));
+  }
+
+  /**
+   * Return a volume mount suitable for mounting a secret volume.
+   * @param volumeName volume name of existing secret volume
+   * @param mountPath path to mount the volume
+   * @return volume mount
+   */
+  private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
+    return volumeMount(volumeName, mountPath).readOnly(true);
+  }
+
+  /**
+   * Return a volume mount.
+   * @param volumeName volume name of existing volume
+   * @param mountPath path to mount the volume
+   * @return volume mount
+   */
+  private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
+    return
+        new V1VolumeMount()
+            .name(volumeName)
+            .mountPath(mountPath);
+  }
 }

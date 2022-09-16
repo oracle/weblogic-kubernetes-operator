@@ -4,12 +4,14 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -22,13 +24,17 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 
 public class DomainValidationSteps {
@@ -36,6 +42,7 @@ public class DomainValidationSteps {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
+  private static final String CLUSTERS = "clusters";
 
   private DomainValidationSteps() {
   }
@@ -48,6 +55,7 @@ public class DomainValidationSteps {
     return Step.chain(
           createListSecretsStep(namespace),
           createListConfigMapsStep(namespace),
+          createListClustersStep(namespace),
           new DomainValidationStep());
   }
 
@@ -55,16 +63,12 @@ public class DomainValidationSteps {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
-  public static Step createAfterIntrospectValidationSteps() {
-    return new DomainAfterIntrospectValidationStep();
+  static Step createValidateDomainTopologySteps(Step next) {
+    return createStatusUpdateStep(new ValidateDomainTopologyStep(next));
   }
 
   private static Step createListSecretsStep(String domainNamespace) {
     return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
-  }
-
-  static Step createValidateDomainTopologyStep(Step next) {
-    return new ValidateDomainTopologyStep(next);
   }
 
   static class ListSecretsResponseStep extends DefaultResponseStep<V1SecretList> {
@@ -103,12 +107,32 @@ public class DomainValidationSteps {
     }
   }
 
+  private static Step createListClustersStep(String domainNamespace) {
+    return new CallBuilder().listClusterAsync(domainNamespace, new ListClustersResponseStep());
+  }
+
+  static class ListClustersResponseStep extends DefaultResponseStep<ClusterList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
+      List<ClusterResource> list = getClusters(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(CLUSTERS, list);
+
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    static List<ClusterResource> getClusters(Packet packet) {
+      return Optional.ofNullable(packet.<List<ClusterResource>>getValue(CLUSTERS)).orElse(new ArrayList<>());
+    }
+  }
+
   static class DomainValidationStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
+      DomainResource domain = info.getDomain();
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
@@ -141,7 +165,7 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
+      DomainResource domain = info.getDomain();
       List<String> validationFailures = domain.getAdditionalValidationFailures(podSpec);
 
       if (validationFailures.isEmpty()) {
@@ -167,17 +191,29 @@ public class DomainValidationSteps {
 
     @Override
     public NextAction apply(Packet packet) {
-      List<String> failures = new WlsConfigValidator(packet).loggingTo(LOGGER).getFailures();
-      if (failures.isEmpty()) {
-        return doNext(createRemoveSelectedFailuresStep(getNext(), TOPOLOGY_MISMATCH), packet);
+      final WlsConfigValidator validator = new WlsConfigValidator(packet).loggingTo(LOGGER);
+      final List<String> failures = validator.getTopologyFailures();
+      final List<String> replicasTooHigh = validator.getReplicaTooHighFailures();
+      if (!failures.isEmpty()) {
+        return doNext(createTopologyMismatchFailureSteps(failures), packet);
+      } else if (!replicasTooHigh.isEmpty()) {
+        return doNext(createReplicasTooHighFailureSteps(getNext(), replicasTooHigh), packet);
       } else {
-        return doNext(createTopologyMismatchFailureSteps(getNext(), failures), packet);
+        return doNext(createRemoveSelectedFailuresStep(getNext(), TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH), packet);
       }
     }
 
-    private Step createTopologyMismatchFailureSteps(Step next, List<String> failures) {
+    private Step createTopologyMismatchFailureSteps(List<String> failures) {
       final String failureString = String.join(lineSeparator(), failures);
-      return DomainStatusUpdater.createTopologyMismatchFailureSteps(failureString, next);
+      return DomainStatusUpdater.createTopologyMismatchFailureSteps(failureString, null);
+    }
+
+    private Step createReplicasTooHighFailureSteps(Step next, List<String> failures) {
+      final String failureString = String.join(lineSeparator(), failures);
+      return Step.chain(
+          createRemoveSelectedFailuresStep(null, TOPOLOGY_MISMATCH),
+          DomainStatusUpdater.createReplicasTooHighFailureSteps(failureString, next)
+      );
     }
   }
 
@@ -208,6 +244,19 @@ public class DomainValidationSteps {
       return getConfigMaps(packet).stream().anyMatch(s -> isSpecifiedConfigMap(s, name, namespace));
     }
 
+    @SuppressWarnings("unchecked")
+    private List<ClusterResource> getClusters(Packet packet) {
+      return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getReferencedClusters)
+          .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
+    }
+
+    @Override
+    public ClusterResource findCluster(V1LocalObjectReference reference) {
+      return Optional.ofNullable(reference.getName()).flatMap(name -> getClusters(packet).stream()
+          .filter(cluster -> name.equals(cluster.getClusterName())).findFirst()).orElse(null);
+    }
+
     boolean isSpecifiedConfigMap(V1ConfigMap configmap, String name, String namespace) {
       return hasMatchingMetadata(configmap.getMetadata(), name, namespace);
     }
@@ -224,25 +273,4 @@ public class DomainValidationSteps {
     }
   }
 
-  private static class DomainAfterIntrospectValidationStep extends Step {
-
-    @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      List<String> validationFailures = new WlsConfigValidator(packet).getFailures();
-
-      if (validationFailures.isEmpty()) {
-        return doNext(packet);
-      }
-
-      LOGGER.severe(DOMAIN_VALIDATION_FAILED, info.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
-      return doNext(step, packet);
-    }
-
-    private String perLine(List<String> validationFailures) {
-      return String.join(lineSeparator(), validationFailures);
-    }
-
-  }
 }

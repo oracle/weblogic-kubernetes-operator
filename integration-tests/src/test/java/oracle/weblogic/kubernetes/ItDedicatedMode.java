@@ -3,17 +3,13 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -25,23 +21,24 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -54,16 +51,19 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The current class verifies various use cases related to Dedicated 
+ * The current class verifies various use cases related to Dedicated
  * domainNamespaceSelectionStrategy applicable to Operator Helm Chart.
  * For more detail regarding the feature, please refer to
  * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#weblogic-domain-management
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
+@Tag("kind-sequential")
+@Tag("oke-sequential")
+@Tag("okd-wls-mrg")
 @IntegrationTest
+@Tag("olcne")
 class ItDedicatedMode {
   // namespace constants
   private static String opNamespace = null;
@@ -76,9 +76,9 @@ class ItDedicatedMode {
   private final String domainUid = "dedicated-domain1";
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
-  private final String adminServerPodName = 
+  private final String adminServerPodName =
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private final String managedServerPodPrefix = 
+  private final String managedServerPodPrefix =
        domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
   // operator constants
@@ -89,7 +89,7 @@ class ItDedicatedMode {
   private static LoggingFacade logger = null;
 
   /**
-   * Get namespaces for operator and domain. 
+   * Get namespaces for operator and domain.
    * Create CRD based on the k8s version.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism.
@@ -103,7 +103,7 @@ class ItDedicatedMode {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    // in the dedicated mode, the operator only manages domains in the 
+    // in the dedicated mode, the operator only manages domains in the
     // operator's own namespace
     domain1Namespace = opNamespace;
 
@@ -132,8 +132,8 @@ class ItDedicatedMode {
         .withParams(new CommandParams().command(createCrdCommand))
         .execute();
 
-    // Install the Operator in a ns (say op) with helm parameter 
-    // domainNamespaceSelectionStrategy set to Dedicated and set 
+    // Install the Operator in a ns (say op) with helm parameter
+    // domainNamespaceSelectionStrategy set to Dedicated and set
     // domainNamespaces parameter to something other than Operator ns (say wls)
     logger.info("Installing and verifying operator");
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
@@ -144,7 +144,7 @@ class ItDedicatedMode {
   }
 
   /**
-   * Create WebLogic Domain in a namespace (say wls) that is different 
+   * Create WebLogic Domain in a namespace (say wls) that is different
    * from the Operator's namespace. Verify that the domain does not come up.
    */
   @Test
@@ -158,22 +158,22 @@ class ItDedicatedMode {
   }
 
   /**
-   * Create WebLogic Domain in a namespace (say op) that is same as  
-   * Operator's namespace. Verify that the domain does come up and can be 
+   * Create WebLogic Domain in a namespace (say op) that is same as
+   * Operator's namespace. Verify that the domain does come up and can be
    * scaled up using Operator
    */
   @Test
   @DisplayName("Verify in Dedicated NamespaceSelectionStrategy domain on operator namespace gets started")
   void testDedicatedModeSameNamespace() {
 
-    // This test uses the operator restAPI to scale the doamin. 
-    // To do this in OKD cluster, we need to expose the external service as 
-    // route and set tls termination to  passthrough 
-    String opExternalSvc = 
+    // This test uses the operator restAPI to scale the doamin.
+    // To do this in OKD cluster, we need to expose the external service as
+    // route and set tls termination to  passthrough
+    String opExternalSvc =
         createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-    
+
     logger.info("Creating a domain in perator namespace {1}", domain1Namespace);
     createDomain(domain1Namespace);
     verifyDomainRunning(domain1Namespace);
@@ -209,7 +209,7 @@ class ItDedicatedMode {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainNamespace, domainUid, domainNamespace);
-    createDomainCrAndVerify(domainNamespace, OCIR_SECRET_NAME, adminSecretName, encryptionSecretName);
+    createDomainCrAndVerify(domainNamespace, TEST_IMAGES_REPO_SECRET_NAME, adminSecretName, encryptionSecretName);
   }
 
   private void createDomainCrAndVerify(String domainNamespace,
@@ -219,15 +219,8 @@ class ItDedicatedMode {
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount)
-        .serverStartState("RUNNING"));
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -237,13 +230,13 @@ class ItDedicatedMode {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -251,13 +244,12 @@ class ItDedicatedMode {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
+
+    domain = addClusterToDomain("cluster-1", domainNamespace, domain, replicaCount);
     setPodAntiAffinity(domain);
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
@@ -299,19 +291,4 @@ class ItDedicatedMode {
     }
   }
 
-  private void uninstallOperatorAndVerify() {
-    // uninstall operator
-    assertTrue(uninstallOperator(opHelmParams),
-        String.format("Uninstall operator failed in namespace %s", opNamespace));
-
-    // delete service account
-    assertTrue(deleteServiceAccount(opServiceAccount,opNamespace),
-        String.format("Delete service acct %s failed in namespace %s", opServiceAccount, opNamespace));
-
-    // delete secret/ocir-secret
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete secret/ocir-secret -n " + opNamespace + " --ignore-not-found"))
-        .execute();
-  }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -34,18 +35,17 @@ import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.http.rest.Scan;
+import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.Scan;
-import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
@@ -319,10 +319,10 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        Domain domain = DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).orElse(null);
-        Optional.ofNullable(domain).map(Domain::getIntrospectVersion)
+        DomainResource domain = DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).orElse(null);
+        Optional.ofNullable(domain).map(DomainResource::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
-        Optional.ofNullable(domain).map(Domain::getMetadata).map(V1ObjectMeta::getGeneration)
+        Optional.ofNullable(domain).map(DomainResource::getMetadata).map(V1ObjectMeta::getGeneration)
                 .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
         V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
@@ -579,14 +579,14 @@ public class ConfigMapHelper {
     }
 
     private Step createIntrospectionVersionUpdateStep() {
-      return DomainValidationSteps.createValidateDomainTopologyStep(
-            createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext()));
+      return createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext());
     }
 
     private Step createValidationStep() {
       return Step.chain(
-            DomainValidationSteps.createValidateDomainTopologyStep(null),
-            new IntrospectionConfigMapStep(data, conflictStep.getNext()));
+            new IntrospectionConfigMapStep(data, conflictStep.getNext()),
+            DomainValidationSteps.createValidateDomainTopologySteps(null)
+            );
     }
 
     private class IntrospectionConfigMapStep extends Step {
@@ -840,18 +840,40 @@ public class ConfigMapHelper {
    *   DOMAIN_RESTART_VERSION             a field from the domain to force rolling when changed
    *   DOMAIN_INPUTS_HASH                 a hash of the image used in the domain.
    *
-   * @param ns the namespace of the domain
-   * @param domainUid the unique domain ID
    * @return a step to do the processing.
    */
-  public static Step readExistingIntrospectorConfigMap(String ns, String domainUid) {
-    String configMapName = getIntrospectorConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectorConfigMapStep());
+  public static Step readExistingIntrospectorConfigMap() {
+    return new ReadIntrospectorConfigMapStep(ReadIntrospectorConfigMapResponseStep::new);
   }
 
-  private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
+  static class ReadIntrospectorConfigMapStep extends Step {
 
-    ReadIntrospectorConfigMapStep() {
+    private final Function<Step, ResponseStep<V1ConfigMap>> responseStepConstructor;
+
+    private ReadIntrospectorConfigMapStep(Function<Step, ResponseStep<V1ConfigMap>> constructor) {
+      this.responseStepConstructor = constructor;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      final DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      return doNext(createReadStep(info), packet);
+    }
+
+    private Step createReadStep(DomainPresenceInfo info) {
+      final String ns = info.getNamespace();
+      final String domainUid = info.getDomainUid();
+      final String configMapName = getIntrospectorConfigMapName(domainUid);
+
+      return new CallBuilder()
+          .readConfigMapAsync(configMapName, ns, domainUid, responseStepConstructor.apply(getNext()));
+    }
+  }
+
+  private static class ReadIntrospectorConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    ReadIntrospectorConfigMapResponseStep(Step next) {
+      super(next);
     }
 
     @Override
@@ -873,10 +895,8 @@ public class ConfigMapHelper {
       if (domainTopology != null) {
         recordTopology(packet, packet.getSpi(DomainPresenceInfo.class), domainTopology);
         recordIntrospectVersionAndGeneration(result, packet);
-        return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
-      } else {
-        return doNext(packet);
       }
+      return doNext(packet);
     }
 
     private void recordIntrospectVersionAndGeneration(V1ConfigMap result, Packet packet) {
@@ -922,32 +942,52 @@ public class ConfigMapHelper {
    * Reads the introspector config map for the specified domain, populating the following packet entries.
    *   INTROSPECTION_STATE_LABEL          the value of the domain's 'introspectVersion' when this map was created
    *
-   * @param ns the namespace of the domain
-   * @param domainUid the unique domain ID
    * @return a step to do the processing.
    */
-  public static Step readIntrospectionVersionStep(String ns, String domainUid) {
-    String configMapName = getIntrospectorConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
+  public static Step readIntrospectionVersionStep() {
+    return new ReadIntrospectorConfigMapStep(ReadIntrospectionVersionResponseStep::new);
   }
 
   /**
    * Create or replace fluentd configuration map.
-   * @param info domain presence info
    * @return next step
    */
-  public static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info, Step next) {
-    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-    if (fluentdSpecification != null) {
-      return new CallBuilder().readConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
-              info.getDomainUid(), new ReadFluentdConfigMapResponseStep(info, next));
-    } else {
-      return next;
+  public static Step createOrReplaceFluentdConfigMapStep() {
+    return new CreateOrReplaceFluentdConfigMapStep();
+  }
+
+  private static class CreateOrReplaceFluentdConfigMapStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (hasNoFluentdSpecification(packet)) {
+        return doNext(packet);
+      } else {
+        return doNext(createNextStep(DomainPresenceInfo.fromPacket(packet).orElseThrow()), packet);
+      }
+    }
+
+    private boolean hasNoFluentdSpecification(Packet packet) {
+      return DomainPresenceInfo.fromPacket(packet)
+          .map(DomainPresenceInfo::getDomain)
+          .map(DomainResource::getFluentdSpecification)
+          .isEmpty();
+    }
+
+    private Step createNextStep(DomainPresenceInfo info) {
+      return new CallBuilder().readConfigMapAsync(
+          FLUENTD_CONFIGMAP_NAME,
+          info.getNamespace(),
+          info.getDomainUid(),
+          new ReadFluentdConfigMapResponseStep(getNext()));
     }
   }
 
+  private static class ReadIntrospectionVersionResponseStep extends DefaultResponseStep<V1ConfigMap> {
 
-  private static class ReadIntrospectionVersionStep extends DefaultResponseStep<V1ConfigMap> {
+    private ReadIntrospectionVersionResponseStep(Step nextStep) {
+      super(nextStep);
+    }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
@@ -992,38 +1032,28 @@ public class ConfigMapHelper {
   }
 
   private static class ReadFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
-    private DomainPresenceInfo info;
-
-    ReadFluentdConfigMapResponseStep(DomainPresenceInfo info, Step next) {
+    ReadFluentdConfigMapResponseStep(Step next) {
       super(next);
-      this.info = info;
     }
 
     private static Step createFluentdConfigMap(DomainPresenceInfo info, Step next) {
-      FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-      if (fluentdSpecification != null) {
-        return new CallBuilder()
-                .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(info),
-                        new CreateFluentdConfigMapResponseStep(next));
-      } else {
-        return next;
-      }
+      return new CallBuilder()
+          .createConfigMapAsync(info.getNamespace(),
+              FluentdHelper.getFluentdConfigMap(info),
+              new CreateFluentdConfigMapResponseStep(next));
     }
 
     private static Step replaceFluentdConfigMap(DomainPresenceInfo info, Step next) {
-      FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-      if (fluentdSpecification != null) {
-        return new CallBuilder()
-                .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
-                        FluentdHelper.getFluentdConfigMap(info),
-                        new ReplaceFluentdConfigMapResponseStep(next));
-      } else {
-        return next;
-      }
+      return new CallBuilder()
+          .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME,
+              info.getNamespace(),
+              FluentdHelper.getFluentdConfigMap(info),
+              new ReplaceFluentdConfigMapResponseStep(next));
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       String existingConfigMapData = Optional.ofNullable(callResponse.getResult())
               .map(V1ConfigMap::getData)
               .map(c -> c.get(FLUENTD_CONFIG_DATA_NAME))
@@ -1031,13 +1061,13 @@ public class ConfigMapHelper {
 
       if (existingConfigMapData == null) {
         return doNext(createFluentdConfigMap(info, getNext()), packet);
-      } else if (isOutdated(existingConfigMapData)) {
+      } else if (isOutdated(info, existingConfigMapData)) {
         return doNext(replaceFluentdConfigMap(info, getNext()), packet);
       }
       return doNext(packet);
     }
 
-    private boolean isOutdated(String existingConfigData) {
+    private boolean isOutdated(DomainPresenceInfo info, String existingConfigData) {
       return !existingConfigData.equals(info.getDomain().getFluentdSpecification().getFluentdConfiguration());
     }
   }

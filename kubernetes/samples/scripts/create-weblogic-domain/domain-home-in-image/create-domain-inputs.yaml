@@ -18,14 +18,13 @@ adminServerSSLPort: 7002
 adminServerName: admin-server
 
 # Unique ID identifying a domain.
-# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains
+# This ID must not contain an underscore ("_"), and must be lowercase and unique across all domains
 # in a Kubernetes cluster.
 domainUID: domain1
 
 # Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image.
 # If not specified, the value is derived from the domainUID as /u01/oracle/user_projects/domains/<domainUID>
 domainHome: /u01/oracle/user_projects/domains/domain1
-
 
 # Determines which WebLogic Servers the operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
@@ -205,8 +204,3 @@ serverPodCpuRequest: "250m"
 # serverPodMemoryLimit: "1Gi"
 # serverPodCpuLimit: "1000m"
 
-# istioEnabled specifies whether or not it is deployed under Istio.
-istioEnabled: false
-
-# istioReadinessPort specifies the WebLogic NAP port for use by the readiness probe
-istioReadinessPort: 8888

@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -40,11 +41,13 @@ import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPDEMO;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -53,6 +56,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
@@ -62,7 +66,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.createZipFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -87,6 +91,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 
 @DisplayName("Test to validate on-prem to k8s use case")
+@Tag("kind-parallel")
+@Tag("oke-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-mrg")
 @IntegrationTest
 class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
@@ -255,7 +263,7 @@ class ItLiftAndShiftFromOnPremDomain {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     //create a MII image
     imageName = createImageAndVerify(WKO_IMAGE_NAME, Collections.singletonList(WKO_IMAGE_FILES + "/onpremdomain.yaml"),
@@ -353,11 +361,14 @@ class ItLiftAndShiftFromOnPremDomain {
   }
 
   private static V1Pod callSetupWebLogicPod(String namespace) {
+    getLogger().info("The input WDT_DOWNLOAD_URL is: {0}", WDT_DOWNLOAD_URL);
+    String wdtDownloadurl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT, LIFT_AND_SHIFT_WORK_DIR);
+    getLogger().info("The actual download location for lifeAndShift is {0}", wdtDownloadurl);
     // create a V1Container with specific scripts and properties for creating domain
     V1Container container = new V1Container()
         .addEnvItem(new V1EnvVar()
-            .name("WDT_VERSION")
-            .value(WDT_VERSION))
+            .name("WDT_INSTALL_ZIP_URL")
+            .value(wdtDownloadurl))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_SRC")
             .value("onpremdomain"))
@@ -399,20 +410,22 @@ class ItLiftAndShiftFromOnPremDomain {
 
   private static void updateDomainYamlFile() {
     try {
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "apiVersion: \"weblogic.oracle/v8\"", "apiVersion: \"weblogic.oracle/" + DOMAIN_VERSION + "\"");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      String filePath = LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML;
+
+      replaceStringInFile(filePath,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "\\{\\{\\{domainHome\\}\\}\\}", "/u01/domains/" + domainUid);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
+          "\\{\\{\\{domainHome\\}\\}\\}", "/u01/" + domainNamespace + "/domains/" + domainUid);
+      replaceStringInFile(filePath,
           "\\{\\{\\{domainHomeSourceType\\}\\}\\}", "FromModel");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
           "\\{\\{\\{imageName\\}\\}\\}", imageName);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "name: ocir", "name: ocir-secret");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+      replaceStringInFile(filePath,
+          "imagePullSecrets: \\[\\]", "imagePullSecrets:\n    - name: " + TEST_IMAGES_REPO_SECRET_NAME);
+      replaceStringInFile(filePath,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
+      replaceStringInFile(filePath,
+          "# replicas: 99", "replicas: 5");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");
     }
@@ -442,6 +455,7 @@ class ItLiftAndShiftFromOnPremDomain {
       logger.severe(ex.getMessage());
     }
   }
+
 
 }
 

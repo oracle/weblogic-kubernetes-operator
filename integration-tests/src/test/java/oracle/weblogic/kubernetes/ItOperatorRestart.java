@@ -13,6 +13,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -55,6 +56,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // domain custom resource that uses model-in-image.
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -181,9 +186,7 @@ class ItOperatorRestart {
 
     // scale up the domain by increasing replica count
     replicaCount = 3;
-    boolean scalingSuccess = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", replicaCount),
-        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
+    boolean scalingSuccess = scaleCluster("cluster-1", domainNamespace, replicaCount);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -293,7 +296,6 @@ class ItOperatorRestart {
 
     logger.info("Wait for domain {0} server pods in namespace {1} to be restarted",
         domainUid, domainNamespace);
-
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 

@@ -24,14 +24,16 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.builders.WatchEvent;
-import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.http.rest.ScanCacheStub;
+import oracle.kubernetes.operator.introspection.IntrospectionTestUtils;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +75,6 @@ class PodPresenceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
-  private OffsetDateTime clock = SystemClock.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
       new V1Pod()
@@ -91,10 +92,11 @@ class PodPresenceTest {
     mementos.add(InMemoryCertificates.install());
     mementos.add(ConstantTestHash.install());
     mementos.add(ScanCacheStub.install());
+    mementos.add(SystemClockTestSupport.installClock());
 
     domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
     disableDomainProcessing();
-    Domain domain = DomainProcessorTestSetup.createTestDomain();
+    DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     testSupport.defineResources(domain);
     info.setDomain(domain);
@@ -183,10 +185,24 @@ class PodPresenceTest {
   }
 
   @Test
-  void whenPodPhaseNotFailed_reportNotFailed() {
+  void whenPodPhaseRunning_reportNotFailed() {
     pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
+  }
+
+  @Test
+  void whenPodPhasePending_reportNotFailed() {
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.PENDING));
+
+    MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
+  }
+
+  @Test
+  void whenPodPhasePending_reportPending() {
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.PENDING));
+
+    MatcherAssert.assertThat(PodHelper.isPending(pod), is(true));
   }
 
   @Test
@@ -519,7 +535,7 @@ class PodPresenceTest {
 
   @SuppressWarnings("ConstantConditions")
   private V1Pod withTimeAndVersion(V1Pod pod) {
-    pod.getMetadata().creationTimestamp(getDateTime()).resourceVersion(RESOURCE_VERSION);
+    pod.getMetadata().creationTimestamp(advanceAndGetTime()).resourceVersion(RESOURCE_VERSION);
     return pod;
   }
 
@@ -527,9 +543,9 @@ class PodPresenceTest {
     return pod.status(new V1PodStatus().phase(FAILED).reason(EVICTED_REASON));
   }
 
-  private OffsetDateTime getDateTime() {
-    clock = clock.plusSeconds(1);
-    return clock;
+  private OffsetDateTime advanceAndGetTime() {
+    SystemClockTestSupport.increment(1);
+    return SystemClock.now();
   }
 
   // Returns a constant hash value to make canUseCurrentPod() in VerifyPodStep.apply to return true

@@ -28,6 +28,17 @@ public class InMemoryCertificates {
     return StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath);
   }
 
+  /**
+   * install memento.
+   * @return memento
+   * @throws NoSuchFieldException on no such field
+   */
+  public static Memento install(InMemoryFileSystem fileSystem) throws NoSuchFieldException {
+    InMemoryCertificates.fileSystem = fileSystem;
+    defineOperatorInternalCertificateFile(INTERNAL_CERT_DATA);
+    return StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath);
+  }
+
   static Memento installWithoutData() throws NoSuchFieldException {
     fileSystem = InMemoryFileSystem.createInstance();
     return StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath);

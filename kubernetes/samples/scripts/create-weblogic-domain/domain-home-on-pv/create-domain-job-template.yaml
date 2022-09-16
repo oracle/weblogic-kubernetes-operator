@@ -79,10 +79,6 @@ spec:
               value: "%DOMAIN_HOME%"
             - name: DOMAIN_LOGS_DIR
               value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
-            - name: ISTIO_ENABLED
-              value: "%ISTIO_ENABLED%"
-            - name: ISTIO_READINESS_PORT
-              value: "%ISTIO_READINESS_PORT%"
             - name: WDT_VERSION
               value: "%WDT_VERSION%"
             - name: PROXY_VAL

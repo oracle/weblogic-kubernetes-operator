@@ -1,0 +1,87 @@
+{
+  "apiVersion": "admission.k8s.io/v1",
+  "kind": "AdmissionReview",
+  "request": {
+    # Random uid uniquely identifying this admission call
+    "uid": "705ab4f5-6393-11e8-b7cc-42010a800002",
+
+    # Fully-qualified group/version/kind of the incoming object
+    "kind": {"group":"weblogic.oracle","version":"v9","kind":"domains"},
+    # Fully-qualified group/version/kind of the resource being modified
+    "resource": {"group":"weblogic.oracle","version":"v9","resource":"domains"},
+
+    # operation can be CREATE, UPDATE, DELETE, or CONNECT
+    "operation": "UPDATE",
+
+    # object is the new object being admitted.
+    # It is null for DELETE operations.
+    "object": {
+      "apiVersion": "weblogic.oracle/v9",
+      "kind": "Domain",
+      "metadata": {
+        "name": "sample-domain1",
+        "namespace": "sample-domain1-ns",
+        "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
+      },
+      "spec": {
+        "clusters": [
+          {
+            "name": "cluster-1"
+          }
+        ],
+        "domainHome": "/u01/domains/sample-domain1",
+        "domainHomeSourceType": "FromModel",
+        "image": "container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+        "imagePullPolicy": "IfNotPresent",
+        "includeServerOutInPodLog": true,
+        "introspectVersion": "1",
+        "replicas": 1,
+        "restartVersion": "1"
+      },
+      "status": {
+          "conditions": [
+              {
+                  "lastTransitionTime": "2022-05-04T19:41:08.794468Z",
+                  "status": "True",
+                  "type": "Completed"
+              }
+          ]
+      } 
+    },
+    # oldObject is the existing object.
+    # It is null for CREATE and CONNECT operations.
+    "oldObject": {
+        "apiVersion": "weblogic.oracle/v9",
+        "kind": "Domain",
+        "metadata": {
+          "name": "sample-domain1",
+          "namespace": "sample-domain1-ns",
+          "uid": "304cd5f3-04bb-4c51-a67e-6ebcce46d936"
+        },
+        "spec": {
+          "clusters": [
+            {
+              "name": "cluster-1"
+            }
+          ],
+          "domainHome": "/u01/domains/sample-domain1",
+          "domainHomeSourceType": "FromModel",
+          "image": "container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+          "imagePullPolicy": "IfNotPresent",
+          "includeServerOutInPodLog": true,
+          "introspectVersion": "1",
+          "replicas": 2,
+          "restartVersion": "1"
+        },
+        "status": {
+            "conditions": [
+                {
+                    "lastTransitionTime": "2022-05-04T19:41:08.794468Z",
+                    "status": "True",
+                    "type": "Completed"
+                }
+            ]
+       }
+    }
+  }
+}

@@ -3,10 +3,12 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -18,13 +20,17 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 
 /**
  * A class to handle coordinating the operator with the actual resources in Kubernetes. This reviews lists
@@ -35,46 +41,64 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private final Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
+  private ClusterList activeClusterResources;
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
     this.processor = processor;
   }
 
-  NamespacedResources.Processors getProcessors() {
-    return new NamespacedResources.Processors() {
+  Processors getProcessors() {
+    return new Processors() {
       @Override
-      Consumer<V1PodList> getPodListProcessing() {
+      public Consumer<V1PodList> getPodListProcessing() {
         return DomainResourcesValidation.this::addPodList;
       }
 
       @Override
-      Consumer<V1ServiceList> getServiceListProcessing() {
+      public Consumer<V1ServiceList> getServiceListProcessing() {
         return DomainResourcesValidation.this::addServiceList;
       }
 
       @Override
-      Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
         return DomainResourcesValidation.this::addOperatorEventList;
       }
 
       @Override
-      Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+      public Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
         return DomainResourcesValidation.this::addPodDisruptionBudgetList;
       }
 
       @Override
-      Consumer<DomainList> getDomainListProcessing() {
+      public Consumer<DomainList> getDomainListProcessing() {
         return DomainResourcesValidation.this::addDomainList;
       }
 
       @Override
-      void completeProcessing(Packet packet) {
+      public Consumer<ClusterList> getClusterListProcessing() {
+        return DomainResourcesValidation.this::addClusterList;
+      }
+
+      @Override
+      public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
+            .forEach(info -> adjustClusterResources(c, info)));
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
+  }
+
+  private void adjustClusterResources(ClusterList clusters, DomainPresenceInfo info) {
+    List<ClusterResource> resources = clusters.getItems().stream()
+        .filter(c -> isForDomain(c, info)).collect(Collectors.toList());
+    info.adjustClusterResources(resources);
+  }
+
+  private boolean isForDomain(ClusterResource clusterResource, DomainPresenceInfo info) {
+    return info.doesReferenceCluster(clusterResource.getMetadata().getName());
   }
 
   private void addPodList(V1PodList list) {
@@ -127,12 +151,17 @@ class DomainResourcesValidation {
     list.getItems().forEach(this::addDomain);
   }
 
-  private void addDomain(Domain domain) {
+  private void addDomain(DomainResource domain) {
     getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
+  private void addClusterList(ClusterList list) {
+    activeClusterResources = list;
+  }
+
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
-    return Stream.concat(domainPresenceInfoMap.values().stream().filter(this::isStranded),
+    return Stream.concat(
+        domainPresenceInfoMap.values().stream().filter(this::isStranded),
         dp.findStrandedDomainPresenceInfos(namespace, domainPresenceInfoMap.keySet()));
   }
 
@@ -158,9 +187,7 @@ class DomainResourcesValidation {
     info.setPopulated(true);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (info.getDomain().getStatus() == null) {
-      makeRight = makeRight
-          .withEventData(EventHelper.EventItem.DOMAIN_CREATED, null)
-          .interrupt();
+      makeRight = makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
     }
     makeRight.execute();
   }

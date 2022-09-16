@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -25,12 +26,14 @@ import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
-import oracle.kubernetes.operator.http.HttpResponseStep;
+import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
+import oracle.kubernetes.operator.http.client.HttpResponseStep;
+import oracle.kubernetes.operator.http.rest.Scan;
+import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.Scan;
-import oracle.kubernetes.operator.rest.ScanCache;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -38,11 +41,15 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 public class ShutdownManagedServerStep extends Step {
 
@@ -71,8 +78,7 @@ public class ShutdownManagedServerStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    V1Service service = info.getServerService(serverName);
+    V1Service service = getDomainPresenceInfo(packet).getServerService(serverName);
 
     if (service == null) {
       return doNext(packet);
@@ -128,9 +134,8 @@ public class ShutdownManagedServerStep extends Step {
       String clusterName = getClusterNameFromServiceLabel();
       List<V1EnvVar> envVarList = getV1EnvVars();
 
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
-          .map(ServerSpec::getShutdown).orElse(null);
+      Shutdown shutdown = Optional.ofNullable(getDomainPresenceInfo(packet).getServer(serverName, clusterName))
+          .map(EffectiveServerSpec::getShutdown).orElse(null);
 
       isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
       timeout = getTimeout(envVarList, shutdown);
@@ -270,7 +275,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private WlsDomainConfig getWlsDomainConfig() {
-      DomainPresenceInfo info = getPacket().getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = getDomainPresenceInfo(getPacket());
       WlsDomainConfig domainConfig =
           (WlsDomainConfig) getPacket().get(ProcessingConstants.DOMAIN_TOPOLOGY);
       if (domainConfig == null) {
@@ -302,32 +307,72 @@ public class ShutdownManagedServerStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
+      getDomainPresenceInfo(packet).setServerPodBeingDeleted(PodHelper.getPodServerName(pod), true);
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
-          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
-          processing.getRequestTimeoutSeconds(), getNext());
+          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
       return doNext(requestStep, packet);
     }
 
   }
 
+  static Step createWaitForServerShutdownWithHttpStep(Step next, String serverName) {
+    return new WaitForServerShutdownWithHttpStep(next, serverName);
+  }
+
+  static final class WaitForServerShutdownWithHttpStep extends Step {
+    @Nonnull
+    private final String serverName;
+
+    WaitForServerShutdownWithHttpStep(Step next, @Nonnull String serverName) {
+      super(next);
+      this.serverName = serverName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      String serverState = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
+      if (shutdownAttemptSucceeded(packet) && serverNotShutdown(serverState)) {
+        return doDelay(this, packet, getPollingInterval(), TimeUnit.SECONDS);
+      }
+      return doNext(packet);
+    }
+
+    @NotNull
+    private Boolean shutdownAttemptSucceeded(Packet packet) {
+      return Optional.ofNullable((Boolean)packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED)).orElse(false);
+    }
+
+    @NotNull
+    private Boolean serverNotShutdown(String serverState) {
+      return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
+    }
+
+    private int getPollingInterval() {
+      return TuningParameters.getInstance().getShutdownWithHttpPollingInterval();
+    }
+  }
+
+  private static DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class);
+  }
+
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
     private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
     private String serverName;
-    private Long requestTimeout;
     private HttpAsyncRequestStep requestStep;
 
-    ShutdownManagedServerResponseStep(String serverName, Long requestTimeout, Step next) {
+    ShutdownManagedServerResponseStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
-      this.requestTimeout = requestTimeout;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
+      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.TRUE);
       return doNext(packet);
     }
 
@@ -335,24 +380,36 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
-        if (getShutdownRequestRetryCount(packet) == null) {
+        if (shouldRetry(packet)) {
           addShutdownRequestRetryCountToPacket(packet, 1);
-          if (requestStep != null) {
-            // Retry request
-            LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
-            return doNext(requestStep, packet);
-          }
+          // Retry request
+          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
+          return doNext(requestStep, packet);
         }
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
-      } else if (getResponse(packet) == null) {
-        // Request timed out
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
+        if (!isServerStateShutdown(packet)) {
+          LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
+        }
       } else {
-        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
+        LOGGER.info(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       }
 
       removeShutdownRequestRetryCount(packet);
+      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.FALSE);
       return doNext(packet);
+    }
+
+    private boolean shouldRetry(Packet packet) {
+      return isServerStateRunningOrAdmin(packet) && getShutdownRequestRetryCount(packet) == null && requestStep != null;
+    }
+
+    private boolean isServerStateRunningOrAdmin(Packet packet) {
+      String state = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
+      return RUNNING_STATE.equals(state) || ADMIN_STATE.equals(state);
+    }
+
+    private boolean isServerStateShutdown(Packet packet) {
+      String state = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
+      return SHUTDOWN_STATE.equals(state);
     }
 
     private static Integer getShutdownRequestRetryCount(Packet packet) {

@@ -68,6 +68,11 @@ resource "oci_containerengine_cluster" "tfsample_cluster" {
   name               = var.cluster_name
   vcn_id             = oci_core_virtual_network.oke-vcn.id
 
+  timeouts {
+    create = "60m"
+    delete = "2h"
+  }
+
   #Optional
   options {
     service_lb_subnet_ids = [oci_core_subnet.oke-subnet-loadbalancer-1.id, oci_core_subnet.oke-subnet-loadbalancer-2.id]
@@ -90,6 +95,11 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   node_image_name    = var.node_pool_node_image_name
   node_shape         = var.node_pool_node_shape
   subnet_ids         = [oci_core_subnet.oke-subnet-worker-1.id, oci_core_subnet.oke-subnet-worker-2.id, oci_core_subnet.oke-subnet-worker-3.id]
+
+  timeouts {
+    create = "60m"
+    delete = "2h"
+  }
 
   #Optional
   quantity_per_subnet = var.node_pool_quantity_per_subnet

@@ -3,10 +3,12 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -25,18 +27,23 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -50,11 +57,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify the basic lifecycle operations of the WebLogic server pods by scaling the clusters in the domain"
     + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-srg")
 class ItMultiDomainModels {
 
   // domain constants
   private static final String clusterName = "cluster-1";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private static final String wlSecretName = "weblogic-credentials";
   private static final String miiDomainUid = "miidomain";
   private static final String dimDomainUid = "domaininimage";
@@ -110,39 +122,56 @@ class ItMultiDomainModels {
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   @Tag("gate")
+  @Tag("crio")
   @DisabledOnSlimImage
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
-    Domain domain = createDomainBasedOnDomainType(domainType);
+    DomainResource domain = createDomainBasedOnDomainType(domainType);
 
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
-
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
-    // In OKD cluster, we need to get the routeHost for the external admin service
+    // In OKD cluster, get the routeHost for the external admin service
     String routeHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
 
 
+    String dynamicServerPodName = domainUid + "-managed-server1";
+    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    final String managedServerPrefix = domainUid + "-managed-server";
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers);
-    List<String> managedServersBeforeScale = listManagedServersBeforeScale(replicaCount);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, numberOfServers, null, managedServersBeforeScale);
+    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
+        numberOfServers), "Could not scale up the cluster");
+    // check managed server pods are ready
+    for (int i = 1; i <= numberOfServers; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+              managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
 
-    // then scale cluster back to 2 servers
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-    managedServersBeforeScale = listManagedServersBeforeScale(numberOfServers);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        numberOfServers, replicaCount, null, managedServersBeforeScale);
+    Callable<Boolean> isDynRestarted =
+         assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
+         domainNamespace, dynTs));
+    assertFalse(assertDoesNotThrow(isDynRestarted::call),
+
+         "Dynamic managed server pod must not be restated");
+    // then scale cluster back to 1 server
+    logger.info("Scaling back cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
+    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
+        replicaCount), "Could not scale down the cluster");
+    for (int i = (replicaCount + 1); i <= numberOfServers; i++) {
+      logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",
+              managedServerPrefix + i, domainNamespace);
+      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+    }
     
     logger.info("Validating WebLogic admin server access by login to console");
     testUntil(
@@ -157,34 +186,18 @@ class ItMultiDomainModels {
   }
 
   /**
-   * Generate a server list which contains all managed servers in the cluster before scale.
-   *
-   * @param replicasBeforeScale the replicas of WebLogic cluster before scale
-   * @return list of managed servers in the cluster before scale
-   */
-  private static List<String> listManagedServersBeforeScale(int replicasBeforeScale) {
-
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicasBeforeScale; i++) {
-      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
-    }
-
-    return managedServerNames;
-  }
-
-  /**
    * Assert the specified domain and domain spec, metadata and clusters not null.
    * @param domain oracle.weblogic.domain.Domain object
    */
-  private static void assertDomainNotNull(Domain domain) {
+  private static void assertDomainNotNull(DomainResource domain) {
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), domain + " spec is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
     assertNotNull(domain.getSpec().getClusters(), domain.getSpec() + " getClusters() is null");
   }
 
-  private static Domain createDomainBasedOnDomainType(String domainType) {
-    Domain domain = null;
+  private static DomainResource createDomainBasedOnDomainType(String domainType) {
+    DomainResource domain = null;
 
     if (domainType.equalsIgnoreCase("modelInImage")) {
       domain = createMiiDomainAndVerify(miiDomainNamespace, miiDomainUid,

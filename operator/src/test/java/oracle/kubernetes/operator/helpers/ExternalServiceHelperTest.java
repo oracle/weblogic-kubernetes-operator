@@ -103,7 +103,7 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
     }
 
     @Override
-    ServiceConfigurator configureService(DomainConfigurator configurator) {
+    ServiceConfigurator configureService(DomainPresenceInfo info, DomainConfigurator configurator) {
       return configurator.configureAdminServer().configureAdminService();
     }
 
@@ -115,11 +115,11 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"http", "https", "tcp", "tls"})
-  void whenIstioPortAdded_createExternalPort(String protocol) {
+  void whenOldStyledIstioUserDefinedPortAdded_createExternalPort(String protocol) {
     final String configuredChannelName = "istio";
-    final String channelName = protocol + "-" + configuredChannelName;
-    configureDomain().withIstio()
-        .configureAdminServer().configureAdminService().withChannel(configuredChannelName, NODE_PORT);
+    final String channelName = protocol + "=" + configuredChannelName;
+    configureDomain()
+        .configureAdminServer().configureAdminService().withChannel(channelName, NODE_PORT);
     getServerConfig().addNetworkAccessPoint(
         new NetworkAccessPoint(channelName, "t3", LISTEN_PORT, 0));
 
@@ -144,3 +144,4 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
   }
 
 }
+

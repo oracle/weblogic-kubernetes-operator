@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
@@ -29,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static java.nio.file.Files.createDirectories;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -119,10 +121,12 @@ public class PersistentVolumeUtils {
       assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
     }
     if (OKE_CLUSTER) {
+      String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
+      logger.info("Using FSS PV directory {0}", fssDir);
       v1pv.getSpec()
           .storageClassName("oci-fss")
           .nfs(new V1NFSVolumeSource()
-              .path(FSS_DIR)
+              .path(fssDir)
               .server(NFS_SERVER)
               .readOnly(false));
     } else if (OKD) {
@@ -192,25 +196,32 @@ public class PersistentVolumeUtils {
   }
 
   private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
+    setVolumeSource(pvHostPath,v1pv, "weblogic-domain-storage-class");
+  }
+
+  private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv, String storageClassName) {
     if (OKE_CLUSTER) {
+      String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
+      LoggingFacade logger = getLogger();
+      logger.info("Using FSS PV directory {0}", fssDir);
       v1pv.getSpec()
-          .storageClassName("oci-fss")
-          .nfs(new V1NFSVolumeSource()
-              .path(FSS_DIR)
-              .server(NFS_SERVER)
-              .readOnly(false));
+              .storageClassName("oci-fss")
+              .nfs(new V1NFSVolumeSource()
+                      .path(fssDir)
+                      .server(NFS_SERVER)
+                      .readOnly(false));
     } else if (OKD) {
       v1pv.getSpec()
-          .storageClassName("okd-nfsmnt")
-          .nfs(new V1NFSVolumeSource()
-              .path(PV_ROOT)
-              .server(NFS_SERVER)
-              .readOnly(false));
+              .storageClassName("okd-nfsmnt")
+              .nfs(new V1NFSVolumeSource()
+                      .path(PV_ROOT)
+                      .server(NFS_SERVER)
+                      .readOnly(false));
     } else {
       v1pv.getSpec()
-          .storageClassName("weblogic-domain-storage-class")
-          .hostPath(new V1HostPathVolumeSource()
-              .path(pvHostPath.toString()));
+              .storageClassName(storageClassName)
+              .hostPath(new V1HostPathVolumeSource()
+                      .path(pvHostPath.toString()));
     }
   }
 
@@ -289,6 +300,7 @@ public class PersistentVolumeUtils {
     V1Container container = new V1Container()
         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
         .addCommandItem("/bin/sh")
         .addArgsItem("-c")
         .addArgsItem(argCommand)
@@ -332,8 +344,8 @@ public class PersistentVolumeUtils {
         .metadata(new V1ObjectMeta()
             .name("pv-test" + nameSuffix)
             .namespace(namespace));
-    setVolumeSource(pvHostPath, v1pv);
-    v1pv.getSpec().storageClassName(nameSuffix);
+
+    setVolumeSource(pvHostPath, v1pv, nameSuffix);
     boolean hasLabels = false;
     String labelSelector = null;
     if (labels != null || !labels.isEmpty()) {

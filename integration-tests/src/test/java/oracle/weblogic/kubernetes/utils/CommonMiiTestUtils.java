@@ -16,7 +16,6 @@ import java.util.Set;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -29,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -37,15 +35,16 @@ import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterList;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -57,19 +56,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -84,6 +82,8 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -92,10 +92,9 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
@@ -118,6 +117,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * The common utility class for model-in-image tests.
  */
 public class CommonMiiTestUtils {
+  
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
@@ -127,8 +127,9 @@ public class CommonMiiTestUtils {
    * @param adminServerPodName name of the admin server pod
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
+   * @return DomainResource
    */
-  public static Domain createMiiDomainAndVerify(
+  public static DomainResource createMiiDomainAndVerify(
       String domainNamespace,
       String domainUid,
       String imageName,
@@ -136,11 +137,36 @@ public class CommonMiiTestUtils {
       String managedServerPrefix,
       int replicaCount
   ) {
+    return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, 
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList("cluster-1"));
+  }
+  
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param adminServerPodName name of the admin server pod
+   * @param managedServerPrefix prefix of the managed server pods
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames names of clusters
+   * @return DomainResource
+   */
+  public static DomainResource createMiiDomainAndVerify(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      String adminServerPodName,
+      String managedServerPrefix,
+      int replicaCount, 
+      List<String> clusterNames
+  ) {
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
-    assertDoesNotThrow(() -> createOcirRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", OCIR_SECRET_NAME));
+    logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
+    assertDoesNotThrow(() -> createTestRepoSecret(domainNamespace),
+            String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -165,15 +191,15 @@ public class CommonMiiTestUtils {
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
-    Domain domain = createDomainResource(
-        domainUid,
+    DomainResource domain = createDomainResource(domainUid,
         domainNamespace,
         imageName,
         adminSecretName,
-        new String[]{OCIR_SECRET_NAME},
+        new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName,
         replicaCount,
-        "cluster-1");
+        clusterNames
+    );
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -202,10 +228,9 @@ public class CommonMiiTestUtils {
 
     return domain;
   }
-
+  
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
    *
    * @param domainResourceName name of the domain resource
    * @param domNamespace Kubernetes namespace that the domain is hosted
@@ -213,28 +238,19 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainResourceName,
       String domNamespace,
       String imageName,
       String adminSecretName,
       String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String clusterName) {
+      String encryptionSecretName) {
 
-    // create the domain CR
-    Domain domain = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-        imageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, List.of(clusterName));
-    setPodAntiAffinity(domain);
-
-    return domain;
-  }
+    return createDomainResource(domainResourceName, domNamespace, imageName,
+        adminSecretName, repoSecretName, encryptionSecretName, -1, Collections.<String>emptyList());
+  } 
 
   /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
@@ -246,11 +262,11 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
+   * @param replicaCount replica count of the cluster
+   * @param clusterNames names of cluster resources to create
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainResourceName,
       String domNamespace,
       String imageName,
@@ -267,7 +283,7 @@ public class CommonMiiTestUtils {
     }
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
@@ -277,11 +293,11 @@ public class CommonMiiTestUtils {
             .domainUid(domainResourceName)
             .domainHomeSourceType("FromModel")
             .image(imageName)
-            .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new oracle.weblogic.domain.ServerPod()
                 .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -290,7 +306,6 @@ public class CommonMiiTestUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new oracle.weblogic.domain.AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
@@ -300,15 +315,23 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
-    for (String clusterName : clusterNames) {
-      domain.spec()
-          .addClustersItem(new oracle.weblogic.domain.Cluster()
-              .clusterName(clusterName)
-              .replicas(replicaCount)
-              .serverStartState("RUNNING"));
-    }
 
     domain.spec().setImagePullSecrets(secrets);
+
+    ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
+    if (clusterNames != null) {
+      for (String clusterName : clusterNames) {
+        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
+          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+        } else {
+          getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+          createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
+        }
+        // set cluster references
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+      }
+    }
+
     setPodAntiAffinity(domain);
     return domain;
   }
@@ -323,30 +346,26 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
    * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
    * @param auxiliaryImageVolumeName auxiliary image volume name
    * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static DomainResource createDomainResource(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
-      String clusterName,
       String auxiliaryImagePath,
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
-        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
-        List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImageAndVolume(domainResourceName,
+        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName,
+        auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
 
     return domainCR;
   }
@@ -361,30 +380,26 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
    * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
    * @param auxiliaryImageVolumeName auxiliary image volume name
    * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImageAndVolume(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames,
       String auxiliaryImagePath,
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterNames);
+        encryptionSecretName);
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
         .mountPath(auxiliaryImagePath)
         .name(auxiliaryImageVolumeName));
@@ -404,162 +419,6 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and auxiliary image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param baseImageName name of the base image to use
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
-   * @param auxiliaryImageVolumes list of AuxiliaryImageVolumes
-   * @param auxiliaryImages list of AuxiliaryImages
-   * @return domain object of the domain resource
-   */
-  public static Domain createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String baseImageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String clusterName,
-      List<AuxiliaryImageVolume> auxiliaryImageVolumes,
-      List<AuxiliaryImage> auxiliaryImages) {
-
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-        baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterName);
-
-    for (AuxiliaryImageVolume auxiliaryImageVolume : auxiliaryImageVolumes) {
-      domainCR.spec().addAuxiliaryImageVolumesItem(auxiliaryImageVolume);
-      domainCR.spec().configuration().model()
-          .withModelHome(auxiliaryImageVolume.getMountPath() + "/models")
-          .withWdtInstallHome(auxiliaryImageVolume.getMountPath() + "/weblogic-deploy");
-    }
-
-    for (AuxiliaryImage auxiliaryImage : auxiliaryImages) {
-      /* Commented out due to auxiliary image 4.0 changes
-      domainCR.spec().serverPod().addAuxiliaryImagesItem(auxiliaryImage);
-       */
-    }
-
-    return domainCR;
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param imageName name of the image including its tag
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
-   * @return domain object of the domain resource
-   */
-  public static Domain createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String clusterName) {
-
-    // create the domain CR
-    Domain domain = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName, domNamespace,
-        imageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, List.of(clusterName));
-    setPodAntiAffinity(domain);
-
-    return domain;
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param imageName name of the image including its tag
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
-   * @return domain object of the domain resource
-   */
-  public static Domain createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames) {
-
-    // create secrets
-    List<V1LocalObjectReference> secrets = new ArrayList<>();
-    for (String secret : repoSecretName) {
-      secrets.add(new V1LocalObjectReference().name(secret));
-    }
-    // create the domain CR
-    Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
-                    .name(domainResourceName)
-                    .namespace(domNamespace))
-            .spec(new oracle.weblogic.domain.DomainSpec()
-                    .domainUid(domainResourceName)
-                    .domainHomeSourceType("FromModel")
-                    .image(imageName)
-                    .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new oracle.weblogic.domain.ServerPod()
-                            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new oracle.weblogic.domain.AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new oracle.weblogic.domain.AdminService()
-                                    .addChannelsItem(new oracle.weblogic.domain.Channel()
-                                            .channelName("default")
-                                            .nodePort(0))))
-                    .configuration(new oracle.weblogic.domain.Configuration()
-                            .model(new oracle.weblogic.domain.Model()
-                                    .domainType("WLS")
-                                    .runtimeEncryptionSecret(encryptionSecretName))
-                            .introspectorJobActiveDeadlineSeconds(600L)));
-    for (String clusterName : clusterNames) {
-      domain.spec()
-              .addClustersItem(new oracle.weblogic.domain.Cluster()
-                      .clusterName(clusterName)
-                      .replicas(replicaCount)
-                      .serverStartState("RUNNING"));
-    }
-
-    domain.spec().setImagePullSecrets(secrets);
-    setPodAntiAffinity(domain);
-    return domain;
-  }
-
-  /**
    * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
    * image.
    *
@@ -569,72 +428,32 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterName name of the cluster to add in domain
    * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
    * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAuxiliaryImage(
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
       String adminSecretName,
       String[] repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
-      String clusterName,
       String auxiliaryImagePath,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
-        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
-        List.of(clusterName), auxiliaryImagePath, auxiliaryImageName);
-
-    return domainCR;
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
-   * image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param baseImageName name of the base image to use
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
-   * @param clusterNames a list of the cluster name to add in domain
-   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
-   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
-   *                   and WDT installation files
-   * @return domain object of the domain resource
-   */
-  public static Domain createDomainResourceWithAuxiliaryImage(
-      String domainResourceName,
-      String domNamespace,
-      String baseImageName,
-      String adminSecretName,
-      String[] repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      List<String> clusterNames,
-      String auxiliaryImagePath,
-      String... auxiliaryImageName) {
-
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterNames);
+        encryptionSecretName);
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
       AuxiliaryImage auxImage = new AuxiliaryImage()
-          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+          .image(cmImageName).imagePullPolicy(IMAGE_PULL_POLICY);
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
         auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
-                .sourceModelHome(auxiliaryImagePath + "/models");
+            .sourceModelHome(auxiliaryImagePath + "/models");
       }
       domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
       index++;
@@ -652,10 +471,72 @@ public class CommonMiiTestUtils {
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
-   * @param replicaCount number of managed servers to start
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResourceWithAuxiliaryImage(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName) {
+
+    // create secrets
+    List<V1LocalObjectReference> secrets = new ArrayList<>();
+    for (String secret : repoSecretName) {
+      secrets.add(new V1LocalObjectReference().name(secret));
+    }
+
+    // create the domain CR
+    DomainResource domain = new DomainResource()
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
+                    .name(domainResourceName)
+                    .namespace(domNamespace))
+            .spec(new oracle.weblogic.domain.DomainSpec()
+                    .domainUid(domainResourceName)
+                    .domainHomeSourceType("FromModel")
+                    .image(imageName)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IfNeeded")
+                    .serverPod(new oracle.weblogic.domain.ServerPod()
+                            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new oracle.weblogic.domain.AdminServer()
+                            .adminService(new oracle.weblogic.domain.AdminService()
+                                    .addChannelsItem(new oracle.weblogic.domain.Channel()
+                                            .channelName("default")
+                                            .nodePort(0))))
+                    .configuration(new oracle.weblogic.domain.Configuration()
+                            .model(new oracle.weblogic.domain.Model()
+                                    .domainType("WLS")
+                                    .runtimeEncryptionSecret(encryptionSecretName))
+                            .introspectorJobActiveDeadlineSeconds(600L)));
+    domain.spec().setImagePullSecrets(secrets);
+    setPodAntiAffinity(domain);
+    return domain;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
    * @param pvName Name of persistent volume
    * @param pvcName Name of persistent volume claim
-   * @param clusterName name of the cluster to add in domain
    * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
    * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
@@ -663,17 +544,15 @@ public class CommonMiiTestUtils {
    * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithLogHome(
+  public static DomainResource createDomainResourceWithLogHome(
       String domainResourceName,
       String domNamespace,
       String imageName,
       String adminSecretName,
       String repoSecretName,
       String encryptionSecretName,
-      int replicaCount,
       String pvName,
       String pvcName,
-      String clusterName,
       String configMapName,
       String dbSecretName,
       boolean allowReplicasBelowMinDynClusterSize,
@@ -692,15 +571,15 @@ public class CommonMiiTestUtils {
         .domainHomeSourceType("FromModel")
         .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
+        .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
             .name(repoSecretName))
-        .webLogicCredentialsSecret(new V1SecretReference()
-            .name(adminSecretName)
-            .namespace(domNamespace))
+        .webLogicCredentialsSecret(new V1LocalObjectReference()
+            .name(adminSecretName))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(Boolean.TRUE)
         .logHome(uniquePath + "/logs")
-        .serverStartPolicy("IF_NEEDED")
+        .serverStartPolicy("IfNeeded")
         .serverPod(new ServerPod()
             .addEnvItem(new V1EnvVar()
                 .name("JAVA_OPTIONS")
@@ -716,15 +595,10 @@ public class CommonMiiTestUtils {
                 .mountPath("/shared")
                 .name(pvName)))
         .adminServer(new AdminServer()
-            .serverStartState("RUNNING")
             .adminService(new AdminService()
                 .addChannelsItem(new Channel()
                     .channelName("default")
                     .nodePort(0))))
-        .addClustersItem(new Cluster()
-            .clusterName(clusterName)
-            .replicas(replicaCount)
-            .serverStartState("RUNNING"))
         .configuration(new Configuration()
             .secrets(securityList)
             .model(new Model()
@@ -739,7 +613,7 @@ public class CommonMiiTestUtils {
       domainSpec.dataHome(uniquePath + "/data");
     }
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -747,16 +621,50 @@ public class CommonMiiTestUtils {
             .namespace(domNamespace))
         .spec(domainSpec);
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-        domainResourceName, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainResourceName, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-        + "for %s in namespace %s", domainResourceName, domNamespace));
-
     setPodAntiAffinity(domain);
     return domain;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start, set at domain level
+   * @param pvName Name of persistent volume
+   * @param pvcName Name of persistent volume claim
+   * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
+   * @param dbSecretName name of the Secret for WebLogic configuration overrides
+   * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
+   * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
+   * @param setDataHome whether to set data home at domain resource
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResourceWithLogHome(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String pvName,
+      String pvcName,
+      String configMapName,
+      String dbSecretName,
+      boolean allowReplicasBelowMinDynClusterSize,
+      boolean onlineUpdateEnabled,
+      boolean setDataHome) {
+    DomainResource domain = createDomainResourceWithLogHome(domainResourceName, domNamespace, imageName,
+        adminSecretName, repoSecretName, encryptionSecretName, pvName, pvcName, configMapName,
+        dbSecretName, allowReplicasBelowMinDynClusterSize, onlineUpdateEnabled, setDataHome);
+    DomainSpec spec = domain.getSpec().replicas(replicaCount);
+    return domain.spec(spec);
   }
 
   /**
@@ -1126,7 +1034,7 @@ public class CommonMiiTestUtils {
                                       .claimName(pvcName))))
                       .imagePullSecrets(Arrays.asList(
                           new V1LocalObjectReference()
-                              .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
+                              .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
 
       String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -1424,7 +1332,7 @@ public class CommonMiiTestUtils {
           String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
           managedServerPodName, domainNamespace)));
     }
-
+    String imagePullPolicy = "IfNotPresent";
     // create patch string
     StringBuffer patchStr = new StringBuffer("[")
         .append("{\"op\":  \"" + addOrReplace + "\",")
@@ -1435,7 +1343,7 @@ public class CommonMiiTestUtils {
         .append("\"value\":  {\"image\": \"")
         .append(auxiliaryImageName)
         .append("\", ")
-        .append("\"imagePullPolicy\": \"IfNotPresent\" ")
+        .append("\"imagePullPolicy\": \"" + imagePullPolicy + "\" ")
         .append("\"}}]");
 
     logger.info("Patch domain with auxiliary image patch string: " + patchStr);
@@ -1447,7 +1355,7 @@ public class CommonMiiTestUtils {
         "patchDomainClusterWithAuxiliaryImageAndVerify failed ");
     assertTrue(aiPatched, "patchDomainClusterWithAuxiliaryImageAndVerify failed");
 
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
@@ -1541,11 +1449,11 @@ public class CommonMiiTestUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static Domain createMiiDomainWithIstioMultiClusters(String domainUid,
-                                                             String domainNamespace,
-                                                             String miiImage,
-                                                             int numOfClusters,
-                                                             int replicaCount) {
+  public static DomainResource createMiiDomainWithIstioMultiClusters(String domainUid,
+                                                                     String domainNamespace,
+                                                                     String miiImage,
+                                                                     int numOfClusters,
+                                                                     int replicaCount) {
     return createMiiDomainWithIstioMultiClusters(domainUid, domainNamespace, miiImage, numOfClusters,
         replicaCount, null);
   }
@@ -1561,12 +1469,12 @@ public class CommonMiiTestUtils {
    * @param serverPodLabels the labels for the server pod
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static Domain createMiiDomainWithIstioMultiClusters(String domainUid,
-                                                             String domainNamespace,
-                                                             String miiImage,
-                                                             int numOfClusters,
-                                                             int replicaCount,
-                                                             Map<String, String> serverPodLabels) {
+  public static DomainResource createMiiDomainWithIstioMultiClusters(String domainUid,
+                                                                     String domainNamespace,
+                                                                     String miiImage,
+                                                                     int numOfClusters,
+                                                                     int replicaCount,
+                                                                     Map<String, String> serverPodLabels) {
 
     LoggingFacade logger = getLogger();
     // admin/managed server name here should match with WDT model yaml file
@@ -1575,8 +1483,8 @@ public class CommonMiiTestUtils {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
-      createOcirRepoSecret(domainNamespace);
+    if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, domainNamespace)) {
+      createTestRepoSecret(domainNamespace);
     }
 
     // create secret for admin credentials
@@ -1595,19 +1503,21 @@ public class CommonMiiTestUtils {
     }
 
     // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
+    List<V1LocalObjectReference> clusterRefList = new ArrayList<>();
     for (int i = numOfClusters; i >= 1; i--) {
-      Cluster cluster = new Cluster()
-          .clusterName("cluster-" + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING");
+      String clusterName = "cluster-" + i;
+      ClusterSpec clusterSpec = new ClusterSpec()
+          .clusterName(clusterName)
+          .replicas(replicaCount);
 
       if (serverPodLabels != null) {
-        cluster.serverPod(new ServerPod()
+        clusterSpec.serverPod(new ServerPod()
             .labels(serverPodLabels));
       }
 
-      clusterList.add(cluster);
+      clusterRefList.add(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
+
+      createClusterAndVerify(createClusterResource(domainUid + "-" + clusterName, domainNamespace, clusterSpec));
     }
 
     // set resource request and limit
@@ -1619,7 +1529,7 @@ public class CommonMiiTestUtils {
     resourceLimit.put("memory", new Quantity("2Gi"));
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1630,13 +1540,13 @@ public class CommonMiiTestUtils {
             .domainHome("/u01/domains/" + domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -1647,14 +1557,8 @@ public class CommonMiiTestUtils {
                 .resources(new V1ResourceRequirements()
                     .requests(resourceRequest)
                     .limits(resourceLimit)))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .clusters(clusterList)
+            .clusters(clusterRefList)
             .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888)
-                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionsecret))
@@ -1730,16 +1634,16 @@ public class CommonMiiTestUtils {
    *
    * @return domain object of the domain resource
    */
-  public static  Domain create2channelsDomainResourceWithConfigMap(String domainUid,
-          String domNamespace, String adminSecretName,
-          String repoSecretName, String encryptionSecretName,
-          int replicaCount, String miiImage, String configmapName) {
+  public static DomainResource create2channelsDomainResourceWithConfigMap(String domainUid,
+                                                String domNamespace, String adminSecretName,
+                                                String repoSecretName, String encryptionSecretName,
+                                                int replicaCount, String miiImage, String configmapName) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1749,13 +1653,13 @@ public class CommonMiiTestUtils {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -1764,7 +1668,6 @@ public class CommonMiiTestUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .serverService(new ServerService()
                     .annotations(keyValueMap)
                     .labels(keyValueMap))
@@ -1775,10 +1678,6 @@ public class CommonMiiTestUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -1814,7 +1713,7 @@ public class CommonMiiTestUtils {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -1838,9 +1737,9 @@ public class CommonMiiTestUtils {
     createModelConfigMapSSLenable(configMapName, yamlString, domainUid, domainNamespace);
 
     // create the domain object
-    Domain domain = create2channelsDomainResourceWithConfigMap(domainUid,
+    DomainResource domain = create2channelsDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
                replicaCount,
                miiImageName, configMapName);
 
@@ -1883,7 +1782,7 @@ public class CommonMiiTestUtils {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -1909,10 +1808,10 @@ public class CommonMiiTestUtils {
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = createIstioDomainResource(domainUid,
+    DomainResource domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         miiImage,

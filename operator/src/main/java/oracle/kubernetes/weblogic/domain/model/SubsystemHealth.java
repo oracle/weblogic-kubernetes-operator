@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -132,7 +132,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableCo
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(Domain.sortOrNull(symptoms))
+        .append(DomainResource.sortList(symptoms))
         .append(health)
         .append(subsystemName)
         .toHashCode();
@@ -148,7 +148,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableCo
     }
     SubsystemHealth rhs = ((SubsystemHealth) other);
     return new EqualsBuilder()
-        .append(Domain.sortOrNull(symptoms), Domain.sortOrNull(rhs.symptoms))
+        .append(DomainResource.sortList(symptoms), DomainResource.sortList(rhs.symptoms))
         .append(health, rhs.health)
         .append(subsystemName, rhs.subsystemName)
         .isEquals();

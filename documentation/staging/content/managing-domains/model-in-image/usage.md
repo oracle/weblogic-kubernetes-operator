@@ -142,7 +142,7 @@ Example:
   ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     create secret generic MY-DOMAINUID-runtime-encrypt-secret \
-    --from-literal=password=welcome1
+    --from-literal=password=MY-RUNTIME-PASSWORD
   ```
   ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
@@ -180,12 +180,12 @@ The following Domain fields are specific to Model in Image domains.
 
 **Notes**:
 
- - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
+ - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
 
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 
  - For fully specified Model in Image Domain YAML file examples,
-   see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+   see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
    The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
 #### Always use external state
@@ -205,7 +205,7 @@ For more information see:
 {{% notice info %}} This section applies only for a `JRF` domain type. Skip it if your domain type is `WLS` or `RestrictedJRF`.
 {{% /notice %}}
 
-A JRF domain requires an infrastructure database, initializing this database using RCU, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize it's OPSS schema tables in the database - a process that can take several minutes.
+A JRF domain requires an infrastructure database, initializing this database using RCU, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize its OPSS schema tables in the database - a process that can take several minutes.
 
 Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
@@ -256,11 +256,12 @@ Always back up your wallet file to a safe location that can be retrieved later. 
 {{% /notice %}}
 
 To reuse the wallet:
-  - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain. For example, assuming the password is `welcome1`:
+  - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain. For example, substitute
+    the password in place of `MY_WALLET_PASSWORD` below:
     ```shell
     $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-password-secret \
-      --from-literal=walletPassword=welcome1
+      --from-literal=walletPassword=MY_WALLET_PASSWORD
     ```
     ```shell
     $ kubectl -n MY_DOMAIN_NAMESPACE \
@@ -286,13 +287,13 @@ To reuse the wallet:
 
 Follow these steps to ensure that a JRF domain can continue to access its RCU data after changing its database password.
 
-- Before changing the database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `NEVER`.
+- Before changing the database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `Never`.
 
 - Update the password in the database.
 
 - Update the Kubernetes Secret that contains your `RCUDbInfo.rcu_schema_password` for each domain.
 
-- Restart the domains. For example, change their `serverStartPolicy` from `NEVER` to `IF_NEEDED`.
+- Restart the domains. For example, change their `serverStartPolicy` from `Never` to `IfNeeded`.
 
 - Save your wallet files again, as changing your password generates a different wallet.
 

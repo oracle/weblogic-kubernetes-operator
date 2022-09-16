@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -44,12 +45,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
-import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,6 +56,7 @@ import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -127,11 +127,11 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainUid();
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return info.getDomain();
   }
 
-  ServerSpec getServerSpec() {
+  EffectiveServerSpec getServerSpec() {
     return getDomain().getAdminServerSpec();
   }
 
@@ -257,24 +257,8 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().isUseOnlineUpdate();
   }
 
-  public boolean isIstioEnabled() {
-    return getDomain().isIstioEnabled();
-  }
-
   public boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
-    return Domain.isAdminChannelPortForwardingEnabled(domainSpec);
-  }
-
-  int getIstioReadinessPort() {
-    return getDomain().getIstioReadinessPort();
-  }
-
-  int getIstioReplicationPort() {
-    return getDomain().getIstioReplicationPort();
-  }
-
-  boolean isLocalhostBindingsEnabled() {
-    return getDomain().isLocalhostBindingsEnabled();
+    return DomainResource.isAdminChannelPortForwardingEnabled(domainSpec);
   }
 
   String getEffectiveLogHome() {
@@ -326,6 +310,7 @@ public class JobStepContext extends BasePodStepContext {
         new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
+          .putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, getIntrospectVersionLabel())
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
@@ -379,9 +364,8 @@ public class JobStepContext extends BasePodStepContext {
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.JOBNAME_LABEL, createJobName(getDomainUid()));
-    if (isIstioEnabled()) {
-      metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
-    }
+    // always set it to false
+    metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
     return metadata;
   }
 
@@ -445,6 +429,10 @@ public class JobStepContext extends BasePodStepContext {
     if (isSourceWdt()) {
       Optional.ofNullable(getWdtConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
       addWdtSecretVolume(podSpec);
+    }
+
+    if (podSpec.getAffinity().equals(getDefaultAntiAffinity())) {
+      podSpec.affinity(null);
     }
     return podSpec;
   }
@@ -575,7 +563,7 @@ public class JobStepContext extends BasePodStepContext {
   protected List<V1Volume> getFluentdVolumes() {
     List<V1Volume> volumes = new ArrayList<>();
     Optional.ofNullable(getDomain())
-            .map(Domain::getFluentdSpecification)
+            .map(DomainResource::getFluentdSpecification)
             .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
                     .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
     return volumes;
@@ -664,6 +652,10 @@ public class JobStepContext extends BasePodStepContext {
     return LegalNames.toServerServiceName(getDomainUid(), getAsName());
   }
 
+  private String getIntrospectVersionLabel() {
+    return Optional.ofNullable(getDomain().getIntrospectVersion()).orElse(null);
+  }
+
   @Override
   List<V1EnvVar> getConfiguredEnvVars() {
     // Pod for introspector job would use same environment variables as for admin server
@@ -687,17 +679,11 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType().toString());
     addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
-    addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
     addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
             Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
     Optional.ofNullable(getKubernetesPlatform())
             .ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
 
-    addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
-    addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
-    if (isIstioEnabled()) {
-      addIstioEnvVars(vars);
-    }
     if (isUseOnlineUpdate()) {
       addOnlineUpdateEnvVars(vars);
     }
@@ -752,19 +738,6 @@ public class JobStepContext extends BasePodStepContext {
       addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
     }
     addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
-  }
-
-  private void addIstioEnvVars(List<V1EnvVar> vars) {
-    // Only add the following Istio configuration environment variables when explicitly configured
-    // otherwise the introspection job will needlessly run, after operator upgrade, based on generated
-    // hash code of the set of environment variables.
-    if (!isLocalhostBindingsEnabled()) {
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS, "false");
-    }
-
-    if (getIstioReplicationPort() != Istio.DEFAULT_REPLICATION_PORT) {
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT, Integer.toString(getIstioReplicationPort()));
-    }
   }
 
   private void addOnlineUpdateEnvVars(List<V1EnvVar> vars) {

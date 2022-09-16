@@ -1,9 +1,9 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v9"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: %DOMAIN_UID%
@@ -22,7 +22,7 @@ spec:
   image: "%WEBLOGIC_IMAGE%"
 
   # imagePullPolicy defaults to "Always" if image version is :latest
-  imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
+  imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
 
   # Identify which Secret contains the credentials for pulling an image
   %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
@@ -50,12 +50,12 @@ spec:
   dataHome: "%DATA_HOME%"
 
 
-  # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+  # serverStartPolicy legal values are "Never", "IfNeeded", or "AdminOnly"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "NEVER" will not start any server in the domain
-  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-  # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
-  serverStartPolicy: "%SERVER_START_POLICY%"
+  # - "Never" will not start any server in the domain
+  # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+  # - "IfNeeded" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: %SERVER_START_POLICY%
 
   serverPod:
     # an (optional) list of environment variable to be set on the servers
@@ -75,10 +75,6 @@ spec:
 
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-    # serverStartState legal values are "RUNNING" or "ADMIN"
-    # "RUNNING" means the listed server will be started up to "RUNNING" mode
-    # "ADMIN" means the listed server will be start up to "ADMIN" mode
-    serverStartState: "RUNNING"
     %EXPOSE_ANY_CHANNEL_PREFIX%adminService:
     %EXPOSE_ANY_CHANNEL_PREFIX%  channels:
     # The Admin Server's NodePort
@@ -91,29 +87,8 @@ spec:
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
   - clusterName: %CLUSTER_NAME%
-    serverStartState: "RUNNING"
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
     replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
 
-  # Istio
-  %ISTIO_PREFIX%configuration:
-  %ISTIO_PREFIX%  istio:
-  %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
-  %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%
 

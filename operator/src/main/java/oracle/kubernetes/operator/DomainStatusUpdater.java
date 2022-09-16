@@ -18,6 +18,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -40,8 +41,7 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.Scan;
-import oracle.kubernetes.operator.rest.ScanCache;
+import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -51,28 +51,29 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
+import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
-import static oracle.kubernetes.common.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
+import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
+import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -85,8 +86,6 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
-import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
@@ -127,7 +126,7 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(next);
+    return new StatusUpdateStep(createClusterResourceStatusUpdaterStep(next));
   }
 
 
@@ -159,7 +158,7 @@ public class DomainStatusUpdater {
         super(packet, domainStatusUpdaterStep);
       }
 
-      @NotNull
+      @Nonnull
       @Override
       List<EventData> createDomainEvents() {
         final List<EventData> result = new ArrayList<>();
@@ -208,7 +207,7 @@ public class DomainStatusUpdater {
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep(Step next) {
-    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH);
+    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH, INTROSPECTION);
   }
 
   /**
@@ -259,11 +258,12 @@ public class DomainStatusUpdater {
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
+   * @param message a fuller description of the problem
+   * @param next the next step to run. May be null.
    */
-  public static Step createAbortedFailureSteps() {
-    return createEventStep(new EventData(DOMAIN_FAILED, INTROSPECTOR_MAX_ERRORS_EXCEEDED).failureReason(ABORTED));
+  public static Step createTopologyMismatchFailureSteps(String message, Step next) {
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH, REPLICAS_TOO_HIGH);
   }
-
 
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
@@ -271,8 +271,8 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    * @param next the next step to run. May be null.
    */
-  public static Step createTopologyMismatchFailureSteps(String message, Step next) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
+  public static Step createReplicasTooHighFailureSteps(String message, Step next) {
+    return new FailureStep(REPLICAS_TOO_HIGH, message, next).removingOldFailures(REPLICAS_TOO_HIGH);
   }
 
   /**
@@ -294,7 +294,8 @@ public class DomainStatusUpdater {
    * @param domainIntrospectorJob Domain introspector job
    */
   public static Step createIntrospectionFailureSteps(String message, V1Job domainIntrospectorJob) {
-    return new FailureStep(INTROSPECTION, message).forIntrospection(domainIntrospectorJob);
+    return new FailureStep(INTROSPECTION, message)
+        .forIntrospection(domainIntrospectorJob).removingOldFailures(INTROSPECTION);
   }
 
   /**
@@ -329,12 +330,12 @@ public class DomainStatusUpdater {
     }
 
     // Note: this step is created with no next step, as that is added via a call to Step.chain, later.
-    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context) {
+    private ResponseStep<DomainResource> createResponseStep(DomainStatusUpdaterContext context) {
       return new StatusReplaceResponseStep(this, context, null);
     }
   }
 
-  static class StatusReplaceResponseStep extends DefaultResponseStep<Domain> {
+  static class StatusReplaceResponseStep extends DefaultResponseStep<DomainResource> {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
 
@@ -346,7 +347,7 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
       if (callResponse.getResult() != null) {
         packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       }
@@ -354,7 +355,7 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
@@ -371,15 +372,15 @@ public class DomainStatusUpdater {
     }
   }
 
-  static class DomainUpdateStep extends ResponseStep<Domain> {
+  static class DomainUpdateStep extends ResponseStep<DomainResource> {
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
       packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       return doNext(packet);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
       return callResponse.getStatusCode() == HTTP_NOT_FOUND
           ? doNext(null, packet)
           : super.onFailure(packet, callResponse);
@@ -389,12 +390,14 @@ public class DomainStatusUpdater {
   static class DomainStatusUpdaterContext {
     @Nonnull
     private final DomainPresenceInfo info;
+    private final boolean isMakeRight;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
+      isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
     }
 
@@ -405,7 +408,7 @@ public class DomainStatusUpdater {
       return newStatus;
     }
 
-    @NotNull
+    @Nonnull
     private DomainStatus createNewStatus() {
       DomainStatus cloneStatus = cloneStatus();
       modifyStatus(cloneStatus);
@@ -428,7 +431,7 @@ public class DomainStatusUpdater {
       return getDomain().getMetadata();
     }
 
-    @NotNull
+    @Nonnull
     DomainPresenceInfo getInfo() {
       return info;
     }
@@ -437,7 +440,7 @@ public class DomainStatusUpdater {
       return getDomain().getStatus();
     }
 
-    Domain getDomain() {
+    DomainResource getDomain() {
       return info.getDomain();
     }
 
@@ -458,13 +461,20 @@ public class DomainStatusUpdater {
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("status change: " + createPatchString());
       }
-      Domain oldDomain = getDomain();
-      Domain newDomain = new Domain()
+      DomainResource oldDomain = getDomain();
+
+      DomainStatus status = getNewStatus();
+      if (isMakeRight) {
+        // Only set observedGeneration during a make-right, but not during a background status update
+        status.setObservedGeneration(oldDomain.getMetadata().getGeneration());
+      }
+
+      DomainResource newDomain = new DomainResource()
           .withKind(KubernetesConstants.DOMAIN)
           .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .withMetadata(oldDomain.getMetadata())
           .withSpec(null)
-          .withStatus(getNewStatus());
+          .withStatus(status);
 
       return new CallBuilder().replaceDomainStatusAsync(
           getDomainName(),
@@ -503,13 +513,14 @@ public class DomainStatusUpdater {
     }
 
     private void addFailureCondition(DomainStatus status, DomainCondition condition) {
-      status.addCondition(condition);
+      status.addCondition(condition).updateSummaryMessage(getDomain());
       addDomainEvent(condition);
     }
 
     private boolean hasReachedRetryLimit(DomainStatus status, DomainCondition condition) {
       return condition.getSeverity() == SEVERE
-          && status.getMinutesFromInitialToLastFailure() > getDomain().getFailureRetryLimitMinutes();
+          && status.getInitialFailureTime() != null
+          && status.getMinutesFromInitialToLastFailure() >= getDomain().getFailureRetryLimitMinutes();
     }
 
     private String getFatalMessage() {
@@ -590,7 +601,7 @@ public class DomainStatusUpdater {
         return list;
       }
 
-      @NotNull
+      @Nonnull
       private List<EventData> getNewConditionEvents(@Nonnull  Conditions conditions) {
         return conditions.getNewConditions().stream()
             .map(this::toEvent)
@@ -619,6 +630,8 @@ public class DomainStatusUpdater {
 
         if (isHasFailedPod()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodFailedMessage()));
+        } else if (hasPodNotRunningInTime()) {
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotRunningMessage()));
         } else if (hasPodNotReadyInTime()) {
           addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotReadyMessage()));
         } else {
@@ -631,6 +644,10 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
+      }
+
+      private String getPodNotRunningMessage() {
+        return LOGGER.formatMessage(PODS_NOT_RUNNING);
       }
 
       private String getPodNotReadyMessage() {
@@ -650,11 +667,9 @@ public class DomainStatusUpdater {
 
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
-          this.status.removeConditionsMatching(c -> c.hasType(FAILED) && REPLICAS_TOO_HIGH == c.getReason());
           this.clusterChecks = createClusterChecks();
           conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
           conditionList.add(new DomainCondition(AVAILABLE).withStatus(sufficientServersRunning()));
-          computeTooManyReplicasFailures();
           if (allIntendedServersReady()) {
             this.status.removeConditionsWithType(ROLLING);
           }
@@ -663,6 +678,7 @@ public class DomainStatusUpdater {
 
         void apply() {
           conditionList.forEach(newCondition -> addCondition(status, newCondition));
+          Arrays.stream(clusterChecks).forEach(ClusterCheck::addClusterConditions);
         }
 
         private void addCondition(DomainStatus status, DomainCondition newCondition) {
@@ -718,35 +734,15 @@ public class DomainStatusUpdater {
         }
 
         private boolean allStartedServersAreComplete() {
-          return expectedRunningServers.stream().allMatch(this::isServerComplete);
+          return expectedRunningServers.stream().allMatch(StatusUpdateContext.this::isServerComplete);
         }
 
         private boolean allNonStartedServersAreShutdown() {
-          return getNonStartedServersWithState().stream().allMatch(this::isShutDown);
+          return getNonStartedServersWithState().stream().allMatch(StatusUpdateContext.this::isShutDown);
         }
 
         private List<String> getNonStartedServersWithState() {
           return serverState.keySet().stream().filter(this::isNonStartedServer).collect(Collectors.toList());
-        }
-
-        // returns true if the server pod does not have a label indicating that it needs to be rolled
-        private boolean isNotMarkedForRoll(String serverName) {
-          return Optional.ofNullable(getInfo().getServerPod(serverName))
-              .map(V1Pod::getMetadata)
-              .map(V1ObjectMeta::getLabels)
-              .map(Map::keySet).orElse(Collections.emptySet()).stream()
-              .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
-        }
-
-        // A server is complete if it is ready, is in the WLS running state and
-        // does not need to roll to accommodate changes to the domain.
-        private boolean isServerComplete(@Nonnull String serverName) {
-          return isServerReady(serverName)
-              && isNotMarkedForRoll(serverName);
-        }
-
-        private boolean isShutDown(@Nonnull String serverName) {
-          return SHUTDOWN_STATE.equals(getRunningState(serverName));
         }
 
         private boolean isNonStartedServer(String serverName) {
@@ -770,13 +766,6 @@ public class DomainStatusUpdater {
           return getNonClusteredServers().stream().allMatch(StatusUpdateContext.this::isServerReady);
         }
 
-        private Set<String> serversMarkedForRoll() {
-          return DomainPresenceInfo.fromPacket(packet)
-              .map(DomainPresenceInfo::getServersToRoll)
-              .map(Map::keySet)
-              .orElse(Collections.emptySet());
-        }
-
         private boolean allIntendedServersReady() {
           return haveServerData()
               && allStartedServersAreComplete()
@@ -791,17 +780,6 @@ public class DomainStatusUpdater {
         private boolean allClustersAvailable() {
           return Arrays.stream(clusterChecks).allMatch(ClusterCheck::isAvailable);
         }
-
-        private void computeTooManyReplicasFailures() {
-          final String message = Arrays.stream(clusterChecks)
-              .filter(ClusterCheck::hasTooManyReplicas)
-              .map(ClusterCheck::createFailureMessage)
-              .collect(Collectors.joining(System.lineSeparator()));
-
-          if (!isNullOrEmpty(message)) {
-            addFailure(status, new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH).withMessage(message));
-          }
-        }
       }
 
       private class ClusterCheck {
@@ -811,13 +789,17 @@ public class DomainStatusUpdater {
         private final int maxReplicaCount;
         private final int specifiedReplicaCount;
         private final List<String> startedServers;
+        private final List<String> nonStartedServers;
+        private final ClusterStatus clusterStatus;
 
         ClusterCheck(DomainStatus domainStatus, ClusterStatus clusterStatus) {
+          this.clusterStatus = clusterStatus;
           clusterName = clusterStatus.getClusterName();
           minReplicaCount = clusterStatus.getMinimumReplicas();
           maxReplicaCount = clusterStatus.getMaximumReplicas();
           specifiedReplicaCount = clusterStatus.getReplicasGoal();
           startedServers = getStartedServersInCluster(domainStatus, clusterName);
+          nonStartedServers = getNonStartedClusteredServers(domainStatus, clusterName);
         }
 
         private List<String> getStartedServersInCluster(DomainStatus domainStatus, String clusterName) {
@@ -828,12 +810,49 @@ public class DomainStatusUpdater {
               .collect(Collectors.toList());
         }
 
+        private List<String> getNonStartedClusteredServers(DomainStatus domainStatus, String clusterName) {
+          return domainStatus.getServers().stream()
+              .filter(s -> clusterName.equals(s.getClusterName()))
+              .map(ServerStatus::getServerName)
+              .filter(name -> !expectedRunningServers.contains(name))
+              .collect(Collectors.toList());
+        }
+
         boolean isAvailable() {
           return isClusterIntentionallyShutDown() || sufficientServersReady();
         }
 
+        private boolean isProcessingCompleted() {
+          return !hasTooManyReplicas() && allIntendedClusterServersReady();
+        }
+
         boolean hasTooManyReplicas() {
           return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
+        }
+
+        private boolean allIntendedClusterServersReady() {
+          return isClusterIntentionallyShutDown() || (allStartedClusterServersAreComplete()
+              && allNonStartedClusterServersAreShutdown()
+              && clusteredServersMarkedForRoll().isEmpty());
+        }
+
+        private boolean allStartedClusterServersAreComplete() {
+          return (startedServers.size() == specifiedReplicaCount)
+              && startedServers.stream().allMatch(StatusUpdateContext.this::isServerComplete);
+        }
+
+        private boolean allNonStartedClusterServersAreShutdown() {
+          return nonStartedServers.stream().allMatch(StatusUpdateContext.this::isShutDown);
+        }
+
+        private Set<String> clusteredServersMarkedForRoll() {
+          return serversMarkedForRoll().stream()
+              .filter(this::isServerInThisCluster)
+              .collect(Collectors.toSet());
+        }
+
+        private boolean isServerInThisCluster(String serverName) {
+          return clusterName.equals(getClusterName(serverName));
         }
 
         private boolean isClusterIntentionallyShutDown() {
@@ -853,7 +872,7 @@ public class DomainStatusUpdater {
         }
 
         private int minReplicas() {
-          return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
+          return getInfo().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
         private long numServersReady() {
@@ -863,17 +882,22 @@ public class DomainStatusUpdater {
         }
 
         private int maxUnavailable() {
-          return getDomain().getMaxUnavailable(clusterName);
+          return getInfo().getMaxUnavailable(clusterName);
         }
 
-        private String createFailureMessage() {
-          return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
+        void addClusterConditions() {
+          clusterStatus.addCondition(
+              new ClusterCondition(ClusterConditionType.AVAILABLE)
+                  .withStatus(isAvailable()));
+          clusterStatus.addCondition(
+              new ClusterCondition(ClusterConditionType.COMPLETED)
+                  .withStatus(isProcessingCompleted()));
         }
       }
 
       private void setStatusDetails(DomainStatus status) {
         getDomainConfig()
-            .map(c -> new DomainStatusFactory(getDomain(), c, this::isStartedServer))
+            .map(c -> new DomainStatusFactory(getInfo(), c, this::isStartedServer))
             .ifPresent(f -> f.setStatusDetails(status));
       }
 
@@ -990,7 +1014,7 @@ public class DomainStatusUpdater {
       private MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
         return DomainPresenceInfo.fromPacket(packet)
             .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getSpec)
+            .map(DomainResource::getSpec)
             .map(DomainSpec::getConfiguration)
             .map(Configuration::getModel)
             .map(Model::getOnlineUpdate)
@@ -1038,18 +1062,39 @@ public class DomainStatusUpdater {
       }
 
       private Optional<WlsDomainConfig> getDomainConfig() {
-        return Optional.ofNullable(config).or(this::getScanCacheDomainConfig);
-      }
-
-      private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
-        DomainPresenceInfo info = getInfo();
-        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
+        return Optional.ofNullable(config);
       }
 
       private boolean isServerReady(@Nonnull String serverName) {
         return RUNNING_STATE.equals(getRunningState(serverName))
               && PodHelper.hasReadyStatus(getInfo().getServerPod(serverName));
+      }
+
+      // A server is complete if it is ready, is in the WLS running state and
+      // does not need to roll to accommodate changes to the domain.
+      private boolean isServerComplete(@Nonnull String serverName) {
+        return isServerReady(serverName)
+            && isNotMarkedForRoll(serverName);
+      }
+
+      // returns true if the server pod does not have a label indicating that it needs to be rolled
+      private boolean isNotMarkedForRoll(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(Map::keySet).orElse(Collections.emptySet()).stream()
+            .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
+      }
+
+      private boolean isShutDown(@Nonnull String serverName) {
+        return SHUTDOWN_STATE.equals(getRunningState(serverName));
+      }
+
+      private Set<String> serversMarkedForRoll() {
+        return DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getServersToRoll)
+            .map(Map::keySet)
+            .orElse(Collections.emptySet());
       }
 
       private boolean isHasFailedPod() {
@@ -1060,8 +1105,16 @@ public class DomainStatusUpdater {
         return getInfo().getServerPods().anyMatch(this::isNotReadyInTime);
       }
 
-      public boolean isNotReadyInTime(V1Pod pod) {
+      private boolean isNotReadyInTime(V1Pod pod) {
         return !PodHelper.isReady(pod) && hasBeenUnreadyExceededWaitTime(pod);
+      }
+
+      private boolean hasPodNotRunningInTime() {
+        return getInfo().getServerPods().anyMatch(this::isNotRunningInTime);
+      }
+
+      private boolean isNotRunningInTime(V1Pod pod) {
+        return PodHelper.isPending(pod) && hasBeenPendingExceededWaitTime(pod);
       }
 
       private boolean hasBeenUnreadyExceededWaitTime(V1Pod pod) {
@@ -1069,6 +1122,13 @@ public class DomainStatusUpdater {
         return SystemClock.now()
             .isAfter(getLater(creationTime, getReadyConditionLastTransitTimestamp(pod, creationTime))
                 .plusSeconds(getMaxReadyWaitTime(pod)));
+      }
+
+      private boolean hasBeenPendingExceededWaitTime(V1Pod pod) {
+        OffsetDateTime creationTime = getCreationTimestamp(pod);
+        return SystemClock.now()
+            .isAfter(getLater(creationTime, getReadyConditionLastTransitTimestamp(pod, creationTime))
+                .plusSeconds(getMaxPendingWaitTime(pod)));
       }
 
       private OffsetDateTime getLater(OffsetDateTime time1, OffsetDateTime time2) {
@@ -1087,8 +1147,16 @@ public class DomainStatusUpdater {
 
       private long getMaxReadyWaitTime(V1Pod pod) {
         return Optional.ofNullable(getInfo().getDomain())
-            .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
+            .map(d -> getInfo().getServer(getServerName(pod), getClusterNameFromPod(pod)))
+            .map(EffectiveServerSpec::getMaximumReadyWaitTimeSeconds)
             .orElse(TuningParameters.getInstance().getMaxReadyWaitTimeSeconds());
+      }
+
+      private long getMaxPendingWaitTime(V1Pod pod) {
+        return Optional.ofNullable(getInfo().getDomain())
+            .map(d -> getInfo().getServer(getServerName(pod), getClusterNameFromPod(pod)))
+            .map(EffectiveServerSpec::getMaximumPendingWaitTimeSeconds)
+            .orElse(TuningParameters.getInstance().getMaxPendingWaitTimeSeconds());
       }
 
       private String getServerName(V1Pod pod) {
@@ -1143,6 +1211,11 @@ public class DomainStatusUpdater {
     }
 
     @Override
+    protected String getDetail() {
+      return selectedReasons.stream().map(DomainFailureReason::toString).collect(Collectors.joining(", "));
+    }
+
+    @Override
     void modifyStatus(DomainStatus status) {
       selectedReasons.forEach(status::markFailuresForRemoval);
       status.removeMarkedFailures();
@@ -1155,22 +1228,22 @@ public class DomainStatusUpdater {
    */
   static class DomainStatusFactory {
 
-    @Nonnull
-    private final Domain domain;
+    private final DomainPresenceInfo info;
     private final WlsDomainConfig domainConfig;
     private final Function<String, Boolean> isServerConfiguredToRun;
 
     /**
      * Creates a factory to create a DomainStatus object, initialized with state from the configuration.
      *
-     * @param domain an operator domain resource
+     * @param info the domain presence info
      * @param domainConfig a WebLogic domain configuration
      * @param isServerConfiguredToRun returns true if the named server is configured to start
      */
-    public DomainStatusFactory(@Nonnull Domain domain,
-                               @Nonnull WlsDomainConfig domainConfig,
-                               @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
-      this.domain = domain;
+    public DomainStatusFactory(
+        @Nonnull DomainPresenceInfo info,
+        @Nonnull WlsDomainConfig domainConfig,
+        @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
+      this.info = info;
       this.domainConfig = domainConfig;
       this.isServerConfiguredToRun = isServerConfiguredToRun;
     }
@@ -1203,16 +1276,16 @@ public class DomainStatusUpdater {
         return new ServerStatus()
             .withServerName(serverName)
             .withClusterName(clusterName)
-            .withDesiredState(getDesiredState())
+            .withStateGoal(getStateGoal())
             .withIsAdminServer(isAdminServer);
       }
 
-      private String getDesiredState() {
-        return wasServerStarted() ? getDesiredState(serverName, clusterName) : SHUTDOWN_STATE;
+      private String getStateGoal() {
+        return wasServerStarted() ? getStateGoal(serverName, clusterName) : SHUTDOWN_STATE;
       }
 
-      private String getDesiredState(String serverName, String clusterName) {
-        return domain.getServer(serverName, clusterName).getDesiredState();
+      private String getStateGoal(String serverName, String clusterName) {
+        return info.getServer(serverName, clusterName).getStateGoal();
       }
 
       private boolean wasServerStarted() {
@@ -1224,17 +1297,18 @@ public class DomainStatusUpdater {
       final String clusterName = clusterConfig.getName();
       return new ClusterStatus()
           .withClusterName(clusterName)
-          .withMaximumReplicas(clusterConfig.getMaxClusterSize())
+          .withLabelSelector(DOMAINUID_LABEL + "=" + info.getDomainUid() + "," + CLUSTERNAME_LABEL + "=" + clusterName)
+          .withMaximumReplicas(clusterConfig.getClusterSize())
           .withMinimumReplicas(useMinimumClusterSize(clusterName) ? clusterConfig.getMinClusterSize() : 0)
           .withReplicasGoal(getClusterSizeGoal(clusterName));
     }
 
     private boolean useMinimumClusterSize(String clusterName) {
-      return !domain.isAllowReplicasBelowMinDynClusterSize(clusterName);
+      return !info.isAllowReplicasBelowMinDynClusterSize(clusterName);
     }
 
     private Integer getClusterSizeGoal(String clusterName) {
-      return domain.getReplicaCount(clusterName);
+      return info.getReplicaCount(clusterName);
     }
 
   }
@@ -1299,6 +1373,7 @@ public class DomainStatusUpdater {
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
         addFailure(status, status.createAdjustedFailedCondition(reason, message));
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
       }
@@ -1306,6 +1381,27 @@ public class DomainStatusUpdater {
     }
   }
 
+  public static class ClearCompletedConditionSteps extends StatusUpdateStep {
+    public ClearCompletedConditionSteps() {
+      super(null);
+    }
 
+    @Override
+    DomainStatusUpdaterContext createContext(Packet packet) {
+      return new UpdateCompletedConditionContext(packet, this);
+    }
+
+    static class UpdateCompletedConditionContext extends StatusUpdateStep.StatusUpdateContext {
+
+      UpdateCompletedConditionContext(Packet packet, StatusUpdateStep statusUpdateStep) {
+        super(packet, statusUpdateStep);
+      }
+
+      @Override
+      void modifyStatus(DomainStatus status) {
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+      }
+    }
+  }
 }
 

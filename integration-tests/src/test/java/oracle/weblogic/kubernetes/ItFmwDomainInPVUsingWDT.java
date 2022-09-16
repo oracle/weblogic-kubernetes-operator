@@ -13,12 +13,13 @@ import java.util.Properties;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -41,7 +42,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -57,6 +58,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to creat a FMW domain in persistent volume using WDT")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-sequential")
+@Tag("okd-fmw-cert")
 class ItFmwDomainInPVUsingWDT {
 
   private static String opNamespace = null;
@@ -73,11 +78,9 @@ class ItFmwDomainInPVUsingWDT {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
-  private static final String DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
-
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
-
+  private static String DOMAINHOMEPREFIX = null;
   private static final String domainUid = "fmw-domainonpv-wdt";
   private static final String clusterName = "cluster-1";
   private static final String adminServerName = "admin-server";
@@ -87,7 +90,7 @@ class ItFmwDomainInPVUsingWDT {
   private static final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
 
   private final String wdtCreateDomainScript = "setup_wdt.sh";
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-wdt";
@@ -120,6 +123,7 @@ class ItFmwDomainInPVUsingWDT {
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace = namespaces.get(2);
 
+    DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
     // start DB and create RCU schema
     logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
@@ -134,7 +138,7 @@ class ItFmwDomainInPVUsingWDT {
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
   }
 
   /**
@@ -174,7 +178,7 @@ class ItFmwDomainInPVUsingWDT {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResourceOnPv(domainUid,
+    DomainResource domain = createDomainResourceOnPv(domainUid,
                                              domainNamespace,
                                              wlSecretName,
                                              clusterName,

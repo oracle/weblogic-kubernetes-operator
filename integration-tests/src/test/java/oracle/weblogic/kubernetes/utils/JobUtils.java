@@ -24,7 +24,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
@@ -106,7 +107,7 @@ public class JobUtils {
         .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
             .name("create-weblogic-domain-onpv-container")
             .image(image)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .ports(Arrays.asList(new V1ContainerPort()
                 .containerPort(7001)))
             .volumeMounts(Arrays.asList(
@@ -129,7 +130,7 @@ public class JobUtils {
                         .name(domainScriptCM)))) //config map containing domain scripts
         .imagePullSecrets(Arrays.asList(
             new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET)));
+                .name(BASE_IMAGES_REPO_SECRET_NAME)));
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")));
     }

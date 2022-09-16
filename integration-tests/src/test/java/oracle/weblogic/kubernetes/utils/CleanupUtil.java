@@ -21,9 +21,10 @@ import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -54,6 +55,10 @@ public class CleanupUtil {
       if (namespaces == null || namespaces.isEmpty()) {
         logger.info("Nothing to cleanup");
         return;
+      }      
+      // delete clusters if any exists
+      for (var namespace : namespaces) {
+        deleteClusters(namespace);
       }
       // delete domains if any exists
       for (var namespace : namespaces) {
@@ -99,6 +104,25 @@ public class CleanupUtil {
     }
   }
 
+  /**
+   * Delete all clusters in the given namespace, if any exists.
+   *
+   * @param namespace namespace
+   */
+  private static void deleteClusters(String namespace) {
+    LoggingFacade logger = getLogger();
+    try {
+      for (var item : Cluster.listClusterCustomResources(namespace).getItems()) {
+        String cluster = item.getMetadata().getName();
+        logger.info("Deleting cluster {0} in namespace {1}", cluster, namespace);
+        Kubernetes.deleteClusterCustomResource(cluster, namespace);
+      }
+    } catch (Exception ex) {
+      logger.severe(ex.getMessage());
+      logger.severe("Failed to delete cluster in namespace {0}", namespace);
+    }
+  }
+  
   /**
    * Delete all domains in the given namespace, if any exists.
    *
@@ -158,7 +182,7 @@ public class CleanupUtil {
       try {
         if (!Kubernetes.listDomains(namespace).getItems().isEmpty()) {
           logger.info("Domain still exists !!!");
-          List<Domain> items = Kubernetes.listDomains(namespace).getItems();
+          List<DomainResource> items = Kubernetes.listDomains(namespace).getItems();
           for (var item : items) {
             logger.info(item.getMetadata().getName());
           }

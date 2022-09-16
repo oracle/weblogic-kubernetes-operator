@@ -21,17 +21,10 @@ import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
-import io.kubernetes.client.openapi.models.V1NodeAffinity;
-import io.kubernetes.client.openapi.models.V1NodeSelector;
-import io.kubernetes.client.openapi.models.V1NodeSelectorTerm;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1PodAffinity;
-import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
-import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PreferredSchedulingTerm;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -39,7 +32,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
-import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ShutdownType;
@@ -48,6 +40,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
+import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
 class ServerPod extends KubernetesResource {
@@ -100,7 +93,9 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.nodeSelector`.")
   private final Map<String, String> nodeSelector = new HashMap<>();
 
-  @Description("If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity`")
+  @Description("The Pod's scheduling constraints."
+      + " More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/. "
+      + " See `kubectl explain pods.spec.affinity`.")
   private V1Affinity affinity = null;
 
   @Description("If specified, indicates the Pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
@@ -245,9 +240,18 @@ class ServerPod extends KubernetesResource {
    *
    * @since 4.0
    */
-  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
-      + "before it considers the pod failed. Defaults to 1800 seconds.")
-  private Long maxReadyWaitTimeSeconds = 1800L;
+  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready "
+      + "state before it considers the pod failed. Defaults to 1800 seconds.")
+  private Long maxReadyWaitTimeSeconds = null;
+
+  /**
+   * The maximum pending wait time.
+   *
+   * @since 4.0
+   */
+  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running "
+      + "state before it considers the pod failed. Defaults to 5 minutes.")
+  private Long maxPendingWaitTimeSeconds = null;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -329,87 +333,6 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private void copyValues(V1Affinity to, V1Affinity from) {
-    if (to.getNodeAffinity() == null) {
-      to.setNodeAffinity(from.getNodeAffinity());
-    } else if (from.getNodeAffinity() != null) {
-      copyValues(to.getNodeAffinity(), from.getNodeAffinity());
-    }
-    if (to.getPodAffinity() == null) {
-      to.setPodAffinity(from.getPodAffinity());
-    } else if (from.getPodAffinity() != null) {
-      copyValues(to.getPodAffinity(), from.getPodAffinity());
-    }
-    if (to.getPodAntiAffinity() == null) {
-      to.setPodAntiAffinity(from.getPodAntiAffinity());
-    } else if (from.getPodAntiAffinity() != null) {
-      copyValues(to.getPodAntiAffinity(), from.getPodAntiAffinity());
-    }
-  }
-
-  private void copyValues(V1NodeAffinity to, V1NodeAffinity from) {
-    if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      Stream<V1PreferredSchedulingTerm> stream = (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null)
-          ? Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
-          from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
-          : from.getPreferredDuringSchedulingIgnoredDuringExecution().stream();
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
-    }
-
-    if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
-    } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      copyValues(to.getRequiredDuringSchedulingIgnoredDuringExecution(),
-          from.getRequiredDuringSchedulingIgnoredDuringExecution());
-    }
-  }
-
-  private void copyValues(V1NodeSelector to, V1NodeSelector from) {
-    if (from.getNodeSelectorTerms() != null) {
-      Stream<V1NodeSelectorTerm> stream = (to.getNodeSelectorTerms() != null)
-          ? Stream.concat(to.getNodeSelectorTerms().stream(),
-          from.getNodeSelectorTerms().stream())
-          : from.getNodeSelectorTerms().stream();
-      to.setNodeSelectorTerms(stream.distinct().collect(Collectors.toList()));
-    }
-  }
-
-  private void copyValues(V1PodAffinity to, V1PodAffinity from) {
-    if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      Stream<V1WeightedPodAffinityTerm> stream = (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null)
-          ? Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
-          from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
-          : from.getPreferredDuringSchedulingIgnoredDuringExecution().stream();
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
-    }
-
-    if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      Stream<V1PodAffinityTerm> stream = (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null)
-          ? Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
-          from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
-          : from.getRequiredDuringSchedulingIgnoredDuringExecution().stream();
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
-    }
-  }
-
-  private void copyValues(V1PodAntiAffinity to, V1PodAntiAffinity from) {
-    if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      Stream<V1WeightedPodAffinityTerm> stream = (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null)
-          ? Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
-          from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
-          : from.getPreferredDuringSchedulingIgnoredDuringExecution().stream();
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
-    }
-
-    if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      Stream<V1PodAffinityTerm> stream = (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null)
-          ? Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
-          from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
-          : from.getRequiredDuringSchedulingIgnoredDuringExecution().stream();
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
-    }
-  }
-
   Shutdown getShutdown() {
     return this.shutdown;
   }
@@ -464,6 +387,14 @@ class ServerPod extends KubernetesResource {
     this.maxReadyWaitTimeSeconds = maxReadyWaitTimeSeconds;
   }
 
+  public Long getMaxPendingWaitTimeSeconds() {
+    return this.maxPendingWaitTimeSeconds;
+  }
+
+  public void setMaxPendingWaitTimeSeconds(@Nullable Long maxPendingWaitTimeSeconds) {
+    this.maxPendingWaitTimeSeconds = maxPendingWaitTimeSeconds;
+  }
+
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
@@ -488,11 +419,14 @@ class ServerPod extends KubernetesResource {
     copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
-    maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
-    if (affinity == null) {
+    if (maxReadyWaitTimeSeconds == null) {
+      maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
+    }
+    if (maxPendingWaitTimeSeconds == null) {
+      maxPendingWaitTimeSeconds = serverPod1.maxPendingWaitTimeSeconds;
+    }
+    if (serverPod1.affinity != null && isNullOrDefaultAffinity()) {
       affinity = serverPod1.affinity;
-    } else if (serverPod1.affinity != null) {
-      copyValues(affinity, serverPod1.affinity);
     }
     if (priorityClassName == null) {
       priorityClassName = serverPod1.priorityClassName;
@@ -515,6 +449,10 @@ class ServerPod extends KubernetesResource {
     }
     tolerations.addAll(serverPod1.tolerations);
     hostAliases.addAll(serverPod1.hostAliases);
+  }
+
+  private boolean isNullOrDefaultAffinity() {
+    return affinity == null || affinity.equals(getDefaultAntiAffinity());
   }
 
   private V1Container createWithEnvCopy(V1Container c) {
@@ -846,16 +784,16 @@ class ServerPod extends KubernetesResource {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(
-            Domain.sortOrNull(env, ENV_VAR_COMPARATOR),
-            Domain.sortOrNull(that.env, ENV_VAR_COMPARATOR))
+            DomainResource.sortList(env, ENV_VAR_COMPARATOR),
+            DomainResource.sortList(that.env, ENV_VAR_COMPARATOR))
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
         .append(
-            Domain.sortOrNull(volumes, VOLUME_COMPARATOR),
-            Domain.sortOrNull(that.volumes, VOLUME_COMPARATOR))
+            DomainResource.sortList(volumes, VOLUME_COMPARATOR),
+            DomainResource.sortList(that.volumes, VOLUME_COMPARATOR))
         .append(
-            Domain.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR),
-            Domain.sortOrNull(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
+            DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR),
+            DomainResource.sortList(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector, that.nodeSelector)
         .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
@@ -880,11 +818,11 @@ class ServerPod extends KubernetesResource {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
-        .append(Domain.sortOrNull(env, ENV_VAR_COMPARATOR))
+        .append(DomainResource.sortList(env, ENV_VAR_COMPARATOR))
         .append(livenessProbe)
         .append(readinessProbe)
-        .append(Domain.sortOrNull(volumes, VOLUME_COMPARATOR))
-        .append(Domain.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR))
+        .append(DomainResource.sortList(volumes, VOLUME_COMPARATOR))
+        .append(DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)
         .append(resources)
         .append(podSecurityContext)

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -58,7 +59,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -74,6 +76,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test implicit upgrade of auximage domain resource with api version v8")
 @IntegrationTest
+@Tag("oke-sequential")
+@Tag("kind-sequential")
 class ItAuxV8DomainImplicitUpgrade {
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -109,7 +113,8 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
+    createBaseRepoSecret(domainNamespace); // needed for AuxDomain
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -264,7 +269,7 @@ class ItAuxV8DomainImplicitUpgrade {
           domainNamespace);
     }
 
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource");
@@ -417,7 +422,7 @@ class ItAuxV8DomainImplicitUpgrade {
    */
   @Test
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
-  void testErrorPathV8DomaineFilePermission() {
+  void testErrorPathV8DomainFilePermission() {
 
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);
@@ -553,7 +558,7 @@ class ItAuxV8DomainImplicitUpgrade {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource");

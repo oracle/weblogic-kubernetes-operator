@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ServerStatusTest {
@@ -145,5 +146,19 @@ class ServerStatusTest {
     assertThat(
           new ServerStatus().withClusterName("1").withServerName("1"),
           equalTo(new ServerStatus().withClusterName("1").withServerName("1").withIsAdminServer(true)));
+  }
+
+  @Test
+  void whenToStringInvoked_includesCurrentValues() {
+    assertThat(new ServerStatus().withStateGoal("RUNNING").toString(),
+        stringContainsInOrder("stateGoal", "RUNNING"));
+  }
+
+  @Test
+  void valuesCreatedInDifferentOrders_haveSameHashCode() {
+    ServerStatus status1 = new ServerStatus().withServerName("ms1").withStateGoal("RUNNING").withState("UNKNOWN");
+    ServerStatus status2 = new ServerStatus().withServerName("ms1").withState("UNKNOWN").withStateGoal("RUNNING");
+
+    assertThat(status1.hashCode(), equalTo(status2.hashCode()));
   }
 }

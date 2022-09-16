@@ -20,10 +20,10 @@ the prerequisite for upper stack products like Oracle SOA Suite."
 * [Additional considerations for Model in Image](#additional-considerations-for-model-in-image)
 
 
-Starting with the 2.2.0 release, the operator supports FMW Infrastructure domains, that is,
+The operator supports FMW Infrastructure domains, that is,
 domains that are created with the FMW Infrastructure installer rather than the WebLogic
-Server installer.  These domains contain the Java Required Files (JRF) feature and are
-the prerequisite for "upper stack" products like Oracle SOA Suite, for example.
+Server installer.  These domains contain Java Required Files (JRF), which are
+a prerequisite for "upper stack" products like Oracle SOA Suite, for example.
 These domains also require a database and the use of the Repository
 Creation Utility (RCU).
 
@@ -157,9 +157,9 @@ same existing requirements apply.
 For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
 
 {{% notice warning %}}
-The Oracle Database images are only supported for non-production use.
+The Oracle Database images are supported only for non-production use.
 For more details, see My Oracle Support note:
-Oracle Support for Database Running on Docker (Doc ID 2216342.1)
+Oracle Support for Database Running on Docker [Doc ID 2216342.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2216342.1).
 {{% /notice %}}
 
 ##### Running the database inside Kubernetes
@@ -409,7 +409,7 @@ You also need to create a Kubernetes Secret containing the credentials for the d
 When you create your domain using the following sample, it will obtain the RCU credentials
 from this secret.
 
-We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-rcu-credentials/README.md)
+We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md)
 that demonstrates how to create the secret.  The schema owner user name required will be the
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.

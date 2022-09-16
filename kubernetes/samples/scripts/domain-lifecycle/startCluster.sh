@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/sh
 # Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -14,7 +14,7 @@ usage() {
 
   This script starts a WebLogic cluster in a domain by patching
   'spec.clusters[<cluster-name>].serverStartPolicy' attribute of the domain
-  resource to 'IF_NEEDED'. This change will cause the operator to initiate
+  resource to 'IfNeeded'. This change will cause the operator to initiate
   startup of cluster's WebLogic server instance pods if the pods are not
   already running and the spec.replicas or
   'spec.clusters[<cluster-name>].serverStartPolicy' is set higher than zero.
@@ -48,6 +48,7 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
+clusterResource=""
 
 while getopts "vc:n:m:d:h" opt; do
   case $opt in
@@ -102,28 +103,36 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+  exit 1
+fi
+
 getDomainPolicy "${domainJson}" domainStartPolicy
-# Fail if effective start policy of domain is NEVER or ADMIN_ONLY
-if [[ "${domainStartPolicy}" == 'NEVER' || "${domainStartPolicy}" == 'ADMIN_ONLY' ]]; then
-  printError "Cannot start cluster '${clusterName}', the domain is configured with a 'spec.serverStartPolicy' attribute on the domain resource of 'NEVER' or 'ADMIN_ONLY'."
+# Fail if effective start policy of domain is Never or AdminOnly
+if [[ "${domainStartPolicy}" == 'Never' || "${domainStartPolicy}" == 'AdminOnly' ]]; then
+  printError "Cannot start cluster '${clusterName}', the domain is configured with a 'spec.serverStartPolicy' attribute on the domain resource of 'Never' or 'AdminOnly'."
   exit 1
 fi
 
 # Get server start policy for this cluster
-getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
+getClusterPolicy "${clusterJson}" startPolicy
 if [ -z "${startPolicy}" ]; then
   startPolicy=${domainStartPolicy}
 fi
 
-if [ "${startPolicy}" == 'IF_NEEDED' ]; then 
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' attribute on the domain resource is 'IF_NEEDED'."
+if [ "${startPolicy}" == 'IfNeeded' ]; then
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the cluster resource is 'IfNeeded'."
   exit 0
 fi
 
-# Set policy value to IF_NEEDED
-printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'IF_NEEDED'."
-createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "IF_NEEDED" patchJson
+# Set policy value to IfNeeded
+printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'IfNeeded'."
+createPatchJsonToUpdateClusterPolicy "${clusterName}" "IfNeeded" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched cluster '${clusterName}' with 'IF_NEEDED' start policy!."
+printInfo "Successfully patched cluster '${clusterName}' with 'IfNeeded' start policy!."

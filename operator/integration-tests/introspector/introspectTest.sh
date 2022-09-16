@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/sh
 # Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
@@ -55,6 +55,8 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
 traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/utils.sh
 source ${traceFile}
+# set SCRIPTPATH again as it was set to a different value by utils.sh
+SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/util_dots.sh
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
 
@@ -97,6 +99,7 @@ export NODEMGR_HOME=${NODEMGR_HOME:-/shared/nodemanagers}
 
 export ADMIN_NAME=${ADMIN_NAME:-"admin-server"}
 export ADMIN_PORT=${ADMIN_PORT:-7001}
+export DEFAULT_SECURE_PORT=${DEFAULT_SECURE_PORT:-7002}
 export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
 export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
 export ADMINISTRATION_PORT=${ADMINISTRATION_PORT:-7099}
@@ -629,12 +632,12 @@ deployPod() {
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
     export DATA_HOME=${DATA_HOME:-/shared/data}
     if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
-      export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
+      export LOCAL_SERVER_DEFAULT_PORT=${ADMINISTRATION_PORT}
       export KEEP_DEFAULT_DATA_HOME="true"
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR=""
       export NODEMGR_MEM_ARGS="-Xms32m -Xmx200m -Djava.security.egd=file:/dev/./urandom"
     else
-      export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
+      export LOCAL_SERVER_DEFAULT_PORT=${ADMINISTRATION_PORT}
       export KEEP_DEFAULT_DATA_HOME=""
       export EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR="true"
       export NODEMGR_MEM_ARGS=""
@@ -650,6 +653,7 @@ deploySinglePodService() {
   local server_name=${1?}
   local internal_port=${2?}
   local external_port=${3?}
+  local external_port2=${4?}
   local service_name=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
   local target_yaml=${test_home}/wl-nodeport-svc-${service_name}.yaml
 
@@ -667,6 +671,7 @@ deploySinglePodService() {
     export SERVER_NAME="${server_name}"
     export SERVICE_INTERNAL_PORT="${internal_port}"
     export SERVICE_EXTERNAL_PORT="${external_port}"
+    export SERVICE_EXTERNAL_DEFAULT_SECURE="${external_port2}"
     export SERVICE_NAME=${service_name}
     ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml}
   ) || exit 1
@@ -696,17 +701,19 @@ deploySinglePodService() {
 
 checkOverrides() {
 
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    # skip checking for situational config for Model In Image
+    return
+  fi
+
   trace "Info: Checking admin server stdout to make sure situational config was loaded and there are no reported situational config errors."
 
-  # Check for exactly 3 occurances of Info.*.BEA.*situational lines -- one for each file we're overriding.
-  #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
+  # Check for exactly 3 occurrences of Info.*.BEA.*situational lines -- one for each file we're overriding.
+  #   the awk expression below gets the tail of the log, everything after the last occurrence of 'Starting WebLogic...'
 
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
   local target_linecount=5
-  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
-    target_linecount=1
-  fi
   if [ "$linecount" != "${target_linecount}" ]; then
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
@@ -734,9 +741,9 @@ checkOverrides() {
   tracen "Info: Waiting for WLST checkBeans.py to complete."
   printdots_start
   # TBD weblogic/welcome1 should be deduced via a base64 of the admin secret
-  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} -- \
     wlst.sh /shared/checkBeans.py \
-      weblogic welcome1 t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} \
+      weblogic welcome1 t3s://${DOMAIN_UID}-${ADMIN_NAME}:${ADMINISTRATION_PORT} \
       /shared/checkBeans.input \
       > $test_home/checkBeans.out 2>&1
   status=$?
@@ -787,7 +794,7 @@ checkWLVersionChecks() {
     || exit 1
 
   rm -f ${outfile}
-  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} -- \
       /shared/${testscript} \
       > ${outfile} 2>&1
   status=$?
@@ -823,7 +830,7 @@ checkDataSource() {
 
   tracen "Info: Waiting for script to complete"
   printdots_start
-  kubectl exec -it -n ${NAMESPACE} ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  kubectl exec -it -n ${NAMESPACE} ${pod_name} -- ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
@@ -854,7 +861,7 @@ checkFileStores() {
     || exit 1
 
   rm -f ${outfile}
-  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
+  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
       /shared/${testscript} \
       > ${outfile} 2>&1
   status=$?
@@ -880,8 +887,8 @@ checkNodeManagerMemArg() {
 
   # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
   # command line when NODEMGR_MEM_ARGS was not defined.
-  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "\-Xms64m -Xmx100m" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
 
@@ -896,8 +903,8 @@ checkNodeManagerMemArg() {
 
   # Verify that NODEMGR_MEM_ARGS environment value (-Xms32m -Xmx200m) was applied to the Node Manager
   # command line, of the Admin Server pod, when NODEMGR_MEM_ARGS was explicitly defined.
-  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "\-Xms32m -Xmx200m" /shared/logs/${ADMIN_NAME?}_nodemanager.out \
+  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "\-Xms32m -Xmx200m" /shared/logs/servers/${ADMIN_NAME?}/logs/${ADMIN_NAME?}_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
 
@@ -912,8 +919,8 @@ checkNodeManagerMemArg() {
 
   # Verify that NODEMGR_MEM_ARGS environment value contains "-Djava.security.egd=file:/dev/./urandom" in the Node Manager
   # command line of the Managed Server pod.
-  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "urandom" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "urandom" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  |  grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
@@ -927,8 +934,8 @@ checkNodeManagerMemArg() {
   fi
 
   # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
-  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "MaxRAMFraction=1" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "MaxRAMFraction=1" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
@@ -952,8 +959,8 @@ checkManagedServer1MemArg() {
   trace "Info: Verifying managed server memory arguments"
 
   # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
-  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "MaxRAMFraction=1"  /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "MaxRAMFraction=1"  /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
@@ -967,8 +974,8 @@ checkManagedServer1MemArg() {
   fi
 
   # Verify that NODEMGR_MEM_ARGS environment value did not get applied to the Managed Server 1 command line
-  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "\-Xms64m -Xmx100m" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "\-Xms64m -Xmx100m" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
 
@@ -993,8 +1000,8 @@ checkNodeManagerJavaOptions() {
   trace "Info: Verifying node manager java options"
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
-  nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
+  nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "\-Dnodemgr.java.options" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_JAVA_OPTIONS"  | wc -l`"
   logstatus=0
 
@@ -1008,8 +1015,8 @@ checkNodeManagerJavaOptions() {
   fi
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value did not get applied to the Managed Server command line
-  nmJavaOptlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 \
-       grep "\-Dnodemgr.java.options" /shared/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
+  nmJavaOptlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+       grep "\-Dnodemgr.java.options" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
@@ -1054,7 +1061,7 @@ createStaticCluster() {
 
   tracen "Info: Waiting for createStaticCluster script to complete"
   printdots_start
-  kubectl exec -it -n ${NAMESPACE} ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  kubectl exec -it -n ${NAMESPACE} ${pod_name} -- ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
@@ -1110,11 +1117,11 @@ deployIntrospectJobPod
 #
 
 deployPod ${ADMIN_NAME?}
-deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
+deploySinglePodService ${ADMIN_NAME?} ${ADMINISTRATION_PORT?} 30701 30702
 waitForPod ${DOMAIN_UID}-${ADMIN_NAME?}
 
 deployPod ${MANAGED_SERVER_NAME_BASE?}1
-deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
+deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801 30802
 waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
 
 # Check admin-server pod log for wl version errors and run some
@@ -1130,7 +1137,7 @@ checkOverrides
 # Check DS to see if it can contact the DB.  This will only pass if the
 # overrides actually took effect:
 
-checkDataSource ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} ${ADMIN_NAME?} mysqlDS
+checkDataSource ${DOMAIN_UID}-${ADMIN_NAME?} t3s://${DOMAIN_UID}-${ADMIN_NAME}:${ADMINISTRATION_PORT} ${ADMIN_NAME?} mysqlDS
 
 # Verify default and custom file stores were created for admin-server
 checkFileStores util_test_adminfilestores.sh ${ADMIN_NAME}
@@ -1151,7 +1158,7 @@ if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ] ; then
   # Create static cluster using WLST on-line mode.
   # NOTE: The static cluster must be configured using on-line WLST instead of
   #       off-line WLST in order to reproduce OWLS 85530.
-  createStaticCluster 'c1' ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT}
+  createStaticCluster 'c1' ${DOMAIN_UID}-${ADMIN_NAME?} t3s://${DOMAIN_UID}-${ADMIN_NAME}:${ADMINISTRATION_PORT}
 
   # Re-run introspector to introspect the static cluster
   cleanupMinor

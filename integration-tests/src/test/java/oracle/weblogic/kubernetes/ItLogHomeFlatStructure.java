@@ -17,15 +17,13 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -39,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -46,9 +45,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -60,14 +60,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -84,12 +83,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test logHome on PV, add SystemResources, Clusters to model in image domain")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItLogHomeFlatStructure {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static int replicaCount = 2;
-  private static final String domainUid = "mii-add-config";
+  private static final String domainUid = "loghomeflat";
   private static final String pvName = getUniqueName(domainUid + "-pv-");
   private static final String pvcName = getUniqueName(domainUid + "-pvc-");
   private StringBuffer curlString = null;
@@ -100,6 +102,7 @@ class ItLogHomeFlatStructure {
   private final String adminServerName = "admin-server";
   private final String clusterName = "cluster-1";
   private String adminSvcExtHost = null;
+  private static String logsDir = null;
 
   private static LoggingFacade logger = null;
 
@@ -125,9 +128,9 @@ class ItLogHomeFlatStructure {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // Create the repo secret to pull the image
+    // Create the repo secret to pull the images from base repo and test repo
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createSecretsForImageRepos(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -149,15 +152,10 @@ class ItLogHomeFlatStructure {
             "##W%*}!\"'\"`']\\\\//1$$~x", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
              String.format("createSecret failed for %s", dbSecretName));
     String configMapName = "jdbc-jms-wldf-configmap";
-
+    logsDir = "/shared/" + domainNamespace + "/logs/" + domainUid;
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.sysresources.yaml"));
-
-
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
 
     // create PV, PVC for logs
     createPV(pvName, domainUid, ItLogHomeFlatStructure.class.getSimpleName());
@@ -168,7 +166,7 @@ class ItLogHomeFlatStructure {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
@@ -216,7 +214,7 @@ class ItLogHomeFlatStructure {
   @DisplayName("Check the server logs are written to PersistentVolume")
   void testMiiServerLogsAreOnPV() {
     // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV("grep RUNNING /shared/logs/"
+    checkLogsOnPV("ls " + logsDir + " && grep RUNNING " + logsDir + "/"
         + adminServerName + ".log", adminServerPodName);
   }
 
@@ -247,7 +245,7 @@ class ItLogHomeFlatStructure {
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
       logger.info("Checking HTTP server logs are written on PV and look for string sample-war/index.jsp in log");
-      checkLogsOnPV("grep sample-war/index.jsp /shared/logs/"
+      checkLogsOnPV("grep sample-war/index.jsp " + logsDir + "/"
           + server + "_access.log",  adminServerPodName);
     }
   }
@@ -289,8 +287,9 @@ class ItLogHomeFlatStructure {
       int replicaCount, String configmapName, String dbSecretName) {
     List<String> securityList = new ArrayList<>();
     securityList.add(dbSecretName);
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -301,16 +300,16 @@ class ItLogHomeFlatStructure {
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
+                    .webLogicCredentialsSecret(new V1LocalObjectReference()
+                            .name(adminSecretName))
                     .includeServerOutInPodLog(true)
                     .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/logs")
-                    .logHomeLayout("FLAT")
-                    .serverStartPolicy("IF_NEEDED")
+                    .logHome("/shared/" + domainNamespace + "/logs/" + domainUid)
+                    .logHomeLayout("Flat")
+                    .serverStartPolicy("IfNeeded")
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
@@ -329,22 +328,18 @@ class ItLogHomeFlatStructure {
                                 .mountPath("/shared")
                                 .name(pvName)))
                     .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
                                             .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .secrets(securityList)
                             .model(new Model()
                                     .domainType("WLS")
                                     .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
+                        .introspectorJobActiveDeadlineSeconds(300L))
+                .replicas(replicaCount));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -7,24 +7,25 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClusters;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
@@ -34,9 +35,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePo
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -62,7 +65,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test verifies usage of CustomIdentityCustomTrust on PV")
+@Tag("kind-parallel")
+@Tag("oke-parallel")
+@Tag("okd-wls-mrg")
+
 @IntegrationTest
+@Tag("olcne")
 class ItMiiCustomSslStore {
 
   private static String opNamespace = null;
@@ -97,7 +105,7 @@ class ItMiiCustomSslStore {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -119,12 +127,22 @@ class ItMiiCustomSslStore {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     String configMapName = "mii-ssl-configmap";
+    // Copy the model file to RESULTS_ROOT
+    assertDoesNotThrow(() -> java.nio.file.Files.copy(
+                    Paths.get(MODEL_DIR, "mii.ssl.yaml"),
+                    Paths.get(RESULTS_ROOT, "mii.ssl.yaml"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING),
+            "Copy mii.ssl.yaml to RESULTS_ROOT failed");
+    assertDoesNotThrow(() ->
+              replaceStringInFile(get(RESULTS_ROOT, "mii.ssl.yaml").toString(),
+                      "/shared/", "/shared/" + domainNamespace + "/" + domainUid + "/"));
+
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/mii.ssl.yaml"));
+        Arrays.asList(RESULTS_ROOT + "/mii.ssl.yaml"));
 
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create PV, PVC for logs/data
     createPV(pvName, domainUid, ItMiiCustomSslStore.class.getSimpleName());
@@ -134,35 +152,31 @@ class ItMiiCustomSslStore {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResourceWithLogHome(domainUid, domainNamespace,
+    DomainResource domain = createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
+        pvName, pvcName, configMapName,
         null, false, false, false);
 
     // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    createDomainAndVerify(domain, domainNamespace);
 
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
     // Generate JKS Keystore using openssl before
     // managed server services and pods are ready
+    String uniquePath = "/shared/" + domainNamespace + "/" + domainUid;
     generateJksStores();
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "IdentityKeyStore.jks"),
-        Paths.get("/shared/IdentityKeyStore.jks")));
+        Paths.get(uniquePath + "/IdentityKeyStore.jks")));
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "TrustKeyStore.jks"),
-        Paths.get("/shared/TrustKeyStore.jks")));
+        Paths.get(uniquePath + "/TrustKeyStore.jks")));
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
@@ -189,9 +203,7 @@ class ItMiiCustomSslStore {
 
     runClientOnAdminPod();
 
-    boolean psuccess = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 3),
-        String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    boolean psuccess = scaleAllClusters(domainUid, domainNamespace, 3);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
@@ -204,7 +216,8 @@ class ItMiiCustomSslStore {
 
     StringBuffer extOpts = new StringBuffer("");
     extOpts.append("-Dweblogic.security.SSL.ignoreHostnameVerification=true ");
-    extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/TrustKeyStore.jks ");
+    extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/"
+            + domainNamespace + "/" + domainUid + "/TrustKeyStore.jks ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStorePassPhrase=changeit ");
     testUntil(
         runClientInsidePod(adminServerPodName, domainNamespace,

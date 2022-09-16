@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,7 +76,7 @@ class RollingHelperTest {
   private static final List<String> CLUSTERED_SERVER_NAMES = Arrays.asList(SERVER10_NAME, SERVER1_NAME, SERVER2_NAME);
   private static final String NONCLUSTERED_SERVER = "non_clustered";
 
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
   private final Map<String, StepAndPacket> rolling = new HashMap<>();
@@ -135,7 +135,7 @@ class RollingHelperTest {
     return createPod(testSupport.getPacket());
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
   }
 
@@ -224,7 +224,7 @@ class RollingHelperTest {
     consoleHandlerMemento.trackMessage(MANAGED_POD_REPLACED);
     initializeExistingPods();
     CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
-    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
@@ -238,7 +238,7 @@ class RollingHelperTest {
     CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
     getPods().forEach(this::setPodNotReady);
 
-    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
@@ -288,7 +288,7 @@ class RollingHelperTest {
     getPods().forEach(this::setPodNotReady);
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     DomainPresenceInfo.fromPacket(testSupport.getPacket()).ifPresent(dpi -> dpi.setServersToRoll(rolling));
-    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 

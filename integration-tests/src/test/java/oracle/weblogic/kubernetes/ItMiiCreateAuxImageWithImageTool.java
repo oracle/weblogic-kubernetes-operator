@@ -7,9 +7,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.AuxiliaryImage;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -30,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -49,6 +51,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageEx
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
@@ -69,6 +73,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-srg")
 class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
@@ -77,9 +85,9 @@ class ItMiiCreateAuxImageWithImageTool {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  private static String miiAuxiliaryImageTag = "new" + MII_BASIC_IMAGE_TAG;
-  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
-  private final int replicaCount = 2;
+  private static String miiImageTag = "new" + MII_BASIC_IMAGE_TAG;
+  private static String miiImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiImageTag;
+  private final int replicaCount = 1;
   private static String adminSecretName;
   private static String encryptionSecretName;
 
@@ -133,6 +141,8 @@ class ItMiiCreateAuxImageWithImageTool {
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
+    String miiAuxiliaryImage = miiImage + "1";
+    String miiAuxiliaryImageTag = miiImageTag + "1";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -140,7 +150,7 @@ class ItMiiCreateAuxImageWithImageTool {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -159,9 +169,9 @@ class ItMiiCreateAuxImageWithImageTool {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage);
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        encryptionSecretName, auxiliaryImagePath,
         miiAuxiliaryImage);
 
     // create domain and verify its running
@@ -204,7 +214,8 @@ class ItMiiCreateAuxImageWithImageTool {
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath2 = "/auxiliary2";
-
+    String miiAuxiliaryImage = miiImage + "2";
+    String miiAuxiliaryImageTag = miiImageTag + "2";
     // create a new auxiliary image with oraclelinux base image
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
@@ -223,9 +234,10 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(modelList)
         .wdtVersion(WDT_TEST_VERSION);
 
-    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
+    
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ",
         MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag);
     testUntil(
@@ -240,16 +252,27 @@ class ItMiiCreateAuxImageWithImageTool {
         DOMAIN_IMAGES_REPO);
     dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
+    // create cluster object
+    String clusterName = "cluster-1";
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage);
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
+        encryptionSecretName, auxiliaryImagePath2,
         miiAuxiliaryImage);
 
     String adminServerPodName = domain2Uid + "-admin-server";
     String managedServerPrefix = domain2Uid + "-managed-server";
+
+    // set cluster references
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
@@ -287,6 +310,8 @@ class ItMiiCreateAuxImageWithImageTool {
 
     String customWdtHome = "/customwdthome";
     String customWdtModelHome = "/customwdtmodelhome/models";
+    String miiAuxiliaryImage = miiImage + "3";
+    String miiAuxiliaryImageTag = miiImageTag + "3";
     WitParams witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
@@ -296,7 +321,7 @@ class ItMiiCreateAuxImageWithImageTool {
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList);
 
-    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -315,13 +340,13 @@ class ItMiiCreateAuxImageWithImageTool {
     String domain3Uid = "domain3";
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domain3Uid, miiAuxiliaryImage);
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
+    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-        encryptionSecretName, replicaCount, "cluster-1");
+        encryptionSecretName);
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
 
@@ -411,6 +436,9 @@ class ItMiiCreateAuxImageWithImageTool {
         .pull(true)
         .modelFiles(Collections.singletonList(MODEL_DIR + "/model.update.wm.yaml"));
 
+    if (dockerImageExists(auxImageName, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(auxImageName + ":" + MII_BASIC_IMAGE_TAG);
+    }
     // create auxiliary image
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
     assertEquals(0, result.exitValue());
@@ -478,8 +506,10 @@ class ItMiiCreateAuxImageWithImageTool {
   public void tearDownAll() {
     if (!SKIP_CLEANUP) {
       // delete images
-      if (miiAuxiliaryImage != null) {
-        deleteImage(miiAuxiliaryImage);
+      for (int i = 1; i < 4; i++) {
+        if (miiImage + i != null) {
+          deleteImage(miiImage + i);
+        }
       }
     }
   }

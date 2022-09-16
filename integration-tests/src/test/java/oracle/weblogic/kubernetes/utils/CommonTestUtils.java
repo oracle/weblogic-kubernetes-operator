@@ -3,9 +3,11 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,18 +22,19 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainCondition;
-import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -45,14 +48,33 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -66,14 +88,19 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotCh
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToDockerContainer;
 import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createDiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodEvictedStatusInOperatorLogs;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScriptInDockerContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -97,6 +124,9 @@ public class CommonTestUtils {
   public static ConditionFactory withStandardRetryPolicyIgnoringExceptions =
       createStandardRetryPolicyWithAtMost(5).ignoreExceptions();
   public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+
+  private static final String TMP_FILE_NAME = "temp-download-file.out";
+
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
@@ -209,8 +239,9 @@ public class CommonTestUtils {
    */
   public static void checkServiceExists(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
+
     testUntil(
-        withStandardRetryPolicyIgnoringExceptions,
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
           String.format("serviceExists failed with ApiException for service %s in namespace %s",
             serviceName, namespace)),
@@ -273,16 +304,14 @@ public class CommonTestUtils {
    * Check whether the cluster's replica count matches with input parameter value.
    *
    * @param clusterName Name of cluster to check
-   * @param domainName Name of domain to which cluster belongs
    * @param namespace cluster's namespace
    * @param replicaCount replica count value to match
    * @return true, if the cluster replica count is matched
    */
-  public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
+  public static boolean checkClusterReplicaCountMatches(String clusterName,
                                                         String namespace, Integer replicaCount) throws ApiException {
-    Cluster cluster = TestActions.getDomainCustomResource(domainName, namespace).getSpec().getClusters()
-            .stream().filter(c -> c.clusterName().equals(clusterName)).findAny().orElse(null);
-    return Optional.ofNullable(cluster).get().replicas() == replicaCount;
+    ClusterSpec clusterSpec = Kubernetes.getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION).getSpec();
+    return Optional.ofNullable(clusterSpec).get().replicas() == replicaCount;
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
@@ -392,7 +421,7 @@ public class CommonTestUtils {
               clusterName, domainUid, domainNamespace))
           .isTrue();
     } else {
-      assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
+      assertThat(assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, replicasAfterScale)))
           .as(String.format("Verify scaling cluster %s of domain %s in namespace %s succeeds",
               clusterName, domainUid, domainNamespace))
           .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s failed",
@@ -924,7 +953,10 @@ public class CommonTestUtils {
     while (port <= END_PORT) {
       freePort = port++;
       try {
-        isLocalPortFree(freePort);
+        isLocalPortFree(freePort, K8S_NODEPORT_HOST);
+        if (OKE_CLUSTER) {
+          isLocalPortFree(freePort, NODE_IP);
+        }
       } catch (IOException ex) {
         return freePort;
       }
@@ -938,11 +970,12 @@ public class CommonTestUtils {
    * the given port is already in use by an another process.
    *
    * @param port port to check
+   * @param host host to check
    * @throws java.io.IOException when the port is not used by any socket
    */
-  private static void isLocalPortFree(int port) throws IOException {
-    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
-      getLogger().info("Port {0} is already in use", port);
+  private static void isLocalPortFree(int port, String host) throws IOException {
+    try (Socket socket = new Socket(host, port)) {
+      getLogger().info("Port {0} is already in use for host {1}", port, host);
     }
   }
 
@@ -1029,7 +1062,7 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(() -> {
-          Domain domain = getDomainCustomResource(domainUid, domainNamespace);
+          DomainResource domain = getDomainCustomResource(domainUid, domainNamespace);
           if ((domain != null) && (domain.getStatus() != null)) {
             for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
               getLogger().info("Condition Type =" + domainCondition.getType()
@@ -1133,6 +1166,250 @@ public class CommonTestUtils {
   }
 
   /**
+   * Start a port-forward process and tests using forwarded port.
+   *
+   * @param domainUid domain uid
+   * @param domainNamespace domain namespace
+   * @param istioIngressPort istio ingress port
+   * @return generated local forward port
+   */
+  public static int testPortForwarding(String domainUid,
+                                        String domainNamespace,
+                                        int istioIngressPort) {
+    LoggingFacade logger = getLogger();
+
+    // verify WebLogic console is accessible before port forwarding using ingress port
+    String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+    boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic console");
+    logger.info("WebLogic console is accessible");
+
+    // forwarding admin port to a local port
+    String localhost = "localhost";
+    String forwardedPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
+    assertNotNull(forwardedPort, "port-forward command fails to assign local port");
+    logger.info("Forwarded local port is {0}", forwardedPort);
+
+    // verify WebLogic console is accessible after port forwarding using the forwarded port
+    consoleUrl = "http://" + localhost + ":" + forwardedPort + "/console/login/LoginForm.jsp";
+    checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+    logger.info("WebLogic console is accessible thru port forwarding");
+
+    // test accessing WLS vis WLST using the forwarded port.
+    ExecResult result = accesseWLSViaWLSTUsingForwardedPort(domainUid, domainNamespace, forwardedPort);
+    assertNotNull(result, "Connecting to WebLogic failed");
+    logger.info("Connecting to Weblogic via WLST using forwarded port {0} returned {1}", result.toString());
+    assertTrue(result.stdout().contains("Successfully connected to Admin Server"),
+        "Failed to connect to WebLogic via WLST using forwarded port");
+
+    // stop port forwarding process
+    stopPortForwardProcess(domainNamespace);
+
+    return Integer.parseInt(forwardedPort);
+  }
+
+  /**
+   * Connect to WLS running on local machine vis WLST using the forwarded port.
+   * e.g. forwarded port is 32001, in the docker container, WLST script runs command
+   * connect('admin_username','admin_password','t3://localhost:32001').
+   *
+   * @param domainUid domain uid
+   * @param domainNamespace domain namespace
+   * @param forwardedPort forwarded local port number to access WebLogic
+   * @return ExecResult output of executing WLST script
+   */
+  public static ExecResult accesseWLSViaWLSTUsingForwardedPort(String domainUid,
+                                                              String domainNamespace,
+                                                              String forwardedPort) {
+    LoggingFacade logger = getLogger();
+    final String containerName = "wlsDockerContainer";
+    final String wlstScriptFileName = "connect.py";
+    final String wlstScriptFilePath = RESOURCE_DIR + "/python-scripts/" + wlstScriptFileName;
+    final String wlstScriptDestPath = "/tmp/" + wlstScriptFileName;
+    final String wlstPropDestPath = "/tmp/connect.prop";
+    final String diiImageName = "wls-docker-container-image";
+    final String diiModelFileName = "dii-docker-container.yaml";
+    final String diiModelPropFileName = "dii-docker-container.properties";
+    ExecResult result = null;
+
+    try {
+      // create a dii images to create a WebLogic docker container
+      String diiDomainImage = createDiiImageAndVerify(domainUid, domainNamespace,
+          diiImageName, diiModelFileName, diiModelPropFileName, null);
+      logger.info("Created dii image: {0}", diiDomainImage);
+
+      // create a WLS docker container using the dii images created above
+      result = createAndStartWlsDockerContainerAndVerify(domainUid, containerName, diiDomainImage);
+      if (result.exitValue() == 0) {
+        logger.info("Create WLS docker container succeeded: {0}", result.stdout());
+      } else {
+        logger.info("Create WLS docker container failed: {0}", result.stderr());
+      }
+
+      // create WLST property file
+      File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+          "Creating WLST properties file failed");
+
+      String localhost = "localhost";
+      Properties p1 = new Properties();
+      p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+      p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+      p1.setProperty("admin_host", localhost);
+      p1.setProperty("admin_port", forwardedPort);
+      assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+          "Failed to write the WLST properties to file");
+      logger.info("WLST property file is: {0} ", wlstPropertiesFile.getAbsolutePath());
+
+      // cp WLST script and prop files to the docker container
+      copyFileToDockerContainer(containerName, wlstScriptFilePath, wlstScriptDestPath);
+      copyFileToDockerContainer(containerName, wlstPropertiesFile.getAbsolutePath(), wlstPropDestPath);
+
+      Path filePath = Path.of(wlstPropertiesFile.getAbsolutePath());
+      String content = Files.readString(filePath, StandardCharsets.US_ASCII);
+      logger.info("Content of WLST property file: {0} ", content);
+
+      // accessing WLS vis WLST using the forwarded port
+      result = executeWLSTScriptInDockerContainer(containerName, wlstScriptDestPath, wlstPropDestPath);
+    } catch (Exception ex) {
+      logger.info("Failed to access WLS vis WLST using the forwarded port!");
+      ex.printStackTrace();
+    } finally {
+      stopWlsDockerContainer(containerName);
+      removeWlsDockerContainer(containerName);
+    }
+
+    return result;
+  }
+
+  /**
+   * Create a WebLogic docker container.
+   *
+   * @param domainUid domain uid
+   * @param containerName docker container name to create
+   * @param imageName image name with tag
+   * @return ExecResult output of creating docker container
+   */
+  public static ExecResult createAndStartWlsDockerContainerAndVerify(String domainUid,
+                                                                     String containerName,
+                                                                     String imageName) {
+    final LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // create a WebLogic docker container
+    String createContainerCmd = new StringBuffer("docker run -d -p 7001:7001 --name=")
+        .append(containerName)
+        .append(" --network=host ")
+        //.append(" --add-host=host.docker.internal:host-gateway ")
+        .append(imageName)
+        .append(" /u01/oracle/user_projects/domains/")
+        .append(domainUid)
+        .append("/startWebLogic.sh").toString();
+    logger.info("Command to create a WLS docker container: {0}", createContainerCmd);
+
+    try {
+      result = exec(createContainerCmd, true);
+      logger.info("Result for WLS docker container creation is {0}", result);
+    } catch (Exception ex) {
+      logger.info("createContainerCmd: caught unexpected exception {0}", ex);
+    }
+    assertNotNull(result, "command returns null");
+    if (result.exitValue() == 0) {
+      // check if the docker container started
+      logger.info("Wait for docker container {0} starting", containerName);
+      testUntil(
+          withStandardRetryPolicy,
+          isDockerContainerReady(containerName),
+          logger,
+          "{0} is started",
+          containerName);
+    } else {
+      logger.info("Failed to exec the command {0}. Error is {1} ", createContainerCmd, result.stderr());
+    }
+    return result;
+  }
+
+  /**
+   * Check if a WebLogic docker container is ready.
+   *
+   * @param containerName docker container name to check
+   * @return true if a WebLogic docker container is ready, otherwise false
+   */
+  public static Callable<Boolean> isDockerContainerReady(String containerName) {
+    return () -> checkDockerContainerReady(containerName);
+  }
+
+  /**
+   * Check if a WebLogic docker container is in RUNNING mode.
+   *
+   * @param containerName docker container name to check
+   * @return true if a WebLogic docker container is in RUNNING mode, otherwise false
+   */
+  public static boolean checkDockerContainerReady(String containerName) {
+    final LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // check is a WebLogic docker container RUNNING mode
+    String checkContainerCmd = new StringBuffer("docker logs ").append(containerName).toString();
+    logger.info("Command to check if WLS docker container: {0}", checkContainerCmd);
+
+    try {
+      result = exec(checkContainerCmd, true);
+    } catch (Exception ex) {
+      logger.info("Check docker container status: caught unexpected exception {0}", ex);
+      ex.printStackTrace();
+    }
+
+    return result.stdout().contains("The server started in RUNNING mode");
+  }
+
+  /**
+   * Stop a WebLogic docker container.
+   *
+   * @param containerName docker container name to stop
+   * @return ExecResult output of creating docker container
+   */
+  public static ExecResult stopWlsDockerContainer(String containerName) {
+    final LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // create a WebLogic docker container
+    String stopContainerCmd = new StringBuffer("docker stop ").append(containerName).toString();
+    logger.info("Command to stop a WLS docker container: {0}", stopContainerCmd);
+
+    try {
+      result = exec(stopContainerCmd, true);
+    } catch (Exception ex) {
+      logger.info("Stop docker container: caught unexpected exception {0}", ex);
+    }
+
+    return result;
+  }
+
+  /**
+   * Delete a WebLogic docker container.
+   *
+   * @param containerName docker container name to delete
+   * @return ExecResult output of creating docker container
+   */
+  public static ExecResult removeWlsDockerContainer(String containerName) {
+    final LoggingFacade logger = getLogger();
+    ExecResult result = null;
+
+    // create a WebLogic docker container
+    String stopContainerCmd = new StringBuffer("docker rm ").append(containerName).toString();
+    logger.info("Command to stop a WLS docker container: {0}", stopContainerCmd);
+
+    try {
+      result = exec(stopContainerCmd, true);
+    } catch (Exception ex) {
+      logger.info("Stop docker container: caught unexpected exception {0}", ex);
+    }
+
+    return result;
+  }
+
+  /**
    * Generate the model.sessmigr.yaml for a given test class
    *
    * @param domainUid unique domain identifier
@@ -1164,6 +1441,34 @@ public class CommonTestUtils {
         "Could not modify DOMAIN_NAME in " + destModelYamlFile);
 
     return destModelYamlFile;
+  }
+
+  /**
+   * Create testwebapp.war.
+   *
+   * @param domainNamespace domain namespace
+   *
+   * @return location of testwebapp.war
+   */
+  public static String createTestWebAppWarFile(String domainNamespace) {
+    LoggingFacade logger = getLogger();
+
+    // create testwebapp.war
+    String sourceTestWebAppWarLoc = APP_DIR + "/testwebapp";
+    String destTestWebAppWarLoc = RESULTS_ROOT + "/" + domainNamespace;
+    String createWarCmd = new StringBuffer("sh ")
+        .append(APP_DIR)
+        .append("/../bash-scripts/build-war-app.sh")
+        .append(" -s ")
+        .append(sourceTestWebAppWarLoc)
+        .append(" -d ")
+        .append(destTestWebAppWarLoc).toString();
+    logger.info("command to build testwebapp.war {0}", createWarCmd);
+
+    ExecResult execResult = assertDoesNotThrow(() -> exec(createWarCmd, true));
+    assertEquals(0, execResult.exitValue(), "Could not create testwebapp.war");
+
+    return destTestWebAppWarLoc + "/testwebapp.war";
   }
 
   /**
@@ -1285,5 +1590,91 @@ public class CommonTestUtils {
     }
     getLogger().info("Creating unique name {0}", cmName);
     return cmName;
+  }
+
+  /**
+   * check the pod evicted status exists inn Operator log.
+   *
+   * @param opNamespace in which the Operator pod is running
+   * @param podName name of the pod to check
+   * @param ephemeralStorage ephemeral storage number
+   */
+  public static void checkPodEvictedStatus(String opNamespace, String podName, String ephemeralStorage) {
+    final LoggingFacade logger = getLogger();
+
+    logger.info("check pod {0} evicted status", podName);
+    String regex = new StringBuffer()
+        .append(".*Pod\\s")
+        .append(podName)
+        .append("\\s*was\\s*evicted\\s*due\\s*to\\s*Pod\\s*ephemeral\\s*local\\s*storage")
+        .append("\\s*usage\\s*exceeds\\s*the\\s*total\\s*limit\\s*of\\s*containers\\s*")
+        .append(ephemeralStorage).toString();
+
+    logger.info("Wait for regex {0} for pod {1} existing in Operator log", regex, podName);
+    testUntil(
+        withStandardRetryPolicy,
+        checkPodEvictedStatusInOperatorLogs(opNamespace, regex),
+        logger,
+        "{0} is evicted and regex {1} found in Operator log",
+        podName,
+        regex);
+  }
+
+  /**
+   * If we use actual URL of WDT or WIT return it. If we use the "latest" release figure out the
+   * actual version number and construct the complete URL
+   * @return the actual download URL
+   * @throws RuntimeException if the operation failed for any reason
+   */
+  public static String getActualLocationIfNeeded(
+      String location,
+      String type,
+      String downloadDir
+  ) throws RuntimeException {
+    String actualLocation = location;
+    if (needToGetActualLocation(location, type)) {
+      actualLocation = location + "/download/" + getInstallerFileName(type);
+    }
+    getLogger().info("The actual download location for {0} is {1}", type, actualLocation);
+    return actualLocation;
+  }
+
+  private static boolean needToGetActualLocation(
+      String location,
+      String type) {
+    switch (type) {
+      case WDT:
+        return WDT_DOWNLOAD_URL_DEFAULT.equals(location);
+      case WIT:
+        return WIT_DOWNLOAD_URL_DEFAULT.equals(location);
+      case WLE:
+        return WLE_DOWNLOAD_URL_DEFAULT.equals(location);
+      case REMOTECONSOLE:
+        return REMOTECONSOLE_DOWNLOAD_URL_DEFAULT.equals(location);
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Get the installer download filename.
+   * @return the download filename
+   */
+  public static String getInstallerFileName(
+      String type) {
+    switch (type) {
+      case WDT:
+        return WDT_DOWNLOAD_FILENAME_DEFAULT;
+      case WIT:
+        return WIT_DOWNLOAD_FILENAME_DEFAULT;
+      case WLE:
+        return WLE_DOWNLOAD_FILENAME_DEFAULT;
+      case SNAKE:
+        return SNAKE_DOWNLOADED_FILENAME;
+      case REMOTECONSOLE:
+        return REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
+      default:
+        return "";
+    }
   }
 }

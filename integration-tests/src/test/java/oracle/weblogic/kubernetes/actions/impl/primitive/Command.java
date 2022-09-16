@@ -60,13 +60,13 @@ public class Command {
       }
 
       // check exitValue to determine if the command execution has failed.
-      if (params.verbose()) {
-        if (result.exitValue() != 0) {
-          getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
-        } else {
+      if (result.exitValue() != 0) {
+        getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      } else {
+        if (params.verbose()) {
           getLogger().info("The command execution succeeded with result: {0}.", result);
         }
-      } 
+      }
 
       return result.exitValue() == 0;
     } catch (IOException | InterruptedException ie) {

@@ -1,22 +1,24 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
-public interface MakeRightDomainOperation {
+public interface MakeRightDomainOperation extends PacketComponent {
 
   /**
    * Defines the operation as pertaining to the deletion of a domain.
@@ -24,28 +26,49 @@ public interface MakeRightDomainOperation {
    */
   MakeRightDomainOperation forDeletion();
 
+  MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo info);
+
   MakeRightDomainOperation withExplicitRecheck();
 
-  MakeRightDomainOperation withEventData(EventItem eventItem, String message);
+  /**
+   * Specifies the event that started this operation.
+   * @param eventData a description of the event, containing at least the event type.
+   */
+  MakeRightDomainOperation withEventData(EventData eventData);
 
   MakeRightDomainOperation interrupt();
+
+  /**
+   * Returns true if this operation was started by an event.
+   */
+  boolean wasStartedFromEvent();
 
   boolean isDeleting();
 
   boolean isWillInterrupt();
 
-  // for unit testing only
-  MakeRightDomainOperation throwNPE();
+  boolean isExplicitRecheck();
 
   void execute();
+
+  @Nonnull
+  Packet createPacket();
 
   Step createSteps();
 
   void setInspectionRun();
 
-  void setLiveInfo(DomainPresenceInfo info);
+  @Nonnull
+  DomainPresenceInfo getPresenceInfo();
+
+  void setLiveInfo(@Nonnull DomainPresenceInfo info);
 
   void clear();
+
+  @Override
+  default void addToPacket(Packet packet) {
+    packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
+  }
 
   boolean wasInspectionRun();
 
@@ -61,6 +84,10 @@ public interface MakeRightDomainOperation {
     return domainRequiresIntrospectionInCurrentMakeRight(packet) && !wasInspectionRun(packet);
   }
 
+  static boolean isMakeRight(Packet packet) {
+    return fromPacket(packet).isPresent();
+  }
+
   /**
    * Returns true if the packet contains info about a domain that requires introspection in a sequences of steps
    * before server pods are created or modified.
@@ -69,7 +96,7 @@ public interface MakeRightDomainOperation {
   private static boolean domainRequiresIntrospectionInCurrentMakeRight(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::isNewIntrospectionRequiredForNewServers)
+          .map(DomainResource::isNewIntrospectionRequiredForNewServers)
           .orElse(false);
   }
 
@@ -78,7 +105,11 @@ public interface MakeRightDomainOperation {
     return fromPacket(packet).map(MakeRightDomainOperation::createSteps).orElse(null);
   }
 
-  private static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
+  /**
+   * Returns an optional containing the make-right-domain-operation in the packet.
+   * @param packet a packet which may contain a make-right operation
+   */
+  static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getValue(MAKE_RIGHT_DOMAIN_OPERATION));
   }
 }

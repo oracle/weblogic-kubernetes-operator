@@ -23,15 +23,14 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -40,12 +39,14 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -56,6 +57,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -65,7 +68,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -91,6 +94,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-mrg")
 class ItSystemResOverrides {
 
   private static String opNamespace = null;
@@ -141,7 +148,7 @@ class ItSystemResOverrides {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     //create and start WebLogic domain
     createDomain();
@@ -335,7 +342,7 @@ class ItSystemResOverrides {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", uniquePath + "/logs");
+    p.setProperty("domain_logs", uniquePath + "/logs/" + domainUid);
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
         -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -350,7 +357,7 @@ class ItSystemResOverrides {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -358,23 +365,22 @@ class ItSystemResOverrides {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC"))
+                .overrideDistributionStrategy("Dynamic"))
             .domainUid(domainUid)
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only for non-kind cluster
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))  // this secret is used only for non-kind cluster
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -398,19 +404,21 @@ class ItSystemResOverrides {
                     .mountPath("/shared")
                     .name(pvName)))
             .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                        .nodePort(t3ChannelPort)))));
     setPodAntiAffinity(domain);
+    // create cluster object
+    ClusterResource cluster = createClusterResource(
+        clusterName, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 

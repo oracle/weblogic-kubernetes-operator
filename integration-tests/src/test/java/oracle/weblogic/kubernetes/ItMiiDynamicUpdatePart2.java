@@ -14,8 +14,8 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -61,6 +61,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-sequential")
+@Tag("kind-parallel")
+@Tag("toolkits-srg")
+@Tag("okd-wls-mrg")
 class ItMiiDynamicUpdatePart2 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
@@ -111,6 +116,7 @@ class ItMiiDynamicUpdatePart2 {
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
   @Tag("gate")
+  @Tag("crio")
   void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -354,7 +360,7 @@ class ItMiiDynamicUpdatePart2 {
   private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()

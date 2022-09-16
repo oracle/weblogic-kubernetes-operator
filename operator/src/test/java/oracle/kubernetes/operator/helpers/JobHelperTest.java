@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -55,12 +56,11 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
-import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -101,8 +101,6 @@ import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLAT
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
-import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT;
-import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -156,7 +154,7 @@ class JobHelperTest extends DomainValidationTestBase {
   public static final int MODE_365 = 365;
   public static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE = 180L;
   private Method getDomainSpec;
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
@@ -227,6 +225,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void creatingServers_false_when_no_domain_nor_cluster_replicas() {
+    configureDomain().withDefaultReplicaCount(0);
+
     configureCluster("cluster1");
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
@@ -349,6 +349,10 @@ class JobHelperTest extends DomainValidationTestBase {
     return JobHelper.createJobSpec(new Packet().with(domainPresenceInfo));
   }
 
+  private V1Job createJob() {
+    return new JobStepContext(new Packet().with(domainPresenceInfo)).getJobModel();
+  }
+
   @Test
   void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
     V1JobSpec jobSpec = createJobSpec();
@@ -424,7 +428,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
           null);
 
-    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
+    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep());
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
     assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_CREATED));
 
@@ -445,7 +449,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
           null);
 
-    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
+    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep());
     assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_REPLACED));
   }
 
@@ -635,13 +639,13 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     configureDomain()
           .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
+          .withWebLogicCredentialsSecret(SECRET_NAME)
           .withAdditionalVolume("volume1", VOLUME_PATH_1)
           .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
@@ -652,16 +656,16 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainFailsValidation_dontStartIntrospectorJob() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
 
     V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     configureDomain()
           .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
+          .withWebLogicCredentialsSecret(SECRET_NAME)
           .withAdditionalVolume("volume1", VOLUME_PATH_1)
           .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
@@ -673,8 +677,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasMultipleConfigOverrideSecretsWithLongNames_volumesCreatedWithShorterNames() {
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, V1Secret.class, NS);
 
     configureDomain()
           .withConfigOverrideSecrets(LONG_RESOURCE_NAME, SECOND_LONG_RESOURCE_NAME);
@@ -692,7 +696,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasConfigMapOverrideWithLongConfigMapName_volumeCreatedWithShorterName() {
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1ConfigMap.class, NS);
 
     configureDomain()
           .withConfigOverrides(LONG_RESOURCE_NAME);
@@ -706,7 +710,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasModelConfigMapOverrideWithLongModelCMName_volumeCreatedWithShorterName() {
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1ConfigMap.class, NS);
 
     configureDomain()
           .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
@@ -721,8 +725,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasMultipleConfigOverrideSecretsWithLongAndShortNames_volumeCreatedWithCorrectNames() {
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1Secret.class, NS);
 
     configureDomain()
           .withConfigOverrideSecrets(SECRET_NAME, LONG_RESOURCE_NAME);
@@ -1209,7 +1213,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   private void runCreateJob() {
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
-    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
   }
 
   @Test
@@ -1333,78 +1337,23 @@ class JobHelperTest extends DomainValidationTestBase {
     return new V1Pod().metadata(new V1ObjectMeta().creationTimestamp(SystemClock.now()));
   }
 
+
   @Test
-  void whenDomainIsIstioEnabled_localhostBindingsDisabled_hasIstioUseLocalhostBindingsEnv() {
-    configureDomain().withIstioLocalhostBindingsEnabled(false);
+  void whenDomainHasIntrospectVersion_jobMetatadataCreatedWithLabel() {
+    final String INTROSPECT_VERSION = "v123";
+    configureDomain().withIntrospectVersion(INTROSPECT_VERSION);
 
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
-    );
+    V1Job job = createJob();
+    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL),
+        is(INTROSPECT_VERSION));
   }
 
   @Test
-  void whenDomainIsIstioEnabled_localhostBindingsEnabled_doesNotHaveIstioUseLocalhostBindingsEnv() {
-    configureDomain().withIstioLocalhostBindingsEnabled(true);
+  void whenDomainHasNoIntrospectVersion_jobMetatadataCreatedWithoutNoLabel() {
+    configureDomain().withIntrospectVersion(null);
 
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
-    );
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_replicationChannelPort_hasIstioEnvVar() {
-    final String REPLICATION_CHANNEL_PORT = "6789";
-    configureDomain().withIstioReplicationChannelPort(Integer.valueOf(REPLICATION_CHANNEL_PORT));
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
-    );
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_defaultReplicationChannelPort_doesNotHaveIstioEnvVar() {
-    configureDomain().withIstio();
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ISTIO_REPLICATION_PORT, Integer.toString(Istio.DEFAULT_REPLICATION_PORT))));
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_istioLocalhostBindingsEnabledEnv_hasIstioUseLocalhostBindingsEnv() {
-    TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "false");
-    configureDomain().withIstio();
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
-    );
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_istioLocalhostBindingsDisabledEnv_hasIstioUseLocalhostBindingsEnv() {
-    TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "true");
-    configureDomain().withIstio();
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
-    );
+    V1Job job = createJob();
+    assertThat(job.getMetadata().getLabels().get(LabelConstants.INTROSPECTION_STATE_LABEL), is(nullValue()));
   }
 
   private V1Job job;
@@ -1432,7 +1381,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
           .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
@@ -1449,7 +1398,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @SuppressWarnings("SameParameterValue")
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
+    return configureDomain().configureCluster(domainPresenceInfo, clusterName);
   }
 
   @SuppressWarnings("SameParameterValue")

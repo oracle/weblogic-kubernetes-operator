@@ -397,7 +397,8 @@ Run the following `kubectl` commands to deploy the required secrets:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
-   --from-literal=username=weblogic --from-literal=password=welcome1
+   --from-literal=username=<wl admin username> \
+   --from-literal=password=<wl admin password>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -407,7 +408,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
-   --from-literal=password=my_runtime_password
+   --from-literal=password=<mii runtime encryption pass>
 ```
 ```shell
 $ kubectl -n sample-domain1-ns label  secret \
@@ -416,6 +417,12 @@ $ kubectl -n sample-domain1-ns label  secret \
 ```
 
   Some important details about these secrets:
+
+  - Choosing passwords and usernames:
+    - Replace `<wl admin username>` and `<wl admin password>` with a username and password of your choice.
+      The password should be at least eight characters long and include at least one digit.
+      Remember what you specified. These credentials may be needed again later.
+    - Replace `<mii runtime encryption pass>` with a password of your choice.
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
@@ -491,10 +498,10 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       #logHome: /shared/logs/sample-domain1
 
       # Set which WebLogic Servers the Operator will start
-      # - "NEVER" will not start any server in the domain
-      # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-      # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-      serverStartPolicy: "IF_NEEDED"
+      # - "Never" will not start any server in the domain
+      # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+      # - "IfNeeded" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+      serverStartPolicy: IfNeeded
 
       # Settings for all server pods in the domain including the introspector job pod
       serverPod:
@@ -519,11 +526,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #  name: weblogic-domain-storage-volume
 
       # The desired behavior for starting the domain's administration server.
-      adminServer:
-        # The serverStartState legal values are "RUNNING" or "ADMIN"
-        # "RUNNING" means the listed server will be started up to "RUNNING" mode
-        # "ADMIN" means the listed server will be start up to "ADMIN" mode
-        serverStartState: "RUNNING"
+      # adminServer:
         # Setup a Kubernetes node port for the administration server default channel
         #adminService:
         #  channels:
@@ -536,7 +539,6 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # The desired behavior for starting a specific cluster's member servers
       clusters:
       - clusterName: cluster-1
-        serverStartState: "RUNNING"
         replicas: 2
 
       # Change the `restartVersion` to force the introspector job to rerun
@@ -719,7 +721,8 @@ NAME                               CLASS    HOSTS   ADDRESS          PORTS   AGE
 sample-nginx-ingress-pathrouting   <none>   *       192.168.100.50   80      7m18s
 ```
 
-Access the Administration Console using the load balancer IP address, `http://192.168.100.50/console`
+Access the Administration Console using the load balancer IP address, `http://192.168.100.50/console`.
+The console login screen expects the WebLogic administration credentials that you specified in the [Secrets](#secrets).
 
 Access the sample application.
 

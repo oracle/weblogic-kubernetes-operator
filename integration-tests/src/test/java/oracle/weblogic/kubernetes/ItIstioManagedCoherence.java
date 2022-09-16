@@ -14,16 +14,12 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -34,31 +30,33 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createAndPushMiiImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainWithIstioMultiClusters;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -73,6 +71,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Test to associate a Coherence Cluster with multiple WebLogic server clusters.
 @DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItIstioManagedCoherence {
 
   // constants for Coherence
@@ -165,7 +166,7 @@ class ItIstioManagedCoherence {
    * Associate them with a Coherence cluster
    * Deploy the EAR file to cluster-1 that has no storage enabled
    * Deploy the GAR file to cluster-2 that has storage enabled
-   * Verify that data can be added and stored in the cache 
+   * Verify that data can be added and stored in the cache
    * and can also be retrieved from cache.
    */
   @Test
@@ -190,9 +191,9 @@ class ItIstioManagedCoherence {
     Path targetHttpFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-    
+
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     int istioIngressPort = getIstioHttpIngressPort();
@@ -376,7 +377,7 @@ class ItIstioManagedCoherence {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainInImageNamespace);
-    createOcirRepoSecret(domainInImageNamespace);
+    createTestRepoSecret(domainInImageNamespace);
     return domImage;
   }
 
@@ -429,17 +430,8 @@ class ItIstioManagedCoherence {
   }
 
   private static void createDomainCrAndVerify(String adminSecretName, String domImage) {
-    // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
-    for (int i = NUMBER_OF_CLUSTERS; i >= 1; i--) {
-      clusterList.add(new Cluster()
-          .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
-    }
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -449,13 +441,13 @@ class ItIstioManagedCoherence {
             .domainUid(domainUid)
             .domainHomeSourceType("Image")
             .image(domImage)
+            .imagePullPolicy((IMAGE_PULL_POLICY))
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainInImageNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -463,21 +455,21 @@ class ItIstioManagedCoherence {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .clusters(clusterList)
             .configuration(new Configuration()
-                .istio(new Istio()
-                   .enabled(Boolean.TRUE)
-                   .readinessPort(8888)
-                   .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .model(new Model()
                     .domainType("WLS"))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource in mii domain
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+      domain = addClusterToDomain(CLUSTER_NAME_PREFIX + i, domainInImageNamespace, domain, replicaCount);
+    }
     setPodAntiAffinity(domain);
+
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainInImageNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
+    DomainResource domain1 = domain;
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain1),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainInImageNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "

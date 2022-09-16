@@ -71,8 +71,10 @@ import oracle.kubernetes.operator.tuning.CallBuilderTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
@@ -104,19 +106,19 @@ public class CallBuilder {
   private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
   private static AsyncRequestStepFactory stepFactory = DEFAULT_STEP_FACTORY;
   private ClientPool helper;
-  private final Boolean allowWatchBookmarks = false;
-  private final String dryRun = null;
-  private final String pretty = null;
-  private final CallFactory<Domain> replaceDomain =
+  private static final Boolean ALLOW_WATCH_BOOKMARKS = false;
+  private static final String DRY_RUN = null;
+  private static final String PRETTY = null;
+  private final CallFactory<DomainResource> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceDomainAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body,
+                  (DomainResource) requestParams.body,
                   callback));
-  private final CallFactory<Domain> patchDomain =
+  private final CallFactory<DomainResource> patchDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
               patchDomainAsync(
@@ -125,14 +127,23 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
                   callback));
-  private final CallFactory<Domain> replaceDomainStatus =
+  private final CallFactory<ClusterResource> replaceClusterStatus =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceClusterStatusAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (ClusterResource) requestParams.body,
+                  callback));
+  private final CallFactory<DomainResource> replaceDomainStatus =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceDomainStatusAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body,
+                  (DomainResource) requestParams.body,
                   callback));
   private final CallFactory<V1CustomResourceDefinition> createCrd =
       (requestParams, usage, cont, callback) ->
@@ -234,7 +245,7 @@ public class CallBuilder {
                   null,
                   null,
                   null,
-                  pretty,
+                  PRETTY,
                   null,
                   null,
                   null,
@@ -317,10 +328,13 @@ public class CallBuilder {
   private Integer timeoutSeconds = 5;
   private final CallParamsImpl callParams = new CallParamsImpl();
 
-  private final String resourceVersion = "";
+  private static final String RESOURCE_VERSION = "";
 
   private Integer maxRetryCount = 10;
-  private final Boolean watch = null;
+  private static final Boolean WATCH = null;
+  private final CallFactory<ClusterList> listCluster =
+      (requestParams, usage, cont, callback) ->
+          wrap(listClusterAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<DomainList> listDomain =
       (requestParams, usage, cont, callback) ->
           wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
@@ -346,7 +360,10 @@ public class CallBuilder {
   private final CallFactory<V1ConfigMapList> listConfigMaps =
       (requestParams, usage, cont, callback) ->
           wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<Domain> readDomain =
+  private final CallFactory<ClusterResource> readCluster =
+      (requestParams, usage, cont, callback) ->
+          wrap(readClusterAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<DomainResource> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1CustomResourceDefinition> readCrd =
@@ -369,8 +386,8 @@ public class CallBuilder {
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   private Integer gracePeriodSeconds = null;
-  private final Boolean orphanDependents = null;
-  private final String propagationPolicy = null;
+  private static final Boolean ORPHAN_DEPENDENTS = null;
+  private static final String PROPAGATION_POLICY = null;
 
   /* Custom Resource Definitions */
   private final CallFactory<V1Status> deleteConfigMap =
@@ -418,39 +435,101 @@ public class CallBuilder {
                   requestParams.name,
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
-                  pretty,
-                  dryRun,
+                  PRETTY,
+                  DRY_RUN,
                   null,
                   null,
                   null);
+  private final SynchronousCallFactory<ClusterList> listClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .listNamespacedCluster(
+                  requestParams.namespace,
+                  PRETTY,
+                  null,
+                  fieldSelector,
+                  labelSelector,
+                  limit,
+                  RESOURCE_VERSION,
+                  timeoutSeconds,
+                  WATCH);
+  private final SynchronousCallFactory<Object> listClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .listNamespacedClusterUntyped(
+                  requestParams.namespace,
+                  PRETTY,
+                  null,
+                  fieldSelector,
+                  labelSelector,
+                  limit,
+                  RESOURCE_VERSION,
+                  timeoutSeconds,
+                  WATCH);
   private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .listNamespacedDomain(
                   requestParams.namespace,
-                  pretty,
+                  PRETTY,
                   null,
                   fieldSelector,
                   labelSelector,
                   limit,
-                  resourceVersion,
+                  RESOURCE_VERSION,
                   timeoutSeconds,
-                  watch);
-  private final SynchronousCallFactory<Domain> replaceDomainCall =
+                  WATCH);
+  private final SynchronousCallFactory<DomainResource> readDomainCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .readNamespacedDomain(
+                  requestParams.name,
+                  requestParams.namespace
+              );
+  private final SynchronousCallFactory<DomainResource> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomain(
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
+                  (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<DomainResource> replaceDomainStatusCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .replaceNamespacedDomainStatus(
                   requestParams.name,
                   requestParams.namespace,
-                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> patchDomainCall =
+                  (DomainResource) requestParams.body);
+  private final SynchronousCallFactory<Object> readClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .readNamespacedClusterUntyped(
+                  requestParams.name,
+                  requestParams.namespace
+              );
+  private final SynchronousCallFactory<ClusterResource> createClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .createNamespacedCluster(
+                  requestParams.namespace, (ClusterResource) requestParams.body);
+  private final SynchronousCallFactory<Object> createClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .createNamespacedCluster(
+                  requestParams.namespace, (Map<String, Object>) requestParams.body);
+  private final SynchronousCallFactory<Object> replaceClusterCallUntyped =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceNamespacedCluster(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Map<String, Object>) requestParams.body);
+  private final SynchronousCallFactory<ClusterResource> patchClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .patchNamespacedCluster(
+                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
+  private final SynchronousCallFactory<DomainResource> patchDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
               .patchNamespacedDomain(
@@ -460,26 +539,28 @@ public class CallBuilder {
       ((client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSubjectAccessReview(
-                  (V1SubjectAccessReview) requestParams.body, null, null, null, pretty));
+                  (V1SubjectAccessReview) requestParams.body, null, null, null, PRETTY));
   private final SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectAccessReview(
-                  (V1SelfSubjectAccessReview) requestParams.body, null, null, null, pretty);
+                  (V1SelfSubjectAccessReview) requestParams.body, null, null, null, PRETTY);
   private final SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectRulesReview(
-                  (V1SelfSubjectRulesReview) requestParams.body, null, null, null, pretty);
+                  (V1SelfSubjectRulesReview) requestParams.body, null, null, null, PRETTY);
   private final SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
       (client, requestParams) ->
           new AuthenticationV1Api(client)
-              .createTokenReview((V1TokenReview) requestParams.body, null, null, null, pretty);
+              .createTokenReview((V1TokenReview) requestParams.body, null, null, null, PRETTY);
 
   private final SynchronousCallFactory<CoreV1Event> createEventCall =
       (client, requestParams) ->
           new CoreV1Api(client)
-              .createNamespacedEvent(requestParams.namespace, (CoreV1Event) requestParams.body, pretty, dryRun,
+              .createNamespacedEvent(requestParams.namespace, (CoreV1Event) requestParams.body,
+                  PRETTY,
+                  DRY_RUN,
                   null, null);
 
 
@@ -641,6 +722,142 @@ public class CallBuilder {
   }
 
   /**
+   * List clusters.
+   *
+   * @param namespace Namespace
+   * @return Cluster list
+   * @throws ApiException API exception
+   */
+  public @Nonnull ClusterList listCluster(String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("listCluster", namespace, null, null, callParams);
+    return executeSynchronousCall(requestParams, listClusterCall);
+  }
+
+  /**
+   * List clusters.
+   *
+   * @param namespace Namespace
+   * @return Cluster list
+   * @throws ApiException API exception
+   */
+  public @Nonnull Object listClusterUntyped(String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("listCluster", namespace, null, null, callParams);
+    return executeSynchronousCall(requestParams, listClusterCallUntyped);
+  }
+
+  /**
+   * Asynchronous step for listing clusters.
+   *
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listClusterAsync(String namespace, ResponseStep<ClusterList> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("listCluster", namespace, null, null, callParams), listCluster);
+  }
+
+  private Call listClusterAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<ClusterList> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .listNamespacedClusterAsync(
+            namespace,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            timeoutSeconds,
+            callback);
+  }
+
+  /**
+   * Create Cluster.
+   *
+   * @param namespace Namespace
+   * @param body Request body
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public ClusterResource createCluster(String namespace, ClusterResource body) throws ApiException {
+    RequestParams requestParams = new RequestParams("createCluster", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, createClusterCall);
+  }
+
+  /**
+   * Create Cluster.
+   *
+   * @param namespace Namespace
+   * @param body Request body
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public Object createClusterUntyped(String namespace, Map<String, Object> body) throws ApiException {
+    RequestParams requestParams = new RequestParams("createCluster", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, createClusterCallUntyped);
+  }
+
+  /**
+   * Patch cluster.
+   *
+   * @param name the domain uid (unique within the k8s cluster)
+   * @param namespace the namespace containing the domain
+   * @param patchBody the patch to apply
+   * @return Updated cluster
+   * @throws ApiException APIException
+   */
+  public ClusterResource patchCluster(String name, String namespace, V1Patch patchBody) throws ApiException {
+    RequestParams requestParams =
+            new RequestParams("patchCluster", namespace, name, patchBody, name);
+    return executeSynchronousCall(requestParams, patchClusterCall);
+  }
+
+  /**
+   * Asynchronous step for reading cluster.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readClusterAsync(String name, String namespace, ResponseStep<ClusterResource> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readCluster", namespace, name, null, name), readCluster);
+  }
+
+  private Call readClusterAsync(
+      ApiClient client, String name, String namespace, ApiCallback<ClusterResource> callback)
+      throws ApiException {
+    return new WeblogicApi(client).getNamespacedClusterAsync(name, namespace, callback);
+  }
+
+  /**
+   * Create Cluster.
+   *
+   * @param namespace Namespace
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public Object readClusterUntyped(String name, String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("readCluster", namespace, name, null, callParams);
+    return executeSynchronousCall(requestParams, readClusterCallUntyped);
+  }
+
+  /**
+   * Replace cluster.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Object replaceClusterUntyped(String name, String namespace, Map<String, Object> body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceCluster", namespace, name, body, callParams);
+    return executeSynchronousCall(requestParams, replaceClusterCallUntyped);
+  }
+
+  /**
    * List domains.
    *
    * @param namespace Namespace
@@ -658,14 +875,14 @@ public class CallBuilder {
     return new WeblogicApi(client)
         .listNamespacedDomainAsync(
             namespace,
-            pretty,
+            PRETTY,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -682,7 +899,7 @@ public class CallBuilder {
   }
 
   private Call readDomainAsync(
-      ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .getNamespacedDomainAsync(name, namespace, callback);
@@ -696,9 +913,22 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step readDomainAsync(String name, String namespace, ResponseStep<Domain> responseStep) {
+  public Step readDomainAsync(String name, String namespace, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
+  }
+
+  /**
+   * Read domain synchronously.
+   *
+   * @param uid the domain uid (unique within the k8s cluster)
+   * @param namespace Namespace
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public DomainResource readDomain(String uid, String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("readDomain", namespace, uid, null, (String)null);
+    return executeSynchronousCall(requestParams, readDomainCall);
   }
 
   /**
@@ -710,7 +940,7 @@ public class CallBuilder {
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomain(String uid, String namespace, Domain body) throws ApiException {
+  public DomainResource replaceDomain(String uid, String namespace, DomainResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
@@ -724,13 +954,13 @@ public class CallBuilder {
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomainStatus(String uid, String namespace, Domain body) throws ApiException {
+  public DomainResource replaceDomainStatus(String uid, String namespace, DomainResource body) throws ApiException {
     RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainStatusCall);
   }
 
   private Call replaceDomainAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, DomainResource body, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .replaceNamespacedDomainAsync(name, namespace, body, callback);
@@ -746,7 +976,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+      String name, String namespace, DomainResource body, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceDomain", namespace, name, body, name), replaceDomain);
   }
@@ -760,14 +990,14 @@ public class CallBuilder {
    * @return Updated domain
    * @throws ApiException APIException
    */
-  public Domain patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
+  public DomainResource patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
         new RequestParams("patchDomain", namespace, uid, patchBody, uid);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
   private Call patchDomainAsync(
-      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .patchNamespacedDomainAsync(name, namespace, patch, callback);
@@ -783,15 +1013,39 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchDomainAsync(
-      String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
+      String name, String namespace, V1Patch patchBody, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("patchDomain", namespace, name, patchBody, name),
         patchDomain);
   }
 
+  private Call replaceClusterStatusAsync(
+      ApiClient client, String name, String namespace, ClusterResource body, ApiCallback<ClusterResource> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .replaceNamespacedClusterStatusAsync(name, namespace, body, callback);
+  }
+
+  /**
+   * Asynchronous step for replacing cluster status.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceClusterStatusAsync(
+      String name, String namespace, ClusterResource body, ResponseStep<ClusterResource> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceClusterStatus", namespace, name, body, name),
+        replaceClusterStatus);
+  }
+
   private Call replaceDomainStatusAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      ApiClient client, String name, String namespace, DomainResource body, ApiCallback<DomainResource> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .replaceNamespacedDomainStatusAsync(name, namespace, body, callback);
@@ -807,7 +1061,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainStatusAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+      String name, String namespace, DomainResource body, ResponseStep<DomainResource> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("replaceDomainStatus", namespace, name, body, name),
@@ -820,7 +1074,7 @@ public class CallBuilder {
       ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1Api(client)
-        .readCustomResourceDefinitionAsync(name, pretty, callback);
+        .readCustomResourceDefinitionAsync(name, PRETTY, callback);
   }
 
   /**
@@ -842,7 +1096,7 @@ public class CallBuilder {
       ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1Api(client)
-        .createCustomResourceDefinitionAsync(body, pretty, null, null, null, callback);
+        .createCustomResourceDefinitionAsync(body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -866,7 +1120,7 @@ public class CallBuilder {
       ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1Api(client)
-        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, null, callback);
+        .replaceCustomResourceDefinitionAsync(name, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -891,16 +1145,16 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedConfigMapAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -922,7 +1176,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedConfigMapAsync(name, namespace, pretty, callback);
+        .readNamespacedConfigMapAsync(name, namespace, PRETTY, callback);
   }
 
   /**
@@ -944,7 +1198,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, null, callback);
+        .createNamespacedConfigMapAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -966,7 +1220,7 @@ public class CallBuilder {
           ApiClient client, String namespace, V1Secret body, ApiCallback<V1Secret> callback)
           throws ApiException {
     return new CoreV1Api(client)
-            .createNamespacedSecretAsync(namespace, body, pretty, null, null, null, callback);
+            .createNamespacedSecretAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -995,11 +1249,11 @@ public class CallBuilder {
         .deleteNamespacedConfigMapAsync(
             name,
             namespace,
-            pretty,
-            dryRun,
+            PRETTY,
+            DRY_RUN,
             gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            ORPHAN_DEPENDENTS,
+            PROPAGATION_POLICY,
             body,
             callback);
   }
@@ -1034,7 +1288,7 @@ public class CallBuilder {
       ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, dryRun, null, null, callback);
+        .replaceNamespacedConfigMapAsync(name, namespace, body, PRETTY, DRY_RUN, null, null, callback);
   }
 
   /**
@@ -1059,7 +1313,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, null, null, callback);
+        .patchNamespacedConfigMapAsync(name, namespace, patch, PRETTY, null, null, null, null, callback);
   }
 
   /**
@@ -1105,7 +1359,7 @@ public class CallBuilder {
           ApiCallback<V1Secret> callback)
           throws ApiException {
     return new CoreV1Api(client)
-            .replaceNamespacedSecretAsync(name, namespace, body, pretty, dryRun, null, null, callback);
+            .replaceNamespacedSecretAsync(name, namespace, body, PRETTY, DRY_RUN, null, null, callback);
   }
 
   private Call listPodAsync(
@@ -1114,16 +1368,16 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedPodAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -1143,7 +1397,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedPodAsync(name, namespace, pretty, callback);
+        .readNamespacedPodAsync(name, namespace, PRETTY, callback);
   }
 
   /* Events */
@@ -1166,7 +1420,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedPodAsync(namespace, body, pretty, null, null, null, callback);
+        .createNamespacedPodAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -1197,11 +1451,11 @@ public class CallBuilder {
         client,
         name,
         namespace,
-        pretty,
-        dryRun,
+        PRETTY,
+        DRY_RUN,
         gracePeriodSeconds,
-        orphanDependents,
-        propagationPolicy,
+        ORPHAN_DEPENDENTS,
+        PROPAGATION_POLICY,
         deleteOptions,
         callback);
   }
@@ -1248,9 +1502,8 @@ public class CallBuilder {
     } else if (namespace == null) {
       throw new ApiException("Missing the required parameter 'namespace' when calling deleteNamespacedPod(Async)");
     } else {
-      Call localVarCall = this.deleteNamespacedPodCall(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
+      return this.deleteNamespacedPodCall(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
           orphanDependents, propagationPolicy, body, callback);
-      return localVarCall;
     }
   }
 
@@ -1320,7 +1573,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, null, null, null, callback);
+        .patchNamespacedPodAsync(name, namespace, patch, PRETTY, null, null, null, null, callback);
   }
 
   /**
@@ -1347,16 +1600,16 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .deleteCollectionNamespacedPodAsync(
             namespace,
-            pretty,
+            PRETTY,
             cont,
-            dryRun,
+            DRY_RUN,
             fieldSelector,
             gracePeriodSeconds,
             labelSelector,
             limit,
-            orphanDependents,
-            propagationPolicy,
-            resourceVersion,
+            ORPHAN_DEPENDENTS,
+            PROPAGATION_POLICY,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             deleteOptions,
@@ -1383,16 +1636,16 @@ public class CallBuilder {
     return new BatchV1Api(client)
         .listNamespacedJobAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -1416,7 +1669,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
       throws ApiException {
     return new BatchV1Api(client)
-        .createNamespacedJobAsync(namespace, body, pretty, null, null, null, callback);
+        .createNamespacedJobAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -1437,7 +1690,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<V1Job> callback)
       throws ApiException {
     return new BatchV1Api(client)
-        .readNamespacedJobAsync(name, namespace, pretty, callback);
+        .readNamespacedJobAsync(name, namespace, PRETTY, callback);
   }
 
   /**
@@ -1466,11 +1719,11 @@ public class CallBuilder {
         .deleteNamespacedJobAsync(
             name,
             namespace,
-            pretty,
-            dryRun,
+            PRETTY,
+            DRY_RUN,
             gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            ORPHAN_DEPENDENTS,
+            PROPAGATION_POLICY,
             body,
             callback);
   }
@@ -1504,16 +1757,16 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedServiceAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -1533,7 +1786,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<V1Service> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedServiceAsync(name, namespace, pretty, callback);
+        .readNamespacedServiceAsync(name, namespace, PRETTY, callback);
   }
 
   /**
@@ -1555,7 +1808,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedServiceAsync(namespace, body, pretty, null, null, null, callback);
+        .createNamespacedServiceAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -1586,11 +1839,11 @@ public class CallBuilder {
         .deleteNamespacedServiceAsync(
             name,
             namespace,
-            pretty,
-            dryRun,
+            PRETTY,
+            DRY_RUN,
             gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            ORPHAN_DEPENDENTS,
+            PROPAGATION_POLICY,
             deleteOptions,
             callback);
   }
@@ -1623,16 +1876,16 @@ public class CallBuilder {
     return new PolicyV1Api(client)
         .listNamespacedPodDisruptionBudgetAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -1653,7 +1906,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<V1PodDisruptionBudget> callback)
       throws ApiException {
     return new PolicyV1Api(client)
-        .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, callback);
+        .readNamespacedPodDisruptionBudgetAsync(name, namespace, PRETTY, callback);
   }
 
   /**
@@ -1676,7 +1929,7 @@ public class CallBuilder {
       ApiCallback<V1PodDisruptionBudget> callback)
       throws ApiException {
     return new PolicyV1Api(client)
-        .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, null, callback);
+        .createNamespacedPodDisruptionBudgetAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -1702,7 +1955,7 @@ public class CallBuilder {
       ApiCallback<V1PodDisruptionBudget> callback)
       throws ApiException {
     return new PolicyV1Api(client)
-        .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
+        .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, PRETTY, null,
             null, null, null, callback);
   }
 
@@ -1735,11 +1988,11 @@ public class CallBuilder {
         .deleteNamespacedPodDisruptionBudgetAsync(
             name,
             namespace,
-            pretty,
-            dryRun,
+            PRETTY,
+            DRY_RUN,
             gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            ORPHAN_DEPENDENTS,
+            PROPAGATION_POLICY,
             deleteOptions,
             callback);
   }
@@ -1774,16 +2027,16 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -1803,7 +2056,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedEventAsync(name, namespace, pretty, callback);
+        .readNamespacedEventAsync(name, namespace, PRETTY, callback);
   }
 
   /**
@@ -1855,7 +2108,7 @@ public class CallBuilder {
       ApiClient client, String namespace, CoreV1Event body, ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedEventAsync(namespace, body, pretty, null, null, null, callback);
+        .createNamespacedEventAsync(namespace, body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -1882,7 +2135,7 @@ public class CallBuilder {
       ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, null, callback);
+        .replaceNamespacedEventAsync(name, namespace, body, PRETTY, DRY_RUN, null, null, callback);
   }
 
   private Call listNamespaceAsync(
@@ -1890,16 +2143,16 @@ public class CallBuilder {
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespaceAsync(
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -1921,7 +2174,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<V1Secret> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedSecretAsync(name, namespace, pretty, callback);
+        .readNamespacedSecretAsync(name, namespace, PRETTY, callback);
   }
 
   /**
@@ -1943,16 +2196,16 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedSecretAsync(
             namespace,
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -2034,16 +2287,16 @@ public class CallBuilder {
       throws ApiException {
     return new AdmissionregistrationV1Api(client)
         .listValidatingWebhookConfigurationAsync(
-            pretty,
-            allowWatchBookmarks,
+            PRETTY,
+            ALLOW_WATCH_BOOKMARKS,
             cont,
             fieldSelector,
             labelSelector,
             limit,
-            resourceVersion,
+            RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
-            watch,
+            WATCH,
             callback);
   }
 
@@ -2063,7 +2316,8 @@ public class CallBuilder {
   private Call readValidatingWebhookConfigurationAsync(
       ApiClient client, String name, ApiCallback<V1ValidatingWebhookConfiguration> callback)
       throws ApiException {
-    return new AdmissionregistrationV1Api(client).readValidatingWebhookConfigurationAsync(name, pretty, callback);
+    return new AdmissionregistrationV1Api(client).readValidatingWebhookConfigurationAsync(name,
+        PRETTY, callback);
   }
 
   /**
@@ -2086,7 +2340,7 @@ public class CallBuilder {
       ApiCallback<V1ValidatingWebhookConfiguration> callback)
       throws ApiException {
     return new AdmissionregistrationV1Api(client)
-        .createValidatingWebhookConfigurationAsync(body, pretty, null, null, null, callback);
+        .createValidatingWebhookConfigurationAsync(body, PRETTY, null, null, null, callback);
   }
 
   /**
@@ -2109,7 +2363,7 @@ public class CallBuilder {
       ApiCallback<V1ValidatingWebhookConfiguration> callback)
       throws ApiException {
     return new AdmissionregistrationV1Api(client)
-        .patchValidatingWebhookConfigurationAsync(name, patch, pretty, null, null, null, null, callback);
+        .patchValidatingWebhookConfigurationAsync(name, patch, PRETTY, null, null, null, null, callback);
   }
 
   /**
@@ -2151,7 +2405,7 @@ public class CallBuilder {
       ApiCallback<V1ValidatingWebhookConfiguration> callback)
       throws ApiException {
     return new AdmissionregistrationV1Api(client)
-        .replaceValidatingWebhookConfigurationAsync(name, body, pretty, dryRun, null, null, callback);
+        .replaceValidatingWebhookConfigurationAsync(name, body, PRETTY, DRY_RUN, null, null, callback);
   }
 
   private Call deleteValidatingWebhookConfigurationAsync(
@@ -2163,11 +2417,11 @@ public class CallBuilder {
     return new AdmissionregistrationV1Api(client)
         .deleteValidatingWebhookConfigurationAsync(
             name,
-            pretty,
-            dryRun,
+            PRETTY,
+            DRY_RUN,
             gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            ORPHAN_DEPENDENTS,
+            PROPAGATION_POLICY,
             deleteOptions,
             callback);
   }
@@ -2239,7 +2493,7 @@ public class CallBuilder {
         gracePeriodSeconds,
         fieldSelector,
         labelSelector,
-        resourceVersion);
+        RESOURCE_VERSION);
   }
 
   private <T> Step createRequestAsync(
@@ -2255,7 +2509,7 @@ public class CallBuilder {
         gracePeriodSeconds,
         fieldSelector,
         labelSelector,
-        resourceVersion);
+        RESOURCE_VERSION);
   }
 
   private <T> Step createRequestAsync(
@@ -2271,7 +2525,7 @@ public class CallBuilder {
         gracePeriodSeconds,
         fieldSelector,
         labelSelector,
-        resourceVersion);
+        RESOURCE_VERSION);
   }
 
   private CancellableCall wrap(Call call) {

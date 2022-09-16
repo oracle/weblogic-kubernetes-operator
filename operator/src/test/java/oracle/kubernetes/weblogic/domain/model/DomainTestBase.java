@@ -4,14 +4,22 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.util.Yaml;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -29,25 +37,26 @@ public abstract class DomainTestBase {
   static final String NS = "test-namespace";
   static final String DOMAIN_UID = "uid1";
 
-  final Domain domain = createDomain();
+  final DomainResource domain = createDomain();
+  final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
-  static Domain createDomain() {
-    return new Domain()
+  static DomainResource createDomain() {
+    return new DomainResource()
         .withMetadata(new V1ObjectMeta().namespace(NS))
         .withSpec(
               new DomainSpec()
-                    .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME))
+                    .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(SECRET_NAME))
                     .withDomainUid(DOMAIN_UID));
   }
 
-  static DomainConfigurator configureDomain(Domain domain) {
+  static DomainConfigurator configureDomain(DomainResource domain) {
     DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
     commonConfigurator.configureAdminServer();
     return commonConfigurator;
   }
 
   final ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain(domain).configureCluster(clusterName);
+    return configureDomain(domain).configureCluster(info, clusterName);
   }
 
   final ServerConfigurator configureServer(String serverName) {
@@ -59,18 +68,39 @@ public abstract class DomainTestBase {
   }
 
   @SuppressWarnings("SameParameterValue")
-  protected Domain readDomain(String resourceName) throws IOException {
-    String json = jsonFromYaml(resourceName);
-    Gson gson = new GsonBuilder().create();
-    return gson.fromJson(json, Domain.class);
+  protected DomainPresenceInfo readDomainPresence(String resourceName) throws IOException {
+    List<KubernetesObject> data = readFromYaml(resourceName);
+    DomainPresenceInfo info = new DomainPresenceInfo((DomainResource) data.get(0));
+    data.stream().filter(ClusterResource.class::isInstance)
+        .forEach(cr -> info.addClusterResource((ClusterResource) cr));
+    return info;
   }
 
-  private String jsonFromYaml(String resourceName) throws IOException {
+  List<KubernetesObject> readFromYaml(String resourceName) throws IOException {
+    List<KubernetesObject> results = new ArrayList<>();
     URL resource = DomainTestBase.class.getResource(resourceName);
-    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    Object obj = yamlReader.readValue(resource, Object.class);
+    Gson gson = new GsonBuilder().create();
+    try (Reader reader = new InputStreamReader(resource.openStream())) {
+      Iterable<Object> iterable = Yaml.getSnakeYaml(null).loadAll(reader);
+      for (Object obj : iterable) {
+        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+        Object json = yamlReader.readValue(Yaml.getSnakeYaml(null).dump(obj), Object.class);
 
-    ObjectMapper jsonWriter = new ObjectMapper();
-    return jsonWriter.writeValueAsString(obj);
+        ObjectMapper jsonWriter = new ObjectMapper();
+        String ko = jsonWriter.writeValueAsString(json);
+        String kind = (String) ((Map) obj).get("kind");
+        switch (kind) {
+          case "Domain":
+            results.add(gson.fromJson(ko, DomainResource.class));
+            break;
+          case "Cluster":
+            results.add(gson.fromJson(ko, ClusterResource.class));
+            break;
+          default:
+            throw new IllegalStateException();
+        }
+      }
+      return results;
+    }
   }
 }

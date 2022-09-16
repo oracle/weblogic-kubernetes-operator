@@ -21,7 +21,7 @@ public class AdminServer {
 
   @ApiModelProperty(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
+          + "Legal values are Always, Never, or IfNeeded.")
   private String serverStartPolicy;
 
   @ApiModelProperty("Configuration affecting server pods.")
@@ -30,11 +30,6 @@ public class AdminServer {
   @ApiModelProperty(
       "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.")
   private ServerService serverService;
-
-  @ApiModelProperty(
-      "The state in which the server is to be started. Use ADMIN if server should start "
-          + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
 
   @ApiModelProperty(
       "If present, every time this value is updated the operator will restart"
@@ -100,23 +95,6 @@ public class AdminServer {
     this.serverPod = serverPod;
   }
 
-  public AdminServer serverStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-    return this;
-  }
-
-  public String serverStartState() {
-    return serverStartState;
-  }
-
-  public String getServerStartState() {
-    return serverStartState;
-  }
-
-  public void setServerStartState(String serverStartState) {
-    this.serverStartState = serverStartState;
-  }
-
   public AdminServer serverService(ServerService serverService) {
     this.serverService = serverService;
     return this;
@@ -173,7 +151,6 @@ public class AdminServer {
     return new ToStringBuilder(this)
         .append("adminService", adminService)
         .append("serverStartPolicy", serverStartPolicy)
-        .append("serverStartState", serverStartState)
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
@@ -194,7 +171,6 @@ public class AdminServer {
     return new EqualsBuilder()
         .append(adminService, rhs.adminService)
         .append(serverStartPolicy, rhs.serverStartPolicy)
-        .append(serverStartState, rhs.serverStartState)
         .append(serverPod, rhs.serverPod)
         .append(serverService, rhs.serverService)
         .append(restartVersion, rhs.restartVersion)
@@ -207,7 +183,6 @@ public class AdminServer {
     return new HashCodeBuilder(17, 37)
         .append(adminService)
         .append(serverStartPolicy)
-        .append(serverStartState)
         .append(serverPod)
         .append(serverService)
         .append(restartVersion)

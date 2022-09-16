@@ -26,14 +26,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -43,9 +46,10 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createDbSecretWithPassword;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -63,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JRF domain-in-image sample using wlst and wdt")
 @IntegrationTest
 @Tag("samples")
+@Tag("kind-parallel")
 public class ItFmwDiiSample {
 
   private static String dbNamespace = null;
@@ -134,7 +139,7 @@ public class ItFmwDiiSample {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -154,20 +159,21 @@ public class ItFmwDiiSample {
     String domainUid = model.split(":")[1];
     String script = model.split(":")[0]; // wlst | wdt way of creating domain
 
-    //copy sample a temporary directory
+    // copy sample a temporary directory
     setupSample();
 
-    //create WebLogic secrets for the domain
+    // create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    // create RCU credential secret
+
+    // create RCU credential secret for use by domain
     createRcuSecretWithUsernamePassword(domainUid + "-rcu-credentials", domainNamespace,
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
     Path sampleBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-fmw-infrastructure-domain/domain-home-in-image");
 
-    //update create-domain-inputs.yaml with the values from this test
+    // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainUid, sampleBase, script);
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
@@ -288,7 +294,7 @@ public class ItFmwDiiSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "adminNodePort: 30701", "adminNodePort: " + adminNodePort);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+          "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -310,7 +316,7 @@ public class ItFmwDiiSample {
     setupSample();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(dbNamespace);
+    createBaseRepoSecret(dbNamespace);
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}",
         dbImage, dbPort, dbNamespace);
@@ -330,10 +336,14 @@ public class ItFmwDiiSample {
     String script = Paths.get(dbSamplePathBase.toString(),  "start-db-service.sh").toString();
     logger.info("Script for startOracleDB: {0}", script);
 
+    deleteSecret(ORACLE_DB_SECRET_NAME, dbNamespace); // does nothing if missing
+    createDbSecretWithPassword(ORACLE_DB_SECRET_NAME, dbNamespace, RCUSYSPASSWORD); // throws an assertion if fails
+
     String command = script
+        + " -a " + ORACLE_DB_SECRET_NAME
         + " -i " + dbBaseImageName
         + " -p " + dbPort
-        + " -s " + BASE_IMAGES_REPO_SECRET
+        + " -s " + BASE_IMAGES_REPO_SECRET_NAME
         + " -n " + dbNamespace;
     logger.info("Command for startOracleDb: {0}", command);
     assertTrue(() -> Command.withParams(
@@ -358,17 +368,26 @@ public class ItFmwDiiSample {
   private static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
       String dbNamespace) {
 
+    // create RCU credential secret for use by rcu initialization
+    // all schemas share the same schema password
+    deleteSecret(ORACLE_RCU_SECRET_NAME, dbNamespace); // does nothing if missing
+    createRcuSecretWithUsernamePassword(ORACLE_RCU_SECRET_NAME, dbNamespace,
+        "", RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD); // throws if fails
+
     Path rcuSamplePathBase = Paths.get(tempSamplePath.toString(), "/scripts/create-rcu-schema");
     String script = Paths.get(rcuSamplePathBase.toString(), "create-rcu-schema.sh").toString();
     String outputPath = Paths.get(rcuSamplePathBase.toString(), "rcuoutput").toString();
+    String imagePullPolicy = "IfNotPresent";
     logger.info("Script for createRcuSchema: {0}", script);
     String command = script
+        + " -c " + ORACLE_RCU_SECRET_NAME
         + " -i " + fmwBaseImageName
-        + " -p " + BASE_IMAGES_REPO_SECRET
+        + " -p " + BASE_IMAGES_REPO_SECRET_NAME
         + " -s " + rcuPrefix
         + " -d " + dbUrl
         + " -n " + dbNamespace
-        + " -o " + outputPath;
+        + " -o " + outputPath
+        + " -u " + imagePullPolicy;
     logger.info("Command for createRcuSchema: {0}", command);
     assertTrue(() -> Command.withParams(
         defaultCommandParams()

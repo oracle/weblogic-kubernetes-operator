@@ -8,12 +8,12 @@ import java.net.HttpURLConnection;
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
-  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5";
+  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7";
   String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String LATEST_IMAGE_SUFFIX = ":latest";
 
-  String CRD_NAME = "domains.weblogic.oracle";
+  String DOMAIN_CRD_NAME = "domains.weblogic.oracle";
   String DOMAIN = "Domain";
   String DOMAIN_GROUP = "weblogic.oracle";
   String DOMAIN_PLURAL = "domains";
@@ -22,6 +22,14 @@ public interface KubernetesConstants {
   String DOMAIN_VERSION = "v9";
   String OLD_DOMAIN_VERSION = "v8";
 
+  String CLUSTER_CRD_NAME = "clusters.weblogic.oracle";
+  String CLUSTER = "Cluster";
+  String CLUSTER_PLURAL = "clusters";
+  String CLUSTER_SINGULAR = "cluster";
+  String CLUSTER_SHORT = "clu";
+  String CLUSTER_VERSION = "v1";
+  String API_VERSION_CLUSTER_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + CLUSTER_VERSION;
+
   String API_VERSION_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + DOMAIN_VERSION;
 
   boolean DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME = true;
@@ -29,6 +37,7 @@ public interface KubernetesConstants {
   boolean DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE = true;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP = 0;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN = 1;
+  int DEFAULT_MAX_UNAVAILABLE = 1;
 
   String WLS_CONTAINER_NAME = "weblogic-server";
 
@@ -90,4 +99,8 @@ public interface KubernetesConstants {
 
   String ADMISSION_REVIEW_API_VERSION = "admission.k8s.io/v1";
   String ADMISSION_REVIEW_KIND = "AdmissionReview";
+
+  String DOMAIN_IMAGE = "spec.image";
+  String DOMAIN_INTROSPECT_VERSION = "spec.introspectVersion";
+  String AUXILIARY_IMAGES = "spec.configuration.model.auxiliaryImages";
 }

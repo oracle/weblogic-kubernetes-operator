@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -30,7 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
@@ -46,7 +47,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -67,6 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create FMW model in image domain and start the domain")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 class ItFmwMiiDomain {
 
   private static String dbNamespace = null;
@@ -90,7 +95,7 @@ class ItFmwMiiDomain {
   private String domainUid = "fmwdomain-mii";
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPrefix = domainUid + "-managed-server";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSecretName = domainUid + "-weblogic-credentials";
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
@@ -156,7 +161,7 @@ class ItFmwMiiDomain {
   void testFmwModelInImage() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(fmwDomainNamespace);
+    createTestRepoSecret(fmwDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -209,14 +214,13 @@ class ItFmwMiiDomain {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(domainUid,
+    DomainResource domain = FmwUtils.createDomainResource(domainUid,
         fmwDomainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         fmwMiiImage);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
@@ -348,10 +352,10 @@ class ItFmwMiiDomain {
   }
 
   /**
-   * Shutdown the domain by setting serverStartPolicy as "NEVER".
+   * Shutdown the domain by setting serverStartPolicy as "Never".
    */
   private void shutdownDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "Never", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
 
     // make sure all the server pods are removed after patch
@@ -365,10 +369,10 @@ class ItFmwMiiDomain {
   }
 
   /**
-   * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
+   * Startup the domain by setting serverStartPolicy as "IfNeeded".
    */
   private void startupDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IfNeeded", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to start all servers in the domain");
   }
 
@@ -393,5 +397,5 @@ class ItFmwMiiDomain {
 
     return patchDomainCustomResource(domainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
-  
+
 }

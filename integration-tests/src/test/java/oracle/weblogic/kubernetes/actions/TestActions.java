@@ -32,11 +32,14 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1StorageClass;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.Apache;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
@@ -74,12 +77,17 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ClusterUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -178,7 +186,7 @@ public class TestActions {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+  public static boolean createDomainCustomResource(DomainResource domain,
                                                    String... domainVersion) throws ApiException {
     return Domain.createDomainCustomResource(domain, domainVersion);
   }
@@ -201,8 +209,8 @@ public class TestActions {
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -215,9 +223,9 @@ public class TestActions {
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace,
-                                                                      String domainVersion) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace,
+                                                       String domainVersion) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
@@ -305,7 +313,7 @@ public class TestActions {
    */
   public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
     LoggingFacade logger = getLogger();
-    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    DomainResource domain = Domain.getDomainCustomResource(domainUid, namespace);
     String introspectVersion = domain.getSpec().getIntrospectVersion();
     if (null != introspectVersion) {
       logger.info("current introspectVersion: {0}", introspectVersion);
@@ -318,18 +326,84 @@ public class TestActions {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace by patching the domain resource.
+   * Scale all clusters in a domain by patching domain resource.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param replicaCount number of servers to be scaled to
+   * @return true on success, false otherwise
+   */
+  public static boolean scaleAllClusters(String domainUid, String namespace, int replicaCount) {
+    return Domain.scaleAllClusters(domainUid, namespace, replicaCount);
+  }
+
+  // ----------------------   cluster  -----------------------------------
+
+  /**
+   * Create Cluster Custom Resource.
+   *
+   * @param cluster Cluster custom resource model object
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterCustomResource(ClusterResource cluster) throws ApiException {
+    return Cluster.createClusterCustomResource(cluster, CLUSTER_VERSION);
+  }
+
+  /**
+   * Delete Cluster Custom Resource.
+   *
+   * @param clusterName Cluster custom resource name
+   * @param namespace namespace in which cluster custom resource exists
+   */
+  public static void deleteClusterCustomResource(String clusterName, String namespace) {
+    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterName, namespace);
+  }
+
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+  "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterCustomResource(String clusterName, String namespace,
+                                                   V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCustomResource(clusterName, namespace, patch, patchFormat);
+  }
+
+  /**
+   * Scale a cluster in a specified namespace by patching cluster resource.
+   *
+   * @param clusterName cluster in the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
+   * @param numOfServers number of servers to be scaled to.
+   * @return true on success, false otherwise
+   */
+  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterName, namespace, numOfServers);
+  }
+
+  /**
+   * Scale the cluster of the domain and change introspect version in the specified namespace by
+   * patching the domain resource.
    *
    * @param domainUid domainUid of the domain to be scaled
    * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
-   * @param numOfServers number of servers to be scaled to.
+   * @param numOfServers number of servers to be scaled to
+   * @param introspectVersion new introspectVersion value
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
+  public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace, String clusterName,
+                                                               int numOfServers, int introspectVersion)
       throws ApiException {
-    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+    return Domain.scaleClusterAndChangeIntrospectVersion(domainUid, namespace, clusterName, numOfServers,
+        introspectVersion);
   }
 
   /**
@@ -726,6 +800,22 @@ public class TestActions {
   }
 
   /**
+   * Inspect base image using WDT models using WebLogic Image Tool.
+   *
+   * @param imageName - image name
+   * @param imageTag - image tag
+   * @return output if the operation succeeds
+   */
+  public static String inspectImage(String imageName, String imageTag) {
+    WitParams params = defaultWitParams()
+            .wdtVersion(WDT_VERSION)
+            .redirect(true);
+    return WebLogicImageTool
+                    .withParams(params)
+                    .inspectImage(imageName, imageTag);
+  }
+
+  /**
    * Create an auxiliary image using WebLogic Image Tool.
    *
    * @param params - the parameters for creating a model-in-image Docker image
@@ -866,6 +956,13 @@ public class TestActions {
     String cmNamespace = configMap.getMetadata().getNamespace();
     if (doesCMExist(cmName, cmNamespace)) {
       deleteConfigMap(cmName, cmNamespace);
+      // wait until the cm is deleted
+      testUntil(withLongRetryPolicy,
+          () -> !doesCMExist(cmName, cmNamespace),
+          getLogger(),
+          "configmap {0} in namespace {1} is deleted",
+          cmName,
+          cmNamespace);
     }
 
     return ConfigMap.create(configMap);
@@ -1434,7 +1531,7 @@ public class TestActions {
 
   /**
    * Patch domain to shutdown a WebLogic server by changing the value of
-   * server's serverStartPolicy property to NEVER.
+   * server's serverStartPolicy property to Never.
    *
    * @param domainUid unique domain identifier
    * @param namespace name of the namespace
@@ -1450,7 +1547,7 @@ public class TestActions {
 
   /**
    * Patch domain to start a WebLogic server by changing the value of
-   * server's serverStartPolicy property to IF_NEEDED.
+   * server's serverStartPolicy property to IfNeeded.
    *
    * @param domainUid unique domain identifier
    * @param namespace name of the namespace

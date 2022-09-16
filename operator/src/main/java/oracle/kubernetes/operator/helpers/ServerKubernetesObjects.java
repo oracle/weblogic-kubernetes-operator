@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -13,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
   private final AtomicBoolean isPodBeingDeleted = new AtomicBoolean(false);
+  private final AtomicInteger httpRequestFailureCount = new AtomicInteger(0);
   private final AtomicReference<LastKnownStatus> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final AtomicReference<V1Service> externalService = new AtomicReference<>();
@@ -36,6 +38,10 @@ class ServerKubernetesObjects {
    */
   AtomicBoolean isPodBeingDeleted() {
     return isPodBeingDeleted;
+  }
+
+  AtomicInteger getHttpRequestFailureCount() {
+    return httpRequestFailureCount;
   }
 
   /**

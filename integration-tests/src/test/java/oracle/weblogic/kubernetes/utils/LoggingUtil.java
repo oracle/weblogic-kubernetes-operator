@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -36,6 +37,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -241,6 +243,13 @@ public class LoggingUtil {
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
+    
+    // get cluster objects in the given namespace
+    try {
+      writeToFile(Kubernetes.listClusters(namespace), resultDir, namespace + ".list.clusters.log");
+    } catch (Exception ex) {
+      logger.warning("Listing clusters failed, not collecting any data for clusters");
+    }    
 
     // get pods
     try {
@@ -361,7 +370,7 @@ public class LoggingUtil {
                 new V1Container()
                     .name("pv-container")
                     .image("ghcr.io/oracle/oraclelinux:7")
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod
@@ -453,20 +462,73 @@ public class LoggingUtil {
     }
   }
 
-
   private static Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
-    return () -> {
-      String podLog;
-      try {
-        podLog = getPodLog(podName, namespace);
-        getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
-      } catch (ApiException apiEx) {
-        getLogger().severe("got ApiException while getting pod log: ", apiEx);
+    return () -> doesPodLogContainString(namespace, podName, expectedString);
+  }
+
+  /**
+   * Check whether pod log contains expected string.
+   * @param namespace - namespace where pod exists
+   * @param podName - pod name of the log
+   * @param expectedString - expected string in the pod log
+   * @return true if pod log contains expected string, false otherwise
+   */
+  public static boolean doesPodLogContainString(String namespace, String podName, String expectedString) {
+    String podLog;
+    try {
+      podLog = getPodLog(podName, namespace);
+      getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
+    } catch (ApiException apiEx) {
+      getLogger().severe("got ApiException while getting pod log: ", apiEx);
+      return false;
+    }
+
+    return podLog.contains(expectedString);
+  }
+
+  /**
+   * Check whether pod log contains expected string in time range from provided start time to the current moment.
+   *
+   * @param namespace      - namespace where pod exists
+   * @param podName        - pod name of the log
+   * @param expectedString - expected string in the pod log
+   * @param timestamp      - starting time to check the log
+   * @return true if pod log contains expected string, false otherwise
+   */
+  public static boolean doesPodLogContainStringInTimeRange(String namespace, String podName, String expectedString,
+                                                           OffsetDateTime timestamp) {
+    String rangePodLog;
+    try {
+      String podLog = getPodLog(podName, namespace);
+      String startTimestamp = timestamp.toString().replace("Z", "");
+      int begin = -1;
+      int count = 0;
+
+      //search log for timestamp plus up to 5 seconds if pod log does not have it matching timestamp
+      while (begin == (-1) && count < 5) {
+        startTimestamp = timestamp.toString().replace("Z", "");
+        begin = podLog.indexOf(startTimestamp);
+        getLogger().info("Index of  timestamp {0} in the pod log is : {1}, count {2}",
+                startTimestamp,
+                begin,
+                count);
+        timestamp = timestamp.plusSeconds(1);
+        count++;
+      }
+      if (begin == (-1)) {
+        getLogger().info("Could not find any messages after timestamp {0}", startTimestamp);
         return false;
       }
-
-      return podLog.contains(expectedString);
-    };
+      rangePodLog = podLog.substring(begin);
+      getLogger().info("pod log for pod {0} in namespace {1} starting from timestamp {2} : {3}", podName,
+              namespace,
+              startTimestamp,
+              rangePodLog);
+    } catch (ApiException apiEx) {
+      getLogger().severe("got ApiException while getting pod log: ", apiEx);
+      return false;
+    }
+    return rangePodLog.contains(expectedString);
   }
 
   /**

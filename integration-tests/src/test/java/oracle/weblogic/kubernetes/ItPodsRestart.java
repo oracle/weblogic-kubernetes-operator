@@ -13,16 +13,14 @@ import java.util.Map;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -41,11 +39,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -59,7 +59,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
@@ -82,13 +82,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test pods are restarted after the following properties in server pods are changed.
  * Change: The env property tested: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true
- * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+ * Change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never).
  * Change: podSecurityContext: runAsUser:0 --> runAsUser: 1000
  * Add resources: limits: cpu: "1", resources: requests: cpu: "0.5".
  *
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-wls-srg")
 class ItPodsRestart {
 
   private static String miiImage;
@@ -144,7 +148,7 @@ class ItPodsRestart {
   void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
 
@@ -271,7 +275,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
   void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -328,7 +332,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
   void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
 
@@ -397,7 +401,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
         + "/spec/serverPod/podSecurityContext is null");
@@ -458,13 +462,15 @@ class ItPodsRestart {
    * Modify the domain scope property on the domain resource.
    * Verify all pods are restarted and back to ready state.
    * Verifies that the domain roll starting/pod cycle starting events are logged.
-   * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+   * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never).
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
   void testServerPodsRestartByChangingImagePullPolicy() {
+    String pullPolicy = KIND_REPO != null 
+        ? ImagePullPolicyEnum.NEVER.getValue() : ImagePullPolicyEnum.ALWAYS.getValue();
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -473,13 +479,13 @@ class ItPodsRestart {
     V1Container.ImagePullPolicyEnum imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
-    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never)
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/imagePullPolicy\",")
         .append("\"value\": \"")
-        .append("Never")
+        .append(pullPolicy)
         .append("\"}]");
     logger.info("PatchStr for imagePullPolicy: {0}", patchStr.toString());
 
@@ -498,8 +504,8 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertEquals(V1Container.ImagePullPolicyEnum.NEVER, imagePullPolicy, "imagePullPolicy was not updated"
-        + " in the new patched domain");
+    assertTrue(imagePullPolicy.getValue().equalsIgnoreCase(pullPolicy),
+        "imagePullPolicy was not updated in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -520,6 +526,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Restart pods using restartVersion flag")
   @Tag("gate")
+  @Tag("crio")
   void testRestartVersion() {
     // get the original domain resource before update
     DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
@@ -563,6 +570,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Check restart of pods after image change")
   @Tag("gate")
+  @Tag("crio")
   void testRestartWithImageChange() {
 
     String tag = getDateAndTimeStamp();
@@ -631,7 +639,7 @@ class ItPodsRestart {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
@@ -654,14 +662,14 @@ class ItPodsRestart {
             .limits(new HashMap<>())
             .requests(new HashMap<>()));
 
-    if (!OKD) { 
-      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext() 
+    if (!OKD) {
+      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext()
                  .runAsUser(0L);
       srvrPod.podSecurityContext(podSecCtxt);
     }
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -671,20 +679,14 @@ class ItPodsRestart {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(srvrPod)
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()

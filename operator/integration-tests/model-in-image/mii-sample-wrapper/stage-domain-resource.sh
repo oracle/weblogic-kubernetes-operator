@@ -23,11 +23,14 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+IMAGE_PULL_POLICY=${IMAGE_PULL_POLICY:-"IfNotPresent"}
 for var in DOMAIN_UID \
            DOMAIN_NAMESPACE \
            CUSTOM_DOMAIN_NAME \
            WDT_DOMAIN_TYPE \
            IMAGE_PULL_SECRET_NAME \
+           IMAGE_PULL_POLICY \
+           DOMAIN_IMAGE_PULL_SECRET_NAME \
            MODEL_IMAGE_NAME \
            MODEL_IMAGE_TAG \
            INCLUDE_MODEL_CONFIGMAP \
@@ -56,13 +59,21 @@ if [ ! -z "${IMAGE_PULL_SECRET_NAME}" ]; then
   sed -i -e "s;\#\(-.*IMAGE_PULL_SECRET_NAME\);\1;" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 fi
 
-IMAGE_PULL_SECRET_NAME="${IMAGE_PULL_SECRET_NAME:-regsecret}"
+if [ ! -z "${DOMAIN_IMAGE_PULL_SECRET_NAME}" ]; then
+  sed -i -e "s;\#\(domainImagePullSecrets:\);\1;"        "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+  sed -i -e "s;\#\(-.*DOMAIN_IMAGE_PULL_SECRET_NAME\);\1;" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+fi
+
+IMAGE_PULL_SECRET_NAME="${IMAGE_PULL_SECRET_NAME:-regsecret2}"
+DOMAIN_IMAGE_PULL_SECRET_NAME="${DOMAIN_IMAGE_PULL_SECRET_NAME:-regsecret}"
 
 for template_var in WDT_DOMAIN_TYPE \
                     CUSTOM_DOMAIN_NAME \
                     DOMAIN_UID \
                     DOMAIN_NAMESPACE \
                     IMAGE_PULL_SECRET_NAME \
+                    IMAGE_PULL_POLICY \
+                    DOMAIN_IMAGE_PULL_SECRET_NAME \
                     MODEL_IMAGE_NAME \
                     MODEL_IMAGE_TAG \
                     INTROSPECTOR_DEADLINE_SECONDS \

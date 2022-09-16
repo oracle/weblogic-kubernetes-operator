@@ -16,13 +16,12 @@ import java.util.regex.Pattern;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
@@ -35,15 +34,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -51,7 +53,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -83,7 +85,6 @@ public class ServerStartPolicyUtils {
   public static final String DYNAMIC_CLUSTER = "cluster-1";
   public static final String CONFIG_CLUSTER = "cluster-2";
 
-
   private static final int replicaCount = 1;
 
   private static LoggingFacade logger = getLogger();
@@ -101,7 +102,7 @@ public class ServerStartPolicyUtils {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -123,9 +124,7 @@ public class ServerStartPolicyUtils {
         Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainNamespace, domainUid, adminSecretName,
-        encryptionSecretName,
-        configMapName);
+    createDomainResource(domainNamespace, domainUid, adminSecretName, encryptionSecretName, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -174,7 +173,7 @@ public class ServerStartPolicyUtils {
 
     // verify that scaleCluster.sh does scale to a required replica number
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
-        domainUid, domainNamespace, replicaNum)));
+        domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
     testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterName, regex), logger,
@@ -223,8 +222,19 @@ public class ServerStartPolicyUtils {
       String encryptionSecretName,
       String configmapName) {
     List<String> securityList = new ArrayList<>();
+
+    // create cluster object
+    ClusterResource configCluster = createClusterResource(CONFIG_CLUSTER, domNamespace, replicaCount);
+    logger.info("Creating config cluster {0} in namespace {1}",CONFIG_CLUSTER, domNamespace);
+    createClusterAndVerify(configCluster);
+
+    // create cluster object
+    ClusterResource dynamicCluster = createClusterResource(DYNAMIC_CLUSTER, domNamespace, replicaCount);
+    logger.info("Creating dynamic cluster {0} in namespace {1}",DYNAMIC_CLUSTER, domNamespace);
+    createClusterAndVerify(dynamicCluster);
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -235,13 +245,13 @@ public class ServerStartPolicyUtils {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -250,49 +260,37 @@ public class ServerStartPolicyUtils {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName(DYNAMIC_CLUSTER)
-                .replicas(replicaCount)
-                .serverStartPolicy("IF_NEEDED")
-                .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName(CONFIG_CLUSTER)
-                .replicas(replicaCount)
-                .serverStartPolicy("IF_NEEDED")
-                .serverStartState("RUNNING"))
             .addManagedServersItem(new ManagedServer()
                 .serverName("standalone-managed")
-                .serverStartPolicy("IF_NEEDED")
-                .serverStartState("RUNNING"))
+                .serverStartPolicy("IfNeeded"))
             .addManagedServersItem(new ManagedServer()
                 .serverName("config-cluster-server2")
-                .serverStartPolicy("IF_NEEDED")
-                .serverStartState("RUNNING"))
+                .serverStartPolicy("IfNeeded"))
             .addManagedServersItem(new ManagedServer()
                 .serverName("managed-server2")
-                .serverStartPolicy("IF_NEEDED")
-                .serverStartState("RUNNING"))
+                .serverStartPolicy("IfNeeded"))
             .addManagedServersItem(new ManagedServer()
                 .serverName("config-cluster-server1")
-                .serverStartPolicy("IF_NEEDED")
-                .serverStartState("RUNNING"))
+                .serverStartPolicy("IfNeeded"))
             .addManagedServersItem(new ManagedServer()
-                .serverName("managed-server1")
-                .serverStartState("RUNNING"))
+                .serverName("managed-server1"))
             .configuration(new Configuration()
                 .secrets(securityList)
                 .model(new Model()
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-
+                .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(CONFIG_CLUSTER));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(DYNAMIC_CLUSTER));
+
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domNamespace);

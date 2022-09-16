@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,8 @@ class AdminServerTest extends BaseConfigurationTestBase {
   private static final String VALUE2 = "value2";
   private final AdminServer server1;
   private final AdminServer server2;
-  private final Domain domain = new Domain();
+  private final DomainResource domain = new DomainResource();
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   /**
    * Administration server tests.

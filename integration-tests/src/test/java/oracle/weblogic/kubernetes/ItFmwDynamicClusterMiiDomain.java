@@ -6,17 +6,14 @@ package oracle.weblogic.kubernetes;
 import java.util.Collections;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
@@ -26,6 +23,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -35,8 +33,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
@@ -45,7 +44,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -61,6 +60,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to Create a FMW Dynamic Domain with Dynamic Cluster using model in image")
 @IntegrationTest
+@Tag("olcne")
+@Tag("oke-parallel")
+@Tag("kind-parallel")
+@Tag("okd-fmw-cert")
 class ItFmwDynamicClusterMiiDomain {
 
   private static String dbNamespace = null;
@@ -84,7 +87,7 @@ class ItFmwDynamicClusterMiiDomain {
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
   private String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
-  private int replicaCount = 2;
+  private int replicaCount = 1;
   private String adminSvcExtHost = null;
 
   /**
@@ -148,7 +151,7 @@ class ItFmwDynamicClusterMiiDomain {
   private void createFmwDomainAndVerify() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -204,7 +207,7 @@ class ItFmwDynamicClusterMiiDomain {
     createDomainCrAndVerify(domainUid,
         domainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
@@ -228,8 +231,9 @@ class ItFmwDynamicClusterMiiDomain {
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
       String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -239,14 +243,13 @@ class ItFmwDynamicClusterMiiDomain {
                 .domainUid(domainUid)
                 .domainHomeSourceType("FromModel")
                 .image(miiImage)
-                .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                .imagePullPolicy(IMAGE_PULL_POLICY)
                 .addImagePullSecretsItem(new V1LocalObjectReference()
                     .name(repoSecretName))
-                .webLogicCredentialsSecret(new V1SecretReference()
-                    .name(adminSecretName)
-                    .namespace(domNamespace))
+                .webLogicCredentialsSecret(new V1LocalObjectReference()
+                    .name(adminSecretName))
                 .includeServerOutInPodLog(true)
-                .serverStartPolicy("IF_NEEDED")
+                .serverStartPolicy("IfNeeded")
                 .serverPod(new ServerPod()
                     .addEnvItem(new V1EnvVar()
                         .name("JAVA_OPTIONS")
@@ -255,15 +258,10 @@ class ItFmwDynamicClusterMiiDomain {
                         .name("USER_MEM_ARGS")
                         .value("-Djava.security.egd=file:/dev/./urandom ")))
                 .adminServer(new AdminServer()
-                    .serverStartState("RUNNING")
                     .adminService(new AdminService()
                         .addChannelsItem(new Channel()
                             .channelName("default")
                             .nodePort(getNextFreePort()))))
-                .addClustersItem(new Cluster()
-                    .clusterName("cluster-1")
-                    .replicas(replicaCount)
-                    .serverStartState("RUNNING"))
                 .configuration(new Configuration()
                     .opss(new Opss()
                         .walletPasswordSecret(opssWalletPasswordSecretName))

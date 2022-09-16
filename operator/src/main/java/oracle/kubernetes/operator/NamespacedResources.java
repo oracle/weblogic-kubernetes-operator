@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
@@ -58,77 +59,9 @@ class NamespacedResources {
           getServiceListSteps(),
           getPodDisruptionBudgetListSteps(),
           getDomainListSteps(),
+          getClusterListSteps(),
           new CompletionStep()
     );
-  }
-
-  /**
-   * A class which describes some processing to be performed on the resources as they are read.
-   */
-  abstract static class Processors {
-
-    /**
-     * Return the processing to be performed on a list of config maps found in Kubernetes. May be null.
-     */
-    Consumer<V1ConfigMapList> getConfigMapListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of events found in Kubernetes. May be null.
-     */
-    Consumer<CoreV1EventList> getEventListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of domain events found in Kubernetes. May be null.
-     */
-    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of jobs found in Kubernetes. May be null.
-     */
-    Consumer<V1JobList> getJobListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of pods found in Kubernetes. May be null.
-     */
-    Consumer<V1PodList> getPodListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of services found in Kubernetes. May be null.
-     */
-    Consumer<V1ServiceList> getServiceListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of services found in Kubernetes. May be null.
-     */
-    Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
-      return null;
-    }
-
-    /**
-     * Return the processing to be performed on a list of domains found in Kubernetes. May be null.
-     */
-    Consumer<DomainList> getDomainListProcessing() {
-      return null;
-    }
-
-    /**
-     * Do any post-processing of intermediate results.
-     * @param packet the packet in the fiber
-     */
-    void completeProcessing(Packet packet) {
-    }
   }
 
   private Step getConfigMapListSteps() {
@@ -201,6 +134,14 @@ class NamespacedResources {
 
   private Step createServiceListStep(List<Consumer<V1ServiceList>> processing) {
     return createSubResourceCallBuilder().listServiceAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getClusterListSteps() {
+    return getListProcessing(Processors::getClusterListProcessing).map(this::createClusterListSteps).orElse(null);
+  }
+
+  private Step createClusterListSteps(List<Consumer<ClusterList>> processing) {
+    return new CallBuilder().listClusterAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getDomainListSteps() {

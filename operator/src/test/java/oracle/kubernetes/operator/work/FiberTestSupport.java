@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.work;
 
 import java.io.File;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Map;
@@ -21,6 +23,7 @@ import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingContext;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -98,6 +101,13 @@ public class FiberTestSupport {
   }
 
   /**
+   * Returns the number of items actually run since this object was created.
+   */
+  public int getNumItemsRun() {
+    return schedule.getNumItemsRun();
+  }
+
+  /**
    * Returns the engine used by this support object.
    *
    * @return the current engine object
@@ -113,7 +123,7 @@ public class FiberTestSupport {
    * @param time the time, in units
    * @param unit the unit associated with the time
    */
-  public void setTime(int time, TimeUnit unit) {
+  public void setTime(long time, TimeUnit unit) {
     schedule.setTime(time, unit);
   }
 
@@ -187,12 +197,13 @@ public class FiberTestSupport {
   }
 
   /**
-   * Starts a unit-test fiber with the specified step.
+   * Starts a unit-test fiber with the specified steps.
    *
    * @param step the first step to run
    */
-  public Packet runSteps(Step step) {
-    return runSteps(packet, step);
+  public Packet runSteps(Step... step) {
+    final Step stepList = (step.length == 1 ? step[0] : Step.chain(step));
+    return runSteps(packet, stepList);
   }
 
   /**
@@ -251,9 +262,14 @@ public class FiberTestSupport {
     private final PriorityQueue<ScheduledItem> scheduledItems = new PriorityQueue<>();
     private final Queue<Runnable> queue = new ArrayDeque<>();
     private Runnable current;
+    private int numItemsRun;
 
-    public static ScheduledExecutorStub create() {
+    static ScheduledExecutorStub create() {
       return createStrictStub(ScheduledExecutorStub.class);
+    }
+
+    int getNumItemsRun() {
+      return numItemsRun;
     }
 
     @Override
@@ -261,7 +277,9 @@ public class FiberTestSupport {
     public ScheduledFuture<?> schedule(
         @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
       scheduledItems.add(new ScheduledItem(currentTime + unit.toMillis(delay), command));
-      runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
       return createStub(ScheduledFuture.class);
     }
 
@@ -272,7 +290,9 @@ public class FiberTestSupport {
       scheduledItems.add(
           new PeriodicScheduledItem(
               currentTime + unit.toMillis(initialDelay), unit.toMillis(delay), command));
-      runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
       return createStub(ScheduledFuture.class);
     }
 
@@ -290,6 +310,7 @@ public class FiberTestSupport {
         Container old = cr.enterContainer(container);
         try {
           current.run();
+          numItemsRun++;
         } finally {
           cr.exitContainer(old);
         }
@@ -320,10 +341,20 @@ public class FiberTestSupport {
 
     private void executeAsScheduled(ScheduledItem item) {
       currentTime = item.atTime;
+      adjustSystemClock(currentTime);
       execute(item.runnable);
       if (item.isReschedulable()) {
         scheduledItems.add(item.rescheduled());
       }
+    }
+
+    private void adjustSystemClock(long currentTime) {
+      Optional.ofNullable(SystemClockTestSupport.getTestStartTime())
+          .ifPresent(startTime -> adjustSystemClock(currentTime, startTime));
+    }
+
+    private void adjustSystemClock(long currentTime, OffsetDateTime initialClockTime) {
+      SystemClockTestSupport.setCurrentTime(initialClockTime.plus(currentTime, ChronoUnit.MILLIS));
     }
 
     /**

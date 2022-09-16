@@ -373,7 +373,7 @@ public class Kubernetes {
     boolean status = false;
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
-    if (pod != null) {
+    if (pod != null && pod.getStatus() != null && pod.getStatus().getConditions() != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
           .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
@@ -674,9 +674,12 @@ public class Kubernetes {
     boolean status = false;
     V1Deployment deployment = getDeployment(deploymentName, label, namespace);
 
-    List<V1DeploymentCondition> deplList = Optional.ofNullable(deployment)
-        .map(V1Deployment::getStatus).map(V1DeploymentStatus::getConditions)
-        .orElse(null);
+    V1DeploymentStatus deploymentStatus = Optional.ofNullable(deployment)
+        .map(V1Deployment::getStatus).orElse(null);
+
+    List<V1DeploymentCondition> deplList = Optional.ofNullable(deploymentStatus)
+        .map(V1DeploymentStatus::getConditions).orElse(null);
+
     if (deplList != null) {
       V1DeploymentCondition v1DeploymentRunningCondition = deplList.stream()
           .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))

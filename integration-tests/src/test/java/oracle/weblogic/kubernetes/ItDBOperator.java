@@ -12,7 +12,9 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Domain;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -38,18 +41,21 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -73,9 +79,9 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -101,6 +107,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
+@Tag("oke-sequential")
+@Tag("kind-parallel")
 class ItDBOperator {
 
   private static String dbNamespace = null;
@@ -122,6 +130,7 @@ class ItDBOperator {
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
+  private String clusterName = "cluster-1";
   private String fmwAminSecretName = fmwDomainUid + "-weblogic-credentials";
   private String fmwEncryptionSecretName = fmwDomainUid + "-encryptionsecret";
   private String rcuaccessSecretName = fmwDomainUid + "-rcu-access";
@@ -169,8 +178,8 @@ class ItDBOperator {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(fmwDomainNamespace);
-    createSecretForBaseImages(wlsDomainNamespace);
+    createBaseRepoSecret(fmwDomainNamespace);
+    createBaseRepoSecret(wlsDomainNamespace);
 
     //install Oracle Database Operator
     assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
@@ -194,9 +203,10 @@ class ItDBOperator {
   @Test
   @DisplayName("Create FMW Domain model in image")
   void  testFmwModelInImageWithDbOperator() {
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(fmwDomainNamespace);
+    createTestRepoSecret(fmwDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -247,15 +257,21 @@ class ItDBOperator {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
-        OCIR_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         fmwEncryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
-        replicaCount,
         fmwMiiImage);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
@@ -274,6 +290,10 @@ class ItDBOperator {
    */
   @Test
   void  testWlsModelInImageWithDbOperator() {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(wlsDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -310,11 +330,26 @@ class ItDBOperator {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
+    DomainResource domainCR = createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
+        pvName, pvcName, configMapName,
         dbSecretName, false, false, true);
+    
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterName, wlsDomainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}", clusterName, wlsDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
+    
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+        wlsDomainUid, wlsDomainNamespace);
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domainCR, DOMAIN_VERSION),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            wlsDomainUid, wlsDomainNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed "
+        + "for %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", wlsDomainNamespace);
@@ -390,9 +425,7 @@ class ItDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = assertDoesNotThrow(()
-        -> scaleCluster(wlsDomainUid, wlsDomainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
+    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));
@@ -674,10 +707,10 @@ class ItDBOperator {
   }
 
   /**
-   * Shutdown the domain by setting serverStartPolicy as "NEVER".
+   * Shutdown the domain by setting serverStartPolicy as "Never".
    */
   private void shutdownDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, fmwDomainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "Never", fmwDomainNamespace, fmwDomainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
 
     // make sure all the server pods are removed after patch
@@ -691,10 +724,10 @@ class ItDBOperator {
   }
 
   /**
-   * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
+   * Startup the domain by setting serverStartPolicy as "IfNeeded".
    */
   private void startupDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, fmwDomainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IfNeeded", fmwDomainNamespace, fmwDomainUid);
     logger.info("Domain is patched to start all servers in the domain");
   }
 

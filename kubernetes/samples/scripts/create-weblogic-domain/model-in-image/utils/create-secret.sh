@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/bash
 # Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -100,7 +100,7 @@ EOF
 kubectlDryRunCreate() {
 local moredry=""
 if [ "$DRY_RUN" = "yaml" ]; then
-  local moredry="--dry-run -o yaml"
+  local moredry="--dry-run=client -o yaml"
 fi
 cat << EOF
 dryrun:kubectl -n $NAMESPACE create secret generic \\
