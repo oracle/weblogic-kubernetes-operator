@@ -973,12 +973,15 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private void addDuplicateNamesClusterReferences() {
       Set<String> references = new HashSet<>();
       Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
-          .stream().map(V1LocalObjectReference::getName).filter(Objects::nonNull).forEach(ref -> {
-            if (references.contains(ref)) {
-              failures.add(DomainValidationMessages.duplicateClusterName(ref));
-            }
-            references.add(ref);
-          });
+          .stream().map(V1LocalObjectReference::getName).filter(Objects::nonNull)
+          .forEach(ref -> checkDuplcaiteClusterReferences(references, ref));
+    }
+
+    private void checkDuplcaiteClusterReferences(Set<String> references, String ref) {
+      if (references.contains(ref)) {
+        failures.add(DomainValidationMessages.duplicateClusterName(ref));
+      }
+      references.add(ref);
     }
 
     private void addDuplicateNamesClusters(KubernetesResourceLookup kubernetesResources) {
