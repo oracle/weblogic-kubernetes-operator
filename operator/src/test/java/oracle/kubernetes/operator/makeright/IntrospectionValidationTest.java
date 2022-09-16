@@ -39,6 +39,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster1;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster2;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -108,7 +109,8 @@ class IntrospectionValidationTest {
       final ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
       return ">>>  /u01/introspect/domain1/" + IntrospectorConfigMapConstants.TOPOLOGY_YAML + '\n'
           + yamlWriter.writeValueAsString(new DomainTopology(createBuilder().createDomainConfig()))
-          + ">>> EOF";
+          + ">>> EOF" + '\n'
+          + DOMAIN_INTROSPECTION_COMPLETE;
     }
 
     WlsDomainConfigSupport createBuilder() {

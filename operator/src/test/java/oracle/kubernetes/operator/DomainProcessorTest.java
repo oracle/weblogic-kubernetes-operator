@@ -118,6 +118,7 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
@@ -1705,7 +1706,8 @@ class DomainProcessorTest {
         + ">>>  /u01/introspect/domain1/topology.yaml\n"
         + "%s\n"
         + ">>> EOF\n"
-        + ">>>  updatedomainResult=%s\n";
+        + ">>>  updatedomainResult=%s\n"
+        + DOMAIN_INTROSPECTION_COMPLETE;
 
     establishPreviousIntrospection(this::configureForModelInImageOnlineUpdate);
     domainConfigurator.withIntrospectVersion("after-onlineUpdate");
@@ -1855,7 +1857,8 @@ class DomainProcessorTest {
         + "\n"
         + ">>>  /u01/introspect/domain1/topology.yaml\n"
         + "%s\n"
-        + ">>> EOF\n";
+        + ">>> EOF\n"
+        + DOMAIN_INTROSPECTION_COMPLETE;
 
     String topologyxml = "domainValid: true\n"
             + "domain:\n"
@@ -1950,7 +1953,8 @@ class DomainProcessorTest {
         + "\n"
         + ">>>  /u01/introspect/domain1/topology.yaml\n"
         + "%s\n"
-        + ">>> EOF\n";
+        + ">>> EOF\n"
+        + DOMAIN_INTROSPECTION_COMPLETE;
 
     String topologyxml = "domainValid: true\n"
         + "domain:\n"

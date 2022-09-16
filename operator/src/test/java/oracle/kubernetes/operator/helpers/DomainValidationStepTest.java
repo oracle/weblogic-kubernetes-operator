@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -25,10 +26,12 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.Model;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -184,6 +187,32 @@ class DomainValidationStepTest {
   private void defineDuplicateServerNames() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+  }
+
+  @Test
+  void whenDomainHasFatalValidationErrors_reportFatalFailedCondition() {
+    defineDuplicateServerNames();
+
+    testSupport.runSteps(domainValidationSteps);
+
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
+    assertThat(getFailedConditionSeverity(updatedDomain), equalTo(DomainFailureSeverity.FATAL));
+  }
+
+  private DomainFailureSeverity getFailedConditionSeverity(DomainResource updatedDomain) {
+    return getConditions(updatedDomain).filter(this::isFailedCondition).findFirst().map(DomainCondition::getSeverity)
+        .orElse(null);
+  }
+
+  @NotNull
+  private Stream<DomainCondition> getConditions(DomainResource updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getConditions)
+        .orElse(Collections.emptyList()).stream();
+  }
+
+  private boolean isFailedCondition(DomainCondition condition) {
+    return condition.getType().equals(FAILED);
   }
 
   @Test
