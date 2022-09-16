@@ -33,6 +33,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -78,7 +79,7 @@ class IntrospectionLoggingTest {
   private static final String SEVERE_MESSAGE_1 = "@[SEVERE] " + SEVERE_PROBLEM_1;
   private static final String SEVERE_MESSAGE_2 = "@[SEVERE] " + SEVERE_PROBLEM_2;
   private static final String WARNING_MESSAGE = "@[WARNING] could be bad";
-  private static final String INFO_MESSAGE = "@[INFO] just letting you know";
+  private static final String INFO_MESSAGE = "@[INFO] just letting you know. " + DOMAIN_INTROSPECTION_COMPLETE;
   private static final String INFO_EXTRA1 = "more stuff";
   private static final String INFO_EXTRA_2 = "still more";
 

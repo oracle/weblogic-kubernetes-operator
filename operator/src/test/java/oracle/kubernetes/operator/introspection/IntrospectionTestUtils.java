@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 
 public class IntrospectionTestUtils {
@@ -47,7 +48,8 @@ public class IntrospectionTestUtils {
           + "\n"
           + ">>>  /u01/introspect/domain1/topology.yaml\n"
           + "%s\n"
-          + ">>> EOF";
+          + ">>> EOF\n"
+          + DOMAIN_INTROSPECTION_COMPLETE;
 
   /**
    * Set up the in-memory Kubernetes environment for the domain processor, specifying the pod log.
