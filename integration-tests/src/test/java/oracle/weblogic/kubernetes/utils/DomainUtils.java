@@ -899,7 +899,10 @@ public class DomainUtils {
                                                                     String imageName,
                                                                     String wlSecretName,
                                                                     String clusterName,
-                                                                    int replicaCount) {
+                                                                    int replicaCount,
+                                                                    Long... failureRetryLimitMinutesArgs) {
+    Long failureRetryLimitMinutes =
+        (failureRetryLimitMinutesArgs.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : failureRetryLimitMinutesArgs[0];
 
     // create the domain custom resource
     DomainResource domain = new DomainResource()
@@ -923,7 +926,7 @@ public class DomainUtils {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
-            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
+            .failureRetryLimitMinutes(failureRetryLimitMinutes)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
