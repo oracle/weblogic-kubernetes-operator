@@ -220,6 +220,9 @@ doIntrospect() {
 
     traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
   fi
+
+  # Important: The following trace's wording must not be changed without
+  # a corresponding change to DOMAIN_INTROSPECTION_COMPLETE in the operator.
   trace "Domain introspection complete"
 }
 

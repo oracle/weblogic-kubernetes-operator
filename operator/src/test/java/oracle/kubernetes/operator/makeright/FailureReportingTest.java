@@ -61,6 +61,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_
 import static oracle.kubernetes.operator.DomainFailureMessages.createReplicaFailureMessage;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -80,7 +81,7 @@ class FailureReportingTest {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final String INFO_MESSAGE = "@[INFO] just letting you know";
+  private static final String INFO_MESSAGE = "@[INFO] just letting you know. " + DOMAIN_INTROSPECTION_COMPLETE;
   private static final String SEVERE_MESSAGE = "really bad";
   private static final String SEVERE_INTROSPECTION_ENTRY = "@[SEVERE] " + SEVERE_MESSAGE;
   private static final String CLUSTER_1 = "cluster1";

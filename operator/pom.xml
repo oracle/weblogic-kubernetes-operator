@@ -272,6 +272,16 @@
               <executable>${project.basedir}/../validateScripts.sh</executable>
             </configuration>
           </execution>
+          <execution>
+            <id>validate-introspector-shell-script</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${project.basedir}/../validateIntrospectorScript.sh</executable>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>

@@ -814,8 +814,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   // used by the validating webhook
-  public List<String> getSimpleValidationFailures() {
-    return new Validator().getSimpleValidationFailures();
+  public List<String> getFatalValidationFailures() {
+    return new Validator().getFatalValidationFailures();
   }
 
   // used by the operator
@@ -899,13 +899,13 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
 
-    List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
-      getSimpleValidationFailures();
-      getCrossReferenceValidationFailures(kubernetesResources);
+    private List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+      addFatalValidationFailures();
+      addCrossReferenceValidationFailures(kubernetesResources);
       return failures;
     }
 
-    private void getCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    private void addCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addMissingSecrets(kubernetesResources);
       addMissingModelConfigMap(kubernetesResources);
       addDuplicateNamesClusters(kubernetesResources);
@@ -918,7 +918,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyClusterResourcesNotInUse(kubernetesResources);
     }
 
-    List<String> getSimpleValidationFailures() {
+    private void addFatalValidationFailures() {
       addDuplicateNamesManagedServers();
       addDuplicateNamesClusterReferences();
       addInvalidMountPathsManagedServers();
@@ -933,6 +933,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+    }
+
+    private List<String> getFatalValidationFailures() {
+      addFatalValidationFailures();
       return failures;
     }
 
