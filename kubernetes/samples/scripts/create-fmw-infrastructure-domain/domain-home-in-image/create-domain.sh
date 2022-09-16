@@ -265,7 +265,7 @@ createDomainHome() {
 
     echo @@ "Info: getting host infor of running instance"
     cat /etc/resolv.conf && cat /etc/hosts
-    echo @@ "Info: getting host infor inside the container"
+    echo @@ "Info: getting host infor inside the FMW container"
     echo @@ "image name: ${domainHomeImageBase}"
     docker run ${domainHomeImageBase} /bin/bash -c "cat /etc/resolv.conf && cat /etc/hosts"
     cmd="
