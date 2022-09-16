@@ -114,7 +114,6 @@ public class MessageKeys {
   public static final String DOMAIN_VALIDATION_FAILED = "WLSKO-0157";
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
-  public static final String REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0164";
   public static final String REQUEST_PARAMS_IN_NS = "WLSKO-0165";
   public static final String REQUEST_PARAMS_FOR_NAME = "WLSKO-0166";
   public static final String REQUEST_PARAMS_WITH = "WLSKO-0167";
