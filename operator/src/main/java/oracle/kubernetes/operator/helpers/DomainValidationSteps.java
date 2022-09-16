@@ -28,11 +28,13 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
+import org.jetbrains.annotations.NotNull;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
@@ -133,16 +135,27 @@ public class DomainValidationSteps {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       DomainResource domain = info.getDomain();
+      List<String> fatalValidationFailures = domain.getFatalValidationFailures();
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
-
+      String errorMsg = getErrorMessage(fatalValidationFailures, validationFailures);
       if (validationFailures.isEmpty()) {
         return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet)
               .withDebugComment(packet, this::domainValidated);
       } else {
-        LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-        return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures)), packet);
+        LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), errorMsg);
+        return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(errorMsg), packet);
       }
+    }
 
+    @NotNull
+    private String getErrorMessage(List<String> fatalValidationFailures, List<String> validationFailures) {
+      String errorMsg;
+      if (fatalValidationFailures.isEmpty()) {
+        errorMsg = perLine(validationFailures);
+      } else {
+        errorMsg = FATAL_DOMAIN_INVALID_ERROR + ": " + perLine(fatalValidationFailures);
+      }
+      return errorMsg;
     }
 
     private String perLine(List<String> validationFailures) {
