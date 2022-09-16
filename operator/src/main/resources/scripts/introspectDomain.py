@@ -2163,6 +2163,9 @@ def main(env):
       env.addGeneratedFile(env.MII_DOMAIN_SECRET_MD5_FILE)
       DomainIntrospector(env).introspect()
       env.printGeneratedFiles()
+      # Important: The following trace's wording must not be changed
+      # without a corresponding change to DOMAIN_INTROSPECTION_COMPLETE
+      # in the operator.
       trace("Domain introspection complete.")
     finally:
       env.close()
