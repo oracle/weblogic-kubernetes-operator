@@ -21,6 +21,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERRO
 import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.WILL_RETRY_EVENT_SUGGESTION;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 
 public enum DomainFailureReason {
@@ -34,6 +35,11 @@ public enum DomainFailureReason {
     @Override
     public String getEventSuggestion() {
       return DOMAIN_INVALID_ERROR_EVENT_SUGGESTION;
+    }
+
+    @Override
+    boolean hasFatalError(String message) {
+      return message.contains(FATAL_DOMAIN_INVALID_ERROR);
     }
   },
   @SerializedName("Introspection")
