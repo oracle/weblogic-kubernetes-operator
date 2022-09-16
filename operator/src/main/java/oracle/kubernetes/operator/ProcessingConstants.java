@@ -63,4 +63,5 @@ public interface ProcessingConstants {
   String WEBHOOK = "Webhook";
 
   String SHUTDOWN_WITH_HTTP_SUCCEEDED = "SHUTDOWN_WITH_HTTP_SUCCEEDED";
+  String DOMAIN_INTROSPECTION_COMPLETE = "Domain introspection complete";
 }
