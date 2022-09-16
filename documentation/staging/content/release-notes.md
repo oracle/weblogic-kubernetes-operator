@@ -8,7 +8,7 @@ draft: false
 
 | Date               | Version  | Change - See also, [Change log](#change-log).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 |--------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| October 4, 2022    | v4.0.0   | New Cluster resource for HPA. Domain resource "v9" with auxiliary image simplification, improved status reporting, and improved failure retry predictability and transparency. Istio and other service mesh support enabled automatically. Kubernetes 1.24 and 1.25 support. Minimum Kubernetes version is now 1.21.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| October 4, 2022    | v4.0.0   | New Cluster resource for Horizontal Pod Autoscaling (HPA). Domain resource "v9" with auxiliary image simplification, improved status reporting, and improved failure retry predictability and transparency. Istio and other service mesh support enabled automatically. Kubernetes 1.24 and 1.25 support. Minimum Kubernetes version is now 1.21.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | August 25, 2022    | v3.4.3   | Resolved an issue related to introspector failure for non-English locales and improved concurrency for managing configuration override files.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | August 9, 2022     | v3.4.2   | Updated several dependencies, including the Oracle Linux base for the container image.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | June 13, 2022      | v3.4.1   | Resolved several issues related to Model in Image and introspection.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -60,10 +60,10 @@ draft: false
 
 ##### Major Themes
 
-* Auxiliary Image Simplification: the [usage of auxiliary images has been substantially simplified]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). In most cases, customers need only specify the name of the auxiliary image.
+* Auxiliary Image simplification: the [usage of auxiliary images has been substantially simplified]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). In most cases, customers need only specify the name of the auxiliary image.
 * Cluster resource: the operator now provides a new custom resource, Cluster, which configures a specific WebLogic cluster. This resource can be used with Kubernetes Horizontal Pod Autoscaler (HPA) or similar technologies to scale WebLogic clusters.
 * Status and Events: the status of and the Events generated about Domain and Cluster resources have been significantly updated. The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads. Failures are distinguished between those that require customer intervention or those that are potentially temporary and will be retried.
-* Istio-compatibility: domain configurations are always compatible with Istio and other service mesh products. Customers are no longer required to enable this support.
+* Istio compatibility: domain configurations are always compatible with Istio and other service mesh products. Customers are no longer required to enable this support.
 
 ##### Upgrade Notes
 
@@ -74,9 +74,8 @@ draft: false
 * For those customers who install more than one WebLogic Kubernetes Operator in a single Kubernetes cluster, you must upgrade every operator to at least version 3.4.1 before upgrading any operator to 4.0.0. As the 4.0.0 Helm chart now also installs a schema conversion webhook, you will want to use the Helm chart option to install this webhook in its own namespace prior to installing any of the 4.0.0 operators.
 * Several Helm chart default values have been changed. Customers who upgrade their 3.x installations using the `--reuse-values` option during the Helm upgrade will continue to use the values from their original installation.
 
-##### Changes by Kind
+##### Changes to domain schema
 
-Domain schema:
 * Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
 * Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
 * Removed `.spec.serverPod.auxiliaryImages` and `.spec.auxiliaryImageVolumes` as part of the simplification effort.
@@ -92,19 +91,21 @@ Domain schema:
 * The field `.status.lastIntrospectJobProcessedUid` was renamed as `.status.failedIntrospectionUid` and added fields `.status.initialFailureTime` and `.status.lastFailureTime`.
 * Added `.status.conditions[*].severity` to describe the severity of conditions that represent failures or warnings.
 
-Helm chart:
+##### Changes to Helm chart
+
 * The default value for `domainNamespaceSelectionStrategy` is now `LabelSelector`. It was previously `List`.
 * The default value for `domainNamespaceLabelSelector` is now `weblogic-operator=enabled`. It was previously unspecified.
 * The previously deprecated value `dedicated` has been removed.
 * The default value for `enableClusterRoleBinding` is now `true`; however, this value is ignored if `domainNamespaceSelectionStrategy` is `Dedicated`. It was previously `false`.
 * The chart now has a value `createLogStashConfigMap`, which defaults to `true`, that configures how an optional Logstash container for the operator is configured.
-* The chart now has a value `webhookOnly`, which defaults to `false`, that specifies if this Helm release will only install the schema conversion webhook.
-* The chart now has a value `operatorOnly`, which defaults to `false`, that specifies if this Helm release will only install the operator.
+* The chart now has a value `webhookOnly`, which defaults to `false`, that specifies if this Helm release will install only the schema conversion webhook.
+* The chart now has a value `operatorOnly`, which defaults to `false`, that specifies if this Helm release will install only the operator.
 * The chart now has a value `preserveWebhook`, which defaults to `false`, that specifies if the schema conversion webhook should be orphaned when this Helm release is uninstalled.
 * The chart now has a value `webhookDebugHttpPort`, which defaults to `31999`, that configures an optional debugging port for the webhook.
 
-Minor features and Bug fixes:
-* The operator provides a validating webhook that will help customers detect invalid configurations more quickly
+##### Minor features and fixes
+
+* The operator added a validating webhook that will help customers detect invalid configurations more quickly.
 * The operator's container image is substantially smaller through the use of `jlink` to create a minimal Java JRE.
 
 #### Operator 3.4.3
