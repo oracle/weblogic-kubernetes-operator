@@ -6,16 +6,11 @@ package oracle.weblogic.kubernetes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -29,23 +24,22 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceForDomainInImage;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.findStringInDomainStatusMessage;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.findStringInOperatorLog;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -133,7 +127,8 @@ class ItRetryImprovements {
         .append(FAILURE_RETRY_INTERVAL_SECONDS)
         .append("\\s*seconds\\s*afterward\\s*until.*\\s*if\\s*the\\s*failure\\s*is\\s*not\\s*resolved").toString();
 
-    testUntil(() -> findStringInDomainStatusMessage(retryOccurRegex), logger, "retry occurs as expected");
+    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryOccurRegex),
+        logger, "retry occurs as expected");
 
     // verify that the operator stops retrying when the maximum retry time is reached
     String retryMaxValueRegex = new StringBuffer(".*operator\\s*failed\\s*after\\s*retrying\\s*for\\s*.*")
@@ -141,7 +136,7 @@ class ItRetryImprovements {
         .append(".*\\s*minutes.*\\s*Please\\s*resolve.*error\\s*and.*update\\s*domain.spec.introspectVersion")
         .append(".*to\\s*force\\s*another\\s*retry\\s*.*").toString();
 
-    testUntil(() -> findStringInDomainStatusMessage(retryMaxValueRegex),
+    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryMaxValueRegex),
         logger, "retry ends as expected after {0} minutes retry", failureRetryLimitMinutes);
 
     // verify that SEVERE level error message is logged in the Operator log
@@ -151,7 +146,8 @@ class ItRetryImprovements {
         .append(".*not\\s*found\\s*in\\s*namespace\\s*.*")
         .append(domainNamespace).toString();
 
-    testUntil(() -> findStringInOperatorLog(opLogSevereErrRegex), logger, "SEVERE error found in Operator log");
+    testUntil(() -> findStringInOperatorLog(opNamespace, opLogSevereErrRegex),
+        logger, "SEVERE error found in Operator log");
   }
 
   /**
@@ -173,7 +169,8 @@ class ItRetryImprovements {
         .append(FAILURE_RETRY_INTERVAL_SECONDS)
         .append("\\s*seconds\\s*afterward\\s*until.*\\s*if\\s*the\\s*failure\\s*is\\s*not\\s*resolved").toString();
 
-    testUntil(() -> findStringInDomainStatusMessage(retryOccurRegex), logger, "retry occurs as expected");
+    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryOccurRegex),
+        logger, "retry occurs as expected");
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -203,46 +200,6 @@ class ItRetryImprovements {
           managedServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
-  }
-
-  private boolean findStringInDomainStatusMessage(String regex) {
-    // get the domain status message
-    StringBuffer getDomainInfoCmd = new StringBuffer("kubectl get domain/");
-    getDomainInfoCmd
-        .append(domainUid)
-        .append(" -n ")
-        .append(domainNamespace)
-        .append(" -o jsonpath='{.status.message}' --ignore-not-found");
-    logger.info("Command to get domain status message: " + getDomainInfoCmd);
-
-    CommandParams params = new CommandParams().defaults();
-    params.command(getDomainInfoCmd.toString());
-    ExecResult execResult = Command.withParams(params).executeAndReturnResult();
-    logger.info("Search: {0} in Domain status message: {1}", regex, execResult.stdout());
-
-    // match regex in domain info
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(execResult.stdout());
-
-    return matcher.find();
-  }
-
-  private boolean findStringInOperatorLog(String regex) {
-    // get operator pod name
-    String operatorPodName = assertDoesNotThrow(
-        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    assertNotNull(operatorPodName, "Operator pod name returned is null");
-    logger.info("Operator pod name {0}", operatorPodName);
-
-    // get the Operator logs
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
-
-    // match regex in Operator log
-    logger.info("Search: {0} in Operator log", regex);
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(operatorPodLog);
-
-    return matcher.find();
   }
 
   private static DomainResource createDomainWithoutWlsSecret(Long failureRetryLimitMinutes) {
