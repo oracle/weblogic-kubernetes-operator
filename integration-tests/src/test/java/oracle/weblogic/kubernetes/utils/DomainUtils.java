@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -47,6 +49,8 @@ import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
@@ -899,7 +903,10 @@ public class DomainUtils {
                                                                     String imageName,
                                                                     String wlSecretName,
                                                                     String clusterName,
-                                                                    int replicaCount) {
+                                                                    int replicaCount,
+                                                                    Long... failureRetryLimitMinutesArgs) {
+    Long failureRetryLimitMinutes =
+        (failureRetryLimitMinutesArgs.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : failureRetryLimitMinutesArgs[0];
 
     // create the domain custom resource
     DomainResource domain = new DomainResource()
@@ -923,7 +930,7 @@ public class DomainUtils {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
-            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
+            .failureRetryLimitMinutes(failureRetryLimitMinutes)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -1022,10 +1029,39 @@ public class DomainUtils {
     return domain;
   }
 
+  /**
+   * Obtains the specified domain, validates that it has a spec and no rolling condition.
+   * @param domainNamespace the domain namespace
+   * @param domainUid the domain UID
+   * @param regex check string
+   * @return true if regex found, false otherwise.
+   */
+  @NotNull
+  public static boolean findStringInDomainStatusMessage(String domainNamespace, String domainUid, String regex) {
+    // get the domain status message
+    StringBuffer getDomainInfoCmd = new StringBuffer("kubectl get domain/");
+    getDomainInfoCmd
+        .append(domainUid)
+        .append(" -n ")
+        .append(domainNamespace)
+        .append(" -o jsonpath='{.status.message}' --ignore-not-found");
+    getLogger().info("Command to get domain status message: " + getDomainInfoCmd);
+
+    CommandParams params = new CommandParams().defaults();
+    params.command(getDomainInfoCmd.toString());
+    ExecResult execResult = Command.withParams(params).executeAndReturnResult();
+    getLogger().info("Search: {0} in Domain status message: {1}", regex, execResult.stdout());
+
+    // match regex in domain info
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(execResult.stdout());
+
+    return matcher.find();
+  }
+
   private static boolean domainHasRollingCondition(DomainResource domain) {
     return Optional.ofNullable(domain.getStatus())
           .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
           .map(DomainCondition::getType).anyMatch("Rolling"::equals);
   }
-
 }
