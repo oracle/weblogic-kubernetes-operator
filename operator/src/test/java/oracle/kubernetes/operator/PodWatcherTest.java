@@ -359,7 +359,6 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     try {
       testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
 
-      assertThat(terminalStep.wasRun(), is(true));
       assertThat(terminalStep.getExecutionCount(), is(1));
     } finally {
       stopping.set(true);
@@ -392,7 +391,6 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
       testSupport.failOnResource(KubernetesTestSupport.POD, NAME, NS, HTTP_NOT_FOUND);
       testSupport.setTime(10, TimeUnit.SECONDS);
 
-      assertThat(terminalStep.wasRun(), is(true));
       assertThat(terminalStep.getExecutionCount(), is(1));
     } finally {
       stopping.set(true);
