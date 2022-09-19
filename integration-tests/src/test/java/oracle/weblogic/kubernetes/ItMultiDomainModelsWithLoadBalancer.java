@@ -818,7 +818,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // create cluster resource in mii domain
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
-      String clusterResName = miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i;
+      String clusterResName = CLUSTER_NAME_PREFIX + i;
       domain = createClusterResourceAndAddReferenceToDomain(clusterResName,
           CLUSTER_NAME_PREFIX + i, domainNamespace, domain, replicaCount);
     }

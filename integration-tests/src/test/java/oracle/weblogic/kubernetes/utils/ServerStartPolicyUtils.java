@@ -276,9 +276,9 @@ public class ServerStartPolicyUtils {
     setPodAntiAffinity(domain);
 
     createClusterResourceAndAddReferenceToDomain(
-        domainUid + "-" + CONFIG_CLUSTER, CONFIG_CLUSTER, domNamespace, domain, replicaCount);
+        CONFIG_CLUSTER, CONFIG_CLUSTER, domNamespace, domain, replicaCount);
     createClusterResourceAndAddReferenceToDomain(
-        domainUid + "-" + DYNAMIC_CLUSTER, DYNAMIC_CLUSTER, domNamespace, domain, replicaCount);
+        DYNAMIC_CLUSTER, DYNAMIC_CLUSTER, domNamespace, domain, replicaCount);
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domNamespace);
