@@ -609,7 +609,7 @@ class ItMiiUpdateDomainConfig {
 
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
-    boolean p1Success = scaleCluster("cluster-1", domainNamespace, 5);
+    boolean p1Success = scaleCluster(domainUid + "-cluster-1", domainNamespace, 5);
     assertTrue(p1Success,
         String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -622,7 +622,7 @@ class ItMiiUpdateDomainConfig {
     // Make sure that we can scale down upto replica count 1
     // since the MinDynamicClusterSize is set to 1
     logger.info("[Before Patching] updating the replica count to 1");
-    boolean p11Success = scaleCluster("cluster-1", domainNamespace, 1);
+    boolean p11Success = scaleCluster(domainUid + "-cluster-1", domainNamespace, 1);
     assertTrue(p11Success,
         String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
@@ -633,7 +633,7 @@ class ItMiiUpdateDomainConfig {
 
     // Bring back the cluster to originally configured replica count
     logger.info("[Before Patching] updating the replica count to 2");
-    boolean p2Success = scaleCluster("cluster-1", domainNamespace, replicaCount);
+    boolean p2Success = scaleCluster(domainUid + "-cluster-1", domainNamespace, replicaCount);
     assertTrue(p1Success,
         String.format("replica patching to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
@@ -677,13 +677,13 @@ class ItMiiUpdateDomainConfig {
     // Attempt to scale the cluster to replica count 5
     // This scale request should be rejected and fail by admission webhook.
     logger.info("[After Patching] updating the replica count to 5");
-    boolean p3Success = scaleCluster("cluster-1", domainNamespace, 5);
+    boolean p3Success = scaleCluster(domainUid + "-cluster-1", domainNamespace, 5);
     assertFalse(p3Success,
             String.format("replica count patching to 5 failed for domain %s in namespace %s",
                     domainUid, domainNamespace));
 
     // Scale the cluster to new maximum replica count of 4
-    boolean p4Success = scaleCluster("cluster-1", domainNamespace, 4);
+    boolean p4Success = scaleCluster(domainUid + "-cluster-1", domainNamespace, 4);
     assertTrue(p4Success,
             String.format("replica count patching to 4 succeeded for domain %s in namespace %s",
                     domainUid, domainNamespace));

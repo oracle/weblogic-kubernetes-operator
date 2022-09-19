@@ -634,11 +634,11 @@ public class DomainUtils {
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
-      ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName,
+      ClusterResource cluster = createClusterResource(clusterName,
           clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     setPodAntiAffinity(domain);
 
@@ -945,11 +945,11 @@ public class DomainUtils {
 
     // create cluster resource for the domain
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
-      ClusterResource cluster = createClusterResource(domainUid + "-" + clusterName,
+      ClusterResource cluster = createClusterResource(clusterName,
           clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
 
     setPodAntiAffinity(domain);
 

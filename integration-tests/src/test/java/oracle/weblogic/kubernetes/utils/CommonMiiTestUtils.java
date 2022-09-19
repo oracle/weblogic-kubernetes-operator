@@ -1517,9 +1517,9 @@ public class CommonMiiTestUtils {
             .labels(serverPodLabels));
       }
 
-      clusterRefList.add(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
+      clusterRefList.add(new V1LocalObjectReference().name(clusterName));
 
-      createClusterAndVerify(createClusterResource(domainUid + "-" + clusterName, domainNamespace, clusterSpec));
+      createClusterAndVerify(createClusterResource(clusterName, domainNamespace, clusterSpec));
     }
 
     // set resource request and limit

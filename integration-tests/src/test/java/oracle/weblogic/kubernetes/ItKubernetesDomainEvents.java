@@ -158,7 +158,7 @@ class ItKubernetesDomainEvents {
   static String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   static final int managedServerPort = 8001;
   static int replicaCount = 2;
-  String clusterRes1Name = domainUid + "-" + cluster1Name;
+  String clusterRes1Name = cluster1Name;
 
   static final String pvName1 = getUniqueName(domainUid + "-pv-");
   static final String pvcName1 = getUniqueName(domainUid + "-pvc-");
@@ -862,7 +862,7 @@ class ItKubernetesDomainEvents {
                                             .nodePort(getNextFreePort()))))));
     setPodAntiAffinity(domain);
     domain = createClusterResourceAndAddReferenceToDomain(
-        domainUid + "-" + cluster1Name, cluster1Name, domainNamespace, domain, replicaCount);
+        cluster1Name, cluster1Name, domainNamespace, domain, replicaCount);
     assertNotNull(domain, "Failed to add Cluster to domain");
     createDomainAndVerify(domain, domainNamespace);
     return domain;
@@ -941,7 +941,7 @@ class ItKubernetesDomainEvents {
     } else {
       getLogger().info("Creating cluster {0} in namespace {1}", cluster2Name, domainNamespace3);
       createClusterAndVerify(createClusterResource(
-          domainUid + "-" + cluster2Name, cluster2Name, domainNamespace3, replicaCount));
+           cluster2Name, cluster2Name, domainNamespace3, replicaCount));
     }
 
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
