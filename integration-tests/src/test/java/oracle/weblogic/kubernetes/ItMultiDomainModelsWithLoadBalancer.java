@@ -437,18 +437,18 @@ class ItMultiDomainModelsWithLoadBalancer {
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
 
-    String serverName;
+    String serverNamePrefix;
     if (numClusters > 1) {
-      serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
+      serverNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
     } else {
-      serverName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
+      serverNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     }
 
     // create file to kill server process
     File killServerScript = assertDoesNotThrow(() -> createScriptToKillServer(),
         "Failed to create script to kill server");
     logger.info("File/script created to kill server {0}", killServerScript);
-
+    String serverName = serverNamePrefix + "1";
     checkPodReady(serverName, domainUid, domainNamespace);
 
     // copy script to pod
@@ -511,6 +511,16 @@ class ItMultiDomainModelsWithLoadBalancer {
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
             serverName, domainNamespace));
 
+    // check the sample app is accessible from admin server pod
+    for (int i = 1; i <= replicaCount; i++) {
+      testUntil(
+          checkSampleAppReady(domainUid, domainNamespace, serverNamePrefix + i),
+          logger,
+          "sample app is accessible from server {0} in namespace {1}",
+          serverNamePrefix + i,
+          domainNamespace);
+    }
+    
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
@@ -1270,4 +1280,15 @@ class ItMultiDomainModelsWithLoadBalancer {
     }
   }
 
+  private Callable<Boolean> checkSampleAppReady(String domainUid, String domainNamespace, String serverName) {
+    return () -> {
+      String curlCmd = String.format("curl http://%s:%s/sample-war/index.jsp", serverName, MANAGED_SERVER_PORT);
+      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+      ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
+          true, "/bin/sh", "-c", curlCmd),
+          String.format("Failed to execute curl command %s from pod %s in namespace %s", curlCmd,
+              adminServerPodName, domainNamespace));
+      return execResult.stdout().contains(serverName.substring(domainUid.length() + 1));
+    };
+  }
 }

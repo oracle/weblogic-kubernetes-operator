@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 0899b78296a62fe59274760a57a4c1eb43c17109e3084b8eed4ed9d9e05f1a39
+    weblogic.sha256: e2f9fdbfd207554ee57037b88a5a0704b9f39dda969f9c5e791c820e291376c9
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -77,14 +77,6 @@ spec:
                   of a WebLogic cluster already defined in the WebLogic domain configuration.
                   Required.
                 type: string
-              allowReplicasBelowMinDynClusterSize:
-                description: Specifies whether the number of running cluster members
-                  is allowed to drop below the minimum dynamic cluster size configured
-                  in the WebLogic domain configuration. Otherwise, the operator will
-                  ensure that the number of running cluster members is not less than
-                  the minimum dynamic cluster setting. This setting applies to dynamic
-                  clusters only. Defaults to true.
-                type: boolean
               serverPod:
                 description: Customization affecting the generation of Pods for WebLogic
                   Server instances.

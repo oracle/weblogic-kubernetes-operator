@@ -13,7 +13,6 @@ import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
@@ -232,46 +231,6 @@ class DomainResourceBasicTest extends DomainTestBase {
     configureCluster("cluster1").withMaxUnavailable(5);
 
     assertThat(info.getMaxUnavailable("cluster1"), equalTo(5));
-  }
-
-  @Test
-  void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
-    configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
-
-    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
-  }
-
-  @Test
-  void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
-    configureCluster("cluster1");
-    configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(null);
-
-    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"),
-        equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
-  }
-
-  @Test
-  void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeFromDomain() {
-    configureCluster("cluster1");
-    configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(false);
-
-    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"),
-        equalTo(false));
-  }
-
-  @Test
-  void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
-    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
-        equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
-  }
-
-  @Test
-  void whenBothClusterAndDomainSpecified_allowReplicasBelowMinDynamicClusterSizeFromCluster() {
-    configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
-    configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(true);
-
-    assertThat(info.isAllowReplicasBelowMinDynClusterSize("cluster1"),
-        equalTo(false));
   }
 
   @Test

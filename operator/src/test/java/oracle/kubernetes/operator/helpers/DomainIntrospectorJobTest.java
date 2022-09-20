@@ -102,6 +102,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
@@ -166,7 +167,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private static final String SEVERE_MESSAGE = "@[SEVERE] " + SEVERE_PROBLEM;
   private static final String FATAL_PROBLEM = "FatalIntrospectorError: really bad";
   private static final String FATAL_MESSAGE = "@[SEVERE] " + FATAL_PROBLEM;
-  private static final String INFO_MESSAGE = "@[INFO] just letting you know";
+  private static final String INFO_MESSAGE = "@[INFO] just letting you know. " + DOMAIN_INTROSPECTION_COMPLETE;
   private static final String JOB_UID = "FAILED_JOB";
   private static final String JOB_NAME = UID + "-introspector";
   public static final String TEST_VOLUME_NAME = "test";
@@ -702,6 +703,17 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
+  void whenNewFailedJobExistsAndUnableToReadContainerLogs_reportFailure() {
+    ignoreIntrospectorFailureLogs();
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithUnableToReadContainerLogs();
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(getUpdatedDomain(), hasCondition(FAILED));
+  }
+
+  @Test
   void whenNewJobSucceededOnFailedDomain_clearFailedCondition() {
     consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
@@ -721,6 +733,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private void defineFailedIntrospection() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, SEVERE_MESSAGE);
+  }
+
+  private void defineFailedIntrospectionWithUnableToReadContainerLogs() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        "unable to retrieve container logs for container containerd://9295e63");
   }
 
   private void defineFailedFluentdContainerInIntrospection() {

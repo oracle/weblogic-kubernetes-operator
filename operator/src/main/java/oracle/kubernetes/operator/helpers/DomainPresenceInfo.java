@@ -981,11 +981,6 @@ public class DomainPresenceInfo implements PacketComponent {
     return getDomainApi().getMaxUnavailable(clusterSpec);
   }
 
-  public boolean isAllowReplicasBelowMinDynClusterSize(@Nonnull String clusterName) {
-    final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
-    return getDomainApi().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
-  }
-
   public int getMaxConcurrentStartup(@Nonnull String clusterName) {
     ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
     return getDomainApi().getMaxConcurrentStartup(clusterSpec);

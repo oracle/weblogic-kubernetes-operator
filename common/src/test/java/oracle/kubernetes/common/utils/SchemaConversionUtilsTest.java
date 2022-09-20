@@ -428,19 +428,23 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV8DomainServerStartState_preserved() {
+  void testV8DomainFields_preserved() {
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.adminServer.serverStartState"));
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].serverStartState"));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.allowReplicasBelowMinDynClusterSize"));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].allowReplicasBelowMinDynClusterSize"));
     assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
-        equalTo("{\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"},"
-            + "\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"serverStartState\":\"RUNNING\"}}")));
+        equalTo("{\"$.spec\":{\"allowReplicasBelowMinDynClusterSize\":false},"
+            + "\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"},"
+            + "\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"allowReplicasBelowMinDynClusterSize\":true,"
+            + "\"serverStartState\":\"RUNNING\"}}")));
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  void testV9DomainServerStartState_restored() throws IOException {
+  void testV9DomainFields_restored() throws IOException {
     Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
     final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
     List<Map<String, Object>> clusters = new ArrayList<>();
@@ -453,6 +457,10 @@ class SchemaConversionUtilsTest {
         equalTo("RUNNING")));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
         equalTo("RUNNING")));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.allowReplicasBelowMinDynClusterSize",
+            equalTo(Boolean.FALSE)));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].allowReplicasBelowMinDynClusterSize",
+            equalTo(Boolean.TRUE)));
   }
 
   @Test
@@ -508,6 +516,7 @@ class SchemaConversionUtilsTest {
     // Simplify domain to focus on Istio
     getDomainSpec(v8Domain).remove("adminServer");
     getDomainSpec(v8Domain).remove("clusters");
+    getDomainSpec(v8Domain).remove("allowReplicasBelowMinDynClusterSize");
 
     // Add Istio configuration
     Map<String, Object> istio = new LinkedHashMap<>();

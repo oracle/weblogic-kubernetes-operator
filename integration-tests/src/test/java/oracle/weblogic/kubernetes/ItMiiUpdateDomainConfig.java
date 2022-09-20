@@ -589,7 +589,6 @@ class ItMiiUpdateDomainConfig {
   /**
    * Start a WebLogic domain with a dynamic cluster with the following
    * attributes MaxDynamicClusterSize(5) and MinDynamicClusterSize(1)
-   * Set allowReplicasBelowMinDynClusterSize to false.
    * Make sure that the cluster can be scaled up to 5 servers and
    * scaled down to 1 server.
    * Create a configmap with a sparse model file with the following attributes
@@ -600,7 +599,6 @@ class ItMiiUpdateDomainConfig {
    * Now with the modified value
    * Make sure that the cluster can be scaled up to 4 servers.
    * Make sure JMS Connections and messages are distributed across 4 servers.
-   * Make sure that the cluster can be scaled down below 2 servers.
    */
   @Test
   @Order(8)
@@ -807,7 +805,6 @@ class ItMiiUpdateDomainConfig {
                     .name(domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
-                    .allowReplicasBelowMinDynClusterSize(false)
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)

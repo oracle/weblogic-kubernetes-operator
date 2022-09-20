@@ -42,7 +42,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -51,7 +50,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceWithNewReplicaCountAtSpecLevel;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -346,8 +344,7 @@ class ItMiiDynamicUpdatePart1 {
 
   /**
    * Modify MaxDynamicClusterSize and MinDynamicClusterSize using dynamic update.
-   * Verify the cluster cannot be scaled beyond the modified MaxDynamicClusterSize value
-   * and cannot be scaled below MinDynamicClusterSize when allowReplicasBelowMinDynClusterSize is set false.
+   * Verify the cluster cannot be scaled beyond the modified MaxDynamicClusterSize value.
    * Verify JMS message and connection distribution/load balance after scaling the cluster.
    */
   @Test
@@ -437,25 +434,6 @@ class ItMiiDynamicUpdatePart1 {
           "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "2", "true"),
         logger,
         "Wait for t3 JMS Client to access WLS");
-
-    // Since the MinDynamicClusterSize is set to 2 in the config map and allowReplicasBelowMinDynClusterSize is set
-    // false, the replica count cannot go below 2. So during the following scale down operation
-    // only managed-server3 and managed-server4 pod should be removed.
-    logger.info("[After Patching] updating the replica count to 1");
-    boolean p4Success = scaleCluster(clusterResName, helper.domainNamespace, 1);
-    assertTrue(p4Success,
-        String.format("Cluster replica patching failed for cluster %s in namespace %s",
-            clusterName, helper.domainNamespace));
-
-    checkPodReadyAndServiceExists(helper.managedServerPrefix + "2",
-        domainUid, helper.domainNamespace);
-    checkPodDoesNotExist(helper.managedServerPrefix + "3", domainUid, helper.domainNamespace);
-    checkPodDoesNotExist(helper.managedServerPrefix + "4", domainUid, helper.domainNamespace);
-    for (int i = 1; i <= helper.replicaCount; i++) {
-      logger.info("Check managed server service {0} available in namespace {1}",
-          helper.managedServerPrefix + i, helper.domainNamespace);
-      checkServiceExists(helper.managedServerPrefix + i, helper.domainNamespace);
-    }
   }
 
   /**
