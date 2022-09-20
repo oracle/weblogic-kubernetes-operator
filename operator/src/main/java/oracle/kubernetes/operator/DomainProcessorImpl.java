@@ -281,10 +281,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    * @return list of the domain resources
    */
   public static List<DomainResource> getDomains(String ns) {
-    List<DomainResource> referencingDomains = new ArrayList<>();
-    Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values()
-        .forEach(domain -> addToList(referencingDomains, domain)));
-    return referencingDomains;
+    List<DomainResource> domains = new ArrayList<>();
+    Optional.ofNullable(DomainProcessorImpl.domains.get(ns)).ifPresent(d -> d.values()
+        .forEach(domain -> addToList(domains, domain)));
+    return domains;
   }
 
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
