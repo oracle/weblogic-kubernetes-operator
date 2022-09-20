@@ -463,7 +463,7 @@ class ItIstioManagedCoherence {
     // create cluster resource in mii domain
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
       domain = createClusterResourceAndAddReferenceToDomain(
-          domainUid + "-" + CLUSTER_NAME_PREFIX + i, CLUSTER_NAME_PREFIX + i,
+           CLUSTER_NAME_PREFIX + i, CLUSTER_NAME_PREFIX + i,
           domainInImageNamespace, domain, replicaCount);
     }
     setPodAntiAffinity(domain);

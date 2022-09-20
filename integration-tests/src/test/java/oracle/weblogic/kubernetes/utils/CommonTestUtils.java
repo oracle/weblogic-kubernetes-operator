@@ -421,8 +421,7 @@ public class CommonTestUtils {
               clusterName, domainUid, domainNamespace))
           .isTrue();
     } else {
-      assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid
-          + "-" + clusterName, domainNamespace, replicasAfterScale)))
+      assertThat(assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, replicasAfterScale)))
           .as(String.format("Verify scaling cluster %s of domain %s in namespace %s succeeds",
               clusterName, domainUid, domainNamespace))
           .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s failed",

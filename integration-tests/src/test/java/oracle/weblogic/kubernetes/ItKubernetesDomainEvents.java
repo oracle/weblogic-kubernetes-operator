@@ -297,7 +297,7 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsNonExistingCluster() {
     OffsetDateTime timestamp = now();
     createClusterAndVerify(createClusterResource(
-        domainUid + "-nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
+        "nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
     logger.info("patch the domain resource with new cluster");
     try {
       String patchStr
