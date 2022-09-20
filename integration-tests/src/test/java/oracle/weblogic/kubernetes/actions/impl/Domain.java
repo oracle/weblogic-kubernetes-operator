@@ -188,6 +188,21 @@ public class Domain {
   }
 
   /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return response msg of patching domain
+   */
+  public static String patchDomainCustomResourceReturnResponse(String domainUid, String namespace, V1Patch patch,
+                                                  String patchFormat) {
+    return Kubernetes.patchDomainCustomResourceReturnResponse(domainUid, namespace, patch, patchFormat);
+  }
+
+  /**
    * Patch a running domain with introspectVersion.
    * If the introspectVersion doesn't exist it will add the value as 2,
    * otherwise the value is updated by 1.

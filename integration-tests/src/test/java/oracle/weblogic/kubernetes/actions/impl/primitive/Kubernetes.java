@@ -1451,6 +1451,41 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return response msg of patching domain resouce
+   */
+  public static String patchDomainCustomResourceReturnResponse(String domainUid, String namespace,
+                                                               V1Patch patch, String patchFormat) {
+    String responseMsg = "";
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<DomainResource> response = crdClient.patch(
+        namespace, // name of namespace
+        domainUid, // name of custom resource domain
+        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+        patch // patch data
+    );
+
+    String logmsg = "response code: " + response.getHttpStatusCode() + ". response message: "
+        + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+        + " when patching " + domainUid + " in namespace "
+        + namespace + " with " + patch + " using patch format: " + patchFormat;
+
+    if (!response.isSuccess()) {
+      responseMsg = "Failed with " + logmsg;
+    } else {
+      responseMsg = "Succeeded with " + logmsg;
+    }
+    getLogger().info(responseMsg);
+
+    return responseMsg;
+  }
 
   // --------------------------- Custom Resource Domain -----------------------------------
   /**
@@ -1608,6 +1643,40 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName name of the cluster to be patched
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return response msg of patching cluster resource
+   */
+  public static String patchClusterCustomResourceReturnResponse(String clusterName, String namespace,
+                                                                 V1Patch patch, String patchFormat) {
+    String responseMsg;
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<ClusterResource> response = clusterCrdClient.patch(
+        namespace, // name of namespace
+        clusterName, // name of custom resource domain
+        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+        patch // patch data
+    );
+
+    String logmsg = "response code: " + response.getHttpStatusCode() + ". response message: "
+        + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+        + " when patching " + clusterName + " in namespace "
+        + namespace + " with " + patch + " using patch format: " + patchFormat;
+    if (!response.isSuccess()) {
+      responseMsg = "Failed with " + logmsg;
+    } else {
+      responseMsg = "Succeeded with " + logmsg;
+    }
+    getLogger().info(responseMsg);
+
+    return responseMsg;
+  }
 
   /**
    * Patch the Deployment.
