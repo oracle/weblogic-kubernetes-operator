@@ -23,6 +23,7 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -107,7 +108,7 @@ class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
   int replicaCount = 2;
-  String clusterNameCommon = "cluster-1";
+  String wlClusterName = "cluster-1";
 
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -173,7 +174,7 @@ class ItDiagnosticsFailedCondition {
   void testBadModelFileStatus() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     // build an image with empty WebLogic domain
     String imageName = MII_BASIC_IMAGE_NAME;
     String imageTag = "empty-domain-image";
@@ -193,7 +194,7 @@ class ItDiagnosticsFailedCondition {
           domainNamespace, adminSecretName,
           BASE_IMAGES_REPO_SECRET_NAME, 
           encryptionSecretName, replicaCount, 
-          imageName + ":" + imageTag, badModelFileCm, 30L, clusterName);
+          imageName + ":" + imageTag, badModelFileCm, 30L, clusterResName);
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
@@ -206,7 +207,7 @@ class ItDiagnosticsFailedCondition {
       }
       deleteDomainResource(domainNamespace, domainName);
       deleteConfigMap(badModelFileCm, domainNamespace);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -222,12 +223,12 @@ class ItDiagnosticsFailedCondition {
   void testReplicasTooHigh() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with replicas=100");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image, clusterResName);
 
     try {
       logger.info("Creating domain");
@@ -243,7 +244,7 @@ class ItDiagnosticsFailedCondition {
           + "]";
       V1Patch patch = new V1Patch(patchStr);
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       //end of debug
       
@@ -271,7 +272,7 @@ class ItDiagnosticsFailedCondition {
           + "]";
       patch = new V1Patch(patchStr);
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
       testUntil(
           domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
@@ -289,13 +290,13 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
   @NotNull
-  private String getClusterName(String domainName) {
-    return domainName + "-" + this.clusterNameCommon;
+  private String getClusterResName(String domainName) {
+    return domainName + "-" + this.wlClusterName;
   }
 
   /**
@@ -308,12 +309,12 @@ class ItDiagnosticsFailedCondition {
   void testReplicasTooHighNegative() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with replicas=100");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image, clusterResName);
 
     logger.info("Creating domain");
     createDomainAndVerify(domain, domainNamespace);
@@ -328,11 +329,11 @@ class ItDiagnosticsFailedCondition {
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching cluster resource using patch string {0} ", patchStr);
-    assertTrue(!patchClusterCustomResource(clusterName, domainNamespace,
+    assertTrue(!patchClusterCustomResource(clusterResName, domainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
 
     deleteDomainResource(domainNamespace, domainName);
-    deleteClusterCustomResource(clusterName, domainNamespace);
+    deleteClusterCustomResource(clusterResName, domainNamespace);
   }
 
   /**
@@ -348,12 +349,12 @@ class ItDiagnosticsFailedCondition {
   void testImageDoesnotExist() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":non-existing";
 
     logger.info("Creating domain resource with non-existing image");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterResName);
 
     try {
       logger.info("Creating domain");
@@ -368,7 +369,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -385,12 +386,12 @@ class ItDiagnosticsFailedCondition {
   void testImagePullSecretDoesnotExist() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with missing image pull secret");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME + "bad", encryptionSecretName, 100, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME + "bad", encryptionSecretName, 100, image, clusterResName);
 
     try {
       logger.info("Creating domain");
@@ -405,7 +406,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -421,7 +422,7 @@ class ItDiagnosticsFailedCondition {
   void testIncorrectImagePullSecret() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     logger.info("Creating a docker secret with invalid credentials");
     createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
@@ -429,7 +430,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain resource with incorrect image pull secret");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        "bad-pull-secret", encryptionSecretName, replicaCount, image, clusterName);
+        "bad-pull-secret", encryptionSecretName, replicaCount, image, clusterResName);
     domain.getSpec().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
     try {
@@ -445,7 +446,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -461,7 +462,7 @@ class ItDiagnosticsFailedCondition {
   void testNonexistentPVC() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     final String pvName = getUniqueName(domainName + "-pv-");
     final String pvcName = getUniqueName(domainName + "-pvc-");
     try {
@@ -508,12 +509,12 @@ class ItDiagnosticsFailedCondition {
                           .nodePort(getNextFreePort())))));
       setPodAntiAffinity(domain);
 
-      ClusterResource cluster = createClusterResource(
-          clusterName, domainNamespace, replicaCount);
-      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
+      ClusterResource cluster = createClusterResource(clusterResName, domainNamespace, spec);
+      logger.info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
       createClusterAndVerify(cluster);
       // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
       // verify the domain custom resource is created
       createDomainAndVerify(domain, domainNamespace);
@@ -526,7 +527,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
       deleteDomainResource(domainNamespace, domainName);
     }
   }
@@ -543,12 +544,12 @@ class ItDiagnosticsFailedCondition {
   void testNonexistentAdminSecret() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
     DomainResource domain = createDomainResource(domainName, domainNamespace, "non-existent-secret",
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterResName);
 
     try {
       logger.info("Creating domain");
@@ -563,7 +564,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -580,12 +581,12 @@ class ItDiagnosticsFailedCondition {
   void testInvalidNodePort() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterResName);
 
     AdminServer as = new AdminServer()
         .adminService(new AdminService()
@@ -607,7 +608,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -624,13 +625,13 @@ class ItDiagnosticsFailedCondition {
   void testIntrospectorTimeoutFailure() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
 
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image, clusterResName);
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
     try {
@@ -646,7 +647,7 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
   }
 
@@ -664,7 +665,7 @@ class ItDiagnosticsFailedCondition {
   void testMSBootFailureStatus() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String clusterName = getClusterName(domainName);
+    String clusterResName = getClusterResName(domainName);
     try {
       String fmwMiiImage = null;
       String rcuSchemaPrefix = "FMWDOMAINMII";
@@ -730,10 +731,11 @@ class ItDiagnosticsFailedCondition {
           replicaCount,
           fmwMiiImage,
           5L);
-      getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
-      createClusterAndVerify(createClusterResource(clusterName, domainNamespace, replicaCount));
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
+      ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
+      createClusterAndVerify(createClusterResource(clusterResName, domainNamespace, spec));
       // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
       createDomainAndVerify(domain, domainNamespace);
 
@@ -754,7 +756,7 @@ class ItDiagnosticsFailedCondition {
 
       logger.info("Shutting down cluster using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch cluster");
 
       for (int i = 1; i <= replicaCount; i++) {
@@ -777,7 +779,7 @@ class ItDiagnosticsFailedCondition {
 
       logger.info("Starting cluster using patch string: {0}", patchStr);
       patch = new V1Patch(patchStr);
-      assertTrue(patchClusterCustomResource(clusterName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch cluster");
 
       //check the desired completed, available and failed statuses
@@ -794,7 +796,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteClusterCustomResource(clusterName, domainNamespace);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
       deleteDomainResource(domainNamespace, domainName);
     }
   }
@@ -804,7 +806,7 @@ class ItDiagnosticsFailedCondition {
                                                            String domNamespace, String adminSecretName,
                                                            String repoSecretName, String encryptionSecretName,
                                                            int replicaCount, String miiImage, String configmapName,
-                                                           Long introspectorDeadline, String clusterName) {
+                                                           Long introspectorDeadline, String clusterResName) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
@@ -849,19 +851,20 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
-    
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+
+    ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
+    ClusterResource cluster = createClusterResource(clusterResName, domNamespace, spec);
+    logger.info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
     return domain;
   }
 
   private DomainResource createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                               String repoSecretName, String encryptionSecretName, int replicaCount,
-                                              String miiImage, String clusterName) {
+                                              String miiImage, String clusterResName) {
 
     // create the domain CR
     DomainResource domain = new DomainResource()
@@ -899,11 +902,12 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
+    ClusterResource cluster = createClusterResource(clusterResName, domNamespace, spec);
+    logger.info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     return domain;
   }
 
