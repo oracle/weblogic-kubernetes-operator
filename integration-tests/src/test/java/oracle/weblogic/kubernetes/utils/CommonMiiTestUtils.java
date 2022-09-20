@@ -250,7 +250,7 @@ public class CommonMiiTestUtils {
 
     return createDomainResource(domainResourceName, domNamespace, imageName,
         adminSecretName, repoSecretName, encryptionSecretName, -1, Collections.<String>emptyList());
-  } 
+  }
 
   /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
@@ -275,6 +275,35 @@ public class CommonMiiTestUtils {
       String encryptionSecretName,
       int replicaCount,
       List<String> clusterNames) {
+    return createDomainResource(domainResourceName, domNamespace, imageName, adminSecretName,
+        repoSecretName, encryptionSecretName, replicaCount, clusterNames, false);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount replica count of the cluster
+   * @param clusterNames names of cluster resources to create
+   * @param prefixDomainName prefix the domainUID to cluster resource name
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      boolean prefixDomainName) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -322,7 +351,7 @@ public class CommonMiiTestUtils {
 
     if (clusterNames != null) {
       for (String clusterName : clusterNames) {
-        String clusterResName = domainResourceName + "-" + clusterName;
+        String clusterResName = prefixDomainName ? domainResourceName + "-" + clusterName : clusterName;
         if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterResName))) {
           getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, domNamespace);
         } else {
