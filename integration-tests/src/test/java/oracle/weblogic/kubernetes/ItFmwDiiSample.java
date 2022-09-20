@@ -437,19 +437,17 @@ public class ItFmwDiiSample {
 
   private Boolean getHostnameInfo() {
 
-    logger.info("Getting host infor of running instance");
+    String fmwBaseImage = FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
+    logger.info("Getting host infor of running instance and container by image: " + fmwBaseImage);
     String command1 = "cat /etc/resolv.conf && cat /etc/hosts";
     CommandParams params1 =
           defaultCommandParams()
-              .command(command1)
-              .saveResults(true);
+          .command(command1)
+          .saveResults(true);
 
-    String fmwBaseImage = FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
-    logger.info("Getting host infor inside the FMW container by image: " + fmwBaseImage);
     String command2 = String.format(
           "docker run %s /bin/bash -c \"cat /etc/resolv.conf && cat /etc/hosts\"",
           fmwBaseImage);
-
     CommandParams params2 =
           defaultCommandParams()
           .command(command2)
