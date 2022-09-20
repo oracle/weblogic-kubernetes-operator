@@ -439,7 +439,7 @@ class ItIstioDBOperator {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, pvName, pvcName, "cluster-1", configMapName,
-        dbSecretName, false, false, true);
+        dbSecretName, false, true);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", wlsDomainNamespace);
@@ -781,21 +781,20 @@ class ItIstioDBOperator {
   }
 
   private static DomainResource createDomainResourceWithLogHome(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String pvName,
-      String pvcName,
-      String clusterName,
-      String configMapName,
-      String dbSecretName,
-      boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled,
-      boolean setDataHome) {
+          String domainResourceName,
+          String domNamespace,
+          String imageName,
+          String adminSecretName,
+          String repoSecretName,
+          String encryptionSecretName,
+          int replicaCount,
+          String pvName,
+          String pvcName,
+          String clusterName,
+          String configMapName,
+          String dbSecretName,
+          boolean onlineUpdateEnabled,
+          boolean setDataHome) {
 
     List<String> securityList = new ArrayList<>();
     if (dbSecretName != null) {
@@ -805,7 +804,6 @@ class ItIstioDBOperator {
     DomainSpec domainSpec = new DomainSpec()
         .domainUid(domainResourceName)
         .domainHomeSourceType("FromModel")
-        .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()

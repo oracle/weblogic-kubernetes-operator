@@ -334,7 +334,7 @@ class ItDBOperator {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
-        dbSecretName, false, false, true);
+        dbSecretName, false, true);
     
     // create cluster object
     ClusterResource cluster = createClusterResource(clusterName, wlsDomainNamespace, replicaCount);

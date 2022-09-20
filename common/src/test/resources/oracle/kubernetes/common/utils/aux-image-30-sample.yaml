@@ -105,6 +105,7 @@ spec:
    
   # The number of managed servers to start for unlisted clusters
   replicas: 1
+  allowReplicasBelowMinDynClusterSize: false
 
   # The desired behavior for starting a specific cluster's member servers
   clusters:
@@ -127,6 +128,7 @@ spec:
                 topologyKey: "kubernetes.io/hostname"
     # The number of managed servers to start for this cluster
     replicas: 2
+    allowReplicasBelowMinDynClusterSize: true
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent

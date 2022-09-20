@@ -72,14 +72,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   @Expose
   private ClusterService clusterService = new ClusterService();
 
-  @Description("Specifies whether the number of running cluster members is allowed to drop below the "
-      + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
-      + "Otherwise, the operator will ensure that the number of running cluster members is not less than "
-      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
-      + "Defaults to true."
-  )
-  private Boolean allowReplicasBelowMinDynClusterSize;
-
   @Description(
       "The maximum number of Managed Servers instances that the operator will start in parallel "
       + "for this cluster in response to a change in the `replicas` count. "
@@ -130,21 +122,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   public ClusterSpec withReplicas(Integer replicas) {
     setReplicas(replicas);
     return this;
-  }
-
-  /**
-   * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
-   * in the WebLogic domain home configuration.
-   *
-   * @return whether to allow number of replicas to drop below the minimum dynamic cluster size
-   *     configured in the WebLogic domain home configuration.
-   */
-  public Boolean isAllowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
-    allowReplicasBelowMinDynClusterSize = value;
   }
 
   public Integer getMaxConcurrentStartup() {
@@ -237,7 +214,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
         .append("serverStartPolicy", serverStartPolicy)
         .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
-        .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
         .append("maxConcurrentStartup", maxConcurrentStartup)
         .append("maxConcurrentShutdown", maxConcurrentShutdown)
         .toString();
@@ -262,7 +238,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
         .append(serverStartPolicy, clusterSpec.serverStartPolicy)
         .append(clusterService, clusterSpec.clusterService)
         .append(maxUnavailable, clusterSpec.maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize, clusterSpec.allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup, clusterSpec.maxConcurrentStartup)
         .append(maxConcurrentShutdown, clusterSpec.maxConcurrentShutdown)
         .isEquals();
@@ -277,7 +252,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
         .append(serverStartPolicy)
         .append(clusterService)
         .append(maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup)
         .append(maxConcurrentShutdown)
         .toHashCode();

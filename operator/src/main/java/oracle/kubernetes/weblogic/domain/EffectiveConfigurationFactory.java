@@ -32,8 +32,6 @@ public interface EffectiveConfigurationFactory {
 
   List<String> getAdminServerChannelNames();
 
-  boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec);
-
   int getMaxConcurrentStartup(ClusterSpec clusterSpec);
 
   int getMaxConcurrentShutdown(ClusterSpec clusterSpec);
