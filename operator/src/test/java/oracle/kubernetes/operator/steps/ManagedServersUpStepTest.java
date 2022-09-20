@@ -53,7 +53,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
-import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
@@ -577,19 +576,6 @@ class ManagedServersUpStepTest {
   }
 
   @Test
-  void whenReplicasLessThanMinDynClusterSize_setReplicaCountToMinClusterSize() {
-    startNoServers();
-    setCluster1Replicas(0);
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(2, equalTo(info.getReplicaCount("cluster1")));
-  }
-
-  @Test
   void whenReplicasLessThanMinDynClusterSize_allowBelowMin_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(0);
@@ -605,30 +591,12 @@ class ManagedServersUpStepTest {
   void whenReplicasMoreThanMinDynClusterSize_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(3);
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
 
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 
     invokeStep();
 
     assertThat(3, equalTo(info.getReplicaCount("cluster1")));
-  }
-
-  @Test
-  void whenReplicasLessThanMinDynClusterSize_logMessage() {
-    List<LogRecord> messages = new ArrayList<>();
-    consoleHandlerMemento.withLogLevel(Level.WARNING)
-        .collectLogMessages(messages, REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT);
-
-    startNoServers();
-    setCluster1Replicas(0);
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(messages, containsWarning(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT));
   }
 
   @Test
@@ -731,11 +699,6 @@ class ManagedServersUpStepTest {
 
   private void setCluster1Replicas(int replicas) {
     configurator.configureCluster(info, "cluster1").withReplicas(replicas);
-  }
-
-  private void setCluster1AllowReplicasBelowMinDynClusterSize(boolean allowReplicasBelowMinDynClusterSize) {
-    configurator.configureCluster(info,"cluster1")
-        .withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
   }
 
   private void configureServers(String... serverNames) {

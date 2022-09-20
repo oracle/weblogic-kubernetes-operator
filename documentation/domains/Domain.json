@@ -430,11 +430,6 @@
           "description": "Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.",
           "type": "boolean"
         },
-        "allowReplicasBelowMinDynClusterSize": {
-          "default": true,
-          "description": "Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.",
-          "type": "boolean"
-        },
         "serverPod": {
           "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"

@@ -539,25 +539,23 @@ public class CommonMiiTestUtils {
    * @param pvcName Name of persistent volume claim
    * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
-   * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
    * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
    * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResourceWithLogHome(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      String pvName,
-      String pvcName,
-      String configMapName,
-      String dbSecretName,
-      boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled,
-      boolean setDataHome) {
+          String domainResourceName,
+          String domNamespace,
+          String imageName,
+          String adminSecretName,
+          String repoSecretName,
+          String encryptionSecretName,
+          String pvName,
+          String pvcName,
+          String configMapName,
+          String dbSecretName,
+          boolean onlineUpdateEnabled,
+          boolean setDataHome) {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
@@ -569,7 +567,6 @@ public class CommonMiiTestUtils {
     DomainSpec domainSpec = new DomainSpec()
         .domainUid(domainResourceName)
         .domainHomeSourceType("FromModel")
-        .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -640,29 +637,27 @@ public class CommonMiiTestUtils {
    * @param pvcName Name of persistent volume claim
    * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
-   * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
    * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
    * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResourceWithLogHome(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String pvName,
-      String pvcName,
-      String configMapName,
-      String dbSecretName,
-      boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled,
-      boolean setDataHome) {
+          String domainResourceName,
+          String domNamespace,
+          String imageName,
+          String adminSecretName,
+          String repoSecretName,
+          String encryptionSecretName,
+          int replicaCount,
+          String pvName,
+          String pvcName,
+          String configMapName,
+          String dbSecretName,
+          boolean onlineUpdateEnabled,
+          boolean setDataHome) {
     DomainResource domain = createDomainResourceWithLogHome(domainResourceName, domNamespace, imageName,
         adminSecretName, repoSecretName, encryptionSecretName, pvName, pvcName, configMapName,
-        dbSecretName, allowReplicasBelowMinDynClusterSize, onlineUpdateEnabled, setDataHome);
+        dbSecretName, onlineUpdateEnabled, setDataHome);
     DomainSpec spec = domain.getSpec().replicas(replicaCount);
     return domain.spec(spec);
   }

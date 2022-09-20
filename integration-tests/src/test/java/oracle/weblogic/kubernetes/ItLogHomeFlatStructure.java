@@ -296,7 +296,6 @@ class ItLogHomeFlatStructure {
                     .name(domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
-                    .allowReplicasBelowMinDynClusterSize(false)
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)

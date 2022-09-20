@@ -824,12 +824,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
-      clusterSpec.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
-      return this;
-    }
-
-    @Override
     public ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
       clusterSpec.setMaxConcurrentStartup(maxConcurrentStartup);
       return this;
