@@ -223,11 +223,6 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  public DomainConfigurator withAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    getDomainSpec().setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize);
-    return this;
-  }
-
   public DomainConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
     getDomainSpec().setMaxClusterConcurrentStartup(maxConcurrentStartup);
     return this;

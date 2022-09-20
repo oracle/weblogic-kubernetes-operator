@@ -37,7 +37,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
@@ -239,13 +238,6 @@ public class DomainSpec extends BaseConfiguration {
   @Range(minimum = 0)
   @Default(intDefault = 1)
   private Integer replicas;
-
-  @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
-      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
-      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
-  )
-  @Default(boolDefault = true)
-  private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
       "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
@@ -783,11 +775,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public boolean isAllowReplicasBelowMinDynClusterSize() {
-    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
-        .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
-  }
-
   public Integer getMaxClusterConcurrentStartup() {
     return Optional.ofNullable(maxClusterConcurrentStartup)
         .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
@@ -955,7 +942,6 @@ public class DomainSpec extends BaseConfiguration {
         new ToStringBuilder(this)
             .appendSuper(super.toString())
             .append("adminServer", adminServer)
-            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("clusters", clusters)
             .append("configuration", configuration)
             .append("domainHome", domainHome)
@@ -987,7 +973,6 @@ public class DomainSpec extends BaseConfiguration {
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
             .append(adminServer)
-            .append(allowReplicasBelowMinDynClusterSize)
             .append(clusters)
             .append(configuration)
             .append(domainHome)
@@ -1045,7 +1030,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-            .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
             .append(fluentdSpecification, rhs.getFluentdSpecification());
@@ -1066,10 +1050,6 @@ public class DomainSpec extends BaseConfiguration {
       }
     }
     return null;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
   public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
@@ -1132,16 +1112,6 @@ public class DomainSpec extends BaseConfiguration {
       return clusterSpec != null && clusterSpec.getMaxUnavailable() != null;
     }
 
-    private boolean hasAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-      return clusterSpec != null && clusterSpec.isAllowReplicasBelowMinDynClusterSize() != null;
-    }
-
-    private boolean isAllowReplicasBelowDynClusterSizeFor(ClusterSpec clusterSpec) {
-      return hasAllowReplicasBelowMinDynClusterSize(clusterSpec)
-          ? clusterSpec.isAllowReplicasBelowMinDynClusterSize()
-          : DomainSpec.this.isAllowReplicasBelowMinDynClusterSize();
-    }
-
     private boolean hasMaxConcurrentStartup(ClusterSpec clusterSpec) {
       return clusterSpec != null && clusterSpec.getMaxConcurrentStartup() != null;
     }
@@ -1198,11 +1168,6 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public List<String> getAdminServerChannelNames() {
       return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
-    }
-
-    @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-      return isAllowReplicasBelowDynClusterSizeFor(clusterSpec);
     }
 
     @Override

@@ -156,7 +156,7 @@ class ItMiiCustomSslStore {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
-        null, false, false, false);
+        null, false, false);
 
     // wait for the domain to exist
     createDomainAndVerify(domain, domainNamespace);
