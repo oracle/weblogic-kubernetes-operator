@@ -151,7 +151,7 @@ public class MiiDynamicUpdateHelper {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
         pvName, pvcName, configMapName,
-        dbSecretName, false, true, false);
+        dbSecretName, true, false);
 
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));

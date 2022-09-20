@@ -62,16 +62,6 @@ public interface PrivateDomainApi {
   int getMinAvailable(ClusterSpec clusterSpec);
 
   /**
-   * Returns whether the specified cluster is allowed to have replica count below the minimum
-   * dynamic cluster size configured in WebLogic domain configuration.
-   *
-   * @param clusterSpec the spec of the cluster; may be null or empty if no applicable cluster.
-   * @return whether the specified cluster is allowed to have replica count below the minimum
-   *     dynamic cluster size configured in WebLogic domain configuration
-   */
-  boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec);
-
-  /**
    * Get the maximum number of servers to start concurrently.
    * @param clusterSpec the spec of the cluster; may be null or empty if no applicable cluster.
    */

@@ -390,8 +390,8 @@ class ItServerStartPolicyConfigCluster {
     // use clusterStatus.sh to make sure the server-to-be-test doesn't exist
     // String regex matches below
     // cluster        min  max  goal  current  ready
-    // clusterName     1    5    1      1       1
-    String regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    // clusterName     0    5    1      1       1
+    String regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)0(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(domainUid, domainNamespace, DYNAMIC_CLUSTER, dynamicServerPodName,
         replicaCount, regex, false, samplePath);
     // String regex matches below
