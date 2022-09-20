@@ -1503,6 +1503,7 @@ public class CommonMiiTestUtils {
     List<V1LocalObjectReference> clusterRefList = new ArrayList<>();
     for (int i = numOfClusters; i >= 1; i--) {
       String clusterName = "cluster-" + i;
+      String clusterResName = domainUid + "-" + clusterName;
       ClusterSpec clusterSpec = new ClusterSpec()
           .clusterName(clusterName)
           .replicas(replicaCount);
@@ -1512,9 +1513,9 @@ public class CommonMiiTestUtils {
             .labels(serverPodLabels));
       }
 
-      clusterRefList.add(new V1LocalObjectReference().name(clusterName));
+      clusterRefList.add(new V1LocalObjectReference().name(clusterResName));
 
-      createClusterAndVerify(createClusterResource(clusterName, domainNamespace, clusterSpec));
+      createClusterAndVerify(createClusterResource(clusterResName, domainNamespace, clusterSpec));
     }
 
     // set resource request and limit
