@@ -206,8 +206,6 @@ public class ItFmwDiiSample {
 
 
     logger.info("Going to run sample create-domain.sh");
-    //boolean result = Command.withParams(params).execute();
-    //assertTrue(result, "Failed to create domain.yaml");
     testUntil(
         () -> {
           return Command.withParams(params).execute();
