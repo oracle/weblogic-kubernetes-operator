@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainV2Test extends DomainTestBase {
 
@@ -1676,5 +1678,14 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
+  }
+
+  @Test
+  void whenNoMonitoringExporterConfigurationDefined_refuseAttemptToSetResourceRequirements() {
+    final DomainConfigurator domainConfigurator = configureDomain(domain);
+    final V1ResourceRequirements resourceRequirements = new V1ResourceRequirements();
+    
+    assertThrows(AssertionError.class,
+        () -> domainConfigurator.withMonitoringExporterResources(resourceRequirements));
   }
 }

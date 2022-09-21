@@ -343,7 +343,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   V1ResourceRequirements getMonitoringExporterResourceRequirements() {
-    return monitoringExporter == null ? null : monitoringExporter.getResources();
+    return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getResources).orElse(null);
   }
 
   /**
