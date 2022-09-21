@@ -17,12 +17,7 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-
 public class OperatorUtils {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private OperatorUtils() {
     // no-op
