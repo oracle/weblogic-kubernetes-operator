@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -37,9 +36,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.tagAndPushToKind;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
@@ -125,7 +123,6 @@ public class ItFmwDiiSample {
             dbNamespace, dbPort));
 
     dbUrl = K8S_NODEPORT_HOST + ":" + dbPort + "/devpdb.k8s";
-    //dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     for (String param: params) {
       String rcuSchemaPrefix = param.split(":")[1];
@@ -410,12 +407,6 @@ public class ItFmwDiiSample {
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
-  }
-
-  private Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
-    return (() -> {
-      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
-    });
   }
 
 }

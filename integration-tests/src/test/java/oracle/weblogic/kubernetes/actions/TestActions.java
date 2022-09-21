@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -1319,6 +1320,18 @@ public class TestActions {
    */
   public static boolean dockerPull(String image) {
     return Docker.pull(image);
+  }
+
+  /**
+   * Tag a originalImage to taggedImage and push it to repo.
+   * @param originalImage original image
+   * @param taggedImage tagged image
+   * @return true if docker tag and push succeeds, false otherwise
+   */
+  public static Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
+    return (() -> {
+      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
+    });
   }
 
   /**
