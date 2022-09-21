@@ -61,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * changing application target, changing dynamic cluster size and removing application target
  * in a running WebLogic domain.
  */
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part1")
 @IntegrationTest
