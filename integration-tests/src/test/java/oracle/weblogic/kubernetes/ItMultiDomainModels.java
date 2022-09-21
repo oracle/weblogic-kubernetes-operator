@@ -147,7 +147,7 @@ class ItMultiDomainModels {
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers);
-    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
+    assertDoesNotThrow(() -> scaleCluster(domainUid + "-" + clusterName,domainNamespace,
         numberOfServers), "Could not scale up the cluster");
     // check managed server pods are ready
     for (int i = 1; i <= numberOfServers; i++) {
