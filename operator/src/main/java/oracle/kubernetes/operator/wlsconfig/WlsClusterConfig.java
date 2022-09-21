@@ -94,15 +94,6 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the minimum size of the cluster.
-   * @return  For static clusters, the minimum size can be 0.  Dynamic servers will return the configured value.
-   */
-  @JsonIgnore
-  public int getMinClusterSize() {
-    return hasDynamicServers() ? getMinDynamicClusterSize() : 0;
-  }
-
-  /**
    * Returns the name of the cluster that this WlsClusterConfig is created for.
    *
    * @return the name of the cluster that this WlsClusterConfig is created for
@@ -203,16 +194,6 @@ public class WlsClusterConfig {
   @JsonIgnore
   public int getDynamicClusterSizeOrZero() {
     return Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getDynamicClusterSize).orElse(0);
-  }
-
-  /**
-   * Returns the minimum size of the dynamic cluster.
-   *
-   * @return the minimum size of the dynamic cluster, or 0 if there are no dynamic servers in this cluster
-   */
-  @JsonIgnore
-  public int getMinDynamicClusterSize() {
-    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : 0;
   }
 
   /**

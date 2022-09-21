@@ -150,7 +150,6 @@ class WlsClusterConfigTest {
     assertThat(wlsClusterConfig.getClusterSize(), equalTo(2));
     assertThat(wlsClusterConfig.getConfiguredClusterSize(), equalTo(0));
     assertThat(wlsClusterConfig.getDynamicClusterSize(), equalTo(2));
-    assertThat(wlsClusterConfig.getMinDynamicClusterSize(), equalTo(1));
   }
 
   @Test

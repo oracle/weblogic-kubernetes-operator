@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -25,6 +27,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
@@ -688,5 +691,30 @@ public class OperatorUtils {
 
     logger.info("Operator pod is restarted in namespace {0}", opNamespace);
 
+  }
+
+  /**
+   * Obtains the specified domain, validates that it has a spec and no rolling condition.
+   * @param opNamespace the Operator namespace
+   * @param regex check string
+   * @return true if regex found, false otherwise.
+   */
+  public static boolean findStringInOperatorLog(String opNamespace, String regex) {
+    LoggingFacade logger = getLogger();
+    // get operator pod name
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertNotNull(operatorPodName, "Operator pod name returned is null");
+    logger.info("Operator pod name {0}", operatorPodName);
+
+    // get the Operator logs
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+
+    // match regex in Operator log
+    logger.info("Search: {0} in Operator log", regex);
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(operatorPodLog);
+
+    return matcher.find();
   }
 }

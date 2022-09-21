@@ -6,7 +6,9 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -43,6 +45,12 @@ class DeploymentReadyTest {
   @AfterEach
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
+
+    // delete probesHome dir (java requires a dir be empty before deletion)
+    Files.walk(coreDelegate.probesHome.toPath())
+        .sorted(Comparator.reverseOrder()) // so files delete before dirs
+        .map(Path::toFile)
+        .forEach(File::delete);
   }
 
   @Test

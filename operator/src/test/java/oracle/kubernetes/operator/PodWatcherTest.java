@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
@@ -358,7 +359,7 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     try {
       testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
 
-      assertThat(terminalStep.wasRun(), is(true));
+      assertThat(terminalStep.getExecutionCount(), is(1));
     } finally {
       stopping.set(true);
     }
@@ -374,6 +375,23 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
       testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
 
       assertThat(terminalStep.wasRun(), is(false));
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  @Test
+  void whenPodDeletedOnSecondRead_runNextStepOnlyOnce() {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    PodWatcher watcher = createWatcher(stopping);
+
+    testSupport.defineResources(createPod());
+    try {
+      testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
+      testSupport.failOnResource(KubernetesTestSupport.POD, NAME, NS, HTTP_NOT_FOUND);
+      testSupport.setTime(10, TimeUnit.SECONDS);
+
+      assertThat(terminalStep.getExecutionCount(), is(1));
     } finally {
       stopping.set(true);
     }

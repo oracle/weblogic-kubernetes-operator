@@ -12,7 +12,6 @@
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `allowReplicasBelowMinDynClusterSize` | Boolean | Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true. |
 | `clusterName` | string | The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required. |
 | `clusterService` | [Cluster Service](#cluster-service) | Customization affecting Kubernetes Service generated for this WebLogic cluster. |
 | `maxConcurrentShutdown` | integer | The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1. |
