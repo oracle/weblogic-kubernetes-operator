@@ -1681,6 +1681,17 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  void whenReadFromYaml_MonitoringExporterSpecificationSupportsBasicOperations() throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    final MonitoringExporterSpecification specification = domain.getSpec().getMonitoringExporterSpecification();
+    assertThat(specification.toString(), containsString("monexp:latest"));
+    assertThat(specification, not(equalTo(new MonitoringExporterSpecification())));
+    assertThat(specification.hashCode(), not(equalTo(new MonitoringExporterSpecification().hashCode())));
+  }
+
+  @Test
   void whenNoMonitoringExporterConfigurationDefined_refuseAttemptToSetResourceRequirements() {
     final DomainConfigurator domainConfigurator = configureDomain(domain);
     final V1ResourceRequirements resourceRequirements = new V1ResourceRequirements();

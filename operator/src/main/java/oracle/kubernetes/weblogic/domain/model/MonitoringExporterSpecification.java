@@ -109,14 +109,6 @@ public class MonitoringExporterSpecification {
     return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  void setImagePullPolicy(@Nullable V1Container.ImagePullPolicyEnum imagePullPolicy) {
-    this.imagePullPolicy = imagePullPolicy;
-  }
-
-  Integer getPort() {
-    return port;
-  }
-
   void setPort(Integer port) {
     this.port = port;
   }
