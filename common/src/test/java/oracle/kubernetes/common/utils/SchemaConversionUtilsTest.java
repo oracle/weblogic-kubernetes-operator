@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class SchemaConversionUtilsTest {
@@ -148,7 +149,10 @@ class SchemaConversionUtilsTest {
     converterv8.convert(domain, clusters);
 
     Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
-    assertThat(converterv8.getDomain().get("clusters"), equalTo(v8Domain.get("clusters")));
+    List<Object> convertedClusters = (List<Object>) getDomainSpec(converterv8.getDomain()).get("clusters");
+    List<Object> origClusters = (List<Object>) getDomainSpec(v8Domain).get("clusters");
+    assertNotNull(convertedClusters);
+    assertThat(convertedClusters, equalTo(origClusters));
   }
 
   @Test
