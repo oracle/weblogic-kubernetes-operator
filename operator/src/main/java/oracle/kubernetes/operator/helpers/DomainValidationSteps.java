@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -283,6 +284,11 @@ public class DomainValidationSteps {
       return metadata != null
             && Objects.equals(name, metadata.getName())
             && Objects.equals(namespace, metadata.getNamespace());
+    }
+
+    @Override
+    public List<DomainResource> getDomains(String ns) {
+      return DomainProcessorImpl.getDomains(ns);
     }
   }
 
