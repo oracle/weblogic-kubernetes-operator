@@ -102,7 +102,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItHDFC {
 
   private static String opNamespace = null;
-  private static String introDomainNamespace = null;
+  private static String[] introDomainNamespace = null;
+  private static int numOfDomains = 20;
 
   private static final String domainUid = "myintrodomain";
   private static final String cluster1Name = "mycluster";
@@ -153,14 +154,16 @@ class ItHDFC {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(21) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
-    introDomainNamespace = namespaces.get(1);
+    for(int i=1;i<numOfDomains;i++){
+    introDomainNamespace = namespaces.get(i);
+    }
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
@@ -449,14 +452,14 @@ class ItHDFC {
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
   }
 
-  private static void createDomain() {
-    String uniquePath = "/shared/" + introDomainNamespace + "/domains";
+  private static void createDomain(String namespace) {
+    String uniquePath = "/shared/" + namespace + "/domains";
 
     // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, namespace,
         wlsUserName, wlsPassword);
     createPV(pvName, domainUid, ItHDFC.class.getSimpleName());
-    createPVC(pvName, pvcName, domainUid, introDomainNamespace);
+    createPVC(pvName, pvcName, domainUid, namespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -486,7 +489,7 @@ class ItHDFC {
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, introDomainNamespace);
+        pvName, pvcName, namespace);
 
     //createPatchJarConfigMap(introDomainNamespace);
     // create a domain custom resource configuration object
@@ -496,16 +499,16 @@ class ItHDFC {
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
-            .namespace(introDomainNamespace))
+            .namespace(namespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image("phx.ocir.io/weblogick8s/test-images/weblogic-hfdc-providerinteral:sankar")
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
-                .namespace(introDomainNamespace))
+                .namespace(namespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome(uniquePath + "/logs/" + domainUid)
@@ -541,40 +544,40 @@ class ItHDFC {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
-    for (String secret : createSecretsForImageRepos(introDomainNamespace)) {
+    for (String secret : createSecretsForImageRepos(namespace)) {
       secrets.add(new V1LocalObjectReference().name(secret));
     }
     domain.spec().setImagePullSecrets(secrets);
     
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
-    createDomainAndVerify(domain, introDomainNamespace);
+    createDomainAndVerify(domain, namespace);
 
     // verify the admin server service and pod created
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, namespace);
 
     // verify managed server services created
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       logger.info("Checking managed server service and pod {0} is created in namespace {1}",
-          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+          cluster1ManagedServerPodNamePrefix + i, namespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, namespace);
     }
 
     if (OKD) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), namespace);
       logger.info("admin svc host = {0}", adminSvcExtHost);
     }
 
     // deploy application and verify all servers functions normally
     logger.info("Getting port for default channel");
     int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        -> getServicePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server default port failed");
     logger.info("default channel port: {0}", defaultChannelPort);
     assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
     int serviceNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+            getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
     logger.info("Admin Server default node port : {0}", serviceNodePort);
     assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
