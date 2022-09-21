@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 2af584e4f5af4a0e5d182199dd64119cb47b53fff82365bcbdf987e6798778fd
+    weblogic.sha256: 4d3978c01ddf8b9f9ba477576355f57ecf2a7df320b4a7ae848210d3d5b21703
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -72,6 +72,19 @@ spec:
                       instance, including the ports of built-in channels or network
                       access points (NAPs).
                     type: integer
+                  resources:
+                    description: Memory and CPU minimum requirements and limits for
+                      the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`.
+                    properties:
+                      requests:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      limits:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                 type: object
               configuration:
                 description: Models and overrides affecting the WebLogic domain configuration.
