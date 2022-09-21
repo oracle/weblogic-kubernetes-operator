@@ -192,7 +192,7 @@ public class ItFmwDiiSample {
 
     // run create-domain.sh to create domain.yaml file
     logger.info("Run create-domain.sh to create domain.yaml file");
-    CommandParams params = new CommandParams().defaults();
+    final CommandParams params = new CommandParams().defaults();
 
     params.command("sh "
             + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
@@ -206,8 +206,14 @@ public class ItFmwDiiSample {
 
 
     logger.info("Going to run sample create-domain.sh");
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain.yaml");
+    //boolean result = Command.withParams(params).execute();
+    //assertTrue(result, "Failed to create domain.yaml");
+    testUntil(
+        () -> {
+          return Command.withParams(params).execute();
+        },
+        logger,
+        "Running sample create-domain.sh to create domain.yaml");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
@@ -227,11 +233,11 @@ public class ItFmwDiiSample {
 
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    CommandParams params1 = new CommandParams().defaults();
+    params1.command("kubectl apply -f "
             + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
-    result = Command.withParams(params).execute();
+    boolean result = Command.withParams(params1).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
     // wait for the domain to exist
