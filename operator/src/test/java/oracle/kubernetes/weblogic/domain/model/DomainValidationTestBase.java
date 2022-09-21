@@ -67,6 +67,9 @@ public class DomainValidationTestBase extends DomainTestUtils {
       if (ClusterResource.class.equals(type)) {
         return (T) new ClusterResource().withMetadata(meta);
       }
+      if (DomainResource.class.equals(type)) {
+        return (T) new DomainResource().withMetadata(meta);
+      }
       throw new IllegalStateException();
     }
 
@@ -97,6 +100,11 @@ public class DomainValidationTestBase extends DomainTestUtils {
 
     boolean hasSpecification(V1ObjectMeta m, String name, String namespace) {
       return Objects.equals(name, m.getName()) && Objects.equals(namespace, m.getNamespace());
+    }
+
+    @Override
+    public List<DomainResource> getDomains(String namespace) {
+      return getResourceList(DomainResource.class);
     }
   }
 

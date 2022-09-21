@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -26,7 +27,9 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestCluster;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.setupCluster;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -47,6 +50,10 @@ class DomainValidationTest extends DomainValidationTestBase {
   private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
   private static final String LONG_CONTAINER_PORT_NAME = "long-container-port-name";
+  public static final String UID2 = "test-domain2";
+  public static final String CLUSTER_1 = "Cluster-1";
+  public static final String CLUSTER_2 = "Cluster-2";
+  public static final String CLUSTER_3 = "Cluster-3";
 
   private final DomainResource domain = createTestDomain();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -871,4 +878,54 @@ class DomainValidationTest extends DomainValidationTestBase {
   private DomainConfigurator configureDomain(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
+
+  @Test
+  void whenTwoDomainsHaveSameClusterReference_reportError() {
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    defineResources(domain, domain2, cluster1);
+
+    ClusterResource[] clusters = new ClusterResource[] {cluster1};
+    setupCluster(domain, clusters);
+    setupCluster(domain2, clusters);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster", CLUSTER_1, "it is used by", UID2)));
+  }
+
+  @Test
+  void whenTwoDomainsReferenceDifferentClusterResources_noFailureReported() {
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    defineResources(domain, domain2, cluster1, cluster2);
+
+    setupCluster(domain, new ClusterResource[] {cluster1});
+    setupCluster(domain2, new ClusterResource[] {cluster2});
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferences_reportError() {
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    ClusterResource cluster3 = createTestCluster(CLUSTER_3);
+    defineResources(domain, domain2, cluster1, cluster2, cluster3);
+
+    setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
+    setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster", CLUSTER_2, "it is used by", UID2)));
+  }
+
+  @SafeVarargs
+  private <T> void defineResources(T... resources) {
+    for (T resource : resources) {
+      resourceLookup.defineResource((KubernetesObject) resource);
+    }
+  }
+
 }
