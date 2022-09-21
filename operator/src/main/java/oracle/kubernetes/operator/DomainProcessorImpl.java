@@ -274,6 +274,23 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
+  /**
+   * Get all the domain resources in the given namespace.
+   *
+   * @param ns the namespace
+   * @return list of the domain resources
+   */
+  public static List<DomainResource> getDomains(String ns) {
+    List<DomainResource> domains = new ArrayList<>();
+    Optional.ofNullable(DomainProcessorImpl.domains.get(ns)).ifPresent(d -> d.values()
+        .forEach(domain -> addToList(domains, domain)));
+    return domains;
+  }
+
+  private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
+    list.add(info.getDomain());
+  }
+
   private void onDeleteEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
