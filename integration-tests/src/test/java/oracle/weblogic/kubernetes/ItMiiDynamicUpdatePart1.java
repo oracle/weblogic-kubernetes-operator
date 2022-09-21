@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -437,7 +438,7 @@ class ItMiiDynamicUpdatePart1 {
     // The client sends 300 messsage to a Uniform Distributed Queue.
     // Make sure the messages are distributed across the members evenly
     // and JMS connection is load balanced across all servers
-    testUntil(
+    testUntil(withLongRetryPolicy,
         runClientInsidePod(helper.adminServerPodName, helper.domainNamespace,
           "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"),
         logger,
