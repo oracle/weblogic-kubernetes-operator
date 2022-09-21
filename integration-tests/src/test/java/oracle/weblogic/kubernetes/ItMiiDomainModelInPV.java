@@ -241,7 +241,7 @@ public class ItMiiDomainModelInPV {
    */
   @ParameterizedTest
   @MethodSource("paramProvider")
-  @DisplayName("Create MII domain with model and application file from PV and custon wdtModelHome")
+  @DisplayName("Create MII domain with model and application file from PV and custom wdtModelHome")
   @Tag("gate")
   @Tag("crio")
   void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
@@ -254,7 +254,7 @@ public class ItMiiDomainModelInPV {
         domainUid, image);
     DomainResource domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName,
-        2, List.of(clusterName));
+        2, List.of(clusterName), true);
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
