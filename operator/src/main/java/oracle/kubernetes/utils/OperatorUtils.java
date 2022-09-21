@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -6,15 +6,23 @@ package oracle.kubernetes.utils;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
 public class OperatorUtils {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private OperatorUtils() {
     // no-op
@@ -32,9 +40,36 @@ public class OperatorUtils {
   public static String joinListGrammatically(final List<String> list) {
     return list.size() > 1
         ? String.join(", ", list.subList(0, list.size() - 1))
-        .concat(String.format("%s and ", list.size() > 2 ? "," : ""))
+        .concat(getFinalSeparator(list) + " " + getBundleString("conjunction") + " ")
         .concat(list.get(list.size() - 1))
         : list.get(0);
+  }
+
+  @Nonnull
+  private static String getFinalSeparator(List<String> list) {
+    return list.size() > 2 ? "," : "";
+  }
+
+  private static String getBundleString(String key) {
+    return ResourceBundle.getBundle("Operator").getString(key);
+  }
+
+  /**
+   * Converts a list of strings to a comma-separated list, using "and" for the last item. If the list
+   * is longer than the specified limit, truncates the list and follows up with the number of remaining elements.
+   *
+   * @param list the list to convert
+   * @return the resultant string
+   */
+  public static String joinListGrammaticallyWithLimit(int limit, final List<String> list) {
+    if (list.size() <= limit) {
+      return joinListGrammatically(list);
+    } else {
+      final int excess = Math.min(2, list.size() - limit);
+      final List<String> truncated = new ArrayList<>(list.subList(0, list.size() - excess));
+      truncated.add(excess + " " + getBundleString("truncation"));
+      return joinListGrammatically(truncated);
+    }
   }
 
   /**
