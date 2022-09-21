@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -286,6 +287,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
   public MonitoringExporterSpecification getMonitoringExporterSpecification() {
     return spec.getMonitoringExporterSpecification();
+  }
+
+  public V1ResourceRequirements getMonitoringExporterResources() {
+    return spec.getMonitoringExporterResourceRequirements();
   }
 
   public String getMonitoringExporterImage() {

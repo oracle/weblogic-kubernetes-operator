@@ -492,6 +492,12 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
+  protected void defineExporterConfigurationWithResourceRequirements() {
+    defineExporterConfiguration()
+        .withMonitoringExporterResources(
+            new V1ResourceRequirements().limits(Map.of("cpu", new Quantity("0.25"))));
+  }
+
   protected void defineFluentdConfiguration(boolean watchIntrospectorLog) {
     configureDomain()
             .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
@@ -555,6 +561,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void monitoringExporterContainer_SpecifiedCpuLimit() {
+    defineExporterConfigurationWithResourceRequirements();
+
+    assertThat(getExporterContainer().getResources().getLimits(), hasEntry("cpu", new Quantity("0.25")));
+  }
+
+  @Test
   void whenExporterContainerCreated_hasMetricsPortsItem() {
     defineExporterConfiguration();
 
@@ -585,6 +598,16 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     // generate hashes for pre-existing pods works correctly, the existing pod will not be replaced; however,
     // it will be patched to update the weblogic.operatorVersion label and the annotation with the hash.
     verifyPodPatched();
+  }
+
+  @Test
+  void afterUpgradeIstioMonitoringExporterPodWithResourceRequirements_replacePod() {
+    useProductionHash();
+    defineExporterConfigurationWithResourceRequirements();
+
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    verifyPodReplaced();
   }
 
   @Test
@@ -1768,7 +1791,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreated_withLogHomeLayoutFlat_hasLogHomeLayoutEnvVariableSet() {
-    final String myLogHome = "/shared/mylogs/";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
     domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.FLAT);
@@ -1778,7 +1800,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreated_withoutLogHomeLayout_hasNoLogHomeLayoutEnvVariableSet() {
-    final String myLogHome = "/shared/mylogs/";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("LOG_HOME_LAYOUT",
