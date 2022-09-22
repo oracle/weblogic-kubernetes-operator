@@ -111,6 +111,7 @@ spec:
   clusters:
   - clusterName: cluster-1
     serverStartState: "RUNNING"
+    serverStartPolicy: ALWAYS
     serverPod:
       # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
       # already members of the same cluster.
