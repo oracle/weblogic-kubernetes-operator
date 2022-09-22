@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
@@ -18,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -26,8 +28,13 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
@@ -856,6 +863,29 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
     assertThat(logRecords, containsInfo(getCyclePodKey()));
+  }
+
+  @Test
+  void whenDMIIDynamicUpdateNull_podCycleEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    testSupport.getPacket().put(MII_DYNAMIC_UPDATE, "abcd");
+    testSupport.getPacket().put(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "1234");
+    setOnlineUpdate(true);
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + POD_CYCLE_STARTING + " expected with expected message not found",
+        getExpectedEventMessage(POD_CYCLE_STARTING), stringContainsInOrder(ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED));
+  }
+
+  private void setOnlineUpdate(boolean enabled) {
+    Configuration config = Optional.ofNullable(getDomain().getSpec().getConfiguration()).orElse(new Configuration());
+
+    Model model = Optional.ofNullable(config.getModel()).orElse(new Model());
+
+    OnlineUpdate update = Optional.ofNullable(model.getOnlineUpdate()).orElse(new OnlineUpdate());
+    update.setEnabled(enabled);
   }
 
   private V1Pod createTestPodModel() {

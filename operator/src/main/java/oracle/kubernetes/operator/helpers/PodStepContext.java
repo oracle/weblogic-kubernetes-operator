@@ -91,6 +91,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.DOMAIN;
+import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.POD;
 import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.UNKNOWN;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
@@ -689,6 +690,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     return compatibility.getScopedIncompatibility(scope);
   }
 
+  protected String getReasonToRecycle(V1Pod pod) {
+    String message = getReasonToRecycle(pod, POD);
+    if (message == null || message.length() == 0) {
+      message = getDomainIncompatibility(pod);
+    }
+    return message;
+  }
+
   private ResponseStep<V1Pod> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
@@ -1199,7 +1208,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Step createCyclePodEventStep(Step next) {
-      String reason = Optional.ofNullable(message).orElse(getReasonToRecycle(pod, CompatibilityScope.POD));
+      String reason = Optional.ofNullable(message).orElse(getReasonToRecycle(pod));
       LOGGER.info(
           MessageKeys.CYCLING_POD,
           Objects.requireNonNull(pod.getMetadata()).getName(),
