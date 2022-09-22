@@ -9,7 +9,6 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -38,13 +37,13 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -57,10 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -68,7 +64,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -102,10 +97,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItHDFC {
 
   private static String opNamespace = null;
-  private static String[] introDomainNamespace = null;
+  
   private static int numOfDomains = 20;
-
-  private static final String domainUid = "myintrodomain";
+  private static String[] domainNamespace = new String[numOfDomains];
+  private static final String baseDomainUid = "domain";
+  private static String[] domainUid;
+  
+  
   private static final String cluster1Name = "mycluster";
   private static final String adminServerName = "admin-server";
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -117,24 +115,12 @@ class ItHDFC {
   private static int cluster1ReplicaCount = 2;
 
   private static final int t3ChannelPort = getNextFreePort();
-
-  private static final String pvName = getUniqueName(domainUid + "-pv-");
-  private static final String pvcName = getUniqueName(domainUid + "-pvc-");
-
   private static final String wlSecretName = "weblogic-credentials";
   private static String wlsUserName = ADMIN_USERNAME_DEFAULT;
   private static String wlsPassword = ADMIN_PASSWORD_DEFAULT;
 
   private static String adminSvcExtHost = null;
   private static String clusterRouteHost = null;
-
-  private Map<String, OffsetDateTime> cl1podsWithTimeStamps = null;
-  private Map<String, OffsetDateTime> cl2podsWithTimeStamps = null;
-
-  private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
-  private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = Paths.get(WORK_DIR, "intros-sample-testing");
-  private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -148,7 +134,6 @@ class ItHDFC {
 
   /**
    * Assigns unique namespaces for operator and domains.
-   * Pull WebLogic image if running tests in Kind cluster.
    * Installs operator.
    *
    * @param namespaces injected by JUnit
@@ -159,43 +144,40 @@ class ItHDFC {
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
-    logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
+    
+    logger.info("Assign a unique namespaces for WebLogic domains");
     assertNotNull(namespaces.get(1), "Namespace is null");
-    for(int i=1;i<numOfDomains;i++){
-    introDomainNamespace = namespaces.get(i);
+    for (int i = 1; i <= numOfDomains; i++) {
+      domainNamespace[i - 1] = namespaces.get(i);
+      domainUid[i-1]=baseDomainUid+i;
+      
     }
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, introDomainNamespace);
-
-    // build the clusterview application
-    Path targetDir = Paths.get(WORK_DIR,
-         ItHDFC.class.getName() + "/clusterviewapp");
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
-        "dist", introDomainNamespace, targetDir);
-    assertTrue(Paths.get(distDir.toString(),
-        "clusterview.war").toFile().exists(),
-        "Application archive is not available");
-    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
-
-    createDomain();
+    installAndVerifyOperator(opNamespace, domainNamespace);
   }
-  
+
   /**
-   * Test brings up a new clusters and verifies it can successfully start by doing the following.
-   * a. Creates new WebLogic static cluster using WLST.
-   * b. Patch the Domain Resource with cluster
-   * c. Update the introspectVersion version
-   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
-   * pre-existing WebLogic cluster.
+   * Test brings up a new domains and verifies it can successfully start by doing the following.
+   * a. Creates new WebLogic static domain using offline WLST in persistent volume.
+   * b. Creates domain resource and deploys in Kubernetes cluster.
+   * d. Verifies the servers in the new WebLogic domain comes up.
    */
+  @Order(1)
   @Test
-  @DisplayName("Test new cluster creation on demand using WLST and introspection")
-  void testCreateNewClusters() {
+  @DisplayName("Test domains creation")
+  void testCreateDomains() {
+    
+    // call create domain with namespace and pv/pvc parameters
+    for(int i=0;i<numOfDomains;i++){
+      
+    
+    createDomain(domainNamespace[i]);
+    }
 
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     String clusterBaseName = "cluster";
     int replicaCount = 2;
@@ -222,9 +204,9 @@ class ItHDFC {
 
       // changet the admin server port to a different value to force pod restart
       Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
 
-      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
@@ -237,20 +219,105 @@ class ItHDFC {
           + "]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
       //verify the introspector pod is created and runs
       String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-      checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
-      checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
+      checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+      checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
       // verify managed server services and pods are created
       for (int i = 1; i <= replicaCount; i++) {
         logger.info("Checking managed server service and pod {0} is created in namespace {1}",
-            clusterManagedServerPodNamePrefix + i, introDomainNamespace);
-        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+            clusterManagedServerPodNamePrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+      }
+
+      List<String> managedServerNames = new ArrayList<String>();
+      for (int i = 1; i <= replicaCount; i++) {
+        managedServerNames.add(clusterManagedServerNameBase + i);
+      }
+
+      //verify admin server accessibility and the health of cluster members
+      verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+    }
+  }
+
+
+  
+  /**
+   * Test brings up a new domains and verifies it can successfully start by doing the following.
+   * a. Creates new WebLogic static cluster using WLST.
+   * b. Patch the Domain Resource with cluster
+   * c. Update the introspectVersion version
+   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
+   * pre-existing WebLogic cluster.
+   */
+  @Order(1)
+  @Test
+  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  void testCreateNewClusters() {
+
+    logger.info("Getting port for default channel");
+    int adminServerPort
+        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+
+    String clusterBaseName = "cluster";
+    int replicaCount = 2;
+
+    for (int j = 1; j < 15; j++) {
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "ms";
+      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
+
+      // create a temporary WebLogic WLST property file
+      File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+          "Creating WLST properties file failed");
+      Properties p = new Properties();
+      p.setProperty("admin_host", adminServerPodName);
+      p.setProperty("admin_port", Integer.toString(adminServerPort));
+      p.setProperty("admin_username", wlsUserName);
+      p.setProperty("admin_password", wlsPassword);
+      p.setProperty("test_name", "create_cluster");
+      p.setProperty("cluster_name", clusterName);
+      p.setProperty("server_prefix", clusterManagedServerNameBase);
+      p.setProperty("server_count", String.valueOf(replicaCount));
+      assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+          "Failed to write the WLST properties to file");
+
+      // changet the admin server port to a different value to force pod restart
+      Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
+      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
+
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+
+      logger.info("patch the domain resource with new cluster and introspectVersion");
+      String patchStr
+          = "["
+          + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+          + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": "
+          + replicaCount + ", \"serverStartState\": \"RUNNING\"}"
+          + "},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+          + "]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+
+      //verify the introspector pod is created and runs
+      String introspectPodNameBase = getIntrospectJobName(domainUid);
+
+      checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+      checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+
+      // verify managed server services and pods are created
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+            clusterManagedServerPodNamePrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
 
       List<String> managedServerNames = new ArrayList<String>();
@@ -279,7 +346,7 @@ class ItHDFC {
     V1Patch patch;
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     String clusterBaseName = "sdcluster";
     int replicaCount = 2;
@@ -304,7 +371,7 @@ class ItHDFC {
           "Failed to write the WLST properties to file");
       // changet the admin server port to a different value to force pod restart
       Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
       logger.info("patch the domain resource with new cluster and introspectVersion");
       patchStr
           = "["
@@ -313,13 +380,13 @@ class ItHDFC {
           + replicaCount + ", \"serverStartPolicy\": \"IF_NEEDED\"}"
           + "}]";
       patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
     }
     logger.info("Restarting admin server");
     restartAS();
 
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
     logger.info("patch the domain resource with new cluster and introspectVersion");
     patchStr
         = "["
@@ -327,12 +394,12 @@ class ItHDFC {
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
   }
 
   /**
@@ -349,7 +416,7 @@ class ItHDFC {
 
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     String clusterBaseName = "rcluster";
     int replicaCount = 2;
@@ -376,7 +443,7 @@ class ItHDFC {
 
       // changet the admin server port to a different value to force pod restart
       Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
@@ -388,33 +455,33 @@ class ItHDFC {
           + "]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
       //restart AS
       restartAS();
 
       //run the inrospector to start all clusters
-      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
       patchStr
           = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
           + "]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
       //verify the introspector pod is created and runs
       String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-      checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
-      checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
+      checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+      checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
       // verify managed server services and pods are created
       for (int i = 1; i <= replicaCount; i++) {
         logger.info("Checking managed server service and pod {0} is created in namespace {1}",
-            clusterManagedServerPodNamePrefix + i, introDomainNamespace);
-        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+            clusterManagedServerPodNamePrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
 
       List<String> managedServerNames = new ArrayList<String>();
@@ -436,9 +503,9 @@ class ItHDFC {
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
-    checkPodDoesNotExist(adminServerPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
 
     patchStr
         = "["
@@ -446,13 +513,13 @@ class ItHDFC {
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
     // verify the admin server service and pod created
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
   }
 
-  private static void createDomain(String namespace) {
+  private static void createDomain(String namespace, String domainUid, String pvName, String pvcName) {
     String uniquePath = "/shared/" + namespace + "/domains";
 
     // create WebLogic domain credential secret
@@ -491,7 +558,7 @@ class ItHDFC {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, namespace);
 
-    //createPatchJarConfigMap(introDomainNamespace);
+    //createPatchJarConfigMap(domainNamespace);
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -691,7 +758,7 @@ class ItHDFC {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
     String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
