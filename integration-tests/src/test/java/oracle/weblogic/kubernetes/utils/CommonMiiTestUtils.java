@@ -250,7 +250,7 @@ public class CommonMiiTestUtils {
 
     return createDomainResource(domainResourceName, domNamespace, imageName,
         adminSecretName, repoSecretName, encryptionSecretName, -1, Collections.<String>emptyList());
-  } 
+  }
 
   /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
@@ -275,6 +275,35 @@ public class CommonMiiTestUtils {
       String encryptionSecretName,
       int replicaCount,
       List<String> clusterNames) {
+    return createDomainResource(domainResourceName, domNamespace, imageName, adminSecretName,
+        repoSecretName, encryptionSecretName, replicaCount, clusterNames, false);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount replica count of the cluster
+   * @param clusterNames names of cluster resources to create
+   * @param prefixDomainName prefix the domainUID to cluster resource name
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String[] repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      boolean prefixDomainName) {
 
     // create secrets
     List<V1LocalObjectReference> secrets = new ArrayList<>();
@@ -319,16 +348,19 @@ public class CommonMiiTestUtils {
     domain.spec().setImagePullSecrets(secrets);
 
     ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
+
     if (clusterNames != null) {
       for (String clusterName : clusterNames) {
-        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, domNamespace);
+        String clusterResName = prefixDomainName ? domainResourceName + "-" + clusterName : clusterName;
+        if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterResName))) {
+          getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, domNamespace);
         } else {
-          getLogger().info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
-          createClusterAndVerify(createClusterResource(clusterName, domNamespace, replicaCount));
+          getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
+          ClusterSpec spec = new ClusterSpec().withClusterName(clusterName).replicas(replicaCount);
+          createClusterAndVerify(createClusterResource(clusterResName, domNamespace, spec));
         }
         // set cluster references
-        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+        domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
       }
     }
 
@@ -539,25 +571,23 @@ public class CommonMiiTestUtils {
    * @param pvcName Name of persistent volume claim
    * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
-   * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
    * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
    * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResourceWithLogHome(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      String pvName,
-      String pvcName,
-      String configMapName,
-      String dbSecretName,
-      boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled,
-      boolean setDataHome) {
+          String domainResourceName,
+          String domNamespace,
+          String imageName,
+          String adminSecretName,
+          String repoSecretName,
+          String encryptionSecretName,
+          String pvName,
+          String pvcName,
+          String configMapName,
+          String dbSecretName,
+          boolean onlineUpdateEnabled,
+          boolean setDataHome) {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
@@ -569,7 +599,6 @@ public class CommonMiiTestUtils {
     DomainSpec domainSpec = new DomainSpec()
         .domainUid(domainResourceName)
         .domainHomeSourceType("FromModel")
-        .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -640,29 +669,27 @@ public class CommonMiiTestUtils {
    * @param pvcName Name of persistent volume claim
    * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
-   * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
    * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
    * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
   public static DomainResource createDomainResourceWithLogHome(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String pvName,
-      String pvcName,
-      String configMapName,
-      String dbSecretName,
-      boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled,
-      boolean setDataHome) {
+          String domainResourceName,
+          String domNamespace,
+          String imageName,
+          String adminSecretName,
+          String repoSecretName,
+          String encryptionSecretName,
+          int replicaCount,
+          String pvName,
+          String pvcName,
+          String configMapName,
+          String dbSecretName,
+          boolean onlineUpdateEnabled,
+          boolean setDataHome) {
     DomainResource domain = createDomainResourceWithLogHome(domainResourceName, domNamespace, imageName,
         adminSecretName, repoSecretName, encryptionSecretName, pvName, pvcName, configMapName,
-        dbSecretName, allowReplicasBelowMinDynClusterSize, onlineUpdateEnabled, setDataHome);
+        dbSecretName, onlineUpdateEnabled, setDataHome);
     DomainSpec spec = domain.getSpec().replicas(replicaCount);
     return domain.spec(spec);
   }

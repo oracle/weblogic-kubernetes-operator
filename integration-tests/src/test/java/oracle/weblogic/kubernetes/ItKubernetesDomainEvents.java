@@ -97,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.TOPOLOGY_MISMATCH_ERROR
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCount;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -461,40 +460,6 @@ class ItKubernetesDomainEvents {
     scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
     scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
     shutdownDomain(domainUid, domainNamespace4);
-  }
-
-  /**
-   * Scale the cluster below minimum dynamic cluster size and verify the Failed
-   * warning event is generated.
-   */
-  @Test
-  void testDomainK8sEventsScaleBelowMin() {
-    OffsetDateTime timestamp = now();
-    try {
-      String patchStr
-          = "["
-          + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": false}"
-          + "]";
-      logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-      assertTrue(scaleCluster(cluster1Name, domainNamespace3, 1),"decreased replica to 1");
-      // No event will be created for this
-      logger.info("verify the Failed event is NOT generated");
-      assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,  DOMAIN_FAILED, "Warning", timestamp));
-    } finally {
-      timestamp = now();
-      logger.info("Updating domain resource to set correct replicas size");
-      assertTrue(scaleCluster(cluster1Name, domainNamespace3, 2), "failed to scale cluster to 2");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
-
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Checking managed server service {0} is created in namespace {1}",
-                managedServerPodNamePrefix + i, domainNamespace3);
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace3);
-      }
-    }
   }
 
   /**

@@ -31,6 +31,8 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -57,6 +59,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_NOT_READY;
+import static oracle.kubernetes.common.logging.MessageKeys.NON_CLUSTERED_SERVERS_NOT_READY;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_APPLICATION_SERVERS_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -99,9 +104,11 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 abstract class DomainStatusUpdateTestBase {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String NAME = UID;
   private static final String ADMIN = "admin";
-  public static final String CLUSTER = "cluster1";
+  private static final String CLUSTER = "cluster1";
   private static final String IMAGE = "initialImage:0";
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -236,10 +243,9 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void statusStep_definesClusterFromWlsConfig() {
-    configureDomain().withAllowReplicasBelowMinDynClusterSize(false);
     defineScenario()
           .withCluster("clusterA", "server3", "server4")
-          .withDynamicCluster("clusterB", 2, 8)
+          .withDynamicCluster("clusterB", 0, 8)
           .notStarting("server4")
           .build();
 
@@ -248,14 +254,13 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(),
           hasStatusForCluster("clusterA").withMinimumReplicas(0).withMaximumReplicas(2));
     assertThat(getRecordedDomain(),
-          hasStatusForCluster("clusterB").withMinimumReplicas(2).withMaximumReplicas(8));
+          hasStatusForCluster("clusterB").withMinimumReplicas(0).withMaximumReplicas(8));
   }
 
   @Test
   void statusStep_definesClusterReplicaGoalFromDomain() {
     configureDomain().configureCluster(info, "clusterA").withReplicas(3);
     configureDomain().configureCluster(info,"clusterB").withReplicas(5);
-    domain.getSpec().setAllowReplicasBelowMinDynClusterSize(false);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withDynamicCluster("clusterB", 2, 8)
@@ -308,13 +313,23 @@ abstract class DomainStatusUpdateTestBase {
     domain.setStatus(
         new DomainStatus()
             .withServers(
-                Collections.singletonList(
+                List.of(
+                    new ServerStatus()
+                        .withState(RUNNING_STATE)
+                        .withStateGoal(RUNNING_STATE)
+                        .withServerName("admin")
+                        .withNodeName("node")
+                        .withIsAdminServer(true)
+                        .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
+                        .withPodReady("True")
+                        .withHealth(overallHealth("health")),
                     new ServerStatus()
                         .withState(SHUTDOWN_STATE)
                         .withStateGoal(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
-              .addCondition(new DomainCondition(AVAILABLE).withStatus(false))
+              .addCondition(new DomainCondition(AVAILABLE).withStatus(false)
+                  .withMessage(LOGGER.formatMessage(NO_APPLICATION_SERVERS_READY)))
               .addCondition(new DomainCondition(COMPLETED).withStatus(true)));
 
     testSupport.clearNumCalls();
@@ -457,7 +472,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenNoServersRunning_establishAvailableConditionFalse() {   
+  void whenNoServersReady_establishAvailableConditionFalse() {
     defineScenario()
           .withServers("server1", "server2")
           .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
@@ -465,7 +480,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE)
+                                         .withMessageContaining(LOGGER.formatMessage(NO_APPLICATION_SERVERS_READY)));
   }
 
   @Test
@@ -1021,11 +1037,10 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountBelowMinReplicasForDynamicClusterAndNotAllowed_domainIsNotAvailable() {
-    configureDomain().withAllowReplicasBelowMinDynClusterSize(false);
+  void whenReplicaCountIsZero_domainIsNotAvailable() {
     defineScenario()
           .withDynamicCluster("cluster1", 3, 4)
-          .notStarting("ms3", "ms4")
+          .notStarting("ms1", "ms2", "ms3", "ms4")
           .build();
 
     updateDomainStatus();
@@ -1052,8 +1067,11 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE)
+        .withMessageContaining(LOGGER.formatMessage(CLUSTER_NOT_READY, "cluster1", 19, 4)));
   }
+
+  // todo add hasCondition matcher for cluster status
 
   @Test
   void whenReplicaCountWithinMaxUnavailableOfReplicas_establishClusterAvailableConditionTrue() {
@@ -1183,12 +1201,13 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void withNonClusteredServerNotStarting_domainIsNotAvailable() {
-    defineScenario().withServers("server1").notStarting("server1").build();
+  void withNonClusteredServerNotReady_domainIsNotAvailable() {
+    defineScenario().withServers("server1", "server2").withServersReachingState(STARTING_STATE, "server1").build();
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE)
+        .withMessageContaining(LOGGER.formatMessage(NON_CLUSTERED_SERVERS_NOT_READY, "server1")));
   }
 
   @Test
@@ -1547,9 +1566,19 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenAdminOnly_availableIsFalse() {
+  void whenAdminOnlyAndAdminServerIsReady_availableIsTrue() {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
+  }
+
+  @Test
+  void whenAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
 
     updateDomainStatus();
 
@@ -1616,6 +1645,7 @@ abstract class DomainStatusUpdateTestBase {
     private ScenarioBuilder() {
       configSupport = new WlsDomainConfigSupport("testDomain");
       configSupport.setAdminServerName(ADMIN);
+      addServer(ADMIN);
       defineServerPod(ADMIN);
       activateServer(ADMIN);
     }

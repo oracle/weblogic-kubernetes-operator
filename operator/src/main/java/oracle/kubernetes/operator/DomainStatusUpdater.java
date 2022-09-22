@@ -50,6 +50,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
@@ -64,14 +65,19 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
+import static oracle.kubernetes.common.logging.MessageKeys.NON_CLUSTERED_SERVERS_NOT_READY;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_APPLICATION_SERVERS_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_RUNNING;
 import static oracle.kubernetes.operator.ClusterResourceStatusUpdater.createClusterResourceStatusUpdaterStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.MINIMUM_CLUSTER_COUNT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -110,6 +116,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVE
 public class DomainStatusUpdater {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  public static final int SERVER_DISPLAY_LIMIT = 5;
+  public static final int CLUSTER_MESSAGE_LIMIT = 2;
 
   private DomainStatusUpdater() {
   }
@@ -669,7 +677,7 @@ public class DomainStatusUpdater {
           this.status = status != null ? status : new DomainStatus();
           this.clusterChecks = createClusterChecks();
           conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
-          conditionList.add(new DomainCondition(AVAILABLE).withStatus(sufficientServersRunning()));
+          conditionList.add(createAvailableCondition());
           if (allIntendedServersReady()) {
             this.status.removeConditionsWithType(ROLLING);
           }
@@ -749,10 +757,6 @@ public class DomainStatusUpdater {
           return !isStartedServer(serverName);
         }
 
-        private boolean atLeastOneApplicationServerStarted() {
-          return !getInfo().getServerStartupInfo().isEmpty();
-        }
-
         private boolean haveServerData() {
           return StatusUpdateContext.this.serverState != null;
         }
@@ -762,10 +766,6 @@ public class DomainStatusUpdater {
               StatusUpdateContext.this::isNonClusteredServer).collect(Collectors.toList());
         }
 
-        private boolean allNonClusteredServersRunning() {
-          return getNonClusteredServers().stream().allMatch(StatusUpdateContext.this::isServerReady);
-        }
-
         private boolean allIntendedServersReady() {
           return haveServerData()
               && allStartedServersAreComplete()
@@ -773,19 +773,82 @@ public class DomainStatusUpdater {
               && serversMarkedForRoll().isEmpty();
         }
 
-        private boolean sufficientServersRunning() {
-          return atLeastOneApplicationServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
+        private DomainCondition createAvailableCondition() {
+          final List<String> unreadyNonClusteredServers = getUnreadyNonClusteredServers();
+          final List<ClusterCheck> unavailableClusters = getUnavailableClusters();
+
+          if (noApplicationServersReady()) {
+            return createNotAvailableCondition(LOGGER.formatMessage(NO_APPLICATION_SERVERS_READY));
+          } else if (!unreadyNonClusteredServers.isEmpty()) {
+            return createNotAvailableCondition(
+                LOGGER.formatMessage(NON_CLUSTERED_SERVERS_NOT_READY, formatServers(unreadyNonClusteredServers)));
+          } else if (!unavailableClusters.isEmpty()) {
+            return createNotAvailableCondition(formatClusters(unavailableClusters));
+          } else {
+            return new DomainCondition(AVAILABLE).withStatus(true);
+          }
         }
 
-        private boolean allClustersAvailable() {
-          return Arrays.stream(clusterChecks).allMatch(ClusterCheck::isAvailable);
+        private String formatServers(List<String> servers) {
+          return OperatorUtils.joinListGrammaticallyWithLimit(SERVER_DISPLAY_LIMIT, servers);
+        }
+
+        private String formatClusters(List<ClusterCheck> unavailableClusters) {
+          return OperatorUtils.joinListGrammaticallyWithLimit(
+              CLUSTER_MESSAGE_LIMIT, createUnavailableClustersMessage(unavailableClusters));
+        }
+
+        @NotNull
+        private List<String> createUnavailableClustersMessage(List<ClusterCheck> unavailableClusters) {
+          return unavailableClusters.stream().map(ClusterCheck::createNotReadyMessage).collect(Collectors.toList());
+        }
+
+        private DomainCondition createNotAvailableCondition(String message) {
+          return new DomainCondition(AVAILABLE).withStatus(false).withMessage(message);
+        }
+
+        private List<String> getUnreadyNonClusteredServers() {
+          return getNonClusteredServers().stream().filter(this::isServerNotReady).collect(Collectors.toList());
+        }
+
+        private List<ClusterCheck> getUnavailableClusters() {
+          return Arrays.stream(clusterChecks).filter(this::isUnavailable).collect(Collectors.toList());
+        }
+
+        private boolean isServerNotReady(@Nonnull String serverName) {
+          return !isServerReady(serverName);
+        }
+
+        private boolean isUnavailable(@Nonnull ClusterCheck clusterCheck) {
+          return !clusterCheck.isAvailable();
+        }
+
+        private boolean noApplicationServersReady() {
+          return getInfo().getServerStartupInfo().stream()
+              .map(DomainPresenceInfo.ServerInfo::getName)
+              .filter(this::isApplicationServer)
+              .noneMatch(StatusUpdateContext.this::isServerReady);
+        }
+
+        // when the domain start policy is ADMIN_ONLY, the admin server is considered to be an application server.
+        private boolean isApplicationServer(String serverName) {
+          return isAdminOnlyDomain() || !isAdminServer(serverName);
+        }
+
+        private boolean isAdminOnlyDomain() {
+          return getDomain().getSpec().getServerStartPolicy() == ServerStartPolicy.ADMIN_ONLY;
+        }
+
+        private boolean isAdminServer(String serverName) {
+          return status.getServers().stream()
+              .filter(s -> s.getServerName().equals(serverName))
+              .anyMatch(ServerStatus::isAdminServer);
         }
       }
 
       private class ClusterCheck {
 
         private final String clusterName;
-        private final int minReplicaCount;
         private final int maxReplicaCount;
         private final int specifiedReplicaCount;
         private final List<String> startedServers;
@@ -795,7 +858,6 @@ public class DomainStatusUpdater {
         ClusterCheck(DomainStatus domainStatus, ClusterStatus clusterStatus) {
           this.clusterStatus = clusterStatus;
           clusterName = clusterStatus.getClusterName();
-          minReplicaCount = clusterStatus.getMinimumReplicas();
           maxReplicaCount = clusterStatus.getMaximumReplicas();
           specifiedReplicaCount = clusterStatus.getReplicasGoal();
           startedServers = getStartedServersInCluster(domainStatus, clusterName);
@@ -864,15 +926,11 @@ public class DomainStatusUpdater {
         }
 
         private long getSufficientServerCount() {
-          return max(1, minReplicas(), specifiedReplicaCount - maxUnavailable());
+          return max(1, MINIMUM_CLUSTER_COUNT, specifiedReplicaCount - maxUnavailable());
         }
 
         private int max(Integer... inputs) {
           return Arrays.stream(inputs).reduce(0, Math::max);
-        }
-
-        private int minReplicas() {
-          return getInfo().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
         private long numServersReady() {
@@ -892,6 +950,10 @@ public class DomainStatusUpdater {
           clusterStatus.addCondition(
               new ClusterCondition(ClusterConditionType.COMPLETED)
                   .withStatus(isProcessingCompleted()));
+        }
+
+        private String createNotReadyMessage() {
+          return LOGGER.formatMessage(CLUSTER_NOT_READY, clusterName, getSufficientServerCount(), numServersReady());
         }
       }
 
@@ -1299,12 +1361,8 @@ public class DomainStatusUpdater {
           .withClusterName(clusterName)
           .withLabelSelector(DOMAINUID_LABEL + "=" + info.getDomainUid() + "," + CLUSTERNAME_LABEL + "=" + clusterName)
           .withMaximumReplicas(clusterConfig.getClusterSize())
-          .withMinimumReplicas(useMinimumClusterSize(clusterName) ? clusterConfig.getMinClusterSize() : 0)
+          .withMinimumReplicas(MINIMUM_CLUSTER_COUNT)
           .withReplicasGoal(getClusterSizeGoal(clusterName));
-    }
-
-    private boolean useMinimumClusterSize(String clusterName) {
-      return !info.isAllowReplicasBelowMinDynClusterSize(clusterName);
     }
 
     private Integer getClusterSizeGoal(String clusterName) {

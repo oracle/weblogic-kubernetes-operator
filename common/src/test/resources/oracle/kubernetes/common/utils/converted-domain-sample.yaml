@@ -7,7 +7,7 @@ metadata:
   labels:
     weblogic.domainUID: sample-domain1
   annotations:
-    weblogic.v8.preserved: '{"$.spec.adminServer":{"serverStartState":"RUNNING"},"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"}}'
+    weblogic.v8.preserved: '{"$.spec":{"allowReplicasBelowMinDynClusterSize":false},"$.spec.adminServer":{"serverStartState":"RUNNING"},"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"allowReplicasBelowMinDynClusterSize":true,"serverStartState":"RUNNING"}}'
 spec:
   domainHomeSourceType: FromModel
   domainHome: /u01/domains/sample-domain1
@@ -85,6 +85,7 @@ metadata:
     weblogic.createdByOperator: "true"
 spec:
     clusterName: cluster-1
+    serverStartPolicy: Always
     serverPod:
       affinity:
         podAntiAffinity:

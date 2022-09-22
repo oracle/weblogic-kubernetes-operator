@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f0c826f67ef899c489b9ea384a06a59e0ad7ff1095fe47b40b8e0c451d2a2419
+    weblogic.sha256: 4d3978c01ddf8b9f9ba477576355f57ecf2a7df320b4a7ae848210d3d5b21703
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -72,6 +72,19 @@ spec:
                       instance, including the ports of built-in channels or network
                       access points (NAPs).
                     type: integer
+                  resources:
+                    description: Memory and CPU minimum requirements and limits for
+                      the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`.
+                    properties:
+                      requests:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      limits:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                 type: object
               configuration:
                 description: Models and overrides affecting the WebLogic domain configuration.
@@ -3675,14 +3688,6 @@ spec:
               logHomeEnabled:
                 description: Specifies whether the log home folder is enabled. Defaults
                   to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
-                type: boolean
-              allowReplicasBelowMinDynClusterSize:
-                default: true
-                description: Whether to allow the number of running cluster member
-                  Managed Server instances to drop below the minimum dynamic cluster
-                  size configured in the WebLogic domain configuration, if this is
-                  not specified for a specific cluster under the `clusters` field.
-                  Defaults to true.
                 type: boolean
               serverPod:
                 description: Customization affecting the generation of Pods for WebLogic

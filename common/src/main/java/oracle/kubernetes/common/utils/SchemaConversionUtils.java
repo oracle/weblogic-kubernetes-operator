@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -118,6 +119,9 @@ public class SchemaConversionUtils {
     LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
     String apiVersion = (String) domain.get(API_VERSION);
+
+    integrateClusters(spec, resourceLookup);
+
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     convertDomainStatus(domain);
@@ -128,11 +132,10 @@ public class SchemaConversionUtils {
     adjustReplicasDefault(spec, apiVersion);
     removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
 
-    Map<String, Object> toBePreserved = new LinkedHashMap<>();
+    Map<String, Object> toBePreserved = new TreeMap<>();
+    removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved);
     removeAndPreserveServerStartState(spec, toBePreserved);
     removeAndPreserveIstio(spec, toBePreserved);
-
-    integrateClusters(spec, resourceLookup);
 
     try {
       preserve(domain, toBePreserved, apiVersion);
@@ -613,12 +616,11 @@ public class SchemaConversionUtils {
     }
   }
 
-
   private void removeAndPreserveIstio(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     Optional.ofNullable(getConfiguration(spec)).ifPresent(configuration -> {
       Object existing = configuration.remove("istio");
       if (existing != null) {
-        toBePreserved.put("$.spec.configuration", Map.of("istio", existing));
+        preserve(toBePreserved, "$.spec.configuration", Map.of("istio", existing));
       }
     });
   }
@@ -627,6 +629,30 @@ public class SchemaConversionUtils {
     if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
       Optional.ofNullable((Map<String, Object>) spec.get("webLogicCredentialsSecret"))
           .ifPresent(wcs -> wcs.remove(NAMESPACE));
+    }
+  }
+
+  private void removeAndPreserveAllowReplicasBelowMinDynClusterSize(Map<String, Object> spec,
+                                                                    Map<String, Object> toBePreserved) {
+    removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved, "$.spec");
+    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+        removeAndPreserveAllowReplicasBelowMinDynClusterSizeForCluster((Map<String, Object>) cluster, toBePreserved)));
+  }
+
+  private void removeAndPreserveAllowReplicasBelowMinDynClusterSize(Map<String, Object> spec,
+                                                                    Map<String, Object> toBePreserved, String scope) {
+    Object existing = spec.remove("allowReplicasBelowMinDynClusterSize");
+    if (existing != null) {
+      preserve(toBePreserved, scope, Map.of("allowReplicasBelowMinDynClusterSize", existing));
+    }
+  }
+
+  private void removeAndPreserveAllowReplicasBelowMinDynClusterSizeForCluster(Map<String, Object> cluster,
+                                                                              Map<String, Object> toBePreserved) {
+    Object name = cluster.get(CLUSTER_NAME);
+    if (name != null) {
+      removeAndPreserveAllowReplicasBelowMinDynClusterSize(
+          cluster, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
     }
   }
 
@@ -644,7 +670,7 @@ public class SchemaConversionUtils {
                                                  Map<String, Object> toBePreserved, String scope) {
     Object existing = spec.remove("serverStartState");
     if (existing != null) {
-      toBePreserved.put(scope, Map.of("serverStartState", existing));
+      preserve(toBePreserved, scope, Map.of("serverStartState", existing));
     }
   }
 
@@ -663,6 +689,16 @@ public class SchemaConversionUtils {
       removeAndPreserveServerStartState(
           managedServer, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')]");
     }
+  }
+
+  private void preserve(Map<String, Object> toBePreserved, String key, Map<String, Object> value) {
+    toBePreserved.compute(key, (k, v) -> {
+      if (v == null) {
+        v = new TreeMap<String, Object>();
+      }
+      ((Map<String, Object>) v).putAll(value);
+      return v;
+    });
   }
 
   private void preserve(Map<String, Object> domain, Map<String, Object> toBePreserved, String apiVersion)
