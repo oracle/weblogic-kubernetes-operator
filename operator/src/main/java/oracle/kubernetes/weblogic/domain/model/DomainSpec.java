@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
@@ -339,6 +340,20 @@ public class DomainSpec extends BaseConfiguration {
 
   V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
+  }
+
+  V1ResourceRequirements getMonitoringExporterResourceRequirements() {
+    return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getResources).orElse(null);
+  }
+
+  /**
+   * Specifies the image for the monitoring exporter sidecar.
+   * @param resourceRequirements the name of the docker image
+   */
+  public void setMonitoringExporterResources(V1ResourceRequirements resourceRequirements) {
+    assert monitoringExporter != null : "May not set resources without configuration";
+
+    monitoringExporter.setResources(resourceRequirements);
   }
 
   /**
