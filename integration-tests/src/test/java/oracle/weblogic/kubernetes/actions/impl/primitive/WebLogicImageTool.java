@@ -12,6 +12,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.YAML_MAX_FILE_SIZE_PROPERTY;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
@@ -168,6 +169,7 @@ public class WebLogicImageTool {
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
         + " --wdtDomainType " + params.domainType()
+        + " --wdtJavaOptions " + YAML_MAX_FILE_SIZE_PROPERTY
         + ownership;
 
     if (params.wdtModelOnly()) {
