@@ -321,7 +321,7 @@ public class CommonMiiTestUtils {
     ClusterList clusters = Cluster.listClusterCustomResources(domNamespace);
     if (clusterNames != null) {
       for (String clusterName : clusterNames) {
-        String clusterResName = domainResourceName + "-" + clusterName;
+        String clusterResName = clusterName;
         if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
           getLogger().info("!!!Cluster Resource {0} in namespace {1} already exists, skipping...",
               clusterResName, domNamespace);
