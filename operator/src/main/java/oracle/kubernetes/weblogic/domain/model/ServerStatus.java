@@ -287,6 +287,13 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
+  /**
+   * Returns true if this server is an admin server.
+   */
+  public boolean isAdminServer() {
+    return isAdminServer;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
