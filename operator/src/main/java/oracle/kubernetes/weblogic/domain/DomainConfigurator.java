@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -34,7 +35,7 @@ public abstract class DomainConfigurator {
 
   private Domain domain;
 
-  public DomainConfigurator() {
+  protected DomainConfigurator() {
   }
 
   protected DomainConfigurator(Domain domain) {
@@ -334,6 +335,8 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withPodAnnotation(String name, String value);
 
   public abstract DomainConfigurator withMonitoringExporterConfiguration(String configuration);
+
+  public abstract DomainConfigurator withMonitoringExporterResources(V1ResourceRequirements resourceRequirements);
 
   public abstract DomainConfigurator withMonitoringExporterImage(String imageName);
 

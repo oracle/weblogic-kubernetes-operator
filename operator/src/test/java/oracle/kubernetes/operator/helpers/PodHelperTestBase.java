@@ -431,6 +431,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
+  protected void defineExporterConfigurationWithResourceRequirements() {
+    defineExporterConfiguration()
+        .withMonitoringExporterResources(
+            new V1ResourceRequirements().limits(Map.of("cpu", new Quantity("0.25"))));
+  }
+
   protected DomainConfigurator defineFluentdConfiguration(boolean watchIntrospectorLog) {
     return configureDomain()
             .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
@@ -492,6 +498,14 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getExporterContainer().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
   }
+  
+  @Test
+  void monitoringExporterContainer_SpecifiedCpuLimit() {
+    defineExporterConfigurationWithResourceRequirements();
+
+    assertThat(getExporterContainer().getResources().getLimits(), hasEntry("cpu", new Quantity("0.25")));
+  }
+
 
   @Test
   void whenExporterContainerCreated_hasMetricsPortsItem() {

@@ -45,6 +45,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainV2Test extends DomainTestBase {
 
@@ -1678,5 +1679,24 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
+  }
+
+  @Test
+  void whenReadFromYaml_MonitoringExporterSpecificationSupportsBasicOperations() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+
+    final MonitoringExporterSpecification specification = domain.getSpec().getMonitoringExporterSpecification();
+    assertThat(specification.toString(), containsString("monexp:latest"));
+    assertThat(specification, not(equalTo(new MonitoringExporterSpecification())));
+    assertThat(specification.hashCode(), not(equalTo(new MonitoringExporterSpecification().hashCode())));
+  }
+
+  @Test
+  void whenNoMonitoringExporterConfigurationDefined_refuseAttemptToSetResourceRequirements() {
+    final DomainConfigurator domainConfigurator = configureDomain(domain);
+    final V1ResourceRequirements resourceRequirements = new V1ResourceRequirements();
+    
+    assertThrows(AssertionError.class,
+        () -> domainConfigurator.withMonitoringExporterResources(resourceRequirements));
   }
 }

@@ -1432,6 +1432,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .name(EXPORTER_CONTAINER_NAME)
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
+            .resources(getDomain().getMonitoringExporterResources())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name(getMetricsPortName()).protocol("TCP").containerPort(getPort()));
