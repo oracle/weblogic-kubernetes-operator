@@ -119,6 +119,9 @@ public class SchemaConversionUtils {
     LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
     String apiVersion = (String) domain.get(API_VERSION);
+
+    integrateClusters(spec, resourceLookup);
+
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     convertDomainStatus(domain);
@@ -133,8 +136,6 @@ public class SchemaConversionUtils {
     removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved);
     removeAndPreserveServerStartState(spec, toBePreserved);
     removeAndPreserveIstio(spec, toBePreserved);
-
-    integrateClusters(spec, resourceLookup);
 
     try {
       preserve(domain, toBePreserved, apiVersion);

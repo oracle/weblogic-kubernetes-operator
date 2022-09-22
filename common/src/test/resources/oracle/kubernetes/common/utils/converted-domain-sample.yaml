@@ -85,6 +85,7 @@ metadata:
     weblogic.createdByOperator: "true"
 spec:
     clusterName: cluster-1
+    serverStartPolicy: Always
     serverPod:
       affinity:
         podAntiAffinity:
