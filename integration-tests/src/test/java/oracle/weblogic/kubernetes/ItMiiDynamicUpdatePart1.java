@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -60,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * changing application target, changing dynamic cluster size and removing application target
  * in a running WebLogic domain.
  */
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part1")
 @IntegrationTest
@@ -429,7 +429,7 @@ class ItMiiDynamicUpdatePart1 {
     // The client sends 300 messsage to a Uniform Distributed Queue.
     // Make sure the messages are distributed across the members evenly
     // and JMS connection is load balanced across all servers
-    testUntil(
+    testUntil(withLongRetryPolicy,
         runClientInsidePod(helper.adminServerPodName, helper.domainNamespace,
           "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "2", "true"),
         logger,
