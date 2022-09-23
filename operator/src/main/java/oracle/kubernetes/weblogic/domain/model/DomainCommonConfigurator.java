@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -171,6 +172,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withMonitoringExporterConfiguration(String configuration) {
     getDomainSpec().createMonitoringExporterConfiguration(configuration);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMonitoringExporterResources(V1ResourceRequirements resourceRequirements) {
+    getDomainSpec().setMonitoringExporterResources(resourceRequirements);
     return this;
   }
 
