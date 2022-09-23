@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
@@ -49,6 +50,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 
@@ -290,10 +292,10 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
             DomainProcessorImpl.bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
-    return Step.chain(
-        new UpHeadStep(),
-        ConfigMapHelper.readExistingIntrospectorConfigMap(),
+    Step introspectionAndDomainPresenceSteps = Step.chain(ConfigMapHelper.readExistingIntrospectorConfigMap(),
         DomainPresenceStep.createDomainPresenceStep(domainUpStrategy, managedServerStrategy));
+
+    return new UpHeadStep(introspectionAndDomainPresenceSteps);
   }
 
   static Step domainIntrospectionSteps() {
@@ -336,12 +338,35 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     }
   }
 
-  private static class UpHeadStep extends Step {
+  private class UpHeadStep extends Step {
+    UpHeadStep(Step next) {
+      super(next);
+    }
 
     @Override
     public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(), info.getNamespace(),
+          new ReadDomainResponseStep(getNext())), packet);
+    }
+  }
+
+  class ReadDomainResponseStep extends ResponseStep<DomainResource> {
+    ReadDomainResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
       DomainPresenceInfo.fromPacket(packet).ifPresent(info -> info.setDeleting(false));
       return doNext(packet);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
+      return callResponse.getStatusCode() == HTTP_NOT_FOUND
+          ? doNext(createDomainDownPlan(), packet)
+          : super.onFailure(packet, callResponse);
     }
   }
 
