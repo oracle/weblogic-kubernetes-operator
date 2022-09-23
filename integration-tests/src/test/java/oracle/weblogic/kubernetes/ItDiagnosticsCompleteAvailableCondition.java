@@ -70,7 +70,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   private static final String adminServerName = "admin-server";
   private static final String cluster1Name = "cluster-1";
   private static final String domainUid = "diagnosticsdomain";
-  private static final String clusterResName = domainUid + "-" + cluster1Name;
+  private static final String clusterResName = cluster1Name;
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
   private static final String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
@@ -694,7 +694,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     // patch the domain back to the original state
     String patchStr;
     String serverStartPolicy;
-    String clusterResName = domainUid + "-" + cluster1Name;
+    String clusterResName =  cluster1Name;
     logger.info("patch the domain and change the serverStartPolicy to IfNeeded");
     ClusterResource clusterResource = assertDoesNotThrow(()
         -> Kubernetes.getClusterCustomResource(

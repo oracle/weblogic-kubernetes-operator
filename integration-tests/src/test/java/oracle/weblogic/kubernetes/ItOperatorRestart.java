@@ -186,7 +186,7 @@ class ItOperatorRestart {
 
     // scale up the domain by increasing replica count
     replicaCount = 3;
-    boolean scalingSuccess = scaleCluster(domainUid + "-cluster-1", domainNamespace, replicaCount);
+    boolean scalingSuccess = scaleCluster("cluster-1", domainNamespace, replicaCount);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
 
