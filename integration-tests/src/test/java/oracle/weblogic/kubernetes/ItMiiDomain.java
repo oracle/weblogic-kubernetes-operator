@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -91,8 +90,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -220,11 +218,6 @@ class ItMiiDomain {
 
     // create cluster object
     String clusterName = "cluster-1";
-    ClusterResource cluster = createClusterResource(
-        clusterName, domainNamespace, replicaCount);
-
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
-    createClusterAndVerify(cluster);
 
     // create the domain object
     DomainResource domain = createDomainResourceWithConfigMap(domainUid,
@@ -232,8 +225,8 @@ class ItMiiDomain {
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
-    // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain = createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -349,14 +342,7 @@ class ItMiiDomain {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace1,
             "weblogicenc", "weblogicenc");
 
-    // create cluster object
     String clusterName = "cluster-1";
-    ClusterResource cluster = createClusterResource(
-        clusterName, domainNamespace1, replicaCount);
-
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace1);
-    createClusterAndVerify(cluster);
-
     // create the domain object
     DomainResource domain = createDomainResource(domainUid1,
                 domainNamespace1,
@@ -369,8 +355,8 @@ class ItMiiDomain {
     // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
 
-    // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain = createClusterResourceAndAddReferenceToDomain(domainUid1 + "-" + clusterName,
+        clusterName, domainNamespace1, domain, replicaCount);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
