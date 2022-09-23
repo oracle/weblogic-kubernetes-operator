@@ -262,6 +262,14 @@ pipeline {
                description: '',
                defaultValue: '2.0.7'
         )
+        string(name: 'PROMETHEUS_CHART_VERSION',
+               description: '',
+               defaultValue: '15.2.0'
+        )
+        string(name: 'GRAFANA_CHART_VERSION',
+               description: '',
+               defaultValue: '6.38.6'
+        )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
                      defaultValue: false
@@ -608,6 +616,8 @@ EOF
                             echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
