@@ -42,6 +42,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -194,11 +195,11 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test brings up a new domains and verifies it can successfully start by doing the following. a. Creates new WebLogic
+   * Test creates new clusters and verifies it can successfully start by doing the following. a. Creates new WebLogic
    * static cluster using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion version d.
-   * Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
-   * pre-existing WebLogic cluster.
+   * Verifies the servers in the new WebLogic cluster comes up.
    */
+  @Disabled
   @Order(2)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
@@ -208,11 +209,11 @@ class ItLargeCapacityDomainsClusters {
     int adminServerPort
         = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String clusterBaseName = "cluster";
+    String clusterBaseName = "cluster-";
 
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = clusterName + "ms";
+      String clusterManagedServerNameBase = clusterName + "-ms-";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       // create a temporary WebLogic WLST property file
@@ -263,7 +264,7 @@ class ItLargeCapacityDomainsClusters {
         checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
 
-      List<String> managedServerNames = new ArrayList<String>();
+      List<String> managedServerNames = new ArrayList<>();
       for (int i = 1; i <= clusterReplicaCount; i++) {
         managedServerNames.add(clusterManagedServerNameBase + i);
       }
@@ -279,6 +280,7 @@ class ItLargeCapacityDomainsClusters {
    * version d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers
    * on pre-existing WebLogic cluster.
    */
+  @Order(3)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewClustersDontStart() {
@@ -288,12 +290,10 @@ class ItLargeCapacityDomainsClusters {
     int adminServerPort
         = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String clusterBaseName = "sdcluster";
-    int replicaCount = 2;
-    int numOfClusters = 15;
+    String clusterBaseName = "sdcluster-";
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = clusterName + "ms";
+      String clusterManagedServerNameBase = clusterName + "-ms-";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
       // create a temporary WebLogic WLST property file
       File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -306,7 +306,7 @@ class ItLargeCapacityDomainsClusters {
       p.setProperty("test_name", "create_cluster");
       p.setProperty("cluster_name", clusterName);
       p.setProperty("server_prefix", clusterManagedServerNameBase);
-      p.setProperty("server_count", String.valueOf(replicaCount));
+      p.setProperty("server_count", String.valueOf(clusterReplicaCount));
       assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
           "Failed to write the WLST properties to file");
       // changet the admin server port to a different value to force pod restart
@@ -317,7 +317,7 @@ class ItLargeCapacityDomainsClusters {
           = "["
           + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
           + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": "
-          + replicaCount + ", \"serverStartPolicy\": \"IF_NEEDED\"}"
+          + clusterReplicaCount + ", \"serverStartPolicy\": \"IF_NEEDED\"}"
           + "}]";
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -340,6 +340,25 @@ class ItLargeCapacityDomainsClusters {
     String introspectPodNameBase = getIntrospectJobName(domainUid);
     checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+
+    for (int j = 1; j <= numOfClusters; j++) {
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-ms-";
+      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
+      // verify managed server services and pods are created
+      for (int i = 1; i <= clusterReplicaCount; i++) {
+        logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+            clusterManagedServerPodNamePrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+      }
+
+      List<String> managedServerNames = new ArrayList<>();
+      for (int i = 1; i <= clusterReplicaCount; i++) {
+        managedServerNames.add(clusterManagedServerNameBase + i);
+      }
+      //verify admin server accessibility and the health of cluster members
+      verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+    }
   }
 
   /**
@@ -348,87 +367,65 @@ class ItLargeCapacityDomainsClusters {
    * version d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers
    * on pre-existing WebLogic cluster.
    */
+  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
-  void testCreateNewClustersRestartAS() {
+  void testRestartClusters() {
 
-    logger.info("Getting port for default channel");
-    int adminServerPort
-        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-
-    String clusterBaseName = "rcluster";
-    int replicaCount = 2;
-
-    for (int j = 1; j <= 15; j++) {
+    String clusterBaseName = "sdcluster-";
+    for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = clusterName + "ms";
+      String clusterManagedServerNameBase = clusterName + "-ms-";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-
-      // create a temporary WebLogic WLST property file
-      File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-          "Creating WLST properties file failed");
-      Properties p = new Properties();
-      p.setProperty("admin_host", adminServerPodName);
-      p.setProperty("admin_port", Integer.toString(adminServerPort));
-      p.setProperty("admin_username", wlsUserName);
-      p.setProperty("admin_password", wlsPassword);
-      p.setProperty("test_name", "create_cluster");
-      p.setProperty("cluster_name", clusterName);
-      p.setProperty("server_prefix", clusterManagedServerNameBase);
-      p.setProperty("server_count", String.valueOf(replicaCount));
-      assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-          "Failed to write the WLST properties to file");
-
-      // changet the admin server port to a different value to force pod restart
-      Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-      executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
-          = "["
-          + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-          + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": "
-          + replicaCount + ", \"serverStartState\": \"RUNNING\"}"
-          + "}"
-          + "]";
+          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + (j - 1) + "/" + clusterName + "/serverStartPolicy\", "
+          + "\"value\": \"serverStartPolicy\": \"NEVER\""
+          + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
+    }
+    for (int j = 1; j <= numOfClusters; j++) {
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-ms-";
+      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
-      //restart AS
-      restartAS();
+      // verify managed server services and pods are created
+      for (int i = 1; i <= clusterReplicaCount; i++) {
+        logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+            clusterManagedServerPodNamePrefix + i, domainNamespace);
+        checkPodDoesNotExist(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+      }
+    }
+    for (int j = 1; j <= numOfClusters; j++) {
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-ms-";
+      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
-      //run the inrospector to start all clusters
-      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
-      patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-          + "]";
+      logger.info("patch the domain resource with new cluster and introspectVersion");
+      String patchStr
+          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + (j - 1) + "/" + clusterName + "/serverStartPolicy\", "
+          + "\"value\": \"serverStartPolicy\": \"IF_NEEDED\""
+          + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      patch = new V1Patch(patchStr);
+      V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
+    }
+    for (int j = 1; j <= numOfClusters; j++) {
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-ms-";
+      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
-      //verify the introspector pod is created and runs
-      String introspectPodNameBase = getIntrospectJobName(domainUid);
-
-      checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
-      checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
       // verify managed server services and pods are created
-      for (int i = 1; i <= replicaCount; i++) {
+      for (int i = 1; i <= clusterReplicaCount; i++) {
         logger.info("Checking managed server service and pod {0} is created in namespace {1}",
             clusterManagedServerPodNamePrefix + i, domainNamespace);
         checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
-
-      List<String> managedServerNames = new ArrayList<String>();
-      for (int i = 1; i <= replicaCount; i++) {
-        managedServerNames.add(clusterManagedServerNameBase + i);
-      }
-
-      //verify admin server accessibility and the health of cluster members
-      verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
     }
 
   }
