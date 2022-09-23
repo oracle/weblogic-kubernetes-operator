@@ -266,9 +266,13 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public ClusterResource findCluster(V1LocalObjectReference reference) {
+    public ClusterResource findCluster(V1LocalObjectReference reference, String namespace) {
       return Optional.ofNullable(reference.getName()).flatMap(name -> getClusters(packet).stream()
-          .filter(cluster -> name.equals(cluster.getClusterName())).findFirst()).orElse(null);
+          .filter(cluster -> nameAndNSMatch(namespace, name, cluster)).findFirst()).orElse(null);
+    }
+
+    private boolean nameAndNSMatch(String namespace, String name, ClusterResource cluster) {
+      return name.equals(cluster.getMetadata().getName()) && namespace.equals(cluster.getNamespace());
     }
 
     boolean isSpecifiedConfigMap(V1ConfigMap configmap, String name, String namespace) {

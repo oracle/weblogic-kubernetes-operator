@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -33,9 +33,10 @@ public interface KubernetesResourceLookup {
   /**
    * Finds a Cluster resource from a reference.
    * @param reference Local reference
+   * @param namespace the namespace in which the cluster resource is looked for
    * @return Cluster resource or null, if cluster resource is not found
    */
-  ClusterResource findCluster(V1LocalObjectReference reference);
+  ClusterResource findCluster(V1LocalObjectReference reference, String namespace);
 
   /**
    * Returns all domain resources in the given namespace.

@@ -383,7 +383,8 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
           .configureCluster(info,"Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
-
+    ClusterResource cluster1 = createTestCluster("Cluster-1");
+    resourceLookup.defineResource(cluster1);
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
@@ -393,7 +394,8 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
-
+    ClusterResource cluster1 = createTestCluster("Cluster-1");
+    resourceLookup.defineResource(cluster1);
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
@@ -873,6 +875,28 @@ class DomainValidationTest extends DomainValidationTestBase {
         contains(stringContainsInOrder("When fluentdSpecification is specified in the domain "
             + "spec, a secret containing elastic search credentials must be specified in",
             "spec.fluentdSpecification.elasticSearchCredentials")));
+  }
+
+  @Test
+  void whenClusterReferenceNotFound_reportError() {
+    resourceLookup.defineResource(domain);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
+  @Test
+  void whenClusterReferenceInDifferentNamespace_reportError() {
+    ClusterResource cluster1 = createTestCluster("cluster-1", "NS2");
+    resourceLookup.defineResource(domain);
+    resourceLookup.defineResource(cluster1);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
   }
 
   private DomainConfigurator configureDomain(DomainResource domain) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -84,14 +84,18 @@ public class DomainValidationTestBase extends DomainTestUtils {
     }
 
     @Override
-    public ClusterResource findCluster(V1LocalObjectReference reference) {
+    public ClusterResource findCluster(V1LocalObjectReference reference, String namespace) {
       String name = reference.getName();
       if (name != null) {
         List<ClusterResource> clusters = getResourceList(ClusterResource.class);
-        return clusters.stream().filter(cluster -> name.equals(cluster.getMetadata().getName()))
+        return clusters.stream().filter(cluster -> nameAndNSMatch(namespace, name, cluster))
             .findFirst().orElse(null);
       }
       return null;
+    }
+
+    private boolean nameAndNSMatch(String namespace, String name, ClusterResource cluster) {
+      return name.equals(cluster.getMetadata().getName()) && namespace.equals(cluster.getNamespace());
     }
 
     private boolean isResourceExists(String name, Class<? extends KubernetesObject> type, String namespace) {
