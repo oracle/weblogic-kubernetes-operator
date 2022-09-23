@@ -899,6 +899,18 @@ class DomainValidationTest extends DomainValidationTestBase {
         contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
   }
 
+  @Test
+  void whenClusterReferenceDifferentName_reportError() {
+    ClusterResource cluster1 = createTestCluster("cluster-2");
+    resourceLookup.defineResource(domain);
+    resourceLookup.defineResource(cluster1);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
   private DomainConfigurator configureDomain(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
