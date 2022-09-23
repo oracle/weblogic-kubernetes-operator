@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
@@ -279,6 +280,10 @@ public class Domain implements KubernetesObject {
 
   public MonitoringExporterSpecification getMonitoringExporterSpecification() {
     return spec.getMonitoringExporterSpecification();
+  }
+
+  public V1ResourceRequirements getMonitoringExporterResources() {
+    return spec.getMonitoringExporterResourceRequirements();
   }
 
   public String getMonitoringExporterImage() {

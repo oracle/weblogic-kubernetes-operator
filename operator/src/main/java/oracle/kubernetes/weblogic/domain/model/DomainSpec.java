@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -346,6 +347,20 @@ public class DomainSpec extends BaseConfiguration {
 
   public Integer getMonitoringExporterPort() {
     return monitoringExporter == null ? null : monitoringExporter.getPort();
+  }
+
+  V1ResourceRequirements getMonitoringExporterResourceRequirements() {
+    return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getResources).orElse(null);
+  }
+
+  /**
+   * Specifies the image for the monitoring exporter sidecar.
+   * @param resourceRequirements the name of the docker image
+   */
+  public void setMonitoringExporterResources(V1ResourceRequirements resourceRequirements) {
+    assert monitoringExporter != null : "May not set resources without configuration";
+
+    monitoringExporter.setResources(resourceRequirements);
   }
 
   /**
