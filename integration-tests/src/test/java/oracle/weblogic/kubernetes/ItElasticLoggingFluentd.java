@@ -447,10 +447,11 @@ class ItElasticLoggingFluentd {
     // create cluster resource
     if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
       ClusterResource cluster =
-          createClusterResource(clusterName, domainNamespace, replicaCount);
+          createClusterResource(domainUid + "-" + clusterName,
+              clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(domainUid + "-" + clusterName));
 
     setPodAntiAffinity(domain);
     // create domain using model in image
