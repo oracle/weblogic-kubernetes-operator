@@ -220,6 +220,7 @@
                                 <wko.it.skip.build.images.if.exists>${wko.it.skip.build.images.if.exists}</wko.it.skip.build.images.if.exists>
                                 <wko.it.wdt.test.version>${wko.it.wdt.test.version}</wko.it.wdt.test.version>
                                 <wko.it.monitoring.exporter.webapp.version>${wko.it.monitoring.exporter.webapp.version}</wko.it.monitoring.exporter.webapp.version>
+                                <wko.it.monitoring.exporter.branch>${wko.it.monitoring.exporter.branch}</wko.it.monitoring.exporter.branch>
                                 <wko.it.prometheus.chart.version>${wko.it.prometheus.chart.version}</wko.it.prometheus.chart.version>
                                 <wko.it.grafana.chart.version>${wko.it.grafana.chart.version}</wko.it.grafana.chart.version>
                                 <wko.it.istio.version>${wko.it.istio.version}</wko.it.istio.version>
