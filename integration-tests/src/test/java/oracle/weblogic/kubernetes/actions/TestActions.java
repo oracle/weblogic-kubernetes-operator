@@ -353,38 +353,38 @@ public class TestActions {
   /**
    * Delete Cluster Custom Resource.
    *
-   * @param clusterName Cluster custom resource name
+   * @param clusterResName Cluster custom resource name
    * @param namespace namespace in which cluster custom resource exists
    */
-  public static void deleteClusterCustomResource(String clusterName, String namespace) {
-    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterName, namespace);
+  public static void deleteClusterCustomResource(String clusterResName, String namespace) {
+    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterResName, namespace);
   }
 
   /**
    * Patch the Cluster Custom Resource.
    *
-   * @param clusterName unique cluster identifier
+   * @param clusterResName unique cluster resource identifier
    * @param namespace name of namespace
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
   "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
-  public static boolean patchClusterCustomResource(String clusterName, String namespace,
+  public static boolean patchClusterCustomResource(String clusterResName, String namespace,
                                                    V1Patch patch, String patchFormat) {
-    return Cluster.patchClusterCustomResource(clusterName, namespace, patch, patchFormat);
+    return Cluster.patchClusterCustomResource(clusterResName, namespace, patch, patchFormat);
   }
 
   /**
    * Scale a cluster in a specified namespace by patching cluster resource.
    *
-   * @param clusterName cluster in the domain to be scaled
+   * @param clusterResName cluster resource name
    * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
    */
-  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
-    return Cluster.scaleCluster(clusterName, namespace, numOfServers);
+  public static boolean scaleCluster(String clusterResName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterResName, namespace, numOfServers);
   }
 
   /**
