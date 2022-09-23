@@ -14,6 +14,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -203,9 +204,10 @@ public class RollingHelper {
     }
   }
 
-  private static class RollSpecificClusterStep extends Step {
+  static class RollSpecificClusterStep extends Step {
     private final String clusterName;
     private final Queue<StepAndPacket> servers;
+    private int loggedServersSize = -1;
 
     public RollSpecificClusterStep(String clusterName, Queue<StepAndPacket> clusteredServerRestarts) {
       this.clusterName = clusterName;
@@ -217,11 +219,25 @@ public class RollingHelper {
       return clusterName;
     }
 
+    List<String> getServerNames(@Nonnull Queue<StepAndPacket> stepAndPackets) {
+      return stepAndPackets.stream().map(this::getServerName).collect(Collectors.toList());
+    }
+
+    String getServerName(StepAndPacket stepAndPacket) {
+      return (String) Optional.ofNullable(stepAndPacket.getPacket())
+        .map(p -> p.get(ProcessingConstants.SERVER_NAME))
+        .orElse("");
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       StepContext context = new StepContext(packet, clusterName);
       List<String> readyServers = context.getReadyServers(packet.getValue(DOMAIN_TOPOLOGY));
-      LOGGER.info(MessageKeys.ROLLING_SERVERS, context.getDomainUid(), servers, readyServers);
+      if (loggedServersSize != servers.size()) {
+        LOGGER.info(MessageKeys.ROLLING_SERVERS,
+            context.getDomainUid(), getServerNames(servers), readyServers);
+        loggedServersSize = servers.size();
+      }
 
       int countToRestartNow = readyServers.size() - context.getMinAvailable(clusterName);
       Collection<StepAndPacket> restarts = new ArrayList<>();
