@@ -23,7 +23,6 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.ClusterResource;
-import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -69,6 +68,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -108,7 +108,9 @@ class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
   int replicaCount = 2;
+  static String clusterName = "cluster-1";
   String wlClusterName = "cluster-1";
+
 
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -509,8 +511,9 @@ class ItDiagnosticsFailedCondition {
                           .nodePort(getNextFreePort())))));
       setPodAntiAffinity(domain);
 
-      ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
-      ClusterResource cluster = createClusterResource(clusterResName, domainNamespace, spec);
+
+
+      ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domainNamespace, replicaCount);
       logger.info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
       createClusterAndVerify(cluster);
       // set cluster references
@@ -731,12 +734,11 @@ class ItDiagnosticsFailedCondition {
           replicaCount,
           fmwMiiImage,
           5L);
-      getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
-      ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
-      createClusterAndVerify(createClusterResource(clusterResName, domainNamespace, spec));
-      // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
+      getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
+
+      domain = createClusterResourceAndAddReferenceToDomain(
+          clusterResName, clusterName, domainNamespace, domain, replicaCount);
       createDomainAndVerify(domain, domainNamespace);
 
       String adminServerPodName = domainName + "-admin-server";
@@ -852,9 +854,11 @@ class ItDiagnosticsFailedCondition {
                 .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
 
-    ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
-    ClusterResource cluster = createClusterResource(clusterResName, domNamespace, spec);
-    logger.info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
+
+    ClusterResource cluster = createClusterResource(clusterResName,
+        clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
+
     createClusterAndVerify(cluster);
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
@@ -902,12 +906,17 @@ class ItDiagnosticsFailedCondition {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    ClusterSpec spec = new ClusterSpec().withClusterName(wlClusterName).replicas(replicaCount);
-    ClusterResource cluster = createClusterResource(clusterResName, domNamespace, spec);
-    logger.info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
+
+    ClusterResource cluster = createClusterResource(clusterResName,
+        clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource{0} in namespace {1}",
+        domainUid + "-" + clusterName, domNamespace);
     createClusterAndVerify(cluster);
+
+
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+
     return domain;
   }
 

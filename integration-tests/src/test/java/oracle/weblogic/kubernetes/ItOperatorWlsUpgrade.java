@@ -164,31 +164,6 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.1.4 to current.
-   * Currently from 3.1.4 to WKO 4.0, v9 cluster reference doesn't work
-   * Temporarily disabled
-   */
-  @Disabled
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.1.4 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom314ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom314ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.1.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.2.5 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.5 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom325ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom325ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.2.5", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
    * Operator upgrade from 3.3.8 to current.
    */
   @ParameterizedTest

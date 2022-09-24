@@ -40,7 +40,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.addClusterToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
@@ -400,7 +400,8 @@ public class IstioUtils {
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
     // create cluster resource
-    domain = addClusterToDomain(clusterName, domNamespace, domain, replicaCount);
+    domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,
+        clusterName, domNamespace, domain, replicaCount);
 
     if (monexpConfig != null) {
       LoggingFacade logger = getLogger();
