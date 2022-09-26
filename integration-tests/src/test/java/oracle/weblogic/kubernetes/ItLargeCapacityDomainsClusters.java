@@ -207,7 +207,7 @@ class ItLargeCapacityDomainsClusters {
         managedServerNames.add(clusterManagedServerNameBase + j);
       }
       //verify admin server accessibility and the health of cluster members
-      verifyMemberHealth(domainNamespaces.get(i), adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+      deployAndVerifyMemberHealth(adminServerPodName, managedServerNames, domainNamespaces.get(i));
     }
   }
 
