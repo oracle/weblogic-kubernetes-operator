@@ -118,6 +118,32 @@ public class Domain {
   }
 
   /**
+   * Check if the domain resource has been patched with a new image.
+   *
+   * @param domainUID identifier of the domain resource
+   * @param namespace Kubernetes namespace in which the domain exists
+   * @param replicas replicas that was used to patch the domain resource
+   * @return true if domain resource's image matches the expected value
+   */
+  public static boolean domainResourceReplicasPatched(
+      String domainUID,
+      String namespace,
+      int replicas
+  ) {
+    DomainResource domain = null;
+    try {
+      domain = getDomainCustomResource(domainUID, namespace);
+    } catch (ApiException apex) {
+      getLogger().severe("Failed to obtain the domain resource object from the API server", apex);
+      return false;
+    }
+
+    boolean domainPatched = (domain.spec().replicas().intValue() == replicas);
+    getLogger().info("Domain Object patched : " + domainPatched + " domain replicas = " + domain.spec().replicas());
+    return domainPatched;
+  }
+
+  /**
    * Check if the domain resource has been patched with a new WebLogic domain credentials secret.
    *
    * @param domainUID identifier of the domain resource
