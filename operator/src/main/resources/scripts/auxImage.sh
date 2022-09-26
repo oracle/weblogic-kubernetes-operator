@@ -42,8 +42,8 @@ elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compatibility-mode-operator-aux-co
   initCompatibilityModeInitContainersWithLegacyAuxImages > /tmp/compatibilityModeInitContainers.out 2>&1
   cat /tmp/compatibilityModeInitContainers.out
 
-  mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/compatibilityModeInitContainerLogs
-  cp /tmp/compatibilityModeInitContainers.out ${AUXILIARY_IMAGE_TARGET_PATH}/compatibilityModeInitContainerLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+  mkdir -p "${AUXILIARY_IMAGE_TARGET_PATH}"/"${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}"
+  cp /tmp/compatibilityModeInitContainers.out "${AUXILIARY_IMAGE_TARGET_PATH}"/"${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}"/"${AUXILIARY_IMAGE_CONTAINER_NAME}".out
 else
   trace SEVERE "Invalid auxiliary image container name '$AUXILIARY_IMAGE_CONTAINER_NAME'. " \
                "The auxiliary image container name must start with either 'operator-aux-container' " \
