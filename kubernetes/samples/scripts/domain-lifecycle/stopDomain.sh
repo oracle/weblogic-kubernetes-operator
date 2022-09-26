@@ -72,7 +72,7 @@ function initialize {
 initialize
 
 # Get the domain in json format
-domainJson=$(${kubernetesCli} get domain ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
+domainJson=$(${kubernetesCli} get domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} -o json --ignore-not-found)
 
 if [ -z "${domainJson}" ]; then
   printError "Domain resource for domain '${domainUid}' not found in namespace '${domainNamespace}'. Exiting."
