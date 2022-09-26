@@ -207,7 +207,7 @@ class ItLargeCapacityDomainsClusters {
         managedServerNames.add(clusterManagedServerNameBase + j);
       }
       //verify admin server accessibility and the health of cluster members
-      verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+      verifyMemberHealth(domainNamespaces.get(i), adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
     }
   }
 
@@ -287,7 +287,7 @@ class ItLargeCapacityDomainsClusters {
       }
 
       //verify admin server accessibility and the health of cluster members
-      verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+      verifyMemberHealth(domainNamespace, adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
     }
   }
 
@@ -374,7 +374,7 @@ class ItLargeCapacityDomainsClusters {
         managedServerNames.add(clusterManagedServerNameBase + i);
       }
       //verify admin server accessibility and the health of cluster members
-      verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+      verifyMemberHealth(domainNamespace, adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
     }
   }
 
@@ -660,15 +660,15 @@ class ItLargeCapacityDomainsClusters {
         });
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+    verifyMemberHealth(namespace, adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
   }
 
-  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
+  private static void verifyMemberHealth(String namespace, String adminServerPodName, List<String> managedServerNames,
       String user, String password) {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        -> getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
     String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
