@@ -270,7 +270,8 @@ class ItMiiDynamicUpdatePart3 {
     if (!WEBLOGIC_SLIM) {
       assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
     }
-    assertTrue(operatorPodLog.contains("Job " + domainUid + "-introspector has failed"));
+    assertTrue(operatorPodLog.contains("Job " + domainUid + "-introspector in namespace " 
+        + helper.domainNamespace + " failed with status"));
     assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
 
