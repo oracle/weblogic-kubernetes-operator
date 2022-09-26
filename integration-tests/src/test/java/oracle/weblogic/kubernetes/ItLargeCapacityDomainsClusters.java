@@ -150,7 +150,7 @@ class ItLargeCapacityDomainsClusters {
     domainNamespaces = namespaces.subList(2, 22);
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(opNamespace, namespaces.subList(1, 22).toArray(new String[0]));
 
     // build the clusterview application
     Path targetDir = Paths.get(WORK_DIR,
