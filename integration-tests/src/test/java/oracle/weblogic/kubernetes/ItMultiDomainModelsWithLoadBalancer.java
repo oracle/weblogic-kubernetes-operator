@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
@@ -32,7 +31,6 @@ import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -47,7 +45,6 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
@@ -79,8 +76,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExi
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -136,7 +132,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "
         + "the sample application can be accessed via NGINX ingress controller")
-@Tag("kind-parallel")
+@Tag("kind-sequential")
 @Tag("oke-sequential")
 @IntegrationTest
 @Tag("olcne")
@@ -832,12 +828,9 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // create cluster resource in mii domain
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
-      if (!Cluster.doesClusterExist(CLUSTER_NAME_PREFIX + i, CLUSTER_VERSION, domainNamespace)) {
-        ClusterResource cluster =
-            createClusterResource(CLUSTER_NAME_PREFIX + i, domainNamespace, replicaCount);
-        createClusterAndVerify(cluster);
-      }
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_PREFIX + i));
+      String clusterResName = CLUSTER_NAME_PREFIX + i;
+      domain = createClusterResourceAndAddReferenceToDomain(clusterResName,
+          CLUSTER_NAME_PREFIX + i, domainNamespace, domain, replicaCount);
     }
     setPodAntiAffinity(domain);
 

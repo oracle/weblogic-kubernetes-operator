@@ -745,14 +745,16 @@ public class MonitoringUtils {
     ClusterList clusters = Cluster.listClusterCustomResources(namespace);
     String[] clusterNames = twoClusters ? new String[]{cluster1Name, cluster2Name} : new String[]{cluster1Name};
     for (String clusterName : clusterNames) {
-      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(clusterName))) {
-        getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterName, namespace);
+      String clusterResName = domainUid + "-" + clusterName;
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
+        getLogger().info("!!!Cluster resource {0} in namespace {1} already exists, skipping...",
+            clusterResName, namespace);
       } else {
-        getLogger().info("Creating cluster {0} in namespace {1}", clusterName, namespace);
-        createClusterAndVerify(createClusterResource(clusterName, namespace, replicaCount));
+        getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, namespace);
+        createClusterAndVerify(createClusterResource(clusterResName, clusterName, namespace, replicaCount));
       }
       // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     }
     
     setPodAntiAffinity(domain);

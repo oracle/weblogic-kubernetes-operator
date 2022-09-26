@@ -194,24 +194,6 @@ class ItOperatorFmwUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.1.4 to current with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.1.4 to current")
-  void testOperatorFmwUpgradeFrom314ToCurrent() {
-    installAndUpgradeOperator("3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.2.5 to current with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.2.5 to current")
-  void testOperatorFmwUpgradeFrom325ToCurrent() {
-    installAndUpgradeOperator("3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
    * Operator upgrade from 3.3.8 to current with a FMW Domain.
    */
   @Test
