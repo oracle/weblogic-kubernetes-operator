@@ -32,10 +32,8 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -84,7 +82,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Simple JUnit test file used for testing operator usability.
  * Use Helm chart to install operator(s)
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test scaling usability ")
 @IntegrationTest
 @Tag("olcne")
@@ -97,12 +94,9 @@ class ItClusterResourceScaling {
 
   private static String opNamespace = null;
   private static String op2Namespace = null;
-  private static String op3Namespace = null;
-  private static String domain1Namespace = null;
   private static String domainNamespace = null;
 
   // domain constants
-  private final String domain1Uid = "usabdomain1";
   private final String domainUid = "usabdomain";
 
   private final String clusterName = "cluster-1";
