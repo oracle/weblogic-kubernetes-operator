@@ -6,19 +6,14 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -61,7 +56,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -147,7 +141,7 @@ class ItLargeCapacityDomainsClusters {
 
     logger.info("Assign a unique namespaces for WebLogic domains");
     domainNamespace = namespaces.get(1);
-    domainNamespaces = namespaces.subList(2, 22);
+    domainNamespaces = namespaces.subList(2, 21);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, namespaces.subList(1, 22).toArray(new String[0]));
@@ -163,6 +157,20 @@ class ItLargeCapacityDomainsClusters {
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
     createDomain(domainNamespace, domainUid);
+    // verify the admin server service and pod created
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // verify managed server services and pods are created
+    for (int i = 1; i <= clusterReplicaCount; i++) {
+      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= clusterReplicaCount; i++) {
+      managedServerNames.add(cluster1ManagedServerNameBase + i);
+    }
+    deployAndVerifyMemberHealth(adminServerPodName, managedServerNames, domainNamespace);
+
   }
 
   /**
@@ -176,18 +184,27 @@ class ItLargeCapacityDomainsClusters {
   void testCreateDomains() {
     String domainUid;
     String adminServerName = "admin-server";
-    String adminServerPodName;
-    List<String> managedServerNames = new ArrayList<String>();
-    String cluster1ManagedServerNameBase = "managed-server";
+    String adminServerPodName;;
+    String clusterManagedServerNameBase = "managed-server";
+    String clusterManagedServerPodNamePrefix;
 
     for (int i = 0; i < numOfDomains; i++) {
       domainUid = baseDomainUid + i;
       adminServerPodName = domainUid + "-" + adminServerName;
+      clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
       createDomain(domainNamespaces.get(i), domainUid);
+      // verify the admin server service and pod created
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespaces.get(i));
+      // verify managed server services created
+      for (int j = 1; j <= clusterReplicaCount; j++) {
+        logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+            clusterManagedServerPodNamePrefix + j, domainNamespaces.get(i));
+        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + j, domainUid, domainNamespaces.get(i));
+      }
 
-      managedServerNames = new ArrayList<String>();
-      for (int j = 1; j <= clusterReplicaCount + 1; j++) {
-        managedServerNames.add(cluster1ManagedServerNameBase + j);
+      List<String> managedServerNames = new ArrayList<String>();
+      for (int j = 1; j <= clusterReplicaCount; j++) {
+        managedServerNames.add(clusterManagedServerNameBase + j);
       }
       //verify admin server accessibility and the health of cluster members
       verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
@@ -561,98 +578,6 @@ class ItLargeCapacityDomainsClusters {
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, namespace);
-
-    // verify the admin server service and pod created
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, namespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= clusterReplicaCount; i++) {
-      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
-          cluster1ManagedServerPodNamePrefix + i, namespace);
-      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, namespace);
-    }
-
-    if (OKD) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), namespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
-    }
-
-    // deploy application and verify all servers functions normally
-    logger.info("Getting port for default channel");
-    int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server default port failed");
-    logger.info("default channel port: {0}", defaultChannelPort);
-    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
-
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-    logger.info("Admin Server default node port : {0}", serviceNodePort);
-    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
-
-    //deploy clusterview application
-    logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, cluster1Name);
-    String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
-
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Deploying the application using Rest"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
-              wlsUserName, wlsPassword,
-              targets, clusterViewAppPath, null, "clusterview"));
-          return result.stdout().equals("202");
-        });
-
-    List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= clusterReplicaCount; i++) {
-      managedServerNames.add(cluster1ManagedServerNameBase + i);
-    }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
-
-  }
-
-  private static void createPatchJarConfigMap(String namespace) {
-    Map<String, byte[]> binaryData = new HashMap<>();
-    assertDoesNotThrow(() -> {
-      binaryData.put("com.oracle.weblogic.management.provider.internal.jar",
-          Base64.getMimeEncoder()
-              .encode(Files.readAllBytes(Paths.get("/tmp", "com.oracle.weblogic.management.provider.internal.jar"))));
-    });
-
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .name("patchjar")
-        .namespace(namespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .binaryData(binaryData)
-        .metadata(meta);
-
-    assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Failed to create configmap %s with files", configMap));
-
-    /*
-    
-                .addVolumesItem(new V1Volume()
-                    .name("config")
-                    .configMap(new V1ConfigMapVolumeSource()
-                        .name("patchjar")
-                        .addItemsItem(new V1KeyToPath()
-                            .key("com.oracle.weblogic.management.provider.internal.jar")
-                            .path("com.oracle.weblogic.management.provider.internal.jar"))))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .name("config")
-                    .mountPath("/u01/oracle/wlserver/modules/com.oracle.weblogic.management.provider.internal.jar")
-                    .subPath("com.oracle.weblogic.management.provider.internal.jar"))
-     */
   }
 
   /**
@@ -692,6 +617,50 @@ class ItLargeCapacityDomainsClusters {
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         namespace, jobCreationContainer);
 
+  }
+
+  private static void deployAndVerifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
+      String namespace) {
+    if (OKD) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), namespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
+    // deploy application and verify all servers functions normally
+    logger.info("Getting port for default channel");
+    int defaultChannelPort = assertDoesNotThrow(()
+        -> getServicePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default port failed");
+    logger.info("default channel port: {0}", defaultChannelPort);
+    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to admin server", clusterViewAppPath);
+    String targets = "{identity:[servers,'admin-server']}";
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Deploying the application using Rest"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+              wlsUserName, wlsPassword,
+              targets, clusterViewAppPath, null, "clusterview"));
+          return result.stdout().equals("202");
+        });
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
