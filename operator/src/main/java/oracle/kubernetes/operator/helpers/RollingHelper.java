@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -208,6 +209,7 @@ public class RollingHelper {
     private final String clusterName;
     private final Queue<StepAndPacket> servers;
     private int loggedServersSize = -1;
+    private String loggedReadyServers;
 
     public RollSpecificClusterStep(String clusterName, Queue<StepAndPacket> clusteredServerRestarts) {
       this.clusterName = clusterName;
@@ -233,10 +235,11 @@ public class RollingHelper {
     public NextAction apply(Packet packet) {
       StepContext context = new StepContext(packet, clusterName);
       List<String> readyServers = context.getReadyServers(packet.getValue(DOMAIN_TOPOLOGY));
-      if (loggedServersSize != servers.size()) {
+      if (loggedServersSize != servers.size() || !Objects.equals(loggedReadyServers, readyServers.toString())) {
         LOGGER.info(MessageKeys.ROLLING_SERVERS,
             context.getDomainUid(), getServerNames(servers), readyServers);
         loggedServersSize = servers.size();
+        loggedReadyServers = readyServers.toString();
       }
 
       int countToRestartNow = readyServers.size() - context.getMinAvailable(clusterName);
