@@ -791,7 +791,7 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(ls -1 "${AUXILIARY_IMAGE_PATH}"/"${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}"/*.out 2>/dev/null | sort --version-sort)
+    out_files=$(ls -1 "${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/*.out" 2>/dev/null | sort --version-sort)
     if [ -z "${out_files}" ]; then
       trace SEVERE "Compatibility Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/$AUXILIARY_IMAGE_COMMAND_LOGS_DIR/*.out'"
       return 1
