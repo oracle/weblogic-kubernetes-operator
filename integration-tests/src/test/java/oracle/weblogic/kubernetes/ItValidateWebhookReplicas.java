@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -22,12 +23,15 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -55,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.tagAndPushToKind;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
@@ -70,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContain
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -98,6 +104,7 @@ class ItValidateWebhookReplicas {
   private static int replicaCount = 2;
   private static LoggingFacade logger = null;
   private static int domain2NumCluster = 2;
+  private static int replicaCountToPatch = 10;
 
   private String clusterName = "cluster-1";
 
@@ -106,6 +113,7 @@ class ItValidateWebhookReplicas {
    * Set up the necessary namespaces, install the operator in the first namespace, and
    * create a domain in the second namespace using the pre-created basic MII image,
    * create a domain with multiple clusters in the third namespace using the pre-created basic MII image.
+   * Max cluster size set in the model file is 5.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *           JUnit engine parameter resolution mechanism
@@ -171,12 +179,12 @@ class ItValidateWebhookReplicas {
    * with a clear error message.
    */
   @Test
-  @DisplayName("Verify increasing the replicas of a cluster too high will be rejected")
+  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic Cluster Size will be rejected")
   void testClusterReplicasTooHigh() {
     // patch the cluster with replicas value more than max cluster size
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicaCountToPatch + "}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching cluster resource using patch string {0} ", patchStr);
@@ -199,7 +207,7 @@ class ItValidateWebhookReplicas {
    * with a clear error message.
    */
   @Test
-  @DisplayName("Verify increasing the replicas of a domain too high will be rejected")
+  @DisplayName("Verify increasing the replicas of a domain beyond configured WebLogic Cluster Size will be rejected")
   void testDomainReplicasTooHigh() {
     // We need to patch the cluster resource to remove the replicas first. Otherwise, the domain level replicas will
     // be ignored.
@@ -209,7 +217,7 @@ class ItValidateWebhookReplicas {
     // patch the domain with replicas value more than max cluster size
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicaCountToPatch + "}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching domain resource using patch string {0} ", patchStr);
@@ -245,7 +253,7 @@ class ItValidateWebhookReplicas {
     // patch the domain with replicas value more than max cluster size
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicaCountToPatch + "}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching domain resource using patch string {0} ", patchStr);
@@ -260,7 +268,7 @@ class ItValidateWebhookReplicas {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-    for (int i = replicaCount + 1; i <= 10; i++) {
+    for (int i = replicaCount + 1; i <= replicaCountToPatch; i++) {
       checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
@@ -278,8 +286,8 @@ class ItValidateWebhookReplicas {
    * be rejected, but the domain will get into a Failed:true condition with a clear error message.
    */
   @Test
-  @DisplayName("Verify changing the image and increasing the replicas of a domain too high will not be rejected but "
-      + "the domain will get into a Failed:true condition with a clear error message")
+  @DisplayName("Verify changing the image and increasing the replicas of a domain beyond configured WebLogic cluster "
+      + "size will not be rejected but the domain will get into a Failed:true condition with a clear error message")
   void testDomainChangeImageReplicasTooHigh() {
     // We need to patch the cluster resource to remove the replicas first. Otherwise, the domain level replicas will
     // be ignored.
@@ -303,7 +311,7 @@ class ItValidateWebhookReplicas {
     String patchStr
         = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": " + "\"" + newImage + "\"}, "
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicaCountToPatch + "}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching domain resource using patch string {0} ", patchStr);
@@ -317,7 +325,9 @@ class ItValidateWebhookReplicas {
     // check the domain event contains the expected error msg
     String expectedErrorMsg = "Domain "
         + domainUid
-        + " failed due to 'Replicas too high': 10 replicas specified for cluster '"
+        + " failed due to 'Replicas too high': "
+        + replicaCountToPatch
+        + " replicas specified for cluster '"
         + clusterName
         + "' which has a maximum cluster size of 5.";
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED, "Warning",
@@ -329,24 +339,89 @@ class ItValidateWebhookReplicas {
     }
 
     // restore the domain image and replicas
-    patchStr
+    restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage);
+
+    // restore the cluster resource with replicas
+    restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
+  }
+
+  /**
+   * Verify that when a domain and its clusters are running, call 'kubectl edit domain' to change the image,
+   * verify the domain is restarted. Use 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
+   * domain level replicas to a value that exceeds the WebLogic cluster size will NOT
+   * be rejected, but the domain will get into a Failed:true condition with a clear error message.
+   */
+  @Test
+  @DisplayName("Verify changing the image and increasing the replicas of a domain beyond configured WebLogic cluster "
+      + "size will not be rejected but the domain will get into a Failed:true condition with a clear error message")
+  void testDomainChangeImageReplicasTooHighUsingScale() {
+    // We need to patch the cluster resource to remove the replicas first. Otherwise, the domain level replicas will
+    // be ignored.
+    patchClusterResourceRemoveReplicas("cluster-1", domainUid, domainNamespace, managedServerPrefix + "2");
+
+    String originalImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+    String newImage = MII_BASIC_IMAGE_NAME + ":newtag";
+    if (KIND_REPO != null) {
+      testUntil(
+          tagAndPushToKind(originalImage, newImage),
+          logger,
+          "tagAndPushToKind for image {0} to be successful",
+          newImage);
+    } else {
+      dockerTag(originalImage, newImage);
+    }
+
+    OffsetDateTime timestamp = now();
+    // get the map with server pods and their original creation timestamps
+    Map<String, OffsetDateTime> podsWithTimeStamps =
+        getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix, 1);
+
+    // patch the domain with replicas value more than max cluster size
+    String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": " + "\"" + originalImage + "\"}, "
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 1}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": " + "\"" + newImage + "\"}"
         + "]";
-    patch = new V1Patch(patchStr);
+    V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching domain resource using patch string {0} ", patchStr);
-    response =
+    String response =
         patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+
     // verify patching domain succeeds
     assertTrue(response.contains("Succeeded with response code: 200"),
         String.format("patching domain should succeed but failed with response msg: %s", response));
 
-    // check only managed server1 pod exists, all other managed server pods are deleted
-    for (int i = DEFAULT_MAX_CLUSTER_SIZE; i > 1; i--) {
-      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+    // verify the domain is restarted
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // use 'kubectl scale' to scale the cluster
+    CommandParams params = new CommandParams().defaults();
+    String command =
+        "kubectl scale --replicas=" + replicaCountToPatch + " clusters/" + clusterName + " -n " + domainNamespace;
+    params.command(command);
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, String.format("Failed to run command: %s", command));
+
+    // check the domain event contains the expected error msg
+    String expectedErrorMsg = "Domain "
+        + domainUid
+        + " failed due to 'Replicas too high': "
+        + replicaCountToPatch
+        + " replicas specified for cluster '"
+        + clusterName
+        + "' which has a maximum cluster size of 5.";
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED, "Warning",
+        timestamp, expectedErrorMsg);
+
+    // verify up to 5 (max cluster size) pods are up and running
+    for (int i = 1; i <= DEFAULT_MAX_CLUSTER_SIZE; i++) {
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-    checkPodReadyAndServiceExists(managedServerPrefix + "1", domainUid, domainNamespace);
+
+    // restore the domain image and replicas
+    restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage);
 
     // restore the cluster resource with replicas
     restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
@@ -369,7 +444,7 @@ class ItValidateWebhookReplicas {
     // patch the domain with replicas value more than max cluster size
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicaCountToPatch + "}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching domain resource using patch string {0} ", patchStr);
@@ -395,18 +470,26 @@ class ItValidateWebhookReplicas {
   }
 
   /**
-   * The domain contains two cluster resources and both have replicas set, changing domain's replicas to a number
+   * The domain contains two cluster resources and both have no replicas set, changing domain's replicas to a number
    * that exceeds all cluster resources' size fails and the message contains the name of both clusters.
    */
+  @Disabled
   @Test
   @DisplayName("The domain contains two cluster resources and both have replicas set, changing domain's replicas to a "
       + "number that exceeds all cluster resources' size fails and the message contains the name of both clusters.")
-  void testDomainReplicasTooHighTwoClustersSameReplica() {
+  void testDomainReplicasTooHighTwoClustersNoReplica() {
+
+    // patch the domain2 to remove the cluster-1 replicas
+    patchClusterResourceRemoveReplicas(domainUid2 + "-cluster-1", domainUid2, domainNamespace2,
+        domainUid2 + "-cluster-1-" + MANAGED_SERVER_NAME_BASE + "2");
+    // patch the domain2 to remove the cluster-2 replicas
+    patchClusterResourceRemoveReplicas(domainUid2 + "-cluster-2", domainUid2, domainNamespace2,
+        domainUid2 + "-cluster-2-" + MANAGED_SERVER_NAME_BASE + "2");
 
     // patch the domain with replicas value more than max cluster size
     String patchStr
         = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicaCountToPatch + "}"
         + "]";
     V1Patch patch = new V1Patch(patchStr);
     logger.info("Patching domain resource using patch string {0} ", patchStr);
@@ -415,7 +498,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-2' "
+            + "' cannot be honored because the replica count for cluster 'cluster-1' and 'cluster-2' "
             + "would exceed the cluster size '5' when patching "
             + domainUid2
             + " in namespace "
@@ -424,6 +507,10 @@ class ItValidateWebhookReplicas {
     assertTrue(response.contains(expectedErrorMsg),
         String.format("Patching domain replicas did not return the expected error msg: %s, got: %s",
             expectedErrorMsg, response));
+
+    // restore domain2-cluster-1 and domain2-cluster-2
+    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-1", domainUid2, domainNamespace2);
+    restoreClusterResourceWithReplicas(domainUid2 + "-cluster-2", domainUid2, domainNamespace2);
   }
 
   private void patchClusterResourceRemoveReplicas(String clusterResName,
@@ -464,16 +551,14 @@ class ItValidateWebhookReplicas {
     int numClusters =
         assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace)).getSpec().getClusters().size();
 
-    for (int j = 1; j <= numClusters; j++) {
-      for (int i = 1; i <= replicaCount; i++) {
-        String serverNamePrefix;
-        if (numClusters > 1) {
-          serverNamePrefix = domainUid + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE;
-        } else {
-          serverNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-        }
-        checkPodReadyAndServiceExists(serverNamePrefix + i, domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      String serverNamePrefix;
+      if (numClusters > 1) {
+        serverNamePrefix = clusterResName + "-" + MANAGED_SERVER_NAME_BASE;
+      } else {
+        serverNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
       }
+      checkPodReadyAndServiceExists(serverNamePrefix + i, domainUid, domainNamespace);
     }
   }
 
@@ -609,4 +694,27 @@ class ItValidateWebhookReplicas {
 
     return miiImage;
   }
+
+  private void restoreDomainImageAndReplicas(String domainUid, String domainNamespace, String originalImage) {
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": " + "\"" + originalImage + "\"}, "
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 1}"
+        + "]";
+    V1Patch patch = new V1Patch(patchStr);
+    logger.info("Patching domain resource using patch string {0} ", patchStr);
+    String response =
+        patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    // verify patching domain succeeds
+    assertTrue(response.contains("Succeeded with response code: 200"),
+        String.format("patching domain should succeed but failed with response msg: %s", response));
+
+    // check only managed server1 pod exists, all other managed server pods are deleted
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    for (int i = DEFAULT_MAX_CLUSTER_SIZE + 1; i > 1; i--) {
+      checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    checkPodReadyAndServiceExists(managedServerPrefix + "1", domainUid, domainNamespace);
+  }
+
 }
