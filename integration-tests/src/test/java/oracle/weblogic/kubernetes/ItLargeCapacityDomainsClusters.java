@@ -126,7 +126,7 @@ class ItLargeCapacityDomainsClusters {
           .atMost(10, MINUTES).await();
 
   private static Path clusterViewAppPath;
-  private static LoggingFacade logger = getLogger();
+  private static LoggingFacade logger;
   private static final int managedServerPort = 7100;
 
   /**
@@ -136,6 +136,7 @@ class ItLargeCapacityDomainsClusters {
    */
   @BeforeAll
   public static void initAll(@Namespaces(50) List<String> namespaces) {
+    logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespaces for WebLogic domains");
@@ -399,7 +400,7 @@ class ItLargeCapacityDomainsClusters {
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
-          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + (j - 1) + "/" + clusterName + "/serverStartPolicy\", "
+          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
           + "\"value\": \"serverStartPolicy\": \"NEVER\""
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
@@ -420,7 +421,7 @@ class ItLargeCapacityDomainsClusters {
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
-          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + (j - 1) + "/" + clusterName + "/serverStartPolicy\", "
+          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
           + "\"value\": \"serverStartPolicy\": \"IF_NEEDED\""
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
