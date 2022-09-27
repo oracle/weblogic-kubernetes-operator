@@ -554,6 +554,8 @@ EOF
                             sh '''
                                 export PATH="${WORKSPACE}/bin:${PATH}"
                                 export KUBECONFIG=${kubeconfig_file}
+                                export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
+                                export OCI_CLI_PROFILE=WKOBUILD
                                 mkdir -m777 -p ${result_root}/kubelogs
 
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
