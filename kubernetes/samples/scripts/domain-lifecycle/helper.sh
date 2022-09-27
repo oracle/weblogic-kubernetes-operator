@@ -1004,10 +1004,10 @@ executePatchCommand() {
   local verboseMode=$5
 
   if [ "${verboseMode}" == "true" ]; then
-    printInfo "Executing command --> ${kubernetesCli} patch domain ${domainUid} \
+    printInfo "Executing command --> ${kubernetesCli} patch domain.v8.weblogic.oracle ${domainUid} \
       -n ${domainNamespace} --type=merge --patch \"${patchJson}\""
   fi
-  ${kubernetesCli} patch domain ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
+  ${kubernetesCli} patch domain.v8.weblogic.oracle ${domainUid} -n ${domainNamespace} --type=merge --patch "${patchJson}"
 }
 
 # timestamp
