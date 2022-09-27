@@ -209,7 +209,7 @@ class ItLargeCapacityDomainsClusters {
       }
       //verify admin server accessibility and the health of cluster members
       deployAndVerifyMemberHealth(adminServerPodName, managedServerNames, domainNamespaces.get(i));
-      shutdownDomain(domainNamespaces.get(i), domainUid);
+      shutdownDomain(domainUid, domainNamespaces.get(i));
     }
   }
 
