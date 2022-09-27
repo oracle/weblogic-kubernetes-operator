@@ -29,7 +29,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -47,12 +46,9 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
@@ -73,7 +69,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,11 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 class ItClusterResourceScaling {
-
-  private static final String LIST_STRATEGY = "List";
-
   private static String opNamespace = null;
-  private static String op2Namespace = null;
   private static String domainNamespace = null;
 
   // domain constants
@@ -129,34 +120,42 @@ class ItClusterResourceScaling {
     createTestRepoSecret(domainNamespace);
   }
 
-  @AfterAll
-  public void tearDownAll() {
-
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    deleteDomainCustomResource(domainUid, domainNamespace);
-    logger.info("Deleted Domain Custom Resource {0} from namespace {1}", domainUid, domainNamespace);
-  }
-
-
-
   /**
    * Install the Operator successfully.
    * Create domain and verify the domain is started
-   * Upgrade the operator helm chart domainNamespaces to include namespace for domain3
-   * Verify both domains are managed by the operator by making a REST API call
-   * Call helm upgrade to remove the domain3 from operator domainNamespaces
-   * Verify it can't be managed by operator anymore.
-   * Test fails when an operator fails to manage the domains as expected
+   * Verify cluster can be scale via Rest Api
+   * Verify expected http responce in case of :
+   * 1. Provided invalid auth token
+   * 2. Provided invalid domainuid
+   * 3. Provided invalid clustername
+   * 4. Provided above max replica
+   * 5. Missed header
+   * 6 Missed auth header
    */
   @Test
   @DisplayName("Create domain, managed by operator and domain1, perfom scaling operation via REST  "
-      + "verify scaling operation generate expected code in case of negative scenarios")
+      + "verify scaling operation generate expected code in case of negative scenarios: bad auth"
+      + "invalid domainuid, invalid clustername, invalid replica count, invalid request header, invalid auth header")
   void testScaleClusterViaRestApi() {
     HelmParams opHelmParams = null;
     HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
     String opServiceAccount = opNamespace + "-sa";
+    boolean badAuthFailed = false;
+    boolean invalidDomainUidFailed = false;
+    boolean invalidClusterNameFailed = false;
+    boolean invalidReplicaNumberFailed = false;
+    boolean invalidHeaderFailed = false;
+    boolean invalidAuthHeaderFailed = false;
+
+    StringBuffer failedNegativeTestCases = new StringBuffer();
+    String negativeTestCase1 = "Bad authentication";
+    String negativeTestCase2 = "Invalid domainUid";
+    String negativeTestCase3 = "Invalid clusterName";
+    String negativeTestCase4 = "Invalid replicaNumber";
+    String negativeTestCase5 = "Invalid request header";
+    String negativeTestCase6 = "Invalid auth header";
     try {
       // install operator
       opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
@@ -180,7 +179,7 @@ class ItClusterResourceScaling {
       // decode the secret encoded token
       String decodedToken = new String(Base64.getDecoder().decode(secretToken));
       assertTrue(scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 1,
-              externalRestHttpsPort,op2Namespace, decodedToken,0, "",
+              externalRestHttpsPort,opNamespace, decodedToken,"",
               true, true),
           "domain in namespace " + domainNamespace + " scaling operation failed");
 
@@ -194,34 +193,62 @@ class ItClusterResourceScaling {
 
       // decode the secret encoded token
       String decodedTokenBad = new String(Base64.getDecoder().decode(secretToken)) + "badbad";
-      assertTrue(scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,op2Namespace, decodedTokenBad, 0, "401 Unauthorized", true,
-              true),
-          "domain in namespace " + domainNamespace + " scaling operation succeeded");
-      assertTrue(scaleClusterWithRestApi(domainUid + "invalid", clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,op2Namespace, decodedToken, 0, "404 Not Found", true,
-              true),
-          "domain in namespace " + domainNamespace + " scaling operation succeeded");
-      assertTrue(scaleClusterWithRestApi(domainUid, clusterName + "invalid",replicaCountdomain + 2,
-              externalRestHttpsPort,op2Namespace, decodedToken, 0, "404 Not Found", true,
-              true),
-          "domain in namespace " + domainNamespace + " scaling operation succeeded");
-
-      assertTrue(scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,op2Namespace, decodedToken, 0, "400 Bad Request", false, 
-              true),
-          "domain in namespace " + domainNamespace + " scaling operation succeeded");
-      assertTrue(scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,op2Namespace, decodedToken, 0, "401 Unauthorized", true,
-              false),
-          "domain in namespace " + domainNamespace + " scaling operation succeeded");
-    } finally {
-      uninstallOperator(opHelmParams);
-      deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
-      cleanUpSA(opNamespace);
-      if (!isDomainRunning) {
-        cleanUpDomainSecrets(domainNamespace);
+      logger.info("Testing {0}", negativeTestCase1);
+      badAuthFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
+              externalRestHttpsPort,opNamespace, decodedTokenBad, "401 Unauthorized", true,
+              true);
+      if (!badAuthFailed) {
+        failedNegativeTestCases.append(negativeTestCase1);
       }
+      logger.info("Testing {0}", negativeTestCase2);
+      invalidDomainUidFailed = scaleClusterWithRestApi(domainUid + "invalid", clusterName,replicaCountdomain + 2,
+              externalRestHttpsPort,opNamespace, decodedToken,  "404 Not Found", true,
+              true);
+      if (!invalidDomainUidFailed) {
+        failedNegativeTestCases
+            .append(", ")
+            .append(negativeTestCase2);
+      }
+      logger.info("Testing {0}", negativeTestCase3);
+      invalidClusterNameFailed = scaleClusterWithRestApi(domainUid, clusterName + "invalid",replicaCountdomain + 2,
+              externalRestHttpsPort,opNamespace, decodedToken,  "404 Not Found", true,
+              true);
+      if (!invalidClusterNameFailed) {
+        failedNegativeTestCases
+            .append(", ")
+            .append(negativeTestCase3);
+      }
+      logger.info("Testing {0}", negativeTestCase4);
+      invalidReplicaNumberFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 12,
+          externalRestHttpsPort,opNamespace, decodedToken,  "400 Requested scaling count of 15"
+              + " is greater than configured cluster size of 5", true,
+          true);
+      if (!invalidReplicaNumberFailed) {
+        failedNegativeTestCases
+            .append(", ")
+            .append(negativeTestCase4);
+      }
+      logger.info("Testing {0}", negativeTestCase5);
+      invalidHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
+              externalRestHttpsPort,opNamespace, decodedToken, "400 Bad Request", false,
+              true);
+      if (!invalidHeaderFailed) {
+        failedNegativeTestCases
+            .append(", ")
+            .append(negativeTestCase5);
+      }
+      logger.info("Testing {0}", negativeTestCase6);
+      invalidAuthHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
+              externalRestHttpsPort,opNamespace, decodedToken, "401 Unauthorized", true,
+              false);
+      if (!invalidAuthHeaderFailed) {
+        failedNegativeTestCases
+            .append(", ")
+            .append(negativeTestCase6);
+      }
+    } finally {
+      assertTrue(failedNegativeTestCases.toString().equals(""),
+          "Test failed to generate expected error message for negative testcases " + failedNegativeTestCases);
     }
   }
 
@@ -241,7 +268,6 @@ class ItClusterResourceScaling {
                                                 int externalRestHttpsPort,
                                                 String opNamespace,
                                                 String decodedToken,
-                                                int expectedExecCode,
                                                 String expectedMsg,
                                                 boolean hasHeader,
                                                 boolean hasAuthHeader) {
@@ -283,10 +309,13 @@ class ItClusterResourceScaling {
     logger.info("Calling curl to scale the cluster");
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-    assertEquals(expectedExecCode, result.exitValue());
-    assertTrue(result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg));
-
-    return true;
+    if (result != null) {
+      logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
+      if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
+        return true;
+      }
+    }
+    return false;
   }
 
 
