@@ -547,7 +547,6 @@ EOF
                             if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
                                 echo "integration-tests failed"
                             fi
-                            sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
                         '''
                     }
                     post {
@@ -562,6 +561,9 @@ EOF
                             '''
                             archiveArtifacts(artifacts: "logdir/**/*")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
+			    sh '''
+			       ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+			    '''
                         }
                     }
                 }
