@@ -470,7 +470,7 @@ EOF
 
                             if [ -z "${mt_private_ip}" ]; then
                                echo "Mount Target was not setup properly , clean up Kubernetes cluster"
-                               sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+                               sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                                exit -1
                             fi
                             export NFS_SERVER=$mt_private_ip
@@ -562,7 +562,7 @@ EOF
                             archiveArtifacts(artifacts: "logdir/**/*")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
 			    sh '''
-			       ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+			       ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
 			    '''
                         }
                     }
