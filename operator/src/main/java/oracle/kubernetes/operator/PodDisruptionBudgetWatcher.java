@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -20,14 +20,14 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * This class handles pod disruption budget watching. It receives pod disruption budget change events and sends them
  * into the operator for processing.
  */
-public class PodDisruptionBudgetWatcher extends Watcher<V1beta1PodDisruptionBudget> {
+public class PodDisruptionBudgetWatcher extends Watcher<V1PodDisruptionBudget> {
   private final String ns;
 
   private PodDisruptionBudgetWatcher(
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
-      WatchListener<V1beta1PodDisruptionBudget> listener,
+      WatchListener<V1PodDisruptionBudget> listener,
       AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
@@ -48,7 +48,7 @@ public class PodDisruptionBudgetWatcher extends Watcher<V1beta1PodDisruptionBudg
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
-      WatchListener<V1beta1PodDisruptionBudget> listener,
+      WatchListener<V1PodDisruptionBudget> listener,
       AtomicBoolean isStopping) {
     PodDisruptionBudgetWatcher watcher =
         new PodDisruptionBudgetWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
@@ -57,7 +57,7 @@ public class PodDisruptionBudgetWatcher extends Watcher<V1beta1PodDisruptionBudg
   }
 
   @Override
-  public Watchable<V1beta1PodDisruptionBudget> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<V1PodDisruptionBudget> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createPodDisruptionBudgetWatch(ns);
@@ -69,8 +69,8 @@ public class PodDisruptionBudgetWatcher extends Watcher<V1beta1PodDisruptionBudg
   }
 
   @Override
-  public String getDomainUid(Response<V1beta1PodDisruptionBudget> item) {
+  public String getDomainUid(Response<V1PodDisruptionBudget> item) {
     return KubernetesUtils.getDomainUidLabel(
-        Optional.ofNullable(item.object).map(V1beta1PodDisruptionBudget::getMetadata).orElse(null));
+        Optional.ofNullable(item.object).map(V1PodDisruptionBudget::getMetadata).orElse(null));
   }
 }

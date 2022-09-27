@@ -29,12 +29,12 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -518,8 +518,8 @@ public class DomainProcessorImpl implements DomainProcessor {
    * Dispatch PodDisruptionBudget watch event.
    * @param item watch event
    */
-  public void dispatchPodDisruptionBudgetWatch(Watch.Response<V1beta1PodDisruptionBudget> item) {
-    V1beta1PodDisruptionBudget pdb = item.object;
+  public void dispatchPodDisruptionBudgetWatch(Watch.Response<V1PodDisruptionBudget> item) {
+    V1PodDisruptionBudget pdb = item.object;
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
     if (domainUid == null) {
       return;
@@ -546,8 +546,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private String getPDBNamespace(V1beta1PodDisruptionBudget pdb) {
-    return Optional.ofNullable(pdb).map(V1beta1PodDisruptionBudget::getMetadata)
+  private String getPDBNamespace(V1PodDisruptionBudget pdb) {
+    return Optional.ofNullable(pdb).map(V1PodDisruptionBudget::getMetadata)
         .map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
@@ -1292,11 +1292,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         }
 
         @Override
-        Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+        Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
           return list -> list.getItems().forEach(this::addPodDisruptionBudget);
         }
 
-        private void addPodDisruptionBudget(V1beta1PodDisruptionBudget pdb) {
+        private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
           PodDisruptionBudgetHelper.addToPresence(info,pdb);
         }
       });

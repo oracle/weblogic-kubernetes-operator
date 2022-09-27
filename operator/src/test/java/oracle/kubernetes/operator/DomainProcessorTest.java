@@ -36,13 +36,13 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetSpec;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -387,8 +387,8 @@ class DomainProcessorTest {
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
   }
 
-  private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
-    return runningPDBs.stream().findFirst().map(V1beta1PodDisruptionBudget::getSpec)
+  private Boolean minAvailableMatches(List<V1PodDisruptionBudget> runningPDBs, int count) {
+    return runningPDBs.stream().findFirst().map(V1PodDisruptionBudget::getSpec)
             .map(s -> s.getMinAvailable().getIntValue()).orElse(0) == count;
   }
 
@@ -725,8 +725,8 @@ class DomainProcessorTest {
         .spec(new V1ServiceSpec().type(ServiceHelper.CLUSTER_IP_TYPE));
   }
 
-  private V1beta1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
-    return new V1beta1PodDisruptionBudget()
+  private V1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
+    return new V1PodDisruptionBudget()
             .metadata(
                     new V1ObjectMeta()
                             .name("do-not-delete-pdb")
@@ -736,7 +736,7 @@ class DomainProcessorTest {
                             .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                             .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
             .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID))
-            .spec(new V1beta1PodDisruptionBudgetSpec()
+            .spec(new V1PodDisruptionBudgetSpec()
                     .selector(new V1LabelSelector()
                             .putMatchLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
                             .putMatchLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
@@ -1335,7 +1335,7 @@ class DomainProcessorTest {
     return testSupport.getResources(KubernetesTestSupport.POD);
   }
 
-  private List<V1beta1PodDisruptionBudget> getRunningPDBs() {
+  private List<V1PodDisruptionBudget> getRunningPDBs() {
     return testSupport.getResources(KubernetesTestSupport.PODDISRUPTIONBUDGET);
   }
 

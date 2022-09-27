@@ -15,7 +15,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -139,13 +139,13 @@ class PodDisruptionBudgetHelperTest {
         .uid(KUBERNETES_UID)
         .controller(true);
 
-    V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
+    V1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
     assertThat(model.getMetadata().getOwnerReferences(), contains(expectedReference));
   }
 
   @Test
   void whenCreated_modelHasExpectedSelectors() {
-    V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
+    V1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
 
     Map<String, String> labels = new HashMap<>();
     labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
@@ -157,7 +157,7 @@ class PodDisruptionBudgetHelperTest {
 
   @Test
   void whenCreated_modelMetadataHasExpectedLabels() {
-    V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
+    V1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
 
     assertThat(
             model.getMetadata().getLabels(), allOf(hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"),
@@ -169,7 +169,7 @@ class PodDisruptionBudgetHelperTest {
   void whenCreated_modelHasExpectedMinAvailableSpec() {
     configureCluster(getTestCluster()).withReplicas(3).withMaxUnavailable(1);
 
-    V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
+    V1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
 
     assertThat(model.getSpec().getMinAvailable().getIntValue(), equalTo(MIN_REPLICA_VALUE));
   }
@@ -229,7 +229,7 @@ class PodDisruptionBudgetHelperTest {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
-  public V1beta1PodDisruptionBudget createPDBModel(Packet packet) {
+  public V1PodDisruptionBudget createPDBModel(Packet packet) {
     return new PodDisruptionBudgetHelper.PodDisruptionBudgetContext(null, packet)
             .createModel();
   }
@@ -246,7 +246,7 @@ class PodDisruptionBudgetHelperTest {
     return PodDisruptionBudgetHelper.createPodDisruptionBudgetForClusterStep(next);
   }
 
-  public V1beta1PodDisruptionBudget getRecordedPodDisruptionBudget(DomainPresenceInfo info) {
+  public V1PodDisruptionBudget getRecordedPodDisruptionBudget(DomainPresenceInfo info) {
     return info.getPodDisruptionBudget(getTestCluster());
   }
 
@@ -264,7 +264,7 @@ class PodDisruptionBudgetHelperTest {
 
   @Test
   void whenMatchingPodDisruptionBudgetRecordedInDomainPresence_logPdbExists() {
-    V1beta1PodDisruptionBudget originalPdb = createPDBModel(testSupport.getPacket());
+    V1PodDisruptionBudget originalPdb = createPDBModel(testSupport.getPacket());
     recordPodDisruptionBudget(domainPresenceInfo, originalPdb);
 
     runPodDisruptionBudgetHelper();
@@ -276,19 +276,19 @@ class PodDisruptionBudgetHelperTest {
     return CLUSTER_PDB_EXISTS;
   }
 
-  public void recordPodDisruptionBudget(DomainPresenceInfo info, V1beta1PodDisruptionBudget pdb) {
+  public void recordPodDisruptionBudget(DomainPresenceInfo info, V1PodDisruptionBudget pdb) {
     info.setPodDisruptionBudget(getTestCluster(), pdb);
   }
 
   static class PodDisruptionBudgetNameMatcher
-          extends org.hamcrest.TypeSafeDiagnosingMatcher<V1beta1PodDisruptionBudget> {
+          extends org.hamcrest.TypeSafeDiagnosingMatcher<V1PodDisruptionBudget> {
     private final String expectedName;
 
     private PodDisruptionBudgetNameMatcher(String expectedName) {
       this.expectedName = expectedName;
     }
 
-    private String getName(V1beta1PodDisruptionBudget item) {
+    private String getName(V1PodDisruptionBudget item) {
       return item.getMetadata().getName();
     }
 
@@ -297,7 +297,7 @@ class PodDisruptionBudgetHelperTest {
     }
 
     @Override
-    protected boolean matchesSafely(V1beta1PodDisruptionBudget item, Description mismatchDescription) {
+    protected boolean matchesSafely(V1PodDisruptionBudget item, Description mismatchDescription) {
       if (expectedName.equals(getName(item))) {
         return true;
       }

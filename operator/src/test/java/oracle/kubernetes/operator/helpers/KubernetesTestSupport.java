@@ -49,6 +49,8 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
@@ -61,8 +63,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -158,7 +158,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
-    supportNamespaced(PODDISRUPTIONBUDGET, V1beta1PodDisruptionBudget.class, this::createPodDisruptionBudgetList);
+    supportNamespaced(PODDISRUPTIONBUDGET, V1PodDisruptionBudget.class, this::createPodDisruptionBudgetList);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
@@ -206,8 +206,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new V1ServiceList().metadata(createListMeta()).items(items);
   }
 
-  private V1beta1PodDisruptionBudgetList createPodDisruptionBudgetList(List<V1beta1PodDisruptionBudget> items) {
-    return new V1beta1PodDisruptionBudgetList().metadata(createListMeta()).items(items);
+  private V1PodDisruptionBudgetList createPodDisruptionBudgetList(List<V1PodDisruptionBudget> items) {
+    return new V1PodDisruptionBudgetList().metadata(createListMeta()).items(items);
   }
 
   private V1ListMeta createListMeta() {

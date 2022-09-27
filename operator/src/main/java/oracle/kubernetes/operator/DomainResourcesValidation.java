@@ -12,11 +12,11 @@ import java.util.stream.Stream;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -58,7 +58,7 @@ class DomainResourcesValidation {
       }
 
       @Override
-      Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+      Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
         return l -> addPodDisruptionBudgetList(l);
       }
 
@@ -111,11 +111,11 @@ class DomainResourcesValidation {
     }
   }
 
-  private void addPodDisruptionBudgetList(V1beta1PodDisruptionBudgetList list) {
+  private void addPodDisruptionBudgetList(V1PodDisruptionBudgetList list) {
     list.getItems().forEach(this::addPodDisruptionBudget);
   }
 
-  private void addPodDisruptionBudget(V1beta1PodDisruptionBudget pdb) {
+  private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
     if (domainUid != null) {
       PodDisruptionBudgetHelper.addToPresence(getDomainPresenceInfo(domainUid), pdb);

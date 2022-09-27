@@ -6,10 +6,10 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -81,7 +81,7 @@ class DomainPresenceInfoTest {
 
   @Test
   void afterPodDisruptionBudgetDefined_nextCallReturnsIt() {
-    V1beta1PodDisruptionBudget pdb = new V1beta1PodDisruptionBudget();
+    V1PodDisruptionBudget pdb = new V1PodDisruptionBudget();
     info.setPodDisruptionBudget("cluster", pdb);
 
     assertThat(info.getPodDisruptionBudget("cluster"), sameInstance(pdb));

@@ -12,8 +12,8 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetSpec;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetSpec;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -84,7 +84,7 @@ public class PodDisruptionBudgetHelper {
       return new PodDisruptionBudgetHelper.PodDisruptionBudgetContext.ConflictStep();
     }
 
-    private class CreateResponseStep extends ResponseStep<V1beta1PodDisruptionBudget> {
+    private class CreateResponseStep extends ResponseStep<V1PodDisruptionBudget> {
       private final String messageKey;
 
       CreateResponseStep(String messageKey, Step next) {
@@ -93,7 +93,7 @@ public class PodDisruptionBudgetHelper {
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return updateDomainStatus(packet, callResponse);
         } else {
@@ -101,33 +101,33 @@ public class PodDisruptionBudgetHelper {
         }
       }
 
-      private NextAction updateDomainStatus(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+      private NextAction updateDomainStatus(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         logPodDisruptionBudgetCreated(messageKey);
         addPodDisruptionBudgetToRecord(callResponse.getResult());
         return doNext(packet);
       }
     }
 
-    private class ReadResponseStep extends DefaultResponseStep<V1beta1PodDisruptionBudget> {
+    private class ReadResponseStep extends DefaultResponseStep<V1PodDisruptionBudget> {
       ReadResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        V1beta1PodDisruptionBudget podDisruptionBudget = callResponse.getResult();
+      public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
+        V1PodDisruptionBudget podDisruptionBudget = callResponse.getResult();
         if (podDisruptionBudget == null) {
           removePodDisruptionBudgetFromRecord();
         } else {
@@ -137,20 +137,20 @@ public class PodDisruptionBudgetHelper {
       }
     }
 
-    private class PatchResponseStep extends ResponseStep<V1beta1PodDisruptionBudget> {
+    private class PatchResponseStep extends ResponseStep<V1PodDisruptionBudget> {
       PatchResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         logPodDisruptionBudgetPatched();
         return doNext(packet);
       }
@@ -183,7 +183,7 @@ public class PodDisruptionBudgetHelper {
     }
 
     Step verifyPodDisruptionBudget(Step next) {
-      V1beta1PodDisruptionBudget podDisruptionBudget = getPodDisruptionBudgetFromRecord();
+      V1PodDisruptionBudget podDisruptionBudget = getPodDisruptionBudgetFromRecord();
       if (podDisruptionBudget == null) {
         return createNewPodDisruptionBudget(next);
       } else if (mustPatch(podDisruptionBudget)) {
@@ -214,9 +214,9 @@ public class PodDisruptionBudgetHelper {
       return new V1Patch(patchBuilder.build().toString());
     }
 
-    private boolean mustPatch(V1beta1PodDisruptionBudget existingPdb) {
+    private boolean mustPatch(V1PodDisruptionBudget existingPdb) {
       int minAvailable = Optional.ofNullable(existingPdb.getSpec())
-              .map(V1beta1PodDisruptionBudgetSpec::getMinAvailable).map(IntOrString::getIntValue).orElse(0);
+              .map(V1PodDisruptionBudgetSpec::getMinAvailable).map(IntOrString::getIntValue).orElse(0);
       return minAvailable != expectedMinAvailableValue(info, clusterName);
     }
 
@@ -242,35 +242,35 @@ public class PodDisruptionBudgetHelper {
                               .CreateResponseStep(messageKey, next));
     }
 
-    public V1beta1PodDisruptionBudget createModel() {
+    public V1PodDisruptionBudget createModel() {
       return withNonHashedElements(AnnotationHelper.withSha256Hash(createRecipe()));
     }
 
-    V1beta1PodDisruptionBudget withNonHashedElements(V1beta1PodDisruptionBudget service) {
+    V1PodDisruptionBudget withNonHashedElements(V1PodDisruptionBudget service) {
       V1ObjectMeta metadata = service.getMetadata();
       updateForOwnerReference(metadata);
       return service;
     }
 
-    V1beta1PodDisruptionBudget createRecipe() {
+    V1PodDisruptionBudget createRecipe() {
       int minAvailable = Math.max(0, info.getDomain().getReplicaCount(clusterName)
               - info.getDomain().getMaxUnavailable(clusterName));
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
       labels.put(DOMAINUID_LABEL, info.getDomainUid());
       labels.put(CLUSTERNAME_LABEL, clusterName);
-      return new V1beta1PodDisruptionBudget()
+      return new V1PodDisruptionBudget()
               .metadata(new V1ObjectMeta().name(getPDBName()).labels(labels))
               .apiVersion(PDB_API_VERSION)
-              .spec(new V1beta1PodDisruptionBudgetSpec().minAvailable(new IntOrString(minAvailable))
+              .spec(new V1PodDisruptionBudgetSpec().minAvailable(new IntOrString(minAvailable))
                       .selector(new V1LabelSelector().matchLabels(labels)));
     }
 
-    protected V1beta1PodDisruptionBudget getPodDisruptionBudgetFromRecord() {
+    protected V1PodDisruptionBudget getPodDisruptionBudgetFromRecord() {
       return info.getPodDisruptionBudget(clusterName);
     }
 
-    protected void addPodDisruptionBudgetToRecord(@Nonnull V1beta1PodDisruptionBudget pdb) {
+    protected void addPodDisruptionBudgetToRecord(@Nonnull V1PodDisruptionBudget pdb) {
       info.setPodDisruptionBudget(clusterName, pdb);
     }
 
@@ -305,7 +305,7 @@ public class PodDisruptionBudgetHelper {
    * @param pdb PodDisruptionBudget
    * @return Domain uid
    */
-  public static String getDomainUid(V1beta1PodDisruptionBudget pdb) {
+  public static String getDomainUid(V1PodDisruptionBudget pdb) {
     return Optional.ofNullable(pdb.getMetadata()).map(V1ObjectMeta::getLabels)
             .map(s -> s.get(DOMAINUID_LABEL)).orElse(null);
   }
@@ -316,7 +316,7 @@ public class PodDisruptionBudgetHelper {
    * @param pdb PodDisruptionBudget
    * @return cluster name
    */
-  public static String getClusterName(V1beta1PodDisruptionBudget pdb) {
+  public static String getClusterName(V1PodDisruptionBudget pdb) {
     return getLabelValue(pdb);
   }
 
@@ -326,11 +326,11 @@ public class PodDisruptionBudgetHelper {
    * @param presenceInfo the domain presence info
    * @param event        the event associated with pod disruption budget
    */
-  public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
+  public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget event) {
     presenceInfo.setPodDisruptionBudgetFromEvent(getClusterName(event), event);
   }
 
-  public static void addToPresence(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget pdb) {
+  public static void addToPresence(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget pdb) {
     presenceInfo.setPodDisruptionBudget(getClusterName(pdb), pdb);
   }
 
@@ -341,12 +341,12 @@ public class PodDisruptionBudgetHelper {
    * @param event        the event associated with pod disruption budget
    * @return true if the pod disruption budget was actually removed
    */
-  public static boolean deleteFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
+  public static boolean deleteFromEvent(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget event) {
     return presenceInfo.deletePodDisruptionBudgetFromEvent(getClusterName(event), event);
   }
 
-  private static String getLabelValue(V1beta1PodDisruptionBudget podDisruptionBudget) {
-    return Optional.ofNullable(podDisruptionBudget).map(V1beta1PodDisruptionBudget::getMetadata)
+  private static String getLabelValue(V1PodDisruptionBudget podDisruptionBudget) {
+    return Optional.ofNullable(podDisruptionBudget).map(V1PodDisruptionBudget::getMetadata)
             .map(V1ObjectMeta::getLabels)
             .map(m -> m.get(LabelConstants.CLUSTERNAME_LABEL)).orElse(null);
   }

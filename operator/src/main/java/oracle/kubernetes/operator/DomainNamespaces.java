@@ -21,11 +21,11 @@ import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
@@ -62,7 +62,7 @@ public class DomainNamespaces {
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
   private final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
         = new WatcherControl<>(ServiceWatcher::create, d -> d::dispatchServiceWatch);
-  private final WatcherControl<V1beta1PodDisruptionBudget, PodDisruptionBudgetWatcher> podDisruptionBudgetWatchers
+  private final WatcherControl<V1PodDisruptionBudget, PodDisruptionBudgetWatcher> podDisruptionBudgetWatchers
           = new WatcherControl<>(PodDisruptionBudgetWatcher::create, d -> d::dispatchPodDisruptionBudgetWatch);
 
   private final SemanticVersion productVersion;
@@ -276,7 +276,7 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+    Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
       return l -> podDisruptionBudgetWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
