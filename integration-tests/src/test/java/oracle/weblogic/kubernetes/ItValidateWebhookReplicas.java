@@ -388,7 +388,7 @@ class ItValidateWebhookReplicas {
    * Verify that when a domain and its clusters are running, call
    * 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
    * domain level replicas to a value that exceeds the WebLogic cluster size will be rejected.
-   * Disabled due to bug
+   * Disabled due to jira 102833
    */
   @Disabled
   @Test
@@ -459,7 +459,7 @@ class ItValidateWebhookReplicas {
   /**
    * The domain contains two cluster resources and both have no replicas set, changing domain's replicas to a number
    * that exceeds all cluster resources' size fails and the message contains the name of both clusters.
-   * Disabled now due to bug.
+   * Disabled now due to jira 102830.
    */
   @Disabled
   @Test
