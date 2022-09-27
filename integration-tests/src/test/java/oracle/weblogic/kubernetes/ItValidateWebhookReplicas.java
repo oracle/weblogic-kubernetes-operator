@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -350,7 +351,9 @@ class ItValidateWebhookReplicas {
    * verify the domain is restarted. Use 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
    * domain level replicas to a value that exceeds the WebLogic cluster size will NOT
    * be rejected, but the domain will get into a Failed:true condition with a clear error message.
+   * Disabled due to bug
    */
+  @Disabled
   @Test
   @DisplayName("Verify changing the image and increasing the replicas of a domain beyond configured WebLogic cluster "
       + "size will not be rejected but the domain will get into a Failed:true condition with a clear error message")
@@ -401,8 +404,17 @@ class ItValidateWebhookReplicas {
     String command =
         "kubectl scale --replicas=" + replicaCountToPatch + " clusters/" + clusterName + " -n " + domainNamespace;
     params.command(command);
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, String.format("Failed to run command: %s", command));
+    ExecResult result = Command.withParams(params).executeAndReturnResult();
+    String errorMsg =
+        "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to cluster resource '"
+            + clusterName
+            + "' cannot be honored because the replica count would exceed the cluster size '5' when patching "
+            + clusterName
+            + " in namespace "
+            + domainNamespace;
+    assertTrue(result.stderr().contains(errorMsg),
+        String.format("scale cluster beyond max cluster size did not throw error, got: %s; expect: %s",
+            result.stderr(), errorMsg));
 
     // check the domain event contains the expected error msg
     String expectedErrorMsg = "Domain "
@@ -472,6 +484,7 @@ class ItValidateWebhookReplicas {
   /**
    * The domain contains two cluster resources and both have no replicas set, changing domain's replicas to a number
    * that exceeds all cluster resources' size fails and the message contains the name of both clusters.
+   * Disabled now due to bug.
    */
   @Disabled
   @Test
