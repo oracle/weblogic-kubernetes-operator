@@ -214,7 +214,7 @@ class DomainStatusPatchTest {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addCluster(new ClusterStatus()
-              .withClusterName("cluster1").withReplicas(2).withReadyReplicas(4)
+              .withClusterName("cluster1").withReplicas(2).withReadyReplicas(4).withObservedGeneration(1L)
               .withMaximumReplicas(10).withReplicasGoal(10).withMinimumReplicas(2))
           .addCluster(new ClusterStatus()
               .withClusterName("cluster2").withReplicas(4).withMaximumReplicas(8).withMinimumReplicas(1));
@@ -224,8 +224,9 @@ class DomainStatusPatchTest {
     assertThat(builder.getPatches(),
           hasItemsInOrder(
                 "ADD /status/clusters/- {'clusterName':'cluster1','maximumReplicas':10,'minimumReplicas':2,"
-                    + "'readyReplicas':4,'replicas':2,'replicasGoal':10}",
-                "ADD /status/clusters/- {'clusterName':'cluster2','maximumReplicas':8,'minimumReplicas':1,'replicas':4}"
+                    + "'observedGeneration':1,'readyReplicas':4,'replicas':2,'replicasGoal':10}",
+                "ADD /status/clusters/- {'clusterName':'cluster2','maximumReplicas':8,'minimumReplicas':1,"
+                    + "'observedGeneration':-1,'replicas':4}"
                 ));
   }
 
@@ -261,7 +262,8 @@ class DomainStatusPatchTest {
           .addCluster(new ClusterStatus()
               .withClusterName("cluster2").withReplicas(2).withMaximumReplicas(8).withMinimumReplicas(3))
           .addCluster(new ClusterStatus()
-              .withClusterName("cluster4").withReplicas(4).withMaximumReplicas(8).withMinimumReplicas(2));
+              .withClusterName("cluster4").withReplicas(4).withMaximumReplicas(8).withMinimumReplicas(2)
+              .withObservedGeneration(2L));
 
     computePatch(status1, status2);
 
@@ -271,7 +273,7 @@ class DomainStatusPatchTest {
                 "REPLACE /status/clusters/1/replicas 2",
                 "REMOVE /status/clusters/2",
                 "ADD /status/clusters/- {'clusterName':'cluster4','maximumReplicas':8,"
-                        + "'minimumReplicas':2,'replicas':4}"
+                        + "'minimumReplicas':2,'observedGeneration':2,'replicas':4}"
                 ));
   }
 

@@ -174,6 +174,20 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return observedGeneration;
   }
 
+  /**
+   * The observedGeneration attribute is defined as an integer type in the Cluster Resource
+   * schema, hence convert to integer when publishing the status.
+   * @return integer value of the observedGeneration, if set, otherwise -1.
+   */
+  private Integer getObservedGenerationAsInteger() {
+    return observedGeneration != null ? observedGeneration.intValue() : -1;
+  }
+
+  public ClusterStatus withObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+    return this;
+  }
+
   public void setObservedGeneration(Long observedGeneration) {
     this.observedGeneration = observedGeneration;
   }
@@ -249,13 +263,15 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return other.getClusterName() != null && other.getClusterName().equals(clusterName);
   }
 
-  private static final ObjectPatch<ClusterStatus> clusterPatch = createObjectPatch(ClusterStatus.class)
-        .withStringField("clusterName", ClusterStatus::getClusterName)
-        .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
-        .withIntegerField("minimumReplicas", ClusterStatus::getMinimumReplicas)
-        .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
-        .withIntegerField("replicas", ClusterStatus::getReplicas)
-        .withIntegerField("replicasGoal", ClusterStatus::getReplicasGoal);
+  private static final ObjectPatch<ClusterStatus> clusterPatch =
+      createObjectPatch(ClusterStatus.class)
+          .withStringField("clusterName", ClusterStatus::getClusterName)
+          .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
+          .withIntegerField("minimumReplicas", ClusterStatus::getMinimumReplicas)
+          .withIntegerField("observedGeneration", ClusterStatus::getObservedGenerationAsInteger)
+          .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
+          .withIntegerField("replicas", ClusterStatus::getReplicas)
+          .withIntegerField("replicasGoal", ClusterStatus::getReplicasGoal);
 
   static ObjectPatch<ClusterStatus> getObjectPatch() {
     return clusterPatch;
