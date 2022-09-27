@@ -22,6 +22,14 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 4.0
  */
+@Description(
+    "A Cluster resource describes the lifecycle options for all "
+    + "of the Managed Server members of a WebLogic cluster, including Java "
+    + "options, environment variables, additional Pod content, and the ability to "
+    + "explicitly start, stop, or restart cluster members. "
+    + "It must describe a cluster that already exists in the WebLogic domain "
+    + "configuration. See also `domain.spec.clusters`."
+)
 public class ClusterResource implements KubernetesObject {
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
