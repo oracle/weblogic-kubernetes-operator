@@ -562,6 +562,8 @@ EOF
                             archiveArtifacts(artifacts: "logdir/**/*")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
 			    sh '''
+				export PATH="${WORKSPACE}/bin:${PATH}"
+                                export KUBECONFIG=${kubeconfig_file}
 			       ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
 			    '''
                         }
