@@ -419,10 +419,11 @@ class ItMultiDomainModelsWithLoadBalancer {
     int numClusters = domain.getSpec().getClusters().size();
 
     String serverName;
+    String serverNamePrefix;
     if (numClusters > 1) {
-      serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
+      serverNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
     } else {
-      serverName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
+      serverNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     }
 
     // create file to kill server process
@@ -430,27 +431,28 @@ class ItMultiDomainModelsWithLoadBalancer {
         "Failed to create script to kill server");
     logger.info("File/script created to kill server {0}", killServerScript);
 
-    checkPodReady(serverName, domainUid, domainNamespace);
+    String server1Name = serverNamePrefix + "1";
+    checkPodReady(server1Name, domainUid, domainNamespace);
 
     // copy script to pod
     String destLocation = "/u01/killserver.sh";
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, serverName, "weblogic-server",
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, server1Name, "weblogic-server",
             killServerScript.toPath(), Paths.get(destLocation)),
         String.format("Failed to copy file %s to pod %s in namespace %s",
-            killServerScript, serverName, domainNamespace));
-    logger.info("File copied to Pod {0} in namespace {1}", serverName, domainNamespace);
+            killServerScript, server1Name, domainNamespace));
+    logger.info("File copied to Pod {0} in namespace {1}", server1Name, domainNamespace);
 
     // get the restart count of the container in pod before liveness probe restarts
     final int beforeRestartCount =
-        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, serverName, null),
+        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, server1Name, null),
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-                serverName, domainNamespace));
+                server1Name, domainNamespace));
     logger.info("Restart count before liveness probe {0}", beforeRestartCount);
 
     // change file permissions
-    ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
             true, "/bin/sh", "-c", "chmod +x " + destLocation),
-        String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
+        String.format("Failed to change permissions for file %s in pod %s", destLocation, server1Name));
     assertTrue(execResult.exitValue() == 0,
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
             execResult.stderr(), execResult.stdout()));
@@ -461,10 +463,10 @@ class ItMultiDomainModelsWithLoadBalancer {
      * initiates a container restart.
      */
     for (int i = 0; i < 3; i++) {
-      execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
-              true, "/bin/sh", "-c", destLocation + " " + serverName),
+      execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
+              true, "/bin/sh", "-c", destLocation + " " + server1Name),
           String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
-              serverName, domainNamespace));
+              server1Name, domainNamespace));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
 
@@ -476,16 +478,26 @@ class ItMultiDomainModelsWithLoadBalancer {
     }
 
     // check pod is ready
-    checkPodReady(serverName, domainUid, domainNamespace);
+    checkPodReady(server1Name, domainUid, domainNamespace);
 
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
-            getContainerRestartCount(domainNamespace, null, serverName, null),
+            getContainerRestartCount(domainNamespace, null, server1Name, null),
         String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-            serverName, domainNamespace));
+            server1Name, domainNamespace));
     assertTrue(afterRestartCount - beforeRestartCount == 1,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
-            serverName, domainNamespace));
+            server1Name, domainNamespace));
+
+    // check the sample app is accessible from admin server pod
+    for (int i = 1; i <= replicaCount; i++) {
+      testUntil(
+          checkSampleAppReady(domainUid, domainNamespace, serverNamePrefix + i),
+          logger,
+          "sample app is accessible from server {0} in namespace {1}",
+          serverNamePrefix + i,
+          domainNamespace);
+    }
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
@@ -1240,4 +1252,15 @@ class ItMultiDomainModelsWithLoadBalancer {
     }
   }
 
+  private Callable<Boolean> checkSampleAppReady(String domainUid, String domainNamespace, String serverName) {
+    return () -> {
+      String curlCmd = String.format("curl http://%s:%s/sample-war/index.jsp", serverName, MANAGED_SERVER_PORT);
+      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+      ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
+          true, "/bin/sh", "-c", curlCmd),
+          String.format("Failed to execute curl command %s from pod %s in namespace %s", curlCmd,
+              adminServerPodName, domainNamespace));
+      return execResult.stdout().contains(serverName.substring(domainUid.length() + 1));
+    };
+  }
 }

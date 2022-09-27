@@ -8,6 +8,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.Gson;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.PreserveUnknown;
@@ -44,6 +45,14 @@ public class MonitoringExporterSpecification {
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
+  /**
+   * Defines the requirements and limits for the monitoring exporter sidecar.
+   *
+   */
+  @Description("Memory and CPU minimum requirements and limits for the Monitoring Exporter sidecar. "
+      + "See `kubectl explain pods.spec.containers.resources`.")
+  private V1ResourceRequirements resources;
+
   @Description(
       "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. "
           + "Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server "
@@ -78,6 +87,14 @@ public class MonitoringExporterSpecification {
     return new Yaml().load(yaml);
   }
 
+  public V1ResourceRequirements getResources() {
+    return resources;
+  }
+
+  public void setResources(V1ResourceRequirements resources) {
+    this.resources = resources;
+  }
+
   String getImage() {
     return Optional.ofNullable(image).orElse(DEFAULT_EXPORTER_IMAGE);
   }
@@ -106,6 +123,7 @@ public class MonitoringExporterSpecification {
   public String toString() {
     return new ToStringBuilder(this)
           .append("configuration", configuration)
+          .append("resources", resources)
           .append("image", image)
           .append("imagePullPolicy", imagePullPolicy)
           .append("port", port)
@@ -121,6 +139,7 @@ public class MonitoringExporterSpecification {
   private boolean equals(MonitoringExporterSpecification that) {
     return new EqualsBuilder()
           .append(configuration, that.configuration)
+          .append(resources, that.resources)
           .append(image, that.image)
           .append(imagePullPolicy, that.imagePullPolicy)
           .append(port, that.port)
@@ -131,6 +150,7 @@ public class MonitoringExporterSpecification {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
           .append(configuration)
+          .append(resources)
           .append(image)
           .append(imagePullPolicy)
           .append(port)
