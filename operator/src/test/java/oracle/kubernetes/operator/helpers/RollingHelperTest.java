@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.ROLLING_SERVERS;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInOrder;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -61,6 +63,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
@@ -147,8 +150,9 @@ class RollingHelperTest {
     Packet packet = testSupport.getPacket().copy();
     Optional.ofNullable(serverName)
           .filter(this::isClustered)
-          .ifPresent(s -> packet.put(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME));     
+          .ifPresent(s -> packet.put(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME));
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    packet.put(ProcessingConstants.SERVER_NAME, serverName);
 
     packet.put(SERVER_SCAN, getServerConfig(serverName));
     return new Step.StepAndPacket(createCyclePodStep(serverPod, packet), packet);
@@ -229,6 +233,28 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME));
+  }
+
+  @Test
+  void whenRollSpecificClusterStep_apply_calledAgainWithSameServers_onlyOneRollMessageLogged() {
+    consoleHandlerMemento.trackMessage(ROLLING_SERVERS);
+    initializeExistingPods();
+    CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
+    configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
+
+    ConcurrentLinkedQueue<StepAndPacket> stepAndPackets = new ConcurrentLinkedQueue<>();
+    stepAndPackets.addAll(rolling.values());
+    Step rollSpecificClusterStep = new RollingHelper.RollSpecificClusterStep(CLUSTER_NAME, stepAndPackets);
+
+    rollSpecificClusterStep.apply(testSupport.getPacket());
+
+    stepAndPackets.clear();
+    stepAndPackets.addAll(rolling.values());
+
+    rollSpecificClusterStep.apply(testSupport.getPacket());
+
+    assertThat(logRecords.size(), is(1));
+    assertThat(logRecords, containsInfo(ROLLING_SERVERS));
   }
 
   @Test
