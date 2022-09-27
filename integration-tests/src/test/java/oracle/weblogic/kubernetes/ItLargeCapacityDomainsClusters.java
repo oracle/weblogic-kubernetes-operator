@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -173,9 +172,9 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test brings up a new domains and verifies it can successfully start by doing the following. a. Creates new WebLogic
-   * static domain using offline WLST in persistent volume. b. Creates domain resource and deploys in Kubernetes
-   * cluster. d. Verifies the servers in the new WebLogic domain comes up.
+   * Test brings up new domains and verifies it can successfully start by doing the following. a. Creates new WebLogic
+   * domains using offline WLST in persistent volume. b. Creates domain resource and deploys in Kubernetes cluster. d.
+   * Verifies the servers in the new WebLogic domain comes up.
    */
   @Order(1)
   @Test
@@ -187,8 +186,8 @@ class ItLargeCapacityDomainsClusters {
     String clusterManagedServerNameBase = clusterName + "-managed-server";
     String clusterManagedServerPodNamePrefix;
 
-    for (int i = 1; i <= numOfDomains; i++) {
-      domainUid = baseDomainUid + i;
+    for (int i = 0; i < numOfDomains; i++) {
+      domainUid = baseDomainUid + (i + 1);
       adminServerPodName = domainUid + "-" + adminServerName;
       clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
       createDomain(domainNamespaces.get(i), domainUid, clusterName, clusterManagedServerNameBase);
@@ -213,13 +212,12 @@ class ItLargeCapacityDomainsClusters {
 
   /**
    * Test creates new clusters and verifies it can successfully start by doing the following. a. Creates new WebLogic
-   * static cluster using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion version d.
+   * static clusters using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion version d.
    * Verifies the servers in the new WebLogic cluster comes up.
    */
-  @Disabled
   @Order(2)
   @Test
-  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  @DisplayName("Test new clusters creation on demand using WLST and introspection")
   void testCreateNewClusters() {
 
     logger.info("Getting port for default channel");
@@ -292,14 +290,14 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test brings up a new clusters and verifies it can successfully start by doing the following. a. Creates new
-   * WebLogic static cluster using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion
-   * version d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers
-   * on pre-existing WebLogic cluster.
+   * Test creates new clusters in shutdown state and verifies it can successfully start after patching the domain with
+   * new introspectVersion string a. Creates new WebLogic static clusters using online WLST. b. Patch the Domain
+   * Resource with clusters c. Update the introspectVersion version d. Verifies the servers in the new WebLogic clusters
+   * comes up without affecting any of the running servers on pre-existing WebLogic cluster.
    */
   @Order(3)
   @Test
-  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  @DisplayName("Test new cluster creations and starting up on introspection on demand using WLST")
   void testCreateNewClustersDontStart() {
     String patchStr;
     V1Patch patch;
@@ -380,14 +378,13 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test brings up a new clusters and verifies it can successfully start by doing the following. a. Creates new
-   * WebLogic static cluster using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion
-   * version d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers
-   * on pre-existing WebLogic cluster.
+   * Test shuts down all existing clusters and starts up. a. Shutdowns all cluster using serverStartPolicy NEVER. b.
+   * Patch the Domain Resource with cluster serverStartPolicy IF_NEEDED. d. Verifies the servers in the domain cluster
+   * comes up.
    */
   @Order(4)
   @Test
-  @DisplayName("Test new cluster creation on demand using WLST and introspection")
+  @DisplayName("Test cluster shutdown and startup")
   void testRestartClusters() {
 
     String clusterBaseName = "sdcluster-";
