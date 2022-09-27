@@ -311,7 +311,7 @@ class ItLargeCapacityDomainsClusters {
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-ms-";
-      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
+
       // create a temporary WebLogic WLST property file
       File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
           "Creating WLST properties file failed");
@@ -326,6 +326,7 @@ class ItLargeCapacityDomainsClusters {
       p.setProperty("server_count", String.valueOf(clusterReplicaCount));
       assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
           "Failed to write the WLST properties to file");
+
       // changet the admin server port to a different value to force pod restart
       Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
       executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
@@ -390,6 +391,7 @@ class ItLargeCapacityDomainsClusters {
   void testRestartClusters() {
 
     String clusterBaseName = "sdcluster-";
+    //shutdown all clusters in default domain
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-ms-";
@@ -404,19 +406,13 @@ class ItLargeCapacityDomainsClusters {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-    }
-    for (int j = 1; j <= numOfClusters; j++) {
-      String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = clusterName + "-ms-";
-      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-
-      // verify managed server services and pods are created
       for (int i = 1; i <= clusterReplicaCount; i++) {
-        logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+        logger.info("Checking managed server service and pod {0} is deleted in namespace {1}",
             clusterManagedServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
     }
+    //startup all clusters in default domain
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-ms-";
@@ -431,12 +427,6 @@ class ItLargeCapacityDomainsClusters {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-    }
-    for (int j = 1; j <= numOfClusters; j++) {
-      String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = clusterName + "-ms-";
-      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-
       // verify managed server services and pods are created
       for (int i = 1; i <= clusterReplicaCount; i++) {
         logger.info("Checking managed server service and pod {0} is created in namespace {1}",
