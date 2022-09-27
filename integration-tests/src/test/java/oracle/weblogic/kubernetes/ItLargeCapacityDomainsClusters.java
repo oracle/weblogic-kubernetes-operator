@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -134,14 +135,14 @@ class ItLargeCapacityDomainsClusters {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(22) List<String> namespaces) {
+  public static void initAll(@Namespaces(50) List<String> namespaces) {
 
     logger.info("Assign a unique namespace for operator");
     opNamespace = namespaces.get(0);
 
     logger.info("Assign a unique namespaces for WebLogic domains");
-    domainNamespace = namespaces.get(1);
-    domainNamespaces = namespaces.subList(2, 21);
+    domainNamespace = namespaces.get(numOfDomains + 1);
+    domainNamespaces = namespaces.subList(1, numOfDomains);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, namespaces.subList(1, 22).toArray(new String[0]));
@@ -188,7 +189,7 @@ class ItLargeCapacityDomainsClusters {
     String clusterManagedServerNameBase = "managed-server";
     String clusterManagedServerPodNamePrefix;
 
-    for (int i = 0; i < numOfDomains; i++) {
+    for (int i = 1; i <= numOfDomains; i++) {
       domainUid = baseDomainUid + i;
       adminServerPodName = domainUid + "-" + adminServerName;
       clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
@@ -208,6 +209,7 @@ class ItLargeCapacityDomainsClusters {
       }
       //verify admin server accessibility and the health of cluster members
       deployAndVerifyMemberHealth(adminServerPodName, managedServerNames, domainNamespaces.get(i));
+      shutdownDomain(domainNamespaces.get(i), domainUid);
     }
   }
 
