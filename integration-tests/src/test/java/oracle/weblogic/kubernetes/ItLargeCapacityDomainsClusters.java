@@ -97,8 +97,8 @@ class ItLargeCapacityDomainsClusters {
 
   private static String opNamespace = null;
 
-  private static int numOfDomains = 3;
-  private static int numOfClusters = 3;
+  private static int numOfDomains = 10;
+  private static int numOfClusters = 10;
   private static final String baseDomainUid = "domain";
   private static List<String> domainNamespaces;
 
@@ -178,7 +178,6 @@ class ItLargeCapacityDomainsClusters {
    * domains using offline WLST in persistent volume. b. Creates domain resource and deploys in Kubernetes cluster. d.
    * Verifies the servers in the new WebLogic domain comes up.
    */
-  @Disabled
   @Order(1)
   @Test
   @DisplayName("Test domains creation")
