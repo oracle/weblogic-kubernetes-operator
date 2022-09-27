@@ -52,6 +52,8 @@
 {{-   if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
 {{-     $ignore := include "utils.verifyOptionalString" (list $scope "domainNamespaceRegExp") -}}
 {{-   end -}}
+{{- else if not $scope.enableClusterRoleBinding -}}
+{{-   fail "enableClusterRoleBinding must be true when webHookOnly is true." }}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 25) -}}

@@ -492,18 +492,17 @@ class ItPodsShutdownOption {
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[4]))));
     setPodAntiAffinity(domain);
-
-
     cluster = createClusterResource(
-            clusterName, domainNamespace, replicaCount);
+        clusterName, clusterName, domainNamespace, replicaCount);
     cluster.getSpec().serverPod(new ServerPod()
-            .shutdown((shutDownObject[2])));
+        .shutdown((shutDownObject[2])));
 
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
+    logger.info("Creating cluster resource {0} in namespace {1}",clusterName, domainNamespace);
     createClusterAndVerify(cluster);
 
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     return domain;
   }
 

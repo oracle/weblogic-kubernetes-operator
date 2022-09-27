@@ -29,6 +29,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -182,9 +184,16 @@ public class ItFmwDiiSample {
   }
 
   private void createDomainAndVerify(String domainName, Path sampleBase) {
+
+    testUntil(
+          getInstanceAndContainerHostInfo(),
+          logger,
+          "Successfully got both instance and container hostname infor");
+
     // run create-domain.sh to create domain.yaml file
     logger.info("Run create-domain.sh to create domain.yaml file");
-    CommandParams params = new CommandParams().defaults();
+    final CommandParams params = new CommandParams().defaults();
+
     params.command("sh "
             + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
             + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
@@ -195,8 +204,14 @@ public class ItFmwDiiSample {
             + " -o "
             + Paths.get(sampleBase.toString()));
 
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain.yaml");
+
+    logger.info("Going to run sample create-domain.sh");
+    testUntil(
+        () -> {
+          return Command.withParams(params).execute();
+        },
+        logger,
+        "Running sample create-domain.sh to create domain.yaml");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
@@ -216,11 +231,11 @@ public class ItFmwDiiSample {
 
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    CommandParams params1 = new CommandParams().defaults();
+    params1.command("kubectl apply -f "
             + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
-    result = Command.withParams(params).execute();
+    boolean result = Command.withParams(params1).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
     // wait for the domain to exist
@@ -416,6 +431,44 @@ public class ItFmwDiiSample {
     return (() -> {
       return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
     });
+  }
+
+  private Callable<Boolean> getInstanceAndContainerHostInfo() {
+    return (() -> {
+      return getHostnameInfo();
+    });
+  }
+
+  private Boolean getHostnameInfo() {
+
+    String fmwBaseImage = FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
+    logger.info("Getting host infor of running instance and container by image: " + fmwBaseImage);
+    String command1 = "cat /etc/resolv.conf && cat /etc/hosts";
+    CommandParams params1 =
+          defaultCommandParams()
+          .command(command1)
+          .saveResults(true);
+
+    String command2 = String.format(
+          "docker run %s /bin/bash -c \"cat /etc/resolv.conf && cat /etc/hosts\"",
+          fmwBaseImage);
+    CommandParams params2 =
+          defaultCommandParams()
+          .command(command2)
+          .saveResults(true)
+          .redirect(true);
+
+    if (Command.withParams(params1).execute()
+          && params1.stdout() != null
+          && params1.stdout().length() != 0
+          && Command.withParams(params2).execute()
+          && params2.stdout() != null
+          && params2.stdout().length() != 0) {
+      logger.info("Got both instance and container host infor");
+      return true;
+    }
+
+    return false;
   }
 
 }

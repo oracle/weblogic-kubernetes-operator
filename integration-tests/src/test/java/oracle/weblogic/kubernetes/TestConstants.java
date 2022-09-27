@@ -282,7 +282,7 @@ public interface TestConstants {
   public static final String PROMETHEUS_CHART_VERSION =
       getNonEmptySystemProperty("wko.it.prometheus.chart.version", "15.2.0");
   public static final String GRAFANA_CHART_VERSION =
-      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.29.2");
+      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.38.6");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";
@@ -379,4 +379,5 @@ public interface TestConstants {
   //Defaulting to 1440 minutes (24 hours)
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
+  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=20000000";
 }
