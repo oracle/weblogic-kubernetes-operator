@@ -43,7 +43,7 @@ class AdmissionWebhookTestSetUp {
    * Create a Domain resource model that contains the domain configuration and status for WebhookRestTest
    * and ValidationUtilsTest.
    */
-  public static DomainResource createDomain() {
+  public static DomainResource createDomainWithClustersAndStatus() {
     DomainResource domain = createTestDomain().withStatus(createDomainStatus());
     domain.getSpec()
         .withReplicas(ORIGINAL_REPLICAS)

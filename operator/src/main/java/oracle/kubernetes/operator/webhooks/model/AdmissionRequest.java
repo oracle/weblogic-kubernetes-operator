@@ -126,7 +126,8 @@ public class AdmissionRequest {
   }
 
   public Object getExistingResource() {
-    return isCluster() ? readCluster(writeMap(getOldObject())) : readDomain(writeMap(getOldObject()));
+    return getOldObject() == null ? null :
+        isCluster() ? readCluster(writeMap(getOldObject())) : readDomain(writeMap(getOldObject()));
   }
 
   public Object getProposedResource() {

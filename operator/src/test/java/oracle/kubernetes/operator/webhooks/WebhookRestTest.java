@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
@@ -57,7 +58,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
-import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomain;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithClustersAndStatus;
 import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
@@ -91,8 +92,8 @@ class WebhookRestTest extends RestTestBase {
 
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
-  private final DomainResource existingDomain = createDomain();
-  private final DomainResource proposedDomain = createDomain();
+  private final DomainResource existingDomain = createDomainWithClustersAndStatus();
+  private final DomainResource proposedDomain = createDomainWithClustersAndStatus();
   private final ClusterResource existingCluster = createCluster();
   private final ClusterResource proposedCluster = createCluster();
 
@@ -386,6 +387,27 @@ class WebhookRestTest extends RestTestBase {
     assertThat(isAllowed(responseReview), equalTo(true));
   }
 
+  @Test
+  void whenNewDomainReplicasInvalid_acceptIt() {
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    setProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
+
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenNewDomainContainsDuplicateClusterNames_rejectIt() {
+    V1LocalObjectReference cluster = new V1LocalObjectReference().name("cluster-2");
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS).withCluster(cluster).withCluster(cluster);
+    setProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
+
+    assertThat(isAllowed(responseReview), equalTo(false));
+  }
+
   private void setExistingAndProposedDomain() {
     domainReview.getRequest().oldObject(writeDomainToMap(existingDomain)).object(writeDomainToMap(proposedDomain));
   }
@@ -541,6 +563,16 @@ class WebhookRestTest extends RestTestBase {
 
     assertThat(isAllowed(responseReview), equalTo(false));
     assertThat(getResponseStatusMessage(responseReview).contains("failure reported in test"), equalTo(true));
+  }
+
+  @Test
+  void whenNewClusterReplicasInvalid_acceptIt() {
+    proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
+    setProposedCluster();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(isAllowed(responseReview), equalTo(true));
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {

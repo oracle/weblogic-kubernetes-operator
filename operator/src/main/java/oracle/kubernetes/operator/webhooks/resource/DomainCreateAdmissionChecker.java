@@ -40,7 +40,7 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
   }
 
   @Override
-  public AdmissionResponse validate() {
+  AdmissionResponse validate() {
     LOGGER.fine("Validating new DomainResource " + proposedDomain);
 
     AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
@@ -51,7 +51,7 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
     }
     return response;
   }
-  
+
   @Override
   public boolean isProposedChangeAllowed() {
     return hasNoFatalValidationErrors(proposedDomain);

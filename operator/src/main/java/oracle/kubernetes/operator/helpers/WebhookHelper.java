@@ -49,6 +49,7 @@ public class WebhookHelper {
   public static final String DOMAIN_RESOURCES = DOMAIN_PLURAL;
   public static final String CLUSTER_RESOURCES = CLUSTER_PLURAL;
   public static final String ADMISSION_REVIEW_VERSION = "v1";
+  public static final String CREATE = "CREATE";
   public static final String UPDATE = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
   public static final String SCOPE = "Namespaced";
@@ -133,7 +134,7 @@ public class WebhookHelper {
     private V1RuleWithOperations createRule() {
       return new V1RuleWithOperations()
           .addApiGroupsItem(APP_GROUP)
-          .operations(Collections.singletonList(UPDATE))
+          .operations(Arrays.asList(CREATE, UPDATE))
           .scope(SCOPE);
     }
 
