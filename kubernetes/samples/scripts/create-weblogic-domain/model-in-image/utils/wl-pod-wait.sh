@@ -28,16 +28,18 @@ syntaxError() {
 
 initGlobals() {
   DOMAIN_UID_DEFAULT="sample-domain1"
-  DOMAIN_NAMESPACE_DEFAULT="sample-domain1-ns"
-  timeout_secs_default=1000
-
-  expected=0
-  verbose=true
-  ignore_failures=false
-  report_interval=120
-  timeout_secs=$timeout_secs_default
   DOMAIN_UID=$DOMAIN_UID_DEFAULT
+
+  DOMAIN_NAMESPACE_DEFAULT="sample-domain1-ns"
   DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE_DEFAULT
+
+  TIMEOUT_SECS_DEFAULT=1000
+  TIMEOUT_SECS=$TIMEOUT_SECS_DEFAULT
+
+  EXPECTED_STATE=0
+  VERBOSE=true
+  IGNORE_FAILURES=false
+  REPORT_INTERVAL_SECS=120
 }
 
 usage() {
@@ -57,22 +59,9 @@ usage() {
       and all domain and cluster resources are fully up-to-date
       (the '-p Completed' option).
 
-    In detail, the '-p Completed' Completed condition and
-    up-to-date checks require:
-    - Exactly the expected number of WebLogic Server pods reach a 'ready'
-      state and have 'restartVersion', 'introspectVersion',
-      'spec.image', and 'spec.configuration.model.auxiliaryImages.image'
-      values that match their corresponding values in their domain resource.
-    - The 'metadata.generation' matches 'status.observedGeneration'
-      for the domain resource and each cluster resource.
-    - If the Completed condition state expects the number of pods to be zero,
-      such as when 'domain.spec.serverStartPolicy' is set to 'Never',
-      then the '-p Completed' option exits successfully when all pods for
-      the given domain have exited.
-
     This script exits non-zero if:
     - A configurable timeout is reached before the target pod count
-      is reached (default $timeout_secs_default seconds).
+      is reached (default $TIMEOUT_SECS_DEFAULT seconds).
     - The '-p Completed' option is specified and the specified domain
       cannot be found.
     - When the domain resource '.apiVersion' is less than 9.
@@ -85,7 +74,7 @@ usage() {
     -n <namespace>  : Kubernetes namespace.
                       Defaults to '$DOMAIN_NAMESPACE_DEFAULT'.
 
-    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_default'.
+    -t <timeout>    : Timeout in seconds. Defaults to '$TIMEOUT_SECS_DEFAULT'.
 
     -p 0            : Expect no pods. This works even when the
                       domain resource is deleted. The default.
@@ -98,6 +87,21 @@ usage() {
     -i              : Ignore Failure conditions.
 
     -?              : This help.
+
+  Notes:
+
+    The '-p Completed' requires:
+    - Exactly the expected number of WebLogic Server pods reach a 'ready'
+      state and have 'restartVersion', 'introspectVersion',
+      'spec.image', and 'spec.configuration.model.auxiliaryImages.image'
+      values that match their corresponding values in their domain resource.
+    - The 'metadata.generation' matches 'status.observedGeneration'
+      for the domain resource and each cluster resource.
+
+    If the Completed condition state expects the number of pods to be zero,
+    such as when 'domain.spec.serverStartPolicy' is set to 'Never',
+    then the '-p Completed' option exits successfully when all pods for
+    the given domain have exited.
 
 EOF
 }
@@ -127,24 +131,24 @@ processCommandLine() {
 
       -d) DOMAIN_UID="${val}" ;;
 
-      -t) timeout_secs="${val}"
+      -t) TIMEOUT_SECS="${val}"
           case "${val}" in
             ''|*[!0-9]*) syntaxError "-t requires a positive integer but got '${val}'" ;;
           esac
           ;;
 
       -p) case "$val" in
-            0|none) expected='0' ;;
-            completed|Completed|COMPLETED) expected='Completed' ;;
+            0|none) EXPECTED_STATE='0' ;;
+            completed|Completed|COMPLETED) EXPECTED_STATE='Completed' ;;
             *) syntaxError '-p requires value "0" or "Completed"' ;;
           esac
           ;;
 
-      -q) verbose=false
-          report_interval=30
+      -q) VERBOSE=false
+          REPORT_INTERVAL_SECS=30
           ;;
 
-      -i) ignore_failures=true
+      -i) IGNORE_FAILURES=true
           ;;
 
       '-?') usage
@@ -207,7 +211,7 @@ sortAIImagesUnitTest
 
 getDomainValue() {
   # get domain value specified by $2 and put in env var named by $1
-  #   - if get fails, and global expected is "Completed", then echo an Error and exit script non-zero
+  #   - if get fails, and global EXPECTED_STATE is "Completed", then echo an Error and exit script non-zero
   #   - example: getDomainValue DOM_VERSION '.spec.introspectVersion'
   local __retvar=$1
   local ljpath="{$2}"
@@ -215,7 +219,7 @@ getDomainValue() {
   set +e
   attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
-    if [ "$expected" = "Completed" ]; then
+    if [ "$EXPECTED_STATE" = "Completed" ]; then
       trace "Error: Could not obtain '$ljpath' from domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
       exit 1
     else
@@ -231,7 +235,7 @@ getDomainValue() {
 
 getClusterValue() {
   # get cluster value specified by $3 from cluster $1 and put in env var named by $2
-  #   - if get fails, and global expected is "Completed", then echo an Error and exit script non-zero
+  #   - if get fails, and global EXPECTED_STATE is "Completed", then echo an Error and exit script non-zero
   #   - example: getClusterValue my-cluster cgen '.metadata.generation'
   local cname="$1"
   local __retvar=$2
@@ -240,7 +244,7 @@ getClusterValue() {
   set +e
   attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
-    if [ "$expected" = "Completed" ]; then
+    if [ "$EXPECTED_STATE" = "Completed" ]; then
       trace "Error: Could not obtain '$ljpath' from cluster '${cname}' in namespace '${DOMAIN_NAMESPACE}'. Is your cluster resource deployed? Err='$attvalue'"
       exit 1
     else
@@ -256,7 +260,7 @@ getClusterValue() {
 
 getDomainAIImages() {
   # get list of domain auxiliary images (if any) and place result in the env var named by $1
-  #   - if expected is "Completed" and get fails, then echo an Error and exit script non-zero
+  #   - if EXPECTED_STATE is "Completed" and get fails, then echo an Error and exit script non-zero
   #   - result is a sorted comma separated list
   local attvalue
   local __retvar=$1
@@ -269,7 +273,7 @@ getDomainAIImages() {
       2>&1
   )
   if [ $? -ne 0 ]; then
-    if [ "$expected" = "Completed" ]; then
+    if [ "$EXPECTED_STATE" = "Completed" ]; then
       trace "Error: Could not obtain '.spec.configuration.model.auxiliaryImages' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
       exit 1
     else
@@ -287,49 +291,49 @@ getDomainInfo() {
   #
   # If any its gets fail then the following implicitly occurs:
   #   - we assume that the domain resource was not found
-  #   - silently set global to "" if expected = '0'
-  #   - "exit 1" and report an error if expected = 'Completed'
+  #   - silently set global to "" if EXPECTED_STATE = '0'
+  #   - "exit 1" and report an error if EXPECTED_STATE = 'Completed'
 
-  getDomainValue    goal_RV_current        ".spec.restartVersion"
-  getDomainValue    goal_IV_current        ".spec.introspectVersion"
-  getDomainValue    goal_image_current     ".spec.image"
-  getDomainValue    clusters               ".spec.clusters"
-  getDomainAIImages goal_aiimages_current
-  getDomainValue    api_version            ".apiVersion"
-  getDomainValue    condition_failed_str   ".status.conditions[?(@.type==\"Failed\")]" # has full failure messages, if any
-  getDomainValue    condition_completed    ".status.conditions[?(@.type==\"Completed\")].status" # "True" when complete
-  getDomainValue    observed_generation    ".status.observedGeneration"
+  getDomainValue    domain_info_goal_RV_current        ".spec.restartVersion"
+  getDomainValue    domain_info_goal_IV_current        ".spec.introspectVersion"
+  getDomainValue    domain_info_goal_image_current     ".spec.image"
+  getDomainValue    domain_info_clusters               ".spec.clusters"
+  getDomainAIImages domain_info_goal_aiimages_current
+  getDomainValue    domain_info_api_version            ".apiVersion"
+  getDomainValue    domain_info_condition_failed_str   ".status.conditions[?(@.type==\"Failed\")]" # has full failure messages, if any
+  getDomainValue    domain_info_condition_completed    ".status.conditions[?(@.type==\"Completed\")].status" # "True" when complete
+  getDomainValue    domain_info_observed_generation    ".status.observedGeneration"
 
-  clusters=$( echo "$clusters" | sed 's/"name"//g' | tr -d '[]{}:' | sortlist | sed 's/,/ /') # convert to sorted space separated list
+  domain_info_clusters=$( echo "$domain_info_clusters" | sed 's/"name"//g' | tr -d '[]{}:' | sortlist | sed 's/,/ /') # convert to sorted space separated list
 
   # gather observed and goal generation for each cluster:
-  cl_observed_generations=""
-  cl_goal_generations=""
+  cl_info_observed_generations=""
+  cl_info_goal_generations=""
   local lgen
   local cl
-  for cl in $clusters EOL; do
+  for cl in $domain_info_clusters EOL; do
     [ "$cl" = "EOL" ] && break
     getClusterValue $cl lgen ".status.observedGeneration"
     [ -z "$lgen" ] && lgen="NOTSET"
-    cl_observed_generations="$cl_observed_generations $lgen"
+    cl_info_observed_generations="$cl_info_observed_generations $lgen"
 
     getClusterValue $cl lgen ".metadata.generation"
-    cl_goal_generations="$cl_goal_generations $lgen"
+    cl_info_goal_generations="$cl_info_goal_generations $lgen"
   done
 
   # Get domain goal generation last in case gen changed while checking the above...
-  getDomainValue    goal_generation        ".metadata.generation"
+  getDomainValue    domain_info_goal_generation        ".metadata.generation"
 
-  all_goals_current="${goal_RV_current}
-${goal_IV_current}
-${goal_image_current}
-${goal_aiimages_current}
-${goal_generation}
-${observed_generation}
-${cl_goal_generations}
-${cl_observed_generations}
-${condition_failed_str}
-${clusters}
+  all_goals_current="${domain_info_goal_RV_current}
+${domain_info_goal_IV_current}
+${domain_info_goal_image_current}
+${domain_info_goal_aiimages_current}
+${domain_info_goal_generation}
+${domain_info_observed_generation}
+${cl_info_goal_generations}
+${cl_info_observed_generations}
+${domain_info_condition_failed_str}
+${domain_info_clusters}
 ^M"
 }
 
@@ -374,29 +378,29 @@ getPodInfo() {
 # report timeout setting, criteria, generation, observedGeneration, Failed state, and Completed state
 # this information is gathered by 'getDomainInfo' and 'processCommandLine'
 reportBasics() {
-  if [ "$expected" = "0" ]; then
-    trace "Info: Waiting up to $timeout_secs seconds for there to be no (0) WebLogic Server pods that match the following criteria:"
+  if [ "$EXPECTED_STATE" = "0" ]; then
+    trace "Info: Waiting up to $TIMEOUT_SECS seconds for there to be no (0) WebLogic Server pods that match the following criteria:"
     trace "Info:   namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
   else
-    trace "Info: Waiting up to $timeout_secs seconds for domain status condition 'Completed' to become 'True'" \
+    trace "Info: Waiting up to $TIMEOUT_SECS seconds for domain status condition 'Completed' to become 'True'" \
           " and '.metadata.generation' to match '.status.observedGeneration' for the domain and each of its clusters."
     trace "Info: WebLogic Server pods, if not shutting down, should reach the following criteria:"
     trace "Info:   namespace='$DOMAIN_NAMESPACE'"
     trace "Info:   domainUID='$DOMAIN_UID'"
     trace "Info:   ready='true'"
-    trace "Info:   image='$goal_image_current'"
-    trace "Info:   auxiliaryImages='$goal_aiimages_current'"
-    trace "Info:   domainRestartVersion='$goal_RV_current'"
-    trace "Info:   introspectVersion='$goal_IV_current'"
+    trace "Info:   image='$domain_info_goal_image_current'"
+    trace "Info:   auxiliaryImages='$domain_info_goal_aiimages_current'"
+    trace "Info:   domainRestartVersion='$domain_info_goal_RV_current'"
+    trace "Info:   introspectVersion='$domain_info_goal_IV_current'"
     trace "Info: Generations:"
-    trace "Info:   domain metadata.generation='$goal_generation'"
-    trace "Info:   domain.status.observedGeneration='$observed_generation'"
-    trace "Info:   clusters='$clusters'"
-    trace "Info:     cluster.metadata.generation(s)='$cl_goal_generations'"
-    trace "Info:     cluster.status.observedGeneration(s)='$cl_observed_generations'"
-    trace "Info: Completed='$condition_completed'"
+    trace "Info:   domain metadata.generation='$domain_info_goal_generation'"
+    trace "Info:   domain.status.observedGeneration='$domain_info_observed_generation'"
+    trace "Info:   clusters='$domain_info_clusters'"
+    trace "Info:     cluster.metadata.generation(s)='$cl_info_goal_generations'"
+    trace "Info:     cluster.status.observedGeneration(s)='$cl_info_observed_generations'"
+    trace "Info: Completed='$domain_info_condition_completed'"
   fi
-  trace "Info: Failure conditions (if any): '${condition_failed_str}'."
+  trace "Info: Failure conditions (if any): '${domain_info_condition_failed_str}'."
   echo
 }
 
@@ -417,19 +421,19 @@ main() {
     # Populate info about current domain into globals.
     #   If any gets fail then the following implicitly occurs:
     #   - we assume that the domain resource was not found
-    #   - silently set the global to "" when expected = '0'
-    #   - "exit 1" and report an error when expected = 'Completed'
+    #   - silently set the global to "" when EXPECTED_STATE = '0'
+    #   - "exit 1" and report an error when EXPECTED_STATE = 'Completed'
 
     getDomainInfo
 
     #
-    # This script only works in v9+, so let's check the 'api_version' global
+    # This script only works in v9+, so let's check the 'domain_info_api_version' global
     #
 
-    local version_str=${api_version:-weblogic.oracle/v9}  # if domain resource is missing, api_version is blank
+    local version_str=${domain_info_api_version:-weblogic.oracle/v9}  # if domain resource is missing, domain_info_api_version is blank
     local version_num=$(echo "$version_str" | sed 's/[^0-9]//g')
     if [ $version_num -lt 9 ]; then
-      trace "Error: Unexpected domain resource '.apiVersion' of '$api_version'. Expected version 9 or higher."
+      trace "Error: Unexpected domain resource '.apiVersion' of '$domain_info_api_version'. Expected version 9 or higher."
       exit 1
     fi
 
@@ -447,12 +451,12 @@ main() {
     # Get the current number of pods that match target criteria and also
     # determine if we have reached our goal.
     #
-    #   If expected = 'Completed'
+    #   If EXPECTED_STATE = 'Completed'
     #    - get the number of ready pods that match the target image, restart version, etc.
     #    - we have reached our goal if the Completed condition is true
     #      AND .metadata.generation equals .status.conditions.observedGeneration
     #
-    #   If expected = '0'
+    #   If EXPECTED_STATE = '0'
     #    - get the current number of pods regardless of their
     #      restart version, introspect version, image, etc.
     #    - we have reached our goal if the pod count is 0
@@ -460,7 +464,7 @@ main() {
 
     is_done="false"
 
-    if [ "$expected" = "0" ]; then
+    if [ "$EXPECTED_STATE" = "0" ]; then
 
       pod_count=$( getPodInfo | wc -l )
 
@@ -469,19 +473,19 @@ main() {
     else
 
       # NOTE: this regex must correspond with the jpath in the 'getPodInfo' function
-      local regex="domainRestartVersion=;$goal_RV_current;"
-      regex+=" introspectVersion=;$goal_IV_current;"
-      regex+=" image=;$goal_image_current;"
-      regex+=" aiimages=;$goal_aiimages_current;"
+      local regex="domainRestartVersion=;$domain_info_goal_RV_current;"
+      regex+=" introspectVersion=;$domain_info_goal_IV_current;"
+      regex+=" image=;$domain_info_goal_image_current;"
+      regex+=" aiimages=;$domain_info_goal_aiimages_current;"
       regex+=" ready=;true;"
 
       set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
       pod_count=$( getPodInfo | grep "$regex" | wc -l )
       set -e
 
-      [ "$condition_completed" = "True" ] \
-        && [ "$goal_generation" = "$observed_generation" ] \
-        && [ "$cl_goal_generations" = "$cl_observed_generations" ] \
+      [ "$domain_info_condition_completed" = "True" ] \
+        && [ "$domain_info_goal_generation" = "$domain_info_observed_generation" ] \
+        && [ "$cl_info_goal_generations" = "$cl_info_observed_generations" ] \
         && is_done="true"
 
     fi
@@ -490,12 +494,12 @@ main() {
     # Report the current state to stdout.
     #
 
-    if [ "$verbose" = "false" ]; then
+    if [ "$VERBOSE" = "false" ]; then
 
       # "quiet" reporting:
       # - show the goal criteria once plus any time they happen to change
       # - append the count of matching pods to a single line "... = 3 3 2" when it changes
-      #   or when a report_interval has passed
+      #   or when a REPORT_INTERVAL_SECS has passed
 
       if [ "$reported" = "false" ]; then
 
@@ -506,7 +510,7 @@ main() {
         reported="true"
         last_report_secs=$SECONDS
 
-      elif [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
+      elif [ $((SECONDS - last_report_secs)) -gt $REPORT_INTERVAL_SECS ] \
            || [ "$is_done" = "true" ]; then
 
         echo -n " $pod_count"
@@ -518,13 +522,13 @@ main() {
       # verbose reporting:
       # - show the goal criteria
       # - show the state of each pod in table form
-      # - output above again when any pod state changes or 'report_interval' is exceeded
+      # - output above again when any pod state changes or 'REPORT_INTERVAL_SECS' is exceeded
 
       pod_info_cur=$(getPodInfo) || exit 1
 
       if [ "$pod_info_cur" != "$pod_info_orig" ] \
          || [ "$reported" = "false" ] \
-         || [ $((SECONDS - last_report_secs)) -gt $report_interval ] \
+         || [ $((SECONDS - last_report_secs)) -gt $REPORT_INTERVAL_SECS ] \
          || [ "$is_done" = "true" ]; then
 
         if [ "$reported" = "false" ]; then
@@ -556,11 +560,11 @@ main() {
     fi
 
     #
-    # Exit 1 if domain resource is reporting a failure and "ignore_failures" is "false" (the default)
+    # Exit 1 if domain resource is reporting a failure and "IGNORE_FAILURES" is "false" (the default)
     #
-    if [ "${ignore_failures}" = "false" ] && [ ! -z "${condition_failed_str}" ]; then
+    if [ "${IGNORE_FAILURES}" = "false" ] && [ ! -z "${domain_info_condition_failed_str}" ]; then
       echo
-      trace "Error: The domain resource has a failure condition: '${condition_failed_str}'. If you want this script to ignore failure conditions and keep trying regardless, then specify '-i' on the commmand line."
+      trace "Error: The domain resource has a failure condition: '${domain_info_condition_failed_str}'. If you want this script to ignore failure conditions and keep trying regardless, then specify '-i' on the commmand line."
       exit 1
     fi
 
@@ -576,10 +580,10 @@ main() {
     #
     # Exit 1 if too much time has passed.
     #
-    if [ $SECONDS -ge $timeout_secs ]; then
+    if [ $SECONDS -ge $TIMEOUT_SECS ]; then
       echo
       reportBasics
-      trace "Error: Timeout after waiting more than $timeout_secs seconds."
+      trace "Error: Timeout after waiting more than $TIMEOUT_SECS seconds."
       exit 1
     fi
 

@@ -184,7 +184,7 @@ Here are the steps for this use case:
 
    - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
 
-   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
+   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p Completed`. This is a utility script that provides useful information about a domain's pods and waits for the domain's `Completed` condition to reach `True` (all expected pods `ready`, at their target `restartVersion`, and at their target `image`).
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
    ```shell
@@ -231,7 +231,7 @@ Here are the steps for this use case:
 
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```shell
-   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
+   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p Completed
    ```
    ```
    @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:

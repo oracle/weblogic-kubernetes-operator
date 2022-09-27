@@ -382,11 +382,11 @@ Here are the steps for this use case:
    ```
    {{% /expand %}}
 
-   For a more detailed view of this activity, you can instead call `/tmp/mii-sample/utils/wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3`. The output will look something like this:
+   For a more detailed view of this activity, you can instead call `/tmp/mii-sample/utils/wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p Completed`. The output will look something like this:
 
    {{%expand "Click here to expand." %}}
    ```shell
-   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
+   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p Completed
    ```
    ```
    @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:

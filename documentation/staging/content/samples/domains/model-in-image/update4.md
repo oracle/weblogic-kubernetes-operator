@@ -161,9 +161,9 @@ Here are the steps:
        sample-domain1-introspector-vgxxl   0/1     Terminating         0          78s
        ```
 
-   - Alternatively, run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`.
+   - Alternatively, run `/tmp/mii-sample/utils/wl-pod-wait.sh -p Completed`.
 
-     This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, reach their target `introspectVersion`, and reach their target `image` before exiting.
+     This is a utility script that provides useful information about a domain's pods and waits for the domain's `Completed` condition to reach `True` (all expected pods `ready`, at their target `restartVersion`, and at their target `image`).
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
    ```shell
@@ -210,7 +210,7 @@ Here are the steps:
 
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows the introspector running and that shows each domain pod reach its new `introspectVersion`." %}}
    ```shell
-   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
+   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p Completed
    ```
    ```
    @@ [2020-11-21T05:55:26][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:

@@ -634,11 +634,10 @@ the introspector job run and your WebLogic Server pods start. The output will lo
   ```
   {{% /expand %}}
 
-Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`.
-This utility script exits successfully when the designated number of WebLogic
-Server pods reach a `ready` state and have `restartVersion`, `introspectVersion`,
-`spec.image`, and `spec.serverPod.auxiliaryImages.image` values that match
-their corresponding values in their domain resource.
+Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p Completed`.
+This is a utility script that provides useful information about a domain's pods
+and waits for the domain's `Completed` condition to reach `True`
+(all expected pods `ready`, at their target `restartVersion`, and at their target `image`).
 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```shell
