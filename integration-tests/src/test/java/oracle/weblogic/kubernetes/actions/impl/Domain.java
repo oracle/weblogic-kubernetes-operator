@@ -496,6 +496,81 @@ public class Domain {
   }
 
   /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return ExecResult object
+   */
+  public static ExecResult scaleClusterWithRestApiAndReturnResult(String domainUid,
+                                                                  String clusterName,
+                                                                  int numOfServers,
+                                                                  int externalRestHttpsPort,
+                                                                  String opNamespace,
+                                                                  String opServiceAccount) {
+    LoggingFacade logger = getLogger();
+
+    String opExternalSvc = getRouteHost(opNamespace, "external-weblogic-operator-svc");
+    logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+    String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
+    if (secretName.isEmpty()) {
+      logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+      return new ExecResult(11, "", "secret name is empty");
+    }
+    logger.info("Got secret {0} of service account {1} in namespace {2}",
+        secretName, opServiceAccount, opNamespace);
+
+    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
+        + " in namespace {2}", secretName, opServiceAccount, opNamespace);
+    String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
+    if (secretToken.isEmpty()) {
+      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
+          secretName, opServiceAccount, opNamespace);
+      return new ExecResult(12, "", "secret token is empty");
+    }
+    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, secretToken);
+
+    // decode the secret encoded token
+    String decodedToken = new String(Base64.getDecoder().decode(secretToken));
+    logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, decodedToken);
+
+    // build the curl command to scale the cluster
+    String command = new StringBuffer()
+        .append("curl --noproxy '*' -v -k ")
+        .append("-H \"Authorization:Bearer ")
+        .append(decodedToken)
+        .append("\" ")
+        .append("-H Accept:application/json ")
+        .append("-H Content-Type:application/json ")
+        .append("-H X-Requested-By:MyClient ")
+        .append("-d '{\"spec\": {\"replicas\": ")
+        .append(numOfServers)
+        .append("} }' ")
+        .append("-X POST https://")
+        .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
+        .append("/operator/latest/domains/")
+        .append(domainUid)
+        .append("/clusters/")
+        .append(clusterName)
+        .append("/scale").toString();
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(command)
+        .saveResults(true)
+        .redirect(true);
+
+    logger.info("Calling curl to scale the cluster");
+    return Command.withParams(params).executeAndReturnResult();
+  }
+
+  /**
    * Scale the cluster of the domain in the specified namespace with WLDF.
    *
    * @param clusterName name of the WebLogic cluster to be scaled in the domain

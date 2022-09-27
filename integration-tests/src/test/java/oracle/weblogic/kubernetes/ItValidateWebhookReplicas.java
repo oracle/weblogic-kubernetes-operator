@@ -56,9 +56,11 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiAndReturnResult;
 import static oracle.weblogic.kubernetes.actions.TestActions.tagAndPushToKind;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -106,6 +108,8 @@ class ItValidateWebhookReplicas {
   private static LoggingFacade logger = null;
   private static int domain2NumCluster = 2;
   private static int replicaCountToPatch = 10;
+  private static String opServiceAccount = null;
+  private static int externalRestHttpsPort = 0;
 
   private String clusterName = "cluster-1";
 
@@ -135,10 +139,13 @@ class ItValidateWebhookReplicas {
     assertNotNull(namespaces.get(2), String.format("Namespace namespaces.get(2) is null"));
     domainNamespace2 = namespaces.get(2);
 
-    // install the operator
+    opServiceAccount = opNamespace + "-sa";
+    // install and verify operator with REST API
     logger.info("Install an operator in namespace {0}, managing namespace {1} and {2}",
         opNamespace, domainNamespace, domainNamespace2);
-    installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace2);
+    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
+        domainNamespace, domainNamespace2);
+    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
@@ -199,6 +206,26 @@ class ItValidateWebhookReplicas {
             + " in namespace "
             + domainNamespace;
     assertTrue(responseMsg.contains(expectedErrorMsg),
+        "Patching cluster replicas did not return the expected error msg: " + expectedErrorMsg);
+  }
+
+  /**
+   * Verify that when a domain and its clusters are running, use the operator's REST call that attempts to increase
+   * the cluster level replicas to a value more than the max WebLogic cluster size will be rejected
+   * with a clear error message.
+   */
+  @Test
+  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic Cluster Size will be rejected")
+  void testScaleClusterReplicasTooHighUsingRest() {
+    // scale the cluster with replicas value more than max cluster size
+    ExecResult execResult = scaleClusterWithRestApiAndReturnResult(domainUid, clusterName, replicaCountToPatch,
+        externalRestHttpsPort, opNamespace, opServiceAccount);
+    logger.info("execResult.exitValue={0}", execResult.exitValue());
+    logger.info("execResult.stdout={0}", execResult.stdout());
+    logger.info("execResult.stderr={0}", execResult.stderr());
+    String expectedErrorMsg = "HTTP/1.1 400 Requested scaling count of 10 is greater than configured cluster size "
+        + "of 5 for WebLogic cluster cluster-1.";
+    assertTrue(execResult.stderr().contains(expectedErrorMsg),
         "Patching cluster replicas did not return the expected error msg: " + expectedErrorMsg);
   }
 
