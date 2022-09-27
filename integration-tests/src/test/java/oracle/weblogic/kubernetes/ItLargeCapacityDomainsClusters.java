@@ -97,8 +97,8 @@ class ItLargeCapacityDomainsClusters {
 
   private static String opNamespace = null;
 
-  private static int numOfDomains = 20;
-  private static int numOfClusters = 20;
+  private static int numOfDomains = 3;
+  private static int numOfClusters = 3;
   private static final String baseDomainUid = "domain";
   private static List<String> domainNamespaces;
 
@@ -107,7 +107,7 @@ class ItLargeCapacityDomainsClusters {
   private static final String cluster1Name = "mycluster";
   private static final String adminServerName = "admin-server";
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String cluster1ManagedServerNameBase = "managed-server";
+  private static final String cluster1ManagedServerNameBase = cluster1Name + "-managed-server";
   private static final String cluster1ManagedServerPodNamePrefix = domainUid + "-" + cluster1ManagedServerNameBase;
 
   private static int clusterReplicaCount = 2;
@@ -130,28 +130,26 @@ class ItLargeCapacityDomainsClusters {
   private static final int managedServerPort = 7100;
 
   /**
-   * Assigns unique namespaces for operator and domains. Installs operator.
+   * Assigns unique namespaces for operator and domains. Installs operator. Creates a WebLogic domain.
    *
    * @param namespaces injected by JUnit
    */
   @BeforeAll
   public static void initAll(@Namespaces(50) List<String> namespaces) {
-
     logger.info("Assign a unique namespace for operator");
     opNamespace = namespaces.get(0);
-
     logger.info("Assign a unique namespaces for WebLogic domains");
+    domainNamespaces = namespaces.subList(1, numOfDomains + 1);
     domainNamespace = namespaces.get(numOfDomains + 1);
-    domainNamespaces = namespaces.subList(1, numOfDomains);
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, namespaces.subList(1, 22).toArray(new String[0]));
+    installAndVerifyOperator(opNamespace, namespaces.subList(1, 50).toArray(new String[0]));
 
     // build the clusterview application
     Path targetDir = Paths.get(WORK_DIR,
         ItIntrospectVersion.class.getName() + "/clusterviewapp");
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
-        "dist", opNamespace, targetDir);
+        "dist", domainNamespace, targetDir);
     assertTrue(Paths.get(distDir.toString(),
         "clusterview.war").toFile().exists(),
         "Application archive is not available");
@@ -166,7 +164,7 @@ class ItLargeCapacityDomainsClusters {
           cluster1ManagedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= clusterReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
@@ -184,16 +182,16 @@ class ItLargeCapacityDomainsClusters {
   @DisplayName("Test domains creation")
   void testCreateDomains() {
     String domainUid;
-    String adminServerName = "admin-server";
     String adminServerPodName;;
-    String clusterManagedServerNameBase = "managed-server";
+    String clusterName = "cluster1";
+    String clusterManagedServerNameBase = clusterName + "-managed-server";
     String clusterManagedServerPodNamePrefix;
 
     for (int i = 1; i <= numOfDomains; i++) {
       domainUid = baseDomainUid + i;
       adminServerPodName = domainUid + "-" + adminServerName;
       clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-      createDomain(domainNamespaces.get(i), domainUid);
+      createDomain(domainNamespaces.get(i), domainUid, clusterName, clusterManagedServerNameBase);
       // verify the admin server service and pod created
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespaces.get(i));
       // verify managed server services created
@@ -203,7 +201,7 @@ class ItLargeCapacityDomainsClusters {
         checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + j, domainUid, domainNamespaces.get(i));
       }
 
-      List<String> managedServerNames = new ArrayList<String>();
+      List<String> managedServerNames = new ArrayList<>();
       for (int j = 1; j <= clusterReplicaCount; j++) {
         managedServerNames.add(clusterManagedServerNameBase + j);
       }
@@ -474,6 +472,11 @@ class ItLargeCapacityDomainsClusters {
   }
 
   private static void createDomain(String namespace, String domainUid) {
+    createDomain(namespace, domainUid, cluster1Name, cluster1ManagedServerNameBase);
+  }
+
+  private static void createDomain(String namespace, String domainUid,
+      String clusterName, String clusterManagedServerNameBase) {
     String uniquePath = "/shared/" + namespace + "/domains";
 
     // create WebLogic domain credential secret
@@ -486,9 +489,6 @@ class ItLargeCapacityDomainsClusters {
     createPV(pvName, domainUid, ItLargeCapacityDomainsClusters.class.getSimpleName());
     createPVC(pvName, pvcName, domainUid, namespace);
 
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
         -> File.createTempFile("domain", "properties"),
@@ -496,7 +496,7 @@ class ItLargeCapacityDomainsClusters {
     Properties p = new Properties();
     p.setProperty("domain_path", uniquePath);
     p.setProperty("domain_name", domainUid);
-    p.setProperty("cluster_name", cluster1Name);
+    p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
     p.setProperty("managed_server_port", Integer.toString(managedServerPort));
     p.setProperty("admin_server_port", "7001");
@@ -505,7 +505,7 @@ class ItLargeCapacityDomainsClusters {
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2"); // maximum number of servers in cluster
-    p.setProperty("managed_server_name_base", cluster1ManagedServerNameBase);
+    p.setProperty("managed_server_name_base", clusterManagedServerNameBase);
     p.setProperty("domain_logs", uniquePath + "/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
@@ -546,8 +546,6 @@ class ItLargeCapacityDomainsClusters {
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.debug.DebugConfigurationEdit=true "
-                        + "-Dweblogic.debug.DebugDeployment=true "
-                        + "-Dweblogic.StdoutDebugEnabled=true "
                         + "-Dweblogic.debug.DebugSituationalConfig=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -566,7 +564,7 @@ class ItLargeCapacityDomainsClusters {
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
-                .clusterName(cluster1Name)
+                .clusterName(clusterName)
                 .replicas(clusterReplicaCount)
                 .serverStartState("RUNNING")));
 
