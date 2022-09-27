@@ -400,8 +400,8 @@ class ItLargeCapacityDomainsClusters {
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
-          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
-          + "\"value\": \"serverStartPolicy\": \"NEVER\""
+          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
+          + "\"value\": \"NEVER\""
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
@@ -422,7 +422,7 @@ class ItLargeCapacityDomainsClusters {
       logger.info("patch the domain resource with new cluster and introspectVersion");
       String patchStr
           = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
-          + "\"value\": \"serverStartPolicy\": \"IF_NEEDED\""
+          + "\"value\": \"IF_NEEDED\""
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
