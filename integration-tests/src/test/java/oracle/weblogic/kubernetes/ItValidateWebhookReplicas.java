@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -62,7 +61,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiAndReturnResult;
 import static oracle.weblogic.kubernetes.actions.TestActions.tagAndPushToKind;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
@@ -78,7 +76,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContain
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -128,15 +125,15 @@ class ItValidateWebhookReplicas {
     logger = getLogger();
 
     // get a namespace for operator
-    assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
+    assertNotNull(namespaces.get(0), "Namespace namespaces.get(0) is null");
     opNamespace = namespaces.get(0);
 
     // get a namespace for domain1
-    assertNotNull(namespaces.get(1), String.format("Namespace namespaces.get(1) is null"));
+    assertNotNull(namespaces.get(1), "Namespace namespaces.get(1) is null");
     domainNamespace = namespaces.get(1);
 
     // get a namespace for domain2
-    assertNotNull(namespaces.get(2), String.format("Namespace namespaces.get(2) is null"));
+    assertNotNull(namespaces.get(2), "Namespace namespaces.get(2) is null");
     domainNamespace2 = namespaces.get(2);
 
     opServiceAccount = opNamespace + "-sa";
@@ -147,7 +144,7 @@ class ItValidateWebhookReplicas {
         domainNamespace, domainNamespace2);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
-    // create a domain resource
+    // create a mii domain resource with one cluster
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace);
     createMiiDomainAndVerify(
@@ -159,20 +156,24 @@ class ItValidateWebhookReplicas {
         replicaCount);
 
     // create a mii domain with two clusters in domainNamespace2
+    logger.info("Create a model-in-image domain {0} with multiple clusters in namespace {1}",
+        domainUid2, domainNamespace2);
     createMiiDomainWithMultiClusters(domainNamespace2);
   }
 
   @BeforeEach
   public void beforeEach() {
-    // check admin server is up and running
+    // check admin server is up and running for domain1
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // check admin server is up and running for domain2
     checkPodReadyAndServiceExists(domainUid2 + "-" + ADMIN_SERVER_NAME_BASE, domainUid2, domainNamespace2);
 
+    // check managed servers are up and running for domain1
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    // check managed servers are up and running
+    // check managed servers are up and running for domain2
     for (int i = 1; i <= replicaCount; i++) {
       for (int j = 1; j <= domain2NumCluster; j++) {
         checkPodReadyAndServiceExists(domainUid2 + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i,
@@ -187,7 +188,7 @@ class ItValidateWebhookReplicas {
    * with a clear error message.
    */
   @Test
-  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic Cluster Size will be rejected")
+  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic cluster size will be rejected")
   void testClusterReplicasTooHigh() {
     // patch the cluster with replicas value more than max cluster size
     String patchStr
@@ -215,18 +216,19 @@ class ItValidateWebhookReplicas {
    * with a clear error message.
    */
   @Test
-  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic Cluster Size will be rejected")
+  @DisplayName("Verify increasing the replicas of a cluster beyond configured WebLogic cluster size will be rejected")
   void testScaleClusterReplicasTooHighUsingRest() {
-    // scale the cluster with replicas value more than max cluster size
+    // scale the cluster with replicas value more than max cluster size using REST
     ExecResult execResult = scaleClusterWithRestApiAndReturnResult(domainUid, clusterName, replicaCountToPatch,
         externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("execResult.exitValue={0}", execResult.exitValue());
     logger.info("execResult.stdout={0}", execResult.stdout());
     logger.info("execResult.stderr={0}", execResult.stderr());
-    String expectedErrorMsg = "HTTP/1.1 400 Requested scaling count of 10 is greater than configured cluster size "
-        + "of 5 for WebLogic cluster cluster-1.";
+    String expectedErrorMsg = "HTTP/1.1 400 Requested scaling count of " + replicaCountToPatch
+        + " is greater than configured cluster size of 5 for WebLogic cluster cluster-1.";
     assertTrue(execResult.stderr().contains(expectedErrorMsg),
-        "Patching cluster replicas did not return the expected error msg: " + expectedErrorMsg);
+        "scale cluster with replicas more than max cluster size did not return the expected error msg: "
+            + expectedErrorMsg);
   }
 
   /**
@@ -235,7 +237,7 @@ class ItValidateWebhookReplicas {
    * with a clear error message.
    */
   @Test
-  @DisplayName("Verify increasing the replicas of a domain beyond configured WebLogic Cluster Size will be rejected")
+  @DisplayName("Verify increasing the replicas of a domain beyond configured WebLogic cluster size will be rejected")
   void testDomainReplicasTooHigh() {
     // We need to patch the cluster resource to remove the replicas first. Otherwise, the domain level replicas will
     // be ignored.
@@ -306,6 +308,15 @@ class ItValidateWebhookReplicas {
     assertEquals(domainStatusClusterReplicas, replicaCount,
         String.format("domain status cluster replica is changed, expect: %s, got: %s",
             domainStatusClusterReplicas, replicaCount));
+
+    // patch the domain with original replicas value
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 1}"
+        + "]";
+    patch = new V1Patch(patchStr);
+    logger.info("Patching domain resource using patch string {0} ", patchStr);
+    patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**
@@ -374,57 +385,16 @@ class ItValidateWebhookReplicas {
   }
 
   /**
-   * Verify that when a domain and its clusters are running, call 'kubectl edit domain' to change the image,
-   * verify the domain is restarted. Use 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
-   * domain level replicas to a value that exceeds the WebLogic cluster size will NOT
-   * be rejected, but the domain will get into a Failed:true condition with a clear error message.
+   * Verify that when a domain and its clusters are running, call
+   * 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
+   * domain level replicas to a value that exceeds the WebLogic cluster size will be rejected.
    * Disabled due to bug
    */
   @Disabled
   @Test
-  @DisplayName("Verify changing the image and increasing the replicas of a domain beyond configured WebLogic cluster "
-      + "size will not be rejected but the domain will get into a Failed:true condition with a clear error message")
-  void testDomainChangeImageReplicasTooHighUsingScale() {
-    // We need to patch the cluster resource to remove the replicas first. Otherwise, the domain level replicas will
-    // be ignored.
-    patchClusterResourceRemoveReplicas("cluster-1", domainUid, domainNamespace, managedServerPrefix + "2");
-
-    String originalImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    String newImage = MII_BASIC_IMAGE_NAME + ":newtag";
-    if (KIND_REPO != null) {
-      testUntil(
-          tagAndPushToKind(originalImage, newImage),
-          logger,
-          "tagAndPushToKind for image {0} to be successful",
-          newImage);
-    } else {
-      dockerTag(originalImage, newImage);
-    }
-
-    OffsetDateTime timestamp = now();
-    // get the map with server pods and their original creation timestamps
-    Map<String, OffsetDateTime> podsWithTimeStamps =
-        getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix, 1);
-
-    // patch the domain with replicas value more than max cluster size
-    String patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": " + "\"" + newImage + "\"}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    logger.info("Patching domain resource using patch string {0} ", patchStr);
-    String response =
-        patchDomainCustomResourceReturnResponse(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
-
-    // verify patching domain succeeds
-    assertTrue(response.contains("Succeeded with response code: 200"),
-        String.format("patching domain should succeed but failed with response msg: %s", response));
-
-    // verify the domain is restarted
-    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+  @DisplayName("Verify call 'kubectl scale' to increase the replicas of a cluster beyond configured WebLogic cluster "
+      + "size will be rejected")
+  void testScaleClusterReplicasTooHigh() {
 
     // use 'kubectl scale' to scale the cluster
     CommandParams params = new CommandParams().defaults();
@@ -442,28 +412,6 @@ class ItValidateWebhookReplicas {
     assertTrue(result.stderr().contains(errorMsg),
         String.format("scale cluster beyond max cluster size did not throw error, got: %s; expect: %s",
             result.stderr(), errorMsg));
-
-    // check the domain event contains the expected error msg
-    String expectedErrorMsg = "Domain "
-        + domainUid
-        + " failed due to 'Replicas too high': "
-        + replicaCountToPatch
-        + " replicas specified for cluster '"
-        + clusterName
-        + "' which has a maximum cluster size of 5.";
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED, "Warning",
-        timestamp, expectedErrorMsg);
-
-    // verify up to 5 (max cluster size) pods are up and running
-    for (int i = 1; i <= DEFAULT_MAX_CLUSTER_SIZE; i++) {
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // restore the domain image and replicas
-    restoreDomainImageAndReplicas(domainUid, domainNamespace, originalImage);
-
-    // restore the cluster resource with replicas
-    restoreClusterResourceWithReplicas("cluster-1", domainUid, domainNamespace);
   }
 
   /**
