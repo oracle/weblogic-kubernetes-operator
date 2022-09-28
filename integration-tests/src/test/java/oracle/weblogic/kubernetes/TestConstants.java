@@ -380,5 +380,5 @@ public interface TestConstants {
   //Defaulting to 1440 minutes (24 hours)
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
-  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=20000000";
+  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
 }
