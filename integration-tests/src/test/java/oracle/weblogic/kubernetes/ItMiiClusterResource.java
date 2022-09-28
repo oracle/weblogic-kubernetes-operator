@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -38,35 +38,27 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -90,9 +82,21 @@ class ItMiiClusterResource {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private String domainUid = "domain1";
-  private String domainUid2 = "domain2";
+  private String domain2Uid = "domain2";
   private String miiImage = null;
   private static LoggingFacade logger = null;
+  final String adminServerPodName = domainUid + "-admin-server";
+  final String managedServerPrefix = domainUid +  "-c1-managed-server";
+  final String managedServerPrefix2 = domainUid + "-c2-managed-server";
+  final int replicaCount = 2;
+  private String clusterRefName = "cluster-1";
+  private String cluster2RefName = "cluster-2";
+  private String clusterName = "cluster-1";
+  private String clusterName2 = "cluster-2";
+  private static String configMapName = "cluster-configmap";
+  private static String config2MapName = "cluster-configmap2";
+  private static String adminSecretName = "weblogic-credentials";
+  private static String encryptionSecretName = "encryptionsecret";
 
   /**
    * Install Operator.
@@ -114,6 +118,20 @@ class ItMiiClusterResource {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
+    
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+            "weblogicenc", "weblogicenc");
   }
 
   /**
@@ -133,72 +151,20 @@ class ItMiiClusterResource {
    * Make sure managed servers from cluster-2 goes down 
    */
   @Test
-  @Order(1)
   @DisplayName("Verify dynamic add/remove of cluster resource on domain")
   void testManageClusterResource() {
 
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid +  "-c1-managed-server";
-    final String managedServerPrefix2 = domainUid + "-c2-managed-server";
-    final int replicaCount = 2;
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createTestRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-            "weblogicenc", "weblogicenc");
-
     // create cluster object(s)
-    String clusterRefName = "cluster-1";
-    String clusterRefName2 = "cluster-2";
-    String clusterName = "cluster-1";
-    String clusterName2 = "cluster-2";
-
     ClusterResource cluster = createClusterResource(
         clusterRefName, clusterName, domainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}",clusterRefName, domainNamespace);
     createClusterAndVerify(cluster);
     ClusterResource cluster2 = createClusterResource(
-        clusterRefName2, clusterName2, domainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",clusterRefName2, domainNamespace);
+        cluster2RefName, clusterName2, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",cluster2RefName, domainNamespace);
     createClusterAndVerify(cluster2);
 
-    String configMapName = "cluster-configmap";
-    String yamlString = "topology:\n"
-        + "  Cluster:\n"
-        + "    'cluster-1':\n"
-        + "       DynamicServers: \n"
-        + "         ServerTemplate: 'cluster-1-template' \n"
-        + "         ServerNamePrefix: 'c1-managed-server' \n"
-        + "         DynamicClusterSize: 3 \n"
-        + "         MaxDynamicClusterSize: 3 \n"
-        + "         CalculatedListenPorts: false \n"
-        + "    'cluster-2':\n"
-        + "       DynamicServers: \n"
-        + "         ServerTemplate: 'cluster-2-template' \n"
-        + "         ServerNamePrefix: 'c2-managed-server' \n"
-        + "         DynamicClusterSize: 4 \n"
-        + "         MaxDynamicClusterSize: 4 \n"
-        + "         CalculatedListenPorts: false \n"
-        + "  ServerTemplate:\n"
-        + "    'cluster-1-template':\n"
-        + "       Cluster: 'cluster-1' \n"
-        + "       ListenPort : 8001 \n"
-        + "    'cluster-2-template':\n"
-        + "       Cluster: 'cluster-2' \n"
-        + "       ListenPort : 9001 \n";
-
-    createModelConfigMap(configMapName, yamlString, domainUid);
+    createModelConfigMap(domainUid,configMapName);
 
     // create the domain object
     DomainResource domain = createDomainResource(domainUid,
@@ -212,7 +178,7 @@ class ItMiiClusterResource {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
 
-    // Do not set cluster references
+    // Do not set cluster references in domain resource
     // check only admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -251,7 +217,7 @@ class ItMiiClusterResource {
     logger.info("patch the domain resource with new cluster and introspectVersion2");
     String patchStr2 = "["
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
-        + " \"" + clusterRefName2 + "\""  
+        + " \"" + cluster2RefName + "\""  
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion2 + "\"}"
         + "]";
@@ -277,77 +243,103 @@ class ItMiiClusterResource {
       checkPodReadyAndServiceExists(managedServerPrefix2 + i, domainUid, domainNamespace);
     }
 
-    kubectlScaleCluster(clusterRefName2,domainNamespace,3);
+    kubectlScaleCluster(cluster2RefName,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServerPrefix2 + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
    
-    deleteClusterCustomResourceAndVerify(clusterRefName2,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2RefName,domainNamespace);
     // check managed server pods from cluster-2 are shutdown
     for (int i = 1; i <= replicaCount + 1; i++) {
       checkPodDoesNotExist(managedServerPrefix2 + i,domainUid,domainNamespace);
     }
-
+    deleteDomainCustomResource(domainUid, domainNamespace);
   }
 
-  private void pushImageIfNeeded(String image) {
-    // push the image to a registry to make the test work in multi node cluster
-    logger.info("docker login to registry {0}", TEST_IMAGES_REPO);
-    assertTrue(dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
-                TEST_IMAGES_REPO_PASSWORD), "docker login failed");
-    // push image
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry", image);
-      assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
+  /**
+   * Create a cluster resorce say cluser-1.
+   * Create a domain recource domain1 with cluster reference set to cluser-1.
+   * Create a domain recource domain2 with cluster reference set to cluser-1.
+   * Start the domain domain1 with all manged servers in the cluster.
+   * A Domain Validation Failed Event MUST be generated for domain domain2.
+   */
+  @Test
+  @DisplayName("Verify Domain Validation Failed Event for sharing Cluster Ref")
+  void testSharedClusterResource() {
+
+    OffsetDateTime timestamp = now();
+    deleteDomainCustomResource(domainUid, domainNamespace);
+    deleteDomainCustomResource(domain2Uid, domainNamespace);
+
+    testUntil(
+        domainDoesNotExist(domainUid, DOMAIN_API_VERSION, domainNamespace),
+        getLogger(),
+        "Doamin {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
+
+    testUntil(
+        domainDoesNotExist(domain2Uid, DOMAIN_API_VERSION, domainNamespace),
+        getLogger(),
+        "Doamin {0} to be created in namespace {1}",
+        domain2Uid,
+        domainNamespace);
+
+    deleteClusterCustomResourceAndVerify(clusterRefName,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2RefName,domainNamespace);
+
+    ClusterResource cluster = createClusterResource(
+        clusterRefName, clusterName, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",clusterRefName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    createModelConfigMap(domainUid,configMapName);
+    createModelConfigMap(domain2Uid,config2MapName);
+
+    // create the domain object
+    DomainResource domain = createDomainResource(domainUid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterRefName));
+    // create model in image domain
+    logger.info("Creating mii domain {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain, domainNamespace);
+    
+    DomainResource domain2 = createDomainResource(domain2Uid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, config2MapName);
+
+    // set cluster references
+    domain2.getSpec().withCluster(new V1LocalObjectReference().name(clusterRefName));
+    // create model in image domain
+    logger.info("Creating mii domain {0} in namespace {1} using image {2}",
+        domain2Uid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain2, domainNamespace);
+
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
+
+    // verify managed server services and pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+                 managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-  }
 
-  private String createImageAndVerify(
-      String imageName,
-      String imageTag,
-      List<String> modelList,
-      List<String> archiveList
-  ) {
-    String image = String.format("%s:%s", imageName, imageTag);
-
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    if (WIT_JAVA_HOME != null) {
-      env.put("JAVA_HOME", WIT_JAVA_HOME);
-    }
-
-    String witTarget = ((OKD) ? "OpenShift" : "Default");
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0} using model list {1} and archive list {2}",
-        image, modelList, archiveList);
-    boolean result = createImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtModelOnly(true)
-            .wdtVersion(WDT_VERSION)
-            .target(witTarget)
-            .target(witTarget)
-            .env(env)
-            .redirect(true));
-
-    assertTrue(result, String.format("Failed to create image %s using WebLogic Image Tool", image));
-
-    /* Check image exists using docker images | grep image tag.
-     * Tag name is unique as it contains date and timestamp.
-     * This is a workaround for the issue on Jenkins machine
-     * as docker images imagename:imagetag is not working and
-     * the test fails even though the image exists.
-     */
-    assertTrue(doesImageExist(imageTag),
-        String.format("Image %s doesn't exist", image));
-
-    return image;
+    testUntil(withLongRetryPolicy,
+        checkDomainFailedEventWithReason(opNamespace, domainNamespace, 
+        domain2Uid, "Domain validation error", "Warning", timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        "Domain validation error",
+        domainNamespace);
   }
 
   // Create a domain resource 
@@ -405,21 +397,45 @@ class ItMiiClusterResource {
   }
 
   // create a ConfigMap with a model that add a cluster 
-  private static void createModelConfigMap(String configMapName, String model, String domainUid) {
+  private static void createModelConfigMap(String domainid, String cfgMapName) {
+    String yamlString = "topology:\n"
+        + "  Cluster:\n"
+        + "    'cluster-1':\n"
+        + "       DynamicServers: \n"
+        + "         ServerTemplate: 'cluster-1-template' \n"
+        + "         ServerNamePrefix: 'c1-managed-server' \n"
+        + "         DynamicClusterSize: 3 \n"
+        + "         MaxDynamicClusterSize: 3 \n"
+        + "         CalculatedListenPorts: false \n"
+        + "    'cluster-2':\n"
+        + "       DynamicServers: \n"
+        + "         ServerTemplate: 'cluster-2-template' \n"
+        + "         ServerNamePrefix: 'c2-managed-server' \n"
+        + "         DynamicClusterSize: 4 \n"
+        + "         MaxDynamicClusterSize: 4 \n"
+        + "         CalculatedListenPorts: false \n"
+        + "  ServerTemplate:\n"
+        + "    'cluster-1-template':\n"
+        + "       Cluster: 'cluster-1' \n"
+        + "       ListenPort : 8001 \n"
+        + "    'cluster-2-template':\n"
+        + "       Cluster: 'cluster-2' \n"
+        + "       ListenPort : 9001 \n";
+
     Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
+    labels.put("weblogic.domainUid", domainid);
     Map<String, String> data = new HashMap<>();
-    data.put("model.cluster.yaml", model);
+    data.put("model.cluster.yaml", yamlString);
 
     V1ConfigMap configMap = new V1ConfigMap()
         .data(data)
         .metadata(new V1ObjectMeta()
             .labels(labels)
-            .name(configMapName)
+            .name(cfgMapName)
             .namespace(domainNamespace));
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
-    assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed %s", cfgMapName));
   }
 
   private static void kubectlScaleCluster(String clusterRef, String namespace, int replica) {
