@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -43,7 +43,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_PATCHED
  */
 public class PodDisruptionBudgetHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  public static final String PDB_API_VERSION = "policy/v1beta1";
+  public static final String PDB_API_VERSION = "policy/v1";
 
   /**
    * Factory for {@link Step} that verifies and creates pod disruption budget if needed.
