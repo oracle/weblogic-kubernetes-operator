@@ -177,10 +177,10 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   /**
    * The observedGeneration attribute is defined as an integer type in the Cluster Resource
    * schema, hence convert to integer when publishing the status.
-   * @return integer value of the observedGeneration, if set, otherwise -1.
+   * @return integer value of the observedGeneration, if set, otherwise defaults to 1.
    */
   private Integer getObservedGenerationAsInteger() {
-    return observedGeneration != null ? observedGeneration.intValue() : -1;
+    return observedGeneration != null ? observedGeneration.intValue() : 1;
   }
 
   public ClusterStatus withObservedGeneration(Long observedGeneration) {

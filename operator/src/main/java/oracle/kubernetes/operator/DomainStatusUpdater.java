@@ -946,11 +946,11 @@ public class DomainStatusUpdater {
 
         void addClusterConditions() {
           clusterStatus.addCondition(
-                  new ClusterCondition(ClusterConditionType.AVAILABLE)
-                          .withStatus(isAvailable()));
+              new ClusterCondition(ClusterConditionType.AVAILABLE)
+                  .withStatus(isAvailable()));
           clusterStatus.addCondition(
-                  new ClusterCondition(ClusterConditionType.COMPLETED)
-                          .withStatus(isProcessingCompleted()));
+              new ClusterCondition(ClusterConditionType.COMPLETED)
+                  .withStatus(isProcessingCompleted()));
         }
 
         private String createNotReadyMessage() {

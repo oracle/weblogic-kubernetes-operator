@@ -226,7 +226,7 @@ class DomainStatusPatchTest {
                 "ADD /status/clusters/- {'clusterName':'cluster1','maximumReplicas':10,'minimumReplicas':2,"
                     + "'observedGeneration':1,'readyReplicas':4,'replicas':2,'replicasGoal':10}",
                 "ADD /status/clusters/- {'clusterName':'cluster2','maximumReplicas':8,'minimumReplicas':1,"
-                    + "'observedGeneration':-1,'replicas':4}"
+                    + "'observedGeneration':1,'replicas':4}"
                 ));
   }
 
