@@ -945,19 +945,12 @@ public class DomainStatusUpdater {
         }
 
         void addClusterConditions() {
-          addClusterConditionIfNeeded(clusterStatus.getCondition(ClusterConditionType.AVAILABLE),
-                  new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(isAvailable()));
-
-          addClusterConditionIfNeeded(clusterStatus.getCondition(ClusterConditionType.COMPLETED),
-                  new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(isProcessingCompleted()));
-
-        }
-
-        private void addClusterConditionIfNeeded(ClusterCondition currentCondition, ClusterCondition newCondition) {
-          if (currentCondition == null
-                  || !currentCondition.equals(newCondition)) {
-            clusterStatus.addCondition(newCondition);
-          }
+          clusterStatus.addCondition(
+                  new ClusterCondition(ClusterConditionType.AVAILABLE)
+                          .withStatus(isAvailable()));
+          clusterStatus.addCondition(
+                  new ClusterCondition(ClusterConditionType.COMPLETED)
+                          .withStatus(isProcessingCompleted()));
         }
 
         private String createNotReadyMessage() {
