@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -86,10 +86,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to introspectVersion attribute.
+ * Tests related to large capacity domain and multiple clusters.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the introspectVersion runs the introspector")
+@DisplayName("Verify the Operator can handle multiple domains and clusters at the same time.")
 @IntegrationTest
 @Tag("okdenv")
 class ItLargeCapacityDomainsClusters {
@@ -173,9 +173,11 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test brings up new domains and verifies it can successfully start by doing the following. a. Creates new WebLogic
-   * domains using offline WLST in persistent volume. b. Creates domain resource and deploys in Kubernetes cluster. d.
-   * Verifies the servers in the new WebLogic domain comes up.
+   * Test brings up new domains and verifies it can successfully start by doing the following.
+   * 
+   * a. Creates new WebLogic domains using offline WLST in persistent volume. 
+   * b. Creates domain resource and deploys in Kubernetes cluster. 
+   * c. Verifies the servers in the new WebLogic domain comes up.
    */
   @Order(1)
   @Test
@@ -212,9 +214,13 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test creates new clusters and verifies it can successfully start by doing the following. a. Creates new WebLogic
-   * static clusters using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion version d.
-   * Verifies the servers in the new WebLogic cluster comes up.
+   * Test creates new clusters and verifies it can successfully start by doing the following. 
+   * 
+   * a. Creates new WebLogic static clusters using online WLST. 
+   * b. Patch the Domain Resource with clusters 
+   * c. Update the introspectVersion version 
+   * d. Verifies the servers in the new WebLogic cluster comes up.
+   * e. Repeat the above cycle for a number of clusters.
    */
   @Order(2)
   @Test
@@ -292,9 +298,13 @@ class ItLargeCapacityDomainsClusters {
 
   /**
    * Test creates new clusters in shutdown state and verifies it can successfully start after patching the domain with
-   * new introspectVersion string a. Creates new WebLogic static clusters using online WLST. b. Patch the Domain
-   * Resource with clusters c. Update the introspectVersion version d. Verifies the servers in the new WebLogic clusters
-   * comes up without affecting any of the running servers on pre-existing WebLogic cluster.
+   * new introspectVersion string 
+   * 
+   * a. Creates new WebLogic static clusters using online WLST. 
+   * b. Patch the Domain Resource with clusters.
+   * c. Update the introspectVersion version.
+   * d. Verifies the servers in the new WebLogic clusters comes up without affecting any of the running servers on 
+   * pre-existing WebLogic cluster.
    */
   @Order(3)
   @Test
@@ -379,9 +389,11 @@ class ItLargeCapacityDomainsClusters {
   }
 
   /**
-   * Test shuts down all existing clusters and starts up. a. Shutdowns all cluster using serverStartPolicy NEVER. b.
-   * Patch the Domain Resource with cluster serverStartPolicy IF_NEEDED. d. Verifies the servers in the domain cluster
-   * comes up.
+   * Test shuts down all existing clusters and starts up. 
+   * 
+   * a. Shutdowns all cluster using serverStartPolicy NEVER. 
+   * b. Patch the Domain Resource with cluster serverStartPolicy IF_NEEDED. 
+   * c. Verifies the servers in the domain cluster comes up.
    */
   @Order(4)
   @Test
