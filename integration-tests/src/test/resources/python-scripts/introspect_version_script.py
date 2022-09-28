@@ -80,7 +80,6 @@ def create_static_cluster():
     for count in range(1, int(server_count) + 1):
       server = server_prefix + str(count)
       cd('/')
-      print 'Creating server ' + server
       cmo.createServer(server)
 
       cd('/Servers/' + server)
@@ -101,30 +100,6 @@ def create_static_cluster():
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)
 
-
-def make_config_changes():
-  try:
-    connect_to_adminserver()
-    for count in range(1, 14):
-      edit()
-      startEdit()
-      cd('/')
-      cluster_name = 'sdcluster' + count
-      for server_count in range( 1, 2):
-        cd('/Servers/' + cluster_name + 'ms' + server_count)
-        set('AdminReconnectIntervalSeconds', 11)
-        set('CompleteMessageTimeout ', 61)
-        set('HealthCheckIntervalSeconds', 181)
-        set('IdleConnectionTimeout', 66)
-      save()
-      activate()
-    disconnect()  
-  except:
-    print 'Setting properties failed'
-    print dumpStack()
-    apply(traceback.print_exception, sys.exc_info())
-    exit(exitcode=1)
-    
 def connect_to_adminserver():
   try:
     if connected == 'false':    
