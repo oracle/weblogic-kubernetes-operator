@@ -1362,13 +1362,18 @@ public class DomainStatusUpdater {
           .withLabelSelector(DOMAINUID_LABEL + "=" + info.getDomainUid() + "," + CLUSTERNAME_LABEL + "=" + clusterName)
           .withMaximumReplicas(clusterConfig.getClusterSize())
           .withMinimumReplicas(MINIMUM_CLUSTER_COUNT)
-          .withReplicasGoal(getClusterSizeGoal(clusterName));
+          .withReplicasGoal(getClusterSizeGoal(clusterName))
+          .withObservedGeneration(getClusterObservedGeneration(clusterName));
     }
 
     private Integer getClusterSizeGoal(String clusterName) {
       return info.getReplicaCount(clusterName);
     }
 
+    private Long getClusterObservedGeneration(String clusterName) {
+      return Optional.ofNullable(info.getClusterResource(clusterName)).map(c -> c.getStatus())
+              .map(s -> s.getObservedGeneration()).orElse(1L);
+    }
   }
 
   static class FailureStep extends DomainStatusUpdaterStep implements StepWithRetryCount {
