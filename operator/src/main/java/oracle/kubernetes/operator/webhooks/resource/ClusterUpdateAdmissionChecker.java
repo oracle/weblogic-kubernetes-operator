@@ -105,7 +105,11 @@ public class ClusterUpdateAdmissionChecker extends AdmissionChecker {
     }
   }
 
-  @Override
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
   public boolean hasException() {
     return exception != null;
   }

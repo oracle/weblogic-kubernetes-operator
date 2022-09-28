@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -45,15 +44,6 @@ public abstract class AdmissionChecker {
    */
   public abstract boolean isProposedChangeAllowed();
 
-  /**
-   * Check if the validation causes an Exception.
-   *
-   * @return true if the validation causes an Exception
-   */
-  public boolean hasException() {
-    return false;
-  }
-
   boolean hasNoFatalValidationErrors(DomainResource proposedDomain) {
     List<String> failures = proposedDomain.getFatalValidationFailures();
     messages.addAll(failures);
@@ -70,10 +60,6 @@ public abstract class AdmissionChecker {
 
   int getClusterSize(ClusterStatus clusterStatus) {
     return getClusterSizeOptional(clusterStatus).orElse(0);
-  }
-
-  int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
-    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
   int getDomainReplicaCount(@NotNull DomainResource domain) {

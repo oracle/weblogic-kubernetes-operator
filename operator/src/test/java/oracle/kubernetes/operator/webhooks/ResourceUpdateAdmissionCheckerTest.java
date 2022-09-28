@@ -215,6 +215,19 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
+  @Test
+  void whenDomainCheckerClusterReplicasChangedToUnsetAndReadClusterFailed404_returnFalseWithException() {
+    testSupport.defineResources(proposedDomain);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    existingCluster.getSpec().withReplicas(2);
+    proposedCluster.getSpec().withReplicas(null);
+
+    testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasException(), equalTo(true));
+  }
+
   // ClusterResource validation
 
   @Test
@@ -231,7 +244,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
-    assertThat(clusterChecker.hasException(), equalTo(false));
+    assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
   @Test
@@ -241,7 +254,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.setStatus(null);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
-    assertThat(clusterChecker.hasException(), equalTo(false));
+    assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
   @Test
@@ -252,7 +265,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().withReplicas(null);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
-    assertThat(clusterChecker.hasException(), equalTo(false));
+    assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
   @Test
@@ -263,7 +276,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().withReplicas(null);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
-    assertThat(clusterChecker.hasException(), equalTo(false));
+    assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 
   @Test
@@ -276,7 +289,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     testSupport.failOnList(KubernetesTestSupport.DOMAIN, NS, HTTP_FORBIDDEN);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
-    assertThat(clusterChecker.hasException(), equalTo(true));
+    assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(true));
   }
 
   @Test
@@ -287,6 +300,6 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
-    assertThat(clusterChecker.hasException(), equalTo(false));
+    assertThat(((ClusterUpdateAdmissionChecker)clusterChecker).hasException(), equalTo(false));
   }
 }

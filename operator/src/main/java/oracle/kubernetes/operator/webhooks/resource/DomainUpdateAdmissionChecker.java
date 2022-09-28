@@ -138,7 +138,15 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return isValid;
   }
 
-  @Override
+  private int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
+    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
+  }
+
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
   public boolean hasException() {
     return exception != null;
   }
