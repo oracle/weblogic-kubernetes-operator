@@ -112,6 +112,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -596,6 +597,7 @@ class ItMiiDomain {
   void testClusterScale() {
     final int replicaCount = 2;
     String clusterName = domainUid + "-" + "cluster-1";
+    final String managedServerPrefix = domainUid + "-managed-server";
 
     //patch replicas at domain resource level to 3
     logger.info(
@@ -607,10 +609,20 @@ class ItMiiDomain {
         domainUid, domainNamespace, 3);
     checkDomainPatchedReplicas(domainUid, domainNamespace, 3);
 
-    //verify managed server pods at cluster resource level are not affected by domain resource level patching
+    //managed server pods at cluster resource level should not be affected by domain resource level patching
+    //verify at cluster resource level there are still only 2 managed server pods exist and running
+    //verify managedServer3 doesn't exist
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
         domainNamespace, replicaCount)));
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    //verify managedServer3 doesn't exist
+    checkPodDoesNotExist(managedServerPrefix + 3, domainUid, domainNamespace);
+
 
     //scaling by patching replicas at cluster resource level should scale up/down
     //the cluster even the domain resource has replicas defined
