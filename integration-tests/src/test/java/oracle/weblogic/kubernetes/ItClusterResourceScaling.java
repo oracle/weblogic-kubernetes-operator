@@ -6,25 +6,11 @@ package oracle.weblogic.kubernetes;
 import java.util.Base64;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.ClusterResource;
-import oracle.weblogic.domain.ClusterSpec;
-import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -34,39 +20,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -93,7 +59,7 @@ class ItClusterResourceScaling {
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
   private final String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
-  private final String managedServerPrefix = "-" + MANAGED_SERVER_NAME_BASE;
+  private final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private boolean isDomainRunning = false;
   private String adminSvcExtRouteHost = null;
 
@@ -114,7 +80,7 @@ class ItClusterResourceScaling {
     opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
-    logger.info("Getting a unique namespace for WebLogic domain 2");
+    logger.info("Getting a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
     createTestRepoSecret(domainNamespace);
@@ -133,8 +99,8 @@ class ItClusterResourceScaling {
    * 6 Missed auth header
    */
   @Test
-  @DisplayName("Create domain, managed by operator and domain1, perfom scaling operation via REST  "
-      + "verify scaling operation generate expected code in case of negative scenarios: bad auth"
+  @DisplayName("Create domain, managed by operator, perfom scaling operation via REST  "
+      + "verify scaling operation generate expected code in case of negative scenarios: bad auth "
       + "invalid domainuid, invalid clustername, invalid replica count, invalid request header, invalid auth header")
   void testScaleClusterViaRestApi() {
     HelmParams opHelmParams = null;
@@ -168,41 +134,45 @@ class ItClusterResourceScaling {
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       if (!isDomainRunning) {
         logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domainNamespace, domainUid),
-            "can't start or verify domain in namespace " + domainNamespace);
+        // get the pre-built image created by IntegrationTestWatcher
+        String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+        String adminServerPodName = domainUid + adminServerPrefix;
+        DomainResource domain = createMiiDomainAndVerify(domainNamespace, domainUid,
+            miiImage, adminServerPodName, managedServerPrefix, replicaCount);
+        assertNotNull(domain, "Can't create and verify domain");
         isDomainRunning = true;
       }
 
       // scale domain
-      int replicaCountdomain = 2;
+      int replicaCountCluster = replicaCount;
       String secretToken = getServerToken(opServiceAccount);
       // decode the secret encoded token
       String decodedToken = new String(Base64.getDecoder().decode(secretToken));
-      assertTrue(scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 1,
-              externalRestHttpsPort,opNamespace, decodedToken,"",
+      assertTrue(scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 1,
+              externalRestHttpsPort, opNamespace, decodedToken,"",
               true, true),
           "domain in namespace " + domainNamespace + " scaling operation failed");
 
-      String managedServerPodName2 = domainUid + managedServerPrefix + (replicaCountdomain + 1);
+      String managedServerPodName = managedServerPrefix + (replicaCountCluster + 1);
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
-          managedServerPodName2, domainNamespace);
-      assertDoesNotThrow(() -> checkPodExists(managedServerPodName2, domainUid, domainNamespace),
+          managedServerPodName, domainNamespace);
+      assertDoesNotThrow(() -> checkPodExists(managedServerPodName, domainUid, domainNamespace),
           "operator failed to manage domain, scaling was not succeeded");
-      ++replicaCountdomain;
-      logger.info("domain scaled to " + replicaCountdomain + " servers");
+      ++replicaCountCluster;
+      logger.info("domain scaled to " + replicaCountCluster + " servers");
 
       // decode the secret encoded token
       String decodedTokenBad = new String(Base64.getDecoder().decode(secretToken)) + "badbad";
       logger.info("Testing {0}", negativeTestCase1);
-      badAuthFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,opNamespace, decodedTokenBad, "401 Unauthorized", true,
+      badAuthFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 2,
+              externalRestHttpsPort, opNamespace, decodedTokenBad, "401 Unauthorized", true,
               true);
       if (!badAuthFailed) {
         failedNegativeTestCases.append(negativeTestCase1);
       }
       logger.info("Testing {0}", negativeTestCase2);
-      invalidDomainUidFailed = scaleClusterWithRestApi(domainUid + "invalid", clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,opNamespace, decodedToken,  "404 Not Found", true,
+      invalidDomainUidFailed = scaleClusterWithRestApi(domainUid + "invalid", clusterName, replicaCountCluster + 2,
+              externalRestHttpsPort, opNamespace, decodedToken,  "404 Not Found", true,
               true);
       if (!invalidDomainUidFailed) {
         failedNegativeTestCases
@@ -210,8 +180,8 @@ class ItClusterResourceScaling {
             .append(negativeTestCase2);
       }
       logger.info("Testing {0}", negativeTestCase3);
-      invalidClusterNameFailed = scaleClusterWithRestApi(domainUid, clusterName + "invalid",replicaCountdomain + 2,
-              externalRestHttpsPort,opNamespace, decodedToken,  "404 Not Found", true,
+      invalidClusterNameFailed = scaleClusterWithRestApi(domainUid, clusterName + "invalid", replicaCountCluster + 2,
+              externalRestHttpsPort, opNamespace, decodedToken, "404 Not Found", true,
               true);
       if (!invalidClusterNameFailed) {
         failedNegativeTestCases
@@ -219,8 +189,8 @@ class ItClusterResourceScaling {
             .append(negativeTestCase3);
       }
       logger.info("Testing {0}", negativeTestCase4);
-      invalidReplicaNumberFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 12,
-          externalRestHttpsPort,opNamespace, decodedToken,  "400 Requested scaling count of 15"
+      invalidReplicaNumberFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 12,
+          externalRestHttpsPort, opNamespace, decodedToken, "400 Requested scaling count of 15"
               + " is greater than configured cluster size of 5", true,
           true);
       if (!invalidReplicaNumberFailed) {
@@ -229,7 +199,7 @@ class ItClusterResourceScaling {
             .append(negativeTestCase4);
       }
       logger.info("Testing {0}", negativeTestCase5);
-      invalidHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
+      invalidHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 2,
               externalRestHttpsPort,opNamespace, decodedToken, "400 Bad Request", false,
               true);
       if (!invalidHeaderFailed) {
@@ -238,8 +208,8 @@ class ItClusterResourceScaling {
             .append(negativeTestCase5);
       }
       logger.info("Testing {0}", negativeTestCase6);
-      invalidAuthHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName,replicaCountdomain + 2,
-              externalRestHttpsPort,opNamespace, decodedToken, "401 Unauthorized", true,
+      invalidAuthHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 2,
+              externalRestHttpsPort, opNamespace, decodedToken, "401 Unauthorized", true,
               false);
       if (!invalidAuthHeaderFailed) {
         failedNegativeTestCases
@@ -340,188 +310,5 @@ class ItClusterResourceScaling {
     logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, secretToken);
     return secretToken;
-  }
-
-  private boolean createVerifyDomain(String domainNamespace, String domainUid) {
-
-    // create and verify the domain
-    logger.info("Creating and verifying model in image domain");
-    createAndVerifyMiiDomain(domainNamespace, domainUid);
-    return true;
-  }
-
-  /**
-   * Create a model in image domain and verify the domain pods are ready.
-   */
-  private void createAndVerifyMiiDomain(String domainNamespace, String domainUid) {
-
-    // get the pre-built image created by IntegrationTestWatcher
-    String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
-
-    // create docker registry secret to pull the image from registry
-    // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createTestRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials-" + domainUid;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret" + domainUid;
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
-
-    // create the domain CR
-    DomainResource domain = new DomainResource()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .imagePullPolicy(IMAGE_PULL_POLICY)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(TEST_IMAGES_REPO_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1LocalObjectReference()
-                .name(adminSecretName))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IfNeeded")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .adminService(new oracle.weblogic.domain.AdminService()
-                    .addChannelsItem(new oracle.weblogic.domain.Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .configuration(new Configuration()
-                .introspectorJobActiveDeadlineSeconds(280L)
-                .model(new Model()
-                    .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))));
-
-    // add cluster to the domain
-    String clusterResName = domainUid + "-" + clusterName;
-    ClusterResource cluster = createClusterResource(clusterResName, domainNamespace,
-        new ClusterSpec().withClusterName(clusterName).replicas(replicaCount));
-    getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
-    createClusterAndVerify(cluster);
-
-    // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
-
-    setPodAntiAffinity(domain);
-
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
-    String adminServerPodName = domainUid + adminServerPrefix;
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-    adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-
-    // check for managed server pods existence in the domain namespace
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = domainUid + managedServerPrefix + i;
-
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
-    }
-    //check the access to managed server mbean via rest api
-    checkManagedServerConfiguration(domainNamespace, domainUid);
-  }
-
-  private void cleanUpSA(String namespace) {
-    V1ServiceAccountList sas = Kubernetes.listServiceAccounts(namespace);
-    if (sas != null) {
-      for (V1ServiceAccount sa : sas.getItems()) {
-        String saName = sa.getMetadata().getName();
-        deleteServiceAccount(saName, namespace);
-        checkServiceDoesNotExist(saName, namespace);
-      }
-    }
-  }
-
-  /*
-   * Verify the server MBEAN configuration through rest API.
-   * @param managedServer name of the managed server
-   * @returns true if MBEAN is found otherwise false
-   **/
-  private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) {
-    ExecResult result;
-    String adminServerPodName = domainUid + adminServerPrefix;
-    String managedServer = "managed-server1";
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuilder checkCluster = new StringBuilder("status=$(curl --user ")
-        .append(ADMIN_USERNAME_DEFAULT)
-        .append(":")
-        .append(ADMIN_PASSWORD_DEFAULT)
-        .append(" ")
-        .append("http://")
-        .append(hostAndPort)
-        .append("/management/tenant-monitoring/servers/")
-        .append(managedServer)
-        .append(" --silent --show-error ")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append("echo ${status}");
-    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
-    try {
-      result = exec(new String(checkCluster), true);
-    } catch (Exception ex) {
-      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
-      return false;
-    }
-    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    return result.stdout().equals("200");
-  }
-
-  private void cleanUpDomainSecrets(String domainNamespace) {
-    //cleanup created artifacts for failed domain creation
-    for (V1Secret secret : listSecrets(domainNamespace).getItems()) {
-      if (secret.getMetadata() != null) {
-        String name = secret.getMetadata().getName();
-        Kubernetes.deleteSecret(name, domainNamespace);
-      }
-    }
   }
 }
