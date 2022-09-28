@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 2.0
  */
+@Description("The specification of the operation of the WebLogic cluster. Required.")
 public class ClusterSpec extends BaseConfiguration implements Comparable<ClusterSpec> {
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
