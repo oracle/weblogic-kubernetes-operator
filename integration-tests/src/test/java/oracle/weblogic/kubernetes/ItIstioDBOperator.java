@@ -314,11 +314,12 @@ class ItIstioDBOperator {
         );
 
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, fmwDomainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    String clusterResName = fmwDomainUid + "-" + clusterName;
+    ClusterResource cluster = createClusterResource(clusterResName, clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterName, fmwDomainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     
     createDomainAndVerify(domain, fmwDomainNamespace);
 
@@ -507,7 +508,7 @@ class ItIstioDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = scaleCluster("cluster-1", wlsDomainNamespace, 1);
+    boolean psuccess = scaleCluster(wlsDomainUid + "-cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));
@@ -796,6 +797,7 @@ class ItIstioDBOperator {
           boolean onlineUpdateEnabled,
           boolean setDataHome) {
 
+    String clusterResName = domainResourceName + "-" + clusterName;
     List<String> securityList = new ArrayList<>();
     if (dbSecretName != null) {
       securityList.add(dbSecretName);
@@ -853,11 +855,11 @@ class ItIstioDBOperator {
     setPodAntiAffinity(domain);
 
     // create cluster object
-    ClusterResource cluster = createClusterResource(clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}", clusterName, domNamespace);
+    ClusterResource cluster = createClusterResource(clusterResName, clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));       
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainResourceName, domNamespace);

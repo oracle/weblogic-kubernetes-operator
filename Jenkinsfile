@@ -57,7 +57,7 @@ def kind_k8s_map = [
         '1.25':    'kindest/node:v1.25.0@sha256:428aaa17ec82ccde0131cb2d1ca6547d13cf5fdabcc0bbecf749baa935387cbf',
         '1.24.4':  'kindest/node:v1.24.4@sha256:adfaebada924a26c2c9308edd53c6e33b3d4e453782c0063dc0028bdebaddf98',
         '1.24':    'kindest/node:v1.24.4@sha256:adfaebada924a26c2c9308edd53c6e33b3d4e453782c0063dc0028bdebaddf98',
-        '1.23.1':  'kindest/node:v1.23.10@sha256:f047448af6a656fae7bc909e2fab360c18c487ef3edc93f06d78cdfd864b2d12',
+        '1.23.10': 'kindest/node:v1.23.10@sha256:f047448af6a656fae7bc909e2fab360c18c487ef3edc93f06d78cdfd864b2d12',
         '1.23':    'kindest/node:v1.23.10@sha256:f047448af6a656fae7bc909e2fab360c18c487ef3edc93f06d78cdfd864b2d12',
         '1.22.13': 'kindest/node:v1.22.13@sha256:4904eda4d6e64b402169797805b8ec01f50133960ad6c19af45173a27eadf959',
         '1.22':    'kindest/node:v1.22.13@sha256:4904eda4d6e64b402169797805b8ec01f50133960ad6c19af45173a27eadf959',
@@ -65,6 +65,20 @@ def kind_k8s_map = [
         '1.21':    'kindest/node:v1.21.14@sha256:f9b4d3d1112f24a7254d2ee296f177f628f9b4c1b32f0006567af11b91c1f301',
         '1.20.15': 'kindest/node:v1.20.15@sha256:d67de8f84143adebe80a07672f370365ec7d23f93dc86866f0e29fa29ce026fe',
         '1.20':    'kindest/node:v1.20.15@sha256:d67de8f84143adebe80a07672f370365ec7d23f93dc86866f0e29fa29ce026fe'
+    ],
+    '0.16.0': [
+        '1.25.2':  'kindest/node:v1.25.2@sha256:9be91e9e9cdf116809841fc77ebdb8845443c4c72fe5218f3ae9eb57fdb4bace',
+        '1.25':    'kindest/node:v1.25.2@sha256:9be91e9e9cdf116809841fc77ebdb8845443c4c72fe5218f3ae9eb57fdb4bace',
+        '1.24.6':  'kindest/node:v1.24.6@sha256:97e8d00bc37a7598a0b32d1fabd155a96355c49fa0d4d4790aab0f161bf31be1',
+        '1.24':    'kindest/node:v1.24.6@sha256:97e8d00bc37a7598a0b32d1fabd155a96355c49fa0d4d4790aab0f161bf31be1',
+        '1.23.12': 'kindest/node:v1.23.12@sha256:9402cf1330bbd3a0d097d2033fa489b2abe40d479cc5ef47d0b6a6960613148a',
+        '1.23':    'kindest/node:v1.23.12@sha256:9402cf1330bbd3a0d097d2033fa489b2abe40d479cc5ef47d0b6a6960613148a',
+        '1.22.15': 'kindest/node:v1.22.15@sha256:bfd5eaae36849bfb3c1e3b9442f3da17d730718248939d9d547e86bbac5da586',
+        '1.22':    'kindest/node:v1.22.15@sha256:bfd5eaae36849bfb3c1e3b9442f3da17d730718248939d9d547e86bbac5da586',
+        '1.21.14': 'kindest/node:v1.21.14@sha256:ad5b7446dd8332439f22a1efdac73670f0da158c00f0a70b45716e7ef3fae20b',
+        '1.21':    'kindest/node:v1.21.14@sha256:ad5b7446dd8332439f22a1efdac73670f0da158c00f0a70b45716e7ef3fae20b',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:45d0194a8069c46483a0e509088ab9249302af561ebee76a1281a1f08ecb4ed3',
+        '1.20':    'kindest/node:v1.20.15@sha256:45d0194a8069c46483a0e509088ab9249302af561ebee76a1281a1f08ecb4ed3'
     ]
 ]
 def _kind_image = null
@@ -149,6 +163,7 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                   '0.16.0',
                    '0.15.0',
                    '0.14.0',
                    '0.13.0',
@@ -157,20 +172,24 @@ pipeline {
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
                     '1.21.14',
                     '1.25',
+                    '1.25.2',
                     '1.25.0',
                     '1.24',
+                    '1.24.6',
                     '1.24.4',
                     '1.24.0',
+                    '1.23.12',
                     '1.23.10',
                     '1.23.6',
                     '1.23.4',
                     '1.23.3',
                     '1.23',
+                    '1.22.15',
                     '1.22.13',
                     '1.22.9',
                     '1.22.7',
@@ -261,6 +280,14 @@ pipeline {
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
                defaultValue: '2.0.7'
+        )
+        string(name: 'PROMETHEUS_CHART_VERSION',
+               description: '',
+               defaultValue: '15.2.0'
+        )
+        string(name: 'GRAFANA_CHART_VERSION',
+               description: '',
+               defaultValue: '6.38.6'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -608,6 +635,8 @@ EOF
                             echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"

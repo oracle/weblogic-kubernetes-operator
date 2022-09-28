@@ -536,7 +536,7 @@ class ItServerStartPolicyDynamicCluster {
     // cluster        min  max  goal  current  ready
     // clusterName     0    2    1     1      1
     regex = ".*" + CONFIG_CLUSTER + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace, CONFIG_CLUSTER, configServerPodName,
+    scalingClusters(domainUid, domainNamespace, configuredClusterResourceName, configServerPodName,
         replicaCount, regex, false, samplePath);
 
     // use scaleCluster.sh to scale a dynamic cluster and

@@ -33,16 +33,18 @@ public class ClusterUtils {
   /**
    * Create cluster custom resource object.
    * @param clusterResName cluster resource name
+   * @param clusterName name of the cluster as in WebLogic config
    * @param namespace in which the cluster object exists
    * @param replicaCount replica count
    * @return cluster resource object
    */
-  public static ClusterResource createClusterResource(String clusterResName, String namespace, int replicaCount) {
+  public static ClusterResource createClusterResource(
+      String clusterResName, String clusterName, String namespace, int replicaCount) {
     return new ClusterResource()
         .withKind("Cluster")
         .withApiVersion(CLUSTER_API_VERSION)
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(clusterResName))
-        .spec(new ClusterSpec().withClusterName(clusterResName).replicas(replicaCount));
+        .spec(new ClusterSpec().withClusterName(clusterName).replicas(replicaCount));
   }
 
   /**
@@ -136,20 +138,23 @@ public class ClusterUtils {
    * Add cluster to domain resource.
    *
    * @param clusterResName name of the cluster resource
+   * @param clusterName name of the cluster as in WebLogic config
    * @param namespace namespace
    * @param domain domain resource object
    * @param replicas scale to replicas
    * @return modified domain resource object
    */
-  public static DomainResource addClusterToDomain(String clusterResName, String namespace,
-                                                  DomainResource domain, int replicas) {
+  public static DomainResource createClusterResourceAndAddReferenceToDomain(
+      String clusterResName, String clusterName, String namespace,
+                 DomainResource domain, int replicas) {
     ClusterList clusters = listClusterCustomResources(namespace);
     if (clusters != null
         && clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
-      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, namespace);
+      getLogger().info("!!!Cluster Resource {0} in namespace {1} already exists, skipping...",
+          clusterResName, namespace);
     } else {
-      getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, namespace);
-      createClusterAndVerify(createClusterResource(clusterResName, namespace, replicas));
+      getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, namespace);
+      createClusterAndVerify(createClusterResource(clusterResName, clusterName, namespace, replicas));
     }
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
