@@ -54,6 +54,7 @@ import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -944,12 +945,19 @@ public class DomainStatusUpdater {
         }
 
         void addClusterConditions() {
-          clusterStatus.addCondition(
-              new ClusterCondition(ClusterConditionType.AVAILABLE)
-                  .withStatus(isAvailable()));
-          clusterStatus.addCondition(
-              new ClusterCondition(ClusterConditionType.COMPLETED)
-                  .withStatus(isProcessingCompleted()));
+          addClusterConditionIfNeeded(clusterStatus.getCondition(ClusterConditionType.AVAILABLE),
+                  new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(isAvailable()));
+
+          addClusterConditionIfNeeded(clusterStatus.getCondition(ClusterConditionType.COMPLETED),
+                  new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(isProcessingCompleted()));
+
+        }
+
+        private void addClusterConditionIfNeeded(ClusterCondition currentCondition, ClusterCondition newCondition) {
+          if (currentCondition == null
+                  || !currentCondition.equals(newCondition)) {
+            clusterStatus.addCondition(newCondition);
+          }
         }
 
         private String createNotReadyMessage() {
@@ -1371,8 +1379,8 @@ public class DomainStatusUpdater {
     }
 
     private Long getClusterObservedGeneration(String clusterName) {
-      return Optional.ofNullable(info.getClusterResource(clusterName)).map(c -> c.getStatus())
-              .map(s -> s.getObservedGeneration()).orElse(1L);
+      return Optional.ofNullable(info.getClusterResource(clusterName)).map(ClusterResource::getStatus)
+              .map(ClusterStatus::getObservedGeneration).orElse(1L);
     }
   }
 

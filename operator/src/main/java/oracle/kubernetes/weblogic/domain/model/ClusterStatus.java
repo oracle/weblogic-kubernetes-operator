@@ -201,6 +201,11 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return conditions;
   }
 
+  public ClusterCondition getCondition(ClusterConditionType type) {
+    return getConditions().stream().filter(condition -> condition.getType().equals(type))
+            .findFirst().orElse(null);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
