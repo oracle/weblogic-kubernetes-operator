@@ -50,20 +50,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 class ItClusterResourceScaling {
+
   private static String opNamespace = null;
-  private static String domainNamespace = null;
-
   // domain constants
-  private final String domainUid = "usabdomain";
-
-  private final String clusterName = "cluster-1";
-  private final int replicaCount = 2;
-  private final String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
-  private final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private boolean isDomainRunning = false;
-  private String adminSvcExtRouteHost = null;
-
+  private static String domainUid = "usabdomain";
+  private static String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
+  private static String adminServerPodName = domainUid + adminServerPrefix;
+  private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+  private static String opServiceAccount = opNamespace + "-sa";
+  private static int replicaCount = 2;
+  private static String domainNamespace = null;
+  private static String clusterName = "cluster-1";
+  private static int externalRestHttpsPort = 0;
+  private static String secretToken;
+  private static String decodedToken;
   private static LoggingFacade logger = null;
+
 
   /**
    * Get namespaces for operator, domain.
@@ -84,142 +86,153 @@ class ItClusterResourceScaling {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
     createTestRepoSecret(domainNamespace);
-  }
-
-  /**
-   * Install the Operator successfully.
-   * Create domain and verify the domain is started
-   * Verify cluster can be scale via Rest Api
-   * Verify expected http responce in case of :
-   * 1. Provided invalid auth token
-   * 2. Provided invalid domainuid
-   * 3. Provided invalid clustername
-   * 4. Provided above max replica
-   * 5. Missed header
-   * 6 Missed auth header
-   */
-  @Test
-  @DisplayName("Create domain, managed by operator, perfom scaling operation via REST  "
-      + "verify scaling operation generate expected code in case of negative scenarios: bad auth "
-      + "invalid domainuid, invalid clustername, invalid replica count, invalid request header, invalid auth header")
-  void testScaleClusterViaRestApi() {
     HelmParams opHelmParams = null;
     HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
-    String opServiceAccount = opNamespace + "-sa";
-    boolean badAuthFailed = false;
-    boolean invalidDomainUidFailed = false;
-    boolean invalidClusterNameFailed = false;
-    boolean invalidReplicaNumberFailed = false;
-    boolean invalidHeaderFailed = false;
-    boolean invalidAuthHeaderFailed = false;
+    // install operator
+    opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
+        0, op1HelmParams, domainNamespace).getHelmParams();
+    assertNotNull(opHelmParams, "Can't install operator");
+    logger.info("Installing and verifying domain");
+    // get the pre-built image created by IntegrationTestWatcher
+    String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+    DomainResource domain = createMiiDomainAndVerify(domainNamespace, domainUid,
+        miiImage, adminServerPodName, managedServerPrefix, replicaCount);
+    assertNotNull(domain, "Can't create and verify domain");
+    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    assertNotEquals(-1, externalRestHttpsPort,
+        "Could not get the Operator external service node port");
+    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+    secretToken = getServerToken(opServiceAccount);
+    assertNotNull(secretToken, "Can't retrieve secret token");
+    // decode the secret encoded token
+    decodedToken = new String(Base64.getDecoder().decode(secretToken));
+    assertNotNull(decodedToken, "Can't decode token");
+  }
 
-    StringBuffer failedNegativeTestCases = new StringBuffer();
-    String negativeTestCase1 = "Bad authentication";
-    String negativeTestCase2 = "Invalid domainUid";
-    String negativeTestCase3 = "Invalid clusterName";
-    String negativeTestCase4 = "Invalid replicaNumber";
-    String negativeTestCase5 = "Invalid request header";
-    String negativeTestCase6 = "Invalid auth header";
-    try {
-      // install operator
-      opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
-          0, op1HelmParams, domainNamespace).getHelmParams();
-      assertNotNull(opHelmParams, "Can't install operator");
+  /**
+   * Verify cluster can be scale via Rest Api.
+   */
+  @Test
+  @DisplayName("Verify scaling operation via REST.  ")
+  void testScaleClusterViaRestApi() {
 
-      int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-      assertNotEquals(-1, externalRestHttpsPort,
-          "Could not get the Operator external service node port");
-      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-      if (!isDomainRunning) {
-        logger.info("Installing and verifying domain");
-        // get the pre-built image created by IntegrationTestWatcher
-        String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-        String adminServerPodName = domainUid + adminServerPrefix;
-        DomainResource domain = createMiiDomainAndVerify(domainNamespace, domainUid,
-            miiImage, adminServerPodName, managedServerPrefix, replicaCount);
-        assertNotNull(domain, "Can't create and verify domain");
-        isDomainRunning = true;
-      }
+    int replicaCountCluster = replicaCount;
+    // scale domain
+    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 1,
+            externalRestHttpsPort, opNamespace, decodedToken, "",
+            true, true),
+        "domain in namespace " + domainNamespace + " scaling operation failed");
 
-      // scale domain
-      int replicaCountCluster = replicaCount;
-      String secretToken = getServerToken(opServiceAccount);
-      // decode the secret encoded token
-      String decodedToken = new String(Base64.getDecoder().decode(secretToken));
-      assertTrue(scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 1,
-              externalRestHttpsPort, opNamespace, decodedToken,"",
-              true, true),
-          "domain in namespace " + domainNamespace + " scaling operation failed");
+    String managedServerPodName = managedServerPrefix + (replicaCountCluster + 1);
+    logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+        managedServerPodName, domainNamespace);
+    assertDoesNotThrow(() -> checkPodExists(managedServerPodName, domainUid, domainNamespace),
+        "operator failed to manage domain, scaling was not succeeded");
+    ++replicaCountCluster;
+    logger.info("domain scaled to " + replicaCountCluster + " servers");
+  }
 
-      String managedServerPodName = managedServerPrefix + (replicaCountCluster + 1);
-      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      assertDoesNotThrow(() -> checkPodExists(managedServerPodName, domainUid, domainNamespace),
-          "operator failed to manage domain, scaling was not succeeded");
-      ++replicaCountCluster;
-      logger.info("domain scaled to " + replicaCountCluster + " servers");
+  /**
+   * Verify scaling via REST operation generates expected code in case of negative scenario :
+   * Provided invalid domainUid.
+   */
+  @Test
+  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+      + "verify scaling operation generates expected code in case of negative scenario: invalid domainUid. ")
+  void testScaleClusterViaRestApiInvalidDomainUid() {
 
-      // decode the secret encoded token
-      String decodedTokenBad = new String(Base64.getDecoder().decode(secretToken)) + "badbad";
-      logger.info("Testing {0}", negativeTestCase1);
-      badAuthFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 2,
-              externalRestHttpsPort, opNamespace, decodedTokenBad, "401 Unauthorized", true,
-              true);
-      if (!badAuthFailed) {
-        failedNegativeTestCases.append(negativeTestCase1);
-      }
-      logger.info("Testing {0}", negativeTestCase2);
-      invalidDomainUidFailed = scaleClusterWithRestApi(domainUid + "invalid", clusterName, replicaCountCluster + 2,
-              externalRestHttpsPort, opNamespace, decodedToken,  "404 Not Found", true,
-              true);
-      if (!invalidDomainUidFailed) {
-        failedNegativeTestCases
-            .append(", ")
-            .append(negativeTestCase2);
-      }
-      logger.info("Testing {0}", negativeTestCase3);
-      invalidClusterNameFailed = scaleClusterWithRestApi(domainUid, clusterName + "invalid", replicaCountCluster + 2,
-              externalRestHttpsPort, opNamespace, decodedToken, "404 Not Found", true,
-              true);
-      if (!invalidClusterNameFailed) {
-        failedNegativeTestCases
-            .append(", ")
-            .append(negativeTestCase3);
-      }
-      logger.info("Testing {0}", negativeTestCase4);
-      invalidReplicaNumberFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 12,
-          externalRestHttpsPort, opNamespace, decodedToken, "400 Requested scaling count of 15"
-              + " is greater than configured cluster size of 5", true,
-          true);
-      if (!invalidReplicaNumberFailed) {
-        failedNegativeTestCases
-            .append(", ")
-            .append(negativeTestCase4);
-      }
-      logger.info("Testing {0}", negativeTestCase5);
-      invalidHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 2,
-              externalRestHttpsPort,opNamespace, decodedToken, "400 Bad Request", false,
-              true);
-      if (!invalidHeaderFailed) {
-        failedNegativeTestCases
-            .append(", ")
-            .append(negativeTestCase5);
-      }
-      logger.info("Testing {0}", negativeTestCase6);
-      invalidAuthHeaderFailed = scaleClusterWithRestApi(domainUid, clusterName, replicaCountCluster + 2,
-              externalRestHttpsPort, opNamespace, decodedToken, "401 Unauthorized", true,
-              false);
-      if (!invalidAuthHeaderFailed) {
-        failedNegativeTestCases
-            .append(", ")
-            .append(negativeTestCase6);
-      }
-    } finally {
-      assertTrue(failedNegativeTestCases.toString().equals(""),
-          "Test failed to generate expected error message for negative testcases " + failedNegativeTestCases);
-    }
+    String negativeTestCase = "Invalid domainUid";
+    logger.info("Testing {0}", negativeTestCase);
+    assertTrue(scaleClusterWithRestApi(domainUid + "invalid", clusterName, replicaCount + 2,
+        externalRestHttpsPort, opNamespace, decodedToken,  "404 Not Found", true,
+        true), "Did not received expected message for  " + negativeTestCase);
+  }
+
+  /**
+   * Verify scaling via REST operation generates expected code in case of negative scenario :
+   * Provided invalid request header.
+   */
+  @Test
+  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+      + "verify scaling operation generates expected code in case of negative scenario: invalid request header ")
+  void testScaleClusterViaRestApiInvalidRequestHeader() {
+
+    String negativeTestCase = "Invalid request header";
+    logger.info("Testing {0}", negativeTestCase);
+    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 2,
+        externalRestHttpsPort,opNamespace, decodedToken, "400 Bad Request", false,
+        true), "Did not received expected message for  " + negativeTestCase);
+  }
+
+  /**
+   * Verify scaling via REST operation generates expected code in case of negative scenario :
+   * Provided invalid request header.
+   */
+  @Test
+  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+      + "verify scaling operation generates expected code in case of negative scenario: missing auth header ")
+  void testScaleClusterViaRestApiInvalidMissingAuthenticationHeader() {
+
+    String negativeTestCase = "Invalid request header";
+    logger.info("Testing {0}", negativeTestCase);
+    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 2,
+        externalRestHttpsPort, opNamespace, decodedToken, "401 Unauthorized", true,
+        false), "Did not received expected message for  " + negativeTestCase);
+  }
+
+  /**
+   * Verify scaling via REST operation generates expected code in case of negative scenario :
+   * Provided invalid domainUid.
+   */
+  @Test
+  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+      + "verify scaling operation generates expected code in case of negative scenario: invalid cluster name ")
+  void testScaleClusterViaRestApiInvalidClusterName() {
+
+    String negativeTestCase = "Invalid cluster name";
+    logger.info("Testing {0}", negativeTestCase);
+    assertTrue(scaleClusterWithRestApi(domainUid + "invalid", clusterName + "invalid", replicaCount + 2,
+        externalRestHttpsPort, opNamespace, decodedToken,  "404 Not Found", true,
+        true), "Did not received expected message for  " + negativeTestCase);
+  }
+
+
+  /**
+   * Verify scaling via REST operation generates expected code in case of negative scenario :
+   * Provided invalid auth token.
+   */
+  @Test
+  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+      + "verify scaling operation generates expected code in case of negative scenario: bad auth ")
+  void testScaleClusterViaRestApiBadAuthentication() {
+
+    String negativeTestCase = "Bad authentication";
+    // decode the secret encoded token
+    String decodedTokenBad = decodedToken + "badbad";
+    logger.info("Testing {0}", negativeTestCase);
+    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, replicaCount + 2,
+        externalRestHttpsPort, opNamespace, decodedTokenBad, "401 Unauthorized", true,
+        true), "Did not received expected message for  " + negativeTestCase);
+  }
+
+  /**
+   * Verify scaling via REST operation generates expected code in case of negative scenario :
+   * Provided invalid auth token.
+   */
+  @Test
+  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+      + "verify scaling operation generates expected code in case of negative scenario: invalid replica number ")
+  void testScaleClusterViaRestApiInvalidReplicaNumber() {
+
+    String negativeTestCase = "Invalid replica number";
+    // decode the secret encoded token
+    logger.info("Testing {0}", negativeTestCase);
+    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, 15,
+        externalRestHttpsPort, opNamespace, decodedToken, "400 Requested scaling count of 15"
+            + " is greater than configured cluster size of 5", true,
+        true), "Did not received expected message for  " + negativeTestCase);
   }
 
   /**
@@ -230,7 +243,11 @@ class ItClusterResourceScaling {
    * @param numOfServers number of servers to be scaled to
    * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
    * @param opNamespace namespace of WebLogic operator
-   * @return true if REST call succeeds, false otherwise
+   * @param decodedToken decoded secret token from operator sa
+   * @param expectedMsg expected message in the http response
+   * @param hasAuthHeader true or false to include auth header
+   * @param hasHeader    true or false to include header
+   * @return true if REST call generate expected response message, false otherwise
    */
   public static boolean scaleClusterWithRestApi(String domainUid,
                                                 String clusterName,
@@ -289,7 +306,7 @@ class ItClusterResourceScaling {
   }
 
 
-  private String getServerToken(String opServiceAccount) {
+  private static String getServerToken(String opServiceAccount) {
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {
