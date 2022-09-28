@@ -44,9 +44,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
@@ -89,8 +89,8 @@ class ItMiiClusterResource {
   final String managedServerPrefix = domainUid +  "-c1-managed-server";
   final String managedServerPrefix2 = domainUid + "-c2-managed-server";
   final int replicaCount = 2;
-  private String clusterRefName = "cluster-1";
-  private String cluster2RefName = "cluster-2";
+  private String clusterRes = "cluster-1";
+  private String cluster2Res = "cluster-2";
   private String clusterName = "cluster-1";
   private String clusterName2 = "cluster-2";
   private static String configMapName = "cluster-configmap";
@@ -156,12 +156,12 @@ class ItMiiClusterResource {
 
     // create cluster object(s)
     ClusterResource cluster = createClusterResource(
-        clusterRefName, clusterName, domainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",clusterRefName, domainNamespace);
+        clusterRes, clusterName, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",clusterRes, domainNamespace);
     createClusterAndVerify(cluster);
     ClusterResource cluster2 = createClusterResource(
-        cluster2RefName, clusterName2, domainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",cluster2RefName, domainNamespace);
+        cluster2Res, clusterName2, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",cluster2Res, domainNamespace);
     createClusterAndVerify(cluster2);
 
     createModelConfigMap(domainUid,configMapName);
@@ -188,24 +188,23 @@ class ItMiiClusterResource {
       checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
-    logger.info("patch the domain resource with new cluster and introspectVersion");
+    logger.info("Patch the domain resource with new cluster resource");
     String patchStr
         = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + clusterRefName + "\"}"
-        + "},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-        + "]";
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + clusterRes + "\"}"
+        + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+
+    patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
-
     checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
-
+    
     // verify managed server services and pods are created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed pod {0} to be ready in namespace {1}",
@@ -213,21 +212,20 @@ class ItMiiClusterResource {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    String introspectVersion2 = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
-    logger.info("patch the domain resource with new cluster and introspectVersion2");
+    logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
     String patchStr2 = "["
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
-        + " \"" + cluster2RefName + "\""  
-        + "},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion2 + "\"}"
-        + "]";
+        + " \"" + cluster2Res + "\""  
+        + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr2);
     V1Patch patch2 = new V1Patch(patchStr2);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch2, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+
+    patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
-
     checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
@@ -243,16 +241,16 @@ class ItMiiClusterResource {
       checkPodReadyAndServiceExists(managedServerPrefix2 + i, domainUid, domainNamespace);
     }
 
-    kubectlScaleCluster(cluster2RefName,domainNamespace,3);
+    kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServerPrefix2 + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
    
-    deleteClusterCustomResourceAndVerify(cluster2RefName,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
     // check managed server pods from cluster-2 are shutdown
     for (int i = 1; i <= replicaCount + 1; i++) {
       checkPodDoesNotExist(managedServerPrefix2 + i,domainUid,domainNamespace);
     }
-    deleteDomainCustomResource(domainUid, domainNamespace);
+    deleteDomainResource(domainUid, domainNamespace);
   }
 
   /**
@@ -267,29 +265,16 @@ class ItMiiClusterResource {
   void testSharedClusterResource() {
 
     OffsetDateTime timestamp = now();
-    deleteDomainCustomResource(domainUid, domainNamespace);
-    deleteDomainCustomResource(domain2Uid, domainNamespace);
 
-    testUntil(
-        domainDoesNotExist(domainUid, DOMAIN_API_VERSION, domainNamespace),
-        getLogger(),
-        "Doamin {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteDomainResource(domain2Uid, domainNamespace);
 
-    testUntil(
-        domainDoesNotExist(domain2Uid, DOMAIN_API_VERSION, domainNamespace),
-        getLogger(),
-        "Doamin {0} to be created in namespace {1}",
-        domain2Uid,
-        domainNamespace);
-
-    deleteClusterCustomResourceAndVerify(clusterRefName,domainNamespace);
-    deleteClusterCustomResourceAndVerify(cluster2RefName,domainNamespace);
+    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
 
     ClusterResource cluster = createClusterResource(
-        clusterRefName, clusterName, domainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",clusterRefName, domainNamespace);
+        clusterRes, clusterName, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",clusterRes, domainNamespace);
     createClusterAndVerify(cluster);
 
     createModelConfigMap(domainUid,configMapName);
@@ -302,7 +287,7 @@ class ItMiiClusterResource {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterRefName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterRes));
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, 
@@ -315,7 +300,7 @@ class ItMiiClusterResource {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, config2MapName);
 
     // set cluster references
-    domain2.getSpec().withCluster(new V1LocalObjectReference().name(clusterRefName));
+    domain2.getSpec().withCluster(new V1LocalObjectReference().name(clusterRes));
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
         domain2Uid, domainNamespace, 
@@ -448,4 +433,13 @@ class ItMiiClusterResource {
     assertTrue(result, "Failed scale the cluster");
   }
 
+  private static void deleteDomainResource(String duid, String namespace) {
+    deleteDomainCustomResource(duid, namespace);
+    testUntil(
+        domainDoesNotExist(duid, DOMAIN_API_VERSION, namespace),
+        getLogger(),
+        "Doamin {0} to be deleted in namespace {1}",
+        duid,
+        namespace);
+  }
 }
