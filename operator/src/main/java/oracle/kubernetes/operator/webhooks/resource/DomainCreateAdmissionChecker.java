@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
@@ -30,7 +27,6 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   private final DomainResource proposedDomain;
-  final List<String> warnings = new ArrayList<>();
 
   /**
    * Construct a DomainCreateAdmissionChecker.
@@ -46,8 +42,6 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
     AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
     if (!response.isAllowed()) {
       return response.status(new AdmissionResponseStatus().message(createMessage()));
-    } else if (!warnings.isEmpty()) {
-      return response.warnings(warnings);
     }
     return response;
   }
@@ -56,10 +50,4 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
   public boolean isProposedChangeAllowed() {
     return hasNoFatalValidationErrors(proposedDomain);
   }
-
-  @Override
-  public boolean hasException() {
-    return false;
-  }
-
 }

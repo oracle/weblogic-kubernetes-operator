@@ -50,7 +50,9 @@ public abstract class AdmissionChecker {
    *
    * @return true if the validation causes an Exception
    */
-  public abstract boolean hasException();
+  public boolean hasException() {
+    return false;
+  }
 
   boolean hasNoFatalValidationErrors(DomainResource proposedDomain) {
     List<String> failures = proposedDomain.getFatalValidationFailures();

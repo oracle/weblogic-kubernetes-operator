@@ -32,7 +32,6 @@ public class ClusterCreateAdmissionChecker extends AdmissionChecker {
   @Override
   AdmissionResponse validate() {
     LOGGER.fine("Validating new ClusterResource " + proposedCluster);
-
     response.allowed(isProposedChangeAllowed());
     return response;
   }
@@ -40,10 +39,5 @@ public class ClusterCreateAdmissionChecker extends AdmissionChecker {
   @Override
   public boolean isProposedChangeAllowed() {
     return true;
-  }
-
-  @Override
-  public boolean hasException() {
-    return false;
   }
 }
