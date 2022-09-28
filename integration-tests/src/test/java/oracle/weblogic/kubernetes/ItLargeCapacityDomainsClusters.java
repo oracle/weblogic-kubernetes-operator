@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -217,7 +216,6 @@ class ItLargeCapacityDomainsClusters {
    * static clusters using WLST. b. Patch the Domain Resource with cluster c. Update the introspectVersion version d.
    * Verifies the servers in the new WebLogic cluster comes up.
    */
-  @Disabled
   @Order(2)
   @Test
   @DisplayName("Test new clusters creation on demand using WLST and introspection")
