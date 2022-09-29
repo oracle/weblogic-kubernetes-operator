@@ -7,14 +7,10 @@ import java.util.Base64;
 import java.util.List;
 
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.impl.Secret;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -27,12 +23,12 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.getServiceAccountToken;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -104,7 +100,7 @@ class ItClusterResourceScaling {
     assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-    secretToken = getServerToken(opServiceAccount);
+    secretToken = getServiceAccountToken(opServiceAccount, opNamespace);
     assertNotNull(secretToken, "Can't retrieve secret token");
     // decode the secret encoded token
     decodedToken = new String(Base64.getDecoder().decode(secretToken));
@@ -139,7 +135,7 @@ class ItClusterResourceScaling {
    * Provided invalid domainUid.
    */
   @Test
-  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+  @DisplayName("Perform scaling operation via REST  "
       + "verify scaling operation generates expected code in case of negative scenario: invalid domainUid. ")
   void testScaleClusterViaRestApiInvalidDomainUid() {
 
@@ -155,7 +151,7 @@ class ItClusterResourceScaling {
    * Provided invalid request header.
    */
   @Test
-  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+  @DisplayName("Perform scaling operation via REST  "
       + "verify scaling operation generates expected code in case of negative scenario: invalid request header ")
   void testScaleClusterViaRestApiInvalidRequestHeader() {
 
@@ -171,7 +167,7 @@ class ItClusterResourceScaling {
    * Provided invalid request header.
    */
   @Test
-  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+  @DisplayName("Perform scaling operation via REST  "
       + "verify scaling operation generates expected code in case of negative scenario: missing auth header ")
   void testScaleClusterViaRestApiInvalidMissingAuthenticationHeader() {
 
@@ -184,10 +180,10 @@ class ItClusterResourceScaling {
 
   /**
    * Verify scaling via REST operation generates expected code in case of negative scenario :
-   * Provided invalid domainUid.
+   * Provided invalid cluster name.
    */
   @Test
-  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+  @DisplayName("Perform scaling operation via REST  "
       + "verify scaling operation generates expected code in case of negative scenario: invalid cluster name ")
   void testScaleClusterViaRestApiInvalidClusterName() {
 
@@ -204,7 +200,7 @@ class ItClusterResourceScaling {
    * Provided invalid auth token.
    */
   @Test
-  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+  @DisplayName("Perform scaling operation via REST  "
       + "verify scaling operation generates expected code in case of negative scenario: bad auth ")
   void testScaleClusterViaRestApiBadAuthentication() {
 
@@ -219,10 +215,10 @@ class ItClusterResourceScaling {
 
   /**
    * Verify scaling via REST operation generates expected code in case of negative scenario :
-   * Provided invalid auth token.
+   * Provided invalid replica number.
    */
   @Test
-  @DisplayName("Create domain, managed by operator, perform scaling operation via REST  "
+  @DisplayName("Perform scaling operation via REST  "
       + "verify scaling operation generates expected code in case of negative scenario: invalid replica number ")
   void testScaleClusterViaRestApiInvalidReplicaNumber() {
 
@@ -233,99 +229,5 @@ class ItClusterResourceScaling {
         externalRestHttpsPort, opNamespace, decodedToken, "400 Requested scaling count of 15"
             + " is greater than configured cluster size of 5", true,
         true), "Did not received expected message for  " + negativeTestCase);
-  }
-
-  /**
-   * Scale the cluster of the domain in the specified namespace with REST API.
-   *
-   * @param domainUid domainUid of the domain to be scaled
-   * @param clusterName name of the WebLogic cluster to be scaled in the domain
-   * @param numOfServers number of servers to be scaled to
-   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
-   * @param opNamespace namespace of WebLogic operator
-   * @param decodedToken decoded secret token from operator sa
-   * @param expectedMsg expected message in the http response
-   * @param hasAuthHeader true or false to include auth header
-   * @param hasHeader    true or false to include header
-   * @return true if REST call generate expected response message, false otherwise
-   */
-  public static boolean scaleClusterWithRestApi(String domainUid,
-                                                String clusterName,
-                                                int numOfServers,
-                                                int externalRestHttpsPort,
-                                                String opNamespace,
-                                                String decodedToken,
-                                                String expectedMsg,
-                                                boolean hasHeader,
-                                                boolean hasAuthHeader) {
-    LoggingFacade logger = getLogger();
-
-    String opExternalSvc = getRouteHost(opNamespace, "external-weblogic-operator-svc");
-
-
-    // build the curl command to scale the cluster
-    StringBuffer command = new StringBuffer()
-        .append("curl --noproxy '*' -v -k ");
-    if (hasAuthHeader) {
-      command.append("-H \"Authorization:Bearer ")
-          .append(decodedToken)
-          .append("\" ");
-    }
-    command.append("-H Accept:application/json ")
-        .append("-H Content-Type:application/json ");
-    if (hasHeader) {
-      command.append("-H X-Requested-By:MyClient ");
-    }
-    command.append("-d '{\"spec\": {\"replicas\": ")
-    .append(numOfServers)
-    .append("}}' ")
-    .append("-X POST https://")
-    .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
-    .append("/operator/latest/domains/")
-    .append(domainUid)
-    .append("/clusters/")
-    .append(clusterName)
-    .append("/scale").toString();
-
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(command.toString())
-        .saveResults(true)
-        .redirect(true);
-
-    logger.info("Calling curl to scale the cluster");
-    ExecResult result = Command.withParams(params).executeAndReturnResult();
-    logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-    if (result != null) {
-      logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
-      if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-
-  private static String getServerToken(String opServiceAccount) {
-    logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
-    String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
-    if (secretName.isEmpty()) {
-      logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
-      return null;
-    }
-    logger.info("Got secret {0} of service account {1} in namespace {2}",
-        secretName, opServiceAccount, opNamespace);
-
-    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
-        + " in namespace {2}", secretName, opServiceAccount, opNamespace);
-    String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    if (secretToken.isEmpty()) {
-      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
-          secretName, opServiceAccount, opNamespace);
-      return null;
-    }
-    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
-        secretName, opServiceAccount, opNamespace, secretToken);
-    return secretToken;
   }
 }
