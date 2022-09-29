@@ -174,6 +174,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
 
   static final String DOMAIN_NAME = "base_domain";
+  public static final String NEW_DOMAIN_UID = "56789";
   static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
@@ -2341,6 +2342,42 @@ class DomainProcessorTest {
     assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
     assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
     assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  }
+
+  @Test
+  void whenDomainAndClusterResourcesAddedAtSameTime_introspectorJobHasCorrectOwnerReference() {
+    consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
+    createInitialDomainStatus();
+    setupNewDomainResource(NEW_DOMAIN_UID);
+    processor.registerDomainPresenceInfo(originalInfo);
+    final String CLUSTER3 = "Cluster-3";
+    for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
+      configureDomain(domain).configureCluster(originalInfo, clusterName);
+      testSupport.defineResources(createClusterResource(NS, clusterName));
+    }
+    final Response<ClusterResource> item = new Response<>("ADDED", testSupport
+        .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
+
+    processor.dispatchClusterWatch(item);
+
+    assertThat(getIntrospectorJobOwnerReferenceUid(), equalTo(NEW_DOMAIN_UID));
+  }
+
+  private void createInitialDomainStatus() {
+    domain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(false));
+    domain.getOrCreateStatus().addCondition(new DomainCondition(COMPLETED).withStatus(false));
+  }
+
+  private void setupNewDomainResource(String newUid) {
+    testSupport.deleteResources(domain);
+    testSupport.defineResources(newDomain.withMetadata(newDomain.getMetadata().uid(newUid)));
+    testSupport.failOnDelete(JOB, UID + "-introspector", NS, HTTP_BAD_REQUEST);
+  }
+
+  private String getIntrospectorJobOwnerReferenceUid() {
+    return Optional.ofNullable((V1Job) testSupport.getResourceWithName(JOB, UID + "-introspector"))
+        .map(j -> j.getMetadata().getOwnerReferences().stream().findFirst().orElse(null)
+            .getUid()).orElse(null);
   }
 
   @Test
