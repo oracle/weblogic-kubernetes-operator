@@ -8,6 +8,8 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion extends SemanticVersion {
   private static final String[] MINIMUM_K8S_VERSIONS = {"1.19.15", "1.20.11", "1.21.5", "1.22.5", "1.23.4", "1.24.0"};
+  static final KubernetesVersion TOO_HIGH = new KubernetesVersion(1, 25);
+
   static final KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final String version;
 
@@ -56,6 +58,10 @@ public class KubernetesVersion extends SemanticVersion {
     }
 
     return numHigher == MINIMUM_K8S_VERSIONS.length;
+  }
+
+  boolean isTooHigh() {
+    return compareTo(TOO_HIGH) >= 0;
   }
 
   boolean isPublishNotReadyAddressesSupported() {
