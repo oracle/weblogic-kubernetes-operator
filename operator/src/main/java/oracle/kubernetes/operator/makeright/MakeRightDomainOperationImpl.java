@@ -358,8 +358,13 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
-      DomainPresenceInfo.fromPacket(packet).ifPresent(info -> info.setDeleting(false));
+      DomainPresenceInfo.fromPacket(packet).ifPresent(info -> updateCache(info, callResponse.getResult()));
       return doNext(packet);
+    }
+
+    private void updateCache(DomainPresenceInfo info, DomainResource domain) {
+      info.setDeleting(false);
+      info.setDomain(domain);
     }
 
     @Override
