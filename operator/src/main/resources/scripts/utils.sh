@@ -743,10 +743,11 @@ checkAuxiliaryImage() {
   fi
   local severe_found=false
   for out_file in $out_files; do
+    sucFile="${out_file/%.out/.suc}"
     if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
       trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
       severe_found=true
-    elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+    elif [ ! -f "$sucFile" ]; then
       trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                    "Contents of '${out_file}':"
       cat $out_file
@@ -798,10 +799,11 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
     fi
     severe_found=false
     for out_file in $out_files; do
+      sucFile="${out_file/%.out/.suc}"
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
         trace FINE "Compatibility Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
         severe_found=true
-      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+      elif [ ! -f "$sucFile" ]; then
         trace SEVERE "Compatibility Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                      "Contents of '${out_file}':"
         cat $out_file
