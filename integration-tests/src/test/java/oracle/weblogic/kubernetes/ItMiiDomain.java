@@ -83,12 +83,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceReplicasPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
@@ -600,17 +600,12 @@ class ItMiiDomain {
     final String managedServerPrefix = domainUid + "-managed-server";
 
     //patch replicas at domain resource level to 3
-    logger.info(
-        "Patch the domain resource {0} in namespace {1} to use the new replicas {2}",
-        domainUid, domainNamespace, 3);
-    patchDomainResourceReplicas(domainUid, domainNamespace, 3);
-    logger.info(
-        "Check that domain resource {0} in namespace {1} has been patched with replicas 3",
-        domainUid, domainNamespace, 3);
-    checkDomainPatchedReplicas(domainUid, domainNamespace, 3);
+    boolean scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 3);
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     //managed server pods at cluster resource level should not be affected by domain resource level patching
-    //verify at cluster resource level there are still only 2 managed server pods exist and running
+    //verify at cluster resource level there are only 2 managed server pods exist and running
     //verify managedServer3 doesn't exist
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
@@ -780,35 +775,6 @@ class ItMiiDomain {
             V1Patch.PATCH_FORMAT_JSON_PATCH),
         String.format("Failed to patch the domain resource {0} in namespace {1} with image {2}",
             domainResourceName, namespace, image));
-  }
-
-  /**
-   * Patch the domain resource with a new replicas.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param namespace Kubernetes namespace that the domain is hosted
-   * @param replicas cale to replicas
-   */
-  private void patchDomainResourceReplicas(
-      String domainResourceName,
-      String namespace,
-      int replicas
-  ) {
-
-    String patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + replicas + "}"
-        + "]";
-    logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
-        domainResourceName, namespace, patchStr);
-
-    assertTrue(patchDomainCustomResource(
-            domainResourceName,
-            namespace,
-            new V1Patch(patchStr),
-            V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource {0} in namespace {1} with replicas {2}",
-            domainResourceName, namespace, replicas));
   }
 
   private String createImageAndVerify(
@@ -1078,23 +1044,6 @@ class ItMiiDomain {
         assertDoesNotThrow(
             () -> domainResourceImagePatched(domainUid, namespace, image),
               String.format("Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)),
-        logger,
-        "domain {0} to be patched in namespace {1}",
-        domainUid,
-        namespace);
-  }
-
-  private void checkDomainPatchedReplicas(
-      String domainUid,
-      String namespace,
-      int replicas
-  ) {
-
-    // check if the domain resource has been patched with the given image
-    testUntil(
-        assertDoesNotThrow(
-            () -> domainResourceReplicasPatched(domainUid, namespace, replicas),
-              String.format("Domain %s is not patched in namespace %s with image %s", domainUid, namespace, replicas)),
         logger,
         "domain {0} to be patched in namespace {1}",
         domainUid,
