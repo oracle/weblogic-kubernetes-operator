@@ -151,6 +151,15 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return exception != null;
   }
 
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
+  public boolean hasWarnings() {
+    return warnings.size() != 0;
+  }
+
   private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) throws ApiException {
     List<ClusterResource> clusters = getClusters(domain.getNamespace());
     return clusters.stream().filter(cluster -> clusterName.equals(cluster.getClusterName())

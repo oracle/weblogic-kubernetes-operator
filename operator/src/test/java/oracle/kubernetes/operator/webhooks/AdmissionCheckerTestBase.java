@@ -36,6 +36,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithClustersAndStatus;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithoutCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.LOG_HOME;
@@ -63,6 +64,8 @@ abstract class AdmissionCheckerTestBase {
 
   final DomainResource existingDomain = createDomainWithClustersAndStatus();
   final DomainResource proposedDomain = createDomainWithClustersAndStatus();
+  final DomainResource existingDomain2 = createDomainWithoutCluster();
+  final DomainResource proposedDomain2 = createDomainWithoutCluster();
   final ClusterResource existingCluster = createCluster();
   final ClusterResource proposedCluster = createCluster();
   AdmissionChecker domainChecker;

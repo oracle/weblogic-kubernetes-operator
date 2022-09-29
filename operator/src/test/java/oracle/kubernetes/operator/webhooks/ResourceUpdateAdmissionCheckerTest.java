@@ -27,6 +27,8 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.crea
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
 
@@ -96,6 +98,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertFalse(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings());
   }
 
   @Test
@@ -146,6 +149,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertTrue(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings());
   }
 
   @Test
@@ -216,6 +220,17 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   }
 
   @Test
+  void whenDomainCheckerClusterReplicasChangedToUnsetAndReadClusterSucceed_returnTrueWithoutException() {
+    testSupport.defineResources(proposedDomain);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    existingCluster.getSpec().withReplicas(2);
+    proposedCluster.getSpec().withReplicas(null);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+    assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasException(), equalTo(false));
+  }
+
+  @Test
   void whenDomainCheckerClusterReplicasChangedToUnsetAndReadClusterFailed404_returnFalseWithException() {
     testSupport.defineResources(proposedDomain);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
@@ -226,6 +241,19 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasException(), equalTo(true));
+  }
+
+  @Test
+  void whenDomainWithInvalidReplicasReferencesNoClusters_returnTrueWithoutWarnings() {
+    testSupport.defineResources(proposedDomain2);
+    proposedDomain2.getSpec().withReplicas(BAD_REPLICAS);
+
+    testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
+
+    DomainUpdateAdmissionChecker checker = new DomainUpdateAdmissionChecker(existingDomain2, proposedDomain2);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings(), equalTo(false));
   }
 
   // ClusterResource validation
