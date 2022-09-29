@@ -3,6 +3,10 @@
 
 set -o pipefail
 
+# Also defined in python script introspectDomain.py changing value must change in both places
+PLATFORM_OPENSHIFT="OPENSHIFT"
+
+
 UTILSSCRIPTPATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source ${UTILSSCRIPTPATH}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${UTILSSCRIPTPATH}/utils_base.sh" && exit 1
@@ -821,8 +825,10 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
   return 0
 }
 
-# Fix node manager script for openshift
-#
+# This function fixes umask and permission issues in OpenShift environment when logHome or domainHome is shared.
+# Since the uid changed each time the pod is restarted, we need to make sure the permission of the files created will
+# not trigger any permission denied issue with a different uid belonging to the same group.   This is all done in
+# the introspector stage.
 fixNodeManagerScriptForOpenShift() {
   if [ ! -f  "${DOMAIN_HOME}/bin/startLocalNM.sh" ] ; then
     cp "${ORACLE_HOME}/wlserver/server/bin/startNodeManager.sh" "${DOMAIN_HOME}/bin/startLocalNM.sh" || exitOrLoop
