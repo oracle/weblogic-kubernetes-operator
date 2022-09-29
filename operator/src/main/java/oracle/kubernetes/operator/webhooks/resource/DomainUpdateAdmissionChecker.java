@@ -157,7 +157,7 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
    * @return true if the validation causes an Exception
    */
   public boolean hasWarnings() {
-    return warnings.size() != 0;
+    return !warnings.isEmpty();
   }
 
   private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) throws ApiException {

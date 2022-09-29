@@ -59,6 +59,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithClustersAndStatus;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithoutCluster;
 import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
@@ -94,6 +95,8 @@ class WebhookRestTest extends RestTestBase {
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
   private final DomainResource existingDomain = createDomainWithClustersAndStatus();
   private final DomainResource proposedDomain = createDomainWithClustersAndStatus();
+  private final DomainResource existingDomain2 = createDomainWithoutCluster();
+  private final DomainResource proposedDomain2 = createDomainWithoutCluster();
   private final ClusterResource existingCluster = createCluster();
   private final ClusterResource proposedCluster = createCluster();
 
@@ -349,7 +352,6 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
-  @Disabled("Cluster replicas are no longer included in Domain specification")
   void whenDomainReplicasChangedAloneAndInvalid_rejectIt() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     setExistingAndProposedDomain();
@@ -406,6 +408,19 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
 
     assertThat(isAllowed(responseReview), equalTo(false));
+  }
+
+  @Test
+  void whenDomainWithInvalidReplicasReferencesNoClusters_acceptIt() {
+    testSupport.defineResources(proposedDomain2);
+    proposedDomain2.getSpec().withReplicas(BAD_REPLICAS);
+    setExistingDomain(existingDomain2);
+    setProposedDomain(proposedDomain2);
+
+    testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
+    assertThat(isAllowed(responseReview), equalTo(true));
   }
 
   private void setExistingAndProposedDomain() {
