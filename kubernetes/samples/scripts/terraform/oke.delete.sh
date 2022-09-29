@@ -56,6 +56,8 @@ export KUBECONFIG=${terraform_script_dir}/${clusterName}_kubeconfig
 export PATH=${terraform_script_dir}/terraforminstall:$PATH
 echo 'Deleting cluster'
 #check and cleanup any left over running Load Balancers
-cleanupLB Subnet01
-cleanupLB Subnet02
+out=$(cleanupLB Subnet01 && :)
+echo $out
+out=$(cleanupLB Subnet02 && :)
+echo $out
 deleteOKE
