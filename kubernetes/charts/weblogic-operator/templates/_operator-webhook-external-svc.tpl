@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorWebhookExternalService" }}
-{{- if .remoteDebugNodePortEnabled }}
+{{- if and (.remoteDebugNodePortEnabled) (not .operatorOnly) }}
 ---
 apiVersion: "v1"
 kind: "Service"
