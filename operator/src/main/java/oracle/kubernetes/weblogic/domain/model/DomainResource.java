@@ -64,6 +64,13 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
+@Description(
+    "A Domain resource describes the configuration, logging, images, and lifecycle "
+    + "of a WebLogic domain, including Java "
+    + "options, environment variables, additional Pod content, and the ability to "
+    + "explicitly start, stop, or restart its members. The Domain resource "
+    + "references its Cluster resources using `.spec.clusters`."
+)
 public class DomainResource implements KubernetesObject, RetryMessageFactory {
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
