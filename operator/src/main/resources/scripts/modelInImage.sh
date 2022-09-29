@@ -813,6 +813,7 @@ createPrimordialDomain() {
       # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
       # group same permissions as user .
       chmod -R g=u ${DOMAIN_HOME} || return 1
+      fixNodeManagerScriptForOpenShift
     fi
 
     tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \

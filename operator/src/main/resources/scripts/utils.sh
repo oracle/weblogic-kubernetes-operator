@@ -820,3 +820,24 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
   done
   return 0
 }
+
+# Fix node manager script for openshift
+#
+fixNodeManagerScriptForOpenShift() {
+  if [ ! -f  "${DOMAIN_HOME}/bin/startLocalNM.sh" ] ; then
+    cp "${ORACLE_HOME}/wlserver/server/bin/startNodeManager.sh" "${DOMAIN_HOME}/bin/startLocalNM.sh" || exitOrLoop
+    chmod 770 "${DOMAIN_HOME}/bin/startLocalNM.sh" || exitOrLoop
+  fi
+  sed -i 's/umask 027/umask 077/' "${DOMAIN_HOME}/bin/startLocalNM.sh" || exitOrLoop
+  sed -i "s/\${WL_HOME}\/server\/bin\/startNodeManager.sh/#\${WL_HOME}\/server\/bin\/startNodeManager.sh/" "${DOMAIN_HOME}/bin/startNodeManager.sh" || exitOrLoop
+  echo "\${DOMAIN_HOME}/bin/startLocalNM.sh" >> "${DOMAIN_HOME}/bin/startNodeManager.sh" || exitOrLoop
+  if [ ! -f  "${DOMAIN_HOME}/bin/setUserOverrides.sh" ] ; then
+    echo "umask 007" >> "${DOMAIN_HOME}/bin/setUserOverrides.sh" || exitOrLoop
+    chmod 770  "${DOMAIN_HOME}/bin/setUserOverrides.sh"
+  else
+    if [ ! $(grep "umask 007" "${DOMAIN_HOME}/bin/setUserOverrides.sh") -gt 0 ] ; then
+      echo "umask 007" >> "${DOMAIN_HOME}/bin/setUserOverrides.sh" || exitOrLoop
+    fi
+  fi
+
+}

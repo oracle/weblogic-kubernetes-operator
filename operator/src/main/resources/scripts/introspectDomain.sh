@@ -175,6 +175,9 @@ doIntrospect() {
     trace "Create domain return code = " ${created_domain}
   else
     created_domain=1
+    if [ ${DOMAIN_SOURCE_TYPE} == "PersistentVolume" ] ; then
+      fixNodeManagerScriptForOpenShift
+    fi
   fi
 
   traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN END" 

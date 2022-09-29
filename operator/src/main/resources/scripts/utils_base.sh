@@ -224,7 +224,13 @@ checkEnv() {
 createFolder() {
   local targetDir="${1}"
   local folderDescription="${2:-}"
-  local mkdirCommand="mkdir -m 750 -p $targetDir"
+
+  if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
+    local mkdirCommand="mkdir -m 770 -p $targetDir"
+  else
+    local mkdirCommand="mkdir -m 750 -p $targetDir"
+  fi
+
 
   trace FINE "Creating folder '${targetDir}' using command '${mkdirCommand}'. ${folderDescription}"
 

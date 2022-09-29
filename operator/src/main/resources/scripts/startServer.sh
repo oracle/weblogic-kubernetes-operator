@@ -41,8 +41,11 @@ startWLS() {
   #
   # Start NM
   #
-
   traceTiming "POD '${SERVICE_NAME}' NM START"
+
+  if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
+    umask 007
+  fi
 
   trace "Start node manager"
   # call script to start node manager in same shell
@@ -261,6 +264,11 @@ fi
 #
 
 createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/security" "This is the server '${SERVER_NAME}' security directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
+if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
+  createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/tmp" "This is the server '${SERVER_NAME}' tmp directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
+  createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/logs" "This is the server '${SERVER_NAME}' logs directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
+  createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/data/ldap/log" "This is the server '${SERVER_NAME}' data directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
+fi
 
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
