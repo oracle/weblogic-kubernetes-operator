@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "A Cluster resource describes the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. It must describe a cluster that already exists in the WebLogic domain configuration. See also `domain.spec.clusters`.",
   "type": "object",
   "definitions": {
     "AdminServer": {
@@ -157,6 +158,7 @@
       }
     },
     "ClusterSpec": {
+      "description": "The specification of the operation of the WebLogic cluster. Required.",
       "type": "object",
       "properties": {
         "serverService": {

@@ -764,8 +764,8 @@ checkAuxiliaryImage() {
 #
 # checkCompatibilityModeInitContainersWithLegacyAuxImages
 #   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
-#            in ${AUXILIARY_IMAGE_PATH}/compatibilityModeInitContainerLogs dir. It returns 1 if a SEVERE message
-#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/compatibilityModeInitContainerLogs
+#            in ${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR} dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}
 #            dirs. It also returns 1 if 'successfully' message is not found in the output files
 #            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
 #            See also 'auxImage.sh'.
@@ -791,9 +791,9 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/compatibilityModeInitContainerLogs/*.out 2>/dev/null | sort --version-sort)
+    out_files=$(ls -1 "${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/*.out" 2>/dev/null | sort --version-sort)
     if [ -z "${out_files}" ]; then
-      trace SEVERE "Compatibility Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/compatibilityModeInitContainerLogs/*.out'"
+      trace SEVERE "Compatibility Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/$AUXILIARY_IMAGE_COMMAND_LOGS_DIR/*.out'"
       return 1
     fi
     severe_found=false
@@ -813,7 +813,7 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
       trace "Compatibility Auxiliary Image: End of '${out_file}' contents"
     done
     [ "${severe_found}" = "true" ] && return 1
-    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v compatibilityModeInitContainerLogs)" ] \
+    [ -z "$(ls -A "${AUXILIARY_IMAGE_PATH}" 2>/dev/null | grep -v "${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}")" ] \
       && trace SEVERE "Compatibility Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
        "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
       && return 1

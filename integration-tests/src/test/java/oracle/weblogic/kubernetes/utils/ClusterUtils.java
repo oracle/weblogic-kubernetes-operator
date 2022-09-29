@@ -12,6 +12,8 @@ import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
@@ -22,7 +24,9 @@ import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomR
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -180,5 +184,75 @@ public class ClusterUtils {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(msPodNamePrefix + i, domainUid, namespace);
     }
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param decodedToken decoded secret token from operator sa
+   * @param expectedMsg expected message in the http response
+   * @param hasAuthHeader true or false to include auth header
+   * @param hasHeader    true or false to include header
+   * @return true if REST call generate expected response message, false otherwise
+   */
+  public static boolean scaleClusterWithRestApi(String domainUid,
+                                                String clusterName,
+                                                int numOfServers,
+                                                int externalRestHttpsPort,
+                                                String opNamespace,
+                                                String decodedToken,
+                                                String expectedMsg,
+                                                boolean hasHeader,
+                                                boolean hasAuthHeader) {
+    LoggingFacade logger = getLogger();
+
+    String opExternalSvc = getRouteHost(opNamespace, "external-weblogic-operator-svc");
+
+
+    // build the curl command to scale the cluster
+    StringBuffer command = new StringBuffer()
+        .append("curl --noproxy '*' -v -k ");
+    if (hasAuthHeader) {
+      command.append("-H \"Authorization:Bearer ")
+          .append(decodedToken)
+          .append("\" ");
+    }
+    command.append("-H Accept:application/json ")
+        .append("-H Content-Type:application/json ");
+    if (hasHeader) {
+      command.append("-H X-Requested-By:MyClient ");
+    }
+    command.append("-d '{\"spec\": {\"replicas\": ")
+        .append(numOfServers)
+        .append("}}' ")
+        .append("-X POST https://")
+        .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
+        .append("/operator/latest/domains/")
+        .append(domainUid)
+        .append("/clusters/")
+        .append(clusterName)
+        .append("/scale").toString();
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(command.toString())
+        .saveResults(true)
+        .redirect(true);
+
+    logger.info("Calling curl to scale the cluster");
+    ExecResult result = Command.withParams(params).executeAndReturnResult();
+    logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
+    if (result != null) {
+      logger.info("Return values {0}, errors {1}", result.stdout(), result.stderr());
+      if (result.stdout().contains(expectedMsg) || result.stderr().contains(expectedMsg)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
