@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -45,8 +44,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -59,11 +56,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -81,7 +78,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -118,13 +114,6 @@ class ItLargeCapacityDomainsClusters {
 
   private static String adminSvcExtHost = null;
   private static String clusterRouteHost = null;
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
-
   private static Path clusterViewAppPath;
   private static LoggingFacade logger;
   private static final int managedServerPort = 7100;
@@ -148,7 +137,7 @@ class ItLargeCapacityDomainsClusters {
 
     // build the clusterview application
     Path targetDir = Paths.get(WORK_DIR,
-        ItIntrospectVersion.class.getName() + "/clusterviewapp");
+        ItLargeCapacityDomainsClusters.class.getName() + "/clusterviewapp");
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
         "dist", domainNamespace, targetDir);
     assertTrue(Paths.get(distDir.toString(),
@@ -210,7 +199,7 @@ class ItLargeCapacityDomainsClusters {
       }
       //verify admin server accessibility and the health of cluster members
       deployAndVerifyMemberHealth(adminServerPodName, managedServerNames, domainNamespaces.get(i));
-      shutdownDomain(domainUid, domainNamespaces.get(i));
+      //shutdownDomain(domainUid, domainNamespaces.get(i));
     }
   }
 
@@ -650,7 +639,7 @@ class ItLargeCapacityDomainsClusters {
     String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    withStandardRetryPolicy.conditionEvaluationListener(
+    withLongRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Deploying the application using Rest"
             + "(elapsed time {0} ms, remaining time {1} ms)",
             condition.getElapsedTimeInMS(),
@@ -681,7 +670,7 @@ class ItLargeCapacityDomainsClusters {
     String url = "http://" + hostAndPort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
-    withStandardRetryPolicy.conditionEvaluationListener(
+    withLongRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Verifying the health of all cluster members"
             + "(elapsed time {0} ms, remaining time {1} ms)",
             condition.getElapsedTimeInMS(),
