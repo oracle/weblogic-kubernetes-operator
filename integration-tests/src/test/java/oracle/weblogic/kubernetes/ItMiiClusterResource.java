@@ -154,11 +154,12 @@ class ItMiiClusterResource {
   @DisplayName("Verify dynamic add/remove of cluster resource on domain")
   void testManageClusterResource() {
 
-    // create cluster object(s)
+    // create and deploy cluster resource(s)
     ClusterResource cluster = createClusterResource(
         clusterRes, clusterName, domainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}",clusterRes, domainNamespace);
     createClusterAndVerify(cluster);
+
     ClusterResource cluster2 = createClusterResource(
         cluster2Res, clusterName2, domainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}",cluster2Res, domainNamespace);
@@ -166,13 +167,11 @@ class ItMiiClusterResource {
 
     createModelConfigMap(domainUid,configMapName);
 
-    // create the domain object
+    // create and deploy domain resource
     DomainResource domain = createDomainResource(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
-
-    // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, 
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
@@ -261,17 +260,18 @@ class ItMiiClusterResource {
    * A Domain Validation Failed Event MUST be generated for domain domain2.
    */
   @Test
-  @DisplayName("Verify Domain Validation Failed Event for sharing Cluster Ref")
+  @DisplayName("Verify Domain Validation Failed Event for sharing Cluster Reference across domains")
   void testSharedClusterResource() {
 
     OffsetDateTime timestamp = now();
 
+    // Delete any pre-existing resources if any
     deleteDomainResource(domainUid, domainNamespace);
     deleteDomainResource(domain2Uid, domainNamespace);
-
     deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
 
+    // create and deploy cluster resource
     ClusterResource cluster = createClusterResource(
         clusterRes, clusterName, domainNamespace, replicaCount);
     logger.info("Creating cluster {0} in namespace {1}",clusterRes, domainNamespace);
@@ -280,7 +280,7 @@ class ItMiiClusterResource {
     createModelConfigMap(domainUid,configMapName);
     createModelConfigMap(domain2Uid,config2MapName);
 
-    // create the domain object
+    // create and deploy domain resource
     DomainResource domain = createDomainResource(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
@@ -294,11 +294,11 @@ class ItMiiClusterResource {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
     
+    // create and deploy domain resource with cluster reference
     DomainResource domain2 = createDomainResource(domain2Uid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, config2MapName);
-
     // set cluster references
     domain2.getSpec().withCluster(new V1LocalObjectReference().name(clusterRes));
     // create model in image domain
@@ -327,7 +327,118 @@ class ItMiiClusterResource {
         domainNamespace);
   }
 
-  // Create a domain resource 
+  /**
+   * Create a cluster resource CR3 with reference to WLS cluster cluster-3.
+   * Here WebLogic Cluster cluster-3 doesn't exists in model/config file.
+   * Create a domain recource DR3 with cluster reference set to CR3.
+   * Start the domain DR3. 
+   * Make sure a Domain Configuration Mismatch Failed Event MUST be 
+   * generated for the domain resource.
+   */
+  @Test
+  @DisplayName("Verify WebLogic domain configuration mismatch error Failed Event for mismatch Cluster Reference")
+  void testMismatchClusterResource() {
+
+    String domain3Uid = "domain3"; 
+    String cluster3Res = "cluster-3"; 
+    String cluster3Name = "cluster-3"; 
+    String config3MapName = "config-cluster-3"; 
+    
+    OffsetDateTime timestamp = now();
+
+    // Delete any pre-existing resources if any
+    deleteDomainResource(domain3Uid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster3Res,domainNamespace);
+
+    ClusterResource cluster = createClusterResource(
+        cluster3Res, cluster3Name, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",cluster3Res, domainNamespace);
+    createClusterAndVerify(cluster);
+    createModelConfigMap(domain3Uid,config3MapName);
+
+    // create and deploy domain resource
+    DomainResource domain = createDomainResource(domain3Uid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, config3MapName);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster3Res));
+    logger.info("Creating mii domain {0} in namespace {1} using image {2}",
+        domain3Uid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain, domainNamespace);
+    
+    testUntil(withLongRetryPolicy,
+        checkDomainFailedEventWithReason(opNamespace, domainNamespace, 
+        domain3Uid, "WebLogic domain configuration mismatch error", 
+        "Warning", timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        "Domain validation error",
+        domainNamespace);
+  }
+
+  /*
+   * Create a domain recource DR4 with cluster resource CR4.
+   * Here the cluster resource CR4 refers to WebLogic cluster in model file.
+   * Note here the CR4 is not deployed before deploying resource DR4. 
+   * Deploy resource DR4 and make sure only admin server is started.
+   * (Note) Should we generate a Warning Event (OWLS-102704) 
+   * Deploy resource CR4 and make sure that all servers in CR4 comes up. 
+   */
+  @Test
+  @DisplayName("Verify servers on missing clsuer resource are picked up when the resource is available")
+  void testMissingClusterResource() {
+
+    String domain4Uid = "domain4"; 
+    String cluster4Res = "cluster-4"; 
+    String cluster4Name = "cluster-1"; 
+    String config4MapName = "config-cluster-4"; 
+    OffsetDateTime timestamp = now();
+   
+    // Delete any pre-existing resources if any
+    deleteDomainResource(domain4Uid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster4Res,domainNamespace);
+
+    // create and deploy domain resource
+    createModelConfigMap(domain4Uid,config4MapName);
+    DomainResource domain = createDomainResource(domain4Uid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, config4MapName);
+    // set cluster references to a non-existing cluster resource
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster4Res));
+    logger.info("Creating mii domain {0} in namespace {1} using image {2}",
+        domain4Uid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain, domainNamespace);
+
+    String managedServerPrefix4 = domain4Uid + "-c1-managed-server";
+    String adminPodName   = domain4Uid + "-admin-server";
+
+    String managedPodName = "domain4-managed-server1";
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminPodName,domain4Uid,domainNamespace);
+
+    // check managed server pods are not started
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix4 + i,domain4Uid,domainNamespace);
+    }
+
+    // create and deploy cluster resource
+    ClusterResource cluster = createClusterResource(
+        cluster4Res, cluster4Name, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",cluster4Res, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // check managed server pods are not started
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPrefix4 + i,domain4Uid,domainNamespace);
+    }
+  }
+
+  // Create a domain resource with replicas count ZERO
   private DomainResource createDomainResource(String domainUid,
           String domNamespace, String adminSecretName,
           String repoSecretName, String encryptionSecretName,
@@ -336,7 +447,6 @@ class ItMiiClusterResource {
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
-    // create the domain CR
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
