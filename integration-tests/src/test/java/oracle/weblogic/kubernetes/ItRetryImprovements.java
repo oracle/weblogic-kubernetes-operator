@@ -69,7 +69,6 @@ class ItRetryImprovements {
 
   // domain constants
   private static final String clusterName = "cluster-1";
-  //private static final int replicaCount = 2;
   private static final String wlSecretName = "weblogic-credentials";
   private static final String domainUid = "domaininimage";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
