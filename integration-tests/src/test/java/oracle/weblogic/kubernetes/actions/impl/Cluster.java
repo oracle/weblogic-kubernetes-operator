@@ -57,6 +57,22 @@ public class Cluster {
   }
 
   /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+  "application/merge-patch+json",
+   * @return response msg of patching cluster resource
+   */
+  public static String patchClusterCustomResourceReturnResponse(String clusterName, String namespace,
+                                                                V1Patch patch, String patchFormat) {
+    return Kubernetes.patchClusterCustomResourceReturnResponse(clusterName, namespace,
+        patch, patchFormat);
+  }
+
+  /**
    * Scale the cluster in the specified namespace by patching the ClusterResource.
    *
    * @param clusterRes name of the cluster resource to be scaled in the domain

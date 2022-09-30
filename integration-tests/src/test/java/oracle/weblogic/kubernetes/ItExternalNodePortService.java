@@ -355,6 +355,7 @@ class ItExternalNodePortService {
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName) {
+    String clusterResName = domainUid + "-" + clusterName;
 
     // create the domain CR
     DomainResource domain = new DomainResource()
@@ -394,12 +395,14 @@ class ItExternalNodePortService {
                         .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     // create cluster object
-    ClusterResource cluster = createClusterResource(
+
+    ClusterResource cluster = createClusterResource(clusterResName,
         clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, domNamespace);
+    logger.info("Creating cluster resource {0} in namespace {1}",clusterResName, domNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));    
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),

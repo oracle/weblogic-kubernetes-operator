@@ -14,9 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.AuxiliaryImage;
-import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -65,8 +63,7 @@ import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersi
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
@@ -252,14 +249,7 @@ class ItMiiAuxiliaryImage {
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
-
-    // create cluster object
     String clusterName = "cluster-1";
-    ClusterResource cluster = createClusterResource(
-        clusterName, domainNamespace, replicaCount);
-
-    logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
-    createClusterAndVerify(cluster);
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
@@ -270,8 +260,8 @@ class ItMiiAuxiliaryImage {
         miiAuxiliaryImage1,
         miiAuxiliaryImage2);
 
-    // set cluster references
-    domainCR.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domainCR = createClusterResourceAndAddReferenceToDomain(
+        domainUid1 + "-" + clusterName, clusterName, domainNamespace, domainCR, replicaCount);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",

@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -278,6 +279,21 @@ public class TestActions {
   }
 
   /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *                    "application/json-patch+json", "application/merge-patch+json",
+   * @return response msg of patching domain
+   */
+  public static String patchDomainCustomResourceReturnResponse(String domainUid, String namespace, V1Patch patch,
+                                                  String patchFormat) {
+    return Domain.patchDomainCustomResourceReturnResponse(domainUid, namespace, patch, patchFormat);
+  }
+
+  /**
    * Patch a running domain with introspectVersion.
    * If the introspectVersion doesn't exist it will add the value as 2,
    * otherwise the value is updated by 1.
@@ -353,11 +369,26 @@ public class TestActions {
   /**
    * Delete Cluster Custom Resource.
    *
-   * @param clusterName Cluster custom resource name
+   * @param clusterResName Cluster custom resource name
    * @param namespace namespace in which cluster custom resource exists
    */
-  public static void deleteClusterCustomResource(String clusterName, String namespace) {
-    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterName, namespace);
+  public static void deleteClusterCustomResource(String clusterResName, String namespace) {
+    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterResName, namespace);
+  }
+
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterResName unique cluster resource identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+  "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterCustomResource(String clusterResName, String namespace,
+                                                   V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCustomResource(clusterResName, namespace, patch, patchFormat);
   }
 
   /**
@@ -368,23 +399,23 @@ public class TestActions {
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
   "application/merge-patch+json",
-   * @return true if successful, false otherwise
+   * @return response msg of patching cluster resource
    */
-  public static boolean patchClusterCustomResource(String clusterName, String namespace,
-                                                   V1Patch patch, String patchFormat) {
-    return Cluster.patchClusterCustomResource(clusterName, namespace, patch, patchFormat);
+  public static String patchClusterCustomResourceReturnResponse(String clusterName, String namespace,
+                                                                V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCustomResourceReturnResponse(clusterName, namespace, patch, patchFormat);
   }
 
   /**
    * Scale a cluster in a specified namespace by patching cluster resource.
    *
-   * @param clusterName cluster in the domain to be scaled
+   * @param clusterResName cluster resource name
    * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
    */
-  public static boolean scaleCluster(String clusterName, String namespace, int numOfServers) {
-    return Cluster.scaleCluster(clusterName, namespace, numOfServers);
+  public static boolean scaleCluster(String clusterResName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterResName, namespace, numOfServers);
   }
 
   /**
@@ -425,6 +456,27 @@ public class TestActions {
                                                 String opServiceAccount) {
     return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
         externalRestHttpsPort, opNamespace, opServiceAccount);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return ExecResult object
+   */
+  public static ExecResult scaleClusterWithRestApiAndReturnResult(String domainUid,
+                                                                  String clusterName,
+                                                                  int numOfServers,
+                                                                  int externalRestHttpsPort,
+                                                                  String opNamespace,
+                                                                  String opServiceAccount) {
+    return Domain.scaleClusterWithRestApiAndReturnResult(domainUid, clusterName, numOfServers, externalRestHttpsPort,
+        opNamespace, opServiceAccount);
   }
 
   /**
@@ -1289,6 +1341,18 @@ public class TestActions {
    */
   public static boolean dockerPull(String image) {
     return Docker.pull(image);
+  }
+
+  /**
+   * Tag a originalImage to taggedImage and push it to repo.
+   * @param originalImage original image
+   * @param taggedImage tagged image
+   * @return true if docker tag and push succeeds, false otherwise
+   */
+  public static Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
+    return (() -> {
+      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
+    });
   }
 
   /**

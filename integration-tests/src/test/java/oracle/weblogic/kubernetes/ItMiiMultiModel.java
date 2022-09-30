@@ -43,8 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -396,17 +395,9 @@ class ItMiiMultiModel {
     DomainResource domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
 
-    // create cluster object if not created earlier 
-    if (cluster == null) {
-      cluster = createClusterResource(
-            clusterName, domainNamespace, replicaCount);
-      logger.info("Creating cluster {0} in namespace {1}",clusterName, domainNamespace);
-      createClusterAndVerify(cluster);
-      logger.info("Associate Cluster {0} and Domain resource {1}",clusterName, domainUid);
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
-    } else {
-      logger.info("Cluster resource ${0} is already created, Skipping the Cluster resource creation ",clusterName);
-    }
+    // create cluster object if not created earlie
+    domain = createClusterResourceAndAddReferenceToDomain(domainUid + "-" + clusterName,
+        clusterName, domainNamespace, domain, replicaCount);
 
     createDomainAndVerify(domain, domainNamespace);
 

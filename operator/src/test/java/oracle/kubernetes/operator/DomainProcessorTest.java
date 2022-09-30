@@ -97,11 +97,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static java.util.logging.Level.INFO;
+import static oracle.kubernetes.common.logging.MessageKeys.ASYNC_NO_RETRY;
+import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.common.logging.MessageKeys.WATCH_CLUSTER;
 import static oracle.kubernetes.common.logging.MessageKeys.WATCH_CLUSTER_DELETED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -111,6 +115,8 @@ import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -159,6 +165,7 @@ class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
   private static final String CLUSTER2 = "cluster-2";
+  private static final String CLUSTER3 = "Cluster-3";
   private static final String INDEPENDENT_SERVER = "server-1";
   private static final int MAX_SERVERS = 5;
   private static final String MS_PREFIX = "managed-server";
@@ -168,6 +175,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
 
   static final String DOMAIN_NAME = "base_domain";
+  public static final String NEW_DOMAIN_UID = "56789";
   static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
@@ -409,6 +417,34 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainResourceDoesNotExistsAndMakeRightNotForDeletion_introspectorJobNotCreated() {
+    consoleHandlerMemento.collectLogMessages(logRecords, JOB_CREATED).withLogLevel(INFO);
+    processor.registerDomainPresenceInfo(originalInfo);
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withMessage("Test"));
+    domainConfigurator.withRestartVersion("17");
+
+    testSupport.failOnResource(DOMAIN, UID, NS, HTTP_NOT_FOUND);
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsInfo(JOB_CREATED)));
+  }
+
+  @Test
+  void whenDomainResourceReadFailsWithUnrecoverableAndMakeRightNotForDeletion_noRetryWarningLogged() {
+    consoleHandlerMemento.collectLogMessages(logRecords, ASYNC_NO_RETRY).withLogLevel(Level.WARNING);
+    processor.registerDomainPresenceInfo(originalInfo);
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withMessage("Test"));
+    domainConfigurator.withRestartVersion("17");
+
+    testSupport.failOnResource(DOMAIN, UID, NS, HTTP_BAD_REQUEST);
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, containsWarning(ASYNC_NO_RETRY));
   }
 
   @Test
@@ -2270,7 +2306,7 @@ class DomainProcessorTest {
 
   @Test
   void whenClusterResourceAdded_verifyDispatch() {
-    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(INFO);
     configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
     final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(NS, CLUSTER));
@@ -2282,7 +2318,7 @@ class DomainProcessorTest {
 
   @Test
   void whenClusterResourceAdded_noDomainPresenceInfoExists_dontDispatch() {
-    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(Level.INFO);
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER).withLogLevel(INFO);
     final Response<ClusterResource> item = new Response<>("ADDED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);
@@ -2293,7 +2329,14 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceAdded_listClusterResources() {
     processor.registerDomainPresenceInfo(originalInfo);
-    final String CLUSTER3 = "Cluster-3";
+    addClustersAndDispatchClusterWatch();
+
+    assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
+    assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
+    assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  }
+
+  private void addClustersAndDispatchClusterWatch() {
     for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
       configureDomain(domain).configureCluster(originalInfo, clusterName);
       testSupport.defineResources(createClusterResource(NS, clusterName));
@@ -2301,12 +2344,29 @@ class DomainProcessorTest {
     final Response<ClusterResource> item = new Response<>("ADDED", testSupport
         .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
 
-
     processor.dispatchClusterWatch(item);
+  }
 
-    assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
-    assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
-    assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  @Test
+  void whenDomainAndClusterResourcesAddedAtSameTime_introspectorJobHasCorrectOwnerReference() {
+    consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
+    domain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(false));
+    setupNewDomainResource(NEW_DOMAIN_UID);
+    processor.registerDomainPresenceInfo(originalInfo);
+    addClustersAndDispatchClusterWatch();
+
+    assertThat(getIntrospectorJobOwnerReferenceUid(), equalTo(NEW_DOMAIN_UID));
+  }
+
+  private void setupNewDomainResource(String newUid) {
+    testSupport.deleteResources(domain);
+    testSupport.defineResources(newDomain.withMetadata(newDomain.getMetadata().uid(newUid)));
+    testSupport.failOnDelete(JOB, getJobName(), NS, HTTP_BAD_REQUEST);
+  }
+
+  private String getIntrospectorJobOwnerReferenceUid() {
+    return Optional.ofNullable((V1Job) testSupport.getResourceWithName(JOB, getJobName())).map(V1Job::getMetadata)
+        .map(m -> m.getOwnerReferences().stream().findFirst().orElse(null).getUid()).orElse(null);
   }
 
   @Test
@@ -2369,7 +2429,7 @@ class DomainProcessorTest {
 
   @Test
   void whenClusterResourceDeleted_verifyDispatch() {
-    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(INFO);
     configureDomain(domain).configureCluster(originalInfo, CLUSTER);
     processor.registerDomainPresenceInfo(originalInfo);
     final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(NS, CLUSTER));
@@ -2381,7 +2441,7 @@ class DomainProcessorTest {
 
   @Test
   void whenClusterResourceDeleted_noDomainPresenceInfoExists_dontDispatch() {
-    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(Level.INFO);
+    consoleHandlerMemento.collectLogMessages(logRecords, WATCH_CLUSTER_DELETED).withLogLevel(INFO);
     final Response<ClusterResource> item = new Response<>("DELETED", createClusterResource(NS, CLUSTER));
 
     processor.dispatchClusterWatch(item);

@@ -321,7 +321,7 @@ class ItMonitoringExporterSamples {
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         cluster1Name, domain2Uid, domain2Namespace, 1);
     managedServersCount = 1;
-    scaleAndVerifyCluster(cluster1Name, domain2Uid, domain2Namespace,
+    scaleAndVerifyCluster(domain2Uid + "-" + cluster1Name, domain2Uid, domain2Namespace,
         domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, managedServersCount,
         null, null);
 
