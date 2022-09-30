@@ -195,12 +195,13 @@ class ItRetryImprovements {
    * Create a domain-in-image domain with an invalid domain resource that has duplicate server names
    * the domain should fail to start with SEVERE error and FatalDomainInvalidError
    * the Operator should stop retrying immediately.
-   * Also log a clear message in Operator logs and the domain Failed condition with the cause,
-   * actions to fix the problem.
+   * Also a message is logged into Operator Log indicating FatalDomainInvalidError
+   * and the domain Failed condition with the cause, actions to fix the problem.
    * Verify that retry resume after the issue is fixed and the domain starts successfully.
    */
   @Test
-  @DisplayName("Create a domain duplicate server names. Verify that retry stopped and handles FATAL error as designed.")
+  @DisplayName("Create a domain with duplicate server names."
+       + "Verify that retry stopped and handles FATAL error as designed.")
   void testRetryOccursAsExpectedAndThrowFatalFailures() {
     int replicaCount = 2;
     String duplicateServerName = "managed-server1";
@@ -251,7 +252,8 @@ class ItRetryImprovements {
    * Also log a clear message in Operator logs and the domain with the cause.
    */
   @Test
-  @DisplayName("Create a domain duplicate server names. Verify that retry stopped and handles Waring as designed.")
+  @DisplayName("Create a domain with replica count = 6 that exceeds the maximum cluster size "
+      + "Verify domain starts and WARNING message is logged")
   void testRetryOccursAsExpectedAndThrowWarning() {
     int replicaMaxCount = 5;
     int replicaCount = 6;
