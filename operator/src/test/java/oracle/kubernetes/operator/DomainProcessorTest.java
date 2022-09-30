@@ -165,6 +165,7 @@ class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
   private static final String CLUSTER2 = "cluster-2";
+  private static final String CLUSTER3 = "Cluster-3";
   private static final String INDEPENDENT_SERVER = "server-1";
   private static final int MAX_SERVERS = 5;
   private static final String MS_PREFIX = "managed-server";
@@ -174,6 +175,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
 
   static final String DOMAIN_NAME = "base_domain";
+  public static final String NEW_DOMAIN_UID = "56789";
   static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
@@ -2327,7 +2329,14 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceAdded_listClusterResources() {
     processor.registerDomainPresenceInfo(originalInfo);
-    final String CLUSTER3 = "Cluster-3";
+    addClustersAndDispatchClusterWatch();
+
+    assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
+    assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
+    assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  }
+
+  private void addClustersAndDispatchClusterWatch() {
     for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
       configureDomain(domain).configureCluster(originalInfo, clusterName);
       testSupport.defineResources(createClusterResource(NS, clusterName));
@@ -2335,12 +2344,29 @@ class DomainProcessorTest {
     final Response<ClusterResource> item = new Response<>("ADDED", testSupport
         .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
 
-
     processor.dispatchClusterWatch(item);
+  }
 
-    assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
-    assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
-    assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  @Test
+  void whenDomainAndClusterResourcesAddedAtSameTime_introspectorJobHasCorrectOwnerReference() {
+    consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
+    domain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(false));
+    setupNewDomainResource(NEW_DOMAIN_UID);
+    processor.registerDomainPresenceInfo(originalInfo);
+    addClustersAndDispatchClusterWatch();
+
+    assertThat(getIntrospectorJobOwnerReferenceUid(), equalTo(NEW_DOMAIN_UID));
+  }
+
+  private void setupNewDomainResource(String newUid) {
+    testSupport.deleteResources(domain);
+    testSupport.defineResources(newDomain.withMetadata(newDomain.getMetadata().uid(newUid)));
+    testSupport.failOnDelete(JOB, getJobName(), NS, HTTP_BAD_REQUEST);
+  }
+
+  private String getIntrospectorJobOwnerReferenceUid() {
+    return Optional.ofNullable((V1Job) testSupport.getResourceWithName(JOB, getJobName())).map(V1Job::getMetadata)
+        .map(m -> m.getOwnerReferences().stream().findFirst().orElse(null).getUid()).orElse(null);
   }
 
   @Test
