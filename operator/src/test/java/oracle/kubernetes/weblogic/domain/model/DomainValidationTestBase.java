@@ -84,7 +84,18 @@ public class DomainValidationTestBase extends DomainTestUtils {
     }
 
     @Override
-    public ClusterResource findCluster(V1LocalObjectReference reference, String namespace) {
+    public ClusterResource findCluster(V1LocalObjectReference reference) {
+      String name = reference.getName();
+      if (name != null) {
+        List<ClusterResource> clusters = getResourceList(ClusterResource.class);
+        return clusters.stream().filter(cluster -> name.equals(cluster.getClusterName()))
+            .findFirst().orElse(null);
+      }
+      return null;
+    }
+
+    @Override
+    public ClusterResource findClusterInNamespace(V1LocalObjectReference reference, String namespace) {
       String name = reference.getName();
       if (name != null) {
         List<ClusterResource> clusters = getResourceList(ClusterResource.class);

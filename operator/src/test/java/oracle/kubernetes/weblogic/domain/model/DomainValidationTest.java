@@ -926,7 +926,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain2, clusters);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("Cluster", CLUSTER_1, "it is used by", UID2)));
+        contains(stringContainsInOrder("cluster resource", CLUSTER_1, "it is used by", UID2)));
   }
 
   @Test
@@ -954,7 +954,28 @@ class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("Cluster", CLUSTER_2, "it is used by", UID2)));
+        contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
+  }
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferences_withClusterName_reportError() {
+    String wlsClusterName1 = "c1";
+    String wlsClusterName2 = "c2";
+    String wlsClusterName3 = "c3";
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    cluster1.getSpec().setClusterName(wlsClusterName1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    cluster2.getSpec().setClusterName(wlsClusterName2);
+    ClusterResource cluster3 = createTestCluster(CLUSTER_3);
+    cluster3.getSpec().setClusterName(wlsClusterName3);
+    defineResources(domain, domain2, cluster1, cluster2, cluster3);
+
+    setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
+    setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
   }
 
   @SafeVarargs

@@ -57,6 +57,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -97,6 +98,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   // Map namespace to map of domainUID to Domain; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
+
+  // Map namespace to map of clusterName to ClusterResource; tests may replace this value.
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static Map<String, Map<String, ClusterResource>> clusters = new ConcurrentHashMap<>();
 
   // map namespace to map of uid to processing.
   @SuppressWarnings("FieldMayBeFinal")
@@ -143,6 +148,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   static void cleanupNamespace(String namespace) {
     clusterEventK8SObjects.remove(namespace);
     domains.remove(namespace);
+    clusters.remove(namespace);
     domainEventK8SObjects.remove(namespace);
     namespaceEventK8SObjects.remove(namespace);
     statusUpdaters.remove((namespace));
@@ -287,8 +293,27 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return domains;
   }
 
+  /**
+   * Get all the cluster resources in the given namespace.
+   *
+   * @param ns the namespace
+   * @return list of the cluster resources
+   */
+  public static List<ClusterResource> getClusters(String ns) {
+    List<ClusterResource> clusters = new ArrayList<>();
+    Optional.ofNullable(DomainProcessorImpl.clusters.get(ns)).ifPresent(d -> d.values()
+        .forEach(cluster -> addToClusterList(clusters, cluster)));
+    return clusters;
+  }
+
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    list.add(info.getDomain());
+    if (info.isNotDeleting()) {
+      list.add(info.getDomain());
+    }
+  }
+
+  private static void addToClusterList(List<ClusterResource> list, ClusterResource cluster) {
+    list.add(cluster);
   }
 
   private void onDeleteEvent(CoreV1Event event) {
@@ -399,6 +424,21 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
           .put(info.getDomainUid(), info);
   }
 
+  /**
+   * Register a cluster resource.
+   *
+   * @param cluster a cluster resource
+   */
+  public void registerCluster(ClusterResource cluster) {
+    clusters
+        .computeIfAbsent(cluster.getNamespace(), k -> new ConcurrentHashMap<>())
+        .put(cluster.getMetadata().getName(), cluster);
+  }
+
+  private void unregisterCluster(ClusterResource cluster) {
+    Optional.ofNullable(clusters.get(cluster.getNamespace())).ifPresent(m -> m.remove(cluster.getMetadata().getName()));
+  }
+
   @Override
   public void unregisterDomainPresenceInfo(DomainPresenceInfo info) {
     unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
@@ -484,6 +524,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     } else if (getPodLabel(item.object, LabelConstants.JOBNAME_LABEL) != null) {
       processIntrospectorJobPodWatch(item.object, item.type);
     }
+  }
+
+  @Override
+  public void addClusterList(ClusterList list) {
+    list.getItems().forEach(this::registerCluster);
   }
 
   private void processServerPodWatch(V1Pod pod, String watchType) {
@@ -696,6 +741,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
+    registerCluster(cluster);
     getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
       LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
       createMakeRightOperation(info)
@@ -707,6 +753,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
+    registerCluster(cluster);
     getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
       ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
       if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
@@ -723,6 +770,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
+    unregisterCluster(cluster);
     getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(), info.getDomainUid());
       info.removeClusterResource(cluster.getClusterName());

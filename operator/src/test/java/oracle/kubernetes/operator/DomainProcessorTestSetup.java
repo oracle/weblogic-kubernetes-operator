@@ -182,9 +182,9 @@ public class DomainProcessorTestSetup {
    * @param clusters a list of clusters
    */
   public static void setupCluster(DomainResource domain, ClusterResource[] clusters) {
-    for (int i = 0; i < clusters.length; i++) {
+    for (ClusterResource cluster : clusters) {
       domain.getSpec()
-          .withCluster(new V1LocalObjectReference().name(clusters[i].getClusterName()));
+          .withCluster(new V1LocalObjectReference().name(cluster.getMetadata().getName()));
     }
   }
 
@@ -195,9 +195,9 @@ public class DomainProcessorTestSetup {
    * @param clusterNames a list of cluster names
    */
   public static void setupCluster(DomainResource domain, String[] clusterNames) {
-    for (int i = 0; i < clusterNames.length; i++) {
+    for (String clusterName : clusterNames) {
       domain.getSpec()
-          .withCluster(new V1LocalObjectReference().name(clusterNames[i]));
+          .withCluster(new V1LocalObjectReference().name(clusterName));
     }
   }
 }
