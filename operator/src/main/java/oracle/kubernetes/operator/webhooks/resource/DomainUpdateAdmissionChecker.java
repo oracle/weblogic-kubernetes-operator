@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -172,7 +173,7 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   }
 
   private boolean isReferenced(@NotNull DomainResource domain, ClusterResource cluster) {
-    String name = Optional.ofNullable(cluster).map(ClusterResource::getClusterName).orElse("");
+    String name = Optional.ofNullable(cluster).map(ClusterResource::getMetadata).map(V1ObjectMeta::getName).orElse("");
     return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getClusters)
         .orElse(Collections.emptyList()).stream().anyMatch(ref -> name.equals(ref.getName()));
   }
