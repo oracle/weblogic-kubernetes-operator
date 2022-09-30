@@ -78,9 +78,6 @@ public final class HealthCheckHelper {
       Operation.patch
   };
 
-  // default namespace or svc account name
-  private static final String DEFAULT_NAMESPACE = "default";
-
   static {
     clusterAccessChecks.put(Resource.NAMESPACES, glwOperations);
     clusterAccessChecks.put(Resource.CRDS, crdOperations);
