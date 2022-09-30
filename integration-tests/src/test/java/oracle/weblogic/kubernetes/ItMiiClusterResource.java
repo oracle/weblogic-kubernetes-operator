@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
@@ -56,6 +59,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
@@ -254,8 +258,8 @@ class ItMiiClusterResource {
 
   /**
    * Create a cluster resorce say cluser-1.
-   * Create a domain recource domain1 with cluster reference set to cluser-1.
-   * Create a domain recource domain2 with cluster reference set to cluser-1.
+   * Create a domain resource domain1 with cluster reference set to cluser-1.
+   * Create a domain resource domain2 with cluster reference set to cluser-1.
    * Start the domain domain1 with all manged servers in the cluster.
    * A Domain Validation Failed Event MUST be generated for domain domain2.
    */
@@ -330,8 +334,8 @@ class ItMiiClusterResource {
   /**
    * Create a cluster resource CR3 with reference to WLS cluster cluster-3.
    * Here WebLogic Cluster cluster-3 doesn't exists in model/config file.
-   * Create a domain recource DR3 with cluster reference set to CR3.
-   * Start the domain DR3. 
+   * Create a domain resource DR3 with cluster reference set to CR3.
+   * Deploy the domain DR3. 
    * Make sure a Domain Configuration Mismatch Failed Event MUST be 
    * generated for the domain resource.
    */
@@ -379,11 +383,11 @@ class ItMiiClusterResource {
   }
 
   /*
-   * Create a domain recource DR4 with cluster resource CR4.
+   * Create a domain resource DR4 with cluster resource CR4.
    * Here the cluster resource CR4 refers to WebLogic cluster in model file.
    * Note here the CR4 is not deployed before deploying resource DR4. 
    * Deploy resource DR4 and make sure only admin server is started.
-   * (Note) Should we generate a Warning Event (OWLS-102704) 
+   * (TBD) Should we generate a Warning Event (OWLS-102704) 
    * Deploy resource CR4 and make sure that all servers in CR4 comes up. 
    */
   @Test
@@ -435,6 +439,53 @@ class ItMiiClusterResource {
     // check managed server pods are not started
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix4 + i,domain4Uid,domainNamespace);
+    }
+  }
+
+  /**
+   * Start WebLogic domain using a single yaml with domain and cluster resource.
+   */
+  @Test
+  @DisplayName("Start a WebLogic doamin with a single yaml with both domain and cluster resource")
+  void testDomainYamlWithClusterResource() {
+
+    String domain5Uid = "domain5"; 
+    String cluster5Res = "cluster-5"; 
+    String cluster5Name = "cluster-1"; 
+    String config5MapName = "config-cluster-5"; 
+    String managedServerPrefix5 = domain5Uid + "-managed-server";
+    String adminPodName   = domain5Uid + "-admin-server";
+    
+    // Delete any pre-existing resources if any
+    deleteDomainResource(domain5Uid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster5Res,domainNamespace);
+
+    Map<String, String> templateMap  = new HashMap<>();
+    templateMap.put("DOMAIN_API_VERSION", DOMAIN_API_VERSION);
+    templateMap.put("WEBLOGIC-CREDENTIALS", adminSecretName);
+    templateMap.put("RUNTIME-ENCRYPTION-SECRET", encryptionSecretName);
+    templateMap.put("NAMESPACE", domainNamespace);
+    templateMap.put("DUID", domain5Uid);
+    templateMap.put("CLUSTER_RES", cluster5Res);
+    templateMap.put("CLUSTERNAME", cluster5Name);
+    templateMap.put("IMAGE", MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+
+    Path srcDomainYaml = Paths.get(RESOURCE_DIR,"domain","mii-cluster-domain.yaml");
+    Path destDomainYaml = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDomainYaml.toString(), "domain.yaml", templateMap));
+    logger.info("Generated domain yaml file path is {0}", destDomainYaml);
+
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("kubectl create -f " + destDomainYaml))
+        .execute(), "kubectl create failed");
+
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminPodName,domain5Uid,domainNamespace);
+    // check managed server pods are not started
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPrefix5 + i,domain5Uid,domainNamespace);
     }
   }
 
