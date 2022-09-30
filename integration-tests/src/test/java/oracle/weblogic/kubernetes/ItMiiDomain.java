@@ -626,12 +626,24 @@ class ItMiiDomain {
     assertTrue(p1Success,
         String.format("Patching replica to 5 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
+    //verify 5 managed servers are up and running
+    for (int i = 1; i <= 5; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
     logger.info("Updating the cluster {0} replica count to 1", clusterName);
     p1Success = scaleCluster(clusterName, domainNamespace,1);
     assertTrue(p1Success,
         String.format("Patching replica to 1 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
-
+    //verify only one managed server is up and running
+    for (int i = 5; i >= 2; i--) {
+      logger.info("Wait for managed server pod {0} to be shutdown in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    checkPodReadyAndServiceExists(managedServerPrefix + 1, domainUid, domainNamespace);
   }
 
   // This method is needed in this test class, since the cleanup util
