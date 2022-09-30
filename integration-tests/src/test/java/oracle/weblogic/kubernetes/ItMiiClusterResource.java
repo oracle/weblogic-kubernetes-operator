@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -436,7 +437,7 @@ class ItMiiClusterResource {
     logger.info("Creating cluster {0} in namespace {1}",cluster4Res, domainNamespace);
     createClusterAndVerify(cluster);
 
-    // check managed server pods are not started
+    // check managed server pods are started
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix4 + i,domain4Uid,domainNamespace);
     }
@@ -483,10 +484,94 @@ class ItMiiClusterResource {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminPodName,domain5Uid,domainNamespace);
-    // check managed server pods are not started
+    // check managed server pods are started
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix5 + i,domain5Uid,domainNamespace);
     }
+  }
+
+  /**
+   * Create a (mii) WebLogic domain with domain level replica set to zero.
+   * Create and deploy two cluster resources c1 and c2
+   * Create and deploy the domain with two cluster resources c1 and c2
+   * Scale only the cluster c2 and make sure no new server from c1 is up 
+   * Scale all the clusters in the namesapce using 
+   *   kubectel scale cluster --replicas=4  --all -n namespace
+   * Scale all the clusters in the namesapce with replica count 1
+   *   kubectel scale cluster --initial-replicas=1 --replicas=5  --all -n ns
+   * This command must fails as there is no cluster with currentreplica set to 1
+   */
+  @Test
+  @DisplayName("Verify various kubectl scale options")
+  void testKubecltScaleClusterResource() {
+
+    String domain6Uid = "domain6"; 
+    String adminPodName = domain6Uid + "-admin-server";
+    String managedPodPrefix = domain6Uid + "-c1-managed-server";
+    String managedPodPrefix2 = domain6Uid + "-c2-managed-server";
+
+    deleteDomainResource(domain6Uid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        clusterRes, clusterName, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",clusterRes, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    ClusterResource cluster2 = createClusterResource(
+        cluster2Res, clusterName2, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",cluster2Res, domainNamespace);
+    createClusterAndVerify(cluster2);
+
+    createModelConfigMap(domain6Uid,configMapName);
+
+    // create and deploy domain resource
+    DomainResource domain = createDomainResource(domain6Uid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+    logger.info("Creating mii domain {0} in namespace {1} using image {2}",
+        domain6Uid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterRes));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster2Res));
+    createDomainAndVerify(domain, domainNamespace);
+
+    // check only admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminPodName, domain6Uid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedPodPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedPodPrefix + i, domain6Uid, domainNamespace);
+    }
+
+    // verify managed server pods from cluster-2 are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedPodPrefix2 + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedPodPrefix2 + i, domain6Uid, domainNamespace);
+    }
+    // Scaling one Cluster(2) does not affect other Cluster(1)
+    kubectlScaleCluster(cluster2Res,domainNamespace,3);
+    checkPodReadyAndServiceExists(managedPodPrefix2 + "3", domain6Uid, domainNamespace);
+    checkPodDoesNotExist(managedPodPrefix + "3", domain6Uid, domainNamespace);
+
+    // Scale all clusters in the namesapce to replicas set to 4
+    // kubectl scale cluster --replicas=4 --all -n namesapce
+    String cmd = " --replicas=4 --all ";
+    kubectlScaleCluster(cmd, domainNamespace,true);
+    checkPodReadyAndServiceExists(managedPodPrefix + "3", domain6Uid, domainNamespace);
+    checkPodReadyAndServiceExists(managedPodPrefix + "4", domain6Uid, domainNamespace);
+    checkPodReadyAndServiceExists(managedPodPrefix2 + "4", domain6Uid, domainNamespace);
+
+    // kubectl command must fail since non of the cluster has the 
+    // current replicacount set to 1. All have the count of 4 
+    cmd = " --replicas=5 --current-replicas=1 --all ";
+    kubectlScaleCluster(cmd, domainNamespace,false);
   }
 
   // Create a domain resource with replicas count ZERO
@@ -550,15 +635,15 @@ class ItMiiClusterResource {
         + "       DynamicServers: \n"
         + "         ServerTemplate: 'cluster-1-template' \n"
         + "         ServerNamePrefix: 'c1-managed-server' \n"
-        + "         DynamicClusterSize: 3 \n"
-        + "         MaxDynamicClusterSize: 3 \n"
+        + "         DynamicClusterSize: 5 \n"
+        + "         MaxDynamicClusterSize: 5 \n"
         + "         CalculatedListenPorts: false \n"
         + "    'cluster-2':\n"
         + "       DynamicServers: \n"
         + "         ServerTemplate: 'cluster-2-template' \n"
         + "         ServerNamePrefix: 'c2-managed-server' \n"
-        + "         DynamicClusterSize: 4 \n"
-        + "         MaxDynamicClusterSize: 4 \n"
+        + "         DynamicClusterSize: 5 \n"
+        + "         MaxDynamicClusterSize: 5 \n"
         + "         CalculatedListenPorts: false \n"
         + "  ServerTemplate:\n"
         + "    'cluster-1-template':\n"
@@ -591,7 +676,21 @@ class ItMiiClusterResource {
     params.command("kubectl scale  clusters/" + clusterRef 
         + " --replicas=" + replica + " -n " + namespace);
     boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed scale the cluster");
+    assertTrue(result, "kubectl scale command failed");
+  }
+
+  private static void kubectlScaleCluster(String cmd, String namespace, boolean expectSuccess) {
+    getLogger().info("Scaling cluster resource in namespace {1} using kubectl scale command", namespace);
+
+    String excommand = "kubectl scale cluster " + cmd + "-n " + namespace;
+    CommandParams params = new CommandParams().defaults();
+    params.command(excommand);
+    boolean result = Command.withParams(params).execute();
+    if (expectSuccess) {
+      assertTrue(result, "kubectl scale command should not fail");
+    } else {
+      assertFalse(result, "kubectl scale command should fail");
+    }
   }
 
   private static void deleteDomainResource(String duid, String namespace) {
