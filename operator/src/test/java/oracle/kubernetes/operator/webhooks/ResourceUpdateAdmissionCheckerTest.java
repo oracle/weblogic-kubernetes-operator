@@ -231,11 +231,9 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   }
 
   @Test
-  void whenDomainCheckerClusterReplicasChangedToUnsetAndReadClusterFailed404_returnFalseWithException() {
+  void whenDomainCheckerReadClusterFailed404_returnFalseWithException() {
     testSupport.defineResources(proposedDomain);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-    existingCluster.getSpec().withReplicas(2);
-    proposedCluster.getSpec().withReplicas(null);
 
     testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
 
