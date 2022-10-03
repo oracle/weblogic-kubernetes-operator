@@ -67,7 +67,9 @@ public class ConversionWebhookResource extends BaseResource {
   public String post(String body) {
     ConversionReviewModel conversionReview = null;
     ConversionResponse conversionResponse;
-    LOGGER.entering(href());
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("Conversion webhook request: " + body);
+    }
 
     try {
       conversionReview = readConversionReview(body);
@@ -83,11 +85,16 @@ public class ConversionWebhookResource extends BaseResource {
           .uid(getUid(conversionReview)).result(new Result().status(FAILED_STATUS).message("Exception: " + e));
       generateFailedEvent(e, getConversionRequest(conversionReview));
     }
-    LOGGER.exiting(conversionResponse);
-    return writeConversionReview(new ConversionReviewModel()
+    ConversionReviewModel conversionReviewModel = new ConversionReviewModel()
         .apiVersion(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getApiVersion).orElse(null))
         .kind(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getKind).orElse(null))
-        .response(conversionResponse));
+        .response(conversionResponse);
+
+    String response = writeConversionReview(conversionReviewModel);
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine("Conversion webhook response: " + response);
+    }
+    return response;
   }
 
   private String getConversionRequest(ConversionReviewModel conversionReview) {
