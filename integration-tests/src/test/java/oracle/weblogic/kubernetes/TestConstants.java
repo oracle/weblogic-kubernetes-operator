@@ -37,6 +37,7 @@ public interface TestConstants {
   public static final String DEFAULT_WEBLOGIC_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
   public static final String WEBLOGIC_IMAGE_TAGS =
       getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
+  public static final int DEFAULT_MAX_CLUSTER_SIZE = 5;
 
   // cluster constants
   public static final String CLUSTER_VERSION =
@@ -379,5 +380,5 @@ public interface TestConstants {
   //Defaulting to 1440 minutes (24 hours)
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
-  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=20000000";
+  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
 }

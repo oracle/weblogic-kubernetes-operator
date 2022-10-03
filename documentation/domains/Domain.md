@@ -1,5 +1,7 @@
 ### Domain
 
+A Domain resource describes the configuration, logging, images, and lifecycle of a WebLogic domain, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart its members. The Domain resource references its Cluster resources using `.spec.clusters`.
+
 | Name | Type | Description |
 | --- | --- | --- |
 | `apiVersion` | string | The API version defines the versioned schema of this Domain. Required. |

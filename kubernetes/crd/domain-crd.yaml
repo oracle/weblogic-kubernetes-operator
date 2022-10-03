@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 4d3978c01ddf8b9f9ba477576355f57ecf2a7df320b4a7ae848210d3d5b21703
+    weblogic.sha256: 0f19892c1da0e97279730097ec59a037a108c805a99b6489a7d0d44bb99149cb
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -25,6 +25,11 @@ spec:
   - name: v9
     schema:
       openAPIV3Schema:
+        description: A Domain resource describes the configuration, logging, images,
+          and lifecycle of a WebLogic domain, including Java options, environment
+          variables, additional Pod content, and the ability to explicitly start,
+          stop, or restart its members. The Domain resource references its Cluster
+          resources using `.spec.clusters`.
         properties:
           spec:
             description: The specification of the operation of the WebLogic domain.

@@ -54,6 +54,7 @@ import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -1362,13 +1363,18 @@ public class DomainStatusUpdater {
           .withLabelSelector(DOMAINUID_LABEL + "=" + info.getDomainUid() + "," + CLUSTERNAME_LABEL + "=" + clusterName)
           .withMaximumReplicas(clusterConfig.getClusterSize())
           .withMinimumReplicas(MINIMUM_CLUSTER_COUNT)
-          .withReplicasGoal(getClusterSizeGoal(clusterName));
+          .withReplicasGoal(getClusterSizeGoal(clusterName))
+          .withObservedGeneration(getClusterObservedGeneration(clusterName));
     }
 
     private Integer getClusterSizeGoal(String clusterName) {
       return info.getReplicaCount(clusterName);
     }
 
+    private Long getClusterObservedGeneration(String clusterName) {
+      return Optional.ofNullable(info.getClusterResource(clusterName)).map(ClusterResource::getStatus)
+              .map(ClusterStatus::getObservedGeneration).orElse(1L);
+    }
   }
 
   static class FailureStep extends DomainStatusUpdaterStep implements StepWithRetryCount {

@@ -47,6 +47,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -1406,6 +1407,30 @@ abstract class DomainStatusUpdateTestBase {
               eventWithReason(DOMAIN_AVAILABLE_EVENT),
               eventWithReason(DOMAIN_ROLL_COMPLETED_EVENT),
               eventWithReason(DOMAIN_COMPLETED_EVENT))));
+  }
+
+  @Test
+  void whenUpdateDomainStatus_verifyClusterStatusObservedGeneration() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(4).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    // Get initial ClusterStatus from DomainResource and verify the initial value.
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getObservedGeneration(), equalTo(1L));
+
+    // increment the observedGeneration on the deployed ClusterResource and update DomainStatus
+    ClusterResource cs = testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1");
+    cs.getStatus().withObservedGeneration(2L);
+
+    updateDomainStatus();
+
+    // Verify the ClusterStatus was updated with incremented observedGeneration after
+    // DomainStatus update.
+    clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getObservedGeneration(), equalTo(2L));
   }
 
   private void setUniqueCreationTimestamp(Object event) {
