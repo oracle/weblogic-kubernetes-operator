@@ -7,6 +7,7 @@ import java.util.List;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.YAML_MAX_FILE_SIZE_PROPERTY;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
@@ -102,6 +103,7 @@ public class WebLogicImageTool {
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
         + " --wdtDomainType " + params.domainType()
+        + " --wdtJavaOptions " + YAML_MAX_FILE_SIZE_PROPERTY
         + " --chown oracle:root";
 
     if (params.wdtModelOnly()) {

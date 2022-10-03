@@ -327,4 +327,5 @@ public interface TestConstants {
       Optional.ofNullable(System.getenv("HTTPS_PROXY")).orElse(System.getenv("https_proxy"));
   public static final String NO_PROXY =
       Optional.ofNullable(System.getenv("NO_PROXY")).orElse(System.getenv("no_proxy"));
+  public static final String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
 }
