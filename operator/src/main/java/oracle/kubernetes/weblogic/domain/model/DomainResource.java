@@ -1211,11 +1211,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
           .forEach(reference ->
               Optional.ofNullable(kubernetesResources.findClusterInNamespace(reference, getNamespace()))
-              .ifPresent(cluster -> verifyClusterInUseByAnotherDomain(kubernetesResources, cluster)));
+              .ifPresent(cluster -> verifyClusterNotInUseByAnotherDomain(kubernetesResources, cluster)));
     }
 
-    private void verifyClusterInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
-                                                   ClusterResource cluster) {
+    private void verifyClusterNotInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
+                                                      ClusterResource cluster) {
       String domainAlreadyReferenceCluster =
           getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getMetadata().getName());
       if (domainAlreadyReferenceCluster != null) {

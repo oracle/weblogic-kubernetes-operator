@@ -265,6 +265,10 @@ public class DomainValidationSteps {
           .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
     }
 
+    private List<ClusterResource> getClustersInNamespace(Packet packet) {
+      return Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS)).orElse(Collections.emptyList());
+    }
+
     @Override
     public ClusterResource findCluster(V1LocalObjectReference reference) {
       return Optional.ofNullable(reference.getName())
@@ -279,8 +283,7 @@ public class DomainValidationSteps {
     @Override
     public ClusterResource findClusterInNamespace(V1LocalObjectReference reference, String namespace) {
       return Optional.ofNullable(reference.getName())
-          .flatMap(name -> Optional.of(DomainProcessorImpl.getClusters(namespace))
-              .orElse(new ArrayList<>())
+          .flatMap(name -> getClustersInNamespace(packet)
               .stream().filter(cluster -> hasMatchingMetadata(cluster.getMetadata(), name, namespace))
               .findFirst())
           .orElse(null);
