@@ -204,7 +204,7 @@ if [ ! "$bname" = "model-in-image-sample-work-dir" ] \
 fi
 
 #
-# Helper script ($1 == number of pods)
+# Helper script ($1 == '0' or 'Completed')
 #
 
 doPodWait() {
@@ -415,7 +415,7 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doPodWait 0
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doPodWait 3
+  doPodWait Completed
 
   if [ "$OKD" = "true" ]; then
     # expose the cluster service as an route
@@ -465,7 +465,7 @@ if [ "$DO_UPDATE1" = "true" ]; then
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doPodWait 3
+  doPodWait Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -516,7 +516,7 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doPodWait 0
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doPodWait 3
+  doPodWait Completed
 
   if [ "$OKD" = "true" ]; then
     # expose the cluster service as an route
@@ -586,7 +586,7 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doPodWait 3
+  doPodWait Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -638,7 +638,7 @@ if [ "$DO_UPDATE4" = "true" ]; then
 
   doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doPodWait 3
+  doPodWait Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
     testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
