@@ -29,8 +29,6 @@ import com.jayway.jsonpath.ReadContext;
 import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.CommonConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
-import oracle.kubernetes.common.logging.BaseLoggingFacade;
-import oracle.kubernetes.common.logging.CommonLoggingFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -63,7 +61,6 @@ public class SchemaConversionUtils {
    */
   public static final List<String> OBSOLETE_CONDITION_TYPES = List.of("Progressing");
 
-  private static final BaseLoggingFacade LOGGER = CommonLoggingFactory.getLogger("Webhook", "Operator");
   private static final String VOLUME_MOUNTS = "volumeMounts";
   private static final String VOLUME = "volume";
   private static final String MOUNT_PATH = "mountPath";
@@ -116,7 +113,6 @@ public class SchemaConversionUtils {
     if (spec == null) {
       return new Resources(domain, Collections.emptyList());
     }
-    LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
     String apiVersion = (String) domain.get(API_VERSION);
 
@@ -148,12 +144,6 @@ public class SchemaConversionUtils {
     generateClusters(domain, clusters, apiVersion);
 
     domain.put(API_VERSION, targetAPIVersion);
-    if (clusters.isEmpty()) {
-      LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
-    } else {
-      LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain
-          + " and associated clusters are " + clusters);
-    }
     return new Resources(domain, clusters);
   }
 
