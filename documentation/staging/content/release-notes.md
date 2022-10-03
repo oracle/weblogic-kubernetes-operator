@@ -4,7 +4,9 @@ date: 2019-03-15T11:25:28-04:00
 draft: false
 ---
 
-### Releases
+{{< table_of_contents >}}
+
+## Releases
 
 | Date               | Version  | Change - See also, [Change log](#change-log).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 |--------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -54,18 +56,18 @@ draft: false
 | April 4, 2018      | v0.2     | Many Kubernetes artifact names and labels have changed. Also, the names of generated YAML files for creating a domain's PV and PVC have changed.  Because of these changes, customers must recreate their operators and domains.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | March 20, 2018     | v0.1     | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
-### Change log
+## Change log
 
-#### Operator 4.0.0
+### Operator 4.0.0
 
-##### Major Themes
+#### Major Themes
 
 * Auxiliary Image simplification: the [usage of auxiliary images has been substantially simplified]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). In most cases, customers need only specify the name of the auxiliary image.
 * Cluster resource: the operator now provides a new custom resource, Cluster, which configures a specific WebLogic cluster. This resource can be used with [Kubernetes Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) or similar technologies to scale WebLogic clusters.
 * Status and Events: the status of and the Events generated about Domain and Cluster resources have been significantly updated. The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads. Failures are distinguished between those that require customer intervention or those that are potentially temporary and will be retried.
 * Istio compatibility: domain configurations are always compatible with Istio and other service mesh products. Customers are no longer required to enable this support.
 
-##### Upgrade Notes
+#### Upgrade Notes
 
 * This release introduces a new API version for the Domain resource, `weblogic.oracle/v9`. The previous API version, `weblogic.oracle/v8` introduced with Operator 3.0.0 is deprecated, but is still supported.
 * The operator added a [schema conversion webhook]({{< relref "/managing-operators/conversion-webhook.md" >}}) that automates the upgrade of `weblogic.oracle/v8` Domain resources to `weblogic.oracle/v9`. Customers do not need to take any action to begin using the latest Domain schema; however, the team recommends starting with "v9" Domain resources for any new projects. The operator provides a library that can be used to update existing "v8" Domain YAML files to "v9".
@@ -74,7 +76,7 @@ draft: false
 * For those customers who install more than one WebLogic Kubernetes Operator in a single Kubernetes cluster, you must upgrade every operator to at least version 3.4.1 before upgrading any operator to 4.0.0. As the 4.0.0 Helm chart now also installs a schema conversion webhook, you will want to use the Helm chart option to install this webhook in its own namespace prior to installing any of the 4.0.0 operators.
 * Several [Helm chart default values have been changed]({{< ref "#changes-to-helm-chart" >}}). Customers who upgrade their 3.x installations using the `--reuse-values` option during the Helm upgrade will continue to use the values from their original installation.
 
-##### Changes to domain schema
+#### Changes to domain schema
 
 * Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
 * Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
@@ -93,7 +95,7 @@ draft: false
 * The field `.status.lastIntrospectJobProcessedUid` was renamed as `.status.failedIntrospectionUid` and added fields `.status.initialFailureTime` and `.status.lastFailureTime`.
 * Added `.status.conditions[*].severity` to describe the severity of conditions that represent failures or warnings.
 
-##### Changes to Helm chart
+#### Changes to Helm chart
 
 * The default value for `domainNamespaceSelectionStrategy` is now `LabelSelector`. It was previously `List`.
 * The default value for `domainNamespaceLabelSelector` is now `weblogic-operator=enabled`. It was previously unspecified.
@@ -105,27 +107,27 @@ draft: false
 * The chart now has a value `preserveWebhook`, which defaults to `false`, that specifies if the schema conversion webhook should be orphaned when this Helm release is uninstalled.
 * The chart now has a value `webhookDebugHttpPort`, which defaults to `31999`, that configures an optional debugging port for the webhook.
 
-##### Minor features and fixes
+#### Minor features and fixes
 
 * The operator added a validating webhook that will help customers detect invalid configurations more quickly.
 * The operator's container image is substantially smaller through the use of `jlink` to create a minimal Java JRE.
 
-#### Operator 3.4.3
+### Operator 3.4.3
 
 * Resolved an issue where introspection would fail due to the node manager for non-English locales ([#3328](https://github.com/oracle/weblogic-kubernetes-operator/pull/3328)).
 * Resolved an issue related to configuration override files where servers may fail to start because another server was updating files on a shared volume ([#3359](https://github.com/oracle/weblogic-kubernetes-operator/pull/3359)).
 
-#### Operator 3.4.2
+### Operator 3.4.2
 
 * Updated several dependencies, including the Oracle Linux base for the container image.
 * Updated the default WebLogic Monitoring Exporter injection to version 2.0.7.
 
-#### Operator 3.4.1
+### Operator 3.4.1
 
 * Better support for retrying introspector `DeadlineExceeded` failures ([#3109](https://github.com/oracle/weblogic-kubernetes-operator/pull/3109)).
 * For Model in Image, expand the WDT custom folder from the archive in the domain directory before calling update or create domain ([#3110](https://github.com/oracle/weblogic-kubernetes-operator/pull/3110)).
 
-#### Operator 3.4.0
+### Operator 3.4.0
 
 * Certified support for Kubernetes 1.22.5+ and 1.23.4+.
 * Support for injecting [Fluentd sidecar containers]({{< relref "/samples/elastic-stack/weblogic-domain/_index.md" >}}) for WebLogic Server pods and the introspector.
@@ -133,7 +135,7 @@ draft: false
 * Updated multiple dependencies, including updating the default WebLogic Monitoring Exporter injection to version 2.0.5.
 * Resolved [issue #2794](https://github.com/oracle/weblogic-kubernetes-operator/issues/2794) related to restarting evicted pods ([#2979](https://github.com/oracle/weblogic-kubernetes-operator/pull/2979)).
 
-#### Operator 3.3.8
+### Operator 3.3.8
 
 * Resolved an issue where the WebLogic Server Administration Console is not accessible through port forwarding after upgrade to WebLogic Deploy Tooling (WDT) 2.0 ([#2776](https://github.com/oracle/weblogic-kubernetes-operator/pull/2776)).
 * Resolved an issue where the operator would log a SEVERE message about failing to create the CRD even though the creation was successful ([#2772](https://github.com/oracle/weblogic-kubernetes-operator/pull/2772)).
@@ -145,31 +147,31 @@ draft: false
 * Resolved an issue related to properly handling WDT archive `domainBin` directory updates ([#2704](https://github.com/oracle/weblogic-kubernetes-operator/pull/2704)).
 * Restricted HTTP tunneling for Istio related replication channels ([#2754](https://github.com/oracle/weblogic-kubernetes-operator/pull/2754)).
 
-#### Operator 3.3.7
+### Operator 3.3.7
 
 * Resolved an issue related to the incorrect validation of the auxiliary image path when the default location has been overridden ([#2659](https://github.com/oracle/weblogic-kubernetes-operator/pull/2659)).
 * Resolved an issue related to preserving auxiliary image logs when the main container crashes ([#2664](https://github.com/oracle/weblogic-kubernetes-operator/pull/2664)).
 
-#### Operator 3.3.6
+### Operator 3.3.6
 
 * Support added for a `hostAliases` field for WebLogic Server pod generation ([#2639](https://github.com/oracle/weblogic-kubernetes-operator/pull/2639)).
 
-#### Operator 3.3.5
+### Operator 3.3.5
 
 * Resolved an issue related to collecting logs for failed Model in Image domains that used auxiliary images ([#2627](https://github.com/oracle/weblogic-kubernetes-operator/pull/2627), [#2629](https://github.com/oracle/weblogic-kubernetes-operator/pull/2629)).
 * Resolved an issue related to improperly reading PodDisruptionBudget resources not created by the operator ([#2633](https://github.com/oracle/weblogic-kubernetes-operator/pull/2633)).
 * Resolved [issue #2636](https://github.com/oracle/weblogic-kubernetes-operator/issues/2636) related to sample scripts having invalid line endings for the Windows platform ([#2637](https://github.com/oracle/weblogic-kubernetes-operator/pull/2637)).
 
-#### Operator 3.3.4
+### Operator 3.3.4
 
 * Resolved an issue related to Model in Image domains and enabling WebLogic secure mode ([#2616](https://github.com/oracle/weblogic-kubernetes-operator/pull/2616)).
 
-#### Operator 3.3.3
+### Operator 3.3.3
 
 * Resolved an issue related to WebLogic cluster replication when using Istio 1.10 ([#2582](https://github.com/oracle/weblogic-kubernetes-operator/pull/2582)).
 * Resolved several issues related to introspector failure, retry, and status ([#2564](https://github.com/oracle/weblogic-kubernetes-operator/pull/2564), [#2571](https://github.com/oracle/weblogic-kubernetes-operator/pull/2571), [#2578](https://github.com/oracle/weblogic-kubernetes-operator/pull/2578), [#2580](https://github.com/oracle/weblogic-kubernetes-operator/pull/2580)).
 
-#### Operator 3.3.2
+### Operator 3.3.2
 
 * Support for the networking changes included with Istio 1.10 ([#2538](https://github.com/oracle/weblogic-kubernetes-operator/pull/2538)).
 * Support for accessing the WebLogic Server Administration Console through `kubectl port-forward` ([#2520](https://github.com/oracle/weblogic-kubernetes-operator/pull/2520)).
@@ -177,13 +179,13 @@ draft: false
 * Enhanced [liveness and readiness probe customization](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/) to support customizing failure thresholds ([#2521](https://github.com/oracle/weblogic-kubernetes-operator/pull/2521)).
 * Additional validation for container port names and WebLogic Network Access Point (NAP) names that will be used as container ports ([#2542](https://github.com/oracle/weblogic-kubernetes-operator/pull/2542)).
 
-#### Operator 3.3.1
+### Operator 3.3.1
 
 * Resolved an issue related to managed Coherence cluster formation when using Istio ([#2499](https://github.com/oracle/weblogic-kubernetes-operator/pull/2499)).
 * Resolved an issue related to generating the internal certificate when using Istio ([#2486](https://github.com/oracle/weblogic-kubernetes-operator/pull/2486)).
 * Resolved an issue related to validating Secrets and ConfigMaps referenced by a Domain when the namespace has a larger number of such resources ([#2500](https://github.com/oracle/weblogic-kubernetes-operator/pull/2500)).
 
-#### Operator 3.3.0
+### Operator 3.3.0
 
 * [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/).
 * Resolved an issue related to Event creation failure with the error: "StorageError: invalid object, Code: 4" ([#2443](https://github.com/oracle/weblogic-kubernetes-operator/pull/2443)).
@@ -192,13 +194,13 @@ draft: false
 * Corrected documentation of roles necessary for the scaling script ([#2464](https://github.com/oracle/weblogic-kubernetes-operator/pull/2464)).
 * All fixes included in 3.2.1 through 3.2.5 are included in 3.3.0.
 
-#### Operator 3.2.5
+### Operator 3.2.5
 
 * Updated the Dockerfile to ensure Oracle Linux libraries are at the latest versions.
 * Resolved an issue related to unnecessary repeated introspection ([#2418](https://github.com/oracle/weblogic-kubernetes-operator/pull/2418)).
 * Updated the default monitoring exporter sidecar container image to use the 2.0.3 version.
 
-#### Operator 3.2.4
+### Operator 3.2.4
 
 * Added support for the sessionAffinity field for the clusterService ([#2383](https://github.com/oracle/weblogic-kubernetes-operator/pull/2383)).
 * Moved several logging messages to the CONFIG level ([#2387](https://github.com/oracle/weblogic-kubernetes-operator/pull/2387)).
@@ -210,7 +212,7 @@ draft: false
 * Resolved an issue related to failing to recover when a node drain or repaving occurred while waiting for the Administration Server to start ([#2398](https://github.com/oracle/weblogic-kubernetes-operator/pull/2398)).
 * Resolved an issue related to Istio and WDT models that use default listen and SSL ports ([#2379](https://github.com/oracle/weblogic-kubernetes-operator/pull/2379)).
 
-#### Operator 3.2.3
+### Operator 3.2.3
 
 * Resolved an issue related to preserving the operator-generated internal certificate ([#2374](https://github.com/oracle/weblogic-kubernetes-operator/pull/2374)).
 * Corrected the monitoring exporter integration to include the Administration Server ([#2365](https://github.com/oracle/weblogic-kubernetes-operator/pull/2365)).
@@ -221,7 +223,7 @@ draft: false
 * Added support for several new events related to rolling restarts ([#2364](https://github.com/oracle/weblogic-kubernetes-operator/pull/2364)).
 * Added support for customer-defined labels and annotations on the operator's pod ([#2370](https://github.com/oracle/weblogic-kubernetes-operator/pull/2370)).
 
-#### Operator 3.2.2
+### Operator 3.2.2
 
 * Resolved an issue where the operator would retry Kubernetes API requests that timed out without a backoff causing increased network utilization ([#2300](https://github.com/oracle/weblogic-kubernetes-operator/pull/2300)).
 * Resolved an issue where the operator would select the incorrect WebLogic Server port for administrative traffic ([#2301](https://github.com/oracle/weblogic-kubernetes-operator/pull/2301)).
@@ -232,13 +234,13 @@ draft: false
 * Resolved an issue where the operator would repeatedly read a Secret causing increased network utilization ([#2326](https://github.com/oracle/weblogic-kubernetes-operator/pull/2326)).
 * Resolved an issue where the operator was not honoring `domain.spec.adminServer.serverService` ([#2334](https://github.com/oracle/weblogic-kubernetes-operator/pull/2334)).
 
-#### Operator 3.2.1
+### Operator 3.2.1
 
 Updated several dependencies, including the Oracle Linux base for the container image.
 
-#### Operator 3.2.0
+### Operator 3.2.0
 
-##### Features
+#### Features
 
 * The operator's container image is based on Oracle Linux 8.
 * WebLogic Server container images based on Oracle Linux 8 are supported.
@@ -249,7 +251,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 * Additional scripts to assist with common tasks, such as the `scaleCluster.sh` script.
 * Support for TCP and UDP on the same channel when the SIP protocol is used.
 
-##### Fixes for Bugs or Regressions
+#### Fixes for Bugs or Regressions
 
 * All fixes included in 3.1.1 through 3.1.4 are included in 3.2.0.
 * Resolved an issue where clustered Managed Servers would not start when the Administration Server was not running ([#2093](https://github.com/oracle/weblogic-kubernetes-operator/pull/2093)).
@@ -269,25 +271,25 @@ Updated several dependencies, including the Oracle Linux base for the container 
 * Resolved an issue where introspection would detect the wrong SSL port ([#2256](https://github.com/oracle/weblogic-kubernetes-operator/pull/2256)).
 * Resolved an issue where introspection would fail if a referenced Secret or ConfigMap name was too long ([#2257](https://github.com/oracle/weblogic-kubernetes-operator/pull/2257)).
 
-#### Operator 3.1.4
+### Operator 3.1.4
 
 * Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore ([#2196](https://github.com/oracle/weblogic-kubernetes-operator/pull/2196)).
 * Updated Kubernetes Java Client and Bouncy Castle dependencies.
 
-#### Operator 3.1.3
+### Operator 3.1.3
 
 * Resolved an issue that caused some WebLogic Servers to fail to start in large Kubernetes clusters where Kubernetes watch notifications were not reliably delivered ([#2188](https://github.com/oracle/weblogic-kubernetes-operator/pull/2188)).
 * Resolved an issue that caused the operator to ignore some namespaces it was configured to manage in Kubernetes clusters that had more than 500 namespaces ([#2189](https://github.com/oracle/weblogic-kubernetes-operator/pull/2189)).
 
-#### Operator 3.1.2
+### Operator 3.1.2
 
 * Resolved an issue where the operator failed to start servers in which the pods were configured to have an annotation containing a forward slash ([#2089](https://github.com/oracle/weblogic-kubernetes-operator/pull/2089)).
 
-#### Operator 3.1.1
+### Operator 3.1.1
 
 * Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters ([#2109](https://github.com/oracle/weblogic-kubernetes-operator/pull/2109)).
 
-#### Operator 3.1.0
+### Operator 3.1.0
 
 * All fixes included in 3.0.1 through 3.0.4 are included in 3.1.0.
 * Sample [scripts to start and stop server instances]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
@@ -311,15 +313,15 @@ Updated several dependencies, including the Oracle Linux base for the container 
 * Correct issue in wl-pod-wait.sh sample script ([#2018](https://github.com/oracle/weblogic-kubernetes-operator/pull/2018)).
 * Correct processing of ALWAYS serverStartPolicy ([#2020](https://github.com/oracle/weblogic-kubernetes-operator/pull/2020)).
 
-#### Operator 3.0.4
+### Operator 3.0.4
 
 * The operator now correctly completes restarting Managed Server pods to complete a rolling activity. This fix is already present in 3.1.0.
 
-#### Operator 3.0.3
+### Operator 3.0.3
 
 * The operator now responds to WebLogic Server instance pods that are stuck in the Terminating state when those pods are evicted from a node that has unexpectedly shut down and where Kubernetes has not removed the pod.
 
-#### Operator 3.0.2
+### Operator 3.0.2
 
 * Removed unnecessary duplicated parameter in initialize-internal-operator-identity.sh script ([#1867](https://github.com/oracle/weblogic-kubernetes-operator/pull/1867)).
 * Support nodeAffinity and nodeSelector for the operator in its Helm chart ([#1869](https://github.com/oracle/weblogic-kubernetes-operator/pull/1869)).
@@ -329,11 +331,11 @@ Updated several dependencies, including the Oracle Linux base for the container 
 * Better reflect introspector status in the Domain status ([#1832](https://github.com/oracle/weblogic-kubernetes-operator/pull/1832)).
 * Create each pod after any previous pods have been scheduled to allow for correct anti-affinity behavior ([#1855](https://github.com/oracle/weblogic-kubernetes-operator/pull/1855)).
 
-#### Operator 3.0.1
+### Operator 3.0.1
 
 * Resolved an issue where a Helm upgrade was incorrectly removing the operator's private key thereby disabling the operator's REST interface ([#1846](https://github.com/oracle/weblogic-kubernetes-operator/pull/1846)).
 
-### Known issues
+## Known issues
 
 | Issue | Description |
 | --- | --- |
