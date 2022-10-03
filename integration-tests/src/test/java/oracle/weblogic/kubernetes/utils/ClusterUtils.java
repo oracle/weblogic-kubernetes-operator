@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -29,6 +28,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -255,4 +255,43 @@ public class ClusterUtils {
     }
     return false;
   }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with kubectl.
+   *
+   * @param clusterRes name of the cluster resource to be scaled.
+   * @param namespace  namespace where the cluster is deployed.
+   * @param replica   the replica count.
+   */
+  public static void kubectlScaleCluster(String clusterRes, String namespace, int replica) {
+    getLogger().info("Scaling cluster resource {0} in namespace {1} using kubectl scale command", 
+          clusterRes, namespace);
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl scale  clusters/" + clusterRes 
+        + " --replicas=" + replica + " -n " + namespace);
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "kubectl scale command failed");
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with kubectl.
+   *
+   * @param cmd    custom kubectl including cluster resource to be executed.
+   * @param namespace  namespace where the cluster is deployed.
+   * @param expectSuccess  expected result of the kubectl command.
+   */
+  public static void kubectlScaleCluster(String cmd, String namespace, boolean expectSuccess) {
+    getLogger().info("Scaling cluster resource in namespace {1} using kubectl scale command", namespace);
+
+    String excommand = "kubectl scale cluster " + cmd + "-n " + namespace;
+    CommandParams params = new CommandParams().defaults();
+    params.command(excommand);
+    boolean result = Command.withParams(params).execute();
+    if (expectSuccess) {
+      assertTrue(result, "kubectl scale command should not fail");
+    } else {
+      assertFalse(result, "kubectl scale command should fail");
+    }
+  }
+
 }
