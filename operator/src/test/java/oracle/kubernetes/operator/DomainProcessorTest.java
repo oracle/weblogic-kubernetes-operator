@@ -2353,7 +2353,9 @@ class DomainProcessorTest {
   private void addClustersAndDispatchClusterWatch() {
     for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
       configureDomain(domain).configureCluster(originalInfo, clusterName);
-      testSupport.defineResources(createClusterResource(NS, clusterName));
+      ClusterResource cluster = createClusterResource(NS, clusterName);
+      testSupport.defineResources(cluster);
+      processor.registerCluster(cluster);
     }
     final Response<ClusterResource> item = new Response<>("ADDED", testSupport
         .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
