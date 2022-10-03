@@ -322,6 +322,8 @@ class ItInitContainers {
    */
   private void createAndVerifyMiiDomain(String domainNamespace, String domainUid, String testCaseName) {
 
+    String clusterResName = domainUid + "-" + clusterName;
+
     // create the domain CR
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
@@ -359,13 +361,13 @@ class ItInitContainers {
 
     if (!testCaseName.equals("clusters")) {
       // create cluster object
-      ClusterResource cluster = createClusterResource(
+      ClusterResource cluster = createClusterResource(clusterResName,
           clusterName, domainNamespace, replicaCount);
 
-      logger.info("Creating cluster {0} in namespace {1}", clusterName, domainNamespace);
+      logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domainNamespace);
       createClusterAndVerify(cluster);
       // set cluster references
-      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     }
 
     switch (testCaseName) {

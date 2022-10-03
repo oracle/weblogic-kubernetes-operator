@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -60,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * changing application target, changing dynamic cluster size and removing application target
  * in a running WebLogic domain.
  */
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part1")
 @IntegrationTest
@@ -352,9 +352,10 @@ class ItMiiDynamicUpdatePart1 {
   @DisplayName("Test modification to Dynamic cluster size parameters")
   void testMiiUpdateDynamicClusterSize() {
     String clusterName = "cluster-1";
+    String clusterResName = domainUid + "-" + clusterName;
     // Scale the cluster by updating the replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
-    boolean p1Success = scaleCluster(clusterName, helper.domainNamespace,5);
+    boolean p1Success = scaleCluster(clusterResName, helper.domainNamespace,5);
     assertTrue(p1Success,
         String.format("Patching replica to 5 failed for cluster %s in namespace %s",
             clusterName, helper.domainNamespace));
@@ -367,7 +368,7 @@ class ItMiiDynamicUpdatePart1 {
 
     // Make sure the cluster can be scaled to replica count 1 as MinDynamicClusterSize is set to 1
     logger.info("[Before Patching] updating the replica count to 1");
-    boolean p11Success = scaleCluster(clusterName, helper.domainNamespace, 1);
+    boolean p11Success = scaleCluster(clusterResName, helper.domainNamespace, 1);
     assertTrue(p11Success,
         String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, helper.domainNamespace));
 
@@ -378,7 +379,7 @@ class ItMiiDynamicUpdatePart1 {
 
     // Bring back the cluster to originally configured replica count
     logger.info("[Before Patching] updating the replica count to 1");
-    boolean p2Success = scaleCluster(clusterName, helper.domainNamespace, helper.replicaCount);
+    boolean p2Success = scaleCluster(clusterResName, helper.domainNamespace, helper.replicaCount);
     assertTrue(p2Success,
         String.format("replica patching to 1 failed for cluster %s in namespace %s",
             clusterName, helper.domainNamespace));
@@ -419,7 +420,7 @@ class ItMiiDynamicUpdatePart1 {
 
     // Scale the cluster using replica count 5, patch cluster should fail as max size is 4
     logger.info("[After Patching] updating the replica count to 5");
-    boolean p3Success = scaleCluster(clusterName, helper.domainNamespace, 5);
+    boolean p3Success = scaleCluster(clusterResName, helper.domainNamespace, 5);
     assertFalse(p3Success,
         String.format("replica patching to 5 should fail for domain %s in namespace %s",
             domainUid, helper.domainNamespace));
@@ -428,7 +429,7 @@ class ItMiiDynamicUpdatePart1 {
     // The client sends 300 messsage to a Uniform Distributed Queue.
     // Make sure the messages are distributed across the members evenly
     // and JMS connection is load balanced across all servers
-    testUntil(
+    testUntil(withLongRetryPolicy,
         runClientInsidePod(helper.adminServerPodName, helper.domainNamespace,
           "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "2", "true"),
         logger,
