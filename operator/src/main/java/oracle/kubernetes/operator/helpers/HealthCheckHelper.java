@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -77,9 +77,6 @@ public final class HealthCheckHelper {
       Operation.update,
       Operation.patch
   };
-
-  // default namespace or svc account name
-  private static final String DEFAULT_NAMESPACE = "default";
 
   static {
     clusterAccessChecks.put(Resource.NAMESPACES, glwOperations);
@@ -218,7 +215,9 @@ public final class HealthCheckHelper {
       CallBuilder cb = new CallBuilder();
       return createAndValidateKubernetesVersion(
           cb.executeSynchronousCallWithRetry(cb::readVersionCode,
-          TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
+              TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
+    } catch (IllegalStateException ise) {
+      throw ise;
     } catch (Throwable t) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);
       return KubernetesVersion.UNREADABLE;
@@ -235,6 +234,11 @@ public final class HealthCheckHelper {
           kubernetesVersion.asDisplayString());
     } else {
       LOGGER.info(MessageKeys.K8S_VERSION_CHECK, kubernetesVersion.asDisplayString());
+    }
+
+    if (kubernetesVersion.isTooHigh()) {
+      throw new IllegalStateException(LOGGER.formatMessage(MessageKeys.K8S_VERSION_TOO_HIGH,
+              KubernetesVersion.TOO_HIGH.asDisplayString(), kubernetesVersion.asDisplayString()));
     }
     return kubernetesVersion;
   }

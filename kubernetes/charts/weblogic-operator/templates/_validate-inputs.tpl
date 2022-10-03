@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.validateInputs" -}}
@@ -7,6 +7,10 @@
 {{- $ignore := include "utils.pushValidationContext" (list $scope "Release") -}}
 {{- $ignore := include "utils.verifyResourceName" (list $scope "Namespace" 63) -}}
 {{- $ignore := include "utils.popValidationContext" $scope -}}
+{{- if not (.APIVersions.Has "policy/v1beta1") }}
+{{-   $errorMsg := "Kubernetes version must be between 1.19 and 1.24." -}}
+{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{- end -}}
 {{- $ignore := include "utils.verifyString" (list $scope "serviceAccount") -}}
 {{- $ignore := include "utils.verifyK8SResource" (list $scope .serviceAccount "ServiceAccount" .Release.Namespace) -}}
 {{- $ignore := include "utils.verifyString" (list $scope "image") -}}

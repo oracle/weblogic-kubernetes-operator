@@ -14,20 +14,24 @@ import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.FailsWithMatcher.failsWith;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TOO_HIGH_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
 import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK;
 import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
 import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_TOO_LOW;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class VersionCheckTest {
@@ -62,8 +66,8 @@ class VersionCheckTest {
           Arguments.of(VERSION_TEST, "1", "21", "10", returnsVersion(1, 21), ignoring(K8S_VERSION_CHECK)),
           Arguments.of(VERSION_TEST, "1", "22", "5", returnsVersion(1, 22), ignoring(K8S_VERSION_CHECK)),
           Arguments.of(VERSION_TEST, "1", "23", "7", returnsVersion(1, 23), ignoring(K8S_VERSION_CHECK)),
-          Arguments.of(VERSION_TEST, "2", "7", "", returnsVersion(2, 7), ignoring(K8S_VERSION_CHECK)),
-          Arguments.of(LOG_MSG_TEST, "2", "", "", containsInfo(K8S_VERSION_CHECK), noIgnores())
+          Arguments.of(VERSION_TOO_HIGH_TEST, "1", "25", "", null, ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TOO_HIGH_TEST, "2", "7", "", null, ignoring(K8S_VERSION_CHECK))
         );
   }
 
@@ -134,6 +138,12 @@ class VersionCheckTest {
       void runTest(List<LogRecord> logRecords, Matcher matcher) {
         assertThat(HealthCheckHelper.performK8sVersionCheck(), matcher);
       }
+    },
+    VERSION_TOO_HIGH_TEST {
+      @Override
+      void runTest(List<LogRecord> logRecords, Matcher matcher) {
+        assertThat(HealthCheckHelper::performK8sVersionCheck, failsWith(IllegalStateException.class));
+      }
     };
 
     abstract void runTest(List<LogRecord> logRecords, Matcher matcher);
@@ -171,5 +181,43 @@ class VersionCheckTest {
     public void describeTo(Description description) {
       describe(description, expectedMajor, expectedMinor);
     }
+  }
+
+  @FunctionalInterface
+  public interface IThrowingRunnable<E extends Throwable> {
+    void run() throws E;
+  }
+
+  static class FailsWithMatcher<E extends Throwable> extends TypeSafeMatcher<IThrowingRunnable<E>> {
+    private final Matcher<? super E> matcher;
+
+    private FailsWithMatcher(final Matcher<? super E> matcher) {
+      this.matcher = matcher;
+    }
+
+    public static <E extends Throwable> Matcher<IThrowingRunnable<E>> failsWith(final Class<E> throwableType) {
+      return new FailsWithMatcher<>(instanceOf(throwableType));
+    }
+
+    public static <E extends Throwable> Matcher<IThrowingRunnable<E>> failsWith(
+            final Class<E> throwableType, final Matcher<? super E> throwableMatcher) {
+      return new FailsWithMatcher<>(allOf(instanceOf(throwableType), throwableMatcher));
+    }
+
+    @Override
+    protected boolean matchesSafely(final IThrowingRunnable<E> runnable) {
+      try {
+        runnable.run();
+        return false;
+      } catch (final Throwable ex) {
+        return matcher.matches(ex);
+      }
+    }
+
+    @Override
+    public void describeTo(final Description description) {
+      description.appendText("fails with ").appendDescriptionOf(matcher);
+    }
+
   }
 }
