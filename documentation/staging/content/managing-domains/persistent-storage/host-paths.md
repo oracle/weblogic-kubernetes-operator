@@ -7,7 +7,7 @@ description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim 
 
 This document show you how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim, which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
-#### Prerequisites
+## Prerequisites
 
 The following prerequisites must be fulfilled before proceeding with the creation of the volume:
 
@@ -15,7 +15,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 * Make sure that all the servers in the WebLogic domain are able to reach the storage location.
 * Make sure that the host directory that will be used, already exists and has the appropriate file permissions set.
 
-### Storage locations
+## Storage locations
 PersistentVolumes can point to different storage locations, for example NFS servers or a local directory path. For a list of available options, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
 **Note regarding HostPath**: In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster, a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
@@ -28,7 +28,7 @@ $ mkdir -m 777 -p /path/to/domain1PersistentVolume
 
 **Note regarding NFS**: In the current GA version, the Oracle Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.
 
-#### PersistentVolume GID annotation
+### PersistentVolume GID annotation
 
 The `HOST_PATH` directory permissions can be made more secure by using a Kubernetes annotation on the
 PersistentVolume that provides the group identifier (GID) which will be added to pods using the PersistentVolume.
@@ -63,13 +63,13 @@ $ sudo chgrp -R 6789 domains/
 $ sudo chgrp -R 6789 logs/
 ```
 
-### YAML files
+## YAML files
 
 Persistent volumes and claims are described in YAML files. For each PersistentVolume, you should create one PersistentVolume YAML file and one PersistentVolumeClaim YAML file. In the following example, you will find two YAML templates, one for the volume and one for the claim. As stated previously, they either can be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with `weblogic.domainUID=[domain name]`. This makes it easy to search for, and clean up resources associated with that particular domain.
 
 For sample YAML templates, refer to the [PersistentVolumes example]({{< relref "/samples/storage/_index.md" >}}).
 
-### Kubernetes resources
+## Kubernetes resources
 
 After you have written your YAML files, use them to create the PersistentVolume by creating Kubernetes resources using the `kubectl create -f` command:
 
@@ -80,7 +80,7 @@ $ kubectl create -f pv.yaml
 $ kubectl create -f pvc.yaml
 ```
 
-#### Verify the results
+### Verify the results
 
 To confirm that the PersistentVolume was created, use these commands:
 
@@ -91,16 +91,16 @@ $ kubectl describe pv <persistent volume name>
 $ kubectl describe pvc -n NAMESPACE <persistent volume claim name>
 ```
 
-### Common problems
+## Common problems
 
 This section provides details of common problems that might occur while running the script and how to resolve them.
 
-#### PersistentVolume provider not configured correctly
+### PersistentVolume provider not configured correctly
 
 Possibly the most common problem experienced during testing was the incorrect configuration of the PersistentVolume provider. The PersistentVolume must be accessible to all Kubernetes Nodes, and must be able to be mounted as Read/Write/Many. If this is not the case, the PersistentVolume creation will fail.
 
 The simplest case is where the `HOST_PATH` provider is used. This can be either with one Kubernetes Node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount). In this case, the path used for the PersistentVolume must have its permission bits set to 777.
 
-#### Further reading
+### Further reading
 
 * See the blog, [How to run WebLogic clusters on the Oracle Cloud Infrastructure Container Engine for Kubernetes](https://blogs.oracle.com/weblogicserver/how-to-run-weblogic-clusters-on-the-oracle-cloud-infrastructure-container-engine-for-kubernetes).

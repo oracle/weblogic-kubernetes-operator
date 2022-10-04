@@ -6,25 +6,9 @@ pre = "<b> </b>"
 description = "Use overrides to customize domains."
 +++
 
-#### Contents
+{{< table_of_contents >}}
 
-* [Overview](#overview)
-* [Prerequisites](#prerequisites)
-* [Typical overrides](#typical-overrides)
-* [Unsupported overrides](#unsupported-overrides)
-* [Overrides distribution](#overrides-distribution)
-* [Override template names and syntax](#override-template-names-and-syntax)
-  * [Override template names](#override-template-names)
-  * [Override template schemas](#override-template-schemas)
-  * [Override template macros](#override-template-macros)
-  * [Override template syntax special requirements](#override-template-syntax-special-requirements)
-  * [Override template samples](#override-template-samples)
-* [Step-by-step guide](#step-by-step-guide)
-* [Debugging](#debugging)
-* [Internal design flow](#internal-design-flow)
-
----
-### Overview
+## Overview
 
 {{% notice note %}}
 Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
@@ -34,7 +18,7 @@ Use configuration overrides (also called _situational configuration_) to customi
 
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site. Beginning with operator version 3.0.0, you can now modify configuration overrides for running WebLogic Server instances and have these new overrides take effect dynamically. There are [limitations](#unsupported-overrides) to the WebLogic configuration attributes that can be modified by overrides and only changes to dynamic configuration MBean attributes may be changed while a server is running. Other changes, specifically overrides to non-dynamic MBeans, must be applied when servers are starting or restarting.
 
-#### How do you specify overrides?
+### How do you specify overrides?
 
 * Make sure your domain home meets the prerequisites. See [Prerequisites](#prerequisites).
 * Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
@@ -53,7 +37,7 @@ You can use overrides to customize domains as they are moved from QA to producti
 
 For a detailed walk-through of these steps, see the [Step-by-step guide](#step-by-step-guide).
 
-#### How do overrides work during runtime?
+### How do overrides work during runtime?
 
 * Configuration overrides are processed during the operator's [introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}) phase.
 * Introspection automatically occurs when:
@@ -70,8 +54,7 @@ For a detailed walk-through of these steps, see the [Step-by-step guide](#step-b
 
 For a detailed walk-through of the runtime flow, see the [Internal design flow](#internal-design-flow).
 
----
-### Prerequisites
+## Prerequisites
 
 * Configuration overrides can be used in combination with Domain in Image and Domain in PV domains.
   For Model in Image domains (introduced in 3.0.0), use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
@@ -80,8 +63,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 
 * If you want to override a JDBC, JMS, or WLDF (diagnostics) module, then the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/diagnostics` directory, respectively. These are the default locations for these types of modules.
 
----
-### Typical overrides
+## Typical overrides
 
 Typical attributes for overrides include:
 
@@ -98,8 +80,7 @@ Typical attributes for overrides include:
 
 See [overrides distribution](#overrides-distribution) for a description of distributing new or changed configuration overrides to already running WebLogic Server instances.
 
----
-### Unsupported overrides
+## Unsupported overrides
 
 **IMPORTANT: The operator does not support customer-provided overrides in the following areas.**
 
@@ -131,18 +112,17 @@ Note that it's supported, even expected, to override network access point `publi
 
 The behavior when using an unsupported override is undefined.
 
-### Overrides distribution
+## Overrides distribution
 
 The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed]({{< relref "/managing-domains/domain-lifecycle/introspection/_index.md#distributing-changes-to-configuration-overrides" >}}) and applied to already running WebLogic Server instances.
 
 For [Domain in PV]({{< relref "/managing-domains/domain-lifecycle/restarting/_index.md#domain-in-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
 
----
-### Override template names and syntax
+## Override template names and syntax
 
 Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." Configuration overriding consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
 
-#### Override template names
+### Override template names
 
 The operator requires a different file name format for override templates than WebLogic's built-in configuration overrides feature.  It converts the names to the format required by the configuration overrides feature when it moves the templates to the domain home `optconfig` directory.  The following table describes the format:
 
@@ -155,7 +135,7 @@ The operator requires a different file name format for override templates than W
 
 A `MODULENAME` must correspond to the MBean name of a system resource defined in your original `config.xml` file. It's not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify 'skeleton' modules that can be overridden.
 
-#### Override template schemas
+### Override template schemas
 
 An override template must define the exact schemas required by the configuration overrides feature.  The schemas vary based on the file type you wish to override.
 
@@ -199,7 +179,7 @@ _`diagnostics-MODULENAME.xml`_
 </wldf:wldf-resource>
 ```
 
-#### Override template macros
+### Override template macros
 
 The operator supports embedding macros within override templates. This helps make your templates flexibly handle multiple use cases, such as specifying a different URL, user name, and password for a different deployment.
 
@@ -215,7 +195,7 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes Secr
 **SECURITY NOTE**: Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom overrides configuration file the operator places in the domain home does not expose passwords in plain-text.
 {{% /notice %}}
 
-#### Override template syntax special requirements
+### Override template syntax special requirements
 
 **Check each of the following items for best practices and to ensure custom overrides configuration takes effect:**
 
@@ -240,11 +220,11 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes Secr
 * Consider having your original configuration reference invalid user names, passwords, and URLs:
   * If your original (non-overridden) configuration references non-working user names, passwords, and URLS, then this helps guard against accidentally deploying a working configuration that's invalid for the intended environment. For example, if your base configuration references a working QA database, and there is some mistake in setting up overrides, then it's possible the running servers will connect to the QA database when you deploy to your production environment.
 
-#### Override template samples
+### Override template samples
 
 Here are some sample template override files.
 
-#### Overriding `config.xml`
+### Overriding `config.xml`
 
 The following `config.xml` override file demonstrates:
 
@@ -273,7 +253,7 @@ The following `config.xml` override file demonstrates:
 </d:domain>
 ```
 
-#### Overriding a data source module
+### Overriding a data source module
 
 The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` by using `secret macros`.  The generated configuration overrides that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The Secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
 
@@ -303,8 +283,7 @@ Best practices for data source modules and their overrides:
 </jdbc:jdbc-data-source>
 ```
 
----
-### Step-by-step guide
+## Step-by-step guide
 
 * Make sure your domain home meets the prerequisites. See [Prerequisites](#prerequisites).
 * Make sure your overrides are supported. See [Typical overrides](#typical-overrides), [Overrides distribution](#overrides-distribution), and [Unsupported overrides](#unsupported-overrides).
@@ -368,8 +347,7 @@ spec:
   [ ... ]
 ```
 
----
-### Debugging
+## Debugging
 
 Use this information to verify that your overrides are taking effect or if there are errors.
 
@@ -468,9 +446,7 @@ __Debugging steps:__
   -Dweblogic.debug.DebugSituationalConfigDumpXml=true
   ```
 
-
----
-### Internal design flow
+## Internal design flow
 
 * The operator generates the final configuration overrides, which include the merging of operator-generated overrides and the processing of any customer-provided configuration overrides templates and Secrets, during its introspection phase.
 * The operator creates a Kubernetes Job for introspection named `DOMAIN_UID-introspector`.

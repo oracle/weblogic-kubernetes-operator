@@ -5,18 +5,9 @@ weight: 9
 description: "Use the operator's REST services."
 ---
 
-#### Contents
+{{< table_of_contents >}}
 
-- [Introduction](#introduction)
-- [Configure the operator's external REST HTTPS interface](#configure-the-operators-external-rest-https-interface)
-- [Updating operator external certificates](#updating-operator-external-certificates)
-- [Use the operator's REST services](#use-the-operators-rest-services)
-   - [How to add your certificate to your operating system trust store](#how-to-add-your-certificate-to-your-operating-system-trust-store)
-   - [Sample SSL certificate and private key for the REST interface](#sample-ssl-certificate-and-private-key-for-the-rest-interface)
-- [Sample operator REST client script](#sample-operator-rest-client-script)
-
-
-#### Introduction
+## Introduction
 
 The operator provides an optional REST API for advanced users.
 You can use the API as an alternative method for getting a list of WebLogic domains and clusters (for example, instead of calling `kubectl get domains`),
@@ -25,7 +16,7 @@ You also can use the REST API as an alternative approach for initiating scaling 
 (instead of using the Kubernetes API or command line to alter a domain resource's `replicas` values).
 Swagger documentation for the REST API is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 
-#### Configure the operator's external REST HTTPS interface
+## Configure the operator's external REST HTTPS interface
 
 The operator can expose an external REST HTTPS interface which can be accessed from outside the Kubernetes cluster. As with the operator's internal REST interface, the external REST interface requires an SSL/TLS certificate and private key that the operator will use as the identity of the external REST interface.
 
@@ -38,7 +29,7 @@ To enable the external REST interface, configure these values in a custom config
 
 **Note**: A node port is a security risk because the port may be publicly exposed to the Internet in some environments. If you need external access to the REST port, then consider alternatives, such as providing access through your load balancer or using Kubernetes port forwarding.
 
-#### Updating operator external certificates
+## Updating operator external certificates
 
 If the operator needs to update the external certificate and key currently
 being used or was installed without an external REST API SSL/TLS identity,
@@ -75,7 +66,7 @@ $ helm -n weblogic-operator-ns upgrade weblogic-operator weblogic-operator/weblo
 * [Sample to create external certificate and key]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})
 
 
-#### Use the operator's REST services
+## Use the operator's REST services
 
 You can access most of the REST services using `GET`, for example:
 
@@ -109,7 +100,7 @@ Before using the [Sample operator REST client script](#sample-operator-rest-clie
   you have installed (though newer versions of macOS come with newer versions of `curl`). Oracle
   recommends `curl 7.63.0 (x86_64-apple-darwin17.7.0) libcurl/7.63.0 SecureTransport zlib/1.2.11` or later. If you are unsure, then check with `curl --version`.
 
-##### How to add your certificate to your operating system trust store
+### How to add your certificate to your operating system trust store
 
 For macOS, find the certificate in Finder, and double-click on it.  This will add it to your keystore and open Keychain
 Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the **Trust** drop-down menu and set the value of **When using this certificate** to **Always Trust**, then close the detail window. Enter your password when prompted.
@@ -133,7 +124,7 @@ In the final command, the file name `e242d2da.0` should be the output of the pre
 
 For other operating systems, consult your operating system's documentation (or Google).
 
-##### Sample SSL certificate and private key for the REST interface
+### Sample SSL certificate and private key for the REST interface
 
 For testing purposes, the WebLogic Kubernetes Operator project provides a [sample script]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})
 that generates a self-signed certificate and private key for the operator external REST interface.
@@ -149,9 +140,7 @@ A certificate signed by a commercial certificate authority is more widely accept
 should contain valid host names, expiration dates, and key constraints.
 {{% /notice %}}
 
-
-
-#### Sample operator REST client script
+## Sample operator REST client script
 
 Here is a small, sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
 operator's REST services:

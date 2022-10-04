@@ -5,20 +5,9 @@ weight: 1
 description: "Important considerations for managing WebLogic domains in Kubernetes."
 ---
 
-#### Contents
+{{< table_of_contents >}}
 
-* [Important considerations for WebLogic domains in Kubernetes](#important-considerations-for-weblogic-domains-in-kubernetes)
-* [Meet Kubernetes resource name restrictions](#meet-kubernetes-resource-name-restrictions)
-* [Creating and managing WebLogic domains](#creating-and-managing-weblogic-domains)
-* [Modifying domain configurations](#modifying-domain-configurations)
-* [About the Domain resource](#about-the-domain-resource)
-* [Managing lifecycle operations](#managing-lifecycle-operations)
-* [Scaling clusters](#scaling-clusters)
-* [About domain events](#about-domain-events)
-* [Accessing and monitoring domains](#accessing-and-monitoring-domains)
-* [Logging](#logging)
-
-#### Important considerations for WebLogic domains in Kubernetes
+## Important considerations for WebLogic domains in Kubernetes
 
 Be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
@@ -89,7 +78,7 @@ The following features are **not** certified or supported in this release:
 
 For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
 
-### Meet Kubernetes resource name restrictions
+## Meet Kubernetes resource name restrictions
 
 Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed in the names of these resources, and also limits the length of these names to no more than 63 characters.
 
@@ -107,7 +96,7 @@ The operator puts in place certain validation checks and conversions to prevent 
 
 When a domain resource or WebLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource's status.
 
-### Creating and managing WebLogic domains
+## Creating and managing WebLogic domains
 
 You can locate a WebLogic domain either in a persistent volume (Domain in PV), inside the container only (Model in Image), or in an image (Domain in Image).
 For an explanation of each, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
@@ -118,7 +107,7 @@ with a specific configuration or applications deployed, then you can create the 
 manually to deploy your domain.  This process is documented in [this
 sample]({{< relref "/samples/domains/manually-create-domain/_index.md" >}}).
 
-### Modifying domain configurations
+## Modifying domain configurations
 
 You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
 
@@ -132,16 +121,16 @@ and URLs that are stored in a secret. However, note the scenarios for which conf
 
 For Model in Image, you use [Runtime Updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
 
-### About the Domain resource
+## About the Domain resource
 
 For more information, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
-### Managing lifecycle operations
+## Managing lifecycle operations
 
 You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
 See [Starting and stopping]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) and [Restarting]({{< relref "/managing-domains/domain-lifecycle/restarting.md" >}}) servers.
 
-### Scaling clusters
+## Scaling clusters
 
 The operator lets you initiate scaling of clusters in various ways:
 
@@ -150,17 +139,17 @@ The operator lets you initiate scaling of clusters in various ways:
 * [Using WLDF policies]({{< relref "/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
 * [Using a Prometheus action]({{< relref "/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})
 
-### About domain events
+## About domain events
 
 The operator generates Kubernetes events at key points during domain processing.
 For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
 
-### Accessing and monitoring domains
+## Accessing and monitoring domains
 
 To access the domain using WLST, console, T3, or a load balancer,  or to export Prometheus-compatible metrics,
 see [Access and monitor domains]({{< relref "/managing-domains/accessing-the-domain/" >}}).
 
-### Logging
+## Logging
 
 To tune log file location and rotation, see [Log Files]({{< relref "/managing-domains/accessing-the-domain/logs.md" >}}).
 

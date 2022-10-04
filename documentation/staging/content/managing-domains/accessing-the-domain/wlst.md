@@ -14,7 +14,7 @@ To give WLST access to a domain running in Kubernetes, you can:
 - [Use a `NodePort`](#use-a-nodeport)
 - [Use port forwarding](#use-port-forwarding)
 
-### Use `kubectl exec`
+## Use `kubectl exec`
 
 You can use the `kubectl exec` command to start an interactive WLST session
 within a pod or to remotely run a WLST script on a pod.
@@ -53,7 +53,7 @@ Exiting WebLogic Scripting Tool.
 $
 ```
 
-### Use a `NodePort`
+## Use a `NodePort`
 
 {{% notice tip %}}
 If you are setting up WLST access through a `NodePort` and your external port
@@ -159,7 +159,7 @@ wls:/base_domain/serverConfig/> exit()
 Exiting WebLogic Scripting Tool.
 ```
 
-#### Use port forwarding
+### Use port forwarding
 
 One way to provide external access to WLST
 is to forward network traffic from a local port on your local machine

@@ -6,13 +6,9 @@ description: "Run an ephemeral database in Kubernetes that is suitable for sampl
 
 ---
 
-### Contents
+{{< table_of_contents >}}
 
- - [Overview](#overview)
- - [Oracle database in Kubernetes](#oracle-database-in-kubernetes)
- - [MySQL database in Kubernetes](#mysql-database-in-kubernetes)
-
-### Overview
+## Overview
 
 This section describes how to run an
 ephemeral [Oracle database](#oracle-database-in-kubernetes)
@@ -28,7 +24,7 @@ using approaches suitable for sample or basic testing purposes.
 - The Oracle Database images are supported for non-production use _only_.
   For more details, see My Oracle Support note: Oracle Support for Database Running on Docker [Doc ID 2216342.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2216342.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
 
-### Oracle database in Kubernetes
+## Oracle database in Kubernetes
 
 The following example shows how to set up an ephemeral Oracle database with the following attributes:
 
@@ -118,7 +114,7 @@ The following example shows how to set up an ephemeral Oracle database with the 
    - Call `stop-db-service.sh` to shutdown and cleanup the `oracle-db` deployment.
    - To troubleshoot, use the `kubectl describe pod DB_POD_NAME` and `kubectl logs DB_POD_NAME` commands on the database pod.
 
-### MySQL database in Kubernetes
+## MySQL database in Kubernetes
 
 The following example shows how to set up an ephemeral MySQL database with the following attributes:
 

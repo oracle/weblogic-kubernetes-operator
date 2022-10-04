@@ -5,18 +5,9 @@ weight: 8
 description: "Sample for using the operator to set up a WLS cluster on the Azure Kubernetes Service."
 ---
 
+{{< table_of_contents >}}
 
-### Contents
-
-- [Introduction](#introduction)
-    - [Azure Kubernetes Service cluster](#azure-kubernetes-service-cluster)
-    - [Domain home source types](#domain-home-source-types)
-- [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): Running the WebLogic cluster on AKS with domain home on PV
-- [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): Running the WebLogic cluster on AKS with domain model in image
-- [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}})
-
-
-### Introduction
+## Introduction
 
 This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relref "/_index.md" >}}) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image, you use the operator to perform WLS administrative operations.
 
@@ -26,12 +17,12 @@ offering which automates the provisioning of
 AKS cluster, AKS resources, the Azure Container Registry (ACR),
  WebLogic Kubernetes Operator, and WebLogic Server images.
 
-#### Azure Kubernetes Service cluster
+### Azure Kubernetes Service cluster
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
 
 
-#### Domain home source types
+### Domain home source types
 
 This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
@@ -50,7 +41,7 @@ This sample demonstrates running the WebLogic cluster on AKS using two domain ho
 {{% notice tip %}} Stop and Start an Azure Kubernetes Service (AKS) cluster using Azure CLI, as described [in the azure docs](https://docs.microsoft.com/en-us/azure/aks/start-stop-cluster). This allows you to optimize costs during your AKS cluster's idle time. Don't pay for running development clusters unless they are actively being used.  You can pick up objects and cluster state right where you were left off.
 {{% /notice %}}
 
-### References
+## References
 
 For references to the relevant user documentation, see:
 - [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) user documentation

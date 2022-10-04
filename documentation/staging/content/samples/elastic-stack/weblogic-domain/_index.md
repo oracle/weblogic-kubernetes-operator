@@ -5,8 +5,6 @@ weight: 2
 description: "Sample for using Fluentd for WebLogic domain and operator's logs."
 ---
 
-
-
 This document describes to how to configure a WebLogic domain to use Fluentd to send log information to Elasticsearch.
 
 Here's the general mechanism for how this works:
@@ -16,7 +14,7 @@ Here's the general mechanism for how this works:
 * `fluentd` tails the domain logs files and exports them to Elasticsearch.
 * A ConfigMap contains the filter and format rules for exporting log records.
 
-#### Sample code
+## Sample code
 
 The samples in this document assume that an existing domain is being edited.  However, you can make all the changes to the domain YAML file before the domain is created.
 
@@ -34,7 +32,7 @@ The sample Elasticsearch configuration is:
     elasticsearchpassword: changeme
 ```
 
-#### Configure log files to use a volume
+## Configure log files to use a volume
 The domain log files must be written to a volume that can be shared between the `weblogic-server` and `fluentd` containers.  The following elements are required to accomplish this:
 
 * `logHome` must be a path that can be shared between containers.
@@ -59,7 +57,7 @@ spec:
       name: weblogic-domain-storage-volume
 ```
 
-#### Create Elasticsearch secrets
+## Create Elasticsearch secrets
 The `fluentd` container will be configured to look for Elasticsearch parameters in a Kubernetes secret.  Create a secret with following keys:
 
 Example:
@@ -71,7 +69,7 @@ $ kubectl -n bob create secret generic fluentd-credential
   --from-literal elasticsearchpassword=xyz
 ```
 
-#### Specify `fluentdSpecification` in the domain resource
+## Specify `fluentdSpecification` in the domain resource
 
 ```text
   spec:
@@ -193,7 +191,7 @@ sample-domain1-introspector-kndk7    0/2     Terminating 0          63s
 
 ```
 
-#### Environment variables in the `fluentd` container
+## Environment variables in the `fluentd` container
 
 The operator sets up the `fluentd` container with the following environment variables, they are referenced by the `fluentd` configuration:
 
@@ -244,7 +242,7 @@ The operator sets up the `fluentd` container with the following environment vari
 
 ```
 
-#### Fluentd configuration
+## Fluentd configuration
 The operator creates a ConfigMap named `webogic-fluentd-configmap` in the namespace of the domain.  The ConfigMap contains the parsing rules and Elasticsearch configuration.
 
 Here's an explanation of some elements defined in the ConfigMap:
@@ -341,8 +339,7 @@ The following is the default `fluentd` configuration if `fluentdConfiguration` i
 
 ```
 
-
-#### Verify logs are exported to Elasticsearch
+## Verify logs are exported to Elasticsearch
 
 After the Administration Server and Managed Server pods have started with all the changes described previously, the logs will be sent to Elasticsearch.
 

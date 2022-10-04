@@ -23,7 +23,7 @@ Here are two typical scenarios for supplying domain images to such deployments:
 
 - [Option 2](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace): Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
 
-#### Option 1: Store images in a central registry and set up image pull secrets on each domain resource
+### Option 1: Store images in a central registry and set up image pull secrets on each domain resource
 
 The most commonly used option is to store the image in a central registry
 and set up image pull secrets for a domain resource:
@@ -63,7 +63,7 @@ For more information about creating Kubernetes Secrets for accessing
 the registry, see the Kubernetes documentation,
 [Pull an image from a private registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
-#### Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
+### Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
 
 An option for accessing an image that is stored in a private registry
 is to set up the Kubernetes `ServiceAccount` in the namespace running the

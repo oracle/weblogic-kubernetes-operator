@@ -6,18 +6,9 @@ weight: 6
 description: "Configure or dynamically change the namespaces that a running operator manages."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
-- [Overview](#overview)
-- [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)
-- [Ensuring the operator has permission to manage a namespace](#ensuring-the-operator-has-permission-to-manage-a-namespace)
-- [Check the namespaces that a running operator manages](#check-the-namespaces-that-a-running-operator-manages)
-- [Altering namespaces for a running operator](#altering-namespaces-for-a-running-operator)
-  - [Add a Kubernetes namespace to a running operator](#add-a-kubernetes-namespace-to-a-running-operator)
-  - [Delete a Kubernetes namespace from a running operator](#delete-a-kubernetes-namespace-from-a-running-operator)
-  - [Recreate a previously deleted Kubernetes namespace with a running operator](#recreate-a-previously-deleted-kubernetes-namespace-with-a-running-operator)
-
-### Overview
+## Overview
 
 An operator deployment must be configured to manage Kubernetes namespaces,
 and a number of Kubernetes resources
@@ -47,7 +38,7 @@ you must ensure that the namespaces managed by these operators do not overlap.
 _At most, a namespace can be managed by one operator._
 {{% /notice %}}
 
-### Choose a domain namespace selection strategy
+## Choose a domain namespace selection strategy
 
 An operator can manage domain resources in multiple namespaces,
 including its own namespace,
@@ -85,7 +76,7 @@ see [WebLogic domain management]({{<relref "/managing-operators/using-helm#weblo
 - For more information about common namespace management issues,
   see [Common mistakes and solutions]({{<relref "/managing-operators/common-mistakes.md">}}).
 
-### Ensuring the operator has permission to manage a namespace
+## Ensuring the operator has permission to manage a namespace
 
 If your operator Helm `enableClusterRoleBinding` configuration value is `true`, then
 the operator has permission to manage any namespace and can automatically
@@ -116,7 +107,7 @@ For a detailed description of the operator's security related resources,
 see the operator's role-based access control (RBAC) requirements
 which are documented [here]({{< relref "/managing-operators/rbac.md" >}}).
 
-### Check the namespaces that a running operator manages
+## Check the namespaces that a running operator manages
 
 Prior to version 3.1.0, the operator supported specifying the namespaces that it would manage only through a list.
 Now, the operator supports a list of namespaces, a label selector, or a regular expression matching namespace names.
@@ -181,11 +172,11 @@ and any command-line tool that can process the regular expression, such as `grep
 $ kubectl get ns -o go-template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' | grep "^weblogic"
 ```
 
-### Altering namespaces for a running operator
+## Altering namespaces for a running operator
 
 This section describes the steps for adding, deleting, or recreated namespaces that are managed by a running operator.
 
-#### Add a Kubernetes namespace to a running operator
+### Add a Kubernetes namespace to a running operator
 
 The following are steps for adding namespaces that are managed by a running operator.
 
@@ -237,7 +228,7 @@ the operator's Helm release.
 See [Ensuring the operator has permission to manage a namespace](#ensuring-the-operator-has-permission-to-manage-a-namespace).
 {{% /notice %}}
 
-####  Delete a Kubernetes namespace from a running operator
+### Delete a Kubernetes namespace from a running operator
 
 The following are steps for deleting namespaces that are managed by a running operator.
 
@@ -265,7 +256,7 @@ For operators configured to select managed namespaces through the use of a label
 you  need to delete the namespace. For the label selector option, you can also adjust the labels on the namespace
 so that the namespace no longer matches the selector.
 
-#### Recreate a previously deleted Kubernetes namespace with a running operator
+### Recreate a previously deleted Kubernetes namespace with a running operator
 
 The following are steps for recreating previously deleted namespaces that are managed by a running operator.
 

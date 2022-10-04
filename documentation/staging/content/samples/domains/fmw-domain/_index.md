@@ -6,14 +6,13 @@ description: "Sample for creating an FMW Infrastructure domain home on an existi
 PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
-
 The sample scripts demonstrate the creation of an FMW Infrastructure domain home on an
 existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts
 also generate the domain resource YAML file, which can then be used to start the Kubernetes
 artifacts of the corresponding domain. Optionally, the scripts start up the domain,
 and WebLogic Server pods and services.
 
-#### Prerequisites
+## Prerequisites
 
 Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
@@ -41,7 +40,7 @@ The following prerequisites must be met prior to running the create domain scrip
   * Configure access to your database. For details, see [here]({{< relref "/managing-domains/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
-#### Use the script to create a domain
+## Use the script to create a domain
 
 The sample for creating domains is in this directory:
 
@@ -116,7 +115,8 @@ The default domain created by the script has the following characteristics:
 
 The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
 
-#### Configuration parameters
+## Configuration parameters
+
 The following parameters can be provided in the inputs file.
 
 | Parameter | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Default                                                                                         |
@@ -168,7 +168,7 @@ The sample demonstrates how to create a WebLogic domain home and associated Kube
 that has one cluster only. In addition, the sample provides the capability for users to supply their own scripts
 to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
-#### Verify the results
+## Verify the results
 
 The create script will verify that the domain was created, and will report failure if there was any error.
 However, it may be desirable to manually verify the domain, even if just to gain familiarity with the
@@ -177,7 +177,7 @@ various Kubernetes objects that were created by the script.
 Note that the following example results use the `default` Kubernetes Namespace. If you are using a different
 namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
-##### Generated YAML files with the default inputs
+### Generated YAML files with the default inputs
 
 The content of the generated `domain.yaml`:
 
@@ -254,7 +254,7 @@ spec:
   # replicas: 1
 ```
 
-#### Verify the domain
+## Verify the domain
 
 To confirm that the domain was created, use this command:
 
@@ -432,7 +432,7 @@ no servers available yet, or perhaps only the Administration Server but no Manag
 The operator will start up the Administration Server first and wait for it to become ready
 before starting the Managed Servers.
 
-#### Verify the pods
+## Verify the pods
 
 Use the following command to see the pods running the servers:
 
@@ -454,7 +454,7 @@ fmw-domain-managed-server3               1/1     Running   0          15h
 fmw-domain-managed-server4               1/1     Running   0          15h
 ```
 
-#### Verify the services
+## Verify the services
 
 Use the following command to see the services for the domain:
 
@@ -477,7 +477,7 @@ fmw-domain-managed-server3          ClusterIP   None             <none>        8
 fmw-domain-managed-server4          ClusterIP   None             <none>        8001/TCP          15h
 ```
 
-#### Delete the generated domain home
+## Delete the generated domain home
 
 Sometimes in production, but most likely in testing environments, you might want to remove the domain
 home that is generated using the `create-domain.sh` script. Do this by running the generated

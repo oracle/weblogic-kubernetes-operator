@@ -5,58 +5,9 @@ weight: 5
 description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
-- [Introduction](#introduction)
-- [Useful Helm operations](#useful-helm-operations)
-- [Operator Helm configuration values](#operator-helm-configuration-values)
-  - [Overall operator information](#overall-operator-information)
-    - [`serviceAccount`](#serviceaccount)
-    - [`kubernetesPlatform`](#kubernetesplatform)
-    - [`enableClusterRoleBinding`](#enableclusterrolebinding)
-  - [Creating the operator pod](#creating-the-operator-pod)
-    - [`image`](#image)
-    - [`imagePullPolicy`](#imagepullpolicy)
-    - [`imagePullSecrets`](#imagepullsecrets)
-    - [`annotations`](#annotations)
-    - [`labels`](#labels)
-    - [`nodeSelector`](#nodeselector)
-    - [`affinity`](#affinity)
-    - [`runAsUser`](#runasuser)
-  - [WebLogic domain conversion webhook](#weblogic-domain-conversion-webhook)
-    - [`webhookOnly`](#webhookonly)
-    - [`operatorOnly`](#operatoronly)
-    - [`preserveWebhook`](#preservewebhook)
-  - [WebLogic domain management](#weblogic-domain-management)
-    - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
-    - [`domainNamespaces`](#domainnamespaces)
-    - [`domainNamespaceLabelSelector`](#domainnamespacelabelselector)
-    - [`domainNamespaceRegExp`](#domainnamespaceregexp)
-    - [`domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`](#domainpresencefailureretrymaxcount-and-domainpresencefailureretryseconds)
-    - [`introspectorJobNameSuffix` and `externalServiceNameSuffix`](#introspectorjobnamesuffix-and-externalservicenamesuffix)
-    - [`clusterSizePaddingValidationEnabled`](#clustersizepaddingvalidationenabled)
-    - [`istioLocalhostBindingsEnabled`](#istiolocalhostbindingsenabled)
-  - [Elastic Stack integration](#elastic-stack-integration)
-    - [`elkIntegrationEnabled`](#elkintegrationenabled)
-    - [`logStashImage`](#logstashimage)
-    - [`elasticSearchHost`](#elasticsearchhost)
-    - [`elasticSearchPort`](#elasticsearchport)
-    - [`elasticSearchProtocol`](#elasticsearchprotocol)
-    - [`createLogStashConfigMap`](#createlogstashconfigmap)
-  - [REST interface configuration](#rest-interface-configuration)
-    - [`externalRestEnabled`](#externalrestenabled)
-    - [`externalRestHttpsPort`](#externalresthttpsport)
-    - [`externalRestIdentitySecret`](#externalrestidentitysecret)
-    - [`externalOperatorCert` ***(Deprecated)***](#externaloperatorcert-deprecated)
-    - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-deprecated)
-    - [`tokenReviewAuthentication`](#tokenreviewauthentication)
-  - [Debugging options](#debugging-options)
-    - [`javaLoggingLevel`](#javalogginglevel)
-    - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
-    - [`internalDebugHttpPort`](#internaldebughttpport)
-    - [`externalDebugHttpPort`](#externaldebughttpport)
-
-### Introduction
+## Introduction
 
 The operator requires Helm for its installation and tuning,
 and this document is a reference guide for useful Helm commands and operator configuration values.
@@ -67,7 +18,7 @@ For information about operator Helm chart access, installation, and upgrade,
 see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})
 and [Installation and upgrade]({{< relref "/managing-operators/installation.md" >}}).
 
-### Useful Helm operations
+## Useful Helm operations
 
 - You can find out the configuration values that the operator Helm chart supports,
   as well as the default values, using the `helm show` command.
@@ -131,13 +82,13 @@ and [Installation and upgrade]({{< relref "/managing-operators/installation.md" 
     consult the [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) advice.
 
 
-### Operator Helm configuration values
+## Operator Helm configuration values
 
 This section describes the details of the operator Helm chart's available configuration values.
 
-#### Overall operator information
+### Overall operator information
 
-##### `serviceAccount`
+#### `serviceAccount`
 Specifies the name of the service account in the operator's namespace that the operator will use to make requests to the Kubernetes API server. You are responsible for creating the service account.
 
 The `helm install` or `helm upgrade` command with a non-existing service account results in a Helm chart validation error.
@@ -149,7 +100,7 @@ Example:
 serviceAccount: "weblogic-operator"
 ```
 
-##### `kubernetesPlatform`
+#### `kubernetesPlatform`
 Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift; the setting should be left unset for other platforms.
 
 When set to `OpenShift`, the operator:
@@ -163,7 +114,7 @@ Example:
 kubernetesPlatform: OpenShift
 ```
 
-##### `enableClusterRoleBinding`
+#### `enableClusterRoleBinding`
 Specifies whether the roles necessary for the operator to manage domains
 will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
 
@@ -184,9 +135,9 @@ that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
 See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-#### Creating the operator pod
+### Creating the operator pod
 
-##### `image`
+#### `image`
 Specifies the container image containing the operator code.
 
 Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`
@@ -198,7 +149,7 @@ Example:
 image:  "ghcr.io/oracle/weblogic-kubernetes-operator:some-tag"
 ```
 
-##### `imagePullPolicy`
+#### `imagePullPolicy`
 Specifies the image pull policy for the operator container image.
 
 Defaults to `IfNotPresent`.
@@ -212,13 +163,12 @@ Example:
 image:  "Always"
 ```
 
-##### `imagePullSecrets`
+#### `imagePullSecrets`
 Contains an optional list of Kubernetes Secrets, in the operator's namespace, that are needed to access the registry containing the operator image.
 For example, you might need an operator `imagePullSecret` if you are using an operator image from a private registry that requires authentication to pull.
 You are responsible for creating the secret. If no secrets are required, then omit this property. For more information on specifying the registry
 credentials when the operator image is stored in a private registry, see
 [Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
-
 
 Examples:
 - Using YAML:
@@ -231,7 +181,7 @@ Examples:
   --set "imagePullSecrets[0].name=my-image-pull-secret"
   ```
 
-##### `annotations`
+#### `annotations`
 Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.
 
 Example:
@@ -246,7 +196,7 @@ You may also specify annotations [using the `--set` parameter to the Helm instal
 --set annotations.stage=production
 ```
 
-##### `labels`
+#### `labels`
 Specifies a set of key-value labels that will be added to each pod running the operator. The Helm chart will automatically add any required labels, so the customer is not required to define those here. If no customer defined labels are required, then omit this property.
 
 Example:
@@ -261,7 +211,7 @@ You may also specify labels [using the `--set` parameter to the Helm install com
 --set labels."sidecar\.istio\.io/inject"=false
 ```
 
-##### `nodeSelector`
+#### `nodeSelector`
 Allows you to run the operator Pod on a Node whose labels match the specified `nodeSelector` labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. For more details, see [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation. This is not required if the operator Pod can run on any Node.
 
 Example:
@@ -270,7 +220,7 @@ nodeSelector:
   disktype: ssd
 ```
 
-##### `affinity`
+#### `affinity`
 Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `affinity` provides advanced capabilities to limit Pod placement on specific Nodes. For more details, see  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
 
 Example:
@@ -294,7 +244,7 @@ affinity:
           values:
           - another-node-label-value
 ```
-##### `runAsUser`
+#### `runAsUser`
 Specifies the UID to run the operator and conversion webhook container processes. If not specified, it defaults to the user specified in the operator's container image.
 
 Example:
@@ -302,37 +252,37 @@ Example:
 runAsUser: 1000
 ```
 
-#### WebLogic domain conversion webhook
+### WebLogic domain conversion webhook
 
 The WebLogic domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
 
 **Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
 
-##### `webhookOnly`
+#### `webhookOnly`
 Specifies whether only the conversion webhook should be installed during the `helm install` and that the operator installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
 If set to `true`, the `helm install` will install _only_ the conversion webhook (and not the operator).
 
 Defaults to `false`.
 
-##### `operatorOnly`
+#### `operatorOnly`
 Specifies whether only the operator should be installed during the `helm install` and that the conversion webhook installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
 If set to `true`, the `helm install` will install _only_ the operator (and not the conversion webhook).
 
 Defaults to `false`.
 
-##### `preserveWebhook`
+#### `preserveWebhook`
 Specifies whether the existing conversion webhook deployment should be preserved (not removed) when the release is uninstalled using `helm uninstall`. By default, the `helm uninstall` removes both the webhook and the operator installation.
 If set to `true` in the `helm install` command, then the `helm uninstall` command will not remove the webhook installation. Ignored when `webhookOnly` is set to `true` in the `helm install` command.
 
 Defaults to `false`.
 
-#### WebLogic domain management
+### WebLogic domain management
 
 The settings in this section determine the namespaces that an operator
 monitors for domain resources. For usage,
 also see [Namespace management]({{< relref "/managing-operators/namespace-management.md" >}}).
 
-##### `domainNamespaceSelectionStrategy`
+#### `domainNamespaceSelectionStrategy`
 
 Specifies how the operator will select the set of namespaces that it will manage.
 Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
@@ -357,7 +307,7 @@ for example, using a `LabelSelector` where the namespace has a matching label. S
 [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).  
 {{% /notice %}}
 
-##### `domainNamespaces`
+#### `domainNamespaces`
 
 Specifies a list of namespaces that the operator manages. The names must be lowercase. You are responsible for creating these namespaces.
 The operator will only manage domains found in these namespaces.
@@ -390,7 +340,7 @@ Examples:
 - For more information,
 see [Namespace Management]({{<relref "/managing-operators/namespace-management.md">}}).
 
-##### `domainNamespaceLabelSelector`
+#### `domainNamespaceLabelSelector`
 Specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors) that will be used when searching for namespaces that the operator will manage.
 The operator will only manage domains found in namespaces matching this selector.
 This value is required if `domainNamespaceSelectionStrategy` is `LabelSelector` and ignored otherwise.
@@ -418,7 +368,7 @@ Examples:
   the operator's Helm release.
   See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-##### `domainNamespaceRegExp`
+#### `domainNamespaceRegExp`
 Specifies a regular expression that will be used when searching for namespaces that the operator will manage.
 The operator will only manage domains found in namespaces matching this regular expression.
 This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ignored otherwise.
@@ -440,8 +390,7 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
   the operator's Helm release.
   See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-
-##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
+#### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
 Specify the number of introspector job retries for a domain and the interval between these retries in seconds.
 
 Defaults to five retries and 10 seconds between each retry.
@@ -465,26 +414,26 @@ Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect
 To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
-##### `clusterSizePaddingValidationEnabled`
+#### `clusterSizePaddingValidationEnabled`
 Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer Managed Server names as a result of expanding a cluster's size in WebLogic domain configurations.
 
 Defaults to `true`.
 
 If `clusterSizePaddingValidationEnabed` is set to `true`, two additional characters will be reserved if the configured cluster's size is between one and nine, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
 
-##### `istioLocalhostBindingsEnabled`
+#### `istioLocalhostBindingsEnabled`
 
 Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
 
 For more information, see [Configuring the domain resource]({{< relref "/managing-domains/accessing-the-domain/istio/istio#configuring-the-domain-resource" >}}) in Istio Support.
 
-#### Elastic Stack integration
+### Elastic Stack integration
 
 The following settings are related to integrating the Elastic Stack with the operator pod.
 
 For example usage, see the operator [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) integration sample.
 
-##### `elkIntegrationEnabled`
+#### `elkIntegrationEnabled`
 Specifies whether or not Elastic Stack integration is enabled.
 
 Defaults to `false`.
@@ -494,7 +443,7 @@ Example:
 elkIntegrationEnabled:  true
 ```
 
-##### `logStashImage`
+#### `logStashImage`
 Specifies the container image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
 Defaults to `logstash:6.8.23`.
@@ -504,7 +453,7 @@ Example:
 logStashImage:  "docker.elastic.co/logstash/logstash:6.8.23"
 ```
 
-##### `elasticSearchHost`
+#### `elasticSearchHost`
 Specifies the hostname where Elasticsearch is running. This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
 Defaults to `elasticsearch.default.svc.cluster.local`.
@@ -514,7 +463,7 @@ Example:
 elasticSearchHost: "elasticsearch2.default.svc.cluster.local"
 ```
 
-##### `elasticSearchPort`
+#### `elasticSearchPort`
 Specifies the port number where Elasticsearch is running. This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
 Defaults to `9200`.
@@ -524,7 +473,7 @@ Example:
 elasticSearchPort: 9201
 ```
 
-##### `elasticSearchProtocol`
+#### `elasticSearchProtocol`
 Specifies the protocol to use for communication with Elasticsearch. This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
 Defaults to `http`.
@@ -535,8 +484,7 @@ Example:
 elasticSearchProtocol: https
 ```
 
-
-##### `createLogStashConfigMap`
+#### `createLogStashConfigMap`
 Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`.
 The ConfigMap contains the Logstash pipeline configuration file `logstash.conf` and the Logstash settings file `logstash.yml` for the Logstash container running in the operator pod.
 If set to `true`, then a ConfigMap will be created during `helm install` using the `logstash.conf` and `logstash.yml` files in the `kubernetes/samples/charts/weblogic-operator` directory.
@@ -550,13 +498,13 @@ Example:
 createLogStashConfigMap:  false
 ```
 
-#### REST interface configuration
+### REST interface configuration
 
 The REST interface configuration options are advanced settings for configuring the operator's external REST interface.
 
 For usage information, see the operator [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
 
-##### `externalRestEnabled`
+#### `externalRestEnabled`
 Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster using a node port.
 
 See also `externalRestHttpsPort` for customizing the port number.
@@ -572,7 +520,7 @@ externalRestEnabled: true
 
 **Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
-##### `externalRestHttpsPort`
+#### `externalRestHttpsPort`
 Specifies the node port that should be allocated for the external operator REST HTTPS interface.
 
 Only used when `externalRestEnabled` is `true`, otherwise ignored.
@@ -586,7 +534,7 @@ externalRestHttpsPort: 32009
 
 **Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
-##### `externalRestIdentitySecret`
+#### `externalRestIdentitySecret`
 Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. To create the Kubernetes `tls` secret, you can use the following command:
 
 ```shell
@@ -612,7 +560,7 @@ Example:
 externalRestIdentitySecret: weblogic-operator-external-rest-identity
 ```
 
-##### `externalOperatorCert` ***(Deprecated)***
+#### `externalOperatorCert` ***(Deprecated)***
 {{% notice info %}}
 Use **`externalRestIdentitySecret`** instead
 {{% /notice %}}
@@ -634,7 +582,7 @@ Example:
 externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...
 ```
 
-##### `externalOperatorKey` ***(Deprecated)***
+#### `externalOperatorKey` ***(Deprecated)***
 {{% notice info %}}
 Use **`externalRestIdentitySecret`** instead
 {{% /notice %}}
@@ -655,7 +603,7 @@ Example:
 ```yaml
 externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
 ```
-##### `tokenReviewAuthentication`
+#### `tokenReviewAuthentication`
 If set to `true`, `tokenReviewAuthentication` specifies whether the the operator's REST API should:
    * Use Kubernetes token review API for authenticating users.
    * Use Kubernetes subject access review API for authorizing a user's operation (`get`, `list`,
@@ -671,9 +619,9 @@ If set to `true`, `tokenReviewAuthentication` specifies whether the the operator
  ```yaml
  tokenReviewAuthentication: true
  ```
-#### Debugging options
+### Debugging options
 
-##### `javaLoggingLevel`
+#### `javaLoggingLevel`
 
 Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
 
@@ -686,7 +634,7 @@ javaLoggingLevel:  "FINE"
 
 **Note**: Please consult [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) before changing this setting.
 
-##### `remoteDebugNodePortEnabled`
+#### `remoteDebugNodePortEnabled`
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.
 
 Defaults to `false`.
@@ -696,7 +644,7 @@ Example:
 remoteDebugNodePortEnabled:  true
 ```
 
-##### `internalDebugHttpPort`
+#### `internalDebugHttpPort`
 
 Specifies the port number inside the Kubernetes cluster for the operator's Java remote debug server.
 
@@ -709,7 +657,7 @@ Example:
 internalDebugHttpPort:  30888
 ```
 
-##### `externalDebugHttpPort`
+#### `externalDebugHttpPort`
 Specifies the node port that should be allocated for the Kubernetes cluster for the operator's Java remote debug server.
 
 This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise, it is ignored.

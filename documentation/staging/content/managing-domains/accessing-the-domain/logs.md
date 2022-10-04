@@ -6,13 +6,9 @@ weight: 9
 description: "Configure WebLogic Server and domain log settings."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
- - [Overview](#overview)
- - [WebLogic Server log file location](#weblogic-server-log-file-location)
- - [WebLogic Server log file rotation and size](#weblogic-server-log-file-rotation-and-size)
-
-### Overview
+## Overview
 
 The operator can automatically override WebLogic Server, domain, and introspector `.log` and `.out` locations.
 This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
@@ -32,7 +28,7 @@ Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernete
 For more information, see [Kubernetes Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
 {{% /notice %}}
 
-### WebLogic Server log file location
+## WebLogic Server log file location
 
 When `logHomeEnabled` is `false`,
 WebLogic Server log files are placed in a subdirectory `<domain.spec.domainHome>/servers/<server name>/logs`.
@@ -65,7 +61,7 @@ drwxr-xr-x 1 docker root    108 Apr 25 13:49 servers
 
 ```
 
-### WebLogic Server log file rotation and size
+## WebLogic Server log file rotation and size
 
 If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
 you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic
@@ -115,5 +111,5 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 set logging attributes using system properties that start with `weblogic.log.`
 and that end with the corresponding Log MBean attribute name.
 
-  For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
+For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
 

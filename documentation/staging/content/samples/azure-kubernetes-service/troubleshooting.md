@@ -5,19 +5,9 @@ weight: 3
 description: "Troubleshooting."
 ---
 
+{{< table_of_contents >}}
 
-- [Access Administration Console](#fail-to-access-administration-console): Possible causes for Administration Console inaccessibility
-- [Domain debugging](#domain-debugging)
-- [Pod Error](#get-pod-error-details): How to get details of the pod error
-- [WebLogic Image Tool failure](#weblogic-image-tool-failure)
-- [WebLogic Kubernetes Operator installation failure](#weblogic-kubernetes-operator-installation-failure)   
-   - [System pods are pending](#the-aks-cluster-system-pods-are-pending)
-   - [WebLogic Kubernetes Operator ErrImagePull](#weblogic-kubernetes-operator-errimagepull)
-- [WSL2 bad timestamp](#wsl2-bad-timestamp)
-- [Cannot attach ACR due to not being Owner of subscription](#cannot-attach-acr-due-to-not-being-owner-of-subscription)
-- [Virtual Machine size is not supported](#virtual-machine-size-is-not-supported)
-
-#### Get pod error details
+## Get pod error details
 
 You may get the following message while creating the WebLogic domain: `"the job status is not Completed!"`
 
@@ -50,7 +40,7 @@ Warning  FailedMount  119s                 kubelet, aks-nodepool1-58449474-vmss0
 Warning  FailedMount  114s (x9 over 4m2s)  kubelet, aks-nodepool1-58449474-vmss000001  MountVolume.SetUp failed for volume "wls-azurefile" : Couldn't get secret default/azure-secrea
 ```
 
-#### Fail to access Administration Console
+## Fail to access Administration Console
 
 Here are some common reasons for this failure, along with some tips to help you investigate.
 
@@ -133,11 +123,11 @@ Status:
 ```
 {{% /expand %}}
 
-#### Domain debugging
+## Domain debugging
 
 For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
-#### WSL2 bad timestamp
+## WSL2 bad timestamp
 
 If you are running with WSL2, you may run into the [bad timestamp issue](https://github.com/microsoft/WSL/issues/4245), which blocks Azure CLI. You may see the following error:
 
@@ -166,7 +156,7 @@ $ data
 Fri Nov 27 13:07:14 CST 2020
 ```
 
-#### Timeout for the operator installation
+## Timeout for the operator installation
 
 You may run into a timeout while installing the operator and get the following error:
 
@@ -204,7 +194,7 @@ $ helm install weblogic-operator weblogic-operator/weblogic-operator \
    --wait
 ```
 
-#### WebLogic Image Tool failure
+## WebLogic Image Tool failure
 
 If your version of WIT is older than 1.9.8, you will get an error running `./imagetool/bin/imagetool.sh` if the Docker buildkit is enabled.
 
@@ -223,7 +213,7 @@ $ export DOCKER_BUILDKIT=0
 $ export COMPOSE_DOCKER_CLI_BUILD=0
 ```
 
-#### WebLogic Kubernetes Operator installation failure
+## WebLogic Kubernetes Operator installation failure
 
 Currently, we meet two cases that block the operator installation:
 
@@ -232,7 +222,7 @@ Currently, we meet two cases that block the operator installation:
 
 Follow these steps to dig into the error.
 
-##### The AKS cluster system pods are pending
+### The AKS cluster system pods are pending
 
 If system pods in the AKS cluster are pending, it will block the operator installation.
 
@@ -288,7 +278,7 @@ kube-system                   omsagent-rs-787ff54d9d-w7tp5                1/1   
 kube-system                   tunnelfront-794845c84b-v9f98                1/1     Running   0          3h44m
 ```
 
-##### WebLogic Kubernetes Operator ErrImagePull
+### WebLogic Kubernetes Operator ErrImagePull
 
 If you got an error of **ErrImagePull** from pod status, use `docker pull` to check the operator image. If an error occurs, you can switch to a version that is greater than `3.1.1`.
 
@@ -315,7 +305,7 @@ Status: Downloaded newer image for ghcr.io/oracle/weblogic-kubernetes-operator:3
 ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
 ```
 
-#### Cannot attach ACR due to not being Owner of subscription
+## Cannot attach ACR due to not being Owner of subscription
 
 If you're unable to create an ACR and you're using a service principal, you can use manual Role Assignments to grant access to the ACR as described in [Azure Container Registry authentication with service principals](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal).
 
@@ -344,7 +334,7 @@ $ az role assignment create --assignee-object-id <your-objectId-from-above> --sc
 
 After you do this, re-try the command that gave the error.
 
-#### Virtual Machine size is not supported
+## Virtual Machine size is not supported
 
 If you run into the following error when creating the AKS cluster, please use an available VM size in the region.
 

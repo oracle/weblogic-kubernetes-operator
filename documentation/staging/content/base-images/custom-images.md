@@ -5,15 +5,9 @@ weight: 2
 description: "Create custom WebLogic images using the WebLogic Image Tool (WIT)."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
-- [Use the WebLogic Image Tool to create custom images](#use-the-weblogic-image-tool-to-create-custom-images)
-- [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
-  - [Create a custom base image](#create-a-custom-base-image)
-  - [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image)
-  - [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image)
-
-### Use the WebLogic Image Tool to create custom images
+## Use the WebLogic Image Tool to create custom images
 
 You can use the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT) to build your own WebLogic Server or
 Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
@@ -112,7 +106,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
      - Inspects images created with the WebLogic Image Tool.
      - See [Inspect images]({{< relref "/base-images/ocr-images#inspect-images" >}}).
 
-### Create a custom image with patches applied
+## Create a custom image with patches applied
 
 All domain home source types require a base image which contains JDK and WebLogic Server binaries.
 This base image is usually [obtained directly]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}) from the Oracle Container Registry,
@@ -126,7 +120,7 @@ Or, if you are using the Model in Image domain home source type _without_ auxili
 then you will additionally need to use the base image
 to [create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
 
-#### Create a custom base image
+### Create a custom base image
 
 {{% notice tip %}}
 This section describes using the WebLogic Image Tool (WIT) [`create`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) command
@@ -251,7 +245,7 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
 
    You can also [inspect]({{< relref "/base-images/ocr-images#inspect-images" >}}) the contents of the image.
 
-#### Create a custom image with your domain inside the image
+### Create a custom image with your domain inside the image
 
 {{% notice warning %}}
 Oracle strongly recommends storing Domain in Image images in a private registry.
@@ -509,7 +503,7 @@ to create the domain home in Domain in Image.
   These files can all change substantially in new versions of the operator
   and must all be copied, preserved, and customized to suite your particular use case.
 
-#### Create a custom image with your model inside the image
+### Create a custom image with your model inside the image
 
 In the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}})
 documentation, you will see a reference to a "base" or `--fromImage` image. You should use an image with

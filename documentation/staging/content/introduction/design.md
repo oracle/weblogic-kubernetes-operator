@@ -3,7 +3,7 @@ title: "Design philosophy"
 date: 2019-02-23T20:51:51-05:00
 draft: false
 weight: 2
-description: "Define the expected roles of an administrator, the operator, and domain resources."
+description: "Define the expected roles of an administrator, the operator, and domain and cluster resources."
 ---
 
 The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.

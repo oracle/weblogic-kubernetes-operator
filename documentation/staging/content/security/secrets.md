@@ -5,15 +5,9 @@ weight: 6
 description: "Kubernetes Secrets for the operator."
 ---
 
-#### Contents
-* [Domain credentials secret](#domain-credentials-secret)
-* [Domain image pull secret](#domain-image-pull-secret)
-* [Domain configuration override or runtime update secrets](#domain-configuration-override-or-runtime-update-secrets)
-* [Operator image pull secret](#operator-image-pull-secret)
-* [Operator external REST interface secret](#operator-external-rest-interface-secret)
-* [Operator internal REST interface secret](#operator-internal-rest-interface-secret)
+{{< table_of_contents >}}
 
-#### Domain credentials secret
+## Domain credentials secret
 
 The credentials for the WebLogic domain are kept in a Kubernetes `Secret` where the name of
 the secret is specified using `webLogicCredentialsSecret` in the WebLogic `Domain` resource.
@@ -72,7 +66,7 @@ password:  8 bytes
 username:  8 bytes
 ```
 
-#### Domain image pull secret
+## Domain image pull secret
 
 The WebLogic domain that the operator manages can have images that are protected
 in the registry. The `imagePullSecrets` setting on the `Domain` can be used to specify the
@@ -82,7 +76,7 @@ Kubernetes `Secret` that holds the registry credentials.
 For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
 {{% /notice %}}
 
-#### Domain configuration override or runtime update secrets
+## Domain configuration override or runtime update secrets
 
 The operator supports embedding macros within configuration override templates
 and Model in Image model files that reference Kubernetes Secrets.
@@ -97,7 +91,7 @@ and
 [Runtime updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md">}}).
 {{% /notice %}}
 
-#### Operator image pull secret
+## Operator image pull secret
 
 The Helm chart for installing the operator has an `imagePullSecrets` option to specify the
 image pull secret used for the operator's image when using a private registry;
@@ -108,7 +102,7 @@ For more information, see
 [Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
 {{% /notice %}}
 
-#### Operator external REST interface secret
+## Operator external REST interface secret
 
 The operator can expose an external REST HTTPS interface which can be
 accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
@@ -118,7 +112,7 @@ is used to hold the certificates and private key.
 For more information, see [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
 {{% /notice %}}
 
-#### Operator internal REST interface secret
+## Operator internal REST interface secret
 
 The operator exposes an internal REST HTTPS interface with a self-signed certificate.
 The certificate is kept in a Kubernetes `ConfigMap` with the name `weblogic-operator-cm` using the key `internalOperatorCert`.

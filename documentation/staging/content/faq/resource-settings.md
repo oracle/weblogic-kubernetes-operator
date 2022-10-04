@@ -6,22 +6,9 @@ weight: 13
 description: "Tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain YAML file."
 ---
 
-#### Contents
+{{< table_of_contents >}}
 
- - [Introduction](#introduction)
- - [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource)
- - [Determining Pod Quality Of Service](#determining-pod-quality-of-service)
- - [Java heap size and memory resource considerations](#java-heap-size-and-memory-resource-considerations)
-   - [Importance of setting heap size and memory resources](#importance-of-setting-heap-size-and-memory-resources)
-   - [Default heap sizes](#default-heap-sizes)
-   - [Configuring heap size](#configuring-heap-size)
- - [CPU resource considerations](#cpu-resource-considerations)
- - [Operator sample heap and resource configuration](#operator-sample-heap-and-resource-configuration)
- - [Configuring CPU affinity](#configuring-cpu-affinity)
- - [Measuring JVM heap, Pod CPU, and Pod memory](#measuring-jvm-heap-pod-cpu-and-pod-memory)
- - [References](#references)
-
-#### Introduction
+## Introduction
 
 The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned
 where the optimal values depend on your workload, applications, and the Kubernetes environment.
@@ -63,7 +50,7 @@ Additionally, resource requests and limits determine a Pod's quality of service.
 
 This FAQ discusses tuning these parameters so WebLogic Server instances run efficiently.
 
-#### Setting resource requests and limits in a Domain resource
+## Setting resource requests and limits in a Domain or Cluster resource
 
 You can set Kubernetes memory and CPU requests and limits in a
 [Domain YAML file]({{< relref "/managing-domains/domain-resource" >}})
@@ -101,7 +88,7 @@ Memory can be expressed in various units, where one `Mi` is one IEC unit mega-by
 
 See also [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/), [Assign Memory Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource) and [Assign CPU Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource) in the Kubernetes documentation.
 
-#### Determining Pod Quality Of Service
+## Determining Pod Quality Of Service
 
 A Pod's Quality of Service (QoS) is based on whether it's configured with resource requests and limits:
 
@@ -119,13 +106,13 @@ For most use cases, Oracle recommends configuring WebLogic Pods with memory and 
 In later versions of Kubernetes, it is possible to fine tune scheduling and eviction policies using [Pod Priority Preemption](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/) in combination with the `serverPod.priorityClassName` Domain field. Note that Kubernetes already ships with two PriorityClasses: `system-cluster-critical` and `system-node-critical`. These are common classes and are used to [ensure that critical components are always scheduled first](https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/).
 {{% /notice %}}
 
-#### Java heap size and memory resource considerations
+## Java heap size and memory resource considerations
 
 {{% notice note %}}
 Oracle recommends configuring Java heap sizes for WebLogic JVMs instead of relying on the defaults.
 {{% /notice %}}
 
-##### Importance of setting heap size and memory resources
+### Importance of setting heap size and memory resources
 
 It's extremely important to set correct heap sizes, memory requests, and memory limits for WebLogic JVMs and Pods.
 
@@ -139,7 +126,7 @@ Oracle recommends setting minimum and maximum heap (or heap percentages) and at 
 If resource requests and resource limits are set too high, then your Pods may not be scheduled due to a lack of Node resources. It will unnecessarily use up CPU shared resources that could be used by other Pods, or may prevent other Pods from running.
 {{% /notice %}}
 
-##### Default heap sizes
+### Default heap sizes
 
 With the latest Java versions, Java 8 update 191 and later, or Java 11, if you don't configure a heap size (no `-Xms` or `-Xms`), the default heap size is dynamically determined:
 - If you configure the memory limit for a container, then the JVM default maximum heap size will be 25% (1/4th) of container memory limit and the default minimum heap size will be 1.56% (1/64th) of the limit value.
@@ -150,7 +137,7 @@ With the latest Java versions, Java 8 update 191 and later, or Java 11, if you d
 
   In this case, the default JVM heap settings can have undesirable behavior, including using unnecessary amounts of memory to the point where it might affect other Pods that run on the same Node.
 
-##### Configuring heap size
+### Configuring heap size
 
 If you specify Pod memory limits, Oracle recommends configuring WebLogic Server heap sizes as a percentage. The JVM will interpret the percentage as a fraction of the limit. This is done using the JVM `-XX:InitialRAMPercentage` and `-XX:MaxRAMPercentage` options in the `USER_MEM_ARGS` [Domain environment variable]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).  For example:
 
@@ -170,7 +157,7 @@ Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES`
 
 In some cases, you might only want to configure memory resource requests but not configure memory resource limits. In such scenarios, you can use the traditional fixed heap size settings (`-Xms` and `-Xmx`) in your WebLogic Server `USER_MEM_ARGS` instead of the percentage settings (`-XX:InitialRAMPercentage` and `-XX:MaxRAMPercentage`).
 
-#### CPU resource considerations
+## CPU resource considerations
 
 It's important to set both a CPU request and a limit for WebLogic Server Pods. This ensures that all WebLogic Server Pods have enough CPU resources, and, as discussed earlier, if the request and limit are set to the same value, then they get a `guaranteed` QoS. A `guaranteed` QoS ensures that the Pods are handled with a higher priority during scheduling and as such, are the least likely to be evicted.
 
@@ -200,7 +187,7 @@ Events:
   Warning  FailedScheduling  16s (x3 over 26s)  default-scheduler  0/2 nodes are available: 2 Insufficient cpu.
 ```
 
-#### Operator sample heap and resource configuration
+## Operator sample heap and resource configuration
 
 The operator samples configure non-default minimum and maximum heap sizes for WebLogic Server JVMs of at least 256MB and 512MB respectively. You can edit a sample's template or Domain YAML file `resources.env` `USER_MEM_ARGS` to have different values. See [Configuring heap size](#configuring-heap-size).
 
@@ -208,9 +195,9 @@ Similarly, the operator samples configure CPU and memory resource requests to at
 
 There's no memory or CPU limit configured by default in samples and so the default QoS for sample WebLogic Server Pod's is `burstable`.
 
-If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
+If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain or Cluster resource](#setting-resource-requests-and-limits-in-a-domain-or-cluster-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
 
-#### Configuring CPU affinity
+## Configuring CPU affinity
 
 A Kubernetes hosted WebLogic Server may exhibit high lock contention in comparison to an on-premises deployment. This lock contention may be due to a lack of CPU cache affinity or scheduling latency when workloads move between different CPU cores.  
 
@@ -221,10 +208,12 @@ In a Kubernetes deployment, similar cache affinity can be achieved by doing the 
 - Configuring the `kubelet` CPU manager policy to be `static` (the default is `none`). See [Control CPU Management Policies on the Node](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies).
 Note that some Kubernetes environments may not allow changing the CPU management policy.
 
-#### Measuring JVM heap, Pod CPU, and Pod memory
+## Measuring JVM heap, Pod CPU, and Pod memory
+
 You can monitor JVM heap, Pod CPU, and Pod memory using Prometheus and Grafana. Also, see [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/) in the Kubernetes documentation.
 
-#### References
+## References
+
 1. [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) in the Kubernetes documentation.
 1. [Assign Memory Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource) in the Kubernetes documentation.
 1. [Assign CPU Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/) in the Kubernetes documentation.

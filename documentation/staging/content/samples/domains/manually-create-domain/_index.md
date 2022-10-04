@@ -5,7 +5,6 @@ weight: 1
 description: "Sample for creating the domain custom resource manually."
 ---
 
-
 In some circumstances you may wish to manually create your domain custom resource.  If you have created your own
 Container image containing your domain and the specific patches that it requires, then this approach will probably
 be the most suitable for your needs.

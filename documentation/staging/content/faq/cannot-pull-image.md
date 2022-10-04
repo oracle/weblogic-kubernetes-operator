@@ -56,7 +56,7 @@ If the image is available in the remote registry and it is public, that is it do
 require authentication, then Kubernetes will pull the image to the local container image
 store and start the container.
 
-#### Images that require authentication
+### Images that require authentication
 
 If the remote container registry requires authentication, then you will need to provide
 the authentication details in a Kubernetes `docker-registry` secret and tell Kubernetes
@@ -126,7 +126,7 @@ remote container registries or if your images require different authentication c
 For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
 {{% /notice %}}
 
-#### Pushing the image to a repository
+### Pushing the image to a repository
 
 If you have an image in your local repository that you would like to copy to
 a remote repository, then the Docker steps are:
@@ -148,7 +148,7 @@ $ docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
 $ docker push some.registry.com/owner/domain1:1.0
 ```
 
-#### Manually copying the image to your worker nodes
+### Manually copying the image to your worker nodes
 
 If you are not able to use a remote container registry, for example if your Kubernetes cluster is
 in a secure network with no external access, then you can manually copy the container images to the
@@ -167,7 +167,7 @@ on each node:
 $ docker load < domain1.tar
 ```
 
-#### Restart pods to clear the error
+### Restart pods to clear the error
 
 After you have ensured that the images are accessible on all worker nodes, you may need to restart
 the pods so that Kubernetes will attempt to pull the images again.   You can do this by

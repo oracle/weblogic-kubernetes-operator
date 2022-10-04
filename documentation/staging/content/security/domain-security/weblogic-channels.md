@@ -5,7 +5,7 @@ weight: 2
 description: "Remote access security."
 ---
 
-#### WebLogic T3 and administrative channels
+## WebLogic T3 and administrative channels
 
 {{% notice warning %}}
 Oracle recommends _not_ exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster
@@ -34,7 +34,7 @@ from the Bastion host to connect to the Kubernetes cluster
 Also, if you need to use cross-domain T3 access
 between clouds, data centers, and such, consider a private VPN.
 
-#### WebLogic HTTP channels
+## WebLogic HTTP channels
 
 When providing remote access to HTTP using a load balancer,
 port forwarding, `NodePorts`, or similar,
@@ -55,7 +55,7 @@ and you perform the additional steps that may be necessary
 to further secure access, as described
 in [WebLogic T3 and administrative channels](#weblogic-t3-and-administrative-channels).
 
-#### Limit use of Kubernetes NodePorts
+## Limit use of Kubernetes NodePorts
 
 Although Kubernetes `NodePorts` are good for use in demos and getting-started guides,
 they are typically not suited for production systems for multiple reasons, including:
@@ -66,7 +66,7 @@ they are typically not suited for production systems for multiple reasons, inclu
 - They cannot expose standard, low-numbered ports like 80 and 443 (or even 8080 and 8443).
 - Some Kubernetes cloud environments cannot expose usable `NodePorts` because their Kubernetes clusters run on a private network that cannot be reached by external clients.
 
-#### General advice
+## General advice
 
 1. _Set up administration ports_: Configure an administration port on WebLogic, or an administrative channel, to prevent
    all other channels from accepting administration-privileged traffic
@@ -84,7 +84,7 @@ they are typically not suited for production systems for multiple reasons, inclu
    (often SSL is setup between the caller and the load balancer, and plain-text
    traffic flows internally from the load balancer to WebLogic).
 
-#### See also
+## See also
 
 - [External WebLogic clients]({{< relref "/managing-domains/accessing-the-domain/external-clients.md" >}})
 - [Remote Console, Administration Console, WLST, and Port Forwarding access]({{< relref "/managing-domains/accessing-the-domain/_index.md" >}})

@@ -4,8 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 1
 ---
 
-
-### Prerequisites for all domain types
+## Prerequisites for all domain types
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
@@ -187,25 +186,24 @@ weight: 1
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
-### Additional prerequisites for JRF domains
+## Additional prerequisites for JRF domains
 
 > __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}).
 
-#### JRF Prerequisites Contents
+### JRF Prerequisites Contents
 
  - [Introduction to JRF setups](#introduction-to-jrf-setups)
  - [Set up and initialize an infrastructure database](#set-up-and-initialize-an-infrastructure-database)
  - [Increase introspection job timeout](#increase-introspection-job-timeout)
  - [Important considerations for RCU model attributes, Domain fields, and secrets](#important-considerations-for-rcu-model-attributes-domain-fields-and-secrets)
 
-##### Introduction to JRF setups
+#### Introduction to JRF setups
 
 > __NOTE__: The requirements in this section are in addition to [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
 A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. You must perform all these steps _before_ you create your domain.
 
-
-##### Set up and initialize an infrastructure database
+#### Set up and initialize an infrastructure database
 
 A JRF domain requires an infrastructure database and requires initializing this database with a schema and a set of tables for each different domain. The following example shows how to set up a database and use the RCU tool to create the infrastructure schemas for two JRF domains. The database is set up with the following attributes:
 
@@ -304,11 +302,11 @@ A JRF domain requires an infrastructure database and requires initializing this 
      you set up when you created the RCU schema.
 
 
-##### Increase introspection job timeout
+#### Increase introspection job timeout
 
 The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your Domain to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the Domain YAML files that are provided in `/tmp/mii-sample/domain-resources` already set this value.
 
-##### Important considerations for RCU model attributes, Domain fields, and secrets
+#### Important considerations for RCU model attributes, Domain fields, and secrets
 
 To allow Model in Image to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your Domain before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
 
@@ -322,7 +320,7 @@ For example, in this sample:
 
   - JRF image models have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
-##### Important considerations for reusing or sharing OPSS tables
+#### Important considerations for reusing or sharing OPSS tables
 
 {{% notice warning %}}
 We do not recommend that users share OPSS tables.  Extreme caution is required when sharing OPSS tables between domains.

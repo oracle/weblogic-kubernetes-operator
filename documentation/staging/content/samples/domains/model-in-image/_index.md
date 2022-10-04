@@ -5,28 +5,9 @@ weight: 4
 description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that the operator expands into a full domain home during runtime."
 ---
 
+{{< table_of_contents >}}
 
-### Contents
-
-   - [Introduction](#introduction)
-     - [Model in Image domain types (WLS, JRF, and Restricted JRF)](#model-in-image-domain-types-wls-jrf-and-restricted-jrf)
-     - [Use cases](#use-cases)
-     - [Sample directory structure](#sample-directory-structure)
-     - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
-   - [References](#references)
-   - Sample steps
-     - [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
-     - [Additional prerequisites for JRF domains]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
-     - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
-     - [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
-     - [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Deploying an additional domain
-     - [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
-     - [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
-     - [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}})
-
-
-### Introduction
-
+## Introduction
 
 This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
@@ -34,13 +15,13 @@ WDT models are a convenient and simple alternative to WebLogic Scripting Tool (W
 
 For more information on Model in Image, see the [Model in Image user guide]({{< relref "/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
-#### Model in Image domain types (WLS, JRF, and Restricted JRF)
+### Model in Image domain types (WLS, JRF, and Restricted JRF)
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, and a `RestrictedJRF` domain. This sample demonstrates the `WLS` and `JRF` types.
 
 The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
 
-#### Use cases
+### Use cases
 
 This sample demonstrates five Model in Image use cases:
 
@@ -126,7 +107,7 @@ Location | Description |
 `utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
 `utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
 
-#### Ensuring your Kubernetes cluster can access images
+### Ensuring your Kubernetes cluster can access images
 
 If you run the sample from a machine that is remote to one or more of your Kubernetes cluster worker nodes, then you need to ensure that the images you create can be accessed from any node in the cluster.
 
@@ -142,7 +123,7 @@ Alternatively, if you have access to the local image cache on each worker node i
 
 For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
-### References
+## References
 
 For references to the relevant user documentation, see:
  - [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation

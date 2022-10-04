@@ -4,21 +4,9 @@ date: 2019-02-23T17:32:31-05:00
 weight: 2
 ---
 
-#### Contents
+{{< table_of_contents >}}
 
- - [Overview](#overview)
- - Image creation
-    - [Image creation - Introduction](#image-creation---introduction)
-    - [Understanding your first archive](#understanding-your-first-archive)
-    - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-    - [Staging model files](#staging-model-files)
-    - [Creating the image with WIT](#creating-the-image-with-wit)
- - Deploy resources
-    - [Deploy resources - Introduction](#deploy-resources---introduction)
-    - [Secrets](#secrets)
-    - [Domain resource](#domain-resource)
-
-#### Overview
+## Overview
 
 In this use case, you set up an initial WebLogic domain. This involves:
 
@@ -35,7 +23,7 @@ Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/d
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
-#### Image creation - Introduction
+## Image creation - Introduction
 
 The goal of the initial use case 'image creation' is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
@@ -48,7 +36,7 @@ Here are the steps for creating the image `model-in-image:WLS-v1`:
 - [Staging model files](#staging-model-files)
 - [Creating the image with WIT](#creating-the-image-with-wit)
 
-#### Understanding your first archive
+## Understanding your first archive
 
 The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
@@ -155,7 +143,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
 The application displays important details about the WebLogic Server instance that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it's at version `v1`; you will update this to `v2` in a later use case that demonstrates upgrading the application.
 
-#### Staging a ZIP file of the archive
+## Staging a ZIP file of the archive
 
 When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-images/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
@@ -180,7 +168,7 @@ $ cd /tmp/mii-sample/archives/archive-v1
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
-#### Staging model files
+## Staging model files
 
 In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-images/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
@@ -318,8 +306,7 @@ The model files:
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
-
-#### Creating the image with WIT
+## Creating the image with WIT
 
 **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
 
@@ -372,7 +359,7 @@ Also, if you run the `docker images` command, then you will see an image named `
 
 **NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-#### Deploy resources - Introduction
+## Deploy resources - Introduction
 
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
 
@@ -385,7 +372,7 @@ In this section, you will deploy the new image to namespace `sample-domain1-ns`,
   - Deploy a Domain YAML file that references the new image.
   - Wait for the domain's Pods to start and reach their ready state.
 
-#### Secrets
+## Secrets
 
 First, create the secrets needed by both `WLS` and `JRF` type model domains. In this case, you have two secrets.
 
@@ -483,8 +470,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{% /expand %}}
 
-
-#### Domain resource
+## Domain resource
 
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
@@ -921,7 +907,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
 If you see an error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
-#### Invoke the web application
+## Invoke the web application
 
 Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik ingress controller's NodePort.
 

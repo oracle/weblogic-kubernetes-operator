@@ -5,11 +5,11 @@ draft: false
 weight: 1
 description: "Answers to commonly asked newcomer questions."
 ---
-#### What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation?
+## What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation?
 
 It's all [here]({{< relref "/_index.md" >}}).
 
-#### How much does it cost?
+## How much does it cost?
 
 The WebLogic Kubernetes Operator (the “operator”) is open source and free, licensed under the Universal Permissive license (UPL), Version 1.0.
 
@@ -17,25 +17,27 @@ WebLogic Server is not open source. Licensing is required for each running WebLo
 
 For more information, see [Pricing and licensing]({{< relref "/introduction/platforms/environments#pricing-and-licensing" >}}).
 
-#### How can I get help?
+## How can I get help?
 
 You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
 To learn how, see [Get help]({{< relref "/introduction/get-help.md" >}}).
 
-#### WebLogic Server Certification
+## WebLogic Server Certification
 
 **Q:** Which Java EE profiles are supported/certified on Kubernetes, only Web Profile or WLS Java EE full blown?
 
 **A:** We support the full Java EE Profile.
 
 
-#### WebLogic Server Configuration
+## WebLogic Server Configuration
 
 **Q:** How is the WebLogic Server domain configured in a container (for example, databases, JMS, and such) that is potentially shared by many domains?
 
 **A:** In a Kubernetes and container environment, the WebLogic domain home can be externalized to a persistent volume, or supplied in an image (by using a layer on top of a WebLogic Server image). For WebLogic domains that are supplied using an image, the domain logs and store locations optionally can be located on a persistent volume.  See the [samples]({{< relref "/samples/_index.md" >}}) in this project.
 
 When using the operator, each deployed domain is specified by a domain resource that you define which describes important aspects of the domain. These include the location of the WebLogic Server image you wish to use, a unique identifier for the domain called the `domain-uid`, any PVs or PVC the domain pods will need to mount, the WebLogic clusters and servers which you want to be running, and the location of its domain home.
+
+Beginning with operator 4.0, WebLogic clusters that are part of the domain configuration may be associated with a cluster resource. The cluster resource makes it easier to scale the number of member servers currently running using `kubectl scale`, the Kubernetes built-in Horizontal Pod Autoscaling, or similar tools. This cluster resource must be referenced from the domain resource. 
 
 Multiple deployments of the same domain are supported by specifying a unique `domain-uid` string for each deployed domain and specifying a different domain resource. The `domain-uid` is in turn used by the operator as the name-prefix and/or label for the domain's Kubernetes resources that the operator deploys for you. The WebLogic configuration of a domain's deployments optionally can by customized by specifying configuration overrides in the domain resource -- which, for example, is useful for overriding the configuration of a data source URL, user name, or password.
 
@@ -48,7 +50,7 @@ The operator does not specify how a WebLogic domain home configuration is create
 
 ***
 
-#### Communications
+## Communications
 
 **Q:** How is location transparency achieved and the communication between WLS instances handled?
 
@@ -80,7 +82,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 ***
 
-#### Load Balancers
+## Load Balancers
 
 **Q:** Load balancing and failover inside a DataCenter (HTTPS and T3s)?
 
@@ -88,7 +90,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 ***
 
-#### Life Cycle and Scaling
+## Life Cycle and Scaling
 
 **Q:** How to deal with grow and shrink? Cluster and non-cluster mode.
 
@@ -113,7 +115,7 @@ For more information, see the [Domain life cycle]({{< relref "/managing-domains/
 ***
 
 
-#### Patching and Upgrades
+## Patching and Upgrades
 
 **Q:** How can I get a patched Oracle container image for running in Kubernetes (one-off patches, overlays, CPUs, etc.)?
 
@@ -135,7 +137,7 @@ see [Create custom images]({{< relref "/base-images/custom-images.md" >}}).
 ***
 
 
-#### Diagnostics and Logging
+## Diagnostics and Logging
 
 **Q:** Integration with ecosystems: logging, monitoring (OS, JVM and application level), and such.
 
