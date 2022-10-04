@@ -137,20 +137,20 @@ class ItMiiClusterResource {
   }
 
   /**
-   * Create a (mii) WebLogic domain with domain level replica set to zero.
-   * Do not not associate any Cluster Resource with domain even if two 
+   * Create a (mii) WebLogic domain DR with domain level replica set to zero.
+   * Do not not associate any Cluster Resource with DR even if two 
    * WebLogic clusters (cluster-1 and cluster-2) are configuted in config.xml
    * Create two kubernates cluster resources CR1 and CR2 
-   * corresponding to WebLogic clusters cluster-1 and cluster-2.
+   * corresponding to WebLogic clusters cluster-1 and cluster-2 respectively.
    * Start the domain and make sure no managed servers are started from either 
    * WebLogic Cluster. 
    * Patch the domain resource to add cluster resource CR1
    * Make sure only managed servers from cluster-1 comes up
    * Patch the domain resource to replace the resource  CR1 with CR2
-   * Make sure managed servers from cluster-1 goes down and managed servers 
-   * from cluster-2 comes up.
-   * Delete the cluster Resource (CR2)
-   * Make sure managed servers from cluster-2 goes down 
+   * Make sure managed servers from CR1 goes down and managed servers 
+   * from CR2 comes up.
+   * Delete the cluster Resource CR2
+   * Make sure managed servers from CR2 goes down 
    */
   @Test
   @DisplayName("Verify dynamic add/remove of cluster resource on domain")
@@ -277,11 +277,11 @@ class ItMiiClusterResource {
   }
 
   /**
-   * Create a cluster resource cluster-1.
-   * Create a domain resource d1 with cluster reference set to cluster-1.
-   * Create a domain resource d2 with cluster reference set to cluster-1.
-   * Start the domain resourcei d1 with all manged servers in the cluster.
-   * A Domain Validation Failed Event MUST be generated for domain d2.
+   * Create a cluster resource SC corresponding to WebLogic cluster cluster-1.
+   * Create a domain resource DR1 with cluster reference set to SR.
+   * Create a domain resource DR2 with cluster reference set to SR.
+   * Start the domain resourcei DR1 with all manged servers in the cluster.
+   * A Domain Validation Failed Event MUST be generated for domain DR2.
    */
   @Test
   @DisplayName("Verify Domain Validation Failed Event for sharing Cluster Reference across domains")
@@ -369,8 +369,8 @@ class ItMiiClusterResource {
   /**
    * Create a cluster resource CR3 with reference to WLS cluster cluster-3.
    * Here WebLogic Cluster cluster-3 doesn't exists in model/config file.
-   * Create a domain resource DR3 with cluster reference set to CR3.
-   * Deploy the domain DR3. 
+   * Create a domain resource DR with cluster reference set to CR3.
+   * Deploy the domain DR. 
    * Make sure a Domain Configuration Mismatch Failed Event MUST be 
    * generated for the domain resource.
    */
@@ -421,15 +421,15 @@ class ItMiiClusterResource {
   }
 
   /*
-   * Create a domain resource DR4 with cluster resource CR4.
-   * Here the cluster resource CR4 refers to WebLogic cluster in model file.
-   * Note here the CR4 is not deployed before deploying resource DR4. 
-   * Deploy resource DR4 and make sure only admin server is started.
+   * Create a domain resource DR with cluster resource CR.
+   * Here the cluster resource CR refers to WebLogic cluster in model file.
+   * Note here the CR is not deployed before deploying resource DR. 
+   * Deploy resource DR and make sure only admin server is started.
    * (TBD) Should we generate a Warning Event (OWLS-102704) 
-   * Deploy resource CR4 and make sure that all servers in CR4 comes up. 
+   * Deploy resource CR and make sure that all servers in CR comes up. 
    */
   @Test
-  @DisplayName("Verify servers on missing clsuer resource are picked up when the resource is available")
+  @DisplayName("Verify servers on missing cluster resource are picked up when the resource is available")
   void testMissingClusterResource() {
 
     String domainUid = "domain4"; 
@@ -534,10 +534,10 @@ class ItMiiClusterResource {
   }
 
   /**
-   * Create a (mii) WebLogic domain with domain level replica set to zero.
-   * Create and deploy two cluster resources c1 and c2
-   * Create and deploy the domain with two cluster resources c1 and c2
-   * Scale only the cluster c2 and make sure no new server from c1 is up 
+   * Create a WebLogic domain resource DR with domain level replica set to zero.
+   * Create and deploy two cluster resources CR1 and CR2
+   * Create and deploy the domain with two cluster resources CR1 and CR2
+   * Scale only the cluster CR2 and make sure no new server from CR1 is up 
    * Scale all the clusters in the namesapce using 
    *   kubectel scale cluster --replicas=4  --all -n namespace
    * Scale all the clusters in the namesapce with replica count 1
