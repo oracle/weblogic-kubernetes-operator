@@ -133,7 +133,7 @@ spec:
 
 Beginning with WebLogic Kubernetes Operator release 4.0, you no longer have to provide the `domain.spec.configuration.istio` section to
 enable Istio support for a domain.  Enabling the sidecar injection at the namespace level alone or annotation at `serverPod`
-level for OpenShift is sufficient.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
+level for OpenShift is sufficient.  The `domain.spec.configuration.istio` field has been removed from the schema.
 
 ### Applying a Domain YAML file
 

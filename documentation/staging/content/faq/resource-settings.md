@@ -53,7 +53,7 @@ This FAQ discusses tuning these parameters so WebLogic Server instances run effi
 ## Setting resource requests and limits in a Domain or Cluster resource
 
 You can set Kubernetes memory and CPU requests and limits in a
-[Domain YAML file]({{< relref "/managing-domains/domain-resource" >}})
+[Domain or Cluster YAML file]({{< relref "/managing-domains/domain-resource" >}})
 using its `spec.serverPod.resources` stanza,
 and you can override the setting for individual WebLogic Server instances or clusters using the
 `serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`.
@@ -189,13 +189,13 @@ Events:
 
 ## Operator sample heap and resource configuration
 
-The operator samples configure non-default minimum and maximum heap sizes for WebLogic Server JVMs of at least 256MB and 512MB respectively. You can edit a sample's template or Domain YAML file `resources.env` `USER_MEM_ARGS` to have different values. See [Configuring heap size](#configuring-heap-size).
+The operator samples configure non-default minimum and maximum heap sizes for WebLogic Server JVMs of at least 256MB and 512MB respectively. You can edit a sample's template or Domain or Cluster YAML file `resources.env` `USER_MEM_ARGS` to have different values. See [Configuring heap size](#configuring-heap-size).
 
 Similarly, the operator samples configure CPU and memory resource requests to at least `250m` and `768Mi` respectively.
 
 There's no memory or CPU limit configured by default in samples and so the default QoS for sample WebLogic Server Pod's is `burstable`.
 
-If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain or Cluster resource](#setting-resource-requests-and-limits-in-a-domain-or-cluster-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
+If you wish to set resource requests or limits differently on a sample Domain or Cluster YAML file or template, see [Setting resource requests and limits in a Domain or Cluster resource](#setting-resource-requests-and-limits-in-a-domain-or-cluster-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
 
 ## Configuring CPU affinity
 

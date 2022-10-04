@@ -187,26 +187,6 @@ Elements related to specifying and overriding WebLogic domain configuration:
   * `walletPasswordSecret`: Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database.
   * `walletFileSecret`: Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.
 
-* These elements are under `configuration.istio`.
-
-  * `enabled`: True, if this domain is deployed under an Istio service mesh.
-    Defaults to true when the `istio` field is specified.
-  * `readinessPort`:
-    The operator will create WebLogic network access points
-    with this port on each WebLogic Server.
-    The readiness probe on each pod will use these
-    network access points
-    to verify that the pod is ready
-    for application traffic. Defaults to 8888.
-  * `replicationChannelPort`:
-    The operator will create a `T3` protocol
-    WebLogic network access point
-    on each WebLogic Server that is part of a cluster with this port
-    to handle EJB and servlet session state replication traffic
-    between servers. This setting is ignored for clusters
-    where the WebLogic cluster configuration already
-    defines a `replication-channel` attribute. Defaults to 4564.
-
 Elements related to Kubernetes Pod and Service generation:
 
 * `serverPod`: Customization affecting the generation of Pods for WebLogic Server instances.
@@ -245,13 +225,13 @@ You can use the following environment variables to specify JVM memory and JVM op
 
 * The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
   * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
-  * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
-* The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
+  * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain or Cluster YAML file using the `env` attribute under the `serverPod` configuration.
+* The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain or Cluster YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command.
 * For a detailed description of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
 * You can use `JAVA_OPTIONS` and `WLSDEPLOY_PROPERTIES` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
-This example snippet illustrates how to add some of the previously mentioned environment variables using the `env` attribute under the `serverPod` configuration in your Domain YAML file.
+This example snippet illustrates how to add some of the previously mentioned environment variables using the `env` attribute under the `serverPod` configuration in your Domain or Cluster YAML file.
 ```yaml
 # Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
@@ -304,7 +284,7 @@ Prior to creating a Pod, the operator replaces variable references allowing the 
 * `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member.
 * `LOG_HOME`: If the `domain.spec.logHomeEnabled' attribute is set to true, then this contains the WebLogic log location as a file system path within the container
 
-This example domain YAML file specifies that Pods for WebLogic Server instances in the `cluster-1` cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:
+This example Domain and Cluster YAML file specifies that Pods for WebLogic Server instances in the `cluster-1` cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:
 
 ```yaml
 # Copyright (c) 2019, 2021, Oracle and/or its affiliates.
@@ -336,24 +316,34 @@ spec:
       value: "-Djava.security.egd=file:/dev/./urandom "
 
   clusters:
-  - clusterName: cluster-1
-    serverPod:
-      volumes:
-      - name: $(SERVER_NAME)-volume
-        emptyDir: {}
+  - domain1-cluster-1
+---
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: domain1-cluster-1
+  namespace: domains23
+  labels:
+    weblogic.domainUID: domain1
+spec:
+- clusterName: cluster-1
+  serverPod:
+    volumes:
+    - name: $(SERVER_NAME)-volume
+      emptyDir: {}
+    volumeMounts:
+    - mountPath: /server-volume
+      name: $(SERVER_NAME)-volume
+    initContainers:
+    - name: volumeinit
+      image: "oraclelinux:7-slim"
+      imagePullPolicy: IfNotPresent
+      command: ["/usr/bin/sh"]
+      args: ["echo", "Replace with command to initialize files in /init-volume"]
       volumeMounts:
-      - mountPath: /server-volume
+      - mountPath: /init-volume
         name: $(SERVER_NAME)-volume
-      initContainers:
-      - name: volumeinit
-        image: "oraclelinux:7-slim"
-        imagePullPolicy: IfNotPresent
-        command: ["/usr/bin/sh"]
-        args: ["echo", "Replace with command to initialize files in /init-volume"]
-        volumeMounts:
-        - mountPath: /init-volume
-          name: $(SERVER_NAME)-volume
-    replicas: 2
+  replicas: 2
 ```
 
 The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The Job Pod for the introspector is generated using the `serverPod` entries for the Administration Server.  Because the Administration Server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".

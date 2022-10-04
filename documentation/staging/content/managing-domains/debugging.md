@@ -6,7 +6,7 @@ pre = "<b> </b>"
 description = "Debug deployed domains."
 +++
 
-Here are some suggestions for debugging problems with a domain after your Domain YAML file is deployed.
+Here are some suggestions for debugging problems with a domain after your Domain or Cluster YAML files are deployed.
 
 {{< table_of_contents >}}
 
@@ -99,7 +99,7 @@ then see [Online update status and labels]({{<relref "/managing-domains/model-in
 ## Check the docs
 
 Common issues that have corresponding documentation include:
-- When a Domain YAML file is deployed and no introspector or WebLogic Server pods start,
+- When a Domain or Cluster YAML file is deployed and no introspector or WebLogic Server pods start,
   plus the operator log contains no mention of the domain,
   then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
   See the operator [Namespace management]({{<relref "/managing-operators/namespace-management.md">}})
