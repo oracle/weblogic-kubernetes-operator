@@ -27,7 +27,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
  */
 class AdmissionWebhookTestSetUp {
   static final String CLUSTER_NAME_1 = "C1";
-  private static final String CLUSTER_NAME_2 = "C2";
+  static final String CLUSTER_NAME_2 = "C2";
   public static final String ORIGINAL_IMAGE_NAME = "abcd";
   public static final int ORIGINAL_REPLICAS = 2;
   public static final String ORIGINAL_INTROSPECT_VERSION = "1234";
@@ -71,6 +71,24 @@ class AdmissionWebhookTestSetUp {
   /**
    * Create a Cluster resource model that contains the cluster configuration and status for WebhookRestTest
    * and ValidationUtilsTest.
+   *
+   * @param clusterName the name of the cluster resource
+   * @return the cluster resource created
+   */
+  public static ClusterResource createCluster(String clusterName) {
+    ClusterResource clusterResource =
+        new ClusterResource().withMetadata(new V1ObjectMeta().name(clusterName).namespace(NS))
+            .spec(createClusterSpec(clusterName));
+    clusterResource.setApiVersion((KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION));
+    clusterResource.setStatus(createClusterStatus(clusterName));
+    return clusterResource;
+  }
+
+  /**
+   * Create a Cluster resource model that contains the cluster configuration and status for WebhookRestTest
+   * and ValidationUtilsTest.
+   *
+   * @return the cluster resource created
    */
   public static ClusterResource createCluster() {
     ClusterResource clusterResource =

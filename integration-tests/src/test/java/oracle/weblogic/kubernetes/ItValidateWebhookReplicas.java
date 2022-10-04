@@ -114,6 +114,7 @@ class ItValidateWebhookReplicas {
   private static int externalRestHttpsPort = 0;
 
   private String clusterName = "cluster-1";
+  private String clusterName2 = "cluster-2";
 
   /**
    * Perform initialization for all the tests in this class.
@@ -179,9 +180,9 @@ class ItValidateWebhookReplicas {
     }
 
     // check managed servers are up and running for domain2
-    for (int i = 1; i <= replicaCount; i++) {
-      for (int j = 1; j <= domain2NumCluster; j++) {
-        checkPodReadyAndServiceExists(domainUid2 + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i,
+    for (int i = 1; i <= domain2NumCluster; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        checkPodReadyAndServiceExists(domainUid2 + "-cluster-" + i + "-" + MANAGED_SERVER_NAME_BASE + j,
             domainUid2, domainNamespace2);
       }
     }
@@ -488,8 +489,12 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-1' and 'cluster-2' "
-            + "would exceed the cluster size '5' when patching "
+            + "' cannot be honored because the replica count for cluster 'cluster-1' "
+            + "would exceed the cluster size '5' \n"
+            + "Change request to domain resource '" + domainUid2
+            + "' cannot be honored because the replica count for cluster 'cluster-2' "
+            + "would exceed the cluster size '5'"
+            + "when patching "
             + domainUid2
             + " in namespace "
             + domainNamespace2;

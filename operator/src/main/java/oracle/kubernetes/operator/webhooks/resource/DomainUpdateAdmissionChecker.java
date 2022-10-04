@@ -112,7 +112,13 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   }
 
   boolean areAllClusterReplicaCountsValid(DomainResource domain) {
-    return getClusterStatusList(domain).stream().allMatch(c -> isReplicaCountValid(domain, c));
+    boolean allValid = true;
+    for (ClusterStatus status : getClusterStatusList(domain)) {
+      if (!isReplicaCountValid(domain, status)) {
+        allValid = false;
+      }
+    }
+    return allValid;
   }
 
   @NotNull
