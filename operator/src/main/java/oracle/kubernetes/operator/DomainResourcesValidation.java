@@ -157,7 +157,6 @@ class DomainResourcesValidation {
 
   private void addClusterList(ClusterList list) {
     activeClusterResources = list;
-    processor.addClusterList(list);
   }
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {

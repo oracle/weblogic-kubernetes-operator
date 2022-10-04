@@ -14,7 +14,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -88,9 +87,5 @@ public interface DomainProcessor {
    */
   default Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
     return Stream.empty();
-  }
-
-  default void addClusterList(ClusterList list) {
-    // no-op
   }
 }
