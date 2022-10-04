@@ -28,9 +28,9 @@ import org.jetbrains.annotations.NotNull;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
 
 /**
- * AdmissionChecker provides the validation functionality for the validating webhook. It takes an existing resource and
- * a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
- * what the problem is.
+ * ClusterUpdateAdmissionChecker provides the validation functionality for the validating webhook. It takes an existing
+ * cluster resource and a proposed cluster resource and returns a result to indicate if the proposed changes are
+ * allowed, and if not, hat the problem is.
  *
  * <p>Currently it checks the following:
  * <ul>
@@ -40,7 +40,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANN
  * </p>
  */
 
-public class ClusterAdmissionChecker extends AdmissionChecker {
+public class ClusterUpdateAdmissionChecker extends AdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   private final ClusterResource existingCluster;
@@ -48,19 +48,15 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
   private final AdmissionResponse response = new AdmissionResponse();
   private Exception exception;
 
-  /** Construct a ClusterAdmissionChecker. */
-  public ClusterAdmissionChecker(@NotNull ClusterResource existingCluster, @NotNull ClusterResource proposedCluster) {
+  /** Construct a ClusterUpdateAdmissionChecker. */
+  public ClusterUpdateAdmissionChecker(@NotNull ClusterResource existingCluster,
+                                       @NotNull ClusterResource proposedCluster) {
     this.existingCluster = existingCluster;
     this.proposedCluster = proposedCluster;
   }
 
-  /**
-   * Validating a proposed ClusterResource resource against an existing ClusterResource resource.
-   *
-   * @return a AdmissionResponse object
-   */
   @Override
-  public AdmissionResponse validate() {
+  AdmissionResponse validate() {
     LOGGER.fine("Validating ClusterResource " + proposedCluster + " against " + existingCluster);
 
     response.allowed(isProposedChangeAllowed());
@@ -74,12 +70,6 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
     return response;
   }
 
-  /**
-   * Validating a proposed Cluster resource against an existing ClusterResource resource. It returns true if the
-   * proposed changes in the proposed ClusterResource resource can be honored, otherwise, returns false.
-   *
-   * @return true if valid, otherwise false
-   */
   @Override
   public boolean isProposedChangeAllowed() {
     return isUnchanged() || skipValidation(proposedCluster.getStatus()) || isReplicaCountValid();
@@ -113,9 +103,13 @@ public class ClusterAdmissionChecker extends AdmissionChecker {
       exception = e;
       return false;
     }
-
   }
 
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
   public boolean hasException() {
     return exception != null;
   }

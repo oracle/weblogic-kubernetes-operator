@@ -827,7 +827,7 @@ public class Domain {
    * @param replicaCount number of servers to be scaled to
    * @return true if patch domain custom resource succeeds, false otherwise
    */
-  public static boolean scaleAllClusters(String domainUid, String namespace, int replicaCount) {
+  public static boolean scaleAllClustersInDomain(String domainUid, String namespace, int replicaCount) {
     LoggingFacade logger = getLogger();
 
     // construct the patch string for scaling the cluster in the domain

@@ -23,7 +23,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
 
 /**
  * AdmissionWebhookTestSetup creates the necessary Domain resources that can be used in admission webhook
- * related test cases such as WebhookRestTest and ValidationUtilsTest.
+ * related test cases such as WebhookRestTest and admission checker tests.
  */
 class AdmissionWebhookTestSetUp {
   static final String CLUSTER_NAME_1 = "C1";
@@ -41,9 +41,9 @@ class AdmissionWebhookTestSetUp {
 
   /**
    * Create a Domain resource model that contains the domain configuration and status for WebhookRestTest
-   * and ValidationUtilsTest.
+   * and admission checker tests.
    */
-  public static DomainResource createDomain() {
+  public static DomainResource createDomainWithClustersAndStatus() {
     DomainResource domain = createTestDomain().withStatus(createDomainStatus());
     domain.getSpec()
         .withReplicas(ORIGINAL_REPLICAS)
@@ -52,6 +52,19 @@ class AdmissionWebhookTestSetUp {
     domain.getSpec()
         .withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_1))
         .withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_2));
+    return domain;
+  }
+
+  /**
+   * Create a Domain resource model that contains the domain configuration without any clusters for WebhookRestTest
+   * and admission checker tests.
+   */
+  public static DomainResource createDomainWithoutCluster() {
+    DomainResource domain = createTestDomain();
+    domain.getSpec()
+        .withReplicas(ORIGINAL_REPLICAS)
+        .withImage(ORIGINAL_IMAGE_NAME)
+        .setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
     return domain;
   }
 
