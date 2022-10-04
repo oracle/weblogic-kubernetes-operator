@@ -274,6 +274,8 @@ public class MessageKeys {
   public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSWH-0017";
   public static final String WEBHOOK_STARTUP_FAILED = "WLSWH-0018";
   public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0019";
+  public static final String DOMAIN_REPLICAS_CANNOT_BE_HONORED_MULTIPLE_CLUSTERS = "WLSWH-0020";
+  public static final String DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS = "WLSWH-0021";
 
   private MessageKeys() {
   }

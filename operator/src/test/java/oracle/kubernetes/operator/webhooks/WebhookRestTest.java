@@ -88,7 +88,10 @@ class WebhookRestTest extends RestTestBase {
   private static final String VALIDATING_WEBHOOK_HREF = "/admission";
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
   private static final String REJECT_MESSAGE_PATTERN_DOMAIN = "Change request to domain resource '%s' cannot be honored"
-          + " because the replica count for cluster '%s' would exceed the cluster size '%s'";
+          + " because the replica count of cluster '%s' would exceed the cluster size '%s'";
+  private static final String REJECT_MESSAGE_PATTERN_DOMAIN_MULTIPLE_CLUSTERS =
+      "Change request to domain resource '%s' cannot be honored"
+      + " because the replica count of each cluster in '%s' would exceed its cluster size '%s' respectively";
   private static final String REJECT_MESSAGE_PATTERN_CLUSTER = "Change request to cluster resource '%s' cannot be "
       + "honored because the replica count would exceed the cluster size '%s'";
 
@@ -558,11 +561,8 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private Object getRejectMessageForDomainResource(DomainResource domain, ClusterResource c1, ClusterResource c2) {
-    return String.format(REJECT_MESSAGE_PATTERN_DOMAIN,
-        domain.getDomainUid(), c1.getMetadata().getName(), ORIGINAL_REPLICAS)
-        + "\n"
-        + String.format(REJECT_MESSAGE_PATTERN_DOMAIN,
-            domain.getDomainUid(), c2.getMetadata().getName(), ORIGINAL_REPLICAS);
+    return String.format(REJECT_MESSAGE_PATTERN_DOMAIN_MULTIPLE_CLUSTERS, domain.getDomainUid(),
+        c1.getMetadata().getName() + ", " + c2.getMetadata().getName(), ORIGINAL_REPLICAS + ", " + ORIGINAL_REPLICAS);
   }
 
   private Object getRejectMessageForClusterResource(ClusterResource cluster) {
