@@ -43,8 +43,8 @@ managedServerPort: 8001
 #
 # **NOTE**:
 # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
-# development purposes _only_ where the environments are not available from the public Internet;
-# they are **not acceptable for production use**. In production, you should always use CPU (patched)
+# development purposes only where the environments are not available from the public Internet;
+# they are not acceptable for production use. In production, you should always use CPU (patched)
 # images from OCR or create your images using the WebLogic Image Tool.
 # Please refer to the `OCR` and `Weblogic Images` pages in the WebLogic Kubernetes Operator
 # documentation for details.
