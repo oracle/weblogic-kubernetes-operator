@@ -1,5 +1,7 @@
 ### Cluster
 
+A Cluster resource describes the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. It must describe a cluster that already exists in the WebLogic domain configuration. See also `domain.spec.clusters`.
+
 | Name | Type | Description |
 | --- | --- | --- |
 | `apiVersion` | string | The API version defines the versioned schema of this cluster. |
@@ -9,6 +11,8 @@
 | `status` | [Cluster Status](#cluster-status) | The current status of the operation of the WebLogic cluster. Updated automatically by the operator. |
 
 ### Cluster Spec
+
+The specification of the operation of the WebLogic cluster. Required.
 
 | Name | Type | Description |
 | --- | --- | --- |
