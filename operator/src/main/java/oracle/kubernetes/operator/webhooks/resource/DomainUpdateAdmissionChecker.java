@@ -34,19 +34,21 @@ import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_INTROSPECT_V
 import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
 
 /**
- * AdmissionChecker provides the validation functionality for the validating webhook. It takes an existing resource and
- * a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
+ * DomainUpdateAdmissionChecker provides the validation functionality for the validating webhook. It takes an existing
+ * resource and a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
  * what the problem is.
  *
  * <p>Currently it checks the following:
  * <ul>
+ * <li>There are fatal domain validation errors.
+ * </li>
  * <li>The proposed replicas settings at the domain level and/or cluster level can be honored by WebLogic domain config.
  * </li>
  * </ul>
  * </p>
  */
 
-public class DomainAdmissionChecker extends AdmissionChecker {
+public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   private final DomainResource existingDomain;
@@ -55,18 +57,13 @@ public class DomainAdmissionChecker extends AdmissionChecker {
   private Exception exception;
 
   /** Construct a DomainAdmissionChecker. */
-  public DomainAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
+  public DomainUpdateAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
     this.existingDomain = existingDomain;
     this.proposedDomain = proposedDomain;
   }
 
-  /**
-   * Validating a proposed DomainResource resource against an existing DomainResource resource.
-   *
-   * @return a AdmissionResponse object
-   */
   @Override
-  public AdmissionResponse validate() {
+  AdmissionResponse validate() {
     LOGGER.fine("Validating DomainResource " + proposedDomain + " against " + existingDomain);
 
     AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
@@ -78,29 +75,17 @@ public class DomainAdmissionChecker extends AdmissionChecker {
     return response;
   }
 
-  /**
-   * Validating a proposed Domain resource against an existing DomainResource resource. It returns true if the
-   * proposed changes in the proposed DomainResource resource can be honored, otherwise, returns false.
-   *
-   * @return true if valid, otherwise false
-   */
   @Override
   public boolean isProposedChangeAllowed() {
     return isSpecUnchanged() || areChangesAllowed();
   }
 
   private boolean areChangesAllowed() {
-    return hasNoPreIntrospectionValidationErrors(proposedDomain) && isProposedReplicaCountValid();
+    return hasNoFatalValidationErrors(proposedDomain) && isProposedReplicaCountValid();
   }
 
   private boolean isProposedReplicaCountValid() {
     return areAllClusterReplicaCountsValid(proposedDomain) || shouldIntrospect();
-  }
-
-  private boolean hasNoPreIntrospectionValidationErrors(DomainResource proposedDomain) {
-    List<String> failures = proposedDomain.getFatalValidationFailures();
-    messages.addAll(failures);
-    return failures.isEmpty();
   }
 
   private boolean isSpecUnchanged() {
@@ -154,8 +139,26 @@ public class DomainAdmissionChecker extends AdmissionChecker {
     return isValid;
   }
 
+  private int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
+    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
+  }
+
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
   public boolean hasException() {
     return exception != null;
+  }
+
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
+  public boolean hasWarnings() {
+    return !warnings.isEmpty();
   }
 
   private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) throws ApiException {
