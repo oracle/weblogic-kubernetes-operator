@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -18,15 +17,8 @@ import static java.lang.System.lineSeparator;
 
 /**
  * AdmissionChecker provides the common validation functionality for the validating webhook. It takes an existing
- * resource and a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
- * what the problem is.
- *
- * <p>Currently it checks the following:
- * <ul>
- * <li>The proposed replicas settings at the domain level and/or cluster level can be honored by WebLogic domain config.
- * </li>
- * </ul>
- * </p>
+ * resource and a proposed resource and returns a result to indicate if the proposed resource or changes are allowed,
+ * and if not, what the problem is.
  */
 
 public abstract class AdmissionChecker {
@@ -37,9 +29,26 @@ public abstract class AdmissionChecker {
     // no-op
   }
 
+  /**
+   * Validating a proposed request.
+   *
+   * @return a AdmissionResponse object
+   */
   abstract AdmissionResponse validate();
 
-  abstract boolean isProposedChangeAllowed();
+  /**
+   * Validate a new resource or a proposed resource against an existing resource. It returns true if the new resource
+   * or proposed changes in the proposed resource can be honored, otherwise, returns false.
+   *
+   * @return true if valid, otherwise false
+   */
+  public abstract boolean isProposedChangeAllowed();
+
+  boolean hasNoFatalValidationErrors(DomainResource proposedDomain) {
+    List<String> failures = proposedDomain.getFatalValidationFailures();
+    messages.addAll(failures);
+    return failures.isEmpty();
+  }
 
   String createMessage() {
     return perLine(messages);
@@ -51,10 +60,6 @@ public abstract class AdmissionChecker {
 
   int getClusterSize(ClusterStatus clusterStatus) {
     return getClusterSizeOptional(clusterStatus).orElse(0);
-  }
-
-  int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
-    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
   int getDomainReplicaCount(@NotNull DomainResource domain) {
