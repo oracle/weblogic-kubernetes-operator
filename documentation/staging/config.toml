@@ -17,3 +17,9 @@ publishDir = "docs"
 [params]
   # disable the copy to clipboard links
   disableInlineCopyToClipBoard = true
+
+[markup]
+  [markup.tableOfContents]
+    endLevel = 2
+    ordered = false
+    startLevel = 2
