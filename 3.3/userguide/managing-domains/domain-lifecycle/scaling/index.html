@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="The operator provides several ways to initiate scaling of WebLogic clusters.">
 
 
@@ -12,20 +12,20 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993357" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993357"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -3260,26 +3260,26 @@
 </ul>
 <h4 id="on-demand-updating-the-domain-directly">On-demand, updating the Domain directly</h4>
 <p>The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the <code>replicas</code> field of a Domain. This can be done by using <code>kubectl</code>. More specifically, you can modify the Domain directly by using the <code>kubectl edit</code> command.  For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl edit domain domain1 -n <span style="color:#f92672">[</span>namespace<span style="color:#f92672">]</span>
-</code></pre></div><p>Here we are editing a Domain named <code>domain1</code>. The <code>kubectl edit</code> command will open the Domain definition in an editor and allow you to modify the <code>replicas</code> value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the <code>replicas</code> value specification.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
-  <span style="color:#ae81ff">...</span>
-  <span style="color:#f92672">clusters</span>:
-    - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
-      <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
-  <span style="color:#ae81ff">...</span>
-</code></pre></div><p>Alternatively, you can specify a default <code>replicas</code> value for all the clusters.  If you do this, then you don&rsquo;t need to list the cluster in the Domain (unless you want to customize another property of the cluster).</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
-  <span style="color:#ae81ff">...</span>
-  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
-  <span style="color:#ae81ff">...</span>
-</code></pre></div><p>In addition, see the helper scripts in the <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/startup/#domain-lifecycle-sample-scripts">Domain lifecycle sample scripts</a> section.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl edit domain domain1 -n <span style="color:#f92672">[</span>namespace<span style="color:#f92672">]</span>
+</span></span></code></pre></div><p>Here we are editing a Domain named <code>domain1</code>. The <code>kubectl edit</code> command will open the Domain definition in an editor and allow you to modify the <code>replicas</code> value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the <code>replicas</code> value specification.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">clusters</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><p>Alternatively, you can specify a default <code>replicas</code> value for all the clusters.  If you do this, then you don&rsquo;t need to list the cluster in the Domain (unless you want to customize another property of the cluster).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><p>In addition, see the helper scripts in the <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/startup/#domain-lifecycle-sample-scripts">Domain lifecycle sample scripts</a> section.</p>
 <h4 id="calling-the-operators-rest-scale-api">Calling the operator&rsquo;s REST scale API</h4>
 <p>Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes environments, scaling WebLogic clusters involves scaling the number of corresponding Pods in which Managed Server instances are running. Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.</p>
 <p>The following URL format is used for describing the resources for scaling (up and down) a WebLogic cluster:</p>
-<pre><code>http(s)://${OPERATOR_ENDPOINT}/operator/&lt;version&gt;/domains/&lt;domainUID&gt;/clusters/&lt;clusterName&gt;/scale
+<pre tabindex="0"><code>http(s)://${OPERATOR_ENDPOINT}/operator/&lt;version&gt;/domains/&lt;domainUID&gt;/clusters/&lt;clusterName&gt;/scale
 </code></pre><p>For example:</p>
-<pre><code>http(s)://${OPERATOR_ENDPOINT}/operator/v1/domains/domain1/clusters/cluster-1/scale
+<pre tabindex="0"><code>http(s)://${OPERATOR_ENDPOINT}/operator/v1/domains/domain1/clusters/cluster-1/scale
 </code></pre><p>In this URL format:</p>
 <ul>
 <li><code>OPERATOR_ENDPOINT</code> is the host and port of the operator REST endpoint (internal or external).</li>
@@ -3288,42 +3288,42 @@
 <li><code>&lt;clusterName&gt;</code> is the name of the WebLogic cluster to be scaled.</li>
 </ul>
 <p>The <code>/scale</code> REST endpoint accepts an HTTP POST request and the request body supports the JSON <code>&quot;application/json&quot;</code> media type.  The request body will be a simple name-value item named <code>managedServerCount</code>; for example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-    <span style="color:#f92672">&#34;managedServerCount&#34;</span>: <span style="color:#ae81ff">3</span>
-}
-</code></pre></div><p>The <code>managedServerCount</code> value designates the number of Managed Server instances to scale to.  On a successful scaling request, the REST interface will return an HTTP response code of <code>204 (“No Content”)</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;managedServerCount&#34;</span>: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>managedServerCount</code> value designates the number of Managed Server instances to scale to.  On a successful scaling request, the REST interface will return an HTTP response code of <code>204 (“No Content”)</code>.</p>
 <p>When you POST to the <code>/scale</code> REST endpoint, you must send the following headers:</p>
 <ul>
 <li><code>X-Requested-By</code> request value.  The value is an arbitrary name such as <code>MyClient</code>.</li>
 <li><code>Authorization: Bearer</code> request value. The value of the <code>Bearer</code> token is the WebLogic domain service account token.</li>
 </ul>
 <p>For example, when using <code>curl</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H <span style="color:#e6db74">&#34;Authorization:Bearer ...&#34;</span> -d <span style="color:#e6db74">&#39;{ &#34;managedServerCount&#34;: 3 }&#39;</span> https://.../scaling
-</code></pre></div><p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response. If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.  If the service account or user associated with the <code>Bearer</code> token does not have permission to <code>patch</code> the WebLogic domain resource, then you&rsquo;ll get a <code>403 (Forbidden)</code> response.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H <span style="color:#e6db74">&#34;Authorization:Bearer ...&#34;</span> -d <span style="color:#e6db74">&#39;{ &#34;managedServerCount&#34;: 3 }&#39;</span> https://.../scaling
+</span></span></code></pre></div><p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response. If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.  If the service account or user associated with the <code>Bearer</code> token does not have permission to <code>patch</code> the WebLogic domain resource, then you&rsquo;ll get a <code>403 (Forbidden)</code> response.</p>
 
 <div class="notices note" ><p>To resolve a <code>403 (Forbidden)</code> response, when calling the operator&rsquo;s REST scaling API, you may need to add the <code>patch</code> request verb to the cluster role associated with the WebLogic <code>domains</code> resource.
 The example ClusterRole definition below grants <code>get</code>, <code>list</code>, <code>patch</code> and <code>update</code> access to the WebLogic <code>domains</code> resource</p>
 </div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
-<span style="color:#f92672">rules</span>:
-- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
-  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;services/status&#34;</span>]
-  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>]
-- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;weblogic.oracle&#34;</span>]
-  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;domains&#34;</span>]
-  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#ae81ff">update&#34;]</span>
----
-</code></pre></div><h5 id="operator-rest-endpoints">Operator REST endpoints</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;services/status&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;weblogic.oracle&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;domains&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#ae81ff">update&#34;]</span>
+</span></span><span style="display:flex;"><span>---
+</span></span></code></pre></div><h5 id="operator-rest-endpoints">Operator REST endpoints</h5>
 <p>The WebLogic Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
 is disabled by default and only exposed if explicitly configured.
-Detailed instructions for configuring the external REST endpoint are available <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/#optional-configure-the-operators-external-rest-https-interface">here</a>.</p>
+Detailed instructions for configuring the external REST endpoint are available <a href="/userguide/managing-operators/#optional-configure-the-operators-external-rest-https-interface">here</a>.</p>
 
 <div class="notices note" ><p>Regardless of which endpoint is being invoked, the URL format for scaling is the same.</p>
 </div>
@@ -3366,7 +3366,7 @@ see <a href="https://docs.oracle.com/en/middleware/standalone/weblogic-server/14
 <p>The <code>scalingAction.sh</code> script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable <code>INTERNAL_OPERATOR_CERT</code>.<br>
 The operator’s SSL certificate can be found in the <code>internalOperatorCert</code> entry of the operator’s ConfigMap <code>weblogic-operator-cm</code>:</p>
 <p>For example:</p>
-<pre><code class="language-none" data-lang="none">#&gt; kubectl describe configmap weblogic-operator-cm -n weblogic-operator
+<pre tabindex="0"><code class="language-none" data-lang="none">#&gt; kubectl describe configmap weblogic-operator-cm -n weblogic-operator
 ...
 Data
 ====
@@ -3432,54 +3432,54 @@ The following is an example YAML file for creating the appropriate Kubernetes Cl
 <div class="notices note" ><p>In the example ClusterRoleBinding definition below, the WebLogic domain is deployed to a namespace <code>weblogic-domain</code>.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.</p>
 </div>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
-<span style="color:#f92672">rules</span>:
-- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
-  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;services/status&#34;</span>]
-  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>]
-- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;weblogic.oracle&#34;</span>]
-  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;domains&#34;</span>]
-  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#ae81ff">update&#34;]</span>
----
-<span style="color:#75715e">#</span>
-<span style="color:#75715e"># creating role-bindings for cluster role</span>
-<span style="color:#75715e">#</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRoleBinding</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain-cluster-rolebinding</span>
-<span style="color:#f92672">subjects</span>:
-- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
-  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;&#34;</span>
-<span style="color:#f92672">roleRef</span>:
-  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
-  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;rbac.authorization.k8s.io&#34;</span>
----
-<span style="color:#75715e">#</span>
-<span style="color:#75715e"># creating role-bindings</span>
-<span style="color:#75715e">#</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">RoleBinding</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-operator-rolebinding</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-operator</span>
-<span style="color:#f92672">subjects</span>:
-- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
-  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;&#34;</span>
-<span style="color:#f92672">roleRef</span>:
-  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-admin</span>
-  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;rbac.authorization.k8s.io&#34;</span>
----
-</code></pre></div><h4 id="using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;services/status&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;weblogic.oracle&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;domains&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#ae81ff">update&#34;]</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># creating role-bindings for cluster role</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRoleBinding</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain-cluster-rolebinding</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subjects</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">roleRef</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-cluster-role</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;rbac.authorization.k8s.io&#34;</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># creating role-bindings</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">RoleBinding</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-operator-rolebinding</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-operator</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subjects</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">roleRef</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-admin</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiGroup</span>: <span style="color:#e6db74">&#34;rbac.authorization.k8s.io&#34;</span>
+</span></span><span style="display:flex;"><span>---
+</span></span></code></pre></div><h4 id="using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</h4>
 <p>In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about <a href="https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5">Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes</a>.</p>
@@ -3493,10 +3493,10 @@ Administration Server Pod because the associated diagnostic module is targeted t
 <li>The domain home is in <code>/u01/oracle/user-projects/domains/domain1</code> (that is, the domain home is inside an image).</li>
 <li>The Dockerfile copied <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl exec -it domain1-admin-server /bin/bash
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /u01/oracle/user-projects/domains/domain1/bin/scripts <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  ./scalingAction.sh
-</code></pre></div><p>A log, <code>scalingAction.log</code>, will be generated in the same directory in which the script was executed and can be examined for errors.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl exec -it domain1-admin-server /bin/bash
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /u01/oracle/user-projects/domains/domain1/bin/scripts <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ./scalingAction.sh
+</span></span></code></pre></div><p>A log, <code>scalingAction.log</code>, will be generated in the same directory in which the script was executed and can be examined for errors.</p>
 <h5 id="example-on-accessing-the-external-rest-endpoint">Example on accessing the external REST endpoint</h5>
 <p>The easiest way to test scaling using the external REST endpoint is to use a command-line tool like <code>curl</code>. Using <code>curl</code> to issue
 an HTTPS scale request requires these mandatory header properties:</p>
@@ -3523,47 +3523,47 @@ This example assumes the operator and Domain YAML file are configured with the f
 </ul>
 </li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e">#!/bin/sh
-</span><span style="color:#75715e"></span><span style="color:#75715e"># Setup properties  </span>
-ophost<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>uname -n<span style="color:#e6db74">`</span>
-opport<span style="color:#f92672">=</span><span style="color:#ae81ff">31001</span> <span style="color:#75715e">#externalRestHttpsPort</span>
-cluster<span style="color:#f92672">=</span>cluster-1
-size<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span> <span style="color:#75715e">#New cluster size</span>
-ns<span style="color:#f92672">=</span>weblogic-operator <span style="color:#75715e"># Operator NameSpace</span>
-sa<span style="color:#f92672">=</span>weblogic-operator <span style="color:#75715e"># Operator ServiceAccount</span>
-domainuid<span style="color:#f92672">=</span>domain1
-
-<span style="color:#75715e"># Retrieve service account name for given namespace   </span>
-sec<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get serviceaccount <span style="color:#e6db74">${</span>sa<span style="color:#e6db74">}</span> -n <span style="color:#e6db74">${</span>ns<span style="color:#e6db74">}</span> -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.secrets[0].name}&#39;</span><span style="color:#e6db74">`</span>
-<span style="color:#75715e">#echo &#34;Secret [${sec}]&#34;</span>
-
-<span style="color:#75715e"># Retrieve base64 encoded secret for the given service account   </span>
-enc_token<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get secret <span style="color:#e6db74">${</span>sec<span style="color:#e6db74">}</span> -n <span style="color:#e6db74">${</span>ns<span style="color:#e6db74">}</span> -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.token}&#39;</span><span style="color:#e6db74">`</span>
-<span style="color:#75715e">#echo &#34;enc_token [${enc_token}]&#34;</span>
-
-<span style="color:#75715e"># Decode the base64 encoded token  </span>
-token<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>echo <span style="color:#e6db74">${</span>enc_token<span style="color:#e6db74">}</span> | base64 --decode<span style="color:#e6db74">`</span>
-<span style="color:#75715e">#echo &#34;token [${token}]&#34;</span>
-
-<span style="color:#75715e"># clean up any temporary files</span>
-rm -rf operator.rest.response.body operator.rest.stderr operator.cert.pem
-
-<span style="color:#75715e"># Retrieve SSL certificate from the Operator&#39;s external REST endpoint</span>
-<span style="color:#e6db74">`</span>openssl s_client -showcerts -connect <span style="color:#e6db74">${</span>ophost<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>opport<span style="color:#e6db74">}</span> &lt;/dev/null 2&gt;/dev/null | openssl x509 -outform PEM &gt; operator.cert.pem<span style="color:#e6db74">`</span>
-
-echo <span style="color:#e6db74">&#34;Rest EndPoint url https://</span><span style="color:#e6db74">${</span>ophost<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>opport<span style="color:#e6db74">}</span><span style="color:#e6db74">/operator/v1/domains/</span><span style="color:#e6db74">${</span>domainuid<span style="color:#e6db74">}</span><span style="color:#e6db74">/clusters/</span><span style="color:#e6db74">${</span>cluster<span style="color:#e6db74">}</span><span style="color:#e6db74">/scale&#34;</span>
-
-<span style="color:#75715e"># Issue &#39;curl&#39; request to external REST endpoint  </span>
-curl --noproxy <span style="color:#e6db74">&#39;*&#39;</span> -v --cacert operator.cert.pem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>token<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H Accept:application/json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Content-Type:application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;X-Requested-By:WLDF&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{\&#34;managedServerCount\&#34;: </span>$size<span style="color:#e6db74">}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-X POST  https://<span style="color:#e6db74">${</span>ophost<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>opport<span style="color:#e6db74">}</span>/operator/v1/domains/<span style="color:#e6db74">${</span>domainuid<span style="color:#e6db74">}</span>/clusters/<span style="color:#e6db74">${</span>cluster<span style="color:#e6db74">}</span>/scale <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-o operator.rest.response.body <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--stderr operator.rest.stderr
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/sh
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># Setup properties  </span>
+</span></span><span style="display:flex;"><span>ophost<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>uname -n<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>opport<span style="color:#f92672">=</span><span style="color:#ae81ff">31001</span> <span style="color:#75715e">#externalRestHttpsPort</span>
+</span></span><span style="display:flex;"><span>cluster<span style="color:#f92672">=</span>cluster-1
+</span></span><span style="display:flex;"><span>size<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span> <span style="color:#75715e">#New cluster size</span>
+</span></span><span style="display:flex;"><span>ns<span style="color:#f92672">=</span>weblogic-operator <span style="color:#75715e"># Operator NameSpace</span>
+</span></span><span style="display:flex;"><span>sa<span style="color:#f92672">=</span>weblogic-operator <span style="color:#75715e"># Operator ServiceAccount</span>
+</span></span><span style="display:flex;"><span>domainuid<span style="color:#f92672">=</span>domain1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Retrieve service account name for given namespace   </span>
+</span></span><span style="display:flex;"><span>sec<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get serviceaccount <span style="color:#e6db74">${</span>sa<span style="color:#e6db74">}</span> -n <span style="color:#e6db74">${</span>ns<span style="color:#e6db74">}</span> -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.secrets[0].name}&#39;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#echo &#34;Secret [${sec}]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Retrieve base64 encoded secret for the given service account   </span>
+</span></span><span style="display:flex;"><span>enc_token<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get secret <span style="color:#e6db74">${</span>sec<span style="color:#e6db74">}</span> -n <span style="color:#e6db74">${</span>ns<span style="color:#e6db74">}</span> -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.token}&#39;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#echo &#34;enc_token [${enc_token}]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Decode the base64 encoded token  </span>
+</span></span><span style="display:flex;"><span>token<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>echo <span style="color:#e6db74">${</span>enc_token<span style="color:#e6db74">}</span> | base64 --decode<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#echo &#34;token [${token}]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># clean up any temporary files</span>
+</span></span><span style="display:flex;"><span>rm -rf operator.rest.response.body operator.rest.stderr operator.cert.pem
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Retrieve SSL certificate from the Operator&#39;s external REST endpoint</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">`</span>openssl s_client -showcerts -connect <span style="color:#e6db74">${</span>ophost<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>opport<span style="color:#e6db74">}</span> &lt;/dev/null 2&gt;/dev/null | openssl x509 -outform PEM &gt; operator.cert.pem<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Rest EndPoint url https://</span><span style="color:#e6db74">${</span>ophost<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>opport<span style="color:#e6db74">}</span><span style="color:#e6db74">/operator/v1/domains/</span><span style="color:#e6db74">${</span>domainuid<span style="color:#e6db74">}</span><span style="color:#e6db74">/clusters/</span><span style="color:#e6db74">${</span>cluster<span style="color:#e6db74">}</span><span style="color:#e6db74">/scale&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Issue &#39;curl&#39; request to external REST endpoint  </span>
+</span></span><span style="display:flex;"><span>curl --noproxy <span style="color:#e6db74">&#39;*&#39;</span> -v --cacert operator.cert.pem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>token<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H Accept:application/json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Content-Type:application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;X-Requested-By:WLDF&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{\&#34;managedServerCount\&#34;: </span>$size<span style="color:#e6db74">}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-X POST  https://<span style="color:#e6db74">${</span>ophost<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>opport<span style="color:#e6db74">}</span>/operator/v1/domains/<span style="color:#e6db74">${</span>domainuid<span style="color:#e6db74">}</span>/clusters/<span style="color:#e6db74">${</span>cluster<span style="color:#e6db74">}</span>/scale <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-o operator.rest.response.body <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--stderr operator.rest.stderr
+</span></span></code></pre></div>
 
 <footer class="footline">
 	
@@ -5680,19 +5680,19 @@ curl --noproxy <span style="color:#e6db74">&#39;*&#39;</span> -v --cacert operat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997073"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997073"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993357"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997073"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -15,7 +15,7 @@
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/2.5/userguide/overview/prepare/</guid>
       <description>Set up your Kubernetes cluster If you need help setting up a Kubernetes environment, check our cheat sheet.
 After creating Kubernetes clusters, you can optionally:
- Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the WebLogic Kubernetes Operator Load Balancer Samples for information about the current capabilities and setup instructions for each of the supported load balancers.</description>
+Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs. Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the WebLogic Kubernetes Operator Load Balancer Samples for information about the current capabilities and setup instructions for each of the supported load balancers.</description>
     </item>
     
     <item>

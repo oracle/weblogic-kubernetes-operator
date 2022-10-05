@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Update 4 :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993357" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993357"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -3260,23 +3260,23 @@
 <p>Add the Work Manager threads constraint configuration WDT model updates to the existing data source model updates in the Model in Image model ConfigMap.</p>
 <p>In this step, we will update the model ConfigMap from the <a href="/weblogic-kubernetes-operator/3.3/samples/domains/model-in-image/update1/">Update 1</a> use case with the desired changes to the minimum and maximum threads constraints.</p>
 <p>Here&rsquo;s an example model configuration that updates the configured count values for the <code>SampleMinThreads</code> minimum threads constraint and <code>SampleMaxThreads</code> maximum threads constraint:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">SelfTuning</span>:
-    <span style="color:#f92672">MinThreadsConstraint</span>:
-      <span style="color:#f92672">SampleMinThreads</span>:
-        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">2</span>
-    <span style="color:#f92672">MaxThreadsConstraint</span>:
-      <span style="color:#f92672">SampleMaxThreads</span>:
-        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">20</span>
-</code></pre></div><p>Optionally, place the preceding model snippet in a file named <code>/tmp/mii-sample/myworkmanager.yaml</code> and then use it when deploying the updated model ConfigMap, or simply use the same model snippet that&rsquo;s provided in <code>/tmp/mii-sample/model-configmaps/workmanager/model.20.workmanager.yaml</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MinThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SampleMinThreads</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MaxThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SampleMaxThreads</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">20</span>
+</span></span></code></pre></div><p>Optionally, place the preceding model snippet in a file named <code>/tmp/mii-sample/myworkmanager.yaml</code> and then use it when deploying the updated model ConfigMap, or simply use the same model snippet that&rsquo;s provided in <code>/tmp/mii-sample/model-configmaps/workmanager/model.20.workmanager.yaml</code>.</p>
 <p>Run the following commands:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --from-file<span style="color:#f92672">=</span>/tmp/mii-sample/model-configmaps/workmanager <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --from-file<span style="color:#f92672">=</span>/tmp/mii-sample/model-configmaps/datasource
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-</code></pre></div><p>Notes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-file<span style="color:#f92672">=</span>/tmp/mii-sample/model-configmaps/workmanager <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-file<span style="color:#f92672">=</span>/tmp/mii-sample/model-configmaps/datasource
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</span></span></code></pre></div><p>Notes:</p>
 <ul>
 <li>If you&rsquo;ve created your own model YAML file(s), then substitute the file names in the <code>--from-file=</code> parameters (we suggested <code>/tmp/mii-sample/myworkmanager.yaml</code> and <code>/tmp/mii-sample/mydatasource.xml</code> earlier).</li>
 <li>The <code>-from-file=</code> parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory. It can be specified multiple times on the same command line to load the contents from multiple locations into the ConfigMap.</li>
@@ -3290,17 +3290,17 @@
 </li>
 <li>
 <p>Update the data source secret that you created in the Update 1 use case with the correct password as well as with an increased maximum pool capacity:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns delete secret sample-domain1-datasource-secret
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   sample-domain1-datasource-secret <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;user=sys as sysdba&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;password=Oradoc_db1&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;max-capacity=10&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s&#39;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   sample-domain1-datasource-secret <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns delete secret sample-domain1-datasource-secret
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   sample-domain1-datasource-secret <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;user=sys as sysdba&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;password=Oradoc_db1&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;max-capacity=10&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s&#39;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   sample-domain1-datasource-secret <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</span></span></code></pre></div></li>
 <li>
 <p>Optionally, start the database.</p>
 <ul>
@@ -3329,22 +3329,22 @@
 <li>Call <code>kubectl -n sample-domain1-ns edit domain sample-domain1</code>.</li>
 <li>Add or edit the value of the <code>spec.configuration.model.onlineUpdate</code> stanza so it contains <code>enabled: true</code> and save.</li>
 <li>The updated domain should look something like this:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
-<span style="color:#f92672">spec</span>:
-  <span style="color:#ae81ff">...</span>
-  <span style="color:#f92672">configuration</span>:
-    <span style="color:#ae81ff">...</span>
-    <span style="color:#f92672">model</span>:
-      <span style="color:#ae81ff">...</span>
-      <span style="color:#f92672">onlineUpdate</span>:
-        <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">configuration</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">model</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">onlineUpdate</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>
 <p>Option 2: Dynamically change your domain using <code>kubectl patch</code>. For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type<span style="color:#f92672">=</span>json <span style="color:#e6db74">&#39;-p=[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/configuration/model/onlineUpdate&#34;, &#34;value&#34;: {&#34;enabled&#34; : &#39;</span>true<span style="color:#e6db74">&#39;} }]&#39;</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type<span style="color:#f92672">=</span>json <span style="color:#e6db74">&#39;-p=[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/configuration/model/onlineUpdate&#34;, &#34;value&#34;: {&#34;enabled&#34; : &#39;</span>true<span style="color:#e6db74">&#39;} }]&#39;</span>
+</span></span></code></pre></div></li>
 <li>
 <p>Option 3: Use the sample helper script.</p>
 <ul>
@@ -3375,8 +3375,8 @@ To do this:</p>
 <ul>
 <li>
 <p>Get the current <code>introspectVersion</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns get domain sample-domain1 <span style="color:#e6db74">&#39;-o=jsonpath={.spec.introspectVersion}&#39;</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns get domain sample-domain1 <span style="color:#e6db74">&#39;-o=jsonpath={.spec.introspectVersion}&#39;</span>
+</span></span></code></pre></div></li>
 <li>
 <p>Choose a new introspect version that&rsquo;s different from the current introspect version.</p>
 <ul>
@@ -3385,8 +3385,8 @@ To do this:</p>
 </li>
 <li>
 <p>Use <code>kubectl patch</code> to set the new value. For example, assuming the new introspect version is <code>2</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type<span style="color:#f92672">=</span>json <span style="color:#e6db74">&#39;-p=[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/introspectVersion&#34;, &#34;value&#34;: &#34;2&#34; }]&#39;</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns patch domain sample-domain1 --type<span style="color:#f92672">=</span>json <span style="color:#e6db74">&#39;-p=[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/introspectVersion&#34;, &#34;value&#34;: &#34;2&#34; }]&#39;</span>
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>
@@ -3406,7 +3406,7 @@ domain introspector job will apply the changes to the WebLogic Servers without r
 <ul>
 <li>
 <p>Call <code>kubectl get pods -n sample-domain1-ns --watch</code> and wait for the introspector pod to get into <code>Terminating</code> state and exit.</p>
-<pre><code>sample-domain1-introspector-vgxxl   0/1     Terminating         0          78s
+<pre tabindex="0"><code>sample-domain1-introspector-vgxxl   0/1     Terminating         0          78s
 </code></pre></li>
 <li>
 <p>Alternatively, run <code>/tmp/mii-sample/utils/wl-pod-wait.sh -p 3</code>.</p>
@@ -3423,42 +3423,41 @@ domain introspector job will apply the changes to the WebLogic Servers without r
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">  $ ./wl-pod-wait.sh -?
-</code></pre></div><pre><code>  Usage:
+        <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>  $ ./wl-pod-wait.sh -?
+</span></span></code></pre></div><pre tabindex="0"><code>  Usage:
 
     wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
        [-p expected_pod_count] \
        [-t timeout_secs] \
        [-q]
 
-    Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+    Exits non-zero if &#39;timeout_secs&#39; is reached before &#39;pod_count&#39; is reached.
 
   Parameters:
 
-    -d &lt;domain_uid&gt; : Defaults to 'sample-domain1'.
+    -d &lt;domain_uid&gt; : Defaults to &#39;sample-domain1&#39;.
 
-    -n &lt;namespace&gt;  : Defaults to 'sample-domain1-ns'.
+    -n &lt;namespace&gt;  : Defaults to &#39;sample-domain1-ns&#39;.
 
     -p 0            : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
 
     -p &lt;pod_count&gt;  : Wait until all of the following are true
-                      for exactly 'pod_count' WebLogic Server pods
+                      for exactly &#39;pod_count&#39; WebLogic Server pods
                       in the domain:
                       - ready
-                      - same 'weblogic.domainRestartVersion' label value as
-                        the domain resource's 'spec.restartVersion'
-                      - same 'weblogic.introspectVersion' label value as
-                        the domain resource's 'spec.introspectVersion'
-                      - same image as the the domain resource's image
+                      - same &#39;weblogic.domainRestartVersion&#39; label value as
+                        the domain resource&#39;s &#39;spec.restartVersion&#39;
+                      - same &#39;weblogic.introspectVersion&#39; label value as
+                        the domain resource&#39;s &#39;spec.introspectVersion&#39;
+                      - same image as the the domain resource&#39;s image
 
-    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to '1000'.
+    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to &#39;1000&#39;.
 
     -q              : Quiet mode. Show only a count of wl pods that
                       have reached the desired criteria.
 
     -?              : This help.
-
 </code></pre>
     </div>
 </div>
@@ -3474,53 +3473,53 @@ domain introspector job will apply the changes to the WebLogic Servers without r
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p <span style="color:#ae81ff">3</span>
-</code></pre></div><pre><code>@@ [2020-11-21T05:55:26][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-@@ [2020-11-21T05:55:26][seconds=0] Info:   ready='true'
-@@ [2020-11-21T05:55:26][seconds=0] Info:   image='model-in-image:WLS-v2'
-@@ [2020-11-21T05:55:26][seconds=0] Info:   domainRestartVersion='1'
-@@ [2020-11-21T05:55:26][seconds=0] Info:   introspectVersion='2'
-@@ [2020-11-21T05:55:26][seconds=0] Info:   namespace='sample-domain1-ns'
-@@ [2020-11-21T05:55:26][seconds=0] Info:   domainUID='sample-domain1'
+        <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p <span style="color:#ae81ff">3</span>
+</span></span></code></pre></div><pre tabindex="0"><code>@@ [2020-11-21T05:55:26][seconds=0] Info: Waiting up to 1000 seconds for exactly &#39;3&#39; WebLogic Server pods to reach the following criteria:
+@@ [2020-11-21T05:55:26][seconds=0] Info:   ready=&#39;true&#39;
+@@ [2020-11-21T05:55:26][seconds=0] Info:   image=&#39;model-in-image:WLS-v2&#39;
+@@ [2020-11-21T05:55:26][seconds=0] Info:   domainRestartVersion=&#39;1&#39;
+@@ [2020-11-21T05:55:26][seconds=0] Info:   introspectVersion=&#39;2&#39;
+@@ [2020-11-21T05:55:26][seconds=0] Info:   namespace=&#39;sample-domain1-ns&#39;
+@@ [2020-11-21T05:55:26][seconds=0] Info:   domainUID=&#39;sample-domain1&#39;
 
-@@ [2020-11-21T05:55:26][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-11-21T05:55:26][seconds=0] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-11-21T05:55:26][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                 RVERSION  IVERSION  IMAGE                    READY   PHASE      
 -----------------------------------  --------  --------  -----------------------  ------  ---------  
-'sample-domain1-admin-server'        '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
-'sample-domain1-introspector-4gpdj'  ''        ''        ''                       ''      'Pending'  
-'sample-domain1-managed-server1'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
-'sample-domain1-managed-server2'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+&#39;sample-domain1-admin-server&#39;        &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
+&#39;sample-domain1-introspector-4gpdj&#39;  &#39;&#39;        &#39;&#39;        &#39;&#39;                       &#39;&#39;      &#39;Pending&#39;  
+&#39;sample-domain1-managed-server1&#39;     &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
+&#39;sample-domain1-managed-server2&#39;     &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
 
-@@ [2020-11-21T05:55:28][seconds=2] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-11-21T05:55:28][seconds=2] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-11-21T05:55:28][seconds=2] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                 RVERSION  IVERSION  IMAGE                    READY   PHASE      
 -----------------------------------  --------  --------  -----------------------  ------  ---------  
-'sample-domain1-admin-server'        '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
-'sample-domain1-introspector-4gpdj'  ''        ''        ''                       ''      'Running'  
-'sample-domain1-managed-server1'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
-'sample-domain1-managed-server2'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'  
+&#39;sample-domain1-admin-server&#39;        &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
+&#39;sample-domain1-introspector-4gpdj&#39;  &#39;&#39;        &#39;&#39;        &#39;&#39;                       &#39;&#39;      &#39;Running&#39;  
+&#39;sample-domain1-managed-server1&#39;     &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
+&#39;sample-domain1-managed-server2&#39;     &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
 
-@@ [2020-11-21T05:56:53][seconds=87] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-11-21T05:56:53][seconds=87] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-11-21T05:56:53][seconds=87] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                 RVERSION  IVERSION  IMAGE                    READY   PHASE        
 -----------------------------------  --------  --------  -----------------------  ------  -----------  
-'sample-domain1-admin-server'        '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'    
-'sample-domain1-introspector-4gpdj'  ''        ''        ''                       ''      'Succeeded'  
-'sample-domain1-managed-server1'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'    
-'sample-domain1-managed-server2'     '1'       '1'       'model-in-image:WLS-v2'  'true'  'Running'    
+&#39;sample-domain1-admin-server&#39;        &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;    
+&#39;sample-domain1-introspector-4gpdj&#39;  &#39;&#39;        &#39;&#39;        &#39;&#39;                       &#39;&#39;      &#39;Succeeded&#39;  
+&#39;sample-domain1-managed-server1&#39;     &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;    
+&#39;sample-domain1-managed-server2&#39;     &#39;1&#39;       &#39;1&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;    
 
-@@ [2020-11-21T05:56:54][seconds=88] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-11-21T05:56:54][seconds=88] Info: &#39;3&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-11-21T05:56:54][seconds=88] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              RVERSION  IVERSION  IMAGE                    READY   PHASE      
 --------------------------------  --------  --------  -----------------------  ------  ---------  
-'sample-domain1-admin-server'     '1'       '2'       'model-in-image:WLS-v2'  'true'  'Running'  
-'sample-domain1-managed-server1'  '1'       '2'       'model-in-image:WLS-v2'  'true'  'Running'  
-'sample-domain1-managed-server2'  '1'       '2'       'model-in-image:WLS-v2'  'true'  'Running'  
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;       &#39;2&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;       &#39;2&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;       &#39;2&#39;       &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;  
 
 @@ [2020-11-21T05:56:54][seconds=88] Info: Success!
 </code></pre>
@@ -3539,36 +3538,35 @@ NAME                              RVERSION  IVERSION  IMAGE                    R
 <li>Determine if the data source can now contact the database (assuming you deployed the database).</li>
 </ul>
 <p>Send a web application request to the ingress controller:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ curl -s -S -m <span style="color:#ae81ff">10</span> -H <span style="color:#e6db74">&#39;host: sample-domain1-cluster-cluster-1.mii-sample.org&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   http://localhost:30305/myapp_war/index.jsp
-</code></pre></div><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can run <code>kubectl exec</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&#34;</span>
-</code></pre></div><p>You will see something like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">html</span>&gt;&lt;<span style="color:#f92672">body</span>&gt;&lt;<span style="color:#f92672">pre</span>&gt;
-*****************************************************************
-
-Hello World! This is version &#39;v2&#39; of the mii-sample JSP web-app.
-
-Welcome to WebLogic server &#39;managed-server2&#39;!
-
-  domain UID  = &#39;sample-domain1&#39;
-  domain name = &#39;domain1&#39;
-
-Found 1 local cluster runtime:
-  Cluster &#39;cluster-1&#39;
-
-Found min threads constraint runtime named &#39;SampleMinThreads&#39; with configured count: 2
-
-Found max threads constraint runtime named &#39;SampleMaxThreads&#39; with configured count: 20
-
-Found 1 local data source:
-  Datasource &#39;mynewdatasource&#39;:  State=&#39;Running&#39;, testPool=&#39;Passed&#39;
-
-*****************************************************************
-&lt;/<span style="color:#f92672">pre</span>&gt;&lt;/<span style="color:#f92672">body</span>&gt;&lt;/<span style="color:#f92672">html</span>&gt;
-
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl -s -S -m <span style="color:#ae81ff">10</span> -H <span style="color:#e6db74">&#39;host: sample-domain1-cluster-cluster-1.mii-sample.org&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   http://localhost:30305/myapp_war/index.jsp
+</span></span></code></pre></div><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can run <code>kubectl exec</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&#34;</span>
+</span></span></code></pre></div><p>You will see something like the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span>&gt;&lt;<span style="color:#f92672">body</span>&gt;&lt;<span style="color:#f92672">pre</span>&gt;
+</span></span><span style="display:flex;"><span>*****************************************************************
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Hello World! This is version &#39;v2&#39; of the mii-sample JSP web-app.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Welcome to WebLogic server &#39;managed-server2&#39;!
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  domain UID  = &#39;sample-domain1&#39;
+</span></span><span style="display:flex;"><span>  domain name = &#39;domain1&#39;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found 1 local cluster runtime:
+</span></span><span style="display:flex;"><span>  Cluster &#39;cluster-1&#39;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found min threads constraint runtime named &#39;SampleMinThreads&#39; with configured count: 2
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found max threads constraint runtime named &#39;SampleMaxThreads&#39; with configured count: 20
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found 1 local data source:
+</span></span><span style="display:flex;"><span>  Datasource &#39;mynewdatasource&#39;:  State=&#39;Running&#39;, testPool=&#39;Passed&#39;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>*****************************************************************
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">pre</span>&gt;&lt;/<span style="color:#f92672">body</span>&gt;&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div></li>
 </ol>
 <p>The <code>testPool='Passed'</code> for <code>mynewdatasource</code> verifies that your update to the data source Secret to correct the password succeeded.</p>
 <p>If you see a <code>testPool='Failed'</code> error, then it is likely you did not deploy the database or your database is not deployed correctly.</p>
@@ -5692,19 +5690,19 @@ Found 1 local data source:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997073"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997073"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993357"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997073"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

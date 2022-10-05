@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Building :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993356" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993356" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997072" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993356"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997072"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993356"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993356"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997072"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997072"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993356"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997072"></script>
 
     
   </div>
@@ -3239,13 +3239,13 @@
 
 <p>The operator is built using <a href="http://maven.apache.org">Apache Maven</a>.  The build machine will also need to have Docker installed.</p>
 <p>To build the operator, issue the following command in the project directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mvn clean install
-</code></pre></div><p>This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ mvn clean install
+</span></span></code></pre></div><p>This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.</p>
 <p>Contributions must conform to <a href="/weblogic-kubernetes-operator/3.3/developerguide/coding-standards/">coding and formatting standards</a>.</p>
 <h4 id="building-the-operator-container-image">Building the operator container image</h4>
 <p>These commands should be executed in the project root directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./buildDockerImage.sh -t weblogic-kubernetes-operator:some-tag
-</code></pre></div><p>Replace <code>&lt;version&gt;</code> with the version of the project found in the <code>pom.xml</code> file in the project root directory.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./buildDockerImage.sh -t weblogic-kubernetes-operator:some-tag
+</span></span></code></pre></div><p>Replace <code>&lt;version&gt;</code> with the version of the project found in the <code>pom.xml</code> file in the project root directory.</p>
 <p>We recommend that you use a tag other than <code>latest</code>, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.</p>
 <h4 id="running-the-operator-from-an-ide">Running the operator from an IDE</h4>
 <p>The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in <code>~/.kube/config</code> or in a location pointed to by the <code>KUBECONFIG</code> environment variable.</p>
@@ -3254,11 +3254,11 @@
 <h4 id="running-the-operator-in-a-kubernetes-cluster">Running the operator in a Kubernetes cluster</h4>
 <p>If you&rsquo;re not running Kubernetes on your development machine, you&rsquo;ll need to make the container image available to a registry visible to your Kubernetes cluster.  Either <code>docker push</code> the image to a private registry or upload your image to a machine running Docker and Kubernetes as follows:</p>
 <p>On your build machine:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker save weblogic-kubernetes-operator:some-tag &gt; operator.tar
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
-</code></pre></div><p>On the Kubernetes server:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker load &lt; /some/path/operator.tar
-</code></pre></div><p>Use the Helm charts to <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/installation/">install the operator</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker save weblogic-kubernetes-operator:some-tag &gt; operator.tar
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
+</span></span></code></pre></div><p>On the Kubernetes server:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker load &lt; /some/path/operator.tar
+</span></span></code></pre></div><p>Use the Helm charts to <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/installation/">install the operator</a>.</p>
 <p>If the operator&rsquo;s behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/using-helm/#debugging-options">debugging options</a>.</p>
 
 
@@ -5369,19 +5369,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993356"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997072"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993356"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993356"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997072"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993356"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997072"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

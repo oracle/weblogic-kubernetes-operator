@@ -13,7 +13,7 @@
       <pubDate>Sat, 23 Feb 2019 17:04:41 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/userguide/managing-domains/domain-lifecycle/startup/</guid>
-      <description>Contents  Starting and stopping servers  Common starting and stopping scenarios Domain lifecycle sample scripts   Shutdown options Restarting servers  Rolling restarts Common restarting scenarios    There are fields on the Domain that specify which servers should be running, which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain (for example, by using kubectl or the Kubernetes REST API).</description>
+      <description>Contents Starting and stopping servers Common starting and stopping scenarios Domain lifecycle sample scripts Shutdown options Restarting servers Rolling restarts Common restarting scenarios There are fields on the Domain that specify which servers should be running, which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain (for example, by using kubectl or the Kubernetes REST API). The operator will detect the changes and apply them.</description>
     </item>
     
     <item>

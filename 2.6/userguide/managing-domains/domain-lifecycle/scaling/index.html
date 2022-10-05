@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="The operator provides several ways to initiate scaling of WebLogic clusters.">
 
 
@@ -12,18 +12,18 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664993350" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664997066" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664997066"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664993350"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664997066"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664997066"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.6";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664997066"></script>
 
     
   </div>
@@ -2778,25 +2778,25 @@ if (!doNotTrack) {
 </ul>
 <h4 id="on-demand-updating-the-domain-resource-directly">On-demand, updating the domain resource directly</h4>
 <p>The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the <code>replicas</code> property within a domain resource.  This can be done by using the <code>kubectl</code> command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain resource directly by using the <code>kubectl edit</code> command.  For example:</p>
-<pre><code>$ kubectl edit domain domain1 -n [namespace]
+<pre tabindex="0"><code>$ kubectl edit domain domain1 -n [namespace]
 </code></pre><p>Here we are editing a domain resource named <code>domain1</code>.  The <code>kubectl edit</code> command will open the domain resource definition in an editor and allow you to modify the <code>replicas</code> value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the <code>replicas</code> value specification.</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   clusters:
     - clusterName: cluster-1
       replicas: 1
   ...
 </code></pre><p>Alternatively, you can specify a default <code>replicas</code> value for all the clusters.  If you do this, then you don&rsquo;t need to list the cluster in the domain resource (unless you want to customize another property of the cluster).</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   replicas: 1
   ...
 </code></pre><h4 id="calling-the-operators-rest-scale-api">Calling the operator&rsquo;s REST scale API</h4>
 <p>Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes cloud environments, scaling WebLogic clusters involves scaling the corresponding pods in which WebLogic Server Managed Server instances are running.  Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.</p>
 <p>The following URL format is used for describing the resources for scaling (up and down) a WebLogic cluster:</p>
-<pre><code>http(s)://${OPERATOR_ENDPOINT}/operator/&lt;version&gt;/domains/&lt;domainUID&gt;/clusters/&lt;clusterName&gt;/scale
+<pre tabindex="0"><code>http(s)://${OPERATOR_ENDPOINT}/operator/&lt;version&gt;/domains/&lt;domainUID&gt;/clusters/&lt;clusterName&gt;/scale
 </code></pre><p>For example:</p>
-<pre><code>http(s)://${OPERATOR_ENDPOINT}/operator/v1/domains/domain1/clusters/cluster-1/scale
+<pre tabindex="0"><code>http(s)://${OPERATOR_ENDPOINT}/operator/v1/domains/domain1/clusters/cluster-1/scale
 </code></pre><p>In this URL format:</p>
 <ul>
 <li><code>OPERATOR_ENDPOINT</code> is the host and port of the operator REST endpoint (internal or external).</li>
@@ -2805,8 +2805,8 @@ if (!doNotTrack) {
 <li><code>&lt;clusterName&gt;</code> is the name of the WebLogic cluster to be scaled.</li>
 </ul>
 <p>The <code>/scale</code> REST endpoint accepts an HTTP POST request and the request body supports the JSON <code>&quot;application/json&quot;</code> media type.  The request body will be a simple name-value item named <code>managedServerCount</code>; for example:</p>
-<pre><code>{
-    &quot;managedServerCount&quot;: 3
+<pre tabindex="0"><code>{
+    &#34;managedServerCount&#34;: 3
 }
 </code></pre><p>The <code>managedServerCount</code> value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of <code>204 (“No Content”)</code> because the resource method’s return type is void and does not return a message body.</p>
 <p>When you POST to the <code>/scale</code> REST endpoint, you must send the following headers:</p>
@@ -2815,7 +2815,7 @@ if (!doNotTrack) {
 <li><code>Authorization: Bearer</code> request value. The value of the <code>Bearer</code> token is the WebLogic domain service account token.</li>
 </ul>
 <p>For example, when using <code>curl</code>:</p>
-<pre><code>curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H &quot;Authorization:Bearer ...&quot; -d '{ &quot;managedServerCount&quot;: 3 }' https://.../scaling
+<pre tabindex="0"><code>curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H &#34;Authorization:Bearer ...&#34; -d &#39;{ &#34;managedServerCount&#34;: 3 }&#39; https://.../scaling
 </code></pre><p>If you omit the header, you&rsquo;ll get a <code>400 (bad request)</code> response without any details explaining why the request was bad.  If you omit the Bearer Authentication header, then you&rsquo;ll get a <code>401 (Unauthorized)</code> response.</p>
 <h5 id="operator-rest-endpoints">Operator REST endpoints</h5>
 <p>The WebLogic Server Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
@@ -2823,7 +2823,7 @@ The internal REST endpoint is only accessible from within the Kubernetes cluster
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
 is disabled by default and only exposed if explicitly configured.
-Detailed instructions for configuring the external REST endpoint are available <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-operators/#optional-configure-the-operators-external-rest-https-interface">here</a>.</p>
+Detailed instructions for configuring the external REST endpoint are available <a href="/userguide/managing-operators/#optional-configure-the-operators-external-rest-https-interface">here</a>.</p>
 
 <div class="notices note" ><p>Regardless of which endpoint is being invoked, the URL format for scaling is the same.</p>
 </div>
@@ -2866,7 +2866,7 @@ see <a href="https://docs.oracle.com/en/middleware/standalone/weblogic-server/14
 <p>The <code>scalingAction.sh</code> script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable <code>INTERNAL_OPERATOR_CERT</code>.<br>
 The operator’s SSL certificate can be found in the <code>internalOperatorCert</code> entry of the operator’s ConfigMap <code>weblogic-operator-cm</code>:</p>
 <p>For example:</p>
-<pre><code>#&gt; kubectl describe configmap weblogic-operator-cm -n weblogic-operator
+<pre tabindex="0"><code>#&gt; kubectl describe configmap weblogic-operator-cm -n weblogic-operator
 ...
 Data
 ====
@@ -2932,17 +2932,17 @@ The following is an example YAML file for creating the appropriate Kubernetes Cl
 <div class="notices note" ><p>In the example ClusterRoleBinding definition below, the WebLogic domain is deployed to a namespace <code>weblogic-domain</code>.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.</p>
 </div>
 
-<pre><code>kind: ClusterRole
+<pre tabindex="0"><code>kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
-- apiGroups: [&quot;weblogic.oracle&quot;]
-  resources: [&quot;domains&quot;]
-  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;update&quot;]
-- apiGroups: [&quot;apiextensions.k8s.io&quot;]
-  resources: [&quot;customresourcedefinitions&quot;]
-  verbs: [&quot;get&quot;, &quot;list&quot;]
+- apiGroups: [&#34;weblogic.oracle&#34;]
+  resources: [&#34;domains&#34;]
+  verbs: [&#34;get&#34;, &#34;list&#34;, &#34;update&#34;]
+- apiGroups: [&#34;apiextensions.k8s.io&#34;]
+  resources: [&#34;customresourcedefinitions&#34;]
+  verbs: [&#34;get&#34;, &#34;list&#34;]
 ---
 #
 # creating role-bindings for cluster role
@@ -2955,11 +2955,11 @@ subjects:
 - kind: ServiceAccount
   name: default
   namespace: weblogic-domain
-  apiGroup: &quot;&quot;
+  apiGroup: &#34;&#34;
 roleRef:
   kind: ClusterRole
   name: weblogic-domain-cluster-role
-  apiGroup: &quot;rbac.authorization.k8s.io&quot;
+  apiGroup: &#34;rbac.authorization.k8s.io&#34;
 ---
 #
 # creating role-bindings
@@ -2973,13 +2973,12 @@ subjects:
 - kind: ServiceAccount
   name: default
   namespace: weblogic-domain
-  apiGroup: &quot;&quot;
+  apiGroup: &#34;&#34;
 roleRef:
   kind: ClusterRole
   name: cluster-admin
-  apiGroup: &quot;rbac.authorization.k8s.io&quot;
+  apiGroup: &#34;rbac.authorization.k8s.io&#34;
 ---
-
 </code></pre><h4 id="using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</h4>
 <p>In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
@@ -2994,7 +2993,7 @@ Administration Server pod because the associated diagnostic module is targed to 
 <li>The domain home is in <code>/u01/oracle/user-projects/domains/domain1</code> (that is, the domain home is inside a Docker image).</li>
 <li>The Dockerfile copied <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
 </ul>
-<pre><code>&gt; kubectl exec -it domain1-admin-server /bin/bash
+<pre tabindex="0"><code>&gt; kubectl exec -it domain1-admin-server /bin/bash
 # bash&gt; cd /u01/oracle/user-projects/domains/domain1/bin/scripts
 # bash&gt; ./scalingAction.sh
 </code></pre><p>A log, <code>scalingAction.log</code>, will be generated in the same directory in which the script was executed and can be examined for errors.</p>
@@ -3024,7 +3023,7 @@ This example assumes the operator and domain resource are configured with the fo
 </ul>
 </li>
 </ul>
-<pre><code>#!/bin/sh
+<pre tabindex="0"><code>#!/bin/sh
 
 # Setup properties  
 ophost=`uname -n`
@@ -3036,36 +3035,35 @@ sa=weblogic-operator # Operator ServiceAccount
 domainuid=domain1
 
 # Retrieve service account name for given namespace   
-sec=`kubectl get serviceaccount ${sa} -n ${ns} -o jsonpath='{.secrets[0].name}'`
-#echo &quot;Secret [${sec}]&quot;
+sec=`kubectl get serviceaccount ${sa} -n ${ns} -o jsonpath=&#39;{.secrets[0].name}&#39;`
+#echo &#34;Secret [${sec}]&#34;
 
 # Retrieve base64 encoded secret for the given service account   
-enc_token=`kubectl get secret ${sec} -n ${ns} -o jsonpath='{.data.token}'`
-#echo &quot;enc_token [${enc_token}]&quot;
+enc_token=`kubectl get secret ${sec} -n ${ns} -o jsonpath=&#39;{.data.token}&#39;`
+#echo &#34;enc_token [${enc_token}]&#34;
 
 # Decode the base64 encoded token  
 token=`echo ${enc_token} | base64 --decode`
-#echo &quot;token [${token}]&quot;
+#echo &#34;token [${token}]&#34;
 
 # clean up any temporary files
 rm -rf operator.rest.response.body operator.rest.stderr operator.cert.pem
 
-# Retrieve SSL certificate from the Operator's external REST endpoint
+# Retrieve SSL certificate from the Operator&#39;s external REST endpoint
 `openssl s_client -showcerts -connect ${ophost}:${opport} &lt;/dev/null 2&gt;/dev/null | openssl x509 -outform PEM &gt; operator.cert.pem`
 
-echo &quot;Rest EndPoint url https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale&quot;
+echo &#34;Rest EndPoint url https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale&#34;
 
-# Issue 'curl' request to external REST endpoint  
-curl --noproxy '*' -v --cacert operator.cert.pem \
--H &quot;Authorization: Bearer ${token}&quot; \
+# Issue &#39;curl&#39; request to external REST endpoint  
+curl --noproxy &#39;*&#39; -v --cacert operator.cert.pem \
+-H &#34;Authorization: Bearer ${token}&#34; \
 -H Accept:application/json \
--H &quot;Content-Type:application/json&quot; \
--H &quot;X-Requested-By:WLDF&quot; \
--d &quot;{\&quot;managedServerCount\&quot;: $size}&quot; \
+-H &#34;Content-Type:application/json&#34; \
+-H &#34;X-Requested-By:WLDF&#34; \
+-d &#34;{\&#34;managedServerCount\&#34;: $size}&#34; \
 -X POST  https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale \
 -o operator.rest.response.body \
 --stderr operator.rest.stderr
-
 </code></pre>
 
 <footer class=" footline" >
@@ -4936,19 +4934,19 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664997067"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664997067"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664993350" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664993350"></script>
+    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664997067" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664997067"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Obtain and inspect images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR).">
 
 
@@ -12,20 +12,20 @@
     <title>OCR images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993346" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993346"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3770,16 +3770,16 @@ the acceptance applies to all versions of WebLogic CPU images.</p>
 <p>Provide Docker with credentials for accessing
 the Oracle Container Registry. For example,
 the following command will prompt for your SSO credentials:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker login container-registry.oracle.com
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker login container-registry.oracle.com
+</span></span></code></pre></div></li>
 <li>
 <p>Use Docker to pull the desired image:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker pull container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker pull container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8
+</span></span></code></pre></div></li>
 <li>
 <p>Use Docker to display an inventory of your local image cache:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker images
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker images
+</span></span></code></pre></div></li>
 <li>
 <p>If desired, then you can <a href="#inspect-images">inspect</a> the content of the image.</p>
 </li>
@@ -3803,23 +3803,23 @@ then you can use the following commands to determine their contents:</p>
 <ul>
 <li>
 <p>Check the WLS version:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ docker run \
-  container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
-  sh -c &#39;source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh &gt; /dev/null 2&gt;&amp;1 &amp;&amp; java weblogic.version&#39;
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ docker run \
+</span></span><span style="display:flex;"><span>  container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
+</span></span><span style="display:flex;"><span>  sh -c &#39;source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh &gt; /dev/null 2&gt;&amp;1 &amp;&amp; java weblogic.version&#39;
+</span></span></code></pre></div></li>
 <li>
 <p>Check the WLS patches:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ docker run \
-container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
-sh -c &#39;$ORACLE_HOME/OPatch/opatch lspatches&#39;
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ docker run \
+</span></span><span style="display:flex;"><span>container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
+</span></span><span style="display:flex;"><span>sh -c &#39;$ORACLE_HOME/OPatch/opatch lspatches&#39;
+</span></span></code></pre></div></li>
 <li>
 <p>If you have installed the <a href="https://github.com/oracle/weblogic-image-tool">WebLogic Image Tool</a> (WIT),
 then you can obtain useful version and patch information using the WIT
 <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/">inspect</a> command with
 the <code>--patches</code> option.
 For example:</p>
-<pre><code>$ /tmp/imagetool/bin/imagetool.sh inspect \
+<pre tabindex="0"><code>$ /tmp/imagetool/bin/imagetool.sh inspect \
 --image=container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
 --patches
 </code></pre></li>
@@ -6182,19 +6182,19 @@ see <a href="#understand-oracle-container-registry-images">Understand Oracle Con
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

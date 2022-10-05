@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Sample for creating the domain custom resource manually.">
 
 
@@ -12,20 +12,20 @@
     <title>Manually :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997064" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997064"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997064"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997064"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997064"></script>
 
     
   </div>
@@ -1834,7 +1834,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/domains/manually-create-domain/" title="Manually" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3525,12 +3525,12 @@ be the most suitable for your needs.</p>
 <p>To create the domain custom resource, just make a copy of the sample <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/scripts/create-weblogic-domain/manually-create-domain/domain.yaml">domain.yaml</a> file, and then edit
 it using the instructions provided in the comments in that file.
 When it is ready, you can create the domain in your Kubernetes cluster using the command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f domain.yaml
-</code></pre></div><p>You can verify the domain custom resource was created using this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n YOUR_NAMESPACE get domains
-</code></pre></div><p>You can view the details of the domain using this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n YOUR_NAMESPACE describe domain YOUR_DOMAIN
-</code></pre></div><p>In both of these commands, replace <code>YOUR_NAMESPACE</code> with the namespace in which you created the domain, and
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f domain.yaml
+</span></span></code></pre></div><p>You can verify the domain custom resource was created using this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n YOUR_NAMESPACE get domains
+</span></span></code></pre></div><p>You can view the details of the domain using this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n YOUR_NAMESPACE describe domain YOUR_DOMAIN
+</span></span></code></pre></div><p>In both of these commands, replace <code>YOUR_NAMESPACE</code> with the namespace in which you created the domain, and
 replace <code>YOUR_DOMAIN</code> with the <code>domainUID</code> you chose.</p>
 
 
@@ -5853,19 +5853,19 @@ replace <code>YOUR_DOMAIN</code> with the <code>domainUID</code> you chose.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997064"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997064"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997064"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

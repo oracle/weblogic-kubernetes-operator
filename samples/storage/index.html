@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Sample for creating a PV or PVC that can be used by a Domain YAML file as the persistent storage for the WebLogic domain home or log files.">
 
 
@@ -12,20 +12,20 @@
     <title>Storage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997064" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997064"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997064"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997064"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997064"></script>
 
     
   </div>
@@ -1753,7 +1753,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/samples/storage/" title="Storage" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3525,20 +3525,20 @@
 <p>The sample scripts demonstrate the creation of a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC), which can then be used in a Domain YAML file as a persistent storage for the WebLogic domain home or log files.</p>
 <p>A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.</p>
 <h4 id="prerequisites">Prerequisites</h4>
-<p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</p>
+<p>Before you begin, read this document, <a href="/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</p>
 <h4 id="using-the-scripts-to-create-a-pv-and-pvc">Using the scripts to create a PV and PVC</h4>
 <p>Prior to running the <code>create-pv-pvc.sh</code> script, make a copy of the <code>create-pv-pvc-inputs.yaml</code> file, and uncomment and explicitly configure the <code>weblogicDomainStoragePath</code> property in the inputs file.</p>
 <p>Run the create script, pointing it at your inputs file and an output directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./create-pv-pvc.sh <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -i create-pv-pvc-inputs.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -o /path/to/output-directory
-</code></pre></div><p>The <code>create-pv-pvc.sh</code> script will create a subdirectory <code>pv-pvcs</code> under the given <code>/path/to/output-directory</code> directory. By default, the script generates two YAML files, namely <code>weblogic-sample-pv.yaml</code> and <code>weblogic-sample-pvc.yaml</code>, in the <code>/path/to/output-directory/pv-pvcs</code>. These two YAML files can be used to create the Kubernetes resources using the <code>kubectl create -f</code> command.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f weblogic-sample-pv.yaml
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f weblogic-sample-pvc.yaml
-</code></pre></div><p>As a convenience, the script can optionally create the PV and PVC resources using the <code>-e</code> option.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./create-pv-pvc.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -i create-pv-pvc-inputs.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -o /path/to/output-directory
+</span></span></code></pre></div><p>The <code>create-pv-pvc.sh</code> script will create a subdirectory <code>pv-pvcs</code> under the given <code>/path/to/output-directory</code> directory. By default, the script generates two YAML files, namely <code>weblogic-sample-pv.yaml</code> and <code>weblogic-sample-pvc.yaml</code>, in the <code>/path/to/output-directory/pv-pvcs</code>. These two YAML files can be used to create the Kubernetes resources using the <code>kubectl create -f</code> command.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create -f weblogic-sample-pv.yaml
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create -f weblogic-sample-pvc.yaml
+</span></span></code></pre></div><p>As a convenience, the script can optionally create the PV and PVC resources using the <code>-e</code> option.</p>
 <p>The usage of the create script is as follows:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sh create-pv-pvc.sh -h
-</code></pre></div><pre><code>usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sh create-pv-pvc.sh -h
+</span></span></code></pre></div><pre tabindex="0"><code>usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated yaml files, must be specified.
   -e Also create the Kubernetes objects using the generated yaml files
@@ -3604,90 +3604,89 @@
 <p>The create script will verify that the PV and PVC were created, and will report a failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.</p>
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
 <p>The content of the generated <code>weblogic-sample-pvc.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
-
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-sample-pvc</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-
-  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">weblogic-sample-storage-class</span>
-  <span style="color:#f92672">accessModes</span>:
-    - <span style="color:#ae81ff">ReadWriteMany</span>
-  <span style="color:#f92672">resources</span>:
-    <span style="color:#f92672">requests</span>:
-      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
-</code></pre></div><p>The content of the generated <code>weblogic-sample-pv.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
-
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolume</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-sample-pv</span>
-  <span style="color:#75715e"># labels:</span>
-  <span style="color:#75715e">#   weblogic.domainUID:</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">weblogic-sample-storage-class</span>
-  <span style="color:#f92672">capacity</span>:
-    <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
-  <span style="color:#f92672">accessModes</span>:
-    - <span style="color:#ae81ff">ReadWriteMany</span>
-  <span style="color:#75715e"># Valid values are Retain, Delete or Recycle</span>
-  <span style="color:#f92672">persistentVolumeReclaimPolicy</span>: <span style="color:#ae81ff">Retain</span>
-  <span style="color:#f92672">hostPath</span>:
-  <span style="color:#75715e"># nfs:</span>
-    <span style="color:#75715e"># server: %SAMPLE_STORAGE_NFS_SERVER%</span>
-    <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/scratch/k8s_dir&#34;</span>
-
-</code></pre></div><h5 id="generated-yaml-files-for-dedicated-pv-and-pvc">Generated YAML files for dedicated PV and PVC</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-sample-pvc</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">weblogic-sample-storage-class</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteMany</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
+</span></span></code></pre></div><p>The content of the generated <code>weblogic-sample-pv.yaml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolume</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-sample-pv</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># labels:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#   weblogic.domainUID:</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">weblogic-sample-storage-class</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">capacity</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteMany</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Valid values are Retain, Delete or Recycle</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">persistentVolumeReclaimPolicy</span>: <span style="color:#ae81ff">Retain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">hostPath</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># nfs:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># server: %SAMPLE_STORAGE_NFS_SERVER%</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/scratch/k8s_dir&#34;</span>
+</span></span></code></pre></div><h5 id="generated-yaml-files-for-dedicated-pv-and-pvc">Generated YAML files for dedicated PV and PVC</h5>
 <p>The content of the generated <code>domain1-weblogic-sample-pvc.yaml</code> when <code>domainUID</code> is set to <code>domain1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
-
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-sample-pvc</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">domain1-weblogic-sample-storage-class</span>
-  <span style="color:#f92672">accessModes</span>:
-    - <span style="color:#ae81ff">ReadWriteMany</span>
-  <span style="color:#f92672">resources</span>:
-    <span style="color:#f92672">requests</span>:
-      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
-</code></pre></div><p>The content of the generated <code>domain1-weblogic-sample-pv.yaml</code> when <code>domainUID</code> is set to <code>domain1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
-
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolume</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-sample-pv</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">domain1-weblogic-sample-storage-class</span>
-  <span style="color:#f92672">capacity</span>:
-    <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
-  <span style="color:#f92672">accessModes</span>:
-    - <span style="color:#ae81ff">ReadWriteMany</span>
-  <span style="color:#75715e"># Valid values are Retain, Delete or Recycle</span>
-  <span style="color:#f92672">persistentVolumeReclaimPolicy</span>: <span style="color:#ae81ff">Retain</span>
-  <span style="color:#f92672">hostPath</span>:
-  <span style="color:#75715e"># nfs:</span>
-    <span style="color:#75715e"># server: %SAMPLE_STORAGE_NFS_SERVER%</span>
-    <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/scratch/k8s_dir&#34;</span>
-</code></pre></div><h4 id="verify-the-pv-and-pvc-objects">Verify the PV and PVC objects</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-sample-pvc</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">domain1-weblogic-sample-storage-class</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteMany</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
+</span></span></code></pre></div><p>The content of the generated <code>domain1-weblogic-sample-pv.yaml</code> when <code>domainUID</code> is set to <code>domain1</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright 2018, 2021, Oracle and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolume</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-sample-pv</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">domain1-weblogic-sample-storage-class</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">capacity</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteMany</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Valid values are Retain, Delete or Recycle</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">persistentVolumeReclaimPolicy</span>: <span style="color:#ae81ff">Retain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">hostPath</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># nfs:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># server: %SAMPLE_STORAGE_NFS_SERVER%</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/scratch/k8s_dir&#34;</span>
+</span></span></code></pre></div><h4 id="verify-the-pv-and-pvc-objects">Verify the PV and PVC objects</h4>
 <p>You can use this command to verify the PersistentVolume was created. Note that the <code>Status</code> field
 should have the value <code>Bound</code>, indicating the that PersistentVolume has been claimed:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe pv weblogic-sample-pv
-</code></pre></div><pre><code>Name:            weblogic-sample-pv
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe pv weblogic-sample-pv
+</span></span></code></pre></div><pre tabindex="0"><code>Name:            weblogic-sample-pv
 Annotations:     pv.kubernetes.io/bound-by-controller=yes
 StorageClass:    weblogic-sample-storage-class
 Status:          Bound
@@ -3701,10 +3700,9 @@ Source:
     Path:          /scratch/k8s_dir
     HostPathType:  
 Events:            &lt;none&gt;
-
 </code></pre><p>You can use this command to verify the PersistentVolumeClaim was created:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe pvc weblogic-sample-pvc
-</code></pre></div><pre><code>Name:          weblogic-sample-pvc
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe pvc weblogic-sample-pvc
+</span></span></code></pre></div><pre tabindex="0"><code>Name:          weblogic-sample-pvc
 Namespace:     default
 StorageClass:  weblogic-sample-storage-class
 Status:        Bound
@@ -3715,7 +3713,6 @@ Finalizers:    []
 Capacity:      10Gi
 Access Modes:  RWX
 Events:        &lt;none&gt;
-
 </code></pre>
 
 
@@ -6036,19 +6033,19 @@ Events:        &lt;none&gt;
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997064"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997064"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997064"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

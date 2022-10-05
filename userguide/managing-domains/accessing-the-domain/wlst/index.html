@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.">
 
 
@@ -12,20 +12,20 @@
     <title>Use WLST :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993346" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993346"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3548,32 +3548,32 @@ Typically, this is the preferred method.</p>
 its Administration Server is named <code>admin-server</code> and is configured with default port <code>7001</code>,
 and its pods are running in namespace <code>sample-domain1-ns</code>,
 then you can start an interactive WLST session this way:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">
-$ kubectl -n sample-domain1-ns exec -it sample-domain1-admin-server /bin/bash
-
-[oracle@sample-domain1-admin-server oracle]$ wlst.sh
-
-Initializing WebLogic Scripting Tool (WLST) ...
-
-Welcome to WebLogic Server Administration Scripting Shell
-
-Type help() for help on available commands
-
-wls:/offline&gt; connect(&#39;myusername&#39;,&#39;mypassword&#39;,&#39;t3://sample-domain1-admin-server:7001&#39;)
-Connecting to t3://sample-domain1-admin-server:7001 with userid myusername ...
-Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
-
-Warning: An insecure protocol was used to connect to the server.
-To ensure on-the-wire security, the SSL port or Admin port should be used instead.
-
-wls:/base_domain/serverConfig/&gt; exit()
-
-
-Exiting WebLogic Scripting Tool.
-[oracle@sample-domain1-admin-server oracle]$ exit
-
-$
-</code></pre></div><h3 id="use-a-nodeport">Use a <code>NodePort</code></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns exec -it sample-domain1-admin-server /bin/bash
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[oracle@sample-domain1-admin-server oracle]$ wlst.sh
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Initializing WebLogic Scripting Tool (WLST) ...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Welcome to WebLogic Server Administration Scripting Shell
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Type help() for help on available commands
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/offline&gt; connect(&#39;myusername&#39;,&#39;mypassword&#39;,&#39;t3://sample-domain1-admin-server:7001&#39;)
+</span></span><span style="display:flex;"><span>Connecting to t3://sample-domain1-admin-server:7001 with userid myusername ...
+</span></span><span style="display:flex;"><span>Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Warning: An insecure protocol was used to connect to the server.
+</span></span><span style="display:flex;"><span>To ensure on-the-wire security, the SSL port or Admin port should be used instead.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/base_domain/serverConfig/&gt; exit()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Exiting WebLogic Scripting Tool.
+</span></span><span style="display:flex;"><span>[oracle@sample-domain1-admin-server oracle]$ exit
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$
+</span></span></code></pre></div><h3 id="use-a-nodeport">Use a <code>NodePort</code></h3>
 
 <div class="notices tip" ><p>If you are setting up WLST access through a <code>NodePort</code> and your external port
 is not going to be the same as the port number on the WebLogic Administration Server Pod, then see
@@ -3597,27 +3597,27 @@ the <code>domain.spec.adminServer.adminService.channels</code> attribute.</li>
 </ol>
 <p>Here is an example snippet of a WebLogic domain <code>config.xml</code> file
 for T3 channel <code>T3Channel</code> defined for an Administration Server named <code>admin-server</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#f92672">&lt;server&gt;</span>
-  <span style="color:#f92672">&lt;name&gt;</span>admin-server<span style="color:#f92672">&lt;/name&gt;</span>
-  <span style="color:#f92672">&lt;listen-port&gt;</span>7001<span style="color:#f92672">&lt;/listen-port&gt;</span>
-  <span style="color:#f92672">&lt;listen-address/&gt;</span>
-  <span style="color:#f92672">&lt;network-access-point&gt;</span>
-    <span style="color:#f92672">&lt;name&gt;</span>T3Channel<span style="color:#f92672">&lt;/name&gt;</span>
-    <span style="color:#f92672">&lt;protocol&gt;</span>t3<span style="color:#f92672">&lt;/protocol&gt;</span>
-    <span style="color:#f92672">&lt;public-address&gt;</span>kubernetes001<span style="color:#f92672">&lt;/public-address&gt;</span>
-    <span style="color:#f92672">&lt;listen-port&gt;</span>30012<span style="color:#f92672">&lt;/listen-port&gt;</span>
-    <span style="color:#f92672">&lt;public-port&gt;</span>30012<span style="color:#f92672">&lt;/public-port&gt;</span>
-  <span style="color:#f92672">&lt;/network-access-point&gt;</span>
-<span style="color:#f92672">&lt;/server&gt;</span>
-</code></pre></div><p>Here is an example snippet of a domain resource that
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;server&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>admin-server<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;listen-port&gt;</span>7001<span style="color:#f92672">&lt;/listen-port&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;listen-address/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;network-access-point&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;name&gt;</span>T3Channel<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;protocol&gt;</span>t3<span style="color:#f92672">&lt;/protocol&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;public-address&gt;</span>kubernetes001<span style="color:#f92672">&lt;/public-address&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;listen-port&gt;</span>30012<span style="color:#f92672">&lt;/listen-port&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;public-port&gt;</span>30012<span style="color:#f92672">&lt;/public-port&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/network-access-point&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/server&gt;</span>
+</span></span></code></pre></div><p>Here is an example snippet of a domain resource that
 sets up a NodePort for the channel:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">adminServer</span>:
-    <span style="color:#f92672">adminService</span>:
-      <span style="color:#f92672">channels</span>:
-       - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">T3Channel</span>
-         <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30012</span>
-</code></pre></div><p>If you set the <code>nodePort:</code> value to <code>0</code>, then Kubernetes will choose
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">adminServer</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">adminService</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">channels</span>:
+</span></span><span style="display:flex;"><span>       - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">T3Channel</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30012</span>
+</span></span></code></pre></div><p>If you set the <code>nodePort:</code> value to <code>0</code>, then Kubernetes will choose
 an open port for you.</p>
 <p>For more details on exposing the T3 channel using a NodePort service,
 run the <code>kubectl explain domain.spec.adminServer.adminService.channels</code> command
@@ -3628,31 +3628,31 @@ and you have set up a NodePort service
 on external port <code>30012</code> using
 the <code>domain.spec.adminServer.adminService.channels</code> attribute,
 then the service would be called:</p>
-<pre><code>domain1-admin-server-ext
+<pre tabindex="0"><code>domain1-admin-server-ext
 </code></pre><p>This service will be in the same namespace as the domain, and its external port number can be obtained by checking its <code>nodePort</code> field:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get service domain1-admin-server-ext -n mynamespace -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.ports[0].nodePort}&#39;</span>
-</code></pre></div><pre><code>30012
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get service domain1-admin-server-ext -n mynamespace -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.ports[0].nodePort}&#39;</span>
+</span></span></code></pre></div><pre tabindex="0"><code>30012
 </code></pre><p>If the Kubernetes node machine address is <code>kubernetes001</code>, then WLST can connect to
 the WebLogic Server Administration Server pod through the <code>NodePort</code> as shown below:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ $ORACLE_HOME/oracle_common/common/bin/wlst.sh
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Initializing WebLogic Scripting Tool (WLST) ...
-
-Welcome to WebLogic Server Administration Scripting Shell
-
-Type help() for help on available commands
-
-wls:/offline&gt; connect(&#39;myusername&#39;,&#39;mypassword&#39;,&#39;t3://kubernetes001:30012&#39;)
-Connecting to t3://kubernetes001:30012 with userid myusername ...
-Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
-
-Warning: An insecure protocol was used to connect to the server.
-To ensure on-the-wire security, the SSL port or Admin port should be used instead.
-
-wls:/base_domain/serverConfig/&gt; exit()
-
-
-Exiting WebLogic Scripting Tool.
-</code></pre></div><h4 id="use-port-forwarding">Use port forwarding</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ $ORACLE_HOME/oracle_common/common/bin/wlst.sh
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Initializing WebLogic Scripting Tool (WLST) ...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Welcome to WebLogic Server Administration Scripting Shell
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Type help() for help on available commands
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/offline&gt; connect(&#39;myusername&#39;,&#39;mypassword&#39;,&#39;t3://kubernetes001:30012&#39;)
+</span></span><span style="display:flex;"><span>Connecting to t3://kubernetes001:30012 with userid myusername ...
+</span></span><span style="display:flex;"><span>Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Warning: An insecure protocol was used to connect to the server.
+</span></span><span style="display:flex;"><span>To ensure on-the-wire security, the SSL port or Admin port should be used instead.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/base_domain/serverConfig/&gt; exit()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Exiting WebLogic Scripting Tool.
+</span></span></code></pre></div><h4 id="use-port-forwarding">Use port forwarding</h4>
 <p>One way to provide external access to WLST
 is to forward network traffic from a local port on your local machine
 to the administration port of an Administration Server Pod.
@@ -5988,19 +5988,19 @@ For domain security considerations, see <a href="/weblogic-kubernetes-operator/s
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

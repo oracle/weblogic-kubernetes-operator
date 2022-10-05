@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Install the operator and ingress controller :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993346" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993346"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3522,48 +3522,48 @@
 
 <h4 id="use-helm-to-install-the-operator-and-traefikhttpgithubcomoracleweblogic-kubernetes-operatorblobhahahugoshortcode-s0-hbhbkubernetessampleschartstraefikreadmemd-ingress-controller">Use Helm to install the operator and <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/charts/traefik/README.md">Traefik</a> ingress controller.</h4>
 <p>First, set up Helm:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm repo add traefik https://helm.traefik.io/traefik --force-update
-</code></pre></div><h4 id="create-a-traefik-ingress-controller">Create a Traefik ingress controller.</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm repo add traefik https://helm.traefik.io/traefik --force-update
+</span></span></code></pre></div><h4 id="create-a-traefik-ingress-controller">Create a Traefik ingress controller.</h4>
 <p>Create a namespace for the ingress controller.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create namespace traefik
-</code></pre></div><p>Use the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/charts/traefik/values.yaml">values.yaml</a> file in the sample but set <code>kubernetes.namespaces</code> specifically.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install traefik-operator traefik/traefik <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --namespace traefik <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --values kubernetes/samples/charts/traefik/values.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --set <span style="color:#e6db74">&#34;kubernetes.namespaces={traefik}&#34;</span>
-</code></pre></div><h4 id="install-the-operator">Install the operator.</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create namespace traefik
+</span></span></code></pre></div><p>Use the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/kubernetes/samples/charts/traefik/values.yaml">values.yaml</a> file in the sample but set <code>kubernetes.namespaces</code> specifically.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install traefik-operator traefik/traefik <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --namespace traefik <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --values kubernetes/samples/charts/traefik/values.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --set <span style="color:#e6db74">&#34;kubernetes.namespaces={traefik}&#34;</span>
+</span></span></code></pre></div><h4 id="install-the-operator">Install the operator.</h4>
 <ol>
 <li>
 <p>Create a namespace for the operator:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create namespace sample-weblogic-operator-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create namespace sample-weblogic-operator-ns
+</span></span></code></pre></div></li>
 <li>
 <p>Create a service account for the operator in the operator&rsquo;s namespace:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+</span></span></code></pre></div></li>
 <li>
 <p>Access the operator Helm chart using this format: <code>helm repo add &lt;helm-chart-repo-name&gt; &lt;helm-chart-repo-url&gt;</code>.
 Each version of the Helm chart defaults to using an operator image from the matching version.</p>
-<pre><code>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
+<pre tabindex="0"><code>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
 </code></pre><p>Install the operator using this format: <code>helm install &lt;helm-release-name&gt; &lt;helm-chart-repo-name&gt;/weblogic-operator ...</code></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install sample-weblogic-operator weblogic-operator/weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --version 3.4.3 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace sample-weblogic-operator-ns <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;enableClusterRoleBinding=true&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaceSelectionStrategy=LabelSelector&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaceLabelSelector=weblogic-operator\=enabled&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wait
-</code></pre></div><p>This Helm release deploys the operator and configures it to manage Domains in any Kubernetes namespace with the label, <code>weblogic-operator=enabled</code>. Because of the <code>enableClusterRoleBinding</code> option, the operator will have privilege in all Kubernetes namespaces. This simplifies adding and removing managed namespaces as you will only have to adjust labels on those namespaces. If you want to limit the operator&rsquo;s privilege to just the set of namespaces that it will manage, then remove this option, but this will mean that the operator has privilege only in the set of namespaces that match the selection strategy at the time the Helm release was installed or upgraded.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install sample-weblogic-operator weblogic-operator/weblogic-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --version 3.4.3 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace sample-weblogic-operator-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;enableClusterRoleBinding=true&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaceSelectionStrategy=LabelSelector&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaceLabelSelector=weblogic-operator\=enabled&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wait
+</span></span></code></pre></div><p>This Helm release deploys the operator and configures it to manage Domains in any Kubernetes namespace with the label, <code>weblogic-operator=enabled</code>. Because of the <code>enableClusterRoleBinding</code> option, the operator will have privilege in all Kubernetes namespaces. This simplifies adding and removing managed namespaces as you will only have to adjust labels on those namespaces. If you want to limit the operator&rsquo;s privilege to just the set of namespaces that it will manage, then remove this option, but this will mean that the operator has privilege only in the set of namespaces that match the selection strategy at the time the Helm release was installed or upgraded.</p>
 </li>
 <li>
 <p>Verify that the operator&rsquo;s pod is running, by listing the pods in the operator&rsquo;s namespace. You should see one
 for the operator.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods -n sample-weblogic-operator-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods -n sample-weblogic-operator-ns
+</span></span></code></pre></div></li>
 <li>
 <p>Verify that the operator is up and running by viewing the operator pod&rsquo;s log:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
+</span></span></code></pre></div></li>
 </ol>
 
 
@@ -5879,19 +5879,19 @@ for the operator.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

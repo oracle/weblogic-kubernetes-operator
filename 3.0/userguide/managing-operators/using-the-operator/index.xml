@@ -13,8 +13,9 @@
       <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.0/userguide/managing-operators/using-the-operator/using-helm/</guid>
-      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options   Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository, see Alternatively, install the operator Helm chart from the GitHub chart repository.
-Useful Helm operations Show the available operator configuration parameters and their default values:</description>
+      <description>Contents Useful Helm operations Operator Helm configuration values Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options Common mistakes and solutions Note that the operator Helm chart is available from the GitHub chart repository, see Alternatively, install the operator Helm chart from the GitHub chart repository.
+Useful Helm operations Show the available operator configuration parameters and their default values:
+$ helm inspect values kubernetes/charts/weblogic-operator Show the custom values you configured for the operator Helm release:</description>
     </item>
     
     <item>
@@ -25,7 +26,7 @@ Useful Helm operations Show the available operator configuration parameters and 
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.0/userguide/managing-operators/using-the-operator/the-rest-api/</guid>
       <description>Use the operator&amp;rsquo;s REST services The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations. Swagger documentation for the REST API is available here.
 You can access most of the REST services using GET, for example:
- To obtain a list of domains, send a GET request to the URL /operator/latest/domains To obtain a list of clusters in a domain, send a GET request to the URL /operator/latest/domains/&amp;lt;domainUID&amp;gt;/clusters  All of the REST services require authentication.</description>
+To obtain a list of domains, send a GET request to the URL /operator/latest/domains To obtain a list of clusters in a domain, send a GET request to the URL /operator/latest/domains/&amp;lt;domainUID&amp;gt;/clusters All of the REST services require authentication.</description>
     </item>
     
   </channel>

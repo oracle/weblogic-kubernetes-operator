@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Run an ephemeral database in Kubernetes that is suitable for sample or basic testing purposes.">
 
 
@@ -12,20 +12,20 @@
     <title>Run a database :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993357" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993357"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -1517,7 +1517,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.3/samples/database/" title="Run a database" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3320,9 +3320,9 @@ For more details, see My Oracle Support note: Oracle Support for Database Runnin
 <li>
 <p>Get the operator source and put it in <code>/tmp/weblogic-kubernetes-operator</code>.</p>
 <p>For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
+</span></span></code></pre></div><blockquote>
 <p><strong>Note</strong>: We will refer to the top directory of the operator source tree as <code>/tmp/weblogic-kubernetes-operator</code>; however, you can use a different location.</p>
 </blockquote>
 <p>For additional information about obtaining the operator source, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/">Developer Guide Requirements</a>.</p>
@@ -3344,15 +3344,14 @@ For more details, see My Oracle Support note: Oracle Support for Database Runnin
 <p>If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then:</p>
 <ul>
 <li>Deploy a Kubernetes <code>docker secret</code> to the default namespace with login credentials for <code>container-registry.oracle.com</code>:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl create secret docker-registry docker-secret <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        --docker-server<span style="color:#f92672">=</span>container-registry.oracle.com <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        --docker-username<span style="color:#f92672">=</span>your.email@some.com <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        --docker-password<span style="color:#f92672">=</span>your-password <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        --docker-email<span style="color:#f92672">=</span>your.email@some.com <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        -n default
-</code></pre></div><p>Pass the name of this secret as a parameter to the <code>start-db-service.sh</code>
-in the following step using <code>-s your-image-pull-secret</code>.</p>
-</li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubectl create secret docker-registry docker-secret <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        --docker-server<span style="color:#f92672">=</span>container-registry.oracle.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        --docker-username<span style="color:#f92672">=</span>your.email@some.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        --docker-password<span style="color:#f92672">=</span>your-password <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        --docker-email<span style="color:#f92672">=</span>your.email@some.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        -n default
+</span></span></code></pre></div>Pass the name of this secret as a parameter to the <code>start-db-service.sh</code>
+in the following step using <code>-s your-image-pull-secret</code>.</li>
 <li>Alternatively, copy the database image to each local Docker cache in the cluster.</li>
 <li>For more information, see the <a href="/weblogic-kubernetes-operator/3.3/faq/cannot-pull-image/">Cannot pull image FAQ</a>.</li>
 </ul>
@@ -3364,9 +3363,9 @@ in the following step using <code>-s your-image-pull-secret</code>.</p>
 <p>Create a deployment using the database image:</p>
 <p>Use the sample script in <code>/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service</code>
 to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ start-db-service.sh
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ start-db-service.sh
+</span></span></code></pre></div></li>
 </ol>
 <h3 id="mysql-database-in-kubernetes">MySQL database in Kubernetes</h3>
 <p>The following example shows how to set up an ephemeral MySQL database with the following attributes:</p>
@@ -3413,51 +3412,51 @@ to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
 </tbody>
 </table>
 <p>Copy the following YAML into a file named <code>mysql.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-db</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">mysql-db</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">terminationGracePeriodSeconds</span>: <span style="color:#ae81ff">5</span>
-  <span style="color:#f92672">containers</span>:
-  - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">mysql:5.6</span>
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql</span>
-    <span style="color:#f92672">env</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">MYSQL_ROOT_PASSWORD</span>
-      <span style="color:#f92672">valueFrom</span>:
-        <span style="color:#f92672">secretKeyRef</span>:
-          <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-secret</span>
-          <span style="color:#f92672">key</span>: <span style="color:#ae81ff">root-password</span>
-    <span style="color:#f92672">ports</span>:
-    - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">3306</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-db</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">ports</span>:
-  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">3306</span>
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">mysql-db</span>
-  <span style="color:#f92672">clusterIP</span>: <span style="color:#ae81ff">None</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-secret</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-<span style="color:#f92672">data</span>:
-  <span style="color:#75715e"># echo -n &#34;root&#34; | base64</span>
-  <span style="color:#f92672">root-user</span>: <span style="color:#ae81ff">cm9vdA==</span>
-  <span style="color:#75715e"># echo -n &#34;password&#34; | base64</span>
-  <span style="color:#f92672">root-password</span>: <span style="color:#ae81ff">cGFzc3dvcmQ=</span>
-</code></pre></div><p>Deploy MySQL using the command <code>kubectl create -f mysql.yaml</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-db</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">mysql-db</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">terminationGracePeriodSeconds</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">mysql:5.6</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">MYSQL_ROOT_PASSWORD</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-secret</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">key</span>: <span style="color:#ae81ff">root-password</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">3306</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-db</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">3306</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">mysql-db</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">clusterIP</span>: <span style="color:#ae81ff">None</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mysql-secret</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># echo -n &#34;root&#34; | base64</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">root-user</span>: <span style="color:#ae81ff">cm9vdA==</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># echo -n &#34;password&#34; | base64</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">root-password</span>: <span style="color:#ae81ff">cGFzc3dvcmQ=</span>
+</span></span></code></pre></div><p>Deploy MySQL using the command <code>kubectl create -f mysql.yaml</code>.</p>
 <p>To shut down and clean up the resources, use <code>kubectl delete -f mysql.yaml</code>.</p>
 
 
@@ -5571,19 +5570,19 @@ to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997073"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997073"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993357"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997073"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

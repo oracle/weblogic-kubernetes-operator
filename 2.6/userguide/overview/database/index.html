@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Run a database :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664993350" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664997067" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664997067"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664993350"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664997067"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664997067"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.6";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664997067"></script>
 
     
   </div>
@@ -2771,10 +2771,10 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1)</p>
 on persistent storage.  Refer to your cloud vendor&rsquo;s documentation for details of
 available storage providers and how to create a persistent volume and attach it to a pod.</p>
 <p>First, create a namespace for the database:</p>
-<pre><code>kubectl create namespace database-namespace
+<pre tabindex="0"><code>kubectl create namespace database-namespace
 </code></pre><p>Next, create a file called <code>database.yml</code> with the following content.  Make sure you update the
 password field with your chosen administrator password for the database.</p>
-<pre><code>apiVersion: extensions/v1beta1
+<pre tabindex="0"><code>apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: database
@@ -2848,17 +2848,16 @@ spec:
 </code></pre><p>If you have not previously done so, you will need to go to the <a href="https://container-registry.oracle.com">Oracle Container Registry</a>
 and accept the license for the <a href="https://container-registry.oracle.com/pls/apex/f?p=113:4:11538835301670">Oracle database image</a>.</p>
 <p>Create a Docker registry secret so that Kubernetes can pull the database image:</p>
-<pre><code>kubectl create secret docker-registry regsecret \
+<pre tabindex="0"><code>kubectl create secret docker-registry regsecret \
         --docker-server=container-registry.oracle.com \
         --docker-username=your.email@some.com \
         --docker-password=your-password \
         --docker-email=your.email@some.com \
         -n database-namespace
-
 </code></pre><p>Now, use the following command to install the database:</p>
-<pre><code>kubectl apply -f database.yml
+<pre tabindex="0"><code>kubectl apply -f database.yml
 </code></pre><p>This will start up the database and expose it in the cluster at the following address:</p>
-<pre><code>database.database-namespace.svc.cluster.local:1521
+<pre tabindex="0"><code>database.database-namespace.svc.cluster.local:1521
 </code></pre>
 
 <footer class=" footline" >
@@ -4725,19 +4724,19 @@ and accept the license for the <a href="https://container-registry.oracle.com/pl
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664997067"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664997067"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664993350" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664993350"></script>
+    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664997067" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664997067"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

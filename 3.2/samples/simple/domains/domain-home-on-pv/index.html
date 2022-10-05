@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Sample for creating a WebLogic domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain.">
 
 
@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664993355" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664997071" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664997071"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664993355"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664997071"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664997071"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664997071"></script>
 
     
   </div>
@@ -1580,7 +1580,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-on-pv/" title="Domain home on a PV" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3229,13 +3229,13 @@
 
 	<p>The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.</p>
 <h4 id="prerequisites">Prerequisites</h4>
-<p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
+<p>Before you begin, read this document, <a href="/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 <p>The following prerequisites must be met prior to running the create domain script:</p>
 <ul>
 <li>Make sure the WebLogic Kubernetes Operator is running.</li>
-<li>The operator requires an image with Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. For details on how to obtain or create the image, see <a href="/weblogic-kubernetes-operator/3.2/userguide/base-images/#create-or-obtain-weblogic-server-images">WebLogic Server images</a>.</li>
+<li>The operator requires an image with Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. For details on how to obtain or create the image, see <a href="/userguide/base-images/#create-or-obtain-weblogic-server-images">WebLogic Server images</a>.</li>
 <li>Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.</li>
-<li>In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/3.2/samples/simple/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</li>
+<li>In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/samples/simple/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</li>
 <li>Create the Kubernetes Secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes Namespace as the domain.</li>
 </ul>
 
@@ -3258,10 +3258,10 @@ to run with user 1000 to make sure that the WebLogic processes can access the fi
 persistent volume.</p>
 <h4 id="use-the-script-to-create-a-domain">Use the script to create a domain</h4>
 <p>Make a copy of the <code>create-domain-inputs.yaml</code> file, and run the create script, pointing it at your inputs file and an output directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./create-domain.sh <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -i create-domain-inputs.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -o /&lt;path to output-directory&gt;
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./create-domain.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -i create-domain-inputs.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -o /&lt;path to output-directory&gt;
+</span></span></code></pre></div>
 <div class="notices note" ><p>The <code>create-domain.sh</code> script and its inputs file are for demonstration purposes <em>only</em>; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.</p>
 </div>
 
@@ -3272,14 +3272,14 @@ persistent volume.</p>
 <li>Run and wait for the job to finish.</li>
 <li>Create a Kubernetes domain resource YAML file, <code>domain.yaml</code>, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code> or <code>kubectl apply -f</code> command:</li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
-</code></pre></div><ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
+</span></span></code></pre></div><ul>
 <li>Create a convenient utility script, <code>delete-domain-job.yaml</code>, to clean up the domain home created by the create script.</li>
 </ul>
 <p>As a convenience, using the <code>-e</code> option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services as well.</p>
 <p>The usage of the create script is as follows:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sh create-domain.sh -h
-</code></pre></div><pre><code>usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sh create-domain.sh -h
+</span></span></code></pre></div><pre tabindex="0"><code>usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
   -e Also create the resources in the generated YAML files, optional.
@@ -3380,7 +3380,7 @@ persistent volume.</p>
 </tr>
 <tr>
 <td><code>image</code></td>
-<td>WebLogic Server image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. For details on how to obtain or create the image, see <a href="/weblogic-kubernetes-operator/3.2/userguide/base-images/#create-or-obtain-weblogic-server-images">WebLogic Server images</a>.</td>
+<td>WebLogic Server image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. For details on how to obtain or create the image, see <a href="/userguide/base-images/#create-or-obtain-weblogic-server-images">WebLogic Server images</a>.</td>
 <td><code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code></td>
 </tr>
 <tr>
@@ -3472,91 +3472,91 @@ persistent volume.</p>
 <p>Note that the example results below use the <code>default</code> Kubernetes Namespace. If you are using a different namespace, you need to replace <code>NAMESPACE</code> in the example <code>kubectl</code> commands with the actual Kubernetes Namespace.</p>
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
 <p>The content of the generated <code>domain.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright (c) 2017, 2021, Oracle and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
-<span style="color:#75715e">#</span>
-<span style="color:#75715e"># This is an example of how to define a Domain resource.</span>
-<span style="color:#75715e">#</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#75715e"># The WebLogic Domain Home</span>
-  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/shared/domains/domain1</span>
-  <span style="color:#75715e"># Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image</span>
-  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">PersistentVolume</span>
-  <span style="color:#75715e"># The WebLogic Server image that the operator uses to start the domain</span>
-  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#34;</span>
-  <span style="color:#75715e"># imagePullPolicy defaults to &#34;Always&#34; if image version is :latest</span>
-  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
-  <span style="color:#75715e"># Identify which Secret contains the credentials for pulling an image</span>
-  <span style="color:#75715e">#imagePullSecrets:</span>
-  <span style="color:#75715e">#- name:</span>
-  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials (note that there is an example of</span>
-  <span style="color:#75715e"># how to create that Secret at the end of this file)</span>
-  <span style="color:#f92672">webLogicCredentialsSecret</span>:
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-credentials</span>
-  <span style="color:#75715e"># Whether to include the server out file into the pod&#39;s stdout, default is true</span>
-  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#75715e"># Whether to enable log home</span>
-  <span style="color:#f92672">logHomeEnabled</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#75715e"># The in-pod name location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
-  <span style="color:#f92672">logHome</span>: <span style="color:#ae81ff">/shared/logs/domain1</span>
-  <span style="color:#75715e"># serverStartPolicy legal values are &#34;NEVER&#34;, &#34;IF_NEEDED&#34;, or &#34;ADMIN_ONLY&#34;</span>
-  <span style="color:#75715e"># This determines which WebLogic Servers the operator will start up when it discovers this Domain</span>
-  <span style="color:#75715e"># - &#34;NEVER&#34; will not start any server in the domain</span>
-  <span style="color:#75715e"># - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)</span>
-  <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server and clustered servers up to the replica count</span>
-  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
-  <span style="color:#f92672">serverPod</span>:
-    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
-    <span style="color:#f92672">env</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom &#34;</span>
-    <span style="color:#f92672">volumes</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
-      <span style="color:#f92672">persistentVolumeClaim</span>:
-        <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">domain1-weblogic-sample-pvc</span>
-    <span style="color:#f92672">volumeMounts</span>:
-    - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/shared</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
-  <span style="color:#75715e"># adminServer is used to configure the desired behavior for starting the administration server.</span>
-  <span style="color:#f92672">adminServer</span>:
-    <span style="color:#75715e"># serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;</span>
-    <span style="color:#75715e"># &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode</span>
-    <span style="color:#75715e"># &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode</span>
-    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
-    <span style="color:#75715e"># adminService:</span>
-    <span style="color:#75715e">#   channels:</span>
-    <span style="color:#75715e"># The Admin Server&#39;s NodePort</span>
-    <span style="color:#75715e">#    - channelName: default</span>
-    <span style="color:#75715e">#      nodePort: 30701</span>
-    <span style="color:#75715e"># Uncomment to export the T3Channel as a service</span>
-    <span style="color:#75715e">#    - channelName: T3Channel</span>
-  <span style="color:#75715e"># clusters is used to configure the desired behavior for starting member servers of a cluster.</span>
-  <span style="color:#75715e"># If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.</span>
-  <span style="color:#f92672">clusters</span>:
-  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
-    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
-    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
-  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
-  <span style="color:#75715e"># replicas: 1</span>
-</code></pre></div><h4 id="verify-the-domain">Verify the domain</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright (c) 2017, 2021, Oracle and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This is an example of how to define a Domain resource.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The WebLogic Domain Home</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/shared/domains/domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">PersistentVolume</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The WebLogic Server image that the operator uses to start the domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># imagePullPolicy defaults to &#34;Always&#34; if image version is :latest</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Identify which Secret contains the credentials for pulling an image</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#imagePullSecrets:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#- name:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials (note that there is an example of</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># how to create that Secret at the end of this file)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-credentials</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to include the server out file into the pod&#39;s stdout, default is true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to enable log home</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">logHomeEnabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The in-pod name location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">logHome</span>: <span style="color:#ae81ff">/shared/logs/domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># serverStartPolicy legal values are &#34;NEVER&#34;, &#34;IF_NEEDED&#34;, or &#34;ADMIN_ONLY&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># This determines which WebLogic Servers the operator will start up when it discovers this Domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;NEVER&#34; will not start any server in the domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server and clustered servers up to the replica count</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom &#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">persistentVolumeClaim</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">domain1-weblogic-sample-pvc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/shared</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># adminServer is used to configure the desired behavior for starting the administration server.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">adminServer</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># adminService:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#   channels:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># The Admin Server&#39;s NodePort</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#    - channelName: default</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#      nodePort: 30701</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Uncomment to export the T3Channel as a service</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#    - channelName: T3Channel</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># clusters is used to configure the desired behavior for starting member servers of a cluster.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">clusters</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># replicas: 1</span>
+</span></span></code></pre></div><h4 id="verify-the-domain">Verify the domain</h4>
 <p>To confirm that the domain was created, use this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe domain DOMAINUID -n NAMESPACE
-</code></pre></div><p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe domain DOMAINUID -n NAMESPACE
+</span></span></code></pre></div><p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
 <p>Here is an example of the output of this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe domain domain1
-</code></pre></div><pre><code>Name:         domain1
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe domain domain1
+</span></span></code></pre></div><pre tabindex="0"><code>Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
-Annotations:  kubectl.kubernetes.io/last-applied-configuration={&quot;apiVersion&quot;:&quot;weblogic.oracle/v2&quot;,&quot;kind&quot;:&quot;Domain&quot;,&quot;metadata&quot;:{&quot;annotations&quot;:{},&quot;labels&quot;:{&quot;weblogic.domainUID&quot;:&quot;domain1&quot;,...
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={&#34;apiVersion&#34;:&#34;weblogic.oracle/v2&#34;,&#34;kind&#34;:&#34;Domain&#34;,&#34;metadata&#34;:{&#34;annotations&#34;:{},&#34;labels&#34;:{&#34;weblogic.domainUID&#34;:&#34;domain1&#34;,...
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
@@ -3682,19 +3682,19 @@ Events:           &lt;none&gt;
 </code></pre><p>In the <code>Status</code> section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.</p>
 <h4 id="verify-the-pods">Verify the pods</h4>
 <p>Use the following command to see the pods running the servers:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods -n NAMESPACE
-</code></pre></div><p>Here is an example of the output of this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods
-</code></pre></div><pre><code>NAME                                         READY     STATUS    RESTARTS   AGE
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods -n NAMESPACE
+</span></span></code></pre></div><p>Here is an example of the output of this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                         READY     STATUS    RESTARTS   AGE
 domain1-admin-server                         1/1       Running   0          1m
 domain1-managed-server1                      1/1       Running   0          8m
 domain1-managed-server2                      1/1       Running   0          8m
 </code></pre><h4 id="verify-the-services">Verify the services</h4>
 <p>Use the following command to see the services for the domain:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get services -n NAMESPACE
-</code></pre></div><p>Here is an example of the output of this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get services
-</code></pre></div><pre><code>NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get services -n NAMESPACE
+</span></span></code></pre></div><p>Here is an example of the output of this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get services
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   10.96.206.134    &lt;none&gt;        7001/TCP          23m
 domain1-admin-server-ext                    NodePort    10.107.164.241   &lt;none&gt;        30012:30012/TCP   22m
 domain1-cluster-cluster-1                   ClusterIP   10.109.133.168   &lt;none&gt;        8001/TCP          22m
@@ -3702,8 +3702,8 @@ domain1-managed-server1                     ClusterIP   None             &lt;non
 domain1-managed-server2                     ClusterIP   None             &lt;none&gt;        8001/TCP          22m
 </code></pre><h4 id="delete-the-generated-domain-home">Delete the generated domain home</h4>
 <p>Sometimes in production, but most likely in testing environments, you might want to remove the domain home that is generated using the <code>create-domain.sh</code> script. Do this by running the generated <code>delete domain job</code> script in the <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code> directory.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f delete-domain-job.yaml
-</code></pre></div><h3 id="troubleshooting">Troubleshooting</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create -f delete-domain-job.yaml
+</span></span></code></pre></div><h3 id="troubleshooting">Troubleshooting</h3>
 <p><strong>Message</strong>: <code>status on iteration 20 of 20 pod domain1-create-weblogic-sample-domain-job-4qwt2 status is Pending The create domain job is not showing status completed after waiting 300 seconds.</code><br>
 The most likely cause is related to the value of <code>persistentVolumeClaimName</code>, defined in <code>domain-home-on-pv/create-domain-inputs.yaml</code>.<br>
 To determine if this is the problem:</p>
@@ -3714,16 +3714,16 @@ To determine if this is the problem:</p>
 * Rerun the `create-domain.sh` script with the same arguments as you did before.
 * Verify that the operator is deployed. Use the command:
 </code></pre>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl  get all --all-namespaces
-</code></pre></div><p>Look for lines similar to:</p>
-<pre><code>weblogic-operator1   pod/weblogic-operator-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl  get all --all-namespaces
+</span></span></code></pre></div><p>Look for lines similar to:</p>
+<pre tabindex="0"><code>weblogic-operator1   pod/weblogic-operator-
 </code></pre><p>If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/installation/">installation instructions</a>.</p>
 <p><strong>Message</strong>: <code>ERROR: Unable to create folder /shared/domains</code><br>
 The most common cause is a poor choice of value for <code>weblogicDomainStoragePath</code> in the input file used when you executed:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ create-pv-pvc.sh
-</code></pre></div><p>You should <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/delete-domain/">delete the resources for your sample domain</a>, correct the value in that file, and rerun the commands to create the PV/PVC and the credential before you attempt to rerun:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ create-domain.sh
-</code></pre></div><p>A correct value for <code>weblogicDomainStoragePath</code> will meet the following requirements:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ create-pv-pvc.sh
+</span></span></code></pre></div><p>You should <a href="/samples/simple/domains/delete-domain/">delete the resources for your sample domain</a>, correct the value in that file, and rerun the commands to create the PV/PVC and the credential before you attempt to rerun:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ create-domain.sh
+</span></span></code></pre></div><p>A correct value for <code>weblogicDomainStoragePath</code> will meet the following requirements:</p>
 <ul>
 <li>Must be the name of a directory.</li>
 <li>The directory must be world writable.</li>
@@ -5829,19 +5829,19 @@ You will see this message if the directory <code>domains/domain1</code> exists i
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664997072"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664997072"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664993355"></script>
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664997072"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

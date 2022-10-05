@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Introduction to Model in Image, description of its runtime behavior, and references.">
 
 
@@ -12,20 +12,20 @@
     <title>Overview :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3548,7 +3548,7 @@
 <li><a href="#references">References</a></li>
 </ul>
 <h3 id="introduction">Introduction</h3>
-<p>Model in Image is an alternative to the operator&rsquo;s Domain in Image and Domain in PV domain types. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a> for a comparison of operator domain types.</p>
+<p>Model in Image is an alternative to the operator&rsquo;s Domain in Image and Domain in PV domain types. See <a href="/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a> for a comparison of operator domain types.</p>
 <p>Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</p>
 <p>It enables:</p>
 <ul>
@@ -3563,7 +3563,7 @@ For example, a secret can be used to supply a database credential.</li>
 to a running domain. See <a href="#runtime-updates">Runtime updates</a> for details.</li>
 </ul>
 <p>This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.</p>
-<p>For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/#requirements-for-jrf-domain-types">Requirements for JRF domain types</a>.</p>
+<p>For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See <a href="/userguide/managing-domains/model-in-image/usage/#requirements-for-jrf-domain-types">Requirements for JRF domain types</a>.</p>
 <h3 id="weblogic-deploy-tool-models">WebLogic Deploy Tool models</h3>
 <p>WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
 configuration scripts and templates.
@@ -3603,15 +3603,15 @@ and still others may require shutting down the entire domain before applying the
 <em>It is the administrator&rsquo;s responsibility to make the necessary changes to a domain resource to initiate the correct type of update.</em></p>
 <p>See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/">Runtime updates</a>.</p>
 <h3 id="continuous-integration-and-delivery-cicd">Continuous integration and delivery (CI/CD)</h3>
-<p>To understand how Model in Image works with CI/CD, see <a href="/weblogic-kubernetes-operator/userguide/cicd/">CI/CD considerations</a>.</p>
+<p>To understand how Model in Image works with CI/CD, see <a href="/userguide/cicd/">CI/CD considerations</a>.</p>
 <h3 id="references">References</h3>
 <ul>
-<li><a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image sample</a></li>
+<li><a href="/samples/domains/model-in-image/">Model in Image sample</a></li>
 <li><a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tool (WDT)</a></li>
 <li><a href="https://oracle.github.io/weblogic-image-tool/">WebLogic Image Tool (WIT)</a></li>
 <li>Domain <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/3.4/documentation/domains/Domain.md">schema</a>, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">documentation</a></li>
-<li>HTTP load balancers: Ingress <a href="/weblogic-kubernetes-operator/userguide/managing-domains/ingress/">documentation</a>, <a href="/weblogic-kubernetes-operator/samples/ingress/">sample</a></li>
-<li><a href="/weblogic-kubernetes-operator/userguide/cicd/">CI/CD considerations</a></li>
+<li>HTTP load balancers: Ingress <a href="/userguide/managing-domains/ingress/">documentation</a>, <a href="/samples/ingress/">sample</a></li>
+<li><a href="/userguide/cicd/">CI/CD considerations</a></li>
 </ul>
 
 
@@ -5935,19 +5935,19 @@ and still others may require shutting down the entire domain before applying the
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values.">
 
 
@@ -12,20 +12,20 @@
     <title>Configuration reference :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3611,49 +3611,49 @@ as well as the default values, using the <code>helm show</code> command.</p>
 <ul>
 <li>First, access the operator Helm chart repository using
 this format, <code>helm repo add &lt;helm-chart-repo-name&gt; &lt;helm-chart-repo-url&gt;</code>:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span></code></pre></div></li>
 <li>Then, use the <code>helm show</code> command with this format: <code>helm show &lt;helm-chart-repo-name&gt;/weblogic-operator</code>. For example,
 with an operator Helm chart where the repository is named <code>weblogic-operator</code>:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm show chart weblogic-operator/weblogic-operator
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm show chart weblogic-operator/weblogic-operator
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>
 <p>An installed operator is maintained by a Helm release. List the Helm releases for a specified namespace or all namespaces:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm list --namespace &lt;namespace&gt;
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm list --all-namespaces
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm list --namespace &lt;namespace&gt;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm list --all-namespaces
+</span></span></code></pre></div></li>
 <li>
 <p>Get the status of the operator Helm release named <code>sample-weblogic-operator</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm status sample-weblogic-operator --namespace &lt;namespace&gt;
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm status sample-weblogic-operator --namespace &lt;namespace&gt;
+</span></span></code></pre></div></li>
 <li>
 <p>Show the history of the operator Helm release named <code>sample-weblogic-operator</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm history sample-weblogic-operator --namespace &lt;namespace&gt;
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm history sample-weblogic-operator --namespace &lt;namespace&gt;
+</span></span></code></pre></div></li>
 <li>
 <p>Roll back to a previous version of the operator Helm release named <code>sample-weblogic-operator</code>, in this case, the first version:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm rollback sample-weblogic-operator <span style="color:#ae81ff">1</span> --namespace &lt;namespace&gt;
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm rollback sample-weblogic-operator <span style="color:#ae81ff">1</span> --namespace &lt;namespace&gt;
+</span></span></code></pre></div></li>
 <li>
 <p>Show the custom values you configured for a operator Helm release named <code>sample-weblogic-operator</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm get values sample-weblogic-operator
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm get values sample-weblogic-operator
+</span></span></code></pre></div></li>
 <li>
 <p>Show all of the values your operator Helm release named <code>sample-weblogic-operator</code> is using:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm get values --all sample-weblogic-operator
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm get values --all sample-weblogic-operator
+</span></span></code></pre></div></li>
 <li>
 <p>Change one or more values using <code>helm upgrade</code>, for example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
-$ helm upgrade <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  weblogic-operator/weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --reuse-values <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaces={sample-domains-ns1}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;javaLoggingLevel=FINE&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wait
-</code></pre></div><p><strong>Notes</strong>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span><span style="display:flex;"><span>$ helm upgrade <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic-operator/weblogic-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --reuse-values <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaces={sample-domains-ns1}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;javaLoggingLevel=FINE&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wait
+</span></span></code></pre></div><p><strong>Notes</strong>:</p>
 <ul>
 <li>In this example, the <code>--reuse-values</code> flag indicates that previous overrides of other values should be retained.</li>
 <li>Before changing the <code>javaLoggingLevel</code> setting,
@@ -3669,18 +3669,18 @@ consult the <a href="/weblogic-kubernetes-operator/userguide/managing-operators/
 The <code>helm install</code> or <code>helm upgrade</code> command with a non-existing service account results in a Helm chart validation error.</p>
 <p>Defaults to <code>default</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">serviceAccount</span>: <span style="color:#e6db74">&#34;weblogic-operator&#34;</span>
-</code></pre></div><h5 id="kubernetesplatform"><code>kubernetesPlatform</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">serviceAccount</span>: <span style="color:#e6db74">&#34;weblogic-operator&#34;</span>
+</span></span></code></pre></div><h5 id="kubernetesplatform"><code>kubernetesPlatform</code></h5>
 <p>Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift; the setting should be left unset for other platforms.</p>
 <p>When set to <code>OpenShift</code>, the operator:</p>
 <ul>
-<li>Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a>, and <a href="/weblogic-kubernetes-operator/samples/domains/domain-home-in-image/">Domain home in Image</a> domains. Specifically, it sets file group permissions so that they match file user permissions.</li>
+<li>Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for <a href="/samples/domains/model-in-image/">Model in Image</a>, and <a href="/samples/domains/domain-home-in-image/">Domain home in Image</a> domains. Specifically, it sets file group permissions so that they match file user permissions.</li>
 <li>Sets the <code>weblogic.SecureMode.WarnOnInsecureFileSystem</code> Java system property to <code>false</code> on the command line of each WebLogic Server. This flag suppresses insecure file system warnings reported in the WebLogic Server console when the WebLogic Server is in production mode. These warnings result from setting the file permissions necessary to work with restricted security context constraints on OpenShift.</li>
 </ul>
 <p>For more information about the security requirements for running WebLogic in OpenShift, see the <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift</a> documentation.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">kubernetesPlatform</span>: <span style="color:#ae81ff">OpenShift</span>
-</code></pre></div><h5 id="enableclusterrolebinding"><code>enableClusterRoleBinding</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">kubernetesPlatform</span>: <span style="color:#ae81ff">OpenShift</span>
+</span></span></code></pre></div><h5 id="enableclusterrolebinding"><code>enableClusterRoleBinding</code></h5>
 <p>Specifies whether the roles necessary for the operator to manage domains
 will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.</p>
 <p>Defaults to <code>false</code>.</p>
@@ -3703,16 +3703,16 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespac
 or similar (based on the default in your Helm chart, see <code>helm show</code>
 in <a href="#useful-helm-operations">Useful Helm operations</a>).</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;ghcr.io/oracle/weblogic-kubernetes-operator:some-tag&#34;</span>
-</code></pre></div><h5 id="imagepullpolicy"><code>imagePullPolicy</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;ghcr.io/oracle/weblogic-kubernetes-operator:some-tag&#34;</span>
+</span></span></code></pre></div><h5 id="imagepullpolicy"><code>imagePullPolicy</code></h5>
 <p>Specifies the image pull policy for the operator container image.</p>
 <p>Defaults to <code>IfNotPresent</code>.</p>
 <p>When using the default images, <code>IfNotPresent</code> is sufficient because the
 operator will never update an existing image. However, if you have created your own operator image and are
 updating the image without changing the tag, you might want to use <code>Always</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;Always&#34;</span>
-</code></pre></div><h5 id="imagepullsecrets"><code>imagePullSecrets</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;Always&#34;</span>
+</span></span></code></pre></div><h5 id="imagepullsecrets"><code>imagePullSecrets</code></h5>
 <p>Contains an optional list of Kubernetes Secrets, in the operator&rsquo;s namespace, that are needed to access the registry containing the operator image.
 For example, you might need an operator <code>imagePullSecret</code> if you are using an operator image from a private registry that requires authentication to pull.
 You are responsible for creating the secret. If no secrets are required, then omit this property. For more information on specifying the registry
@@ -3721,54 +3721,54 @@ credentials when the operator image is stored in a private registry, see
 <p>Examples:</p>
 <ul>
 <li>Using YAML:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">imagePullSecrets</span>:
-- <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;my-image-pull-secret&#34;</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">imagePullSecrets</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;my-image-pull-secret&#34;</span>
+</span></span></code></pre></div></li>
 <li>Using the Helm command line:
-<pre><code>--set &quot;imagePullSecrets[0].name=my-image-pull-secret&quot;
+<pre tabindex="0"><code>--set &#34;imagePullSecrets[0].name=my-image-pull-secret&#34;
 </code></pre></li>
 </ul>
 <h5 id="annotations"><code>annotations</code></h5>
 <p>Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">annotations</span>:
-  <span style="color:#f92672">stage</span>: <span style="color:#ae81ff">production</span>
-</code></pre></div><p>You may also specify annotations <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
-<pre><code>--set annotations.stage=production
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">stage</span>: <span style="color:#ae81ff">production</span>
+</span></span></code></pre></div><p>You may also specify annotations <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
+<pre tabindex="0"><code>--set annotations.stage=production
 </code></pre><h5 id="labels"><code>labels</code></h5>
 <p>Specifies a set of key-value labels that will be added to each pod running the operator. The Helm chart will automatically add any required labels, so the customer is not required to define those here. If no customer defined labels are required, then omit this property.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">labels</span>:
-  <span style="color:#f92672">sidecar.istio.io/inject</span>: <span style="color:#e6db74">&#34;false&#34;</span>
-</code></pre></div><p>You may also specify labels <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
-<pre><code>--set labels.&quot;sidecar\.istio\.io/inject&quot;=false
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">sidecar.istio.io/inject</span>: <span style="color:#e6db74">&#34;false&#34;</span>
+</span></span></code></pre></div><p>You may also specify labels <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
+<pre tabindex="0"><code>--set labels.&#34;sidecar\.istio\.io/inject&#34;=false
 </code></pre><h5 id="nodeselector"><code>nodeSelector</code></h5>
 <p>Allows you to run the operator Pod on a Node whose labels match the specified <code>nodeSelector</code> labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. For more details, see <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector">Assign Pods to Nodes</a> in the Kubernetes documentation. This is not required if the operator Pod can run on any Node.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">nodeSelector</span>:
-  <span style="color:#f92672">disktype</span>: <span style="color:#ae81ff">ssd</span>
-</code></pre></div><h5 id="affinity"><code>affinity</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">nodeSelector</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">disktype</span>: <span style="color:#ae81ff">ssd</span>
+</span></span></code></pre></div><h5 id="affinity"><code>affinity</code></h5>
 <p>Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to <code>nodeSelector</code>. <code>affinity</code> provides advanced capabilities to limit Pod placement on specific Nodes. For more details, see  <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity">Assign Pods to Nodes</a> in the Kubernetes documentation. This is optional and not required if the operator Pod can run on any Node or when using <code>nodeSelector</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">affinity</span>:
-  <span style="color:#f92672">nodeAffinity</span>:
-    <span style="color:#f92672">requiredDuringSchedulingIgnoredDuringExecution</span>:
-      <span style="color:#f92672">nodeSelectorTerms</span>:
-      - <span style="color:#f92672">matchExpressions</span>:
-        - <span style="color:#f92672">key</span>: <span style="color:#ae81ff">nodeType</span>
-          <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
-          <span style="color:#f92672">values</span>:
-          - <span style="color:#ae81ff">dev</span>
-          - <span style="color:#ae81ff">test</span>
-    <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
-    - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">1</span>
-      <span style="color:#f92672">preference</span>:
-        <span style="color:#f92672">matchExpressions</span>:
-        - <span style="color:#f92672">key</span>: <span style="color:#ae81ff">another-node-label-key</span>
-          <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
-          <span style="color:#f92672">values</span>:
-          - <span style="color:#ae81ff">another-node-label-value</span>
-</code></pre></div><h4 id="weblogic-domain-management">WebLogic domain management</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">affinity</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">nodeAffinity</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requiredDuringSchedulingIgnoredDuringExecution</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">nodeSelectorTerms</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">matchExpressions</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">key</span>: <span style="color:#ae81ff">nodeType</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">values</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">dev</span>
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">preference</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">matchExpressions</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">key</span>: <span style="color:#ae81ff">another-node-label-key</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">values</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">another-node-label-value</span>
+</span></span></code></pre></div><h4 id="weblogic-domain-management">WebLogic domain management</h4>
 <p>The settings in this section determine the namespaces that an operator
 monitors for domain resources. For usage,
 also see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/">Namespace management</a>.</p>
@@ -3804,17 +3804,16 @@ This value is required if <code>domainNamespaceSelectionStrategy</code> is <code
 <p>Examples:</p>
 <ul>
 <li>Example 1: In the following configuration, the operator will manage the <code>default</code> and <code>ns1</code> Kubernetes Namespaces:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainNamespaces</span>:
-- <span style="color:#e6db74">&#34;default&#34;</span>
-- <span style="color:#e6db74">&#34;ns1&#34;</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaces</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#e6db74">&#34;default&#34;</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#e6db74">&#34;ns1&#34;</span>
+</span></span></code></pre></div></li>
 <li>Example 2: In the following configuration, the operator will manage <code>namespace1</code> and <code>namespace2</code>:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainNamespaces</span>: [ <span style="color:#e6db74">&#34;namespace1&#34;</span>, <span style="color:#e6db74">&#34;namespace2&#34;</span> ]
-</code></pre></div><p>Note that this is a valid but different YAML syntax for specifying arrays
-in comparison to the previous example.</p>
-</li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaces</span>: [ <span style="color:#e6db74">&#34;namespace1&#34;</span>, <span style="color:#e6db74">&#34;namespace2&#34;</span> ]
+</span></span></code></pre></div>Note that this is a valid but different YAML syntax for specifying arrays
+in comparison to the previous example.</li>
 <li>Example 3: To specify on the Helm command line:
-<pre><code>--set &quot;domainNamespaces={namespace1,namespace2}&quot;
+<pre tabindex="0"><code>--set &#34;domainNamespaces={namespace1,namespace2}&#34;
 </code></pre></li>
 </ul>
 <p><strong>Notes:</strong></p>
@@ -3835,17 +3834,17 @@ This value is required if <code>domainNamespaceSelectionStrategy</code> is <code
 <ul>
 <li>Example 1: In the following configuration, the operator will manage namespaces that have the label <code>weblogic-operator</code>
 regardless of the value of that label:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">weblogic-operator</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">weblogic-operator</span>
+</span></span></code></pre></div></li>
 <li>Example 2: In the following configuration, the operator will manage all namespaces that have the label <code>environment</code>,
 but where the value of that label is not <code>production</code> or <code>systemtest</code>:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">environment notin (production,systemtest)</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">environment notin (production,systemtest)</span>
+</span></span></code></pre></div></li>
 </ul>
 <p><strong>Notes</strong>:</p>
 <ul>
 <li>To specify the previous sample on the Helm command line, escape the equal sign, spaces, and commas as follows:
-<pre><code>--set &quot;domainNamespaceLabelSelector\=environment\\ notin\\ (production\\,systemtest)&quot;
+<pre tabindex="0"><code>--set &#34;domainNamespaceLabelSelector\=environment\\ notin\\ (production\\,systemtest)&#34;
 </code></pre></li>
 <li>If your operator Helm <code>enableClusterRoleBinding</code> configuration value is <code>false</code>, then
 a running operator will <em>not</em> have privilege to manage a newly added namespace
@@ -3884,9 +3883,9 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespac
 <p>Specify the number of introspector job retries for a domain and the interval between these retries in seconds.</p>
 <p>Defaults to five retries and 10 seconds between each retry.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainPresenceFailureRetryMaxCount</span>: <span style="color:#ae81ff">10</span>
-<span style="color:#f92672">domainPresenceFailureRetrySeconds</span>: <span style="color:#ae81ff">30</span>
-</code></pre></div><h5 id="introspectorjobnamesuffix-and-externalservicenamesuffix"><code>introspectorJobNameSuffix</code> and <code>externalServiceNameSuffix</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainPresenceFailureRetryMaxCount</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">domainPresenceFailureRetrySeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span></code></pre></div><h5 id="introspectorjobnamesuffix-and-externalservicenamesuffix"><code>introspectorJobNameSuffix</code> and <code>externalServiceNameSuffix</code></h5>
 <p>Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.</p>
 <p>Defaults to <code>-introspector</code> and <code>-ext</code>, respectively. The values cannot be more than 25 and 10 characters, respectively.</p>
 
@@ -3894,7 +3893,7 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespac
 </div>
 
 
-<div class="notices note" ><p>To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+<div class="notices note" ><p>To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see <a href="/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 </div>
 
 <h5 id="clustersizepaddingvalidationenabled"><code>clusterSizePaddingValidationEnabled</code></h5>
@@ -3906,28 +3905,28 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespac
 <p>For more information, see <a href="/weblogic-kubernetes-operator/userguide/istio/istio/#configuring-the-domain-resource">Configuring the domain resource</a> in Istio Support.</p>
 <h4 id="elastic-stack-integration">Elastic Stack integration</h4>
 <p>The following settings are related to integrating the Elastic Stack with the operator pod.</p>
-<p>For example usage, see the operator <a href="/weblogic-kubernetes-operator/samples/elastic-stack/operator/#elastic-stack-per-operator-configuration">Elastic Stack (Elasticsearch, Logstash, and Kibana)</a> integration sample.</p>
+<p>For example usage, see the operator <a href="/samples/elastic-stack/operator/#elastic-stack-per-operator-configuration">Elastic Stack (Elasticsearch, Logstash, and Kibana)</a> integration sample.</p>
 <h5 id="elkintegrationenabled"><code>elkIntegrationEnabled</code></h5>
 <p>Specifies whether or not Elastic Stack integration is enabled.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">elkIntegrationEnabled</span>:  <span style="color:#66d9ef">true</span>
-</code></pre></div><h5 id="logstashimage"><code>logStashImage</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elkIntegrationEnabled</span>:  <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><h5 id="logstashimage"><code>logStashImage</code></h5>
 <p>Specifies the container image containing Logstash.  This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
 <p>Defaults to <code>logstash:6.8.23</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">logStashImage</span>:  <span style="color:#e6db74">&#34;docker.elastic.co/logstash/logstash:6.8.23&#34;</span>
-</code></pre></div><h5 id="elasticsearchhost"><code>elasticSearchHost</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">logStashImage</span>:  <span style="color:#e6db74">&#34;docker.elastic.co/logstash/logstash:6.8.23&#34;</span>
+</span></span></code></pre></div><h5 id="elasticsearchhost"><code>elasticSearchHost</code></h5>
 <p>Specifies the hostname where Elasticsearch is running. This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
 <p>Defaults to <code>elasticsearch.default.svc.cluster.local</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">elasticSearchHost</span>: <span style="color:#e6db74">&#34;elasticsearch2.default.svc.cluster.local&#34;</span>
-</code></pre></div><h5 id="elasticsearchport"><code>elasticSearchPort</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elasticSearchHost</span>: <span style="color:#e6db74">&#34;elasticsearch2.default.svc.cluster.local&#34;</span>
+</span></span></code></pre></div><h5 id="elasticsearchport"><code>elasticSearchPort</code></h5>
 <p>Specifies the port number where Elasticsearch is running. This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
 <p>Defaults to <code>9200</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">elasticSearchPort</span>: <span style="color:#ae81ff">9201</span>
-</code></pre></div><h5 id="createlogstashconfigmap"><code>createLogStashConfigMap</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">elasticSearchPort</span>: <span style="color:#ae81ff">9201</span>
+</span></span></code></pre></div><h5 id="createlogstashconfigmap"><code>createLogStashConfigMap</code></h5>
 <p>Specifies whether a ConfigMap named <code>weblogic-operator-logstash-cm</code> should be created during <code>helm install</code>.
 The ConfigMap contains the Logstash pipeline configuration for the Logstash container running in the operator pod.
 If set to <code>true</code>, a ConfigMap will be created during <code>helm install</code> using the <code>logstash.conf</code> file in the <code>kubernetes/samples/charts/weblogic-operator</code> directory.
@@ -3935,8 +3934,8 @@ Set <code>createLogStashConfigMap</code> to <code>false</code> if the ConfigMap 
 This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</code>.</p>
 <p>Defaults to <code>true</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">createLogStashConfigMap</span>:  <span style="color:#66d9ef">false</span>
-</code></pre></div><h4 id="rest-interface-configuration">REST interface configuration</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">createLogStashConfigMap</span>:  <span style="color:#66d9ef">false</span>
+</span></span></code></pre></div><h4 id="rest-interface-configuration">REST interface configuration</h4>
 <p>The REST interface configuration options are advanced settings for configuring the operator&rsquo;s external REST interface.</p>
 <p>For usage information, see the operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/">REST Services</a>.</p>
 <h5 id="externalrestenabled"><code>externalRestEnabled</code></h5>
@@ -3945,31 +3944,31 @@ This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</
 <p>Defaults to <code>false</code>.</p>
 <p>If set to <code>true</code>, you must provide the <code>externalRestIdentitySecret</code> property that contains the name of the Kubernetes Secret which contains the SSL certificate and private key for the operator&rsquo;s external REST interface.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">externalRestEnabled</span>: <span style="color:#66d9ef">true</span>
-</code></pre></div><p><strong>Note</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalRestEnabled</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><p><strong>Note</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.</p>
 <h5 id="externalresthttpsport"><code>externalRestHttpsPort</code></h5>
 <p>Specifies the node port that should be allocated for the external operator REST HTTPS interface.</p>
 <p>Only used when <code>externalRestEnabled</code> is <code>true</code>, otherwise ignored.</p>
 <p>Defaults to <code>31001</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">externalRestHttpsPort</span>: <span style="color:#ae81ff">32009</span>
-</code></pre></div><p><strong>Note</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalRestHttpsPort</span>: <span style="color:#ae81ff">32009</span>
+</span></span></code></pre></div><p><strong>Note</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.</p>
 <h5 id="externalrestidentitysecret"><code>externalRestIdentitySecret</code></h5>
 <p>Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes <code>tls</code> secret previously created in the namespace where the operator is deployed. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored. To create the Kubernetes <code>tls</code> secret, you can use the following command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create secret tls &lt;secret-name&gt; <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -n &lt;operator-namespace&gt; <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --cert<span style="color:#f92672">=</span>&lt;path-to-certificate&gt; <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --key<span style="color:#f92672">=</span>&lt;path-to-private-key&gt;
-</code></pre></div><p>There is no default value.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create secret tls &lt;secret-name&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n &lt;operator-namespace&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cert<span style="color:#f92672">=</span>&lt;path-to-certificate&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --key<span style="color:#f92672">=</span>&lt;path-to-private-key&gt;
+</span></span></code></pre></div><p>There is no default value.</p>
 <p>The Helm installation will produce an error, similar to the following, if <code>externalRestIdentitySecret</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
-<pre><code>Error: render error in &quot;weblogic-operator/templates/main.yaml&quot;: template: weblogic-operator/templates/main.yaml:9:3: executing &quot;weblogic-operator/templates/main.yaml&quot;
-    at &lt;include &quot;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing &quot;operator.validateInputs&quot;
-    at &lt;include &quot;utils.endVa...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing &quot;utils.endValidation&quot;
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:9:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+    at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing &#34;operator.validateInputs&#34;
+    at &lt;include &#34;utils.endVa...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing &#34;utils.endValidation&#34;
     at &lt;fail $scope.validati...&gt;: error calling fail:
  string externalRestIdentitySecret must be specified
 </code></pre><p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">externalRestIdentitySecret</span>: <span style="color:#ae81ff">weblogic-operator-external-rest-identity</span>
-</code></pre></div><h5 id="externaloperatorcert-deprecated"><code>externalOperatorCert</code> <em><strong>(Deprecated)</strong></em></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalRestIdentitySecret</span>: <span style="color:#ae81ff">weblogic-operator-external-rest-identity</span>
+</span></span></code></pre></div><h5 id="externaloperatorcert-deprecated"><code>externalOperatorCert</code> <em><strong>(Deprecated)</strong></em></h5>
 
 <div class="notices info" ><p>Use <strong><code>externalRestIdentitySecret</code></strong> instead</p>
 </div>
@@ -3977,13 +3976,13 @@ This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</
 <p>Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored.</p>
 <p>There is no default value.</p>
 <p>The Helm installation will produce an error, similar to the following, if <code>externalOperatorCert</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
-<pre><code>Error: render error in &quot;weblogic-operator/templates/main.yaml&quot;: template: weblogic-operator/templates/main.yaml:4:3: executing &quot;weblogic-operator/templates/main.yaml&quot;
-  at &lt;include &quot;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &quot;operator.validateInputs&quot;
-  at &lt;include &quot;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &quot;operator.reportValidationErrors&quot;
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:4:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+  at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &#34;operator.validateInputs&#34;
+  at &lt;include &#34;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &#34;operator.reportValidationErrors&#34;
   at &lt;fail .validationErro...&gt;: error calling fail: The string property externalOperatorCert must be specified.
 </code></pre><p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">externalOperatorCert</span>: <span style="color:#ae81ff">LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...</span>
-</code></pre></div><h5 id="externaloperatorkey-deprecated"><code>externalOperatorKey</code> <em><strong>(Deprecated)</strong></em></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalOperatorCert</span>: <span style="color:#ae81ff">LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...</span>
+</span></span></code></pre></div><h5 id="externaloperatorkey-deprecated"><code>externalOperatorKey</code> <em><strong>(Deprecated)</strong></em></h5>
 
 <div class="notices info" ><p>Use <strong><code>externalRestIdentitySecret</code></strong> instead</p>
 </div>
@@ -3991,13 +3990,13 @@ This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</
 <p>Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored.</p>
 <p>There is no default value.</p>
 <p>The Helm installation will produce an error, similar to the following, if <code>externalOperatorKey</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
-<pre><code>Error: render error in &quot;weblogic-operator/templates/main.yaml&quot;: template: weblogic-operator/templates/main.yaml:4:3: executing &quot;weblogic-operator/templates/main.yaml&quot;
-  at &lt;include &quot;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &quot;operator.validateInputs&quot;
-  at &lt;include &quot;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &quot;operator.reportValidationErrors&quot;
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:4:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+  at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &#34;operator.validateInputs&#34;
+  at &lt;include &#34;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &#34;operator.reportValidationErrors&#34;
   at &lt;fail .validationErro...&gt;: error calling fail: The string property externalOperatorKey must be specified.
 </code></pre><p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">externalOperatorKey</span>: <span style="color:#ae81ff">QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...</span>
-</code></pre></div><h5 id="tokenreviewauthentication"><code>tokenReviewAuthentication</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalOperatorKey</span>: <span style="color:#ae81ff">QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...</span>
+</span></span></code></pre></div><h5 id="tokenreviewauthentication"><code>tokenReviewAuthentication</code></h5>
 <p>If set to <code>true</code>, <code>tokenReviewAuthentication</code> specifies whether the the operator&rsquo;s REST API should:</p>
 <ul>
 <li>Use Kubernetes token review API for authenticating users.</li>
@@ -4009,32 +4008,32 @@ This parameter is ignored if <code>elkIntegrationEnabled</code> is <code>false</
 to the domain resource so that it is done using the caller&rsquo;s privileges.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">tokenReviewAuthentication</span>: <span style="color:#66d9ef">true</span>
-</code></pre></div><h4 id="debugging-options">Debugging options</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">tokenReviewAuthentication</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><h4 id="debugging-options">Debugging options</h4>
 <h5 id="javalogginglevel"><code>javaLoggingLevel</code></h5>
 <p>Specifies the level of Java logging that should be enabled in the operator. Valid values are:  <code>SEVERE</code>, <code>WARNING</code>, <code>INFO</code>, <code>CONFIG</code>, <code>FINE</code>, <code>FINER</code>, and <code>FINEST</code>.</p>
 <p>Defaults to <code>INFO</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">javaLoggingLevel</span>:  <span style="color:#e6db74">&#34;FINE&#34;</span>
-</code></pre></div><p><strong>Note</strong>: Please consult <a href="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/#operator-logging-level">Operator logging level</a> before changing this setting.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">javaLoggingLevel</span>:  <span style="color:#e6db74">&#34;FINE&#34;</span>
+</span></span></code></pre></div><p><strong>Note</strong>: Please consult <a href="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/#operator-logging-level">Operator logging level</a> before changing this setting.</p>
 <h5 id="remotedebugnodeportenabled"><code>remoteDebugNodePortEnabled</code></h5>
 <p>Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">remoteDebugNodePortEnabled</span>:  <span style="color:#66d9ef">true</span>
-</code></pre></div><h5 id="internaldebughttpport"><code>internalDebugHttpPort</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">remoteDebugNodePortEnabled</span>:  <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><h5 id="internaldebughttpport"><code>internalDebugHttpPort</code></h5>
 <p>Specifies the port number inside the Kubernetes cluster for the operator&rsquo;s Java remote debug server.</p>
 <p>This parameter is required if <code>remoteDebugNodePortEnabled</code> is <code>true</code> (default <code>false</code>). Otherwise, it is ignored.</p>
 <p>Defaults to <code>30999</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">internalDebugHttpPort</span>:  <span style="color:#ae81ff">30888</span>
-</code></pre></div><h5 id="externaldebughttpport"><code>externalDebugHttpPort</code></h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">internalDebugHttpPort</span>:  <span style="color:#ae81ff">30888</span>
+</span></span></code></pre></div><h5 id="externaldebughttpport"><code>externalDebugHttpPort</code></h5>
 <p>Specifies the node port that should be allocated for the Kubernetes cluster for the operator&rsquo;s Java remote debug server.</p>
 <p>This parameter is required if <code>remoteDebugNodePortEnabled</code> is <code>true</code>. Otherwise, it is ignored.</p>
 <p>Defaults to <code>30999</code>.</p>
 <p>Example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">externalDebugHttpPort</span>:  <span style="color:#ae81ff">30777</span>
-</code></pre></div><p><strong>Note</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">externalDebugHttpPort</span>:  <span style="color:#ae81ff">30777</span>
+</span></span></code></pre></div><p><strong>Note</strong>: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.</p>
 
 
 <footer class="footline">
@@ -6356,19 +6355,19 @@ to the domain resource so that it is done using the caller&rsquo;s privileges.</
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Important considerations for WebLogic domains in Kubernetes.">
 
 
@@ -12,18 +12,18 @@
     <title>Manage WebLogic domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664993352" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664997068" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664997068"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664993352"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664993352"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664997068"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664997068"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.0";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664993352"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664997068"></script>
 
     
   </div>
@@ -602,7 +602,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/" title="Manage WebLogic domains" class="dd-item 
-        parent
+        
         active
         
         ">
@@ -3028,7 +3028,7 @@ that many cloud provider&rsquo;s volume providers may not support volumes across
 <li><code>NODEMGR_JAVA_OPTIONS</code> - Java options for starting a Node Manager instance</li>
 <li><code>NODEMGR_MEM_ARGS</code> - JVM memory arguments for starting a Node Manager instance</li>
 </ul>
-<p>For more information, see <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
+<p>For more information, see <a href="/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 </li>
 </ul>
 <p>The following features are <strong>not</strong> certified or supported in this release:</p>
@@ -3044,25 +3044,25 @@ that many cloud provider&rsquo;s volume providers may not support volumes across
 <p>For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.</p>
 <h3 id="creating-and-managing-weblogic-domains">Creating and managing WebLogic domains</h3>
 <p>You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
-For examples of each, see the <a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/">WebLogic Server Kubernetes Operator samples</a>.</p>
+For examples of each, see the <a href="/samples/simple/domains/">WebLogic Server Kubernetes Operator samples</a>.</p>
 <p>If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration or applications deployed, then you can create the domain custom resource
-manually to deploy your domain.  This process is documented in <a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/manually-create-domain/">this
+manually to deploy your domain.  This process is documented in <a href="/samples/simple/domains/manually-create-domain/">this
 sample</a>.</p>
 <h3 id="modifying-domain-configurations">Modifying domain configurations</h3>
 <p>You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:</p>
 <p>When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.</p>
-<p>For Domain in Image and Domain in PV you can use <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
+<p>For Domain in Image and Domain in PV you can use <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
 <p>Configuration overrides allow changing a configuration without modifying its original <code>config.xml</code> or system resource XML files, and supports
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
 and URLs that are stored in a secret.</p>
-<p>For Domain in Image and Domain in PV you can use <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
+<p>For Domain in Image and Domain in PV you can use <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
 <p>Configuration overrides allow changing a configuration without modifying its original <code>config.xml</code> or system resource XML files, and supports
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
 and URLs that are stored in a secret.</p>
 <p>For Model in Image you use <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/model-in-image/runtime-updates/">Runtime Updates</a>.</p>
 <h3 id="about-the-domain-resource">About the Domain resource</h3>
-<p>For more information, see <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
+<p>For more information, see <a href="/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 <h3 id="managing-lifecycle-operations">Managing lifecycle operations</h3>
 <p>You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
 See <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-lifecycle/startup/">Starting and stopping</a> and <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-lifecycle/restarting/">Restarting</a> servers.</p>
@@ -3084,32 +3084,32 @@ Servers, you can set corresponding system properties in <code>JAVA_OPTIONS</code
 <ul>
 <li>
 <p>Here are some WLST offline examples for creating and accessing commonly tuned Log MBeans:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># domain log</span>
-cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/&#39;</span><span style="color:#f92672">)</span>
-create<span style="color:#f92672">(</span>dname,<span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
-cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Log/&#39;</span> + dname<span style="color:#f92672">)</span>;
-  
-<span style="color:#75715e"># configured server log for a server named &#39;sname&#39;</span>
-cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/&#39;</span> + sname<span style="color:#f92672">)</span>
-create<span style="color:#f92672">(</span>sname, <span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
-cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/&#39;</span> + sname + <span style="color:#e6db74">&#39;/Log/&#39;</span> + sname<span style="color:#f92672">)</span>
-  
-<span style="color:#75715e"># templated (dynamic) server log for a template named &#39;tname&#39;</span>
-cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/ServerTemplates/&#39;</span> + tname<span style="color:#f92672">)</span>
-create<span style="color:#f92672">(</span>tname,<span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
-cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/ServerTemplates/&#39;</span> + tname + <span style="color:#e6db74">&#39;/Log/&#39;</span> + tname<span style="color:#f92672">)</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># domain log</span>
+</span></span><span style="display:flex;"><span>cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>create<span style="color:#f92672">(</span>dname,<span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Log/&#39;</span> + dname<span style="color:#f92672">)</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># configured server log for a server named &#39;sname&#39;</span>
+</span></span><span style="display:flex;"><span>cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/&#39;</span> + sname<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>create<span style="color:#f92672">(</span>sname, <span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/&#39;</span> + sname + <span style="color:#e6db74">&#39;/Log/&#39;</span> + sname<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># templated (dynamic) server log for a template named &#39;tname&#39;</span>
+</span></span><span style="display:flex;"><span>cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/ServerTemplates/&#39;</span> + tname<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>create<span style="color:#f92672">(</span>tname,<span style="color:#e6db74">&#39;Log&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>cd<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/ServerTemplates/&#39;</span> + tname + <span style="color:#e6db74">&#39;/Log/&#39;</span> + tname<span style="color:#f92672">)</span>
+</span></span></code></pre></div></li>
 <li>
 <p>Here is sample WLST offline code for commonly tuned Log MBean attributes:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># minimum log file size before rotation in kilobytes</span>
-set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;FileMinSize&#39;</span>, 1000<span style="color:#f92672">)</span>
-  
-<span style="color:#75715e"># maximum number of rotated files</span>
-set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;FileCount&#39;</span>, 10<span style="color:#f92672">)</span>
-  
-<span style="color:#75715e"># set to true to rotate file every time on startup (instead of append)</span>
-set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;RotateLogOnStartup&#39;</span>, <span style="color:#e6db74">&#39;true&#39;</span><span style="color:#f92672">)</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># minimum log file size before rotation in kilobytes</span>
+</span></span><span style="display:flex;"><span>set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;FileMinSize&#39;</span>, 1000<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># maximum number of rotated files</span>
+</span></span><span style="display:flex;"><span>set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;FileCount&#39;</span>, 10<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># set to true to rotate file every time on startup (instead of append)</span>
+</span></span><span style="display:flex;"><span>set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;RotateLogOnStartup&#39;</span>, <span style="color:#e6db74">&#39;true&#39;</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div></li>
 <li>
 <p>Here are the defaults for commonly tuned Log MBean attributes:</p>
 <table>
@@ -3143,7 +3143,7 @@ set<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;RotateLo
 <p>For WebLogic Server <code>.log</code> and <code>.out</code> files (including both dynamic and configured servers), you can alternatively
 set logging attributes using system properties that start with <code>weblogic.log.</code>
 and that end with the corresponding Log MBean attribute name.</p>
-<p>For example, you can include <code>-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true</code> in <code>domain.spec.serverPod.env.name.JAVA_OPTIONS</code> to set the behavior for all WebLogic Servers in your domain. For information about setting <code>JAVA_OPTIONS</code>, see <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain resource</a>.</p>
+<p>For example, you can include <code>-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true</code> in <code>domain.spec.serverPod.env.name.JAVA_OPTIONS</code> to set the behavior for all WebLogic Servers in your domain. For information about setting <code>JAVA_OPTIONS</code>, see <a href="/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain resource</a>.</p>
 </li>
 </ul>
 
@@ -5175,19 +5175,19 @@ For more information, see <a href="https://kubernetes.io/docs/concepts/cluster-a
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664997068"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664997068"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664993352" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664993352"></script>
+    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664997068" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664997068"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="This document describes domain introspection in the Oracle WebLogic Server in Kubernetes environment.">
 
 
@@ -12,18 +12,18 @@
     <title>Domain introspection :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664993351" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664997068" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664997068"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664993351"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664997068"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664997068"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.0";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664997068"></script>
 
     
   </div>
@@ -2972,7 +2972,7 @@ if (!doNotTrack) {
 <p>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.</p>
 <p>In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an &ldquo;introspection&rdquo; job. This Job will be named <code>DOMAIN_UID-introspect-domain-job</code>, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
-<a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/choosing-a-model/">domain home source types</a> are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
+<a href="/userguide/managing-domains/choosing-a-model/">domain home source types</a> are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.</p>
 <p>Introspection ensures that:</p>
@@ -2980,7 +2980,7 @@ analyzing the same WebLogic domain configuration that WebLogic Server instances 
 <li>The operator is aware of domain topology from the WebLogic domain configuration, including servers, clusters, network access points, listen addresses, and other configurations.</li>
 <li>The operator can generate configuration overrides to adjust the WebLogic domain configuration to match the Kubernetes environment, such as modifying listen addresses.</li>
 <li>For Model in Image, the operator can generate the WebLogic domain home, including the final domain configuration.</li>
-<li>For Domain in PV and Domain in Image, the operator can use any customer-provided <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/">configuration overrides</a> along with the operator-generated overrides to generate the final configuration overrides.</li>
+<li>For Domain in PV and Domain in Image, the operator can use any customer-provided <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a> along with the operator-generated overrides to generate the final configuration overrides.</li>
 </ol>
 <h4 id="when-introspection-occurs-automatically">When introspection occurs automatically</h4>
 <p>Introspection automatically occurs when:</p>
@@ -2991,42 +2991,42 @@ analyzing the same WebLogic domain configuration that WebLogic Server instances 
 <h4 id="initiating-introspection">Initiating introspection</h4>
 <p>Sometimes, such as for the <a href="#introspection-use-cases">use cases</a> described below, it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain <code>introspectVersion</code> field.</p>
 <p>Set <code>introspectVersion</code> to a new value.</p>
-<pre><code>  kind: Domain
+<pre tabindex="0"><code>  kind: Domain
   metadata:
     name: domain1
   spec:
-    introspectVersion: &quot;2&quot;
+    introspectVersion: &#34;2&#34;
     ...
 </code></pre><p>As with <code>restartVersion</code>, the <code>introspectVersion</code> field has no required format; however, we recommend using a value likely to be unique such as a continually increasing number or a timestamp.</p>
 <h4 id="failed-introspection">Failed introspection</h4>
 <p>Sometimes the Kubernetes Job, named <code>DOMAIN_UID-introspect-domain-job</code>, created for the introspection will fail.</p>
 <p>When introspection fails, the operator will not start any WebLogic Server instances. If this is not the initial introspection and there are already WebLogic Server instances running, then a failed introspection will leave the existing WebLogic Server instances running without making any changes to the operational state of the domain.</p>
 <p>The introspection will be periodically retried and then will eventually timeout with the Domain <code>status</code> indicating the processing failed. To recover from a failed state, correct the underlying problem and update the <code>introspectVersion</code>.</p>
-<p>Please review the details for diagnosing introspection failures related to <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/#debugging">configuration overrides</a> or <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/model-in-image/debugging/">Model in Image domain home generation</a>.</p>
+<p>Please review the details for diagnosing introspection failures related to <a href="/userguide/managing-domains/configoverrides/#debugging">configuration overrides</a> or <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/model-in-image/debugging/">Model in Image domain home generation</a>.</p>
 <h3 id="introspection-use-cases">Introspection use cases</h3>
 <h4 id="adding-clusters-or-managed-servers-to-the-weblogic-domain-configuration">Adding clusters or Managed Servers to the WebLogic domain configuration</h4>
 <p>When you have an existing WebLogic domain home on a persistent volume (&ldquo;Domain in PV&rdquo;) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.</p>
 <p>Prior to operator 3.0.0, this was not possible because there was no mechanism to initiate introspection other than a full domain shut down and restart and so the operator was unaware of the new clusters or Managed Servers. Now, after updating the domain configuration, you can initiate introspection by changing the <code>introspectVersion</code>.</p>
 <p>For instance, if you had a domain configuration with a single cluster named &ldquo;cluster-1&rdquo; then your Domain YAML file may have content like this:</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   clusters:
     - clusterName: cluster-1
       replicas: 3
   ...
 </code></pre><p>If you modified your WebLogic domain configuration (using the console or WLST) to add a new dynamic cluster named &ldquo;cluster-2&rdquo;, then you could immediately start cluster members of this new cluster by updating your Domain YAML file like this:</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   clusters:
     - clusterName: cluster-1
       replicas: 3
     - clusterName: cluster-2
       replicas: 2
-  introspectVersion: &quot;2&quot;
+  introspectVersion: &#34;2&#34;
   ...
 </code></pre><p>When this updated Domain YAML file is applied, the operator will initiate a new introspection of the domain configuration during which it will learn about the additional WebLogic cluster and then the operator will continue to start WebLogic Server instances that are members of this new cluster. In this case, the operator will start two Managed Servers that are members of the cluster named &ldquo;cluster-2&rdquo;.</p>
 <h4 id="distributing-changes-to-configuration-overrides">Distributing changes to configuration overrides</h4>
-<p>The operator supports customer-provided <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/">configuration overrides</a>. These configuration overrides, which are supported with Domain in PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL&rsquo;s or credentials.</p>
+<p>The operator supports customer-provided <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>. These configuration overrides, which are supported with Domain in PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL&rsquo;s or credentials.</p>
 <p>With operator 3.0.0, you can now change the configuration overrides and distribute these new configuration overrides to already running WebLogic Server instances. To do this, update the ConfigMap that contains the configuration overrides or update one or more of the Secrets referenced by those configuration overrides and then initiate introspection by changing the <code>introspectVersion</code> field.</p>
 <p>We have introduced a new field, called <code>overrideDistributionStrategy</code> and located under <code>configuration</code>, that controls whether updated configuration overrides are distributed dynamically to already running WebLogic Server instances or if the new configuration overrides are only applied when servers are started or restarted.</p>
 <p>The default value for <code>overrideDistributionStrategy</code> is DYNAMIC, which means that new configuration overrides are distributed dynamically to already running WebLogic Server instances.</p>
@@ -5065,19 +5065,19 @@ analyzing the same WebLogic domain configuration that WebLogic Server instances 
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664997068"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664997068"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664993351" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664993351"></script>
+    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664997068" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664997068"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

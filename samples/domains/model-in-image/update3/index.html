@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Update 3 :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993346" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993346"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3575,24 +3575,24 @@
 <p><strong>NOTE</strong>: If you are using JRF in this sample, substitute <code>JRF</code> for each occurrence of <code>WLS</code> in the paths below.</p>
 <p>When you create your updated image, you will use the files in staging directory <code>/tmp/mii-sample/model-in-image__WLS-v2</code>. In preparation, you need it to contain a ZIP file of the new WDT application archive.</p>
 <p>Run the following commands to create your application archive ZIP file and put it in the expected directory:</p>
-<pre><code># Delete existing archive.zip in case we have an old leftover version
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
-</code></pre></div><pre><code># Move to the directory which contains the source files for our new archive
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp/mii-sample/archives/archive-v2
-</code></pre></div><pre><code># Zip the archive to the location will later use when we run the WebLogic Image Tool
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
-</code></pre></div></li>
+<pre tabindex="0"><code># Delete existing archive.zip in case we have an old leftover version
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
+</span></span></code></pre></div><pre tabindex="0"><code># Move to the directory which contains the source files for our new archive
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/archives/archive-v2
+</span></span></code></pre></div><pre tabindex="0"><code># Zip the archive to the location will later use when we run the WebLogic Image Tool
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
+</span></span></code></pre></div></li>
 <li>
 <p>Understanding your staged model files.</p>
 <p>The WDT model YAML file and properties for this use case have already been staged for you to directory <code>/tmp/mii-sample/model-in-image__WLS-v2</code>.</p>
 <p>The <code>model.10.yaml</code> file in this directory has an updated path <code>wlsdeploy/applications/myapp-v2</code> that references the updated web application in your archive, but is otherwise identical to the model staged for the original image. The final related YAML file stanza looks like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">appDeployments</span>:
-    <span style="color:#f92672">Application</span>:
-        <span style="color:#f92672">myapp</span>:
-            <span style="color:#f92672">SourcePath</span>: <span style="color:#e6db74">&#39;wlsdeploy/applications/myapp-v2&#39;</span>
-            <span style="color:#f92672">ModuleType</span>: <span style="color:#ae81ff">ear</span>
-            <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
-</code></pre></div><p>If you would like to review the entire original model before this change, see <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/#staging-model-files">Staging model files</a>  in the Initial use case.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">appDeployments</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">Application</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">myapp</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">SourcePath</span>: <span style="color:#e6db74">&#39;wlsdeploy/applications/myapp-v2&#39;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">ModuleType</span>: <span style="color:#ae81ff">ear</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+</span></span></code></pre></div><p>If you would like to review the entire original model before this change, see <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/#staging-model-files">Staging model files</a>  in the Initial use case.</p>
 </li>
 <li>
 <p>Create a new image from your staged model files using WIT.</p>
@@ -3607,17 +3607,17 @@
 <p>If you don&rsquo;t see the <code>weblogic-deploy.zip</code> file, then you missed a step in the <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
 <p>Now, you use the Image Tool to create an image named <code>model-in-image:WLS-v2</code> that&rsquo;s layered on a base WebLogic image. You&rsquo;ve already set up this tool during the prerequisite steps.</p>
 <p>Run the following commands to create the model image and verify that it worked:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp/mii-sample/model-images
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-v2 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wdtModel      ./model-in-image__WLS-v2/model.10.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wdtVariables  ./model-in-image__WLS-v2/model.10.properties <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wdtArchive    ./model-in-image__WLS-v2/archive.zip <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wdtModelOnly <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wdtDomainType WLS <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --chown oracle:root
-</code></pre></div><p>If you don&rsquo;t see the <code>imagetool</code> directory, then you missed a step in the <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/model-images
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-v2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModel      ./model-in-image__WLS-v2/model.10.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtVariables  ./model-in-image__WLS-v2/model.10.properties <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtArchive    ./model-in-image__WLS-v2/archive.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModelOnly <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtDomainType WLS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --chown oracle:root
+</span></span></code></pre></div><p>If you don&rsquo;t see the <code>imagetool</code> directory, then you missed a step in the <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
 <p>This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:</p>
 <ul>
 <li>Builds the final container image as a layer on the <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code> base image.</li>
@@ -3630,9 +3630,9 @@
 <li>Copies the specified WDT model, properties, and application archives to image location <code>/u01/wdt/models</code>.</li>
 </ul>
 <p>When the command succeeds, it will end with output like the following:</p>
-<pre><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
+<pre tabindex="0"><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
 </code></pre><p>Also, if you run the <code>docker images</code> command, then you will see an image named <code>model-in-image:WLS-v2</code>.</p>
-<p><strong>Note</strong>: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+<p><strong>Note</strong>: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See <a href="/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
 </li>
 </ul>
 </li>
@@ -3660,23 +3660,23 @@
 <li>
 <p>Change the <code>/tmp/mii-sample/mii-update3.yaml</code> Domain YAML file&rsquo;s <code>image</code> field to reference <code>model-in-image:WLS-v2</code> instead of <code>model-in-image:WLS-v1</code>.</p>
 <p>The final result will look something like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
-<span style="color:#f92672">spec</span>:
-  <span style="color:#ae81ff">...</span>
-  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-v2&#34;</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-v2&#34;</span>
+</span></span></code></pre></div></li>
 <li>
 <p>Apply your changed Domain YAML file:</p>
-<p><strong>NOTE</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
-</code></pre></div></li>
+<p><strong>NOTE</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>
 <p>Option 2: Use the updated Domain YAML file that is supplied with the sample:</p>
-<p><strong>NOTE</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
-</code></pre></div></li>
+<p><strong>NOTE</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>
@@ -3700,42 +3700,41 @@
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">  $ ./wl-pod-wait.sh -?
-</code></pre></div><pre><code>  Usage:
+        <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>  $ ./wl-pod-wait.sh -?
+</span></span></code></pre></div><pre tabindex="0"><code>  Usage:
 
     wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
        [-p expected_pod_count] \
        [-t timeout_secs] \
        [-q]
 
-    Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+    Exits non-zero if &#39;timeout_secs&#39; is reached before &#39;pod_count&#39; is reached.
 
   Parameters:
 
-    -d &lt;domain_uid&gt; : Defaults to 'sample-domain1'.
+    -d &lt;domain_uid&gt; : Defaults to &#39;sample-domain1&#39;.
 
-    -n &lt;namespace&gt;  : Defaults to 'sample-domain1-ns'.
+    -n &lt;namespace&gt;  : Defaults to &#39;sample-domain1-ns&#39;.
 
     -p 0            : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
 
     -p &lt;pod_count&gt;  : Wait until all of the following are true
-                      for exactly 'pod_count' WebLogic Server pods
+                      for exactly &#39;pod_count&#39; WebLogic Server pods
                       in the domain:
                       - ready
-                      - same 'weblogic.domainRestartVersion' label value as
-                        the domain resource's 'spec.restartVersion'
-                      - same 'weblogic.introspectVersion' label value as
-                        the domain resource's 'spec.introspectVersion'
-                      - same image as the the domain resource's image
+                      - same &#39;weblogic.domainRestartVersion&#39; label value as
+                        the domain resource&#39;s &#39;spec.restartVersion&#39;
+                      - same &#39;weblogic.introspectVersion&#39; label value as
+                        the domain resource&#39;s &#39;spec.introspectVersion&#39;
+                      - same image as the the domain resource&#39;s image
 
-    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to '1000'.
+    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to &#39;1000&#39;.
 
     -q              : Quiet mode. Show only a count of wl pods that
                       have reached the desired criteria.
 
     -?              : This help.
-
 </code></pre>
     </div>
 </div>
@@ -3751,159 +3750,158 @@
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p <span style="color:#ae81ff">3</span>
-</code></pre></div><pre><code>@@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-@@ [2020-05-14T17:28:47][seconds=1] Info:   ready='true'
-@@ [2020-05-14T17:28:47][seconds=1] Info:   image='model-in-image:WLS-v2'
-@@ [2020-05-14T17:28:47][seconds=1] Info:   domainRestartVersion='1'
-@@ [2020-05-14T17:28:47][seconds=1] Info:   namespace='sample-domain1-ns'
-@@ [2020-05-14T17:28:47][seconds=1] Info:   domainUID='sample-domain1'
+        <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p <span style="color:#ae81ff">3</span>
+</span></span></code></pre></div><pre tabindex="0"><code>@@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 1000 seconds for exactly &#39;3&#39; WebLogic Server pods to reach the following criteria:
+@@ [2020-05-14T17:28:47][seconds=1] Info:   ready=&#39;true&#39;
+@@ [2020-05-14T17:28:47][seconds=1] Info:   image=&#39;model-in-image:WLS-v2&#39;
+@@ [2020-05-14T17:28:47][seconds=1] Info:   domainRestartVersion=&#39;1&#39;
+@@ [2020-05-14T17:28:47][seconds=1] Info:   namespace=&#39;sample-domain1-ns&#39;
+@@ [2020-05-14T17:28:47][seconds=1] Info:   domainUID=&#39;sample-domain1&#39;
 
-@@ [2020-05-14T17:28:47][seconds=1] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:28:47][seconds=1] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:28:47][seconds=1] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                          VERSION  IMAGE                    READY   PHASE
 --------------------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'                 '2'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-introspector-g5kzn'           ''       ''                       ''      'Running'
-'sample-domain1-managed-server1'              '2'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server2'              '2'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;                 &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-introspector-g5kzn&#39;           &#39;&#39;       &#39;&#39;                       &#39;&#39;      &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;              &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;              &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:29:39][seconds=53] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:29:39][seconds=53] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:29:39][seconds=53] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '2'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:29:50][seconds=64] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:29:50][seconds=64] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:29:50][seconds=64] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-managed-server1&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:29:58][seconds=72] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:29:58][seconds=72] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:29:58][seconds=72] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'false'  'Pending'
-'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
 
-@@ [2020-05-14T17:29:59][seconds=73] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:29:59][seconds=73] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:29:59][seconds=73] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'false'  'Running'
-'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
 
-@@ [2020-05-14T17:30:30][seconds=104] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:30:30][seconds=104] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:30:30][seconds=104] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:31:13][seconds=147] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:31:13][seconds=147] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:31:13][seconds=147] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'false'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
 
-@@ [2020-05-14T17:31:15][seconds=149] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:31:15][seconds=149] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:31:15][seconds=149] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:31:41][seconds=175] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:31:41][seconds=175] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:31:41][seconds=175] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
 
-@@ [2020-05-14T17:31:42][seconds=176] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:31:42][seconds=176] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:31:42][seconds=176] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
 
-@@ [2020-05-14T17:32:21][seconds=215] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:32:21][seconds=215] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:32:21][seconds=215] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:32:31][seconds=225] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:32:31][seconds=225] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:32:31][seconds=225] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'false'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;2&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:32:40][seconds=234] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:32:40][seconds=234] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:32:40][seconds=234] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:32:51][seconds=245] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:32:51][seconds=245] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:32:51][seconds=245] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;false&#39;  &#39;Pending&#39;
 
-@@ [2020-05-14T17:32:52][seconds=246] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:32:52][seconds=246] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:32:52][seconds=246] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'
-'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-05-14T17:33:25][seconds=279] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-14T17:33:25][seconds=279] Info: &#39;3&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-14T17:33:25][seconds=279] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'
-'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v2&#39;  &#39;true&#39;  &#39;Running&#39;
 
 
 @@ [2020-05-14T17:33:25][seconds=279] Info: Success!
-
 </code></pre>
     </div>
 </div>
@@ -3914,42 +3912,42 @@ NAME                              VERSION  IMAGE                    READY   PHAS
 <p>After your domain roll is complete, you can call the sample web application to determine if the updated application was deployed.</p>
 <p>When the application is invoked, it will contain an output string like <code>Hello World! This is version 'v2' of the mii-sample JSP web-app.</code>.</p>
 <p>Send a web application request to the ingress controller:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ curl -s -S -m <span style="color:#ae81ff">10</span> -H <span style="color:#e6db74">&#39;host: sample-domain1-cluster-cluster-1.mii-sample.org&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   http://localhost:30305/myapp_war/index.jsp
-</code></pre></div><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can run <code>kubectl exec</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&#34;</span>
-</code></pre></div><p>You will see something like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">html</span>&gt;&lt;<span style="color:#f92672">body</span>&gt;&lt;<span style="color:#f92672">pre</span>&gt;
-*****************************************************************
-
-Hello World! This is version &#39;v2&#39; of the mii-sample JSP web-app.
-
-Welcome to WebLogic Server &#39;managed-server1&#39;!
-
-  domain UID  = &#39;sample-domain1&#39;
-  domain name = &#39;domain1&#39;
-
-Found 1 local cluster runtime:
-  Cluster &#39;cluster-1&#39;
-
-Found min threads constraint runtime named &#39;SampleMinThreads&#39; with configured count: 1
-
-Found max threads constraint runtime named &#39;SampleMaxThreads&#39; with configured count: 10
-
-Found 1 local data source:
-  Datasource &#39;mynewdatasource&#39;:  State=&#39;Running&#39;, testPool=&#39;Failed&#39;
-    ---TestPool Failure Reason---
-    NOTE: Ignore &#39;mynewdatasource&#39; failures until the sample&#39;s Update 4 use case.
-    ---
-    ...
-    ... invalid host/username/password
-    ...
-    -----------------------------
-
-*****************************************************************
-&lt;/<span style="color:#f92672">pre</span>&gt;&lt;/<span style="color:#f92672">body</span>&gt;&lt;/<span style="color:#f92672">html</span>&gt;
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl -s -S -m <span style="color:#ae81ff">10</span> -H <span style="color:#e6db74">&#39;host: sample-domain1-cluster-cluster-1.mii-sample.org&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   http://localhost:30305/myapp_war/index.jsp
+</span></span></code></pre></div><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can run <code>kubectl exec</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&#34;</span>
+</span></span></code></pre></div><p>You will see something like the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span>&gt;&lt;<span style="color:#f92672">body</span>&gt;&lt;<span style="color:#f92672">pre</span>&gt;
+</span></span><span style="display:flex;"><span>*****************************************************************
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Hello World! This is version &#39;v2&#39; of the mii-sample JSP web-app.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Welcome to WebLogic Server &#39;managed-server1&#39;!
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  domain UID  = &#39;sample-domain1&#39;
+</span></span><span style="display:flex;"><span>  domain name = &#39;domain1&#39;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found 1 local cluster runtime:
+</span></span><span style="display:flex;"><span>  Cluster &#39;cluster-1&#39;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found min threads constraint runtime named &#39;SampleMinThreads&#39; with configured count: 1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found max threads constraint runtime named &#39;SampleMaxThreads&#39; with configured count: 10
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Found 1 local data source:
+</span></span><span style="display:flex;"><span>  Datasource &#39;mynewdatasource&#39;:  State=&#39;Running&#39;, testPool=&#39;Failed&#39;
+</span></span><span style="display:flex;"><span>    ---TestPool Failure Reason---
+</span></span><span style="display:flex;"><span>    NOTE: Ignore &#39;mynewdatasource&#39; failures until the sample&#39;s Update 4 use case.
+</span></span><span style="display:flex;"><span>    ---
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>    ... invalid host/username/password
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>    -----------------------------
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>*****************************************************************
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">pre</span>&gt;&lt;/<span style="color:#f92672">body</span>&gt;&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div></li>
 </ol>
 <p>A <code>TestPool Failure</code> is expected because we will demonstrate dynamically correcting the data source attributes in <a href="/weblogic-kubernetes-operator/samples/domains/model-in-image/update4/">Update 4</a>.</p>
 <p>If you see an error other than the expected <code>TestPool Failure</code>, then consult <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">Debugging</a> in the Model in Image user guide.</p>
@@ -6280,19 +6278,19 @@ Found 1 local data source:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

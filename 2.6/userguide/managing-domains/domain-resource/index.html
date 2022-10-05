@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664993350" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664997066" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664997066"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664993350"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664997066"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664997066"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.6";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664997066"></script>
 
     
   </div>
@@ -2783,13 +2783,13 @@ for the <a href="#details-for-300-rc1">3.0.0-rc1 release candidate</a> below.</p
 </ul>
 <h4 id="yaml-files">YAML files</h4>
 <p>Domain resources are defined using the domain resource YAML files. For each WebLogic Server domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample script, <code>create-domain.sh</code>, generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WebLogic Server domain parameters that define your domain.</p>
-<p>See the WebLogic Server sample <a href="/weblogic-kubernetes-operator/2.6/samples/simple/domains/domain-home-on-pv/">Domain home on a persistent volume</a> README.</p>
+<p>See the WebLogic Server sample <a href="/samples/simple/domains/domain-home-on-pv/">Domain home on a persistent volume</a> README.</p>
 <h4 id="kubernetes-resources">Kubernetes resources</h4>
 <p>After you have written your YAML files, you use them to create your domain artifacts using the <code>kubectl apply -f</code> command.</p>
-<pre><code>$ kubectl apply -f domain-resource.yaml
+<pre tabindex="0"><code>$ kubectl apply -f domain-resource.yaml
 </code></pre><h4 id="verify-the-results">Verify the results</h4>
 <p>To confirm that the domain resource was created, use this command:</p>
-<pre><code>$ kubectl describe domain [domain name] -n [namespace]
+<pre tabindex="0"><code>$ kubectl describe domain [domain name] -n [namespace]
 </code></pre><h4 id="domain-resource-overview">Domain resource overview</h4>
 <p>The domain resource, like all <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">Kubernetes objects</a>, is described by three sections: <code>metadata</code>, <code>spec</code>, and <code>status</code>.</p>
 <p>The <code>metadata</code> section names the domain resource and its namespace.  The name of the domain resource is the default value for the <code>domain UID</code> which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.</p>
@@ -2856,10 +2856,10 @@ for the <a href="#details-for-300-rc1">3.0.0-rc1 release candidate</a> below.</p
 </ul>
 <p>Note: Defining <code>-Djava.security.egd=file:/dev/./urandom</code> in the <code>NODEMGR_MEM_ARGS</code> environment variable helps to speed up the Node Manager startup on systems with low entropy.</p>
 <p>This example snippet illustrates how to add the above environment variables using the <code>env</code> attribute under the <code>serverPod</code> configuration in your domain resource YAML file.</p>
-<pre><code># Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+<pre tabindex="0"><code># Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-apiVersion: &quot;weblogic.oracle/v7&quot;
+apiVersion: &#34;weblogic.oracle/v7&#34;
 kind: Domain
 metadata:
   name: domain1
@@ -2872,13 +2872,13 @@ spec:
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false &quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false &#34;
     - name: USER_MEM_ARGS
-      value: &quot;-Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Djava.security.egd=file:/dev/./urandom &#34;
     - name: NODEMGR_JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false &quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false &#34;
     - name: NODEMGR_MEM_ARGS
-      value: &quot;-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom &#34;
 </code></pre><h3 id="pod-generation">Pod generation</h3>
 <p>The operator creates a Pod for each running WebLogic Server instance.  This Pod will have a container, named <code>weblogic-server</code>, based on the Docker image specified by the <code>image</code> field.  Additional Pod or container content can be specified using the elements under <code>serverPod</code>. This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, <a href="https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/">resource requirements</a>, or <a href="https://kubernetes.io/docs/tasks/configure-pod-container/security-context/">security context</a>.</p>
 <p>Customer provided labels and annotations may not begin with &ldquo;weblogic&rdquo; and the operator will generate the following labels:</p>
@@ -2900,10 +2900,10 @@ spec:
 <li><code>LOG_HOME</code>: The WebLogic log location as a file system path within the container.</li>
 </ul>
 <p>This example domain YAML file specifies that Pods for WebLogic Server instances in the <code>cluster-1</code> cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes <code>StatefulSet</code>), an <code>init</code> container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:</p>
-<pre><code># Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+<pre tabindex="0"><code># Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: &quot;weblogic.oracle/v7&quot;
+apiVersion: &#34;weblogic.oracle/v7&#34;
 kind: Domain
 metadata:
   name: domain1
@@ -2914,27 +2914,27 @@ metadata:
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
   domainHomeInImage: true
-  image: &quot;phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4&quot;
-  imagePullPolicy: &quot;IfNotPresent&quot;
+  image: &#34;phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4&#34;
+  imagePullPolicy: &#34;IfNotPresent&#34;
   imagePullSecrets:
   - name: ocirsecret
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: &quot;IF_NEEDED&quot;
+  serverStartPolicy: &#34;IF_NEEDED&#34;
   serverPod:
     env:
     - name: JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false&quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false&#34;
     - name: USER_MEM_ARGS
-      value: &quot;-Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Djava.security.egd=file:/dev/./urandom &#34;
 
   adminServer:
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
 
   clusters:
   - clusterName: cluster-1
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
     serverPod:
       affinity:
         podAntiAffinity:
@@ -2943,11 +2943,11 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: &quot;weblogic.clusterName&quot;
+                    - key: &#34;weblogic.clusterName&#34;
                       operator: In
                       values:
                       - $(CLUSTER_NAME)
-                topologyKey: &quot;kubernetes.io/hostname&quot;
+                topologyKey: &#34;kubernetes.io/hostname&#34;
       volumes:
       - name: $(SERVER_NAME)-volume
         emptyDir: {}
@@ -2956,10 +2956,10 @@ spec:
         name: $(SERVER_NAME)-volume
       initContainers:
       - name: volumeinit
-        image: &quot;oraclelinux:7-slim&quot;
+        image: &#34;oraclelinux:7-slim&#34;
         imagePullPolicy: IfNotPresent
-        command: [&quot;/usr/bin/sh&quot;]
-        args: [&quot;echo&quot;, &quot;Replace with command to initialize files in /init-volume&quot;]
+        command: [&#34;/usr/bin/sh&#34;]
+        args: [&#34;echo&#34;, &#34;Replace with command to initialize files in /init-volume&#34;]
         volumeMounts:
         - mountPath: /init-volume
           name: $(SERVER_NAME)-volume
@@ -2983,14 +2983,14 @@ for the 3.0.0-rc1 release candidate below.</p>
 </ul>
 <h4 id="yaml-files-1">YAML files</h4>
 <p>Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.</p>
-<p>See the WebLogic samples, <a href="/weblogic-kubernetes-operator/2.6/samples/simple/domains/domain-home-on-pv/">Domain home on a PV</a>,
-<a href="/weblogic-kubernetes-operator/2.6/samples/simple/domains/domain-home-in-image/">Domain home in Image</a>, and <a href="/weblogic-kubernetes-operator/2.6/samples/simple/domains/model-in-image/">Model in Image</a>.</p>
+<p>See the WebLogic samples, <a href="/samples/simple/domains/domain-home-on-pv/">Domain home on a PV</a>,
+<a href="/samples/simple/domains/domain-home-in-image/">Domain home in Image</a>, and <a href="/samples/simple/domains/model-in-image/">Model in Image</a>.</p>
 <h4 id="kubernetes-resources-1">Kubernetes resources</h4>
 <p>After you have written your YAML files, you use them to create your WLS domain artifacts using the <code>kubectl apply -f</code> command.</p>
-<pre><code>$ kubectl apply -f domain-resource.yaml
+<pre tabindex="0"><code>$ kubectl apply -f domain-resource.yaml
 </code></pre><h4 id="verify-the-results-1">Verify the results</h4>
 <p>To confirm that the domain resource was created, use this command:</p>
-<pre><code>$ kubectl describe domain [domain name] -n [namespace]
+<pre tabindex="0"><code>$ kubectl describe domain [domain name] -n [namespace]
 </code></pre><h4 id="domain-resource-overview-1">Domain resource overview</h4>
 <p>The domain resource, like all <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">Kubernetes objects</a>, is described by three sections: <code>metadata</code>, <code>spec</code>, and <code>status</code>.</p>
 <p>The <code>metadata</code> section names the domain resource and its namespace.  The name of the domain resource is the default value for the <code>domain UID</code> which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.</p>
@@ -3030,18 +3030,18 @@ for the 3.0.0-rc1 release candidate below.</p>
 <li>
 <p>These elements are under <code>configuration</code>.</p>
 <ul>
-<li><code>overridesConfigMap</code>: The name of the ConfigMap for optional <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/configoverrides/">Configuration overrides</a>. The value only applies if the <code>domainHomeSourceType</code> is <code>Image</code> or <code>PersistentVolume</code>. Do not set this value if the <code>domainHomeSourceType</code> is <code>FromModel</code>.</li>
-<li><code>secrets</code>: A list of secret names for optional <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/configoverrides/">Configuration overrides</a> macros or Model in Image <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/model-in-image/model-files/">Model files</a> macros. Often used for specifying data source URLs, user names, and passwords.</li>
+<li><code>overridesConfigMap</code>: The name of the ConfigMap for optional <a href="/userguide/managing-domains/configoverrides/">Configuration overrides</a>. The value only applies if the <code>domainHomeSourceType</code> is <code>Image</code> or <code>PersistentVolume</code>. Do not set this value if the <code>domainHomeSourceType</code> is <code>FromModel</code>.</li>
+<li><code>secrets</code>: A list of secret names for optional <a href="/userguide/managing-domains/configoverrides/">Configuration overrides</a> macros or Model in Image <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/model-in-image/model-files/">Model files</a> macros. Often used for specifying data source URLs, user names, and passwords.</li>
 <li><code>introspectorJobActiveDeadlineSeconds</code>: Time in seconds before timing out the introspector job. Default is 120 seconds.</li>
 </ul>
 </li>
 <li>
-<p>These elements are under <code>configuration.model</code>, only apply if the <code>domainHomeSourceType</code> is <code>FromModel</code>, and are discussed in <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/model-in-image/">Model in Image</a>.</p>
+<p>These elements are under <code>configuration.model</code>, only apply if the <code>domainHomeSourceType</code> is <code>FromModel</code>, and are discussed in <a href="/userguide/managing-domains/model-in-image/">Model in Image</a>.</p>
 <ul>
 <li><code>configMap</code>: Optional configuration map for supplying <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/model-in-image/runtime-updates/">runtime model file updates</a> to Model in Image model configuration.</li>
 <li><code>domainType</code>: Must be one of <code>WLS</code>, <code>JRF</code>, or <code>RestrictedJRF</code>.  Default is <code>WLS</code>.</li>
 <li><code>runtimeEncryptionSecret</code>: Required. Expected field is <code>password</code>. This is used by Model in Image to encrypt data while the data is passed from the introspector job to WebLogic pods. The password can be arbitrary: the only requirement is that it must stay the same for the life of a domain resource. If a domain resource is deleted then redeployed, it&rsquo;s fine to change the password during the interim.</li>
-<li><code>wdtEncryptionSecret</code>: Optional. Rarely used. See <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-domains/model-in-image/">Model in Image</a> for details.</li>
+<li><code>wdtEncryptionSecret</code>: Optional. Rarely used. See <a href="/userguide/managing-domains/model-in-image/">Model in Image</a> for details.</li>
 </ul>
 </li>
 <li>
@@ -3080,10 +3080,10 @@ for the 3.0.0-rc1 release candidate below.</p>
 </ul>
 <p><strong>Note</strong>: Defining <code>-Djava.security.egd=file:/dev/./urandom</code> in the <code>NODEMGR_MEM_ARGS</code> environment variable helps to speed up the Node Manager startup on systems with low entropy.</p>
 <p>This example snippet illustrates how to add the above environment variables using the <code>env</code> attribute under the <code>serverPod</code> configuration in your domain resource YAML file.</p>
-<pre><code># Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+<pre tabindex="0"><code># Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: &quot;weblogic.oracle/v7&quot;
+apiVersion: &#34;weblogic.oracle/v7&#34;
 kind: Domain
 metadata:
   name: domain1
@@ -3096,13 +3096,13 @@ spec:
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false &quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false &#34;
     - name: USER_MEM_ARGS
-      value: &quot;-Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Djava.security.egd=file:/dev/./urandom &#34;
     - name: NODEMGR_JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false &quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false &#34;
     - name: NODEMGR_MEM_ARGS
-      value: &quot;-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom &#34;
 </code></pre><h3 id="pod-generation-1">Pod generation</h3>
 <p>The operator creates a Pod for each running WebLogic Server instance.  This Pod will have a container, named <code>weblogic-server</code>, based on the Docker image specified by the <code>image</code> field.  Additional Pod or container content can be specified using the elements under <code>serverPod</code>. This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, <a href="https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/">resource requirements</a>, or <a href="https://kubernetes.io/docs/tasks/configure-pod-container/security-context/">security context</a>.</p>
 <p>Customer provided labels and annotations may not begin with &ldquo;weblogic&rdquo; and the operator will generate the following labels:</p>
@@ -3124,10 +3124,10 @@ spec:
 <li><code>LOG_HOME</code>: The WebLogic log location as a file system path within the container.</li>
 </ul>
 <p>This example domain YAML file specifies that Pods for WebLogic Server instances in the <code>cluster-1</code> cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes <code>StatefulSet</code>), an <code>init</code> container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:</p>
-<pre><code># Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+<pre tabindex="0"><code># Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: &quot;weblogic.oracle/v7&quot;
+apiVersion: &#34;weblogic.oracle/v7&#34;
 kind: Domain
 metadata:
   name: domain1
@@ -3138,27 +3138,27 @@ metadata:
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
   domainHomeSourceType: Image
-  image: &quot;phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4&quot;
-  imagePullPolicy: &quot;IfNotPresent&quot;
+  image: &#34;phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4&#34;
+  imagePullPolicy: &#34;IfNotPresent&#34;
   imagePullSecrets:
   - name: ocirsecret
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   includeServerOutInPodLog: true
-  serverStartPolicy: &quot;IF_NEEDED&quot;
+  serverStartPolicy: &#34;IF_NEEDED&#34;
   serverPod:
     env:
     - name: JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false&quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false&#34;
     - name: USER_MEM_ARGS
-      value: &quot;-Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Djava.security.egd=file:/dev/./urandom &#34;
 
   adminServer:
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
 
   clusters:
   - clusterName: cluster-1
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
     serverPod:
       affinity:
         podAntiAffinity:
@@ -3167,11 +3167,11 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: &quot;weblogic.clusterName&quot;
+                    - key: &#34;weblogic.clusterName&#34;
                       operator: In
                       values:
                       - $(CLUSTER_NAME)
-                topologyKey: &quot;kubernetes.io/hostname&quot;
+                topologyKey: &#34;kubernetes.io/hostname&#34;
       volumes:
       - name: $(SERVER_NAME)-volume
         emptyDir: {}
@@ -3180,10 +3180,10 @@ spec:
         name: $(SERVER_NAME)-volume
       initContainers:
       - name: volumeinit
-        image: &quot;oraclelinux:7-slim&quot;
+        image: &#34;oraclelinux:7-slim&#34;
         imagePullPolicy: IfNotPresent
-        command: [&quot;/usr/bin/sh&quot;]
-        args: [&quot;echo&quot;, &quot;Replace with command to initialize files in /init-volume&quot;]
+        command: [&#34;/usr/bin/sh&#34;]
+        args: [&#34;echo&#34;, &#34;Replace with command to initialize files in /init-volume&#34;]
         volumeMounts:
         - mountPath: /init-volume
           name: $(SERVER_NAME)-volume
@@ -5055,19 +5055,19 @@ spec:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664997066"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664997066"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664993350" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664993350"></script>
+    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664997066" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664997066"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

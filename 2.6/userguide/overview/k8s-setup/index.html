@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Set up Kubernetes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664993350" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664997067" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664997067"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664993350"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664997067"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664997067"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.6";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664997067"></script>
 
     
   </div>
@@ -2778,8 +2778,8 @@ if (!doNotTrack) {
 <li>Download and install <a href="https://www.terraform.io/">Terraform</a> (v0.10.3 or later).</li>
 <li>Download and install the <a href="https://github.com/terraform-providers/terraform-provider-oci/releases">OCI Terraform Provider</a> (v2.0.0 or later).</li>
 <li>Create an Terraform configuration file at  <code>~/.terraformrc</code> that specifies the path to the OCI provider:
-<pre><code>providers {
-  oci = &quot;&lt;path_to_provider_binary&gt;/terraform-provider-oci&quot;
+<pre tabindex="0"><code>providers {
+  oci = &#34;&lt;path_to_provider_binary&gt;/terraform-provider-oci&#34;
 }
 </code></pre></li>
 <li>Ensure that you have <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">kubectl</a> installed if you plan to interact with the cluster locally.</li>
@@ -2788,42 +2788,42 @@ if (!doNotTrack) {
 <ol>
 <li>
 <p>Do a <code>git clone</code> of the Terraform Kubernetes installer project:</p>
-<pre><code>git clone https://github.com/oracle/terraform-kubernetes-installer.git
+<pre tabindex="0"><code>git clone https://github.com/oracle/terraform-kubernetes-installer.git
 </code></pre></li>
 <li>
 <p>Initialize your project:</p>
-<pre><code>cd terraform-kubernetes-installer
+<pre tabindex="0"><code>cd terraform-kubernetes-installer
 terraform init
 </code></pre></li>
 <li>
 <p>Copy the example <code>terraform.tvfars</code>:</p>
-<pre><code>cp terraform.example.tfvars terraform.tfvars
+<pre tabindex="0"><code>cp terraform.example.tfvars terraform.tfvars
 </code></pre></li>
 <li>
 <p>Edit the <code>terraform.tvfars</code> file to include values for your tenancy, user, and compartment.  Optionally, edit the variables to change the <code>Shape</code> of the VMs for your Kubernetes master and workers, and your <code>etcd</code> cluster.   For example:</p>
-<pre><code>#give a label to your cluster to help identify it if you have multiple
-label_prefix=&quot;weblogic-operator-1-&quot;
+<pre tabindex="0"><code>#give a label to your cluster to help identify it if you have multiple
+label_prefix=&#34;weblogic-operator-1-&#34;
 
 #identification/authorization info
-tenancy_ocid = &quot;ocid1.tenancy....&quot;
-compartment_ocid = &quot;ocid1.compartment....&quot;
-fingerprint = &quot;...&quot;
-private_key_path = &quot;/Users/username/.oci/oci_api_key.pem&quot;
-user_ocid = &quot;ocid1.user...&quot;
+tenancy_ocid = &#34;ocid1.tenancy....&#34;
+compartment_ocid = &#34;ocid1.compartment....&#34;
+fingerprint = &#34;...&#34;
+private_key_path = &#34;/Users/username/.oci/oci_api_key.pem&#34;
+user_ocid = &#34;ocid1.user...&#34;
 
 #shapes for your VMs
-etcdShape = &quot;VM.Standard1.2&quot;
-k8sMasterShape = &quot;VM.Standard1.8&quot;
-k8sWorkerShape = &quot;VM.Standard1.8&quot;
-k8sMasterAd1Count = &quot;1&quot;
-k8sWorkerAd1Count = &quot;2&quot;
+etcdShape = &#34;VM.Standard1.2&#34;
+k8sMasterShape = &#34;VM.Standard1.8&#34;
+k8sWorkerShape = &#34;VM.Standard1.8&#34;
+k8sMasterAd1Count = &#34;1&#34;
+k8sWorkerAd1Count = &#34;2&#34;
 
 #this ingress is set to wide-open for testing **not secure**
-etcd_ssh_ingress = &quot;0.0.0.0/0&quot;
-master_ssh_ingress = &quot;0.0.0.0/0&quot;
-worker_ssh_ingress = &quot;0.0.0.0/0&quot;
-master_https_ingress = &quot;0.0.0.0/0&quot;
-worker_nodeport_ingress = &quot;0.0.0.0/0&quot;
+etcd_ssh_ingress = &#34;0.0.0.0/0&#34;
+master_ssh_ingress = &#34;0.0.0.0/0&#34;
+worker_ssh_ingress = &#34;0.0.0.0/0&#34;
+master_https_ingress = &#34;0.0.0.0/0&#34;
+worker_nodeport_ingress = &#34;0.0.0.0/0&#34;
 
 #create iscsi volumes to store your etcd and /var/lib/docker info
 worker_iscsi_volume_create = true
@@ -2833,16 +2833,16 @@ etcd_iscsi_volume_size = 50
 </code></pre></li>
 <li>
 <p>Test and apply your changes:</p>
-<pre><code>terraform plan
+<pre tabindex="0"><code>terraform plan
 terraform apply
 </code></pre></li>
 <li>
 <p>Test your cluster using the built-in script <code>scripts/cluster-check.sh</code>:</p>
-<pre><code>scripts/cluster-check.sh
+<pre tabindex="0"><code>scripts/cluster-check.sh
 </code></pre></li>
 <li>
 <p>Output the SSH private key:</p>
-<pre><code># output the ssh private key for use later
+<pre tabindex="0"><code># output the ssh private key for use later
 $ rm -f generated/instances_id_rsa &amp;&amp; terraform output ssh_private_key &gt; generated/instances_id_rsa &amp;&amp; chmod 600 generated/instances_id_rsa
 </code></pre></li>
 <li>
@@ -2858,7 +2858,7 @@ Alternatively, you may install an NFS server on one node and share the file syst
 <div class="notices note" ><p>Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.</p>
 </div>
 
-<pre><code>$ terraform output worker_public_ips
+<pre tabindex="0"><code>$ terraform output worker_public_ips
 IP1,
 IP2
 $ terraform output worker_private_ips
@@ -2868,7 +2868,7 @@ $ ssh -i `pwd`/generated/instances_id_rsa opc@IP1
 worker-1$ sudo su -
 worker-1# yum install -y nfs-utils
 worker-1# mkdir /scratch
-worker-1# echo &quot;/scratch PRIVATE_IP2(rw)&quot; &gt;&gt; /etc/exports
+worker-1# echo &#34;/scratch PRIVATE_IP2(rw)&#34; &gt;&gt; /etc/exports
 worker-1# systemctl restart nfs
 worker-1# exit
 worker-1$ exit
@@ -2877,7 +2877,7 @@ $ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
 worker-2$ sudo su -
 worker-2# yum install -y nfs-utils
 worker-2# mkdir /scratch
-worker-2# echo &quot;PRIVATE_IP1:/scratch /scratch  nfs nfsvers=3 0 0&quot; &gt;&gt; /etc/fstab
+worker-2# echo &#34;PRIVATE_IP1:/scratch /scratch  nfs nfsvers=3 0 0&#34; &gt;&gt; /etc/fstab
 worker-2# mount /scratch
 worker-2# exit
 worker-2$ exit
@@ -2891,19 +2891,19 @@ $
 <ol>
 <li>
 <p>Choose the directories where your Docker and Kubernetes files will be stored.  The Docker directory should be on a disk with a lot of free space (more than 100GB) because it will be used for the <code>/var/lib/docker</code> file system, which contains all of your images and containers. The Kubernetes directory will be used for the <code>/var/lib/kubelet</code> file system and persistent volume storage.</p>
-<pre><code>export docker_dir=/scratch/docker
+<pre tabindex="0"><code>export docker_dir=/scratch/docker
 export k8s_dir=/scratch/k8s_dir
 </code></pre></li>
 <li>
 <p>Create a shell script that sets up the necessary environment variables. You should probably just append this to the user&rsquo;s <code>.bashrc</code> so that it will get executed at login.  You will also need to configure your proxy settings here if you are behind an HTTP proxy:</p>
-<pre><code>export PATH=$PATH:/sbin:/usr/sbin
-pod_network_cidr=&quot;10.244.0.0/16&quot;
+<pre tabindex="0"><code>export PATH=$PATH:/sbin:/usr/sbin
+pod_network_cidr=&#34;10.244.0.0/16&#34;
 
 k8s_dir=$k8s_dir
 
 ## grab my IP address to pass into  kubeadm init, and to add to no_proxy vars
 # assume ipv4 and eth0
-ip_addr=`ip -f inet addr show eth0  | egrep inet | awk  '{print $2}' | awk -F/ '{print $1}'\`
+ip_addr=`ip -f inet addr show eth0  | egrep inet | awk  &#39;{print $2}&#39; | awk -F/ &#39;{print $1}&#39;\`
 
 export HTTPS_PROXY=http://proxy:80
 export https_proxy=http://proxy:80
@@ -2914,23 +2914,23 @@ export http_proxy=http://proxy:80
 
 export KUBECONFIG=$k8s_dir/admin.conf
 </code></pre><p>Source that script to set up your environment variables:</p>
-<pre><code>. ~/.bashrc
+<pre tabindex="0"><code>. ~/.bashrc
 </code></pre><p>If you want command completion, you can add the following to the script:</p>
-<pre><code>[ -f /usr/share/bash-completion/bash_completion ] &amp;&amp; . /usr/share/bash-completion/bash_completion
+<pre tabindex="0"><code>[ -f /usr/share/bash-completion/bash_completion ] &amp;&amp; . /usr/share/bash-completion/bash_completion
 source &lt;(kubectl completion bash)
 </code></pre></li>
 <li>
 <p>Create the directories you need:</p>
-<pre><code>mkdir -p $docker_dir $k8s_dir/kubelet
+<pre tabindex="0"><code>mkdir -p $docker_dir $k8s_dir/kubelet
 ln -s $k8s_dir/kubelet /var/lib/kubelet
 </code></pre></li>
 <li>
 <p>Set an environment variable with the Docker version you want to install:</p>
-<pre><code>docker_version=&quot;17.03.1.ce&quot;
+<pre tabindex="0"><code>docker_version=&#34;17.03.1.ce&#34;
 </code></pre></li>
 <li>
 <p>Install Docker, removing any previously installed version:</p>
-<pre><code>### install docker and curl-devel (for git if needed)
+<pre tabindex="0"><code>### install docker and curl-devel (for git if needed)
 yum-config-manager --enable ol7_addons ol7_latest
 # we are going to just uninstall any docker-engine that is installed
 yum -y erase docker-engine docker-engine-selinux
@@ -2939,33 +2939,33 @@ yum -y install docker-engine-$docker_version curl-devel
 </code></pre></li>
 <li>
 <p>Update the Docker options:</p>
-<pre><code># edit /etc/sysconfig/docker to add custom OPTIONS
-cat /etc/sysconfig/docker | sed &quot;s#^OPTIONS=.*#OPTIONS='--selinux-enabled --group=docker -g $docker_dir'#g&quot; &gt; /tmp/docker.out
+<pre tabindex="0"><code># edit /etc/sysconfig/docker to add custom OPTIONS
+cat /etc/sysconfig/docker | sed &#34;s#^OPTIONS=.*#OPTIONS=&#39;--selinux-enabled --group=docker -g $docker_dir&#39;#g&#34; &gt; /tmp/docker.out
 diff /etc/sysconfig/docker /tmp/docker.out
 mv /tmp/docker.out /etc/sysconfig/docker
 </code></pre></li>
 <li>
 <p>Set up the Docker network, including the HTTP proxy configuration, if you need it:</p>
-<pre><code># generate a custom /setc/sysconfig/docker-network
+<pre tabindex="0"><code># generate a custom /setc/sysconfig/docker-network
  cat &lt;&lt;EOF &gt; /etc/sysconfig/docker-network
 # /etc/sysconfig/docker-network
-DOCKER_NETWORK_OPTIONS=&quot;-H tcp://0.0.0.0:4243 -H unix:///var/run/docker.sock&quot;
-HTTP_PROXY=&quot;http://proxy:80&quot;
-HTTPS_PROXY=&quot;http://proxy:80&quot;
-NO_PROXY=&quot;localhost,127.0.0.0/8,.my.domain.com,/var/run/docker.sock&quot;
+DOCKER_NETWORK_OPTIONS=&#34;-H tcp://0.0.0.0:4243 -H unix:///var/run/docker.sock&#34;
+HTTP_PROXY=&#34;http://proxy:80&#34;
+HTTPS_PROXY=&#34;http://proxy:80&#34;
+NO_PROXY=&#34;localhost,127.0.0.0/8,.my.domain.com,/var/run/docker.sock&#34;
 EOF
 </code></pre></li>
 <li>
 <p>Add your user to the <code>docker</code> group:</p>
-<pre><code>usermod -aG docker YOUR_USERID
+<pre tabindex="0"><code>usermod -aG docker YOUR_USERID
 </code></pre></li>
 <li>
 <p>Enable and start the Docker service that you just installed and configured:</p>
-<pre><code>systemctl enable docker &amp;&amp; systemctl start docker
+<pre tabindex="0"><code>systemctl enable docker &amp;&amp; systemctl start docker
 </code></pre></li>
 <li>
 <p>Install the Kubernetes packages:</p>
-<pre><code># generate the yum repo config
+<pre tabindex="0"><code># generate the yum repo config
 cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
@@ -2980,46 +2980,46 @@ EOF
 setenforce 0
 # install kube* packages
 v=${1:-1.8.4-0}
-old_ver=`echo $v | egrep &quot;^1.7&quot;`
+old_ver=`echo $v | egrep &#34;^1.7&#34;`
 yum install -y kubelet-$v kubeadm-$v kubectl-$v kubernetes-cni
 
 # change the cgroup-driver to match what docker is using
-cgroup=`docker info 2&gt;&amp;1 | egrep Cgroup | awk '{print $NF}'`
-[ &quot;$cgroup&quot; == &quot;&quot; ] &amp;&amp; echo &quot;cgroup not detected!&quot; &amp;&amp; exit 1
+cgroup=`docker info 2&gt;&amp;1 | egrep Cgroup | awk &#39;{print $NF}&#39;`
+[ &#34;$cgroup&#34; == &#34;&#34; ] &amp;&amp; echo &#34;cgroup not detected!&#34; &amp;&amp; exit 1
 
-cat /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed &quot;s#KUBELET_CGROUP_ARGS=--cgroup-driver=.*#KUBELET_CGROUP_ARGS=--cgroup-driver=$cgroup\&quot;#&quot;&gt; /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out
+cat /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed &#34;s#KUBELET_CGROUP_ARGS=--cgroup-driver=.*#KUBELET_CGROUP_ARGS=--cgroup-driver=$cgroup\&#34;#&#34;&gt; /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out
 diff  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out
 mv  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
-if [ &quot;$old_ver&quot; = &quot;&quot; ] ; then
+if [ &#34;$old_ver&#34; = &#34;&#34; ] ; then
 
 # run with swap if not in version 1.7* (starting in 1.8, kubelet
 # fails to start with swap enabled)
 #
 cat &lt;&lt;EOF &gt; /etc/systemd/system/kubelet.service.d/90-local-extras.conf
 [Service]
-Environment=&quot;KUBELET_EXTRA_ARGS=--fail-swap-on=false&quot;
+Environment=&#34;KUBELET_EXTRA_ARGS=--fail-swap-on=false&#34;
 EOF
 
 fi
 </code></pre></li>
 <li>
 <p>Enable and start the Kubernetes Service:</p>
-<pre><code>systemctl enable kubelet &amp;&amp; systemctl start kubelet
+<pre tabindex="0"><code>systemctl enable kubelet &amp;&amp; systemctl start kubelet
 </code></pre></li>
 <li>
 <p>Install and use Flannel for CNI:</p>
-<pre><code># run kubeadm init as root
+<pre tabindex="0"><code># run kubeadm init as root
 echo Running kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr  --pod-network-cidr=$pod_network_cidr
-echo &quot; see /tmp/kubeadm-init.out for output&quot;
+echo &#34; see /tmp/kubeadm-init.out for output&#34;
 kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr  --pod-network-cidr=$pod_network_cidr &gt; /tmp/kubeadm-init.out 2&gt;&amp;1
 if [ $? -ne 0 ] ; then
-  echo &quot;ERROR: kubeadm init returned non 0&quot;
+  echo &#34;ERROR: kubeadm init returned non 0&#34;
   chmod a+r  /tmp/kubeadm-init.out
   exit 1
 else
-  echo; echo &quot;kubeadm init complete&quot; ; echo
-  # tail the log to get the &quot;join&quot; token
+  echo; echo &#34;kubeadm init complete&#34; ; echo
+  # tail the log to get the &#34;join&#34; token
   tail -6 /tmp/kubeadm-init.out
 fi
 
@@ -3033,29 +3033,29 @@ chmod 644 $KUBECONFIG
 </li>
 <li>
 <p>Configure CNI:</p>
-<pre><code>sudo -u YOUR_USERID kubectl create clusterrolebinding permissive-binding --clusterrole=cluster-admin --user=admin --user=kubelet --group=system:serviceaccounts
+<pre tabindex="0"><code>sudo -u YOUR_USERID kubectl create clusterrolebinding permissive-binding --clusterrole=cluster-admin --user=admin --user=kubelet --group=system:serviceaccounts
 sudo -u YOUR_USERID kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 </code></pre><p>Wait for <code>kubectl get nodes</code> to show <code>Ready</code> for this host:</p>
-<pre><code>host=`hostname | awk -F. '{print $1}'`
-status=&quot;NotReady&quot;
+<pre tabindex="0"><code>host=`hostname | awk -F. &#39;{print $1}&#39;`
+status=&#34;NotReady&#34;
 max=10
 count=1
-while [ ${status:=Error} != &quot;Ready&quot; -a $count -lt $max ] ; do
+while [ ${status:=Error} != &#34;Ready&#34; -a $count -lt $max ] ; do
   sleep 30
-  status=`sudo -u YOUR_USERID kubectl get nodes | egrep $host | awk '{print $2}'`
-  echo &quot;kubectl status is ${status:=Error}, iteration $count of $max&quot;
+  status=`sudo -u YOUR_USERID kubectl get nodes | egrep $host | awk &#39;{print $2}&#39;`
+  echo &#34;kubectl status is ${status:=Error}, iteration $count of $max&#34;
   count=`expr $count + 1`
 done
 
-status=`sudo -u YOUR_USERID kubectl get nodes | egrep $host | awk '{print $2}'`
-if [ ${status:=Error} != &quot;Ready&quot; ] ; then
-  echo &quot;ERROR: kubectl get nodes reports status=${status:=Error} after configuration, exiting!&quot;
+status=`sudo -u YOUR_USERID kubectl get nodes | egrep $host | awk &#39;{print $2}&#39;`
+if [ ${status:=Error} != &#34;Ready&#34; ] ; then
+  echo &#34;ERROR: kubectl get nodes reports status=${status:=Error} after configuration, exiting!&#34;
   exit 1
 fi
 </code></pre></li>
 <li>
 <p>Taint the nodes:</p>
-<pre><code>sudo -u YOUR_USERID kubectl taint nodes --all node-role.kubernetes.io/master-
+<pre tabindex="0"><code>sudo -u YOUR_USERID kubectl taint nodes --all node-role.kubernetes.io/master-
 sudo -u YOUR_USERID kubectl get nodes
 sudo -u YOUR_USERID kubeadm version
 </code></pre><p>Congratulations!  Docker and Kubernetes are installed and configured!</p>
@@ -3084,22 +3084,22 @@ sudo -u YOUR_USERID kubeadm version
 </li>
 <li>
 <p>Ensure that <code>kubectl</code> on your Mac, is pointing to the correct cluster and context.</p>
-<pre><code>$ kubectl config get-contexts
+<pre tabindex="0"><code>$ kubectl config get-contexts
 CURRENT   NAME                          CLUSTER                      AUTHINFO             NAMESPACE
           docker-for-desktop            docker-for-desktop-cluster   docker-for-desktop
           kubernetes-admin@kubernetes   kubernetes                   kubernetes-admin
 $ kubectl config use-context docker-for-desktop
-Switched to context &quot;docker-for-desktop&quot;.
+Switched to context &#34;docker-for-desktop&#34;.
 $ kubectl config get-clusters
 NAME
 kubernetes
 docker-for-desktop-cluster
 $ kubectl config set-cluster docker-for-desktop-cluster
-Cluster &quot;docker-for-desktop-cluster&quot; set.
+Cluster &#34;docker-for-desktop-cluster&#34; set.
 </code></pre></li>
 <li>
 <p>You should add <code>docker-for-desktop</code> to your <code>/etc/hosts</code> file entry for <code>127.0.0.1</code>, as shown in this example, and you must be an admin user to edit this file:</p>
-<pre><code>##
+<pre tabindex="0"><code>##
 # Host Database
 #
 # localhost is used to configure the loopback interface
@@ -3111,14 +3111,14 @@ Cluster &quot;docker-for-desktop-cluster&quot; set.
 </code></pre></li>
 <li>
 <p>You may also have to tell <code>kubectl</code> to ignore the certificate by entering this command:</p>
-<pre><code>kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true
+<pre tabindex="0"><code>kubectl config set-cluster docker-for-desktop --insecure-skip-tls-verify=true
 </code></pre></li>
 <li>
 <p>Then validate you are talking to the Kubernetes in Docker by entering these commands:</p>
-<pre><code>$ kubectl cluster-info
+<pre tabindex="0"><code>$ kubectl cluster-info
 Kubernetes master is running at https://docker-for-desktop:6443
 
-To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+To further debug and diagnose cluster problems, use &#39;kubectl cluster-info dump&#39;.
 </code></pre><h4 id="important-note-about-persistent-volumes">Important note about persistent volumes</h4>
 </li>
 </ol>
@@ -4992,19 +4992,19 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664997067"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664997067"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664993350" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664993350"></script>
+    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664997067" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664997067"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

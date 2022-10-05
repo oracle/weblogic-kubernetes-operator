@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Configuration overrides :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993358" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993358"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -851,7 +851,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3301,8 +3301,8 @@
 <li>If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
 <ul>
 <li>Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances or if the change required a full domain shutdown.</li>
-<li>If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">Starting and stopping servers</a>.)</li>
-<li>Otherwise, simply restart your domain, which includes rolling clusters. (See <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">Restarting servers</a>.)</li>
+<li>If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See <a href="/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">Starting and stopping servers</a>.)</li>
+<li>Otherwise, simply restart your domain, which includes rolling clusters. (See <a href="/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">Restarting servers</a>.)</li>
 </ul>
 </li>
 <li>Verify your overrides are taking effect.  (See <a href="#debugging">Debugging</a>).</li>
@@ -3317,7 +3317,7 @@
 <li>For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.</li>
 </ol>
 </li>
-<li>You can <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection">initiate introspection</a> by changing the value of the Domain <code>introspectVersion</code> field.</li>
+<li>You can <a href="/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection">initiate introspection</a> by changing the value of the Domain <code>introspectVersion</code> field.</li>
 <li>For configuration overrides and during introspection, the operator will:
 <ul>
 <li>Resolve any macros in your override templates.</li>
@@ -3409,8 +3409,8 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 <p>Note that it&rsquo;s supported, even expected, to override network access point <code>public</code> or <code>external</code> addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don&rsquo;t require port matching).</p>
 <p>The behavior when using an unsupported override is undefined.</p>
 <h3 id="overrides-distribution">Overrides distribution</h3>
-<p>The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator&rsquo;s introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/introspection/#distributing-changes-to-configuration-overrides">overrides can also be distributed</a> and applied to already running WebLogic Server instances.</p>
-<p>For <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/restarting/#domain-in-pv">Domain in PV</a>, the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.</p>
+<p>The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator&rsquo;s introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these <a href="/userguide/managing-domains/domain-lifecycle/introspection/#distributing-changes-to-configuration-overrides">overrides can also be distributed</a> and applied to already running WebLogic Server instances.</p>
+<p>For <a href="/userguide/managing-domains/domain-lifecycle/restarting/#domain-in-pv">Domain in PV</a>, the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.</p>
 <hr>
 <h3 id="override-template-names-and-syntax">Override template names and syntax</h3>
 <p>Overrides leverage a built-in WebLogic feature called &ldquo;Configuration Overriding&rdquo; which is often informally called &ldquo;Situational Configuration.&rdquo; Configuration overriding consists of XML formatted files that closely resemble the structure of WebLogic <code>config.xml</code> and system resource module XML files. In addition, the attribute fields in these files can embed <code>add</code>, <code>replace</code>, and <code>delete</code> verbs to specify the desired override action for the field.</p>
@@ -3446,34 +3446,34 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 <h4 id="override-template-schemas">Override template schemas</h4>
 <p>An override template must define the exact schemas required by the configuration overrides feature.  The schemas vary based on the file type you wish to override.</p>
 <p><em><code>config.xml</code></em></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
-<span style="color:#f92672">&lt;d:domain</span> <span style="color:#a6e22e">xmlns:d=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain&#34;</span>
-          <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain-fragment&#34;</span>
-          <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span><span style="color:#f92672">&gt;</span>
-  ...
-<span style="color:#f92672">&lt;/d:domain&gt;</span>
-</code></pre></div><p><em><code>jdbc-MODULENAME.xml</code></em></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
-<span style="color:#f92672">&lt;jdbc:jdbc-data-source</span> <span style="color:#a6e22e">xmlns:jdbc=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source&#34;</span>
-                       <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment&#34;</span>
-                       <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span><span style="color:#f92672">&gt;</span>
-  ...
-<span style="color:#f92672">&lt;/jdbc:jdbc-data-source&gt;</span>
-</code></pre></div><p><em><code>jms-MODULENAME.xml</code></em></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
-<span style="color:#f92672">&lt;jms:weblogic-jms</span> <span style="color:#a6e22e">xmlns:jms=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-jms&#34;</span>
-                  <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-jms-fragment&#34;</span>
-                  <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span> <span style="color:#f92672">&gt;</span>
-  ...
-<span style="color:#f92672">&lt;/jms:weblogic-jms&gt;</span>
-</code></pre></div><p><em><code>diagnostics-MODULENAME.xml</code></em></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
-<span style="color:#f92672">&lt;wldf:wldf-resource</span> <span style="color:#a6e22e">xmlns:wldf=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-diagnostics&#34;</span>
-                    <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment&#34;</span>
-                    <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span> <span style="color:#f92672">&gt;</span>
-  ...
-<span style="color:#f92672">&lt;/wldf:wldf-resource&gt;</span>
-</code></pre></div><h4 id="override-template-macros">Override template macros</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;d:domain</span> <span style="color:#a6e22e">xmlns:d=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain-fragment&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/d:domain&gt;</span>
+</span></span></code></pre></div><p><em><code>jdbc-MODULENAME.xml</code></em></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;jdbc:jdbc-data-source</span> <span style="color:#a6e22e">xmlns:jdbc=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source&#34;</span>
+</span></span><span style="display:flex;"><span>                       <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment&#34;</span>
+</span></span><span style="display:flex;"><span>                       <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/jdbc:jdbc-data-source&gt;</span>
+</span></span></code></pre></div><p><em><code>jms-MODULENAME.xml</code></em></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;jms:weblogic-jms</span> <span style="color:#a6e22e">xmlns:jms=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-jms&#34;</span>
+</span></span><span style="display:flex;"><span>                  <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-jms-fragment&#34;</span>
+</span></span><span style="display:flex;"><span>                  <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span> <span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/jms:weblogic-jms&gt;</span>
+</span></span></code></pre></div><p><em><code>diagnostics-MODULENAME.xml</code></em></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;wldf:wldf-resource</span> <span style="color:#a6e22e">xmlns:wldf=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-diagnostics&#34;</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment&#34;</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span> <span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/wldf:wldf-resource&gt;</span>
+</span></span></code></pre></div><h4 id="override-template-macros">Override template macros</h4>
 <p>The operator supports embedding macros within override templates. This helps make your templates flexibly handle multiple use cases, such as specifying a different URL, user name, and password for a different deployment.</p>
 <p>Two types of macros are supported, environment variable macros and secret macros:</p>
 <ul>
@@ -3552,25 +3552,25 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 <li>Sets the <code>public-address</code> and <code>public-port</code> fields with values obtained from a Secret named <code>test-host</code> with keys <code>hostname</code> and <code>port</code>. It assumes the original config.xml already sets these fields, and so uses <code>replace</code> instead of <code>add</code>.</li>
 <li>Sets two debug settings. It assumes the original config.xml does not have a <code>server-debug</code> stanza, so it uses <code>add</code> throughout the entire stanza.</li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
-<span style="color:#f92672">&lt;d:domain</span> <span style="color:#a6e22e">xmlns:d=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain&#34;</span>
-          <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain-fragment&#34;</span>
-          <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span> <span style="color:#f92672">&gt;</span>
-    <span style="color:#f92672">&lt;d:server&gt;</span>
-        <span style="color:#f92672">&lt;d:name&gt;</span>admin-server<span style="color:#f92672">&lt;/d:name&gt;</span>
-        <span style="color:#f92672">&lt;d:max-message-size</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>78787878<span style="color:#f92672">&lt;/d:max-message-size&gt;</span>
-        <span style="color:#f92672">&lt;d:server-debug</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>
-          <span style="color:#f92672">&lt;d:debug-server-life-cycle</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>true<span style="color:#f92672">&lt;/d:debug-server-life-cycle&gt;</span>
-          <span style="color:#f92672">&lt;d:debug-jmx-core</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>true<span style="color:#f92672">&lt;/d:debug-jmx-core&gt;</span>
-        <span style="color:#f92672">&lt;/d:server-debug&gt;</span>
-        <span style="color:#f92672">&lt;d:network-access-point&gt;</span>
-          <span style="color:#f92672">&lt;d:name&gt;</span>T3Channel<span style="color:#f92672">&lt;/d:name&gt;</span>
-          <span style="color:#f92672">&lt;d:public-address</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:test-host.hostname}<span style="color:#f92672">&lt;/d:public-address&gt;</span>
-          <span style="color:#f92672">&lt;d:public-port</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:test-host.port}<span style="color:#f92672">&lt;/d:public-port&gt;</span>
-        <span style="color:#f92672">&lt;/d:network-access-point&gt;</span>
-    <span style="color:#f92672">&lt;/d:server&gt;</span>
-<span style="color:#f92672">&lt;/d:domain&gt;</span>
-</code></pre></div><h4 id="overriding-a-data-source-module">Overriding a data source module</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;d:domain</span> <span style="color:#a6e22e">xmlns:d=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/domain-fragment&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span> <span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;d:server&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;d:name&gt;</span>admin-server<span style="color:#f92672">&lt;/d:name&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;d:max-message-size</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>78787878<span style="color:#f92672">&lt;/d:max-message-size&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;d:server-debug</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;d:debug-server-life-cycle</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>true<span style="color:#f92672">&lt;/d:debug-server-life-cycle&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;d:debug-jmx-core</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;add&#34;</span><span style="color:#f92672">&gt;</span>true<span style="color:#f92672">&lt;/d:debug-jmx-core&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/d:server-debug&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;d:network-access-point&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;d:name&gt;</span>T3Channel<span style="color:#f92672">&lt;/d:name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;d:public-address</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:test-host.hostname}<span style="color:#f92672">&lt;/d:public-address&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;d:public-port</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:test-host.port}<span style="color:#f92672">&lt;/d:public-port&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/d:network-access-point&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/d:server&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/d:domain&gt;</span>
+</span></span></code></pre></div><h4 id="overriding-a-data-source-module">Overriding a data source module</h4>
 <p>The following <code>jdbc-testDS.xml</code> override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named <code>testDS</code> by using <code>secret macros</code>.  The generated configuration overrides that replaces the macros with secret values will be located in the <code>DOMAIN_HOME/optconfig/jdbc</code> directory.   The <code>password-encrypted</code> field will be populated with an encrypted value because it uses a secret macro with an <code>:encrypt</code> suffix.  The Secret is named <code>dbsecret</code> and contains three keys: <code>url</code>, <code>username</code>, and <code>password</code>.</p>
 <p>Best practices for data source modules and their overrides:</p>
 <ul>
@@ -3578,24 +3578,24 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 <li>Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that&rsquo;s wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes Deployment could cause your production applications to use your QA database.</li>
 <li>Set your original (non-overridden) <code>JDBCConnectionPoolParams</code> <code>MinCapacity</code> and <code>InitialCapacity</code> to <code>0</code>, and set your original <code>DriverName</code> to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn&rsquo;t running, or you haven&rsquo;t specified your overrides yet.</li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
-<span style="color:#f92672">&lt;jdbc:jdbc-data-source</span> <span style="color:#a6e22e">xmlns:jdbc=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source&#34;</span>
-                       <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment&#34;</span>
-                       <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span><span style="color:#f92672">&gt;</span>
-
-  <span style="color:#f92672">&lt;jdbc:name&gt;</span>testDS<span style="color:#f92672">&lt;/jdbc:name&gt;</span>
-  <span style="color:#f92672">&lt;jdbc:jdbc-driver-params&gt;</span>
-    <span style="color:#f92672">&lt;jdbc:url</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:dbsecret.url}<span style="color:#f92672">&lt;/jdbc:url&gt;</span>
-    <span style="color:#f92672">&lt;jdbc:properties&gt;</span>
-       <span style="color:#f92672">&lt;jdbc:property&gt;</span>
-          <span style="color:#f92672">&lt;jdbc:name&gt;</span>user<span style="color:#f92672">&lt;/jdbc:name&gt;</span>
-          <span style="color:#f92672">&lt;jdbc:value</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:dbsecret.username}<span style="color:#f92672">&lt;/jdbc:value&gt;</span>
-       <span style="color:#f92672">&lt;/jdbc:property&gt;</span>
-    <span style="color:#f92672">&lt;/jdbc:properties&gt;</span>
-    <span style="color:#f92672">&lt;jdbc:password-encrypted</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:dbsecret.password:encrypt}<span style="color:#f92672">&lt;/jdbc:password-encrypted&gt;</span>
-  <span style="color:#f92672">&lt;/jdbc:jdbc-driver-params&gt;</span>
-<span style="color:#f92672">&lt;/jdbc:jdbc-data-source&gt;</span>
-</code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;jdbc:jdbc-data-source</span> <span style="color:#a6e22e">xmlns:jdbc=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source&#34;</span>
+</span></span><span style="display:flex;"><span>                       <span style="color:#a6e22e">xmlns:f=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment&#34;</span>
+</span></span><span style="display:flex;"><span>                       <span style="color:#a6e22e">xmlns:s=</span><span style="color:#e6db74">&#34;http://xmlns.oracle.com/weblogic/situational-config&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;jdbc:name&gt;</span>testDS<span style="color:#f92672">&lt;/jdbc:name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;jdbc:jdbc-driver-params&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;jdbc:url</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:dbsecret.url}<span style="color:#f92672">&lt;/jdbc:url&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;jdbc:properties&gt;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#f92672">&lt;jdbc:property&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;jdbc:name&gt;</span>user<span style="color:#f92672">&lt;/jdbc:name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&lt;jdbc:value</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:dbsecret.username}<span style="color:#f92672">&lt;/jdbc:value&gt;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#f92672">&lt;/jdbc:property&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/jdbc:properties&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;jdbc:password-encrypted</span> <span style="color:#a6e22e">f:combine-mode=</span><span style="color:#e6db74">&#34;replace&#34;</span><span style="color:#f92672">&gt;</span>${secret:dbsecret.password:encrypt}<span style="color:#f92672">&lt;/jdbc:password-encrypted&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/jdbc:jdbc-driver-params&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/jdbc:jdbc-data-source&gt;</span>
+</span></span></code></pre></div><hr>
 <h3 id="step-by-step-guide">Step-by-step guide</h3>
 <ul>
 <li>Make sure your domain home meets the prerequisites. See <a href="#prerequisites">Prerequisites</a>.</li>
@@ -3623,9 +3623,9 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 </li>
 <li>
 <p>For example, assuming <code>./mydir</code> contains your <code>version.txt</code> and situation configuration template files:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID<span style="color:#f92672">=</span>DOMAIN_UID
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID<span style="color:#f92672">=</span>DOMAIN_UID
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>Create any Kubernetes Secrets referenced by a template &ldquo;secret macro&rdquo;.
@@ -3641,9 +3641,9 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 </li>
 <li>
 <p>For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n MYNAMESPACE create secret generic my-secret --from-literal<span style="color:#f92672">=</span>key1<span style="color:#f92672">=</span>supersecret --from-literal<span style="color:#f92672">=</span>key2<span style="color:#f92672">=</span>topsecret
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID<span style="color:#f92672">=</span>DOMAIN_UID
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MYNAMESPACE create secret generic my-secret --from-literal<span style="color:#f92672">=</span>key1<span style="color:#f92672">=</span>supersecret --from-literal<span style="color:#f92672">=</span>key2<span style="color:#f92672">=</span>topsecret
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID<span style="color:#f92672">=</span>DOMAIN_UID
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>Configure the name of the ConfigMap in the Domain YAML file <code>configuration.overridesConfigMap</code> field.</li>
@@ -3657,29 +3657,29 @@ For Model in Image domains (introduced in 3.0.0), use <a href="/weblogic-kuberne
 <li>If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
 <ul>
 <li>Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances, or if the change requires a full domain shutdown. (See <a href="#overrides-distribution">Overrides distribution</a>)</li>
-<li>If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">Starting and stopping servers</a>.)</li>
-<li>Otherwise, simply restart your domain, which includes rolling clusters. (See <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">Restarting servers</a>.)</li>
+<li>If a full domain shut down is requried, stop all running WebLogic Server instance Pods in your domain and then restart them. (See <a href="/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers">Starting and stopping servers</a>.)</li>
+<li>Otherwise, simply restart your domain, which includes rolling clusters. (See <a href="/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers">Restarting servers</a>.)</li>
 </ul>
 </li>
 <li>See <a href="#debugging">Debugging</a> for ways to check if the configuration overrides are taking effect or if there are errors.</li>
 </ul>
 <p>Example Domain YAML:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
-<span style="color:#f92672">spec</span>:
-  [ <span style="color:#ae81ff">... ]</span>
-  <span style="color:#f92672">webLogicCredentialsSecret</span>:
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-wl-credentials-secret</span>
-  <span style="color:#f92672">configuration</span>:
-    <span style="color:#f92672">overridesConfigMap</span>: <span style="color:#ae81ff">domain1-overrides-config-map</span>
-    <span style="color:#f92672">secrets</span>: [<span style="color:#ae81ff">my-secret, my-other-secret]</span>
-  [ <span style="color:#ae81ff">... ]</span>
-</code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  [ <span style="color:#ae81ff">... ]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-wl-credentials-secret</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">configuration</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">overridesConfigMap</span>: <span style="color:#ae81ff">domain1-overrides-config-map</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">secrets</span>: [<span style="color:#ae81ff">my-secret, my-other-secret]</span>
+</span></span><span style="display:flex;"><span>  [ <span style="color:#ae81ff">... ]</span>
+</span></span></code></pre></div><hr>
 <h3 id="debugging">Debugging</h3>
 <p>Use this information to verify that your overrides are taking effect or if there are errors.</p>
 <p><strong>Background notes:</strong></p>
@@ -3765,7 +3765,7 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
 </li>
 <li>If the search yields <code>Warning</code> or <code>Error</code> lines, then the format of the custom configuration overrides template is incorrect, and the <code>Warning</code> or <code>Error</code> text should describe the problem.</li>
 <li><strong>Note</strong>: The following exception may show up in the server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored:
-<pre><code>java.lang.NullPointerException
+<pre tabindex="0"><code>java.lang.NullPointerException
   at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.registerListener(SituationalConfigManagerImpl.java:227)
   at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.start(SituationalConfigManagerImpl.java:319)
   ...
@@ -3792,8 +3792,8 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
 <li>Lines containing the String <code>situational</code> may be found in the Administration Server Pod log to provide more hints.</li>
 <li>For example:</li>
 </ul>
-<pre><code>  &lt;Jun 20, 2019 3:48:45 AM GMT&gt; &lt;Warning&gt; &lt;Management&gt; &lt;BEA-141323&gt;
-  &lt;The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type &quot;jdbc:jdbc-driver-params&quot; must be terminated by the matching end-tag &quot;&lt;/jdbc:jdbc-driver-params&gt;&quot;.
+<pre tabindex="0"><code>  &lt;Jun 20, 2019 3:48:45 AM GMT&gt; &lt;Warning&gt; &lt;Management&gt; &lt;BEA-141323&gt;
+  &lt;The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type &#34;jdbc:jdbc-driver-params&#34; must be terminated by the matching end-tag &#34;&lt;/jdbc:jdbc-driver-params&gt;&#34;.
 </code></pre><ul>
 <li>The warning message suggests a syntax error is found in the provided configuration override file for the <code>testDS</code> JDBC data source.</li>
 </ul>
@@ -3810,18 +3810,18 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
 <li>The <code>server config</code> value should reflect the overridden value.</li>
 <li>For example, assuming your <code>DOMAIN_UID</code> is <code>domain1</code>, and your domain contains a WebLogic Server named <code>admin-server</code>, then:</li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl exec -it domain1-admin-server /bin/bash
-$ wlst.sh
-&gt; connect<span style="color:#f92672">(</span>MYADMINUSERNAME, MYADMINPASSWORD, <span style="color:#e6db74">&#39;t3://domain1-admin-server:7001&#39;</span><span style="color:#f92672">)</span>
-&gt; domainConfig<span style="color:#f92672">()</span>
-&gt; get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/admin-server/MaxMessageSize&#39;</span><span style="color:#f92672">)</span>
-&gt; serverConfig<span style="color:#f92672">()</span>
-&gt; get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/admin-server/MaxMessageSize&#39;</span><span style="color:#f92672">)</span>
-&gt; exit<span style="color:#f92672">()</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl exec -it domain1-admin-server /bin/bash
+</span></span><span style="display:flex;"><span>$ wlst.sh
+</span></span><span style="display:flex;"><span>&gt; connect<span style="color:#f92672">(</span>MYADMINUSERNAME, MYADMINPASSWORD, <span style="color:#e6db74">&#39;t3://domain1-admin-server:7001&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>&gt; domainConfig<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>&gt; get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/admin-server/MaxMessageSize&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>&gt; serverConfig<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>&gt; get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/Servers/admin-server/MaxMessageSize&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>&gt; exit<span style="color:#f92672">()</span>
+</span></span></code></pre></div></li>
 <li>
 <p>To cause the WebLogic configuration overrides feature to produce additional debugging information in the WebLogic Server logs, configure the <code>JAVA_OPTIONS</code> environment variable in your Domain YAML file with:</p>
-<pre><code>-Dweblogic.debug.DebugSituationalConfig=true
+<pre tabindex="0"><code>-Dweblogic.debug.DebugSituationalConfig=true
 -Dweblogic.debug.DebugSituationalConfigDumpXml=true
 </code></pre></li>
 </ul>
@@ -6003,19 +6003,19 @@ $ wlst.sh
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997074"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997074"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993358"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997074"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

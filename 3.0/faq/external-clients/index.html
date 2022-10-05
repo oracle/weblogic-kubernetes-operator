@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="This FAQ describes approaches for giving external WebLogic clients or servers access to a Kubernetes hosted WebLogic cluster JMS or EJBs, and for giving Kubernetes hosted clients or servers access to remotely hosted WebLogic JMS or EJBs.">
 
 
@@ -12,18 +12,18 @@
     <title>External WebLogic clients :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664993351" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664997067" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664997067"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664993351"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664997067"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664997067"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.0";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664997067"></script>
 
     
   </div>
@@ -3013,7 +3013,7 @@ if (!doNotTrack) {
 <p>In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port remote clients will use to access the load balancer.  See  <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a> for samples and details.</p>
 </li>
 <li>
-<p>Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/ingress/">Ingress</a>. If you&rsquo;re using OKE/OCI to host your Kubernetes cluster, also see <a href="/weblogic-kubernetes-operator/3.0/faq/oci-lb/">Using an OCI Load Balancer</a>.</p>
+<p>Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see <a href="/userguide/managing-domains/ingress/">Ingress</a>. If you&rsquo;re using OKE/OCI to host your Kubernetes cluster, also see <a href="/weblogic-kubernetes-operator/3.0/faq/oci-lb/">Using an OCI Load Balancer</a>.</p>
 </li>
 <li>
 <p><strong>Important</strong>: Ensure that the load balancer configures the HTTP flow to be &lsquo;sticky&rsquo; - for example, a Traefik load balancer has a <code>sticky sessions</code> option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.</p>
@@ -3077,7 +3077,7 @@ if (!doNotTrack) {
 </li>
 </ul>
 <p>For example, here is a snippet of a WebLogic domain <code>config.xml</code> file for channel <code>MyChannel</code> defined for an operator controlled WebLogic dynamic cluster named <code>cluster-1</code>:</p>
-<pre><code>&lt;server-template&gt;
+<pre tabindex="0"><code>&lt;server-template&gt;
   &lt;name&gt;cluster-1-template&lt;/name&gt;
   &lt;listen-port&gt;8001&lt;/listen-port&gt;
   &lt;cluster&gt;cluster-1&lt;/cluster&gt;
@@ -3109,21 +3109,21 @@ if (!doNotTrack) {
   &lt;/dynamic-servers&gt;
 &lt;/cluster&gt;
 </code></pre><p>And, here is a snippet of offline WLST code that corresponds to the above <code>config.xml</code> file snippet:</p>
-<pre><code>  templateName = &quot;cluster-1-template&quot;
-  cd('/ServerTemplates/%s' % templateName)
-  templateChannelName = &quot;MyChannel&quot;
-  create(templateChannelName, 'NetworkAccessPoint')
-  cd('NetworkAccessPoints/%s' % templateChannelName)
-  set('Protocol', 't3')
-  set('ListenPort', 7999)
-  set('PublicPort', 30999)
-  set('PublicAddress', 'some.public.address.com')
-  set('HttpEnabledForThisProtocol', true)
-  set('TunnelingEnabled', true)
-  set('OutboundEnabled', false)
-  set('Enabled', true)
-  set('TwoWaySslEnabled', false)
-  set('ClientCertificateEnforced', false)
+<pre tabindex="0"><code>  templateName = &#34;cluster-1-template&#34;
+  cd(&#39;/ServerTemplates/%s&#39; % templateName)
+  templateChannelName = &#34;MyChannel&#34;
+  create(templateChannelName, &#39;NetworkAccessPoint&#39;)
+  cd(&#39;NetworkAccessPoints/%s&#39; % templateChannelName)
+  set(&#39;Protocol&#39;, &#39;t3&#39;)
+  set(&#39;ListenPort&#39;, 7999)
+  set(&#39;PublicPort&#39;, 30999)
+  set(&#39;PublicAddress&#39;, &#39;some.public.address.com&#39;)
+  set(&#39;HttpEnabledForThisProtocol&#39;, true)
+  set(&#39;TunnelingEnabled&#39;, true)
+  set(&#39;OutboundEnabled&#39;, false)
+  set(&#39;Enabled&#39;, true)
+  set(&#39;TwoWaySslEnabled&#39;, false)
+  set(&#39;ClientCertificateEnforced&#39;, false)
 </code></pre><p>In this example:</p>
 <ul>
 <li>
@@ -3154,14 +3154,14 @@ if (!doNotTrack) {
 <h4 id="setting-up-a-nodeport">Setting up a <code>NodePort</code></h4>
 <h5 id="getting-started">Getting started</h5>
 <p>A Kubernetes <code>NodePort</code> exposes a port on each worker node in the Kubernetes cluster (they are not typically exposed on masters), where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes <code>NodePort</code> is one approach for giving external WebLogic clients access to JMS or EJBs.</p>
-<p>If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the <code>spec.adminServer.adminService.channels</code> Domain field to have the operator create a <code>NodePort</code> for you. See <a href="/weblogic-kubernetes-operator/3.0/reference/domain-resource/">Reference - Domain</a>. Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a <code>NodePort</code>, then the <code>NodePort</code> must be exposed &lsquo;manually&rsquo; - see the following sample and table.</p>
+<p>If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the <code>spec.adminServer.adminService.channels</code> Domain field to have the operator create a <code>NodePort</code> for you. See <a href="/reference/domain-resource/">Reference - Domain</a>. Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a <code>NodePort</code>, then the <code>NodePort</code> must be exposed &lsquo;manually&rsquo; - see the following sample and table.</p>
 
 <div class="notices note" ><p>Setting up a <code>NodePort</code> usually also requires setting up a custom network channel. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic Custom Channel</a>.</p>
 </div>
 
 <h5 id="sample-nodeport-resource">Sample <code>NodePort</code> resource</h5>
 <p>The following <code>NodePort</code> YAML file exposes an external node port of <code>30999</code> and internal port <code>7999</code> for a domain UID of <code>DOMAIN_UID</code>, a domain name of <code>DOMAIN_NAME</code>, and a cluster name of <code>CLUSTER_NAME</code>. It assumes that <code>7999</code> corresponds to a T3 protocol port of a channel that&rsquo;s configured on your WebLogic cluster.</p>
-<pre><code>apiVersion: v1
+<pre tabindex="0"><code>apiVersion: v1
 kind: Service
 metadata:
   namespace: default
@@ -5290,19 +5290,19 @@ spec:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664997067"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664997067"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664993351" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664993351"></script>
+    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664997067" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664997067"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

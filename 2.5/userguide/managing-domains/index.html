@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Important considerations for WebLogic domains in Kubernetes.">
 
 
@@ -12,18 +12,18 @@
     <title>Manage WebLogic domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664993349" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664997066" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664997066"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664993349"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664993349"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664997066"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664997066"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.5";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664993349"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664997066"></script>
 
     
   </div>
@@ -602,7 +602,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/" title="Manage WebLogic domains" class="dd-item 
-        parent
+        
         active
         
         ">
@@ -2664,7 +2664,7 @@ that many cloud provider&rsquo;s volume providers may not support volumes across
 <li><code>NODEMGR_JAVA_OPTIONS</code> - Java options for starting Node Manager instance</li>
 <li><code>NODEMGR_MEM_ARGS</code> - JVM mem args for starting Node Manager instance</li>
 </ul>
-<p>For more information, see <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
+<p>For more information, see <a href="/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 </li>
 </ul>
 <p>The following features are <strong>not</strong> certified or supported in this release:</p>
@@ -2679,20 +2679,20 @@ that many cloud provider&rsquo;s volume providers may not support volumes across
 <p>Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments.</p>
 <h3 id="creating-and-managing-weblogic-domains">Creating and managing WebLogic domains</h3>
 <p>You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
-For examples of each, see the <a href="/weblogic-kubernetes-operator/2.5/samples/simple/domains/">WebLogic Kubernetes Operator samples</a>.</p>
+For examples of each, see the <a href="/samples/simple/domains/">WebLogic Kubernetes Operator samples</a>.</p>
 <p>If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration and/or applications deployed, then you can create the domain custom resource
-manually to deploy your domain.  This process is documented in <a href="/weblogic-kubernetes-operator/2.5/samples/simple/domains/manually-create-domain/">this
+manually to deploy your domain.  This process is documented in <a href="/samples/simple/domains/manually-create-domain/">this
 sample</a>.</p>
 <h3 id="modifying-domain-configurations">Modifying domain configurations</h3>
 <p>You can modify the WebLogic domain configuration for both the &ldquo;domain in persistent volume&rdquo; and the &ldquo;domain in image&rdquo; options before deploying a domain resource:</p>
 <ul>
 <li>When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.</li>
-<li>For either case, you can use <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/configoverrides/">configuration overrides</a>.</li>
+<li>For either case, you can use <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>.</li>
 </ul>
 <p>Configuration overrides allow changing a configuration without modifying its original <code>config.xml</code> or system resource XML files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database user names, passwords, and URLs that are stored in a secret.</p>
 <h3 id="about-the-domain-resource">About the domain resource</h3>
-<p>For information about the domain resource, see <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
+<p>For information about the domain resource, see <a href="/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 <h3 id="managing-life-cycle-operations">Managing life cycle operations</h3>
 <p>You can perform life cycle operations on WebLogic servers, clusters, or domains.
 See <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/domain-lifecycle/startup/">Starting, stopping, and restarting servers</a> and <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/domain-lifecycle/restarting/">Restarting WebLogic servers</a>.</p>
@@ -4440,19 +4440,19 @@ See <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/domain
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664997066"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664997066"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664993349" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664993349"></script>
+    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664997066" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664997066"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

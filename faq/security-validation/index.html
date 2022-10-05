@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Why am I seeing these security warnings?">
 
 
@@ -12,20 +12,20 @@
     <title>Handling security validations :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993346" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997062" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997062"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993346"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997062"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997062"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997062"></script>
 
     
   </div>
@@ -3518,13 +3518,13 @@
 <p>SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.</p>
 </blockquote>
 <p>WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production. With the July 2021 PSU applied, WebLogic Server regularly validates your domain configuration settings against a set of security configuration guidelines to determine whether the domain meets key security guidelines recommended by Oracle. For more information and additional details, see <a href="https://support.oracle.com/rs?type=doc&amp;id=2788605.1">MOS Doc 2788605.1</a> &ldquo;WebLogic Server Security Warnings Displayed Through the Admin Console&rdquo; and <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/lockd/secure.html#GUID-4148D1BE-2D54-4DA5-8E94-A35D48DCEF1D">Review Potential Security Issues</a> in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</p>
-<p>Warnings may be at the level of the JDK, or that SSL is not enabled. Some warnings may recommend updating your WebLogic configuration. You can make the recommended configuration changes using an approach that depends on your <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">domain home source type</a>:</p>
+<p>Warnings may be at the level of the JDK, or that SSL is not enabled. Some warnings may recommend updating your WebLogic configuration. You can make the recommended configuration changes using an approach that depends on your <a href="/userguide/managing-domains/choosing-a-model/">domain home source type</a>:</p>
 <ul>
 <li>
-<p>For Domain in PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, WebLogic Deploy Tooling (WDT), or <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
+<p>For Domain in PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, WebLogic Deploy Tooling (WDT), or <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
 </li>
 <li>
-<p>For Domain in Image, create a new image with the recommended changes or use <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
+<p>For Domain in Image, create a new image with the recommended changes or use <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>.</p>
 </li>
 <li>
 <p>For Model in Image, supply model files with the recommended changes in its image&rsquo;s <code>modelHome</code> directory or use <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/">runtime updates</a>.</p>
@@ -5856,19 +5856,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997062"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997062"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997062"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

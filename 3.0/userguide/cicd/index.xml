@@ -25,7 +25,7 @@ Why is it important to maintain the layering of images? Layering is an important
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.0/userguide/cicd/why-layering-matters/</guid>
       <description>How does layering affect our CI/CD process? Now that we know more about layering, let’s talk about why it is important to our CI/CD process. Let&amp;rsquo;s consider the kinds of updates we might want to make to our domain:
 You might want to update the domain by:
- Installing a patch on the operating system or a library. Updating the version of the JDK you are using. Picking up a new version of WebLogic Server.</description>
+Installing a patch on the operating system or a library. Updating the version of the JDK you are using. Picking up a new version of WebLogic Server.</description>
     </item>
     
     <item>
@@ -35,7 +35,7 @@ You might want to update the domain by:
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.0/userguide/cicd/choose-an-approach/</guid>
       <description>Let&amp;rsquo;s review what we have discussed and talk about when we might want to use various approaches. We can start by asking ourselves questions like these:
-  Can you make the desired change with a configuration override or Model in Image ConfigMap?
+Can you make the desired change with a configuration override or Model in Image ConfigMap?
 When your domain home source type is Domain in PV or Domain in Image, the operator allows you to inject a number of configuration overrides into your pods before starting any servers in the domain.</description>
     </item>
     

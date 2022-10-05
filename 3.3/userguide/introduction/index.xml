@@ -14,7 +14,7 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.3/userguide/introduction/terms/</guid>
       <description>This documentation uses several important terms which are intended to have a specific meaning.
-   Term Definition     Cluster Because this term is ambiguous, it will be prefixed to indicate which type of cluster is meant. A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters.</description>
+Term Definition Cluster Because this term is ambiguous, it will be prefixed to indicate which type of cluster is meant. A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters.</description>
     </item>
     
     <item>
@@ -33,8 +33,8 @@ Human operators are typically responsible for starting and stopping environments
       <pubDate>Sat, 23 Feb 2019 20:51:45 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.3/userguide/introduction/architecture/</guid>
-      <description>Contents  Overall architecture Domain architecture Domain UID Network name predictability Domain state stored outside container images  Overall architecture The operator consists of the following parts:
- The operator runtime, which is a process that:  Runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. Performs the actual management tasks for domain resources deployed to these namespaces.   A Helm chart for installing the operator runtime and its related resources.</description>
+      <description>Contents Overall architecture Domain architecture Domain UID Network name predictability Domain state stored outside container images Overall architecture The operator consists of the following parts:
+The operator runtime, which is a process that: Runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. Performs the actual management tasks for domain resources deployed to these namespaces. A Helm chart for installing the operator runtime and its related resources.</description>
     </item>
     
     <item>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain YAML file.">
 
 
@@ -12,18 +12,18 @@
     <title>Pod memory and CPU resources :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664993351" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664997067" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664997067"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664993351"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664997067"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664997067"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.0";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664997067"></script>
 
     
   </div>
@@ -2979,14 +2979,14 @@ if (!doNotTrack) {
 <p>This FAQ discusses tuning these parameters so WebLogic Server instances run efficiently.</p>
 <h4 id="setting-resource-requests-and-limits-in-a-domain">Setting resource requests and limits in a Domain</h4>
 <p>You can set Kubernetes memory and CPU requests and limits in a <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-resource/">Domain YAML file</a> using its <code>spec.serverPod.resources</code> stanza, and you can override the setting for individual WebLogic Server instances or clusters using the <code>serverPod.resources</code> element in <code>spec.adminServer</code>, <code>spec.clusters</code>, or <code>spec.managedServers</code>. For example:</p>
-<pre><code>  spec:
+<pre tabindex="0"><code>  spec:
     serverPod:
       requests:
-        cpu: &quot;250m&quot;
-        memory: &quot;768Mi&quot;
+        cpu: &#34;250m&#34;
+        memory: &#34;768Mi&#34;
       limits:
-        cpu: &quot;2&quot;
-        memory: &quot;2Gi&quot;
+        cpu: &#34;2&#34;
+        memory: &#34;2Gi&#34;
 </code></pre><p>Limits and requests for CPU resources are measured in CPU units. One CPU, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers and 1 hyperthread on bare-metal Intel processors. An <code>m</code> suffix in a CPU attribute indicates &lsquo;milli-CPU&rsquo;, so <code>250m</code> is 25% of a CPU.</p>
 <p>Memory can be expressed in various units, where one <code>Mi</code> is one IEC unit mega-byte (1024^2), and one <code>Gi</code> is one IEC unit giga-byte (1024^3).</p>
 <p>See also <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Managing Resources for Containers</a>, <a href="https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource">Assign Memory Resources to Containers and Pods</a> and <a href="https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource">Assign CPU Resources to Containers and Pods</a> in the Kubernetes documentation.</p>
@@ -3039,11 +3039,11 @@ if (!doNotTrack) {
 </ul>
 <h5 id="configuring-heap-size">Configuring heap size</h5>
 <p>If you specify Pod memory limits, Oracle recommends configuring WebLogic Server heap sizes as a percentage. The JVM will interpret the percentage as a fraction of the limit. This is done using the JVM <code>-XX:InitialRAMPercentage</code> and <code>-XX:MaxRAMPercentage</code> options in the <code>USER_MEM_ARGS</code> <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain environment variable</a>.  For example:</p>
-<pre><code>  spec:
+<pre tabindex="0"><code>  spec:
     resources:
       env:
       - name: USER_MEM_ARGS
-        value: &quot;-XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0 -Djava.security.egd=file:/dev/./urandom&quot;
+        value: &#34;-XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0 -Djava.security.egd=file:/dev/./urandom&#34;
 </code></pre><p>Additionally, there&rsquo;s a <code>node-manager</code> process that&rsquo;s running in the same container as the WebLogic Server, which has its own heap and native memory requirements. Its heap is tuned by using <code>-Xms</code> and <code>-Xmx</code> in the <code>NODEMGR_MEM_ARGS</code> environment variable. Oracle recommends setting the Node Manager heap memory to fixed sizes, instead of percentages, where <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">the default tuning</a> is usually sufficient.</p>
 
 <div class="notices note" ><p>Notice that the <code>NODEMGR_MEM_ARGS</code> and <code>USER_MEM_ARGS</code> environment variables both set <code>-Djava.security.egd=file:/dev/./urandom</code> by default, so we have also included them in the above example for specifying a <code>USER_MEM_ARGS</code> value. This helps speed up Node Manager and WebLogic Server startup time on systems with low entropy.</p>
@@ -3065,7 +3065,7 @@ if (!doNotTrack) {
 </li>
 </ul>
 <p>It&rsquo;s also important to keep in mind that if you set a value of CPU core count that&rsquo;s larger than the core count of your biggest Node, then the Pod will never be scheduled. Let&rsquo;s say you have a Pod that needs 4 cores but you have a Kubernetes cluster that&rsquo;s comprised of 2 core VMs. In this case, your Pod will never be scheduled and will have <code>Pending</code> status. For example:</p>
-<pre><code>$ kubectl get pod sample-domain1-managed-server1 -n sample-domain1-ns
+<pre tabindex="0"><code>$ kubectl get pod sample-domain1-managed-server1 -n sample-domain1-ns
 NAME                              READY   STATUS    RESTARTS   AGE
 sample-domain1-managed-server1    0/1     Pending   0          65s
 
@@ -5120,19 +5120,19 @@ Note that some Kubernetes environments may not allow changing the CPU management
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664997067"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664997067"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664993351" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664993351"></script>
+    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664997067" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664997067"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -24,8 +24,8 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/faq/cannot-pull-image/</guid>
       <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
- When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
- The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
+When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
+The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
     <item>
@@ -46,7 +46,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/faq/domain-secret-mismatch/</guid>
       <description>One or more WebLogic Server instances in my domain will not start and the Domain status or the pod log reports errors like this:
 Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSystemIni.dat where DOMAIN_HOME=$DOMAIN_HOME does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.
- When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
+When you see these kinds of errors, it means that the WebLogic domain directory&amp;rsquo;s security configuration files have changed in an incompatible way between when the operator scanned the domain directory, which occurs during the &amp;ldquo;introspection&amp;rdquo; phase, and when the server instance attempted to start.</description>
     </item>
     
     <item>
@@ -95,7 +95,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/faq/volumes/</guid>
       <description>I need to provide an instance with access to a PersistentVolumeClaim.
- Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server.</description>
+Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server.</description>
     </item>
     
     <item>
@@ -105,7 +105,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/faq/configmaps/</guid>
       <description>I need to provide an instance with access to a ConfigMap.
- Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
+Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
     </item>
     
     <item>
@@ -114,7 +114,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/faq/external-clients/</guid>
-      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches:</description>
+      <description>Contents Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes Setting up a NodePort Getting started Sample NodePort resource Table of NodePort attributes Security notes Enabling unknown host access When is it necessary to enable unknown host access? How to enable unknown host access Optional reading Overview When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches:</description>
     </item>
     
     <item>
@@ -134,7 +134,7 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.1/faq/resource-settings/</guid>
-      <description>Contents  Introduction Setting resource requests and limits in a Domain YAML file Determining Pod Quality Of Service Java heap size and memory resource considerations  Importance of setting heap size and memory resources Default heap sizes Configuring heap size   CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References  Introduction The operator creates a container in its own Pod for each WebLogic Server instance.</description>
+      <description>Contents Introduction Setting resource requests and limits in a Domain YAML file Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The operator creates a container in its own Pod for each WebLogic Server instance.</description>
     </item>
     
   </channel>

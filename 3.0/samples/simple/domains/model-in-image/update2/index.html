@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Update 2 :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664993351" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664997068" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664997068"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664993351"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664997068"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664997068"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.0";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664997068"></script>
 
     
   </div>
@@ -2974,7 +2974,7 @@ if (!doNotTrack) {
 <li>Using a different (unique) domain name, <code>domain2</code>, for the different domains.</li>
 <li>Deploying secrets and a model update ConfigMap that are uniquely labeled and named for the new domain.</li>
 </ul>
-<p>Note that this use case shows Model in Image&rsquo;s unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/choosing-a-model/">domain home source type</a>:</p>
+<p>Note that this use case shows Model in Image&rsquo;s unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image <a href="/userguide/managing-domains/choosing-a-model/">domain home source type</a>:</p>
 <ul>
 <li>
 <p>Domain in Image does not support overriding the domain name, but different domain names are necessary when two domains need to interoperate. This use case takes advantage of model macros to ensure that its two different domains have a different domain name:</p>
@@ -2999,7 +2999,7 @@ if (!doNotTrack) {
 <li>
 <p>Create a ConfigMap with the WDT model that contains the data source definition.</p>
 <p>Run the following commands:</p>
-<pre><code>$ kubectl -n sample-domain1-ns create configmap sample-domain2-wdt-config-map \
+<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns create configmap sample-domain2-wdt-config-map \
   --from-file=/tmp/mii-sample/model-configmaps/datasource
 $ kubectl -n sample-domain1-ns label configmap sample-domain2-wdt-config-map \
   weblogic.domainUID=sample-domain2
@@ -3024,7 +3024,7 @@ $ kubectl -n sample-domain1-ns label configmap sample-domain2-wdt-config-map \
 <li>
 <p>Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the Domain YAML file.</p>
 <p>Run the following commands:</p>
-<pre><code># spec.webLogicCredentialsSecret
+<pre tabindex="0"><code># spec.webLogicCredentialsSecret
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain2-weblogic-credentials \
    --from-literal=username=weblogic --from-literal=password=welcome1
@@ -3064,7 +3064,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 </ul>
 </li>
 </ul>
-<p>If you&rsquo;re following the <code>JRF</code> path through the sample, then you also need to deploy the additional secret referenced by macros in the <code>JRF</code> model <code>RCUDbInfo</code> clause, plus an <code>OPSS</code> wallet password secret. For details about the uses of these secrets, see the <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/model-in-image/">Model in Image</a> user documentation. Note that we are using the RCU prefix <code>FMW2</code> for this domain, because the first domain is already using <code>FMW1</code>.</p>
+<p>If you&rsquo;re following the <code>JRF</code> path through the sample, then you also need to deploy the additional secret referenced by macros in the <code>JRF</code> model <code>RCUDbInfo</code> clause, plus an <code>OPSS</code> wallet password secret. For details about the uses of these secrets, see the <a href="/userguide/managing-domains/model-in-image/">Model in Image</a> user documentation. Note that we are using the RCU prefix <code>FMW2</code> for this domain, because the first domain is already using <code>FMW1</code>.</p>
 
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -3077,7 +3077,7 @@ $ kubectl -n sample-domain1-ns label  secret \
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>$ kubectl -n sample-domain1-ns create secret generic \
+        <pre tabindex="0"><code>$ kubectl -n sample-domain1-ns create secret generic \
   sample-domain2-rcu-access \
    --from-literal=rcu_prefix=FMW2 \
    --from-literal=rcu_schema_password=Oradoc_db1 \
@@ -3116,7 +3116,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 <li>
 <p>Change the <code>/tmp/mii-sample/mii-update2.yaml</code> Domain YAML file name and <code>weblogic.domainUID</code> label to <code>sample-domain2</code>.</p>
 <p>The final result will look something like this:</p>
-<pre><code>apiVersion: &quot;weblogic.oracle/v8&quot;
+<pre tabindex="0"><code>apiVersion: &#34;weblogic.oracle/v8&#34;
 kind: Domain
 metadata:
   name: sample-domain2
@@ -3131,19 +3131,19 @@ metadata:
 <p>Change the <code>/tmp/mii-sample/mii-update2.yaml</code> Domain YAML file&rsquo;s <code>CUSTOM_DOMAIN_NAME</code> environment variable from <code>domain1</code> to <code>domain2</code>.</p>
 <p>The model file in the image uses macro <code>@@ENV:CUSTOM_DOMAIN_NAME@@</code> to reference this environment variable when setting its domain name.</p>
 <p>Specifically, change the corresponding Domain <code>spec.serverPod.env</code> YAML file stanza to look something like this:</p>
-<pre><code>...
+<pre tabindex="0"><code>...
 spec:
   ...
   serverPod:
   ...
     env:
     - name: CUSTOM_DOMAIN_NAME
-      value: &quot;domain2&quot;
+      value: &#34;domain2&#34;
   ...
 </code></pre></li>
 <li>
 <p>Change the <code>/tmp/mii-sample/mii-update2.yaml</code> Domain YAML file&rsquo;s <code>spec.domainHome</code> value to <code>/u01/domains/sample-domain2</code>. The corresponding YAML file stanza will look something like this:</p>
-<pre><code>...
+<pre tabindex="0"><code>...
 spec:
   ...
   domainHome: /u01/domains/sample-domain2
@@ -3152,7 +3152,7 @@ spec:
 </li>
 <li>
 <p>Change the <code>/tmp/mii-sample/mii-update2.yaml</code> secret references in the <code>spec.webLogicCredentialsSecret</code> and <code>spec.configuration.secrets</code> stanzas to reference this use case&rsquo;s secrets. Specifically, change:</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   webLogicCredentialsSecret:
     name: sample-domain1-weblogic-credentials
@@ -3166,7 +3166,7 @@ spec:
       ...
       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 </code></pre><p>To this:</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   webLogicCredentialsSecret:
     name: sample-domain2-weblogic-credentials
@@ -3185,7 +3185,7 @@ spec:
 </li>
 <li>
 <p>Change the Domain YAML file&rsquo;s <code>spec.configuration.model.configMap</code> value from <code>sample-domain1-wdt-config-map</code> to <code>sample-domain2-wdt-config-map</code>. The corresponding YAML file stanza will look something like this:</p>
-<pre><code>spec:
+<pre tabindex="0"><code>spec:
   ...
   configuration:
     ...
@@ -3195,7 +3195,7 @@ spec:
 </code></pre></li>
 <li>
 <p>Now, compare your original and changed Domain YAML files to double check your changes.</p>
-<pre><code>$ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
+<pre tabindex="0"><code>$ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
 9c9
 &lt;   name: sample-domain1
 ---
@@ -3217,9 +3217,9 @@ spec:
 ---
 &gt;   #logHome: /shared/logs/sample-domain2
 61c61
-&lt;       value: &quot;domain1&quot;
+&lt;       value: &#34;domain1&#34;
 ---
-&gt;       value: &quot;domain2&quot;
+&gt;       value: &#34;domain2&#34;
 71c71
 &lt;     #    claimName: sample-domain1-weblogic-sample-pvc
 ---
@@ -3268,18 +3268,18 @@ spec:
 <li>
 <p>Apply your changed Domain YAML file:</p>
 <blockquote>
-<p><strong>Note</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+<p><strong>Note</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
 </blockquote>
-<pre><code>$ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
+<pre tabindex="0"><code>$ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
 </code></pre></li>
 </ul>
 </li>
 <li>
 <p>Option 2: Use the updated Domain YAML file that is supplied with the sample:</p>
 <blockquote>
-<p><strong>Note</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+<p><strong>Note</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
 </blockquote>
-<pre><code>$ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
+<pre tabindex="0"><code>$ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
 </code></pre></li>
 </ul>
 </li>
@@ -3298,7 +3298,7 @@ spec:
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>$ kubectl get pods -n sample-domain1-ns --watch
+        <pre tabindex="0"><code>$ kubectl get pods -n sample-domain1-ns --watch
 NAME                             READY   STATUS    RESTARTS   AGE
 sample-domain1-admin-server      1/1     Running   0          5d2h
 sample-domain1-managed-server1   1/1     Running   1          5d2h
@@ -3341,89 +3341,88 @@ sample-domain2-managed-server2               1/1     Running             0      
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>$ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
+        <pre tabindex="0"><code>$ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
 
-@@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-@@ [2020-05-13T17:06:00][seconds=1] Info:   ready='true'
-@@ [2020-05-13T17:06:00][seconds=1] Info:   image='model-in-image:WLS-v1'
-@@ [2020-05-13T17:06:00][seconds=1] Info:   domainRestartVersion='1'
-@@ [2020-05-13T17:06:00][seconds=1] Info:   namespace='sample-domain1-ns'
-@@ [2020-05-13T17:06:00][seconds=1] Info:   domainUID='sample-domain2'
+@@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 1000 seconds for exactly &#39;3&#39; WebLogic Server pods to reach the following criteria:
+@@ [2020-05-13T17:06:00][seconds=1] Info:   ready=&#39;true&#39;
+@@ [2020-05-13T17:06:00][seconds=1] Info:   image=&#39;model-in-image:WLS-v1&#39;
+@@ [2020-05-13T17:06:00][seconds=1] Info:   domainRestartVersion=&#39;1&#39;
+@@ [2020-05-13T17:06:00][seconds=1] Info:   namespace=&#39;sample-domain1-ns&#39;
+@@ [2020-05-13T17:06:00][seconds=1] Info:   domainUID=&#39;sample-domain2&#39;
 
-@@ [2020-05-13T17:06:00][seconds=1] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:06:00][seconds=1] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:06:00][seconds=1] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                          VERSION  IMAGE  READY  PHASE
 --------------------------------------------  -------  -----  -----  ---------
-'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Running'
+&#39;sample-domain2-introspect-domain-job-plssr&#39;  &#39;&#39;       &#39;&#39;     &#39;&#39;     &#39;Running&#39;
 
-@@ [2020-05-13T17:07:03][seconds=64] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:07:03][seconds=64] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:07:03][seconds=64] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                          VERSION  IMAGE  READY  PHASE
 --------------------------------------------  -------  -----  -----  -----------
-'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Succeeded'
+&#39;sample-domain2-introspect-domain-job-plssr&#39;  &#39;&#39;       &#39;&#39;     &#39;&#39;     &#39;Succeeded&#39;
 
-@@ [2020-05-13T17:07:06][seconds=67] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:07:06][seconds=67] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:07:06][seconds=67] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME  VERSION  IMAGE  READY  PHASE
 ----  -------  -----  -----  -----
 
-@@ [2020-05-13T17:07:14][seconds=75] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:07:14][seconds=75] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:07:14][seconds=75] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                           VERSION  IMAGE                    READY    PHASE
 -----------------------------  -------  -----------------------  -------  ---------
-'sample-domain2-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+&#39;sample-domain2-admin-server&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-05-13T17:07:47][seconds=108] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:07:47][seconds=108] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:07:47][seconds=108] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+&#39;sample-domain2-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain2-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
-@@ [2020-05-13T17:07:49][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:07:49][seconds=110] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:07:49][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+&#39;sample-domain2-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain2-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain2-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
-@@ [2020-05-13T17:07:50][seconds=111] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:07:50][seconds=111] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:07:50][seconds=111] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+&#39;sample-domain2-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain2-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain2-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-05-13T17:08:32][seconds=153] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:08:32][seconds=153] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:08:32][seconds=153] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+&#39;sample-domain2-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain2-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain2-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-05-13T17:08:34][seconds=155] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-05-13T17:08:34][seconds=155] Info: &#39;3&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-05-13T17:08:34][seconds=155] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain2-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain2-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain2-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
 
 @@ [2020-05-13T17:08:34][seconds=155] Info: Success!
-
 </code></pre>
     </div>
 </div>
@@ -3431,31 +3430,30 @@ NAME                              VERSION  IMAGE                    READY   PHAS
 <li>
 <p>After the <code>sample-domain2</code> domain is running, you can call its sample web application to verify that it&rsquo;s fully active.</p>
 <p>Send a web application request to the ingress controller for <code>sample-domain2</code>:</p>
-<pre><code>$ curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
+<pre tabindex="0"><code>$ curl -s -S -m 10 -H &#39;host: sample-domain2-cluster-cluster-1.mii-sample.org&#39; \
    http://localhost:30305/myapp_war/index.jsp
 </code></pre><p>Or, if Traefik is unavailable and your <code>domain2</code> Administration Server pod is running, you can run <code>kubectl exec</code>:</p>
-<pre><code>$ kubectl exec -n sample-domain1-ns sample-domain2-admin-server -- bash -c \
-  &quot;curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp&quot;
+<pre tabindex="0"><code>$ kubectl exec -n sample-domain1-ns sample-domain2-admin-server -- bash -c \
+  &#34;curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp&#34;
 </code></pre><p>You will see something like the following:</p>
-<pre><code>&lt;html&gt;&lt;body&gt;&lt;pre&gt;
+<pre tabindex="0"><code>&lt;html&gt;&lt;body&gt;&lt;pre&gt;
 *****************************************************************
 
-Hello World! This is version 'v1' of the mii-sample JSP web-app.
+Hello World! This is version &#39;v1&#39; of the mii-sample JSP web-app.
 
-Welcome to WebLogic Server 'managed-server1'!
+Welcome to WebLogic Server &#39;managed-server1&#39;!
 
- domain UID  = 'sample-domain2'
- domain name = 'domain2'
+ domain UID  = &#39;sample-domain2&#39;
+ domain name = &#39;domain2&#39;
 
 Found 1 local cluster runtime:
-  Cluster 'cluster-1'
+  Cluster &#39;cluster-1&#39;
 
 Found 1 local data source:
-  Datasource 'mynewdatasource': State='Running'
+  Datasource &#39;mynewdatasource&#39;: State=&#39;Running&#39;
 
 *****************************************************************
 &lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;
-
 </code></pre></li>
 </ol>
 <p>If you see an error, then consult <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/model-in-image/debugging/">Debugging</a> in the Model in Image user guide.</p>
@@ -5492,19 +5490,19 @@ Found 1 local data source:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664997068"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664997068"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664993351" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664993351"></script>
+    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664997068" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664997068"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

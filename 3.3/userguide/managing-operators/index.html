@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator&#39;s Helm chart to install and manage the operator.">
 
 
@@ -12,20 +12,20 @@
     <title>Manage operators :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993358" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997074" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997074"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993358"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997074"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997074"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997074"></script>
 
     
   </div>
@@ -441,7 +441,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/" title="Manage operators" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3252,8 +3252,8 @@
 <li>Overriding individual values directly on the Helm command line, using the <code>--set</code> option.</li>
 </ul>
 <p>You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm inspect values kubernetes/charts/weblogic-operator
-</code></pre></div><p>The available configuration values are explained by category in
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm inspect values kubernetes/charts/weblogic-operator
+</span></span></code></pre></div><p>The available configuration values are explained by category in
 <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>.</p>
 <p>Helm commands are explained in more detail in
 <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-operators/using-helm/#useful-helm-operations">Useful Helm operations</a>.</p>
@@ -3279,7 +3279,7 @@ should contain valid host names, expiration dates, and key constraints.</p>
 </div>
 
 <p>For more detailed information about the sample script and how to run it, see
-the <a href="/weblogic-kubernetes-operator/3.3/samples/rest/#sample-to-create-certificate-and-key">REST APIs</a>.</p>
+the <a href="/samples/rest/#sample-to-create-certificate-and-key">REST APIs</a>.</p>
 <h4 id="optional-elastic-stack-elasticsearch-logstash-and-kibana-integration">Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration</h4>
 <p>The operator Helm chart includes the option of installing the necessary Kubernetes resources for Elastic Stack integration.</p>
 <p>You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator&rsquo;s log contents to that Elasticsearch location.</p>
@@ -5403,19 +5403,19 @@ the <a href="/weblogic-kubernetes-operator/3.3/samples/rest/#sample-to-create-ce
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997074"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997074"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993358"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997074"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

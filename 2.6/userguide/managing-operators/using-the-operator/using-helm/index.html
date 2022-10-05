@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Useful Helm operations.">
 
 
@@ -12,18 +12,18 @@
     <title>Use Helm :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664993350" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664997067" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664997067" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664997067"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664993350"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664997067"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664997067"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.6";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664997067"></script>
 
     
   </div>
@@ -2780,35 +2780,35 @@ if (!doNotTrack) {
 </li>
 <li><a href="#common-mistakes-and-solutions">Common mistakes and solutions</a></li>
 </ul>
-<p>Note that the operator Helm chart is available from the GitHub chart repository, see <a href="/weblogic-kubernetes-operator/2.6/userguide/managing-operators/installation/#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository">Alternatively, install the operator Helm chart from the GitHub chart repository</a>.</p>
+<p>Note that the operator Helm chart is available from the GitHub chart repository, see <a href="/userguide/managing-operators/installation/#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository">Alternatively, install the operator Helm chart from the GitHub chart repository</a>.</p>
 <h4 id="useful-helm-operations">Useful Helm operations</h4>
 <p>Show the available operator configuration parameters and their default values:</p>
-<pre><code>$ helm inspect values kubernetes/charts/weblogic-operator
+<pre tabindex="0"><code>$ helm inspect values kubernetes/charts/weblogic-operator
 </code></pre><p>Show the custom values you configured for the operator Helm release:</p>
-<pre><code>$ helm get values weblogic-operator
+<pre tabindex="0"><code>$ helm get values weblogic-operator
 </code></pre><p>Show all of the values your operator Helm release is using:</p>
-<pre><code>$ helm get values --all weblogic-operator
+<pre tabindex="0"><code>$ helm get values --all weblogic-operator
 </code></pre><p>List the Helm releases for a specified namespace or all namespaces:</p>
-<pre><code>$ helm list --namespace &lt;namespace&gt;
+<pre tabindex="0"><code>$ helm list --namespace &lt;namespace&gt;
 $ helm list --all-namespaces
 </code></pre><p>Get the status of the operator Helm release:</p>
-<pre><code>$ helm status weblogic-operator
+<pre tabindex="0"><code>$ helm status weblogic-operator
 </code></pre><p>Show the history of the operator Helm release:</p>
-<pre><code>$ helm history weblogic-operator
+<pre tabindex="0"><code>$ helm history weblogic-operator
 </code></pre><p>Roll back to a previous version of this operator Helm release, in this case, the first version:</p>
-<pre><code>$ helm rollback weblogic-operator 1
+<pre tabindex="0"><code>$ helm rollback weblogic-operator 1
 </code></pre><p>Change one or more values in the operator Helm release. In this example, the <code>--reuse-values</code> flag indicates that previous overrides of other values should be retained:</p>
-<pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ helm upgrade \
   --reuse-values \
-  --set &quot;domainNamespaces={sample-domains-ns1}&quot; \
-  --set &quot;javaLoggingLevel=FINE&quot; \
+  --set &#34;domainNamespaces={sample-domains-ns1}&#34; \
+  --set &#34;javaLoggingLevel=FINE&#34; \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
 </code></pre><p>Enable operator debugging on port 30999. Again, we use <code>--reuse-values</code> to change one value without affecting the others:</p>
-<pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ helm upgrade \
   --reuse-values \
-  --set &quot;remoteDebugNodePortEnabled=true&quot; \
+  --set &#34;remoteDebugNodePortEnabled=true&#34; \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
@@ -2819,12 +2819,12 @@ $ helm list --all-namespaces
 <p>Specifies the name of the service account in the operator&rsquo;s namespace that the operator will use to make requests to the Kubernetes API server. You are responsible for creating the service account.</p>
 <p>Defaults to <code>default</code>.</p>
 <p>Example:</p>
-<pre><code>serviceAccount: &quot;weblogic-operator&quot;
+<pre tabindex="0"><code>serviceAccount: &#34;weblogic-operator&#34;
 </code></pre><h5 id="dedicated"><code>dedicated</code></h5>
 <p>Specifies if this operator will manage WebLogic domains only in the same namespace in which the operator itself is deployed.  If set to <code>true</code>, then the <code>domainNamespaces</code> value is ignored.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>Example:</p>
-<pre><code>dedicated: false
+<pre tabindex="0"><code>dedicated: false
 </code></pre><p>In the <code>dedicated</code> mode, the operator does not require permissions to access the cluster-scoped Kubernetes resources, such as <code>CustomResourceDefinitions</code>, <code>PersistentVolumes</code>, and <code>Namespaces</code>. In those situations, the operator may skip some of its operations, such as verifying the WebLogic domain <code>CustomResoruceDefinition</code> <code>domains.weblogic.oracle</code> (and creating it when it is absent), watching namespace events, and cleaning up <code>PersistentVolumes</code> as part of deleting a domain.</p>
 
 <div class="notices note" ><p>It is the responsibility of the administrator to make sure that the required <code>CustomResourceDefinition (CRD)</code> <code>domains.weblogic.oracle</code> is deployed in the Kubernetes cluster before the operator is installed. The creation of the <code>CRD</code> requires the Kubernetes <code>cluster-admin</code> privileges. A YAML file for creating the <code>CRD</code> can be found at <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/crd/domain-crd.yaml">domain-crd.yaml</a>.</p>
@@ -2834,32 +2834,32 @@ $ helm list --all-namespaces
 <p>Specifies the level of Java logging that should be enabled in the operator. Valid values are:  <code>SEVERE</code>, <code>WARNING</code>, <code>INFO</code>, <code>CONFIG</code>, <code>FINE</code>, <code>FINER</code>, and <code>FINEST</code>.</p>
 <p>Defaults to <code>INFO</code>.</p>
 <p>Example:</p>
-<pre><code>javaLoggingLevel:  &quot;FINE&quot;
+<pre tabindex="0"><code>javaLoggingLevel:  &#34;FINE&#34;
 </code></pre><h4 id="creating-the-operator-pod">Creating the operator pod</h4>
 <h5 id="image"><code>image</code></h5>
 <p>Specifies the Docker image containing the operator code.</p>
 <p>Defaults to <code>weblogic-kubernetes-operator:2.6.0</code>.</p>
 <p>Example:</p>
-<pre><code>image:  &quot;weblogic-kubernetes-operator:LATEST&quot;
+<pre tabindex="0"><code>image:  &#34;weblogic-kubernetes-operator:LATEST&#34;
 </code></pre><h5 id="imagepullpolicy"><code>imagePullPolicy</code></h5>
 <p>Specifies the image pull policy for the operator Docker image.</p>
 <p>Defaults to <code>IfNotPresent</code>.</p>
 <p>Example:</p>
-<pre><code>image:  &quot;Always&quot;
+<pre tabindex="0"><code>image:  &#34;Always&#34;
 </code></pre><h5 id="imagepullsecrets"><code>imagePullSecrets</code></h5>
 <p>Contains an optional list of Kubernetes Secrets, in the operator&rsquo;s namespace, that are needed to access the registry containing the operator Docker image. You are responsible for creating the secret. If no secrets are required, then omit this property.</p>
 <p>Example:</p>
-<pre><code>imagePullSecrets:
-- name: &quot;my-image-pull-secret&quot;
+<pre tabindex="0"><code>imagePullSecrets:
+- name: &#34;my-image-pull-secret&#34;
 </code></pre><h4 id="weblogic-domain-management">WebLogic domain management</h4>
 <h5 id="domainnamespaces"><code>domainNamespaces</code></h5>
 <p>Specifies a list of WebLogic domain namespaces which the operator manages. The names must be lower case. You are responsible for creating these namespaces.</p>
 <p>This property is required.</p>
 <p>Example 1: In the configuration below, the operator will monitor the <code>default</code> Kubernetes Namespace:</p>
-<pre><code>domainNamespaces:
-- &quot;default&quot;
+<pre tabindex="0"><code>domainNamespaces:
+- &#34;default&#34;
 </code></pre><p>Example 2: In the configuration below, the Helm installation will manage <code>namespace1</code> and <code>namespace2</code>:</p>
-<pre><code>domainNamespaces: [ &quot;namespace1&quot;, &quot;namespace2&quot; ]
+<pre tabindex="0"><code>domainNamespaces: [ &#34;namespace1&#34;, &#34;namespace2&#34; ]
 </code></pre>
 <div class="notices note" ><p>These examples show two valid YAML syntax options for arrays.</p>
 </div>
@@ -2878,51 +2878,50 @@ $ helm list --all-namespaces
 <p>Specifies whether or not Elastic Stack integration is enabled.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>Example:</p>
-<pre><code>elkIntegrationEnabled:  true
+<pre tabindex="0"><code>elkIntegrationEnabled:  true
 </code></pre><h5 id="logstashimage"><code>logStashImage</code></h5>
 <p>Specifies the Docker image containing Logstash.  This parameter is ignored if <code>elkIntegrationEnabled</code> is false.</p>
 <p>Defaults to <code>logstash:6.6.0</code>.</p>
 <p>Example:</p>
-<pre><code>logStashImage:  &quot;logstash:6.2&quot;
+<pre tabindex="0"><code>logStashImage:  &#34;logstash:6.2&#34;
 </code></pre><h5 id="elasticsearchhost"><code>elasticSearchHost</code></h5>
 <p>Specifies the hostname where Elasticsearch is running. This parameter is ignored if <code>elkIntegrationEnabled</code> is false.</p>
 <p>Defaults to <code>elasticsearch.default.svc.cluster.local</code>.</p>
 <p>Example:</p>
-<pre><code>elasticSearchHost: &quot;elasticsearch2.default.svc.cluster.local&quot;
+<pre tabindex="0"><code>elasticSearchHost: &#34;elasticsearch2.default.svc.cluster.local&#34;
 </code></pre><h5 id="elasticsearchport"><code>elasticSearchPort</code></h5>
 <p>Specifies the port number where Elasticsearch is running. This parameter is ignored if <code>elkIntegrationEnabled</code> is false.</p>
 <p>Defaults to <code>9200</code>.</p>
 <p>Example:</p>
-<pre><code>elasticSearchPort: 9201
+<pre tabindex="0"><code>elasticSearchPort: 9201
 </code></pre><h4 id="rest-interface-configuration">REST interface configuration</h4>
 <h5 id="externalrestenabled"><code>externalRestEnabled</code></h5>
 <p>Determines whether the operator&rsquo;s REST interface will be exposed outside the Kubernetes cluster.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>If set to <code>true</code>, you must provide the <code>externalRestIdentitySecret</code> property that contains the name of the Kubernetes Secret which contains the SSL certificate and private key for the operator&rsquo;s external REST interface.</p>
 <p>Example:</p>
-<pre><code>externalRestEnabled: true
+<pre tabindex="0"><code>externalRestEnabled: true
 </code></pre><h5 id="externalresthttpsport"><code>externalRestHttpsPort</code></h5>
 <p>Specifies the node port that should be allocated for the external operator REST HTTPS interface.</p>
 <p>Only used when <code>externalRestEnabled</code> is <code>true</code>, otherwise ignored.</p>
 <p>Defaults to <code>31001</code>.</p>
 <p>Example:</p>
-<pre><code>externalRestHttpsPort: 32009
+<pre tabindex="0"><code>externalRestHttpsPort: 32009
 </code></pre><h5 id="externalrestidentitysecret"><code>externalRestIdentitySecret</code></h5>
 <p>Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes <code>tls</code> secret previously created in the namespace where the operator is deployed. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored. In order to create the Kubernetes <code>tls</code> secret you can use the following command:</p>
-<pre><code>$ kubectl create secret tls &lt;secret-name&gt; \
+<pre tabindex="0"><code>$ kubectl create secret tls &lt;secret-name&gt; \
   -n &lt;operator-namespace&gt; \
   --cert=&lt;path-to-certificate&gt; \
   --key=&lt;path-to-private-key&gt;
 </code></pre><p>There is no default value.</p>
 <p>The Helm installation will produce an error, similar to the following, if <code>externalRestIdentitySecret</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
-<pre><code>Error: render error in &quot;weblogic-operator/templates/main.yaml&quot;: template: weblogic-operator/templates/main.yaml:9:3: executing &quot;weblogic-operator/templates/main.yaml&quot;
-    at &lt;include &quot;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing &quot;operator.validateInputs&quot;
-    at &lt;include &quot;utils.endVa...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing &quot;utils.endValidation&quot;
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:9:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+    at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing &#34;operator.validateInputs&#34;
+    at &lt;include &#34;utils.endVa...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing &#34;utils.endValidation&#34;
     at &lt;fail $scope.validati...&gt;: error calling fail:
  string externalRestIdentitySecret must be specified
-
 </code></pre><p>Example:</p>
-<pre><code>externalRestIdentitySecret: weblogic-operator-external-rest-identity
+<pre tabindex="0"><code>externalRestIdentitySecret: weblogic-operator-external-rest-identity
 </code></pre><h5 id="externaloperatorcert-deprecated"><code>externalOperatorCert</code> <em><strong>(Deprecated)</strong></em></h5>
 
 <div class="notices info" ><p>Use <strong><code>externalRestIdentitySecret</code></strong> instead</p>
@@ -2931,12 +2930,12 @@ $ helm list --all-namespaces
 <p>Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored.</p>
 <p>There is no default value.</p>
 <p>The Helm installation will produce an error, similar to the following, if <code>externalOperatorCert</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
-<pre><code>Error: render error in &quot;weblogic-operator/templates/main.yaml&quot;: template: weblogic-operator/templates/main.yaml:4:3: executing &quot;weblogic-operator/templates/main.yaml&quot;
-  at &lt;include &quot;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &quot;operator.validateInputs&quot;
-  at &lt;include &quot;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &quot;operator.reportValidationErrors&quot;
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:4:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+  at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &#34;operator.validateInputs&#34;
+  at &lt;include &#34;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &#34;operator.reportValidationErrors&#34;
   at &lt;fail .validationErro...&gt;: error calling fail: The string property externalOperatorCert must be specified.
 </code></pre><p>Example:</p>
-<pre><code>externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...
+<pre tabindex="0"><code>externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...
 </code></pre><h5 id="externaloperatorkey-deprecated"><code>externalOperatorKey</code> <em><strong>(Deprecated)</strong></em></h5>
 
 <div class="notices info" ><p>Use <strong><code>externalRestIdentitySecret</code></strong> instead</p>
@@ -2945,35 +2944,35 @@ $ helm list --all-namespaces
 <p>Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if <code>externalRestEnabled</code> is <code>true</code>, otherwise, it is ignored.</p>
 <p>There is no default value.</p>
 <p>The Helm installation will produce an error, similar to the following, if <code>externalOperatorKey</code> is not specified (left blank) and <code>externalRestEnabled</code> is <code>true</code>:</p>
-<pre><code>Error: render error in &quot;weblogic-operator/templates/main.yaml&quot;: template: weblogic-operator/templates/main.yaml:4:3: executing &quot;weblogic-operator/templates/main.yaml&quot;
-  at &lt;include &quot;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &quot;operator.validateInputs&quot;
-  at &lt;include &quot;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &quot;operator.reportValidationErrors&quot;
+<pre tabindex="0"><code>Error: render error in &#34;weblogic-operator/templates/main.yaml&#34;: template: weblogic-operator/templates/main.yaml:4:3: executing &#34;weblogic-operator/templates/main.yaml&#34;
+  at &lt;include &#34;operator.va...&gt;: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing &#34;operator.validateInputs&#34;
+  at &lt;include &#34;operator.re...&gt;: error calling include: template: weblogic-operator/templates/_utils.tpl:137:6: executing &#34;operator.reportValidationErrors&#34;
   at &lt;fail .validationErro...&gt;: error calling fail: The string property externalOperatorKey must be specified.
 </code></pre><p>Example:</p>
-<pre><code>externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
+<pre tabindex="0"><code>externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
 </code></pre><h4 id="debugging-options">Debugging options</h4>
 <h5 id="remotedebugnodeportenabled"><code>remoteDebugNodePortEnabled</code></h5>
 <p>Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.</p>
 <p>Defaults to <code>false</code>.</p>
 <p>Example:</p>
-<pre><code>remoteDebugNodePortEnabled:  true
+<pre tabindex="0"><code>remoteDebugNodePortEnabled:  true
 </code></pre><h5 id="internaldebughttpport"><code>internalDebugHttpPort</code></h5>
 <p>Specifies the port number inside the Kubernetes cluster for the operator&rsquo;s Java remote debug server.</p>
 <p>This parameter is required if <code>remoteDebugNodePortEnabled</code> is <code>true</code>. Otherwise, it is ignored.</p>
 <p>Defaults to <code>30999</code>.</p>
 <p>Example:</p>
-<pre><code>internalDebugHttpPort:  30888
+<pre tabindex="0"><code>internalDebugHttpPort:  30888
 </code></pre><h5 id="externaldebughttpport"><code>externalDebugHttpPort</code></h5>
 <p>Specifies the node port that should be allocated for the Kubernetes cluster for the operator&rsquo;s Java remote debug server.</p>
 <p>This parameter is required if <code>remoteDebugNodePortEnabled</code> is <code>true</code>. Otherwise, it is ignored.</p>
 <p>Defaults to <code>30999</code>.</p>
 <p>Example:</p>
-<pre><code>externalDebugHttpPort:  30777
+<pre tabindex="0"><code>externalDebugHttpPort:  30777
 </code></pre><h3 id="common-mistakes-and-solutions">Common mistakes and solutions</h3>
 <h4 id="installing-the-operator-a-second-time-into-the-same-namespace">Installing the operator a second time into the same namespace</h4>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<pre><code>$ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
-Error: release op2 failed: secrets &quot;weblogic-operator-secrets&quot; already exists
+<pre tabindex="0"><code>$ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
+Error: release op2 failed: secrets &#34;weblogic-operator-secrets&#34; already exists
 </code></pre><p>Both the previous and new release own the resources created by the previous operator.</p>
 <ul>
 <li>You can&rsquo;t modify it to change the namespace (because <code>helm upgrade</code> does not let you change the namespace).</li>
@@ -2985,8 +2984,8 @@ See <a href="https://github.com/helm/helm/issues/2349">https://github.com/helm/h
 </ul>
 <h4 id="installing-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing">Installing an operator and having it manage a domain namespace that another operator is already managing</h4>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<pre><code>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
-Error: release op2 failed: rolebindings.rbac.authorization.k8s.io &quot;weblogic-operator-rolebinding-namespace&quot; already exists
+<pre tabindex="0"><code>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
+Error: release op2 failed: rolebindings.rbac.authorization.k8s.io &#34;weblogic-operator-rolebinding-namespace&#34; already exists
 </code></pre><p>To recover:</p>
 <ul>
 <li><code>helm delete --purge</code> the failed release.
@@ -3010,8 +3009,8 @@ Error: release op2 failed: rolebindings.rbac.authorization.k8s.io &quot;weblogic
 </ul>
 <h4 id="installing-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator">Installing an operator and assigning it the same external REST port number as another operator</h4>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<pre><code>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
-Error: release op2 failed: Service &quot;external-weblogic-operator-svc&quot; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
+<pre tabindex="0"><code>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
+Error: release op2 failed: Service &#34;external-weblogic-operator-svc&#34; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 </code></pre><p>To recover:</p>
 <ul>
 <li>$ <code>helm delete --purge</code> the failed release.</li>
@@ -3019,15 +3018,15 @@ Error: release op2 failed: Service &quot;external-weblogic-operator-svc&quot; is
 </ul>
 <h4 id="upgrading-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator">Upgrading an operator and assigning it the same external REST port number as another operator</h4>
 <p>The <code>helm upgrade</code> fails and moves the release to the <code>FAILED</code> state.</p>
-<pre><code>$ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
-Error: UPGRADE FAILED: Service &quot;external-weblogic-operator-svc&quot; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
+<pre tabindex="0"><code>$ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
+Error: UPGRADE FAILED: Service &#34;external-weblogic-operator-svc&#34; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 </code></pre><ul>
 <li>You can fix this by upgrading the Helm release (to fix the port number).</li>
 <li>You can also fix this by rolling back the Helm release.</li>
 </ul>
 <h4 id="installing-an-operator-and-assigning-it-a-service-account-that-doesnt-exist">Installing an operator and assigning it a service account that doesn&rsquo;t exist</h4>
 <p>The <code>helm install</code> eventually times out and creates a failed release.</p>
-<pre><code>$ helm install kubernetes/charts/weblogic-operator --name op2 --namespace myuser-op2-ns --values o24.yaml --wait --no-hooks
+<pre tabindex="0"><code>$ helm install kubernetes/charts/weblogic-operator --name op2 --namespace myuser-op2-ns --values o24.yaml --wait --no-hooks
 Error: release op2 failed: timed out waiting for the condition
 
 kubectl logs -n kube-system tiller-deploy-f9b8476d-mht6v
@@ -3042,12 +3041,12 @@ kubectl logs -n kube-system tiller-deploy-f9b8476d-mht6v
 </ul>
 <h4 id="upgrading-an-operator-and-assigning-it-a-service-account-that-doesnt-exist">Upgrading an operator and assigning it a service account that doesn&rsquo;t exist</h4>
 <p>The <code>helm upgrade</code> succeeds and changes the service account on the existing operator deployment, but the existing deployment&rsquo;s pod doesn&rsquo;t get modified, so it keeps running. If the pod is deleted, the deployment creates another one using the OLD service account. However, there&rsquo;s an error in the deployment&rsquo;s status section saying that the service account doesn&rsquo;t exist.</p>
-<pre><code>lastTransitionTime: 2018-12-06T23:19:26Z
+<pre tabindex="0"><code>lastTransitionTime: 2018-12-06T23:19:26Z
 lastUpdateTime: 2018-12-06T23:19:26Z
-message: 'pods &quot;weblogic-operator-88bbb5896-&quot; is forbidden: error looking up
-service account myuser-op2-ns/no-such-sa2: serviceaccount &quot;no-such-sa2&quot; not found'
+message: &#39;pods &#34;weblogic-operator-88bbb5896-&#34; is forbidden: error looking up
+service account myuser-op2-ns/no-such-sa2: serviceaccount &#34;no-such-sa2&#34; not found&#39;
 reason: FailedCreate
-status: &quot;True&quot;
+status: &#34;True&#34;
 type: ReplicaFailure
 </code></pre><p>To recover:</p>
 <ul>
@@ -3057,8 +3056,8 @@ type: ReplicaFailure
 </ul>
 <h4 id="installing-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist">Installing an operator and having it manage a domain namespace that doesn&rsquo;t exist</h4>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<pre><code>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
-Error: release op2 failed: namespaces &quot;myuser-d2-ns&quot; not found
+<pre tabindex="0"><code>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
+Error: release op2 failed: namespaces &#34;myuser-d2-ns&#34; not found
 </code></pre><p>To recover:</p>
 <ul>
 <li><code>helm delete --purge</code> the failed release.</li>
@@ -3067,8 +3066,8 @@ Error: release op2 failed: namespaces &quot;myuser-d2-ns&quot; not found
 </ul>
 <h4 id="upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist">Upgrading an operator and having it manage a domain namespace that doesn&rsquo;t exist</h4>
 <p>The <code>helm upgrade</code> fails and moves the release to the <code>FAILED</code> state.</p>
-<pre><code>$ helm upgrade myuser-op kubernetes/charts/weblogic-operator --values o.yaml --no-hooks
-Error: UPGRADE FAILED: failed to create resource: namespaces &quot;myuser-d2-ns&quot; not found
+<pre tabindex="0"><code>$ helm upgrade myuser-op kubernetes/charts/weblogic-operator --values o.yaml --no-hooks
+Error: UPGRADE FAILED: failed to create resource: namespaces &#34;myuser-d2-ns&#34; not found
 </code></pre><p>To recover:</p>
 <ul>
 <li><code>helm rollback</code></li>
@@ -4945,19 +4944,19 @@ For more information about the problem and solutions, see <a href="/weblogic-kub
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664997067"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664997067"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664997067"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664993350" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664993350"></script>
+    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664997067" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664997067"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

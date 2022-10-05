@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations.  Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.">
 
 
@@ -12,20 +12,20 @@
     <title>Disabling Fast Application Notifications :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993345" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993345" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997062" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997062" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993345"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997062"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993345"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993345"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997062"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997062"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993345"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997062"></script>
 
     
   </div>
@@ -3521,7 +3521,7 @@ data sources cannot be used because they work with RAC.</p>
 <p>WebLogic Server 12.2.1.3.0 shipped with the 12.2.0.1 Oracle driver. When connecting
 with this driver to a database that does not have GRID, you will
 encounter the following exception (however, the 18.3 driver does not have this problem):</p>
-<pre><code>oracle.simplefan.impl.FanManager configure
+<pre tabindex="0"><code>oracle.simplefan.impl.FanManager configure
 SEVERE: attempt to configure ONS in FanManager failed with oracle.ons.NoServersAvailable: Subscription time out
 </code></pre><p>To correct the problem, you must disable FAN, in one of two places:</p>
 <ol>
@@ -3529,38 +3529,38 @@ SEVERE: attempt to configure ONS in FanManager failed with oracle.ons.NoServersA
 </ol>
 <p>To do this, edit the Domain Custom Resource to set the system property <code>oracle.jdbc.fanEnabled</code>
 to <code>false</code> as shown in the following example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  <span style="color:#f92672">serverPod</span>:
-    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
-    <span style="color:#f92672">env</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false -Doracle.jdbc.fanEnabled=false&#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">WLSDEPLOY_PROPERTIES</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Doracle.jdbc.fanEnabled=false&#34;</span>
-</code></pre></div><ol start="2">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false -Doracle.jdbc.fanEnabled=false&#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">WLSDEPLOY_PROPERTIES</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Doracle.jdbc.fanEnabled=false&#34;</span>
+</span></span></code></pre></div><ol start="2">
 <li>Configure the data source connection pool properties.</li>
 </ol>
 <p>The following WLST script adds the
 <code>oracle.jdbc.fanEnabled</code> property, set to <code>false</code>, to an existing data source.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">       <span style="color:#a6e22e">fmwDb</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;jdbc:oracle:thin:@&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">db</span>
-       <span style="color:#a6e22e">print</span> <span style="color:#e6db74">&#39;fmwDatabase  &#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">fmwDb</span>
-       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/JDBCSystemResource/LocalSvcTblDataSource/JdbcResource/LocalSvcTblDataSource&#39;</span>)
-       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;JDBCDriverParams/NO_NAME_0&#39;</span>)
-       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;DriverName&#39;</span>, <span style="color:#e6db74">&#39;oracle.jdbc.OracleDriver&#39;</span>)
-       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;URL&#39;</span>, <span style="color:#a6e22e">fmwDb</span>)
-       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PasswordEncrypted&#39;</span>, <span style="color:#a6e22e">dbPassword</span>)
-
-       <span style="color:#a6e22e">stbUser</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">dbPrefix</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_STB&#39;</span>
-       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;Properties/NO_NAME_0/Property/user&#39;</span>)
-       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Value&#39;</span>, <span style="color:#a6e22e">stbUser</span>)
-       <span style="color:#a6e22e">ls</span>()
-       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;../..&#39;</span>)
-       <span style="color:#a6e22e">ls</span>()
-       <span style="color:#a6e22e">create</span>(<span style="color:#e6db74">&#39;oracle.jdbc.fanEnabled&#39;</span>,<span style="color:#e6db74">&#39;Property&#39;</span>)
-       <span style="color:#a6e22e">ls</span>()
-       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;Property/oracle.jdbc.fanEnabled&#39;</span>)
-       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Value&#39;</span>, <span style="color:#e6db74">&#39;false&#39;</span>)
-       <span style="color:#a6e22e">ls</span>()
-</code></pre></div><p>After changing the data source connection pool configuration, for the attribute to take effect,
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>       <span style="color:#a6e22e">fmwDb</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;jdbc:oracle:thin:@&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">db</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">print</span> <span style="color:#e6db74">&#39;fmwDatabase  &#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">fmwDb</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/JDBCSystemResource/LocalSvcTblDataSource/JdbcResource/LocalSvcTblDataSource&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;JDBCDriverParams/NO_NAME_0&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;DriverName&#39;</span>, <span style="color:#e6db74">&#39;oracle.jdbc.OracleDriver&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;URL&#39;</span>, <span style="color:#a6e22e">fmwDb</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PasswordEncrypted&#39;</span>, <span style="color:#a6e22e">dbPassword</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">stbUser</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">dbPrefix</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_STB&#39;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;Properties/NO_NAME_0/Property/user&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Value&#39;</span>, <span style="color:#a6e22e">stbUser</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">ls</span>()
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;../..&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">ls</span>()
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">create</span>(<span style="color:#e6db74">&#39;oracle.jdbc.fanEnabled&#39;</span>,<span style="color:#e6db74">&#39;Property&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">ls</span>()
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;Property/oracle.jdbc.fanEnabled&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Value&#39;</span>, <span style="color:#e6db74">&#39;false&#39;</span>)
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">ls</span>()
+</span></span></code></pre></div><p>After changing the data source connection pool configuration, for the attribute to take effect,
 make sure to undeploy and redeploy the data source, or restart WebLogic Server.</p>
 
 
@@ -5879,19 +5879,19 @@ make sure to undeploy and redeploy the data source, or restart WebLogic Server.<
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997062"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997062"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997062"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997062"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

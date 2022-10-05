@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Consult these preparation steps, strategy choices, and prequisites prior to installing an operator.">
 
 
@@ -12,20 +12,20 @@
     <title>Prepare for installation :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3608,14 +3608,14 @@ or in a custom repository that you control.</p>
 <code>https://oracle.github.io/weblogic-kubernetes-operator/charts</code>
 repository and name the repository reference <code>weblogic-operator</code>, use
 the following command, <code>helm repo add &lt;helm-chart-repo-name&gt; &lt;helm-chart-repo-url&gt;</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span></code></pre></div></li>
 <li>
 <p>To verify that a Helm chart repository was added correctly, or to list existing repositories:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm repo list
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">NAME                 URL
-weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo list
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>NAME                 URL
+</span></span><span style="display:flex;"><span>weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
+</span></span></code></pre></div></li>
 <li>
 <p>For example, assuming you have named
 your repository <code>weblogic-operator</code>, simply
@@ -3624,8 +3624,8 @@ commands when specifying the chart location.</p>
 <ul>
 <li>
 <p>To list the versions of the operator that you can install from the Helm chart repository:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm search repo weblogic-operator/weblogic-operator --versions
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm search repo weblogic-operator/weblogic-operator --versions
+</span></span></code></pre></div></li>
 <li>
 <p>For a specified version of the Helm chart and operator, with the <code>helm pull</code> and <code>helm install</code> commands, use the <code>--version &lt;value&gt;</code> option
 to choose the version that you want, with the <code>latest</code> value being the default.</p>
@@ -3636,8 +3636,8 @@ to choose the version that you want, with the <code>latest</code> value being th
 <h4 id="inspect-the-operator-helm-chart">Inspect the operator Helm chart</h4>
 <p>You can find out the configuration values that the operator Helm chart supports,
 as well as the default values, using the <code>helm show</code> command.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm show values weblogic-operator/weblogic-operator
-</code></pre></div><ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm show values weblogic-operator/weblogic-operator
+</span></span></code></pre></div><ul>
 <li>
 <p>Alternatively, you can view most of the configuration values
 and their defaults in the operator source in the
@@ -3677,9 +3677,9 @@ on the operator Helm chart installation to create
 these resources for you.</li>
 </ul>
 <p>Here&rsquo;s an example of each:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl create namespace sample-weblogic-operator-ns
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
-</code></pre></div><p>In operator installation steps,
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl create namespace sample-weblogic-operator-ns
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+</span></span></code></pre></div><p>In operator installation steps,
 you will specify the namespace using the <code>--namespace MY-NAMESPACE</code>
 operator Helm chart configuration setting on the Helm install command line.
 If not specified, then it defaults to <code>default</code>.
@@ -3702,7 +3702,7 @@ Operator GitHub container registry images can be directly referenced using an im
 <code>ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N</code> where <code>N.N.N</code> refers to the operator version
 and <code>ghcr.io</code> is the DNS name of the GitHub container registry.
 You can also optionally build your own operator image,
-see the <a href="/weblogic-kubernetes-operator/developerguide/">Developer Guide</a>.</p>
+see the <a href="/developerguide/">Developer Guide</a>.</p>
 <h5 id="default-operator-image">Default operator image</h5>
 <p>Each Helm chart version defaults to using an operator image from the matching version.
 To find the default image name that will be used when installing the operator,
@@ -3714,8 +3714,8 @@ to the machines on its cluster nodes.</p>
 <p>If you want to manually place an operator image
 in a particular machine&rsquo;s container image pool, or test access to an image,
 then call <code>docker pull</code>. For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.3
-</code></pre></div><p>Note that if the image registry you are using is a private registry that
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.3
+</span></span></code></pre></div><p>Note that if the image registry you are using is a private registry that
 requires an image pull credential,
 then you will need to call <code>docker login my-registry-dns-name.com</code>
 before calling <code>docker pull</code>.</p>
@@ -3841,13 +3841,13 @@ so that then you can run <code>helm install</code> to install the operator.</p>
 <ol>
 <li>On a machine with Internet access, to download the chart to the current directory, run:</li>
 </ol>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm pull weblogic-operator --repo https://oracle.github.io/weblogic-kubernetes-operator/charts --destination .
-</code></pre></div><p>For a specified version of the Helm chart, with <code>helm pull</code> and <code>helm install</code>, use the <code>--version &lt;value&gt;</code> option
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm pull weblogic-operator --repo https://oracle.github.io/weblogic-kubernetes-operator/charts --destination .
+</span></span></code></pre></div><p>For a specified version of the Helm chart, with <code>helm pull</code> and <code>helm install</code>, use the <code>--version &lt;value&gt;</code> option
 to choose the version that you want, with the <code>latest</code> value being the default. To list the versions of the
 operator that you can install from the Helm chart repository, run:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
-$ helm search repo weblogic-operator/weblogic-operator --versions
-</code></pre></div><ol start="2">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+</span></span><span style="display:flex;"><span>$ helm search repo weblogic-operator/weblogic-operator --versions
+</span></span></code></pre></div><ol start="2">
 <li>Move the resulting <code>weblogic-operator-&lt;version&gt;.tgz</code> file to the machine without Internet access on which you want to install the WebLogic Kubernetes Operator.</li>
 <li>Run <code>$ tar zxf weblogic-operator-&lt;version&gt;.tgz</code>. This puts the Helm chart files in a local directory <code>./weblogic-operator</code>.</li>
 <li>To create the namespace where the operator will be installed, run <code>$ kubectl create namespace weblogic-operator</code>.
@@ -3877,16 +3877,16 @@ See <a href="#choose-a-security-strategy">Choose a security strategy</a>.</p>
 <p><strong>How to manually install a Domain CRD.</strong></p>
 <p>To manually install the CRD, first <a href="/weblogic-kubernetes-operator/developerguide/requirements/#obtaining-the-operator-source-code">download the operator source</a>.</p>
 <p>Assuming you have installed the operator source into the <code>/tmp</code> directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ cd /tmp/weblogic-kubernetes-operator
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl create -f kubernetes/crd/domain-crd.yaml
-</code></pre></div><p><strong>How to check if a Domain CRD has been installed.</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ cd /tmp/weblogic-kubernetes-operator
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl create -f kubernetes/crd/domain-crd.yaml
+</span></span></code></pre></div><p><strong>How to check if a Domain CRD has been installed.</strong></p>
 <p>After the CustomResourceDefinition is installed,
 either by the operator or using the previous <code>create</code> command,
 you can verify that the CRD is installed correctly using:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl get crd domains.weblogic.oracle
-</code></pre></div><p>Or, by calling:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl explain domain.spec
-</code></pre></div><p>The <code>kubectl explain</code> call should succeed
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get crd domains.weblogic.oracle
+</span></span></code></pre></div><p>Or, by calling:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl explain domain.spec
+</span></span></code></pre></div><p>The <code>kubectl explain</code> call should succeed
 and list the domain resource&rsquo;s <code>domain.spec</code> attributes
 that are defined in the CRD.</p>
 
@@ -6210,19 +6210,19 @@ that are defined in the CRD.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

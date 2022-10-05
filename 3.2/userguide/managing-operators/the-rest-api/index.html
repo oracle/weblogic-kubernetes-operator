@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Use the operator&#39;s REST services.">
 
 
@@ -12,20 +12,20 @@
     <title>Use the operator&#39;s REST services :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664993355" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664997071" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664997071"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664993355"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664997071"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664997071"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664997071"></script>
 
     
   </div>
@@ -3232,8 +3232,8 @@
 </p>
 <p>Callers should pass in the <code>Accept:/application/json</code> header.</p>
 <p>To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a <code>X-Requested-By</code> header when you invoke a REST endpoint that makes a change (for example, when you POST to the <code>/scale</code> endpoint).  The value is an arbitrary name such as <code>MyClient</code>. For example, when using <code>curl</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
-</code></pre></div><p>If you do not pass in the <code>X-Requested-By</code> header, then you&rsquo;ll get a 400 (bad request) response without any details explaining why the request is bad.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
+</span></span></code></pre></div><p>If you do not pass in the <code>X-Requested-By</code> header, then you&rsquo;ll get a 400 (bad request) response without any details explaining why the request is bad.
 The <code>X-Requested-By</code> header is not needed for requests that only read, for example, when you GET any of the operator&rsquo;s REST endpoints.</p>
 <p>Before using the sample script below, you must:</p>
 <ul>
@@ -3250,140 +3250,140 @@ with <code>brew install curl</code>.</li>
 Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the &ldquo;Trust&rdquo; pull-down menu and set the value of &ldquo;When using this certificate&rdquo; to &ldquo;Always Trust&rdquo;, then close the detail window. Enter your password when prompted.</p>
 <p>For Oracle Linux, run the script below, once to copy the certificate into <code>/tmp/operator.cert.pem</code>, then run these
 commands to add the certificate to the trust store:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sudo cp /tmp/operator.cert.pem /etc/pki/ca-trust/source/anchors/
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sudo update-ca-trust enable; sudo update-ca-trust extract
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ openssl x509 -noout -hash -in /tmp/operator.cert.pem
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sudo ln -s /etc/pki/ca-trust/source/anchors/operator.cert.pem /etc/pki/tls/certs/e242d2da.0
-</code></pre></div><p>In the final command, the file name <code>e242d2da.0</code> should be the output of the previous command plus the suffix <code>.0</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo cp /tmp/operator.cert.pem /etc/pki/ca-trust/source/anchors/
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo update-ca-trust enable; sudo update-ca-trust extract
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ openssl x509 -noout -hash -in /tmp/operator.cert.pem
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo ln -s /etc/pki/ca-trust/source/anchors/operator.cert.pem /etc/pki/tls/certs/e242d2da.0
+</span></span></code></pre></div><p>In the final command, the file name <code>e242d2da.0</code> should be the output of the previous command plus the suffix <code>.0</code>.</p>
 <p>For other operating systems, consult your operating system&rsquo;s documentation (or Google).</p>
 <h4 id="sample-operator-rest-client-script">Sample operator REST client script</h4>
 <p>Here is a small, sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
 operator&rsquo;s REST services.  Please read the important caveats above before using this script:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
-</span><span style="color:#75715e"></span>KUBERNETES_SERVER<span style="color:#f92672">=</span>$1
-URL_TAIL<span style="color:#f92672">=</span>$2
-
-REST_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get services -n weblogic-operator -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.items[?(@.metadata.name == &#34;external-weblogic-operator-svc&#34;)].spec.ports[?(@.name == &#34;rest&#34;)].nodePort}&#39;</span><span style="color:#e6db74">`</span>
-REST_ADDR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://</span><span style="color:#e6db74">${</span>KUBERNETES_SERVER<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>REST_PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-SECRET<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get serviceaccount weblogic-operator -n weblogic-operator -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.secrets[0].name}&#39;</span><span style="color:#e6db74">`</span>
-ENCODED_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get secret <span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span> -n weblogic-operator -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.token}&#39;</span><span style="color:#e6db74">`</span>
-TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>echo <span style="color:#e6db74">${</span>ENCODED_TOKEN<span style="color:#e6db74">}</span> | base64 --decode<span style="color:#e6db74">`</span>
-OPERATOR_CERT_DATA<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get secret -n weblogic-operator weblogic-operator-external-rest-identity -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.tls\.crt}&#39;</span><span style="color:#e6db74">`</span>
-OPERATOR_CERT_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/tmp/operator.cert.pem&#34;</span>
-echo <span style="color:#e6db74">${</span>OPERATOR_CERT_DATA<span style="color:#e6db74">}</span> | base64 --decode &gt; <span style="color:#e6db74">${</span>OPERATOR_CERT_FILE<span style="color:#e6db74">}</span>
-cat <span style="color:#e6db74">${</span>OPERATOR_CERT_FILE<span style="color:#e6db74">}</span>
-
-echo <span style="color:#e6db74">&#34;Ready to call operator REST APIs&#34;</span>
-
-STATUS_CODE<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -v <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --cacert <span style="color:#e6db74">${</span>OPERATOR_CERT_FILE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -H Accept:application/json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -X GET <span style="color:#e6db74">${</span>REST_ADDR<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>URL_TAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -o curl.out <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --stderr curl.err <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -w <span style="color:#e6db74">&#34;%{http_code}&#34;</span><span style="color:#e6db74">`</span>
-
-cat curl.err
-cat curl.out | jq .
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>KUBERNETES_SERVER<span style="color:#f92672">=</span>$1
+</span></span><span style="display:flex;"><span>URL_TAIL<span style="color:#f92672">=</span>$2
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>REST_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get services -n weblogic-operator -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.items[?(@.metadata.name == &#34;external-weblogic-operator-svc&#34;)].spec.ports[?(@.name == &#34;rest&#34;)].nodePort}&#39;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>REST_ADDR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://</span><span style="color:#e6db74">${</span>KUBERNETES_SERVER<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>REST_PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>SECRET<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get serviceaccount weblogic-operator -n weblogic-operator -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.secrets[0].name}&#39;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>ENCODED_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get secret <span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span> -n weblogic-operator -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.token}&#39;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>echo <span style="color:#e6db74">${</span>ENCODED_TOKEN<span style="color:#e6db74">}</span> | base64 --decode<span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>OPERATOR_CERT_DATA<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>kubectl get secret -n weblogic-operator weblogic-operator-external-rest-identity -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.tls\.crt}&#39;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>OPERATOR_CERT_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/tmp/operator.cert.pem&#34;</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">${</span>OPERATOR_CERT_DATA<span style="color:#e6db74">}</span> | base64 --decode &gt; <span style="color:#e6db74">${</span>OPERATOR_CERT_FILE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">${</span>OPERATOR_CERT_FILE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Ready to call operator REST APIs&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>STATUS_CODE<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -v <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cacert <span style="color:#e6db74">${</span>OPERATOR_CERT_FILE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H Accept:application/json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -X GET <span style="color:#e6db74">${</span>REST_ADDR<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>URL_TAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -o curl.out <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --stderr curl.err <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -w <span style="color:#e6db74">&#34;%{http_code}&#34;</span><span style="color:#e6db74">`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cat curl.err
+</span></span><span style="display:flex;"><span>cat curl.out | jq .
+</span></span></code></pre></div>
 <div class="notices note" ><p>You can use the <code>-k</code> option to bypass the check to verify that the operator&rsquo;s certificate is trusted (instead of <code>curl --cacert</code>), but this is insecure.</p>
 </div>
 
 <p>To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes <code>jq</code> is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information, in addition to the response.  Here is an example of the output of this script:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters
-Ready to call operator REST APIs
-Note: Unnecessary use of -X or --request, GET is already inferred.
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> --:--:-- --:--:-- --:--:--     0*   Trying 10.139.151.214...
-* TCP_NODELAY set
-* Connected to kubernetes001 <span style="color:#f92672">(</span>10.1.2.3<span style="color:#f92672">)</span> port <span style="color:#ae81ff">31001</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
-* ALPN, offering h2
-* ALPN, offering http/1.1
-* Cipher selection: ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
-* error setting certificate verify locations, continuing anyway:
-*   CAfile: /tmp/operator.cert.pem
-  CApath: none
-* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS handshake, Client hello <span style="color:#f92672">(</span>1<span style="color:#f92672">)</span>:
-<span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">512</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Server hello <span style="color:#f92672">(</span>2<span style="color:#f92672">)</span>:
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">81</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Certificate <span style="color:#f92672">(</span>11<span style="color:#f92672">)</span>:
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">799</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Server key exchange <span style="color:#f92672">(</span>12<span style="color:#f92672">)</span>:
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">413</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Server finished <span style="color:#f92672">(</span>14<span style="color:#f92672">)</span>:
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">4</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS handshake, Client key exchange <span style="color:#f92672">(</span>16<span style="color:#f92672">)</span>:
-<span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">150</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS change cipher, Client hello <span style="color:#f92672">(</span>1<span style="color:#f92672">)</span>:
-<span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">1</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS handshake, Finished <span style="color:#f92672">(</span>20<span style="color:#f92672">)</span>:
-<span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">16</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS change cipher, Client hello <span style="color:#f92672">(</span>1<span style="color:#f92672">)</span>:
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">1</span> bytes data<span style="color:#f92672">]</span>
-* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Finished <span style="color:#f92672">(</span>20<span style="color:#f92672">)</span>:
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">16</span> bytes data<span style="color:#f92672">]</span>
-* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256
-* ALPN, server did not agree to a protocol
-* Server certificate:
-*  subject: CN<span style="color:#f92672">=</span>weblogic-operator
-*  start date: Jan <span style="color:#ae81ff">18</span> 16:30:01 <span style="color:#ae81ff">2018</span> GMT
-*  expire date: Jan <span style="color:#ae81ff">16</span> 16:30:01 <span style="color:#ae81ff">2028</span> GMT
-*  issuer: CN<span style="color:#f92672">=</span>weblogic-operator
-*  SSL certificate verify result: unable to get local issuer certificate <span style="color:#f92672">(</span>20<span style="color:#f92672">)</span>, continuing anyway.
-&gt; GET /operator/latest/domains/domain1/clusters HTTP/1.1
-&gt; Host: kubernetes001:31001
-&gt; User-Agent: curl/7.54.0
-&gt; Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ3ZWJsb2dpYy1vcGVyYXRvciIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQ <span style="color:#f92672">(</span>truncated<span style="color:#f92672">)</span> 1vcGVyYXRvcjp3ZWJsb2dpYy1vcGVyYXRvciJ9.NgaGR0NbzbJpVXguQDjRKyDBnNTqwgwPEXv3NjWwMcaf0OlN54apHubdrIx6KYz9ONGz-QeTLnoMChFY7oWA6CBfbvjt-GQX6JvdoJYxsQo1pt-E6sO2YvqTFE4EG-gpEDaiCE_OjZ_bBpJydhIiFReToA3-mxpDAUK2_rUfkWe5YEaLGMWoYQfXPAykzFiH4vqIi_tzzyzNnGxI2tUcBxNh3tzWFPGXKhzG18HswiwlFU5pe7XEYv4gJbvtV5tlGz7YdmH74Rc0dveV-54qHD_VDC5M7JZVh0ZDlyJMAmWe4YcdwNQQNGs91jqo1-JEM0Wj8iQSDE3cZj6MB0wrdg
-&gt; Accept:application/json
-&gt;
-  <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> --:--:--  0:00:01 --:--:--     0&lt; HTTP/1.1 <span style="color:#ae81ff">200</span> OK
-&lt; Content-Type: application/json
-&lt; Content-Length: <span style="color:#ae81ff">463</span>
-&lt;
-<span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">463</span> bytes data<span style="color:#f92672">]</span>
-<span style="color:#ae81ff">100</span>   <span style="color:#ae81ff">463</span>  <span style="color:#ae81ff">100</span>   <span style="color:#ae81ff">463</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">205</span>      <span style="color:#ae81ff">0</span>  0:00:02  0:00:02 --:--:--   <span style="color:#ae81ff">205</span>
-* Connection <span style="color:#75715e">#0 to host kubernetes001 left intact</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;links&#34;</span>: <span style="color:#f92672">[</span>
-    <span style="color:#f92672">{</span>
-      <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;self&#34;</span>,
-      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-      <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters&#34;</span>
-    <span style="color:#f92672">}</span>,
-    <span style="color:#f92672">{</span>
-      <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;canonical&#34;</span>,
-      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-      <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters&#34;</span>
-    <span style="color:#f92672">}</span>,
-    <span style="color:#f92672">{</span>
-      <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;parent&#34;</span>,
-      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-      <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1&#34;</span>
-    <span style="color:#f92672">}</span>
-  <span style="color:#f92672">]</span>,
-  <span style="color:#e6db74">&#34;items&#34;</span>: <span style="color:#f92672">[</span>
-    <span style="color:#f92672">{</span>
-      <span style="color:#e6db74">&#34;links&#34;</span>: <span style="color:#f92672">[</span>
-        <span style="color:#f92672">{</span>
-          <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;self&#34;</span>,
-          <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-          <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters/cluster-1&#34;</span>
-        <span style="color:#f92672">}</span>,
-        <span style="color:#f92672">{</span>
-          <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;canonical&#34;</span>,
-          <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-          <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters/cluster-1&#34;</span>
-        <span style="color:#f92672">}</span>
-      <span style="color:#f92672">]</span>,
-      <span style="color:#e6db74">&#34;cluster&#34;</span>: <span style="color:#e6db74">&#34;cluster-1&#34;</span>
-    <span style="color:#f92672">}</span>
-  <span style="color:#f92672">]</span>
-<span style="color:#f92672">}</span>
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters
+</span></span><span style="display:flex;"><span>Ready to call operator REST APIs
+</span></span><span style="display:flex;"><span>Note: Unnecessary use of -X or --request, GET is already inferred.
+</span></span><span style="display:flex;"><span>  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+</span></span><span style="display:flex;"><span>                                 Dload  Upload   Total   Spent    Left  Speed
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> --:--:-- --:--:-- --:--:--     0*   Trying 10.139.151.214...
+</span></span><span style="display:flex;"><span>* TCP_NODELAY set
+</span></span><span style="display:flex;"><span>* Connected to kubernetes001 <span style="color:#f92672">(</span>10.1.2.3<span style="color:#f92672">)</span> port <span style="color:#ae81ff">31001</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)</span>
+</span></span><span style="display:flex;"><span>* ALPN, offering h2
+</span></span><span style="display:flex;"><span>* ALPN, offering http/1.1
+</span></span><span style="display:flex;"><span>* Cipher selection: ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
+</span></span><span style="display:flex;"><span>* error setting certificate verify locations, continuing anyway:
+</span></span><span style="display:flex;"><span>*   CAfile: /tmp/operator.cert.pem
+</span></span><span style="display:flex;"><span>  CApath: none
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS handshake, Client hello <span style="color:#f92672">(</span>1<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">512</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Server hello <span style="color:#f92672">(</span>2<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">81</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Certificate <span style="color:#f92672">(</span>11<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">799</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Server key exchange <span style="color:#f92672">(</span>12<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">413</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Server finished <span style="color:#f92672">(</span>14<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">4</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS handshake, Client key exchange <span style="color:#f92672">(</span>16<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">150</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS change cipher, Client hello <span style="color:#f92672">(</span>1<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">1</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>OUT<span style="color:#f92672">)</span>, TLS handshake, Finished <span style="color:#f92672">(</span>20<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">16</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS change cipher, Client hello <span style="color:#f92672">(</span>1<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">1</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* TLSv1.2 <span style="color:#f92672">(</span>IN<span style="color:#f92672">)</span>, TLS handshake, Finished <span style="color:#f92672">(</span>20<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">16</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256
+</span></span><span style="display:flex;"><span>* ALPN, server did not agree to a protocol
+</span></span><span style="display:flex;"><span>* Server certificate:
+</span></span><span style="display:flex;"><span>*  subject: CN<span style="color:#f92672">=</span>weblogic-operator
+</span></span><span style="display:flex;"><span>*  start date: Jan <span style="color:#ae81ff">18</span> 16:30:01 <span style="color:#ae81ff">2018</span> GMT
+</span></span><span style="display:flex;"><span>*  expire date: Jan <span style="color:#ae81ff">16</span> 16:30:01 <span style="color:#ae81ff">2028</span> GMT
+</span></span><span style="display:flex;"><span>*  issuer: CN<span style="color:#f92672">=</span>weblogic-operator
+</span></span><span style="display:flex;"><span>*  SSL certificate verify result: unable to get local issuer certificate <span style="color:#f92672">(</span>20<span style="color:#f92672">)</span>, continuing anyway.
+</span></span><span style="display:flex;"><span>&gt; GET /operator/latest/domains/domain1/clusters HTTP/1.1
+</span></span><span style="display:flex;"><span>&gt; Host: kubernetes001:31001
+</span></span><span style="display:flex;"><span>&gt; User-Agent: curl/7.54.0
+</span></span><span style="display:flex;"><span>&gt; Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ3ZWJsb2dpYy1vcGVyYXRvciIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQ <span style="color:#f92672">(</span>truncated<span style="color:#f92672">)</span> 1vcGVyYXRvcjp3ZWJsb2dpYy1vcGVyYXRvciJ9.NgaGR0NbzbJpVXguQDjRKyDBnNTqwgwPEXv3NjWwMcaf0OlN54apHubdrIx6KYz9ONGz-QeTLnoMChFY7oWA6CBfbvjt-GQX6JvdoJYxsQo1pt-E6sO2YvqTFE4EG-gpEDaiCE_OjZ_bBpJydhIiFReToA3-mxpDAUK2_rUfkWe5YEaLGMWoYQfXPAykzFiH4vqIi_tzzyzNnGxI2tUcBxNh3tzWFPGXKhzG18HswiwlFU5pe7XEYv4gJbvtV5tlGz7YdmH74Rc0dveV-54qHD_VDC5M7JZVh0ZDlyJMAmWe4YcdwNQQNGs91jqo1-JEM0Wj8iQSDE3cZj6MB0wrdg
+</span></span><span style="display:flex;"><span>&gt; Accept:application/json
+</span></span><span style="display:flex;"><span>&gt;
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> --:--:--  0:00:01 --:--:--     0&lt; HTTP/1.1 <span style="color:#ae81ff">200</span> OK
+</span></span><span style="display:flex;"><span>&lt; Content-Type: application/json
+</span></span><span style="display:flex;"><span>&lt; Content-Length: <span style="color:#ae81ff">463</span>
+</span></span><span style="display:flex;"><span>&lt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span> <span style="color:#f92672">[</span><span style="color:#ae81ff">463</span> bytes data<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">100</span>   <span style="color:#ae81ff">463</span>  <span style="color:#ae81ff">100</span>   <span style="color:#ae81ff">463</span>    <span style="color:#ae81ff">0</span>     <span style="color:#ae81ff">0</span>    <span style="color:#ae81ff">205</span>      <span style="color:#ae81ff">0</span>  0:00:02  0:00:02 --:--:--   <span style="color:#ae81ff">205</span>
+</span></span><span style="display:flex;"><span>* Connection <span style="color:#75715e">#0 to host kubernetes001 left intact</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;links&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;self&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;canonical&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;parent&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;items&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;links&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;self&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters/cluster-1&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;rel&#34;</span>: <span style="color:#e6db74">&#34;canonical&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;href&#34;</span>: <span style="color:#e6db74">&#34;/operator/latest/domains/domain1/clusters/cluster-1&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;cluster&#34;</span>: <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div>
 
 <footer class="footline">
 	
@@ -5466,19 +5466,19 @@ Note: Unnecessary use of -X or --request, GET is already inferred.
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664997071"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664997071"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664993355"></script>
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664997071"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

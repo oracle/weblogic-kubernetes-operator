@@ -14,7 +14,7 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/</guid>
       <description>Oracle strongly recommends storing the container images that contain a WebLogic domain home as private in the container registry. In addition to any local registry, public container registries include GitHub Container Registry and the Oracle Cloud Infrastructure Registry (OCIR).
- The WebLogic domain home that is part of a Domain in Image image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
+The WebLogic domain home that is part of a Domain in Image image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
     </item>
     
     <item>
@@ -24,7 +24,7 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</guid>
       <description>WebLogic T3 and administrative channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary.
- If exposing an administrative, RMI, EJB, JMS, or T3 capable channel using a load balancer, port forwarding, NodePorts, or similar, then limit access by using a custom dedicated WebLogic Server port that you have configured with the T3 or administration protocol (a network access point) instead of relaying the traffic to a default port, leverage two-way SSL, use controls like security lists, and/or set up a Bastion to provide access.</description>
+If exposing an administrative, RMI, EJB, JMS, or T3 capable channel using a load balancer, port forwarding, NodePorts, or similar, then limit access by using a custom dedicated WebLogic Server port that you have configured with the T3 or administration protocol (a network access point) instead of relaying the traffic to a default port, leverage two-way SSL, use controls like security lists, and/or set up a Bastion to provide access.</description>
     </item>
     
   </channel>

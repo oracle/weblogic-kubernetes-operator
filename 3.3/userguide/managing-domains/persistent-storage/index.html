@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Persistent storage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993358" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997074" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997074" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997074"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993358"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997074"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997074"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997074"></script>
 
     
   </div>
@@ -663,7 +663,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3260,37 +3260,37 @@
 <p>PersistentVolumes can point to different storage locations, for example NFS servers or a local directory path. The list of available options is listed in the <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">Kubernetes documentation</a>.</p>
 <p><strong>Note regarding HostPath</strong>: In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, <code>HOST_PATH</code> provides the simplest configuration.  In a multinode Kubernetes cluster, a <code>HOST_PATH</code> that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.</p>
 <p>The PersistentVolume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the <code>HOST_PATH</code> provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mkdir -m <span style="color:#ae81ff">777</span> -p /path/to/domain1PersistentVolume
-</code></pre></div><p><strong>Note regarding NFS</strong>: In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ mkdir -m <span style="color:#ae81ff">777</span> -p /path/to/domain1PersistentVolume
+</span></span></code></pre></div><p><strong>Note regarding NFS</strong>: In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.</p>
 <p>Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and <code>domain_home</code>), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.</p>
 <h4 id="persistentvolume-gid-annotation">PersistentVolume GID annotation</h4>
 <p>The <code>HOST_PATH</code> directory permissions can be made more secure by using a Kubernetes annotation on the
 PersistentVolume that provides the group identifier (GID) which will be added to pods using the PersistentVolume.</p>
 <p>For example, if the GID of the directory is <code>6789</code>, then the directory can be updated to remove permissions
 other than for the user and group along with the PersistentVolume being annotated with the specified GID:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ chmod <span style="color:#ae81ff">770</span> /path/to/domain1PersistentVolume
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid<span style="color:#f92672">=</span><span style="color:#ae81ff">6789</span>
-</code></pre></div><p>After the domain is created and servers are running, the group ownership of the PersistentVolume files
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ chmod <span style="color:#ae81ff">770</span> /path/to/domain1PersistentVolume
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid<span style="color:#f92672">=</span><span style="color:#ae81ff">6789</span>
+</span></span></code></pre></div><p>After the domain is created and servers are running, the group ownership of the PersistentVolume files
 can be updated to the specified GID which will provide read access to the group members. Typically,
 files created from a pod onto the PersistentVolume will have UID <code>1000</code> and GID <code>1000</code> which is the
 <code>oracle</code> user from the WebLogic Server image.</p>
 <p>An example of updating the group ownership on the PersistentVolume would be as follows:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /path/to/domain1PersistentVolume
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sudo chgrp <span style="color:#ae81ff">6789</span> applications domains logs stores
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sudo chgrp -R <span style="color:#ae81ff">6789</span> domains/
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sudo chgrp -R <span style="color:#ae81ff">6789</span> logs/
-</code></pre></div><h3 id="yaml-files">YAML files</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /path/to/domain1PersistentVolume
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo chgrp <span style="color:#ae81ff">6789</span> applications domains logs stores
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo chgrp -R <span style="color:#ae81ff">6789</span> domains/
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo chgrp -R <span style="color:#ae81ff">6789</span> logs/
+</span></span></code></pre></div><h3 id="yaml-files">YAML files</h3>
 <p>Persistent volumes and claims are described in YAML files. For each PersistentVolume, you should create one PersistentVolume YAML file and one PersistentVolumeClaim YAML file. In the example below, you will find two YAML templates, one for the volume and one for the claim. As stated above, they either can be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with <code>weblogic.domainUID=[domain name]</code>. This makes it easy to search for, and clean up resources associated with that particular domain.</p>
-<p>For sample YAML templates, refer to the <a href="/weblogic-kubernetes-operator/3.3/samples/storage/">PersistentVolumes example</a>.</p>
+<p>For sample YAML templates, refer to the <a href="/samples/storage/">PersistentVolumes example</a>.</p>
 <h3 id="kubernetes-resources">Kubernetes resources</h3>
 <p>After you have written your YAML files, use them to create the PersistentVolume by creating Kubernetes resources using the <code>kubectl create -f</code> command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f pv.yaml
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f pvc.yaml
-</code></pre></div><h4 id="verify-the-results">Verify the results</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create -f pv.yaml
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create -f pvc.yaml
+</span></span></code></pre></div><h4 id="verify-the-results">Verify the results</h4>
 <p>To confirm that the PersistentVolume was created, use these commands:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe pv <span style="color:#f92672">[</span>persistent volume name<span style="color:#f92672">]</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe pvc -n NAMESPACE <span style="color:#f92672">[</span>persistent volume claim name<span style="color:#f92672">]</span>
-</code></pre></div><h3 id="common-problems">Common problems</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe pv <span style="color:#f92672">[</span>persistent volume name<span style="color:#f92672">]</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe pvc -n NAMESPACE <span style="color:#f92672">[</span>persistent volume claim name<span style="color:#f92672">]</span>
+</span></span></code></pre></div><h3 id="common-problems">Common problems</h3>
 <p>This section provides details of common problems that might occur while running the script and how to resolve them.</p>
 <h4 id="persistentvolume-provider-not-configured-correctly">PersistentVolume provider not configured correctly</h4>
 <p>Possibly the most common problem experienced during testing was the incorrect configuration of the PersistentVolume provider. The PersistentVolume must be accessible to all Kubernetes Nodes, and must be able to be mounted as Read/Write/Many. If this is not the case, the PersistentVolume creation will fail.</p>
@@ -5415,19 +5415,19 @@ files created from a pod onto the PersistentVolume will have UID <code>1000</cod
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997074"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997074"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997074"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993358"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997074"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

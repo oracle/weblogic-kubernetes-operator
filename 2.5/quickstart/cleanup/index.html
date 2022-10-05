@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Clean up :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664993348" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664997065" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664997065"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664993348"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664993348"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664997065"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664997065"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.5";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664993348"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664997065"></script>
 
     
   </div>
@@ -2587,71 +2587,71 @@
 <li>
 <p>Remove the domain&rsquo;s Ingress by using <code>helm</code>:</p>
 <p>For Helm 2.x:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm delete --purge sample-domain1-ingress
-</code></pre></div><p>For Helm 3.x:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm uninstall sample-domain1-ingress -n sample-domain1-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm delete --purge sample-domain1-ingress
+</span></span></code></pre></div><p>For Helm 3.x:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm uninstall sample-domain1-ingress -n sample-domain1-ns
+</span></span></code></pre></div></li>
 <li>
 <p>Remove the domain resources by using the sample <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh"><code>delete-weblogic-domain-resources</code></a> script:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+</span></span></code></pre></div></li>
 <li>
 <p>Use <code>kubectl</code> to confirm that the server pods and domain resource are gone:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pods -n sample-domain1-ns
-$ kubectl get domains -n sample-domain1-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl get pods -n sample-domain1-ns
+</span></span><span style="display:flex;"><span>$ kubectl get domains -n sample-domain1-ns
+</span></span></code></pre></div></li>
 </ol>
 <h4 id="remove-the-domain-namespace">Remove the domain namespace.</h4>
 <ol>
 <li>
 <p>Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm upgrade traefik-operator stable/traefik <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --namespace traefik <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --reuse-values <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --set <span style="color:#e6db74">&#34;kubernetes.namespaces={traefik}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --wait 
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm upgrade traefik-operator stable/traefik <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --namespace traefik <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --reuse-values <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --set <span style="color:#e6db74">&#34;kubernetes.namespaces={traefik}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --wait 
+</span></span></code></pre></div></li>
 <li>
 <p>Configure the operator to stop managing the domain:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm upgrade  sample-weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>              kubernetes/charts/weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace sample-weblogic-operator-ns <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --reuse-values <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaces={}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wait <span style="color:#ae81ff">\
-</span></code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm upgrade  sample-weblogic-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>              kubernetes/charts/weblogic-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace sample-weblogic-operator-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --reuse-values <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaces={}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wait <span style="color:#ae81ff">\
+</span></span></span></code></pre></div></li>
 <li>
 <p>Delete the domain namespace:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl delete namespace sample-domain1-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl delete namespace sample-domain1-ns
+</span></span></code></pre></div></li>
 </ol>
 <h4 id="remove-the-operator">Remove the operator.</h4>
 <ol>
 <li>
 <p>Remove the operator:</p>
 <p>For Helm 2.x:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm delete --purge sample-weblogic-operator
-</code></pre></div><p>For Helm 3.x:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm delete --purge sample-weblogic-operator
+</span></span></code></pre></div><p>For Helm 3.x:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
+</span></span></code></pre></div></li>
 <li>
 <p>Remove the operator&rsquo;s namespace:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl delete namespace sample-weblogic-operator-ns
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl delete namespace sample-weblogic-operator-ns
+</span></span></code></pre></div></li>
 </ol>
 <h4 id="remove-the-load-balancer">Remove the load balancer.</h4>
 <ol>
 <li>
 <p>Remove the Traefik load balancer:</p>
 <p>For Helm 2.x:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm delete --purge traefik-operator
-</code></pre></div><p>For Helm 3.x:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm uninstall traefik-operator -n traefik
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm delete --purge traefik-operator
+</span></span></code></pre></div><p>For Helm 3.x:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm uninstall traefik-operator -n traefik
+</span></span></code></pre></div></li>
 <li>
 <p>Remove the Traefik namespace:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl delete namespace traefik
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl delete namespace traefik
+</span></span></code></pre></div></li>
 </ol>
 
 
@@ -4384,19 +4384,19 @@ $ kubectl get domains -n sample-domain1-ns
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664997065"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664997065"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664993348" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664993348"></script>
+    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664997065" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664997065"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

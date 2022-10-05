@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Initial use case :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664993353" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664997069" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664997069"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664993353"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664997069"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664997069"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.1";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664997069"></script>
 
     
   </div>
@@ -3016,7 +3016,7 @@ If you are taking the <code>JRF</code> path through the sample, then substitute 
 </ul>
 <h4 id="understanding-your-first-archive">Understanding your first archive</h4>
 <p>The sample includes a predefined archive directory in <code>/tmp/mii-sample/archives/archive-v1</code> that you will use to create an archive ZIP file for the image.</p>
-<p>The archive top directory, named <code>wlsdeploy</code>, contains a directory named <code>applications</code>, which includes an &lsquo;exploded&rsquo; sample JSP web application in the directory, <code>myapp-v1</code>. Three useful aspects to remember about WDT archives are:</p>
+<p>The archive top directory, named <code>wlsdeploy</code>, contains a directory named <code>applications</code>, which includes an &rsquo;exploded&rsquo; sample JSP web application in the directory, <code>myapp-v1</code>. Three useful aspects to remember about WDT archives are:</p>
 <ul>
 <li>A model image can contain multiple WDT archives.</li>
 <li>WDT archives can contain multiple applications, libraries, and other components.</li>
@@ -3034,60 +3034,60 @@ If you are taking the <code>JRF</code> path through the sample, then substitute 
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>&lt;%-- Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates. --%&gt;
+        <pre tabindex="0"><code>&lt;%-- Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates. --%&gt;
 &lt;%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%&gt;
-&lt;%@ page import=&quot;javax.naming.InitialContext&quot; %&gt;
-&lt;%@ page import=&quot;javax.management.*&quot; %&gt;
-&lt;%@ page import=&quot;java.io.*&quot; %&gt;
+&lt;%@ page import=&#34;javax.naming.InitialContext&#34; %&gt;
+&lt;%@ page import=&#34;javax.management.*&#34; %&gt;
+&lt;%@ page import=&#34;java.io.*&#34; %&gt;
 &lt;%
   InitialContext ic = null;
   try {
     ic = new InitialContext();
 
-    String srName=System.getProperty(&quot;weblogic.Name&quot;);
-    String domainUID=System.getenv(&quot;DOMAIN_UID&quot;);
-    String domainName=System.getenv(&quot;CUSTOM_DOMAIN_NAME&quot;);
+    String srName=System.getProperty(&#34;weblogic.Name&#34;);
+    String domainUID=System.getenv(&#34;DOMAIN_UID&#34;);
+    String domainName=System.getenv(&#34;CUSTOM_DOMAIN_NAME&#34;);
 
-    out.println(&quot;&lt;html&gt;&lt;body&gt;&lt;pre&gt;&quot;);
-    out.println(&quot;*****************************************************************&quot;);
+    out.println(&#34;&lt;html&gt;&lt;body&gt;&lt;pre&gt;&#34;);
+    out.println(&#34;*****************************************************************&#34;);
     out.println();
-    out.println(&quot;Hello World! This is version 'v1' of the mii-sample JSP web-app.&quot;);
+    out.println(&#34;Hello World! This is version &#39;v1&#39; of the mii-sample JSP web-app.&#34;);
     out.println();
-    out.println(&quot;Welcome to WebLogic Server '&quot; + srName + &quot;'!&quot;);
+    out.println(&#34;Welcome to WebLogic Server &#39;&#34; + srName + &#34;&#39;!&#34;);
     out.println();
-    out.println(&quot; domain UID  = '&quot; + domainUID +&quot;'&quot;);
-    out.println(&quot; domain name = '&quot; + domainName +&quot;'&quot;);
+    out.println(&#34; domain UID  = &#39;&#34; + domainUID +&#34;&#39;&#34;);
+    out.println(&#34; domain name = &#39;&#34; + domainName +&#34;&#39;&#34;);
     out.println();
 
-    MBeanServer mbs = (MBeanServer)ic.lookup(&quot;java:comp/env/jmx/runtime&quot;);
+    MBeanServer mbs = (MBeanServer)ic.lookup(&#34;java:comp/env/jmx/runtime&#34;);
 
-    // display the current server's cluster name
-    Set&lt;ObjectInstance&gt; clusterRuntimes = mbs.queryMBeans(new ObjectName(&quot;*:Type=ClusterRuntime,*&quot;), null);
-    out.println(&quot;Found &quot; + clusterRuntimes.size() + &quot; local cluster runtime&quot; + (String)((clusterRuntimes.size()!=1)?&quot;s:&quot;:&quot;:&quot;));
+    // display the current server&#39;s cluster name
+    Set&lt;ObjectInstance&gt; clusterRuntimes = mbs.queryMBeans(new ObjectName(&#34;*:Type=ClusterRuntime,*&#34;), null);
+    out.println(&#34;Found &#34; + clusterRuntimes.size() + &#34; local cluster runtime&#34; + (String)((clusterRuntimes.size()!=1)?&#34;s:&#34;:&#34;:&#34;));
     for (ObjectInstance clusterRuntime : clusterRuntimes) {
-       String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), &quot;Name&quot;);
-       out.println(&quot;  Cluster '&quot; + cName + &quot;'&quot;);
+       String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), &#34;Name&#34;);
+       out.println(&#34;  Cluster &#39;&#34; + cName + &#34;&#39;&#34;);
     }
     out.println();
 
 
     // display local data sources
-    ObjectName jdbcRuntime = new ObjectName(&quot;com.bea:ServerRuntime=&quot; + srName + &quot;,Name=&quot; + srName + &quot;,Type=JDBCServiceRuntime&quot;);
-    ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, &quot;JDBCDataSourceRuntimeMBeans&quot;);
-    out.println(&quot;Found &quot; + dataSources.length + &quot; local data source&quot; + (String)((dataSources.length!=1)?&quot;s:&quot;:&quot;:&quot;));
+    ObjectName jdbcRuntime = new ObjectName(&#34;com.bea:ServerRuntime=&#34; + srName + &#34;,Name=&#34; + srName + &#34;,Type=JDBCServiceRuntime&#34;);
+    ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, &#34;JDBCDataSourceRuntimeMBeans&#34;);
+    out.println(&#34;Found &#34; + dataSources.length + &#34; local data source&#34; + (String)((dataSources.length!=1)?&#34;s:&#34;:&#34;:&#34;));
     for (ObjectName dataSource : dataSources) {
-       String dsName  = (String)mbs.getAttribute(dataSource, &quot;Name&quot;);
-       String dsState = (String)mbs.getAttribute(dataSource, &quot;State&quot;);
-       out.println(&quot;  Datasource '&quot; + dsName + &quot;': State='&quot; + dsState +&quot;'&quot;);
+       String dsName  = (String)mbs.getAttribute(dataSource, &#34;Name&#34;);
+       String dsState = (String)mbs.getAttribute(dataSource, &#34;State&#34;);
+       out.println(&#34;  Datasource &#39;&#34; + dsName + &#34;&#39;: State=&#39;&#34; + dsState +&#34;&#39;&#34;);
     }
     out.println();
 
-    out.println(&quot;*****************************************************************&quot;);
+    out.println(&#34;*****************************************************************&#34;);
 
   } catch (Throwable t) {
     t.printStackTrace(new PrintStream(response.getOutputStream()));
   } finally {
-    out.println(&quot;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;&quot;);
+    out.println(&#34;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;&#34;);
     if (ic != null) ic.close();
   }
 %&gt;
@@ -3098,7 +3098,7 @@ If you are taking the <code>JRF</code> path through the sample, then substitute 
 <h4 id="staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</h4>
 <p>When you create the image, you will use the files in the staging directory, <code>/tmp/mii-sample/model-in-image__WLS-v1</code>. In preparation, you need it to contain a ZIP file of the WDT application archive.</p>
 <p>Run the following commands to create your application archive ZIP file and put it in the expected directory:</p>
-<pre><code># Delete existing archive.zip in case we have an old leftover version
+<pre tabindex="0"><code># Delete existing archive.zip in case we have an old leftover version
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
 # Move to the directory which contains the source files for our archive
@@ -3108,39 +3108,39 @@ $ cd /tmp/mii-sample/archives/archive-v1
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 </code></pre><h4 id="staging-model-files">Staging model files</h4>
 <p>In this step, you explore the staged WDT model YAML file and properties in the <code>/tmp/mii-sample/model-in-image__WLS-v1</code> directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, <code>model.10.properties</code>, a file with a single property, and, <code>model.10.yaml</code>, a YAML file with your WebLogic configuration <code>model.10.yaml</code>.</p>
-<pre><code>CLUSTER_SIZE=5
+<pre tabindex="0"><code>CLUSTER_SIZE=5
 </code></pre><p>Here is the WLS <code>model.10.yaml</code>:</p>
-<pre><code>domainInfo:
-    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
-    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ServerStartMode: 'prod'
+<pre tabindex="0"><code>domainInfo:
+    AdminUserName: &#39;@@SECRET:__weblogic-credentials__:username@@&#39;
+    AdminPassword: &#39;@@SECRET:__weblogic-credentials__:password@@&#39;
+    ServerStartMode: &#39;prod&#39;
 
 topology:
-    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
-    AdminServerName: 'admin-server'
+    Name: &#39;@@ENV:CUSTOM_DOMAIN_NAME@@&#39;
+    AdminServerName: &#39;admin-server&#39;
     Cluster:
-        'cluster-1':
+        &#39;cluster-1&#39;:
             DynamicServers:
-                ServerTemplate:  'cluster-1-template'
-                ServerNamePrefix: 'managed-server'
-                DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
-                MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
-                MinDynamicClusterSize: '0'
+                ServerTemplate:  &#39;cluster-1-template&#39;
+                ServerNamePrefix: &#39;managed-server&#39;
+                DynamicClusterSize: &#39;@@PROP:CLUSTER_SIZE@@&#39;
+                MaxDynamicClusterSize: &#39;@@PROP:CLUSTER_SIZE@@&#39;
+                MinDynamicClusterSize: &#39;0&#39;
                 CalculatedListenPorts: false
     Server:
-        'admin-server':
+        &#39;admin-server&#39;:
             ListenPort: 7001
     ServerTemplate:
-        'cluster-1-template':
-            Cluster: 'cluster-1'
+        &#39;cluster-1-template&#39;:
+            Cluster: &#39;cluster-1&#39;
             ListenPort: 8001
 
 appDeployments:
     Application:
         myapp:
-            SourcePath: 'wlsdeploy/applications/myapp-v1'
+            SourcePath: &#39;wlsdeploy/applications/myapp-v1&#39;
             ModuleType: ear
-            Target: 'cluster-1'
+            Target: &#39;cluster-1&#39;
 </code></pre>
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -3153,42 +3153,42 @@ appDeployments:
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>domainInfo:
-    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
-    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ServerStartMode: 'prod'
+        <pre tabindex="0"><code>domainInfo:
+    AdminUserName: &#39;@@SECRET:__weblogic-credentials__:username@@&#39;
+    AdminPassword: &#39;@@SECRET:__weblogic-credentials__:password@@&#39;
+    ServerStartMode: &#39;prod&#39;
     RCUDbInfo:
-        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
-        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
-        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+        rcu_prefix: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@&#39;
+        rcu_schema_password: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@&#39;
+        rcu_db_conn_string: &#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@&#39;
 
 topology:
-    AdminServerName: 'admin-server'
-    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
+    AdminServerName: &#39;admin-server&#39;
+    Name: &#39;@@ENV:CUSTOM_DOMAIN_NAME@@&#39;
     Cluster:
-        'cluster-1':
+        &#39;cluster-1&#39;:
     Server:
-        'admin-server':
+        &#39;admin-server&#39;:
             ListenPort: 7001
-        'managed-server1-c1-':
-            Cluster: 'cluster-1'
+        &#39;managed-server1-c1-&#39;:
+            Cluster: &#39;cluster-1&#39;
             ListenPort: 8001
-        'managed-server2-c1-':
-            Cluster: 'cluster-1'
+        &#39;managed-server2-c1-&#39;:
+            Cluster: &#39;cluster-1&#39;
             ListenPort: 8001
-        'managed-server3-c1-':
-            Cluster: 'cluster-1'
+        &#39;managed-server3-c1-&#39;:
+            Cluster: &#39;cluster-1&#39;
             ListenPort: 8001
-        'managed-server4-c1-':
-            Cluster: 'cluster-1'
+        &#39;managed-server4-c1-&#39;:
+            Cluster: &#39;cluster-1&#39;
             ListenPort: 8001
 
 appDeployments:
     Application:
         myapp:
-            SourcePath: 'wlsdeploy/applications/myapp-v1'
+            SourcePath: &#39;wlsdeploy/applications/myapp-v1&#39;
             ModuleType: ear
-            Target: 'cluster-1'
+            Target: &#39;cluster-1&#39;
 </code></pre>
     </div>
 </div>
@@ -3236,7 +3236,7 @@ appDeployments:
 <p>If you don&rsquo;t see the <code>weblogic-deploy.zip</code> file, then you missed a step in the <a href="/weblogic-kubernetes-operator/3.1/samples/simple/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
 <p>Now, you use the Image Tool to create an image named <code>model-in-image:WLS-v1</code> that&rsquo;s layered on a base WebLogic image. You&rsquo;ve already set up this tool during the prerequisite steps.</p>
 <p>Run the following commands to create the model image and verify that it worked:</p>
-<pre><code>$ cd /tmp/mii-sample/model-images
+<pre tabindex="0"><code>$ cd /tmp/mii-sample/model-images
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
   --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
@@ -3259,7 +3259,7 @@ $ ./imagetool/bin/imagetool.sh update \
 <li>Copies the specified WDT model, properties, and application archives to image location <code>/u01/wdt/models</code>.</li>
 </ul>
 <p>When the command succeeds, it should end with output like the following:</p>
-<pre><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
+<pre tabindex="0"><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
 </code></pre><p>Also, if you run the <code>docker images</code> command, then you will see an image named <code>model-in-image:WLS-v1</code>.</p>
 <blockquote>
 <p>Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See <a href="#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
@@ -3282,7 +3282,7 @@ $ ./imagetool/bin/imagetool.sh update \
 <h4 id="secrets">Secrets</h4>
 <p>First, create the secrets needed by both <code>WLS</code> and <code>JRF</code> type model domains. In this case, you have two secrets.</p>
 <p>Run the following <code>kubectl</code> commands to deploy the required secrets:</p>
-<pre><code>$ kubectl -n sample-domain1-ns create secret generic \
+<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
    --from-literal=username=weblogic --from-literal=password=welcome1
 $ kubectl -n sample-domain1-ns label  secret \
@@ -3330,7 +3330,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 </ul>
 </li>
 </ul>
-<p>If you&rsquo;re following the <code>JRF</code> path through the sample, then you also need to deploy the additional secret referenced by macros in the <code>JRF</code> model <code>RCUDbInfo</code> clause, plus an <code>OPSS</code> wallet password secret. For details about the uses of these secrets, see the <a href="/weblogic-kubernetes-operator/3.1/userguide/managing-domains/model-in-image/">Model in Image</a> user documentation.</p>
+<p>If you&rsquo;re following the <code>JRF</code> path through the sample, then you also need to deploy the additional secret referenced by macros in the <code>JRF</code> model <code>RCUDbInfo</code> clause, plus an <code>OPSS</code> wallet password secret. For details about the uses of these secrets, see the <a href="/userguide/managing-domains/model-in-image/">Model in Image</a> user documentation.</p>
 
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -3343,7 +3343,7 @@ $ kubectl -n sample-domain1-ns label  secret \
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>$ kubectl -n sample-domain1-ns create secret generic \
+        <pre tabindex="0"><code>$ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-rcu-access \
    --from-literal=rcu_prefix=FMW1 \
    --from-literal=rcu_schema_password=Oradoc_db1 \
@@ -3376,10 +3376,10 @@ $ kubectl -n sample-domain1-ns label  secret \
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>  #
+        <pre tabindex="0"><code>  #
   # This is an example of how to define a Domain resource.
   #
-  apiVersion: &quot;weblogic.oracle/v8&quot;
+  apiVersion: &#34;weblogic.oracle/v8&#34;
   kind: Domain
   metadata:
     name: sample-domain1
@@ -3388,58 +3388,58 @@ $ kubectl -n sample-domain1-ns label  secret \
       weblogic.domainUID: sample-domain1
 
   spec:
-    # Set to 'FromModel' to indicate 'Model in Image'.
+    # Set to &#39;FromModel&#39; to indicate &#39;Model in Image&#39;.
     domainHomeSourceType: FromModel
 
     # The WebLogic Domain Home, this must be a location within
-    # the image for 'Model in Image' domains.
+    # the image for &#39;Model in Image&#39; domains.
     domainHome: /u01/domains/sample-domain1
 
     # The WebLogic Server image that the Operator uses to start the domain
-    image: &quot;model-in-image:WLS-v1&quot;
+    image: &#34;model-in-image:WLS-v1&#34;
 
-    # Defaults to &quot;Always&quot; if image tag (version) is ':latest'
-    imagePullPolicy: &quot;IfNotPresent&quot;
+    # Defaults to &#34;Always&#34; if image tag (version) is &#39;:latest&#39;
+    imagePullPolicy: &#34;IfNotPresent&#34;
 
     # Identify which Secret contains the credentials for pulling an image
     #imagePullSecrets:
     #- name: regsecret
 
     # Identify which Secret contains the WebLogic Admin credentials,
-    # the secret must contain 'username' and 'password' fields.
+    # the secret must contain &#39;username&#39; and &#39;password&#39; fields.
     webLogicCredentialsSecret:
       name: sample-domain1-weblogic-credentials
 
-    # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
+    # Whether to include the WebLogic Server stdout in the pod&#39;s stdout, default is true
     includeServerOutInPodLog: true
 
-    # Whether to enable overriding your log file location, see also 'logHome'
+    # Whether to enable overriding your log file location, see also &#39;logHome&#39;
     #logHomeEnabled: false
 
     # The location for domain log, server logs, server out, introspector out, and Node Manager log files
-    # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
+    # see also &#39;logHomeEnabled&#39;, &#39;volumes&#39;, and &#39;volumeMounts&#39;.
     #logHome: /shared/logs/sample-domain1
 
     # Set which WebLogic Servers the Operator will start
-    # - &quot;NEVER&quot; will not start any server in the domain
-    # - &quot;ADMIN_ONLY&quot; will start up only the administration server (no managed servers will be started)
-    # - &quot;IF_NEEDED&quot; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-    serverStartPolicy: &quot;IF_NEEDED&quot;
+    # - &#34;NEVER&#34; will not start any server in the domain
+    # - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)
+    # - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+    serverStartPolicy: &#34;IF_NEEDED&#34;
 
     # Settings for all server pods in the domain including the introspector job pod
     serverPod:
-      # Optional new or overridden environment variables for the domain's pods
+      # Optional new or overridden environment variables for the domain&#39;s pods
       # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
       #   to set the WebLogic domain name
       env:
       - name: CUSTOM_DOMAIN_NAME
-        value: &quot;domain1&quot;
+        value: &#34;domain1&#34;
       - name: JAVA_OPTIONS
-        value: &quot;-Dweblogic.StdoutDebugEnabled=false&quot;
+        value: &#34;-Dweblogic.StdoutDebugEnabled=false&#34;
       - name: USER_MEM_ARGS
-        value: &quot;-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom &quot;
+        value: &#34;-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom &#34;
 
-      # Optional volumes and mounts for the domain's pods. See also 'logHome'.
+      # Optional volumes and mounts for the domain&#39;s pods. See also &#39;logHome&#39;.
       #volumes:
       #- name: weblogic-domain-storage-volume
       #  persistentVolumeClaim:
@@ -3448,12 +3448,12 @@ $ kubectl -n sample-domain1-ns label  secret \
       #- mountPath: /shared
       #  name: weblogic-domain-storage-volume
 
-    # The desired behavior for starting the domain's administration server.
+    # The desired behavior for starting the domain&#39;s administration server.
     adminServer:
-      # The serverStartState legal values are &quot;RUNNING&quot; or &quot;ADMIN&quot;
-      # &quot;RUNNING&quot; means the listed server will be started up to &quot;RUNNING&quot; mode
-      # &quot;ADMIN&quot; means the listed server will be start up to &quot;ADMIN&quot; mode
-      serverStartState: &quot;RUNNING&quot;
+      # The serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;
+      # &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode
+      # &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode
+      serverStartState: &#34;RUNNING&#34;
       # Setup a Kubernetes node port for the administration server default channel
       #adminService:
       #  channels:
@@ -3463,28 +3463,28 @@ $ kubectl -n sample-domain1-ns label  secret \
     # The number of managed servers to start for unlisted clusters
     replicas: 1
 
-    # The desired behavior for starting a specific cluster's member servers
+    # The desired behavior for starting a specific cluster&#39;s member servers
     clusters:
     - clusterName: cluster-1
-      serverStartState: &quot;RUNNING&quot;
+      serverStartState: &#34;RUNNING&#34;
       replicas: 2
 
     # Change the `restartVersion` to force the introspector job to rerun
     # and apply any new model configuration, to also force a subsequent
-    # roll of your domain's WebLogic Server pods.
-    restartVersion: '1'
+    # roll of your domain&#39;s WebLogic Server pods.
+    restartVersion: &#39;1&#39;
 
     configuration:
 
-      # Settings for domainHomeSourceType 'FromModel'
+      # Settings for domainHomeSourceType &#39;FromModel&#39;
       model:
-        # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-        domainType: &quot;WLS&quot;
+        # Valid model domain types are &#39;WLS&#39;, &#39;JRF&#39;, and &#39;RestrictedJRF&#39;, default is &#39;WLS&#39;
+        domainType: &#34;WLS&#34;
 
         # Optional configmap for additional models and variable files
         #configMap: sample-domain1-wdt-config-map
 
-        # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+        # All &#39;FromModel&#39; domains require a runtimeEncryptionSecret with a &#39;password&#39; field
         runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 
       # Secrets that are referenced by model yaml macros
@@ -3506,12 +3506,12 @@ $ kubectl -n sample-domain1-ns label  secret \
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code># Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+        <pre tabindex="0"><code># Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: &quot;weblogic.oracle/v8&quot;
+apiVersion: &#34;weblogic.oracle/v8&#34;
 kind: Domain
 metadata:
   name: sample-domain1
@@ -3520,58 +3520,58 @@ metadata:
     weblogic.domainUID: sample-domain1
 
 spec:
-  # Set to 'FromModel' to indicate 'Model in Image'.
+  # Set to &#39;FromModel&#39; to indicate &#39;Model in Image&#39;.
   domainHomeSourceType: FromModel
 
   # The WebLogic Domain Home, this must be a location within
-  # the image for 'Model in Image' domains.
+  # the image for &#39;Model in Image&#39; domains.
   domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
-  image: &quot;model-in-image:JRF-v1&quot;
+  image: &#34;model-in-image:JRF-v1&#34;
 
-  # Defaults to &quot;Always&quot; if image tag (version) is ':latest'
-  imagePullPolicy: &quot;IfNotPresent&quot;
+  # Defaults to &#34;Always&#34; if image tag (version) is &#39;:latest&#39;
+  imagePullPolicy: &#34;IfNotPresent&#34;
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name: regsecret
 
   # Identify which Secret contains the WebLogic Admin credentials,
-  # the secret must contain 'username' and 'password' fields.
+  # the secret must contain &#39;username&#39; and &#39;password&#39; fields.
   webLogicCredentialsSecret:
     name: sample-domain1-weblogic-credentials
 
-  # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
+  # Whether to include the WebLogic Server stdout in the pod&#39;s stdout, default is true
   includeServerOutInPodLog: true
 
-  # Whether to enable overriding your log file location, see also 'logHome'
+  # Whether to enable overriding your log file location, see also &#39;logHome&#39;
   #logHomeEnabled: false
 
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
-  # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
+  # see also &#39;logHomeEnabled&#39;, &#39;volumes&#39;, and &#39;volumeMounts&#39;.
   #logHome: /shared/logs/sample-domain1
 
   # Set which WebLogic Servers the Operator will start
-  # - &quot;NEVER&quot; will not start any server in the domain
-  # - &quot;ADMIN_ONLY&quot; will start up only the administration server (no managed servers will be started)
-  # - &quot;IF_NEEDED&quot; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-  serverStartPolicy: &quot;IF_NEEDED&quot;
+  # - &#34;NEVER&#34; will not start any server in the domain
+  # - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)
+  # - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+  serverStartPolicy: &#34;IF_NEEDED&#34;
 
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
-    # Optional new or overridden environment variables for the domain's pods
+    # Optional new or overridden environment variables for the domain&#39;s pods
     # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
     #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
-      value: &quot;domain1&quot;
+      value: &#34;domain1&#34;
     - name: JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false&quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false&#34;
     - name: USER_MEM_ARGS
-      value: &quot;-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom &#34;
 
-    # Optional volumes and mounts for the domain's pods. See also 'logHome'.
+    # Optional volumes and mounts for the domain&#39;s pods. See also &#39;logHome&#39;.
     #volumes:
     #- name: weblogic-domain-storage-volume
     #  persistentVolumeClaim:
@@ -3580,12 +3580,12 @@ spec:
     #- mountPath: /shared
     #  name: weblogic-domain-storage-volume
 
-  # The desired behavior for starting the domain's administration server.
+  # The desired behavior for starting the domain&#39;s administration server.
   adminServer:
-    # The serverStartState legal values are &quot;RUNNING&quot; or &quot;ADMIN&quot;
-    # &quot;RUNNING&quot; means the listed server will be started up to &quot;RUNNING&quot; mode
-    # &quot;ADMIN&quot; means the listed server will be start up to &quot;ADMIN&quot; mode
-    serverStartState: &quot;RUNNING&quot;
+    # The serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;
+    # &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode
+    # &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode
+    serverStartState: &#34;RUNNING&#34;
     # Setup a Kubernetes node port for the administration server default channel
     #adminService:
     #  channels:
@@ -3595,28 +3595,28 @@ spec:
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The desired behavior for starting a specific cluster&#39;s member servers
   clusters:
   - clusterName: cluster-1
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
     replicas: 2
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
-  # roll of your domain's WebLogic Server pods.
-  restartVersion: '1'
+  # roll of your domain&#39;s WebLogic Server pods.
+  restartVersion: &#39;1&#39;
 
   configuration:
 
-    # Settings for domainHomeSourceType 'FromModel'
+    # Settings for domainHomeSourceType &#39;FromModel&#39;
     model:
-      # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: &quot;JRF&quot;
+      # Valid model domain types are &#39;WLS&#39;, &#39;JRF&#39;, and &#39;RestrictedJRF&#39;, default is &#39;WLS&#39;
+      domainType: &#34;JRF&#34;
 
       # Optional configmap for additional models and variable files
       #configMap: sample-domain1-wdt-config-map
 
-      # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+      # All &#39;FromModel&#39; domains require a runtimeEncryptionSecret with a &#39;password&#39; field
       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 
     # Secrets that are referenced by model yaml macros
@@ -3639,10 +3639,10 @@ spec:
     </div>
 </div>
 <blockquote>
-<p><strong>Note</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/weblogic-kubernetes-operator/3.1/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+<p><strong>Note</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
 </blockquote>
 <p>Run the following command to create the domain custom resource:</p>
-<pre><code>$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+<pre tabindex="0"><code>$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
 </code></pre><blockquote>
 <p>Note: If you are choosing <em>not</em> to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it <code>/tmp/mii-sample/mii-initial.yaml</code>.</p>
 </blockquote>
@@ -3659,7 +3659,7 @@ spec:
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>$ kubectl get pods -n sample-domain1-ns --watch
+        <pre tabindex="0"><code>$ kubectl get pods -n sample-domain1-ns --watch
 NAME                                         READY   STATUS    RESTARTS   AGE
 sample-domain1-introspector-lqqj9   0/1   Pending   0     0s
 sample-domain1-introspector-lqqj9   0/1   ContainerCreating   0     0s
@@ -3694,7 +3694,7 @@ sample-domain1-managed-server2   1/1   Running   0     42s
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>$ ./wl-pod-wait.sh -?
+        <pre tabindex="0"><code>$ ./wl-pod-wait.sh -?
 
   Usage:
 
@@ -3703,25 +3703,25 @@ sample-domain1-managed-server2   1/1   Running   0     42s
        [-t timeout_secs] \
        [-q]
 
-    Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+    Exits non-zero if &#39;timeout_secs&#39; is reached before &#39;pod_count&#39; is reached.
 
   Parameters:
 
-    -d &lt;domain_uid&gt; : Defaults to 'sample-domain1'.
+    -d &lt;domain_uid&gt; : Defaults to &#39;sample-domain1&#39;.
 
-    -n &lt;namespace&gt;  : Defaults to 'sample-domain1-ns'.
+    -n &lt;namespace&gt;  : Defaults to &#39;sample-domain1-ns&#39;.
 
-    pod_count &gt; 0   : Wait until exactly 'pod_count' WebLogic Server pods for
+    pod_count &gt; 0   : Wait until exactly &#39;pod_count&#39; WebLogic Server pods for
                       a domain all (a) are ready, (b) have the same
-                      'domainRestartVersion' label value as the
-                      current Domain's 'spec.restartVersion, and
-                      (c) have the same image as the current Domain's
+                      &#39;domainRestartVersion&#39; label value as the
+                      current Domain&#39;s &#39;spec.restartVersion, and
+                      (c) have the same image as the current Domain&#39;s
                       image.
 
     pod_count = 0   : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
 
-    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to '1000'.
+    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to &#39;1000&#39;.
 
     -q              : Quiet mode. Show only a count of wl pods that
                       have reached the desired criteria.
@@ -3742,78 +3742,77 @@ sample-domain1-managed-server2   1/1   Running   0     42s
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <pre><code>@@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-@@ [2020-04-30T13:50:42][seconds=0] Info:   ready='true'
-@@ [2020-04-30T13:50:42][seconds=0] Info:   image='model-in-image:WLS-v1'
-@@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion='1'
-@@ [2020-04-30T13:50:42][seconds=0] Info:   namespace='sample-domain1-ns'
-@@ [2020-04-30T13:50:42][seconds=0] Info:   domainUID='sample-domain1'
+        <pre tabindex="0"><code>@@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 1000 seconds for exactly &#39;3&#39; WebLogic Server pods to reach the following criteria:
+@@ [2020-04-30T13:50:42][seconds=0] Info:   ready=&#39;true&#39;
+@@ [2020-04-30T13:50:42][seconds=0] Info:   image=&#39;model-in-image:WLS-v1&#39;
+@@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion=&#39;1&#39;
+@@ [2020-04-30T13:50:42][seconds=0] Info:   namespace=&#39;sample-domain1-ns&#39;
+@@ [2020-04-30T13:50:42][seconds=0] Info:   domainUID=&#39;sample-domain1&#39;
 
-@@ [2020-04-30T13:50:42][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:50:42][seconds=0] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:50:42][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                          VERSION  IMAGE  READY  PHASE
 --------------------------------------------  -------  -----  -----  ---------
-'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Pending'
+&#39;sample-domain1-introspector-rkdkg&#39;           &#39;&#39;       &#39;&#39;     &#39;&#39;     &#39;Pending&#39;
 
-@@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:50:45][seconds=3] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                          VERSION  IMAGE  READY  PHASE
 --------------------------------------------  -------  -----  -----  ---------
-'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Running'
+&#39;sample-domain1-introspector-rkdkg&#39;           &#39;&#39;       &#39;&#39;     &#39;&#39;     &#39;Running&#39;
 
 
-@@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:51:50][seconds=68] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:51:50][seconds=68] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME  VERSION  IMAGE  READY  PHASE
 ----  -------  -----  -----  -----
 
-@@ [2020-04-30T13:51:59][seconds=77] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:51:59][seconds=77] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:51:59][seconds=77] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                           VERSION  IMAGE                    READY    PHASE
 -----------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+&#39;sample-domain1-admin-server&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
-@@ [2020-04-30T13:52:02][seconds=80] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:52:02][seconds=80] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:52:02][seconds=80] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                           VERSION  IMAGE                    READY    PHASE
 -----------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+&#39;sample-domain1-admin-server&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-04-30T13:52:32][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:52:32][seconds=110] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:52:32][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
-@@ [2020-04-30T13:52:34][seconds=112] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:52:34][seconds=112] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:52:34][seconds=112] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY    PHASE
 --------------------------------  -------  -----------------------  -------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
-@@ [2020-04-30T13:53:14][seconds=152] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:53:14][seconds=152] Info: &#39;3&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2020-04-30T13:53:14][seconds=152] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              VERSION  IMAGE                    READY   PHASE
 --------------------------------  -------  -----------------------  ------  ---------
-'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
-'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;      &#39;model-in-image:WLS-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
 
 @@ [2020-04-30T13:53:14][seconds=152] Info: Success!
-
 </code></pre>
     </div>
 </div>
@@ -3822,24 +3821,24 @@ NAME                              VERSION  IMAGE                    READY   PHAS
 <p>Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik ingress controller&rsquo;s NodePort.</p>
 <p><strong>Note</strong>: The web application will display a list of any data sources it finds, but at this point, we don&rsquo;t expect it to find any because the model doesn&rsquo;t contain any.</p>
 <p>Send a web application request to the load balancer:</p>
-<pre><code>$ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+<pre tabindex="0"><code>$ curl -s -S -m 10 -H &#39;host: sample-domain1-cluster-cluster-1.mii-sample.org&#39; \
    http://localhost:30305/myapp_war/index.jsp
 </code></pre><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can use <code>kubectl exec</code>:</p>
-<pre><code>$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
-  &quot;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&quot;
+<pre tabindex="0"><code>$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
+  &#34;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&#34;
 </code></pre><p>You will see output like the following:</p>
-<pre><code>&lt;html&gt;&lt;body&gt;&lt;pre&gt;
+<pre tabindex="0"><code>&lt;html&gt;&lt;body&gt;&lt;pre&gt;
 *****************************************************************
 
-Hello World! This is version 'v1' of the mii-sample JSP web-app.
+Hello World! This is version &#39;v1&#39; of the mii-sample JSP web-app.
 
-Welcome to WebLogic Server 'managed-server2'!
+Welcome to WebLogic Server &#39;managed-server2&#39;!
 
- domain UID  = 'sample-domain1'
- domain name = 'domain1'
+ domain UID  = &#39;sample-domain1&#39;
+ domain name = &#39;domain1&#39;
 
 Found 1 local cluster runtime:
-  Cluster 'cluster-1'
+  Cluster &#39;cluster-1&#39;
 
 Found 0 local data sources:
 
@@ -5879,19 +5878,19 @@ Found 0 local data sources:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664997069"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664997069"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664993353" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664993353"></script>
+    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664997069" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664997069"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

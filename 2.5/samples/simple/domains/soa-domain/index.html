@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Sample for creating a SOA Suite domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated SOA domain.">
 
 
@@ -12,18 +12,18 @@
     <title>SOA domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664993349" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664997065" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664997065"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664993349"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664993349"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664997065"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664997065"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.5";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664993349"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664997065"></script>
 
     
   </div>
@@ -1445,7 +1445,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/2.5/samples/simple/domains/soa-domain/" title="SOA domain" class="dd-item 
-        parent
+        
         active
         
         ">
@@ -2608,10 +2608,10 @@ artifacts of the corresponding domain.</p>
 <h4 id="prerequisites">Prerequisites</h4>
 <p>Before you begin, we recommend the following:</p>
 <ul>
-<li>Review the <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-domains/domain-resource/">Domain resource</a> documentation.</li>
+<li>Review the <a href="/userguide/managing-domains/domain-resource/">Domain resource</a> documentation.</li>
 <li>Review the <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/#operator-prerequisites">operator prerequisites</a>
 section for the supported versions of Kubernetes and Helm.</li>
-<li>Complete the preliminary required steps documented <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-fmw-domains/soa-suite/">here</a>.</li>
+<li>Complete the preliminary required steps documented <a href="/userguide/managing-fmw-domains/soa-suite/">here</a>.</li>
 </ul>
 <h4 id="prepare-to-use-the-create-domain-script">Prepare to use the create domain script</h4>
 <p>The sample scripts for Oracle SOA Suite domain deployment are available at <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts/create-soa-domain</code>.</p>
@@ -2701,7 +2701,7 @@ provide in this file.</p>
 </tr>
 <tr>
 <td><code>image</code></td>
-<td>SOA Suite Docker image. The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied. Refer to <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-fmw-domains/soa-suite/#obtaining-the-soa-suite-docker-image">SOA domains</a> for details on how to obtain or create the image.</td>
+<td>SOA Suite Docker image. The operator requires SOA Suite 12.2.1.3.0 with patch 29135930 applied. Refer to <a href="/userguide/managing-fmw-domains/soa-suite/#obtaining-the-soa-suite-docker-image">SOA domains</a> for details on how to obtain or create the image.</td>
 <td><code>container-registry.oracle.com/middleware/soasuite:12.2.1.3</code></td>
 </tr>
 <tr>
@@ -2818,7 +2818,7 @@ to create the domain home for other use cases. The generated domain YAML file co
 <h4 id="run-the-create-domain-script">Run the create domain script</h4>
 <p>Run the create domain script, specifying your inputs file and an output directory to store the
 generated artifacts:</p>
-<pre><code>$ ./create-domain.sh \
+<pre tabindex="0"><code>$ ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /&lt;path to output-directory&gt;
 </code></pre><p>The script will perform the following steps:</p>
@@ -2839,7 +2839,7 @@ offline WLST scripts to create the domain on the shared storage.</p>
 <p>Create a Kubernetes domain YAML file, <code>domain.yaml</code>, in the &ldquo;output&rdquo; directory that was created above.
 This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code>
 or <code>kubectl apply -f</code> command:</p>
-<pre><code>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
+<pre tabindex="0"><code>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
 </code></pre></li>
 <li>
 <p>Create a convenient utility script, <code>delete-domain-job.yaml</code>, to clean up the domain home
@@ -2864,13 +2864,13 @@ various Kubernetes objects that were created by the script.</p>
 namespace, you need to replace <code>NAMESPACE</code> in the example <code>kubectl</code> commands with the actual Kubernetes namespace.</p>
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
 <p>The content of the generated <code>domain.yaml</code>:</p>
-<pre><code>$ cat output/weblogic-domains/soainfra/domain.yaml
+<pre tabindex="0"><code>$ cat output/weblogic-domains/soainfra/domain.yaml
 # Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: &quot;weblogic.oracle/v6&quot;
+apiVersion: &#34;weblogic.oracle/v6&#34;
 kind: Domain
 metadata:
   name: soainfra
@@ -2886,10 +2886,10 @@ spec:
   domainHomeInImage: false
 
   # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: &quot;container-registry.oracle.com/middleware/soasuite:12.2.1.3&quot;
+  image: &#34;container-registry.oracle.com/middleware/soasuite:12.2.1.3&#34;
 
-  # imagePullPolicy defaults to &quot;Always&quot; if image version is :latest
-  imagePullPolicy: &quot;IfNotPresent&quot;
+  # imagePullPolicy defaults to &#34;Always&#34; if image version is :latest
+  imagePullPolicy: &#34;IfNotPresent&#34;
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
@@ -2900,7 +2900,7 @@ spec:
   webLogicCredentialsSecret:
     name: soainfra-domain-credentials
 
-  # Whether to include the server out file into the pod's stdout, default is true
+  # Whether to include the server out file into the pod&#39;s stdout, default is true
   includeServerOutInPodLog: true
 
   # Whether to enable log home
@@ -2909,16 +2909,16 @@ spec:
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   logHome: /u01/oracle/user_projects/domains/logs/soainfra
   # An (optional) in-pod location for data storage of default and custom file stores.
-  # If not specified or the value is either not set or empty (e.g. dataHome: &quot;&quot;) then the
+  # If not specified or the value is either not set or empty (e.g. dataHome: &#34;&#34;) then the
   # data storage directories are determined from the WebLogic domain home configuration.
-  dataHome: &quot;&quot;
+  dataHome: &#34;&#34;
 
-  # serverStartPolicy legal values are &quot;NEVER&quot;, &quot;IF_NEEDED&quot;, or &quot;ADMIN_ONLY&quot;
+  # serverStartPolicy legal values are &#34;NEVER&#34;, &#34;IF_NEEDED&#34;, or &#34;ADMIN_ONLY&#34;
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - &quot;NEVER&quot; will not start any server in the domain
-  # - &quot;ADMIN_ONLY&quot; will start up only the administration server (no managed servers will be started)
-  # - &quot;IF_NEEDED&quot; will start all non-clustered servers, including the administration server and clustered servers up to the replica count
-  serverStartPolicy: &quot;IF_NEEDED&quot;
+  # - &#34;NEVER&#34; will not start any server in the domain
+  # - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)
+  # - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: &#34;IF_NEEDED&#34;
 
   serverService:
     precreateService: true
@@ -2927,9 +2927,9 @@ spec:
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
-      value: &quot;-Dweblogic.StdoutDebugEnabled=false&quot;
+      value: &#34;-Dweblogic.StdoutDebugEnabled=false&#34;
     - name: USER_MEM_ARGS
-      value: &quot;-Djava.security.egd=file:/dev/./urandom &quot;
+      value: &#34;-Djava.security.egd=file:/dev/./urandom &#34;
     volumes:
     - name: weblogic-domain-storage-volume
       persistentVolumeClaim:
@@ -2940,13 +2940,13 @@ spec:
 
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-    # serverStartState legal values are &quot;RUNNING&quot; or &quot;ADMIN&quot;
-    # &quot;RUNNING&quot; means the listed server will be started up to &quot;RUNNING&quot; mode
-    # &quot;ADMIN&quot; means the listed server will be start up to &quot;ADMIN&quot; mode
-    serverStartState: &quot;RUNNING&quot;
+    # serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;
+    # &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode
+    # &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode
+    serverStartState: &#34;RUNNING&#34;
     # adminService:
     #   channels:
-    # The Admin Server's NodePort
+    # The Admin Server&#39;s NodePort
     #    - channelName: default
     #      nodePort: 30701
     # Uncomment to export the T3Channel as a service
@@ -2958,7 +2958,7 @@ spec:
   - clusterName: osb_cluster
     serverService:
       precreateService: true
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
     replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
@@ -2966,16 +2966,16 @@ spec:
   - clusterName: soa_cluster
     serverService:
       precreateService: true
-    serverStartState: &quot;RUNNING&quot;
+    serverStartState: &#34;RUNNING&#34;
     replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
 </code></pre><h4 id="verify-the-domain">Verify the domain</h4>
 <p>To confirm that the domain was created, use this command:</p>
-<pre><code>$ kubectl describe domain DOMAINUID -n NAMESPACE
+<pre tabindex="0"><code>$ kubectl describe domain DOMAINUID -n NAMESPACE
 </code></pre><p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
 <p>Here is an example of the output of this command:</p>
-<pre><code>$ kubectl describe domain soainfra -n soans
+<pre tabindex="0"><code>$ kubectl describe domain soainfra -n soans
 Name:         soainfra
 Namespace:    soans
 Labels:       weblogic.domainUID=soainfra
@@ -3144,9 +3144,9 @@ The operator will start up the Administration Server first and wait for it to be
 before starting the Managed Servers.</p>
 <h4 id="verify-the-pods">Verify the pods</h4>
 <p>Use the following command to see the pods running the servers:</p>
-<pre><code>$ kubectl get pods -n NAMESPACE
+<pre tabindex="0"><code>$ kubectl get pods -n NAMESPACE
 </code></pre><p>Here is an example of the output of this command. You can verify that an Administration Server and two Managed Servers for each cluster (SOA and OSB) are running for <code>soaessosb</code> domain type.</p>
-<pre><code>$ kubectl get pods -n soans
+<pre tabindex="0"><code>$ kubectl get pods -n soans
 NAME                                                READY   STATUS      RESTARTS   AGE
 soainfra-adminserver                                1/1     Running     0          20h
 soainfra-osb-server1                                1/1     Running     0          20h
@@ -3155,9 +3155,9 @@ soainfra-soa-server1                                1/1     Running     0       
 soainfra-soa-server2                                1/1     Running     0          20h
 </code></pre><h4 id="verify-the-services">Verify the services</h4>
 <p>Use the following command to see the services for the domain:</p>
-<pre><code>$ kubectl get services -n NAMESPACE
+<pre tabindex="0"><code>$ kubectl get services -n NAMESPACE
 </code></pre><p>Here is an example of the output of this command. You can verify that services for Administration Server and Managed Servers (for SOA and OSB clusters) are created for <code>soaessosb</code> domain type.</p>
-<pre><code>$ kubectl get services -n soans
+<pre tabindex="0"><code>$ kubectl get services -n soans
 NAME                            TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                       AGE
 soainfra-adminserver            ClusterIP      None             &lt;none&gt;        7001/TCP                      20h
 soainfra-cluster-osb-cluster    ClusterIP      10.110.6.107     &lt;none&gt;        9001/TCP                      20h
@@ -3176,8 +3176,7 @@ soainfra-soa-server5            ClusterIP      10.101.171.78    &lt;none&gt;    
 <p>Sometimes in production, but most likely in testing environments, you might want to remove the domain
 home that is generated using the <code>create-domain.sh</code> script. Do this by running the generated
 <code>delete domain job</code> script in the <code>/&lt;path to weblogic-operator-output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code> directory.</p>
-<pre><code>$ kubectl create -f delete-domain-job.yaml
-
+<pre tabindex="0"><code>$ kubectl create -f delete-domain-job.yaml
 </code></pre>
 
 
@@ -4919,19 +4918,19 @@ home that is generated using the <code>create-domain.sh</code> script. Do this b
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664997065"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664997065"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664993349" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664993349"></script>
+    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664997065" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664997065"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

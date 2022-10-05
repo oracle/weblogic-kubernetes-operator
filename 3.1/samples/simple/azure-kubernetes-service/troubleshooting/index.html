@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Troubleshooting.">
 
 
@@ -12,18 +12,18 @@
     <title>Troubleshooting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664993353" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664997069" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664997069"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664993353"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664997069"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664997069"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.1";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664997069"></script>
 
     
   </div>
@@ -2980,23 +2980,23 @@ if (!doNotTrack) {
 </ul>
 <h4 id="get-pod-error-details">Get pod error details</h4>
 <p>You may get the following message while creating the WebLogic domain: <code>&quot;the job status is not Completed!&quot;</code></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">status on iteration 20 of 20
-pod domain1-create-weblogic-sample-domain-job-nj7wl status is Init:0/1
-The create domain job is not showing status completed after waiting 300 seconds.
-Check the log output for errors.
-Error from server (BadRequest): container &#34;create-weblogic-sample-domain-job&#34; in pod &#34;domain1-create-weblogic-sample-domain-job-nj7wl&#34; is waiting to start: PodInitializing
-[ERROR] Exiting due to failure - the job status is not Completed!
-</code></pre></div><p>You can get further error details by running <code>kubectl describe pod</code>, as shown here:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe pod &lt;your-pod-name&gt;
-</code></pre></div><p>This is an output example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe pod domain1-create-weblogic-sample-domain-job-nj7wl
-Events:
-Type     Reason       Age                  From                                        Message
-----     ------       ----                 ----                                        -------
-Normal   Scheduled    4m2s                 default-scheduler                           Successfully assigned default/domain1-create-weblogic-sample-domain-job-qqv6k to aks-nodepool1-58449474-vmss000001
-Warning  FailedMount  119s                 kubelet, aks-nodepool1-58449474-vmss000001  Unable to mount volumes <span style="color:#66d9ef">for</span> pod <span style="color:#e6db74">&#34;domain1-create-weblogic-sample-domain-job-qqv6k_default(15706980-73cb-11ea-b804-b2c91b494b00)&#34;</span>: timeout expired waiting <span style="color:#66d9ef">for</span> volumes to attach or mount <span style="color:#66d9ef">for</span> pod <span style="color:#e6db74">&#34;default&#34;</span>/<span style="color:#e6db74">&#34;domain1-create-weblogic-sample-domain-job-qqv6k&#34;</span>. list of unmounted volumes<span style="color:#f92672">=[</span>weblogic-sample-domain-storage-volume<span style="color:#f92672">]</span>. list of unattached volumes<span style="color:#f92672">=[</span>create-weblogic-sample-domain-job-cm-volume weblogic-sample-domain-storage-volume weblogic-credentials-volume default-token-zr7bq<span style="color:#f92672">]</span>
-Warning  FailedMount  114s <span style="color:#f92672">(</span>x9 over 4m2s<span style="color:#f92672">)</span>  kubelet, aks-nodepool1-58449474-vmss000001  MountVolume.SetUp failed <span style="color:#66d9ef">for</span> volume <span style="color:#e6db74">&#34;wls-azurefile&#34;</span> : Couldn<span style="color:#960050;background-color:#1e0010">&#39;</span>t get secret default/azure-secrea
-</code></pre></div><h4 id="fail-to-access-administration-console">Fail to access Administration Console</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>status on iteration 20 of 20
+</span></span><span style="display:flex;"><span>pod domain1-create-weblogic-sample-domain-job-nj7wl status is Init:0/1
+</span></span><span style="display:flex;"><span>The create domain job is not showing status completed after waiting 300 seconds.
+</span></span><span style="display:flex;"><span>Check the log output for errors.
+</span></span><span style="display:flex;"><span>Error from server (BadRequest): container &#34;create-weblogic-sample-domain-job&#34; in pod &#34;domain1-create-weblogic-sample-domain-job-nj7wl&#34; is waiting to start: PodInitializing
+</span></span><span style="display:flex;"><span>[ERROR] Exiting due to failure - the job status is not Completed!
+</span></span></code></pre></div><p>You can get further error details by running <code>kubectl describe pod</code>, as shown here:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl describe pod &lt;your-pod-name&gt;
+</span></span></code></pre></div><p>This is an output example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl describe pod domain1-create-weblogic-sample-domain-job-nj7wl
+</span></span><span style="display:flex;"><span>Events:
+</span></span><span style="display:flex;"><span>Type     Reason       Age                  From                                        Message
+</span></span><span style="display:flex;"><span>----     ------       ----                 ----                                        -------
+</span></span><span style="display:flex;"><span>Normal   Scheduled    4m2s                 default-scheduler                           Successfully assigned default/domain1-create-weblogic-sample-domain-job-qqv6k to aks-nodepool1-58449474-vmss000001
+</span></span><span style="display:flex;"><span>Warning  FailedMount  119s                 kubelet, aks-nodepool1-58449474-vmss000001  Unable to mount volumes <span style="color:#66d9ef">for</span> pod <span style="color:#e6db74">&#34;domain1-create-weblogic-sample-domain-job-qqv6k_default(15706980-73cb-11ea-b804-b2c91b494b00)&#34;</span>: timeout expired waiting <span style="color:#66d9ef">for</span> volumes to attach or mount <span style="color:#66d9ef">for</span> pod <span style="color:#e6db74">&#34;default&#34;</span>/<span style="color:#e6db74">&#34;domain1-create-weblogic-sample-domain-job-qqv6k&#34;</span>. list of unmounted volumes<span style="color:#f92672">=[</span>weblogic-sample-domain-storage-volume<span style="color:#f92672">]</span>. list of unattached volumes<span style="color:#f92672">=[</span>create-weblogic-sample-domain-job-cm-volume weblogic-sample-domain-storage-volume weblogic-credentials-volume default-token-zr7bq<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>Warning  FailedMount  114s <span style="color:#f92672">(</span>x9 over 4m2s<span style="color:#f92672">)</span>  kubelet, aks-nodepool1-58449474-vmss000001  MountVolume.SetUp failed <span style="color:#66d9ef">for</span> volume <span style="color:#e6db74">&#34;wls-azurefile&#34;</span> : Couldn<span style="color:#960050;background-color:#1e0010">&#39;</span>t get secret default/azure-secrea
+</span></span></code></pre></div><h4 id="fail-to-access-administration-console">Fail to access Administration Console</h4>
 <p>Here are some common reasons for this failure, along with some tips to help you investigate.</p>
 <ul>
 <li>
@@ -3011,20 +3011,20 @@ we need to wait some more for the Administration Server to start.</p>
 </li>
 </ul>
 <p>The following output is an example of when the Administration Server has started.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get svc
-NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>              AGE
-domain1-admin-server               ClusterIP      None          &lt;none&gt;          30012/TCP,7001/TCP   7m3s
-domain1-admin-server-ext           NodePort       10.0.78.211   &lt;none&gt;          7001:30701/TCP       7m3s
-domain1-admin-server-external-lb   LoadBalancer   10.0.6.144    40.71.233.81    7001:32758/TCP       7m32s
-domain1-cluster-1-lb               LoadBalancer   10.0.29.231   52.142.39.152   8001:31022/TCP       7m30s
-domain1-cluster-cluster-1          ClusterIP      10.0.80.134   &lt;none&gt;          8001/TCP             1s
-domain1-managed-server1            ClusterIP      None          &lt;none&gt;          8001/TCP             1s
-domain1-managed-server2            ClusterIP      None          &lt;none&gt;          8001/TCP             1s
-internal-weblogic-operator-svc     ClusterIP      10.0.1.23     &lt;none&gt;          8082/TCP             9m59s
-kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;          443/TCP              16m
-</code></pre></div><p>If services are up but the WLS Administration Console is still not available, use <code>kubectl describe domain</code> to check domain status.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe domain domain1
-</code></pre></div><p>Make sure the status of <code>cluster-1</code> is <code>ServersReady</code> and <code>Available</code>. The status of <code>admin-server</code>, <code>managed-server1</code>, and <code>managed-server2</code> should be <code>RUNNING</code>. Otherwise, the cluster is likely still in the process of becoming fully ready.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl get svc
+</span></span><span style="display:flex;"><span>NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>              AGE
+</span></span><span style="display:flex;"><span>domain1-admin-server               ClusterIP      None          &lt;none&gt;          30012/TCP,7001/TCP   7m3s
+</span></span><span style="display:flex;"><span>domain1-admin-server-ext           NodePort       10.0.78.211   &lt;none&gt;          7001:30701/TCP       7m3s
+</span></span><span style="display:flex;"><span>domain1-admin-server-external-lb   LoadBalancer   10.0.6.144    40.71.233.81    7001:32758/TCP       7m32s
+</span></span><span style="display:flex;"><span>domain1-cluster-1-lb               LoadBalancer   10.0.29.231   52.142.39.152   8001:31022/TCP       7m30s
+</span></span><span style="display:flex;"><span>domain1-cluster-cluster-1          ClusterIP      10.0.80.134   &lt;none&gt;          8001/TCP             1s
+</span></span><span style="display:flex;"><span>domain1-managed-server1            ClusterIP      None          &lt;none&gt;          8001/TCP             1s
+</span></span><span style="display:flex;"><span>domain1-managed-server2            ClusterIP      None          &lt;none&gt;          8001/TCP             1s
+</span></span><span style="display:flex;"><span>internal-weblogic-operator-svc     ClusterIP      10.0.1.23     &lt;none&gt;          8082/TCP             9m59s
+</span></span><span style="display:flex;"><span>kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;          443/TCP              16m
+</span></span></code></pre></div><p>If services are up but the WLS Administration Console is still not available, use <code>kubectl describe domain</code> to check domain status.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl describe domain domain1
+</span></span></code></pre></div><p>Make sure the status of <code>cluster-1</code> is <code>ServersReady</code> and <code>Available</code>. The status of <code>admin-server</code>, <code>managed-server1</code>, and <code>managed-server2</code> should be <code>RUNNING</code>. Otherwise, the cluster is likely still in the process of becoming fully ready.</p>
 
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -3037,55 +3037,55 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
     	</span>
     </div>
     <div class="expand-content" style="display: none;">
-        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">Status</span>:
-   <span style="color:#f92672">Clusters</span>:
-   <span style="color:#f92672">Cluster Name</span>:      <span style="color:#ae81ff">cluster-1</span>
-   <span style="color:#f92672">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
-   <span style="color:#f92672">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
-   <span style="color:#f92672">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
-   <span style="color:#f92672">Replicas</span>:          <span style="color:#ae81ff">2</span>
-   <span style="color:#f92672">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
-   <span style="color:#f92672">Conditions</span>:
-   <span style="color:#f92672">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
-   <span style="color:#f92672">Reason</span>:                <span style="color:#ae81ff">ServersReady</span>
-   <span style="color:#f92672">Status</span>:                <span style="color:#66d9ef">True</span>
-   <span style="color:#f92672">Type</span>:                  <span style="color:#ae81ff">Available</span>
-   <span style="color:#f92672">Replicas</span>:                <span style="color:#ae81ff">2</span>
-   <span style="color:#f92672">Servers</span>:
-   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
-   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
-   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">admin-server</span>
-   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
-   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
-   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
-   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server1</span>
-   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
-   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
-   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
-   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server2</span>
-   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
-   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
-   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server3</span>
-   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
-   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server4</span>
-   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
-   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server5</span>
-</code></pre></div>
+        <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">Status</span>:
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Clusters</span>:
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:      <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Replicas</span>:          <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Conditions</span>:
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Reason</span>:                <span style="color:#ae81ff">ServersReady</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Status</span>:                <span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Type</span>:                  <span style="color:#ae81ff">Available</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Replicas</span>:                <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Servers</span>:
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">admin-server</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server2</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server3</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server4</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server5</span>
+</span></span></code></pre></div>
     </div>
 </div>
 <h4 id="domain-debugging">Domain debugging</h4>
 <p>For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">Debugging</a>.</p>
 <h4 id="wsl2-bad-timestamp">WSL2 bad timestamp</h4>
 <p>If you are running with WSL2, you may run into the <a href="https://github.com/microsoft/WSL/issues/4245">bad timestamp issue</a>, which blocks Azure CLI. You may see the following error:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pod
-Unable to connect to the server: x509: certificate has expired or is not yet valid: current time 2020-11-25T15:58:10+08:00 is before 2020-11-27T04:25:04Z
-</code></pre></div><p>You can run the following command to update WSL2 system time:</p>
-<pre><code># Fix the outdated systime time
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pod
+</span></span><span style="display:flex;"><span>Unable to connect to the server: x509: certificate has expired or is not yet valid: current time 2020-11-25T15:58:10+08:00 is before 2020-11-27T04:25:04Z
+</span></span></code></pre></div><p>You can run the following command to update WSL2 system time:</p>
+<pre tabindex="0"><code># Fix the outdated systime time
 $ sudo hwclock -s
 
 # Check systime time
@@ -3093,35 +3093,35 @@ $ data
 Fri Nov 27 13:07:14 CST 2020
 </code></pre><h4 id="timeout-for-the-operator-installation">Timeout for the operator installation</h4>
 <p>You may run into a timeout while installing the operator and get the following error:</p>
-<pre><code>$ helm install weblogic-operator kubernetes/charts/weblogic-operator \
+<pre tabindex="0"><code>$ helm install weblogic-operator kubernetes/charts/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
-   --set &quot;enableClusterRoleBinding=true&quot; \
-   --set &quot;domainNamespaceSelectionStrategy=LabelSelector&quot; \
-   --set &quot;domainNamespaceLabelSelector=weblogic-operator\=enabled&quot; \
+   --set &#34;enableClusterRoleBinding=true&#34; \
+   --set &#34;domainNamespaceSelectionStrategy=LabelSelector&#34; \
+   --set &#34;domainNamespaceLabelSelector=weblogic-operator\=enabled&#34; \
 --wait
 Error: timed out waiting for the condition
 </code></pre><p>Make sure you are working with the master branch. Remove the operator and install again.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm uninstall weblogic-operator -n sample-weblogic-operator-ns
-release <span style="color:#e6db74">&#34;weblogic-operator&#34;</span> uninstalled
-</code></pre></div><p>Check out master and install the operator.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd weblogic-kubernetes-operator
-$ git checkout master
-$ helm install weblogic-operator kubernetes/charts/weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --namespace sample-weblogic-operator-ns <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --set serviceAccount<span style="color:#f92672">=</span>sample-weblogic-operator-sa <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --set <span style="color:#e6db74">&#34;enableClusterRoleBinding=true&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --set <span style="color:#e6db74">&#34;domainNamespaceSelectionStrategy=LabelSelector&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --set <span style="color:#e6db74">&#34;domainNamespaceLabelSelector=weblogic-operator\=enabled&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --wait
-</code></pre></div><h4 id="weblogic-image-tool-failure">WebLogic Image Tool failure</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm uninstall weblogic-operator -n sample-weblogic-operator-ns
+</span></span><span style="display:flex;"><span>release <span style="color:#e6db74">&#34;weblogic-operator&#34;</span> uninstalled
+</span></span></code></pre></div><p>Check out master and install the operator.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cd weblogic-kubernetes-operator
+</span></span><span style="display:flex;"><span>$ git checkout master
+</span></span><span style="display:flex;"><span>$ helm install weblogic-operator kubernetes/charts/weblogic-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --namespace sample-weblogic-operator-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --set serviceAccount<span style="color:#f92672">=</span>sample-weblogic-operator-sa <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --set <span style="color:#e6db74">&#34;enableClusterRoleBinding=true&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --set <span style="color:#e6db74">&#34;domainNamespaceSelectionStrategy=LabelSelector&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --set <span style="color:#e6db74">&#34;domainNamespaceLabelSelector=weblogic-operator\=enabled&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --wait
+</span></span></code></pre></div><h4 id="weblogic-image-tool-failure">WebLogic Image Tool failure</h4>
 <p>If your version of WIT is older than 1.9.8, you will get an error running <code>./imagetool/bin/imagetool.sh</code> if the Docker buildkit is enabled.</p>
 <p>Here is the warning message shown:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">failed to solve with frontend dockerfile.v0: failed to create LLB definition: failed to parse stage name &#34;WDT_BUILD&#34;: invalid reference format: repository name must be lowercase
-</code></pre></div><p>To resolve the error, either upgrade to a newer version of WIT or disable the Docker buildkit with the following commands and run the <code>imagetool</code> command again.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ export DOCKER_BUILDKIT<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
-$ export COMPOSE_DOCKER_CLI_BUILD<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
-</code></pre></div><h4 id="weblogic-kubernetes-operator-installation-failure">WebLogic Kubernetes Operator installation failure</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>failed to solve with frontend dockerfile.v0: failed to create LLB definition: failed to parse stage name &#34;WDT_BUILD&#34;: invalid reference format: repository name must be lowercase
+</span></span></code></pre></div><p>To resolve the error, either upgrade to a newer version of WIT or disable the Docker buildkit with the following commands and run the <code>imagetool</code> command again.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ export DOCKER_BUILDKIT<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>$ export COMPOSE_DOCKER_CLI_BUILD<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><h4 id="weblogic-kubernetes-operator-installation-failure">WebLogic Kubernetes Operator installation failure</h4>
 <p>Currently, we meet two cases that block the operator installation:</p>
 <ul>
 <li>The system pods in the AKS cluster are pending.</li>
@@ -3131,88 +3131,88 @@ $ export COMPOSE_DOCKER_CLI_BUILD<span style="color:#f92672">=</span><span style
 <h5 id="the-aks-cluster-system-pods-are-pending">The AKS cluster system pods are pending</h5>
 <p>If system pods in the AKS cluster are pending, it will block the operator installation.</p>
 <p>This is an error example with warning message <strong>no nodes available to schedule pods</strong>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pod -A
-NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
-default                       weblogic-operator-c5c78b8b5-ssvqk           0/1     Pending   <span style="color:#ae81ff">0</span>          13m
-kube-system                   coredns-79766dfd68-wcmkd                    0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
-kube-system                   coredns-autoscaler-66c578cddb-tc946         0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
-kube-system                   dashboard-metrics-scraper-6f5fb5c4f-9f5mb   0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
-kube-system                   kubernetes-dashboard-849d5c99ff-xzknj       0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
-kube-system                   metrics-server-7f5b4f6d8c-bqzrn             0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
-kube-system                   tunnelfront-765bf6df59-msj27                0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
-sample-weblogic-operator-ns   weblogic-operator-f86b879fd-v2xrz           0/1     Pending   <span style="color:#ae81ff">0</span>          35m
-
-$ kubectl describe pod weblogic-operator-f86b879fd-v2xrz -n sample-weblogic-operator-ns
-...
-Events:
-  Type     Reason            Age                 From               Message
-  ----     ------            ----                ----               -------
-  Warning  FailedScheduling  71s <span style="color:#f92672">(</span>x25 over 36m<span style="color:#f92672">)</span>  default-scheduler  no nodes available to schedule pods
-</code></pre></div><p>If you run into this error, remove the AKS cluster and create a new one.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl get pod -A
+</span></span><span style="display:flex;"><span>NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
+</span></span><span style="display:flex;"><span>default                       weblogic-operator-c5c78b8b5-ssvqk           0/1     Pending   <span style="color:#ae81ff">0</span>          13m
+</span></span><span style="display:flex;"><span>kube-system                   coredns-79766dfd68-wcmkd                    0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
+</span></span><span style="display:flex;"><span>kube-system                   coredns-autoscaler-66c578cddb-tc946         0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
+</span></span><span style="display:flex;"><span>kube-system                   dashboard-metrics-scraper-6f5fb5c4f-9f5mb   0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
+</span></span><span style="display:flex;"><span>kube-system                   kubernetes-dashboard-849d5c99ff-xzknj       0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
+</span></span><span style="display:flex;"><span>kube-system                   metrics-server-7f5b4f6d8c-bqzrn             0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
+</span></span><span style="display:flex;"><span>kube-system                   tunnelfront-765bf6df59-msj27                0/1     Pending   <span style="color:#ae81ff">0</span>          3h22m
+</span></span><span style="display:flex;"><span>sample-weblogic-operator-ns   weblogic-operator-f86b879fd-v2xrz           0/1     Pending   <span style="color:#ae81ff">0</span>          35m
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ kubectl describe pod weblogic-operator-f86b879fd-v2xrz -n sample-weblogic-operator-ns
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>Events:
+</span></span><span style="display:flex;"><span>  Type     Reason            Age                 From               Message
+</span></span><span style="display:flex;"><span>  ----     ------            ----                ----               -------
+</span></span><span style="display:flex;"><span>  Warning  FailedScheduling  71s <span style="color:#f92672">(</span>x25 over 36m<span style="color:#f92672">)</span>  default-scheduler  no nodes available to schedule pods
+</span></span></code></pre></div><p>If you run into this error, remove the AKS cluster and create a new one.</p>
 <p>Run the <code>kubectl get pod -A</code> to make sure all the system pods are running.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pod -A
-NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
-kube-system                   coredns-79766dfd68-ch5b9                    1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-kube-system                   coredns-79766dfd68-sxk4g                    1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
-kube-system                   coredns-autoscaler-66c578cddb-s5qm5         1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-kube-system                   dashboard-metrics-scraper-6f5fb5c4f-wtckh   1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-kube-system                   kube-proxy-fwll6                            1/1     Running   <span style="color:#ae81ff">0</span>          3h42m
-kube-system                   kube-proxy-kq6wj                            1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
-kube-system                   kube-proxy-t2vbb                            1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
-kube-system                   kubernetes-dashboard-849d5c99ff-hrz2w       1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-kube-system                   metrics-server-7f5b4f6d8c-snnbt             1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-kube-system                   omsagent-8tf4j                              1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
-kube-system                   omsagent-n9b7k                              1/1     Running   <span style="color:#ae81ff">0</span>          3h42m
-kube-system                   omsagent-rcmgr                              1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
-kube-system                   omsagent-rs-787ff54d9d-w7tp5                1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-kube-system                   tunnelfront-794845c84b-v9f98                1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
-</code></pre></div><h5 id="weblogic-kubernetes-operator-errimagepull">WebLogic Kubernetes Operator ErrImagePull</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl get pod -A
+</span></span><span style="display:flex;"><span>NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
+</span></span><span style="display:flex;"><span>kube-system                   coredns-79766dfd68-ch5b9                    1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span><span style="display:flex;"><span>kube-system                   coredns-79766dfd68-sxk4g                    1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
+</span></span><span style="display:flex;"><span>kube-system                   coredns-autoscaler-66c578cddb-s5qm5         1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span><span style="display:flex;"><span>kube-system                   dashboard-metrics-scraper-6f5fb5c4f-wtckh   1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span><span style="display:flex;"><span>kube-system                   kube-proxy-fwll6                            1/1     Running   <span style="color:#ae81ff">0</span>          3h42m
+</span></span><span style="display:flex;"><span>kube-system                   kube-proxy-kq6wj                            1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
+</span></span><span style="display:flex;"><span>kube-system                   kube-proxy-t2vbb                            1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
+</span></span><span style="display:flex;"><span>kube-system                   kubernetes-dashboard-849d5c99ff-hrz2w       1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span><span style="display:flex;"><span>kube-system                   metrics-server-7f5b4f6d8c-snnbt             1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span><span style="display:flex;"><span>kube-system                   omsagent-8tf4j                              1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
+</span></span><span style="display:flex;"><span>kube-system                   omsagent-n9b7k                              1/1     Running   <span style="color:#ae81ff">0</span>          3h42m
+</span></span><span style="display:flex;"><span>kube-system                   omsagent-rcmgr                              1/1     Running   <span style="color:#ae81ff">0</span>          3h43m
+</span></span><span style="display:flex;"><span>kube-system                   omsagent-rs-787ff54d9d-w7tp5                1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span><span style="display:flex;"><span>kube-system                   tunnelfront-794845c84b-v9f98                1/1     Running   <span style="color:#ae81ff">0</span>          3h44m
+</span></span></code></pre></div><h5 id="weblogic-kubernetes-operator-errimagepull">WebLogic Kubernetes Operator ErrImagePull</h5>
 <p>If you got an error of <strong>ErrImagePull</strong> from pod status, use <code>docker pull</code> to check the operator image. If an error occurs, you can switch to a version that is greater than <code>3.1.1</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:&lt;version&gt;
-
-<span style="color:#75715e"># Example: pull 3.1.1.</span>
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
-3.1.1: Pulling from oracle/weblogic-kubernetes-operator
-980316e41237: Pull complete
-c980371d97ea: Pull complete
-db19c8ff0d12: Pull complete
-550f44317ae5: Pull complete
-be2e701f5ee0: Pull complete
-1cb891615559: Pull complete
-4f4fb700ef54: Pull complete
-Digest: sha256:6b060ec1989fcb26e1acb0d0b906d81fce6b8ec2e0a30fa2b9d9099290eb6416
-Status: Downloaded newer image <span style="color:#66d9ef">for</span> ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
-ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
-</code></pre></div><h4 id="cannot-attach-acr-due-to-not-being-owner-of-subscription">Cannot attach ACR due to not being Owner of subscription</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:&lt;version&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Example: pull 3.1.1.</span>
+</span></span><span style="display:flex;"><span>$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
+</span></span><span style="display:flex;"><span>3.1.1: Pulling from oracle/weblogic-kubernetes-operator
+</span></span><span style="display:flex;"><span>980316e41237: Pull complete
+</span></span><span style="display:flex;"><span>c980371d97ea: Pull complete
+</span></span><span style="display:flex;"><span>db19c8ff0d12: Pull complete
+</span></span><span style="display:flex;"><span>550f44317ae5: Pull complete
+</span></span><span style="display:flex;"><span>be2e701f5ee0: Pull complete
+</span></span><span style="display:flex;"><span>1cb891615559: Pull complete
+</span></span><span style="display:flex;"><span>4f4fb700ef54: Pull complete
+</span></span><span style="display:flex;"><span>Digest: sha256:6b060ec1989fcb26e1acb0d0b906d81fce6b8ec2e0a30fa2b9d9099290eb6416
+</span></span><span style="display:flex;"><span>Status: Downloaded newer image <span style="color:#66d9ef">for</span> ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
+</span></span><span style="display:flex;"><span>ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
+</span></span></code></pre></div><h4 id="cannot-attach-acr-due-to-not-being-owner-of-subscription">Cannot attach ACR due to not being Owner of subscription</h4>
 <p>If you&rsquo;re unable to create an ACR and you&rsquo;re using a service principal, you can use manual Role Assignments to grant access to the ACR as described in <a href="https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal">Azure Container Registry authentication with service principals</a>.</p>
 <p>First, find the <code>objectId</code> of the service principal used when the AKS cluster was created. You will need the output from <code>az ad sp create-for-rbac</code>, which you were directed to save to a file.  Within the output, you need the value of the <code>name</code> property. It will start with <code>http</code>.  Get the <code>objectId</code> with this command.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ az ad sp show --id http://&lt;your-name-from-the-saved-output&gt; | grep objectId
-<span style="color:#e6db74">&#34;objectId&#34;</span>: <span style="color:#e6db74">&#34;nror4p30-qnoq-4129-o89r-p60n71805npp&#34;</span>,
-</code></pre></div><p>Next, assign the <code>acrpull</code> role to that service principal with this command.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ az role assignment create --assignee-object-id &lt;your-objectId-from-above&gt; --scope $AKS_PERS_RESOURCE_GROUP --role acrpull
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;canDelegate&#34;</span>: null,
-  <span style="color:#e6db74">&#34;condition&#34;</span>: null,
-...
-  <span style="color:#e6db74">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;Microsoft.Authorization/roleAssignments&#34;</span>
-<span style="color:#f92672">}</span>
-</code></pre></div><p>After you do this, re-try the command that gave the error.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ az ad sp show --id http://&lt;your-name-from-the-saved-output&gt; | grep objectId
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;objectId&#34;</span>: <span style="color:#e6db74">&#34;nror4p30-qnoq-4129-o89r-p60n71805npp&#34;</span>,
+</span></span></code></pre></div><p>Next, assign the <code>acrpull</code> role to that service principal with this command.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ az role assignment create --assignee-object-id &lt;your-objectId-from-above&gt; --scope $AKS_PERS_RESOURCE_GROUP --role acrpull
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;canDelegate&#34;</span>: null,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;condition&#34;</span>: null,
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;Microsoft.Authorization/roleAssignments&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>After you do this, re-try the command that gave the error.</p>
 <h4 id="virtual-machine-size-is-not-supported">Virtual Machine size is not supported</h4>
 <p>If you run into the following error when creating the AKS cluster, please use an available VM size in the region.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ az aks create <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --resource-group $AKS_PERS_RESOURCE_GROUP <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --name $AKS_CLUSTER_NAME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --node-count <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --generate-ssh-keys <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --nodepool-name nodepool1 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --node-vm-size Standard_DS2_v2 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --location $AKS_PERS_LOCATION <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --service-principal $SP_APP_ID <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>   --client-secret $SP_CLIENT_SECRET
-
-BadRequestError: Operation failed with status: <span style="color:#e6db74">&#39;Bad Request&#39;</span>. Details: Virtual Machine size: <span style="color:#e6db74">&#39;Standard_DS2_v2&#39;</span> is not supported <span style="color:#66d9ef">for</span> subscription subscription-id in location <span style="color:#e6db74">&#39;eastus&#39;</span>. The available VM sizes are <span style="color:#e6db74">&#39;basic_a0,basic_a1,basic_a2,basic_a3,basic_a4,standard_a2&#39;</span>. Please refer to aka.ms/aks-vm-sizes <span style="color:#66d9ef">for</span> the details.
-ResourceNotFoundError: The Resource <span style="color:#e6db74">&#39;Microsoft.ContainerService/managedClusters/wlsaks1613726008&#39;</span> under resource group <span style="color:#e6db74">&#39;wlsresourcegroup1613726008&#39;</span> was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
-</code></pre></div><p>As shown in the example, you can use <code>standard_a2</code>; pay attention to the CPU and memory of that size; make sure it meets your memory requirements.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ az aks create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --resource-group $AKS_PERS_RESOURCE_GROUP <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --name $AKS_CLUSTER_NAME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --node-count <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --generate-ssh-keys <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --nodepool-name nodepool1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --node-vm-size Standard_DS2_v2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --location $AKS_PERS_LOCATION <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --service-principal $SP_APP_ID <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --client-secret $SP_CLIENT_SECRET
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>BadRequestError: Operation failed with status: <span style="color:#e6db74">&#39;Bad Request&#39;</span>. Details: Virtual Machine size: <span style="color:#e6db74">&#39;Standard_DS2_v2&#39;</span> is not supported <span style="color:#66d9ef">for</span> subscription subscription-id in location <span style="color:#e6db74">&#39;eastus&#39;</span>. The available VM sizes are <span style="color:#e6db74">&#39;basic_a0,basic_a1,basic_a2,basic_a3,basic_a4,standard_a2&#39;</span>. Please refer to aka.ms/aks-vm-sizes <span style="color:#66d9ef">for</span> the details.
+</span></span><span style="display:flex;"><span>ResourceNotFoundError: The Resource <span style="color:#e6db74">&#39;Microsoft.ContainerService/managedClusters/wlsaks1613726008&#39;</span> under resource group <span style="color:#e6db74">&#39;wlsresourcegroup1613726008&#39;</span> was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+</span></span></code></pre></div><p>As shown in the example, you can use <code>standard_a2</code>; pay attention to the CPU and memory of that size; make sure it meets your memory requirements.</p>
 
 
 <footer class=" footline" >
@@ -5240,19 +5240,19 @@ ResourceNotFoundError: The Resource <span style="color:#e6db74">&#39;Microsoft.C
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664997069"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664997069"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664993353" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664993353"></script>
+    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664997069" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664997069"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Create or obtain WebLogic Server images.">
 
 
@@ -12,20 +12,20 @@
     <title>WebLogic Server images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993358" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993358" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993358"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993358"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -540,7 +540,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.3/userguide/base-images/" title="WebLogic Server images" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3270,13 +3270,13 @@ as described in <a href="#create-a-custom-image-with-your-domain-inside-the-imag
 </div>
 
 <p>In order for Kubernetes to obtain the WebLogic Server image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes Secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create secret docker-registry SECRET_NAME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -n NAMESPACE <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --docker-server<span style="color:#f92672">=</span>container-registry.oracle.com <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --docker-username<span style="color:#f92672">=</span>YOUR_USERNAME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --docker-password<span style="color:#f92672">=</span>YOUR_PASSWORD <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --docker-email<span style="color:#f92672">=</span>YOUR_EMAIL
-</code></pre></div><p>In this command, replace the uppercase items with the appropriate values. The <code>SECRET_NAME</code> will be needed in later parameter files.  The <code>NAMESPACE</code> must match the namespace where the first domain will be deployed, otherwise, Kubernetes will not be able to find it.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create secret docker-registry SECRET_NAME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n NAMESPACE <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --docker-server<span style="color:#f92672">=</span>container-registry.oracle.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --docker-username<span style="color:#f92672">=</span>YOUR_USERNAME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --docker-password<span style="color:#f92672">=</span>YOUR_PASSWORD <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --docker-email<span style="color:#f92672">=</span>YOUR_EMAIL
+</span></span></code></pre></div><p>In this command, replace the uppercase items with the appropriate values. The <code>SECRET_NAME</code> will be needed in later parameter files.  The <code>NAMESPACE</code> must match the namespace where the first domain will be deployed, otherwise, Kubernetes will not be able to find it.</p>
 <p>It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section.
 If you choose this approach, you do not require the Kubernetes Secret.</p>
 <h4 id="obtain-standard-images-from-the-oracle-container-registry">Obtain standard images from the Oracle Container Registry</h4>
@@ -3287,10 +3287,10 @@ using the Oracle Single Sign-On authentication service. If you do not already ha
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.</p>
 <p>The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.</p>
 <p>First, you will need to log in to the Oracle Container Registry:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker login container-registry.oracle.com
-</code></pre></div><p>Then, you can pull the image with this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
-</code></pre></div><p>If desired, you can:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker login container-registry.oracle.com
+</span></span></code></pre></div><p>Then, you can pull the image with this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
+</span></span></code></pre></div><p>If desired, you can:</p>
 <ul>
 <li>
 <p>Check the WLS version with <code>docker run container-registry.oracle.com/middleware/weblogic:12.2.1.4 sh -c</code> <code>'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh &gt; /dev/null 2&gt;&amp;1 &amp;&amp; java weblogic.version'</code></p>
@@ -3310,36 +3310,36 @@ and <a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/
 <ol>
 <li>
 <p>Add the Server JRE and the WebLogic Server installer to the <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/"><code>cache</code> command</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool cache addInstaller <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>jdk <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>8u241 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/jre-8u241-linux-x64.tar.gz
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool cache addInstaller <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>12.2.1.4.0 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ imagetool cache addInstaller <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>jdk <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>8u241 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/jre-8u241-linux-x64.tar.gz
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ imagetool cache addInstaller <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>12.2.1.4.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
+</span></span></code></pre></div></li>
 <li>
 <p>Use the <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/">Create Tool</a>
 to build the image and apply the patches.</p>
 <p>For the Create Tool to download the patches, you must supply your My Oracle Support credentials.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool create <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span>weblogic:12.2.1.3 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>12.2.1.3.0 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--jdkVersion<span style="color:#f92672">=</span>8u241 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-–patches<span style="color:#f92672">=</span>29135930_12.2.1.3.0,27117282_12.2.1.3.0 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--user<span style="color:#f92672">=</span>username.mycompany.com <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--passwordEnv<span style="color:#f92672">=</span>MYPWD  
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ imagetool create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span>weblogic:12.2.1.3 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>wls <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>12.2.1.3.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--jdkVersion<span style="color:#f92672">=</span>8u241 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-–patches<span style="color:#f92672">=</span>29135930_12.2.1.3.0,27117282_12.2.1.3.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--user<span style="color:#f92672">=</span>username.mycompany.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--passwordEnv<span style="color:#f92672">=</span>MYPWD  
+</span></span></code></pre></div></li>
 <li>
 <p>After the tool creates the image, verify that the image is in your local repository:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker images
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker images
+</span></span></code></pre></div></li>
 </ol>
 <h4 id="create-a-custom-image-with-your-domain-inside-the-image">Create a custom image with your domain inside the image</h4>
 <p>You can also create an image with the WebLogic domain inside the image.
-<a href="/weblogic-kubernetes-operator/3.3/samples/domains/domain-home-in-image/">Samples</a>
+<a href="/samples/domains/domain-home-in-image/">Samples</a>
 are provided that demonstrate how to create the image using either:</p>
 <ul>
 <li>WLST to define the domain, or</li>
@@ -3367,11 +3367,11 @@ download the WebLogic Server 12.2.1.4.0 installer and JDK installer prior to run
 the WIT <a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/">Quick Start</a> guide.</p>
 <p>Example: Create an image named <code>sample:wls</code> with the WebLogic Server 12.2.1.4.0 slim installer, JDK 8u291, a slim version of the Oracle Linux 7 container image,
 and latest PSU and recommended CPU and SPU patches applied.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool create --tag sample:wls --type<span style="color:#f92672">=</span>wlsslim --recommendedPatches --pull --user testuser@xyz.com --password hello --version<span style="color:#f92672">=</span>12.2.1.4.0 --jdkVersion<span style="color:#f92672">=</span>8u291
-</code></pre></div><h4 id="apply-patched-images-to-a-running-domain">Apply patched images to a running domain</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ imagetool create --tag sample:wls --type<span style="color:#f92672">=</span>wlsslim --recommendedPatches --pull --user testuser@xyz.com --password hello --version<span style="color:#f92672">=</span>12.2.1.4.0 --jdkVersion<span style="color:#f92672">=</span>8u291
+</span></span></code></pre></div><h4 id="apply-patched-images-to-a-running-domain">Apply patched images to a running domain</h4>
 <p>When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image,
 the operator applies the update in a zero downtime fashion. The procedure for the operator
-to update the running domain differs depending on the <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/choosing-a-model/">domain home source type</a>. One
+to update the running domain differs depending on the <a href="/userguide/managing-domains/choosing-a-model/">domain home source type</a>. One
 difference between the domain home source types is the location of the domain home:</p>
 <ul>
 <li>Domain in PV: The container image contains the JDK and WebLogic Server binaries. The domain home is located in a Persistent Volume (PV).</li>
@@ -3384,7 +3384,7 @@ WDT model and archive. You use WebLogic Image Tool (WIT) <a href="https://oracle
 to update the Oracle Home of the original image using the patched Oracle Home from a patched container image.</p>
 <p>In all three domain home source types, you edit the <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-resource/#domain-resource-attribute-references">Domain Resource</a>
 to inform the operator of the name of the new patched image so that it can manage the update of the WebLogic domain.</p>
-<p>For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see <a href="/weblogic-kubernetes-operator/3.3/userguide/cicd/">CI/CD</a>.</p>
+<p>For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see <a href="/userguide/cicd/">CI/CD</a>.</p>
 <h5 id="domain-in-pv">Domain in PV</h5>
 <p>Edit the Domain Resource image reference with the new image name/tag (for example, <code>oracle/weblogic:12.2.1.4-patched</code>).
 Then, the operator performs a <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/domain-lifecycle/restarting/#overview">rolling restart</a>
@@ -3398,8 +3398,8 @@ of the domain, updating the Oracle Home of each server pod.</p>
 <p>Example: WIT copies a WDT model and WDT archive from the source image, <code>mydomain:v1</code>, 
 to a new image, <code>mydomain:v2</code>, based on a target image named <code>oracle/weblogic:generic-12.2.1.4.0-patched</code>. </p>
 <p><strong>Note</strong>: Oracle Home and the JDK must be installed in the same directories on each image.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:generic-12.2.1.4.0-patched  --wdtModelOnly
-</code></pre></div><p>Then, edit the Domain Resource image reference with the new image name/tag (<code>mydomain:2</code>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:generic-12.2.1.4.0-patched  --wdtModelOnly
+</span></span></code></pre></div><p>Then, edit the Domain Resource image reference with the new image name/tag (<code>mydomain:2</code>).</p>
 <h5 id="domain-in-image">Domain in Image</h5>
 <p>Use the WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"><code>rebase</code></a> command to update the Oracle Home
 for an existing domain image using the patched Oracle Home from a patched container image. Then, the operator performs a
@@ -3408,8 +3408,8 @@ updating the Oracle Home of each server pod.</p>
 <p>Example: WIT copies the domain from the source image, <code>mydomain:v1</code>, to a new image, <code>mydomain:v2</code>, based on a target
 image named <code>oracle/weblogic:12.2.1.4-patched</code>.</p>
 <p><strong>Note</strong>: Oracle Home and the JDK must be installed in the same directories on each image.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:12.2.1.4-patched
-</code></pre></div><p>Then, edit the Domain Resource image reference with the new image name/tag (<code>mydomain:2</code>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:12.2.1.4-patched
+</span></span></code></pre></div><p>Then, edit the Domain Resource image reference with the new image name/tag (<code>mydomain:2</code>).</p>
 
 
 
@@ -5522,19 +5522,19 @@ image named <code>oracle/weblogic:12.2.1.4-patched</code>.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997073"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993358"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993358"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997073"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993358"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997073"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Help for common installing and upgrading mistakes.">
 
 
@@ -12,20 +12,20 @@
     <title>Common mistakes and solutions :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3569,8 +3569,8 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 <p>For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/#ensuring-the-operator-has-permission-to-manage-a-namespace">Namespace management</a>.</p>
 <h5 id="installing-the-operator-a-second-time-into-the-same-namespace">Installing the operator a second time into the same namespace</h5>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml weblogic-operator/weblogic-operator
-</code></pre></div><pre><code>Error: release op2 failed: secrets &quot;weblogic-operator-secrets&quot; already exists
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml weblogic-operator/weblogic-operator
+</span></span></code></pre></div><pre tabindex="0"><code>Error: release op2 failed: secrets &#34;weblogic-operator-secrets&#34; already exists
 </code></pre><p>Both the previous and new release own the resources created by the previous operator.</p>
 <ul>
 <li>You can&rsquo;t modify it to change the namespace (because <code>helm upgrade</code> does not let you change the namespace).</li>
@@ -3582,8 +3582,8 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 <p>See <a href="https://github.com/helm/helm/issues/2349">https://github.com/helm/helm/issues/2349</a>.</p>
 <h5 id="installing-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing">Installing an operator and having it manage a domain namespace that another operator is already managing</h5>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml weblogic-operator/weblogic-operator
-</code></pre></div><pre><code>Error: release op2 failed: rolebindings.rbac.authorization.k8s.io &quot;weblogic-operator-rolebinding-namespace&quot; already exists
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml weblogic-operator/weblogic-operator
+</span></span></code></pre></div><pre tabindex="0"><code>Error: release op2 failed: rolebindings.rbac.authorization.k8s.io &#34;weblogic-operator-rolebinding-namespace&#34; already exists
 </code></pre><p>To recover:</p>
 <ul>
 <li><code>helm delete --purge</code> the failed release.
@@ -3607,8 +3607,8 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 </ul>
 <h5 id="installing-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist">Installing an operator and having it manage a domain namespace that doesn&rsquo;t exist</h5>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml weblogic-operator/weblogic-operator
-</code></pre></div><pre><code>Error: release op2 failed: namespaces &quot;myuser-d2-ns&quot; not found
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml weblogic-operator/weblogic-operator
+</span></span></code></pre></div><pre tabindex="0"><code>Error: release op2 failed: namespaces &#34;myuser-d2-ns&#34; not found
 </code></pre><p>To recover:</p>
 <ul>
 <li><code>helm delete --purge</code> the failed release.</li>
@@ -3617,8 +3617,8 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 </ul>
 <h5 id="upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist">Upgrading an operator and having it manage a domain namespace that doesn&rsquo;t exist</h5>
 <p>The <code>helm upgrade</code> fails and moves the release to the <code>FAILED</code> state.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm upgrade myuser-op weblogic-operator/weblogic-operator --values o.yaml --no-hooks
-</code></pre></div><pre><code>Error: UPGRADE FAILED: failed to create resource: namespaces &quot;myuser-d2-ns&quot; not found
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm upgrade myuser-op weblogic-operator/weblogic-operator --values o.yaml --no-hooks
+</span></span></code></pre></div><pre tabindex="0"><code>Error: UPGRADE FAILED: failed to create resource: namespaces &#34;myuser-d2-ns&#34; not found
 </code></pre><p>To recover:</p>
 <ul>
 <li><code>helm rollback</code>.</li>
@@ -3629,8 +3629,8 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 <p>REST port conflict-related mistakes.</p>
 <h5 id="installing-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator">Installing an operator and assigning it the same external REST port number as another operator</h5>
 <p>A new <code>FAILED</code> Helm release is created.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml weblogic-operator/weblogic-operator
-</code></pre></div><pre><code>Error: release op2 failed: Service &quot;external-weblogic-operator-svc&quot; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml weblogic-operator/weblogic-operator
+</span></span></code></pre></div><pre tabindex="0"><code>Error: release op2 failed: Service &#34;external-weblogic-operator-svc&#34; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 </code></pre><p>To recover:</p>
 <ul>
 <li>$ <code>helm delete --purge</code> the failed release.</li>
@@ -3638,8 +3638,8 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 </ul>
 <h5 id="upgrading-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator">Upgrading an operator and assigning it the same external REST port number as another operator</h5>
 <p>The <code>helm upgrade</code> fails and moves the release to the <code>FAILED</code> state.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm upgrade --no-hooks --values o23.yaml op2 weblogic-operator/weblogic-operator --wait
-</code></pre></div><pre><code>Error: UPGRADE FAILED: Service &quot;external-weblogic-operator-svc&quot; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm upgrade --no-hooks --values o23.yaml op2 weblogic-operator/weblogic-operator --wait
+</span></span></code></pre></div><pre tabindex="0"><code>Error: UPGRADE FAILED: Service &#34;external-weblogic-operator-svc&#34; is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 </code></pre><ul>
 <li>You can fix this by upgrading the Helm release (to fix the port number).</li>
 <li>You can also fix this by rolling back the Helm release.</li>
@@ -3648,9 +3648,9 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
 <p>Missing service account-related mistakes.</p>
 <h5 id="installing-an-operator-and-assigning-it-a-service-account-that-doesnt-exist">Installing an operator and assigning it a service account that doesn&rsquo;t exist</h5>
 <p>The following <code>helm install</code> command fails because it tries to install an operator release with a non-existing service account <code>op2-sa</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm install op2 weblogic-operator/weblogic-operator --namespace myuser-op2-ns --set serviceAccount<span style="color:#f92672">=</span>op2-sa --wait --no-hooks
-</code></pre></div><p>The output contains the following error message.</p>
-<pre><code>ServiceAccount op2-sa not found in namespace myuser-op2-ns
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install op2 weblogic-operator/weblogic-operator --namespace myuser-op2-ns --set serviceAccount<span style="color:#f92672">=</span>op2-sa --wait --no-hooks
+</span></span></code></pre></div><p>The output contains the following error message.</p>
+<pre tabindex="0"><code>ServiceAccount op2-sa not found in namespace myuser-op2-ns
 </code></pre><p>To recover:</p>
 <ul>
 <li>Create the service account.</li>
@@ -5984,19 +5984,19 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

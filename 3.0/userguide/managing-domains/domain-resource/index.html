@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664993351" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664993351" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/nucleus.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/fontawesome-all.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hybrid.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/featherlight.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/perfect-scrollbar.min.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/auto-complete.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/atom-one-dark-reasonable.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/theme.css?1664997068" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.0/css/hugo-theme.css?1664997068" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery-3.3.1.min.js?1664997068"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664993351"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/lunr.min.js?1664997068"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/auto-complete.js?1664997068"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.0";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664993351"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.0/js/search.js?1664997068"></script>
 
     
   </div>
@@ -2988,28 +2988,28 @@ if (!doNotTrack) {
 <li>Make sure the WebLogic Server Kubernetes Operator is running and is configured to monitor the namespace.</li>
 <li>Make sure any resources that the domain resource references are deployed to the same namespace. For example, all domain resources have a <code>spec.webLogicCredentialsSecret</code> field that references a Kubernetes Secret containing the <code>username</code> and <code>password</code> of the WebLogic server administrative account.</li>
 </ul>
-<p>For example, see the <a href="/weblogic-kubernetes-operator/3.0/quickstart/">Quick Start</a>.</p>
+<p>For example, see the <a href="/quickstart/">Quick Start</a>.</p>
 <h4 id="deploying-domain-resource-yaml-files">Deploying domain resource YAML files</h4>
 <p>Domains are defined using YAML files. For each WebLogic Server domain you want to run, you should create one Domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a Domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WebLogic Server domain parameters that define your domain.</p>
-<p>See the WebLogic Server samples, <a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/domain-home-on-pv/">Domain home on a PV</a>,
-<a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/domain-home-in-image/">Domain home in Image</a>, and <a href="/weblogic-kubernetes-operator/3.0/samples/simple/domains/model-in-image/">Model in Image</a>.</p>
+<p>See the WebLogic Server samples, <a href="/samples/simple/domains/domain-home-on-pv/">Domain home on a PV</a>,
+<a href="/samples/simple/domains/domain-home-in-image/">Domain home in Image</a>, and <a href="/samples/simple/domains/model-in-image/">Model in Image</a>.</p>
 <p>After you have written your YAML files, you use them to create your domain artifacts using the <code>kubectl apply -f</code> command.</p>
-<pre><code class="language-none" data-lang="none">$ kubectl apply -f domain-resource.yaml
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl apply -f domain-resource.yaml
 </code></pre><p>To confirm that the Domain was created, use this command:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl get domains -n [namespace]
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl get domains -n [namespace]
 </code></pre><p>To view all of the attributes of a running domain, including the domain&rsquo;s status, use this command:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl describe domain [domain name] -n [namespace]
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl describe domain [domain name] -n [namespace]
 </code></pre><p>Or this command:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl get domain [domain name] -n [namespace] -o yaml
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl get domain [domain name] -n [namespace] -o yaml
 </code></pre><h4 id="domain-resource-custom-resource-definition-crd">Domain resource custom resource definition (CRD)</h4>
 <p>The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD) and, like all <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">Kubernetes objects</a>, is described by three sections: <code>metadata</code>, <code>spec</code>, and <code>status</code>.</p>
 <p>The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator&rsquo;s role based access control (RBAC) requirements are documented <a href="/weblogic-kubernetes-operator/3.0/security/rbac/">here</a>.</p>
 <p>For Kubernetes 1.16 and later:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl create -f kubernetes/crd/domain-crd.yaml
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl create -f kubernetes/crd/domain-crd.yaml
 </code></pre><p>For Kubernetes 1.15 and earlier:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl create -f kubernetes/crd/domain-v1beta1-crd.yaml
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl create -f kubernetes/crd/domain-v1beta1-crd.yaml
 </code></pre><p>After the CustomResourceDefinition is installed, either by the operator or using one of the <code>create</code> commands above, you can verify that the CRD is installed correctly using:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl get crd domains.weblogic.oracle
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl get crd domains.weblogic.oracle
 </code></pre><h4 id="domain-resource-attribute-references">Domain resource attribute references</h4>
 <p>The domain resource <code>metadata</code> section names the Domain and its namespace.  The name of the Domain is the default value for the <code>domain UID</code> which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different.</p>
 <p>The domain resource <code>spec</code> section describes the intended running state of the domain, including intended runtime state of WebLogic Server instances, number of cluster members started, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts.</p>
@@ -3023,7 +3023,7 @@ if (!doNotTrack) {
 </ul>
 <h4 id="using-kubectl-explain">Using <code>kubectl explain</code></h4>
 <p>If you are using Kubernetes 1.16 or later, you can access the description of any field of the Domain using <code>kubectl explain</code>. For instance, the following command displays the description of the <code>domainUID</code> field:</p>
-<pre><code class="language-none" data-lang="none">$ kubectl explain domain.spec.domainUID
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl explain domain.spec.domainUID
 KIND:     Domain
 VERSION:  weblogic.oracle/v8
 
@@ -3076,14 +3076,14 @@ DESCRIPTION:
 <li>
 <p>These elements are under <code>configuration</code>.</p>
 <ul>
-<li><code>overridesConfigMap</code>: The name of the ConfigMap for WebLogic <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/">configuration overrides</a>. If this field is specified, then the value of <code>spec.configOverrides</code> is ignored.</li>
+<li><code>overridesConfigMap</code>: The name of the ConfigMap for WebLogic <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a>. If this field is specified, then the value of <code>spec.configOverrides</code> is ignored.</li>
 <li><code>overrideDistributionStrategy</code>: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the <code>domainHomeSourceType</code> is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the <code>overrideConfigMap</code> field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server&rsquo;s next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also <code>introspectVersion</code>. Defaults to DYNAMIC.</li>
-<li><code>secrets</code>: A list of names of the Secrets for WebLogic <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/configoverrides/">configuration overrides</a> or model. If this field is specified, then the value of <code>spec.configOverrideSecrets</code> is ignored.</li>
+<li><code>secrets</code>: A list of names of the Secrets for WebLogic <a href="/userguide/managing-domains/configoverrides/">configuration overrides</a> or model. If this field is specified, then the value of <code>spec.configOverrideSecrets</code> is ignored.</li>
 <li><code>introspectorJobActiveDeadlineSeconds</code>: The introspector job timeout value in seconds. If this field is specified, then the operator&rsquo;s ConfigMap <code>data.introspectorJobActiveDeadlineSeconds</code> value is ignored. Defaults to 120 seconds.</li>
 </ul>
 </li>
 <li>
-<p>These elements are under <code>configuration.model</code>, only apply if the <code>domainHomeSourceType</code> is <code>FromModel</code>, and are discussed in <a href="/weblogic-kubernetes-operator/3.0/userguide/managing-domains/model-in-image/">Model in Image</a>.</p>
+<p>These elements are under <code>configuration.model</code>, only apply if the <code>domainHomeSourceType</code> is <code>FromModel</code>, and are discussed in <a href="/userguide/managing-domains/model-in-image/">Model in Image</a>.</p>
 <ul>
 <li><code>configMap</code>: Name of a ConfigMap containing the WebLogic Deploy Tooling model.</li>
 <li><code>domainType</code>: WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.</li>
@@ -3147,33 +3147,33 @@ DESCRIPTION:
 <li>You can use <code>JAVA_OPTIONS</code> and <code>WLSDEPLOY_PROPERTIES</code> to disable Fast Application Notifications (FAN); see the <a href="/weblogic-kubernetes-operator/3.0/faq/fan/">Disable Fast Application Notifications FAQ</a> for details.</li>
 </ul>
 <p>This example snippet illustrates how to add some of the above environment variables using the <code>env</code> attribute under the <code>serverPod</code> configuration in your Domain YAML file.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
-<span style="color:#75715e">#</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">domains23</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">serverPod</span>:
-    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
-    <span style="color:#f92672">env</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false &#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom &#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">NODEMGR_JAVA_OPTIONS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false &#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">NODEMGR_MEM_ARGS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom &#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">PRE_CLASSPATH</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;/sample/path/prepended/to/weblogic/system/classpath:/another/prepended/path&#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CLASSPATH</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;/sample/path/appended/to/weblogic/system/classpath:/another/appended/path&#34;</span>
-</code></pre></div><h4 id="pod-generation">Pod generation</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">domains23</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false &#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom &#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">NODEMGR_JAVA_OPTIONS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false &#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">NODEMGR_MEM_ARGS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom &#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">PRE_CLASSPATH</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;/sample/path/prepended/to/weblogic/system/classpath:/another/prepended/path&#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CLASSPATH</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;/sample/path/appended/to/weblogic/system/classpath:/another/appended/path&#34;</span>
+</span></span></code></pre></div><h4 id="pod-generation">Pod generation</h4>
 <p>The operator creates a Pod for each running WebLogic Server instance.  This Pod will have a container, named <code>weblogic-server</code>, based on the container image specified by the <code>image</code> field.  Additional Pod or container content can be specified using the elements under <code>serverPod</code>. This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, <a href="https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/">resource requirements</a>, or <a href="https://kubernetes.io/docs/tasks/configure-pod-container/security-context/">security context</a>.</p>
 <p>Customer provided labels and annotations may not begin with &ldquo;weblogic&rdquo; and the operator will generate the following labels:</p>
 <ul>
@@ -3193,70 +3193,70 @@ DESCRIPTION:
 <li><code>LOG_HOME</code>: The WebLogic log location as a file system path within the container.</li>
 </ul>
 <p>This example domain YAML file specifies that Pods for WebLogic Server instances in the <code>cluster-1</code> cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
-<span style="color:#75715e">#</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">domains23</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/oracle/user_projects/domains/domain1</span>
-  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">Image</span>
-  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4&#34;</span>
-  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
-  <span style="color:#f92672">imagePullSecrets</span>:
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ocirsecret</span>
-  <span style="color:#f92672">webLogicCredentialsSecret</span>:
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-credentials</span>
-  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
-  <span style="color:#f92672">serverPod</span>:
-    <span style="color:#f92672">env</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom &#34;</span>
-
-  <span style="color:#f92672">adminServer</span>:
-    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
-
-  <span style="color:#f92672">clusters</span>:
-  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
-    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
-    <span style="color:#f92672">serverPod</span>:
-      <span style="color:#f92672">affinity</span>:
-        <span style="color:#f92672">podAntiAffinity</span>:
-          <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
-            - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">100</span>
-              <span style="color:#f92672">podAffinityTerm</span>:
-                <span style="color:#f92672">labelSelector</span>:
-                  <span style="color:#f92672">matchExpressions</span>:
-                    - <span style="color:#f92672">key</span>: <span style="color:#e6db74">&#34;weblogic.clusterName&#34;</span>
-                      <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
-                      <span style="color:#f92672">values</span>:
-                      - <span style="color:#ae81ff">$(CLUSTER_NAME)</span>
-                <span style="color:#f92672">topologyKey</span>: <span style="color:#e6db74">&#34;kubernetes.io/hostname&#34;</span>
-      <span style="color:#f92672">volumes</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">$(SERVER_NAME)-volume</span>
-        <span style="color:#f92672">emptyDir</span>: {}
-      <span style="color:#f92672">volumeMounts</span>:
-      - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/server-volume</span>
-        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">$(SERVER_NAME)-volume</span>
-      <span style="color:#f92672">initContainers</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">volumeinit</span>
-        <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;oraclelinux:7-slim&#34;</span>
-        <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
-        <span style="color:#f92672">command</span>: [<span style="color:#e6db74">&#34;/usr/bin/sh&#34;</span>]
-        <span style="color:#f92672">args</span>: [<span style="color:#e6db74">&#34;echo&#34;</span>, <span style="color:#e6db74">&#34;Replace with command to initialize files in /init-volume&#34;</span>]
-        <span style="color:#f92672">volumeMounts</span>:
-        - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/init-volume</span>
-          <span style="color:#f92672">name</span>: <span style="color:#ae81ff">$(SERVER_NAME)-volume</span>
-    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
-</code></pre></div><p>The operator uses an &ldquo;introspection&rdquo; job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The Job Pod for the introspector is generated using the <code>serverPod</code> entries for the Administration Server.  Because the Administration Server name is not known until the introspection step is complete, the value of the <code>$(SERVER_NAME)</code> variable for the introspection job will be &ldquo;introspector&rdquo;.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">domains23</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/oracle/user_projects/domains/domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">Image</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">imagePullSecrets</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ocirsecret</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-weblogic-credentials</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom &#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">adminServer</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">clusters</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">affinity</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">podAntiAffinity</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">podAffinityTerm</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">labelSelector</span>:
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">matchExpressions</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#f92672">key</span>: <span style="color:#e6db74">&#34;weblogic.clusterName&#34;</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">values</span>:
+</span></span><span style="display:flex;"><span>                      - <span style="color:#ae81ff">$(CLUSTER_NAME)</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">topologyKey</span>: <span style="color:#e6db74">&#34;kubernetes.io/hostname&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">$(SERVER_NAME)-volume</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">emptyDir</span>: {}
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/server-volume</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">$(SERVER_NAME)-volume</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">initContainers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">volumeinit</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;oraclelinux:7-slim&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">command</span>: [<span style="color:#e6db74">&#34;/usr/bin/sh&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">args</span>: [<span style="color:#e6db74">&#34;echo&#34;</span>, <span style="color:#e6db74">&#34;Replace with command to initialize files in /init-volume&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/init-volume</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">name</span>: <span style="color:#ae81ff">$(SERVER_NAME)-volume</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+</span></span></code></pre></div><p>The operator uses an &ldquo;introspection&rdquo; job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The Job Pod for the introspector is generated using the <code>serverPod</code> entries for the Administration Server.  Because the Administration Server name is not known until the introspection step is complete, the value of the <code>$(SERVER_NAME)</code> variable for the introspection job will be &ldquo;introspector&rdquo;.</p>
 
 
 <footer class=" footline" >
@@ -5283,19 +5283,19 @@ DESCRIPTION:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/clipboard.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/perfect-scrollbar.jquery.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/jquery.sticky.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/featherlight.min.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/highlight.pack.js?1664997068"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664993351"></script>
-    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664993351"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/modernizr.custom-3.6.0.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/learn.js?1664997068"></script>
+    <script src="/weblogic-kubernetes-operator/3.0/js/hugo-learn.js?1664997068"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664993351" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664993351"></script>
+    <link href="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.css?1664997068" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.0/mermaid/mermaid.js?1664997068"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

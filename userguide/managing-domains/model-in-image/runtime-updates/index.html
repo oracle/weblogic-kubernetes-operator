@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Updating a running Model in Image domain&#39;s images and model files.">
 
 
@@ -12,20 +12,20 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3599,7 +3599,7 @@ and then restarts the other pods in the cluster.</p>
 If a change is unsupported for an online or offline update, then propagating
 the change requires entirely shutting domain the domain,
 applying the change, and finally restarting the domain. Full domain restarts are discussed in
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.
+<a href="/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.
 Supported and unsupported changes are discussed in
 <a href="#supported-updates">Supported updates</a>
 and
@@ -3608,7 +3608,7 @@ and
 
 <div class="notices warning" ><p>Custom configuration overrides, which are WebLogic configuration overrides
 specified using a domain resource YAML file <code>configuration.overridesConfigMap</code>, as described in
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">Configuration overrides</a>,
+<a href="/userguide/managing-domains/configoverrides/">Configuration overrides</a>,
 are <em>not</em> supported in combination with Model in Image.
 Model in Image will generate an error if custom overrides are specified.
 This should not be a concern because model file, secret, or model image updates are simpler
@@ -3636,13 +3636,13 @@ along with their parent bean hierarchy. For example, you can add a data source.<
 <p>You can change or add MBean attributes by specifying a YAML file snippet
 along with its parent bean hierarchy that references an existing MBean and the attribute.
 For example, to add or alter the maximum capacity of a data source named <code>mynewdatasource</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">JDBCSystemResource</span>:
-    <span style="color:#f92672">mynewdatasource</span>:
-      <span style="color:#f92672">JdbcResource</span>:
-        <span style="color:#f92672">JDBCConnectionPoolParams</span>:
-          <span style="color:#f92672">MaxCapacity</span>: <span style="color:#ae81ff">5</span>
-</code></pre></div><p>For more information, see <a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#using-multiple-models">Using Multiple Models</a> in the WebLogic Deploy Tooling documentation.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">JDBCSystemResource</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">mynewdatasource</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">JdbcResource</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">JDBCConnectionPoolParams</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">MaxCapacity</span>: <span style="color:#ae81ff">5</span>
+</span></span></code></pre></div><p>For more information, see <a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#using-multiple-models">Using Multiple Models</a> in the WebLogic Deploy Tooling documentation.</p>
 </li>
 <li>
 <p>You can change or add secrets that your model macros reference
@@ -3665,10 +3665,10 @@ For example, if you have a data source named <code>mynewdatasource</code> define
 in your model, then it can be removed by specifying a small model file that
 loads after the model file that defines the data source, where the
 small model file looks like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">JDBCSystemResource</span>:
-    <span style="color:#f92672">!mynewdatasource</span>:
-</code></pre></div><p>There are <a href="#online-update-handling-of-deletes">some exceptions for online updates</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">JDBCSystemResource</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">!mynewdatasource</span>:
+</span></span></code></pre></div><p>There are <a href="#online-update-handling-of-deletes">some exceptions for online updates</a>.</p>
 <p>For more information, see
 <a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete">Declaring Named MBeans to Delete</a>
 in the WebLogic Deploying Tooling documentation.</p>
@@ -3676,7 +3676,7 @@ in the WebLogic Deploying Tooling documentation.</p>
 </ul>
 <h3 id="unsupported-updates">Unsupported updates</h3>
 
-<div class="notices warning" ><p>It is important to avoid applying unsupported model updates to a running domain. An attempt to use an unsupported update may not always result in a clear error message, and the expected behavior may be undefined. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.</p>
+<div class="notices warning" ><p>It is important to avoid applying unsupported model updates to a running domain. An attempt to use an unsupported update may not always result in a clear error message, and the expected behavior may be undefined. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change. See <a href="/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.</p>
 </div>
 
 <p>The following summarizes the types of runtime update configuration that are <em>not</em> supported in this release of Model in Image unless a workaround or alternative is documented:</p>
@@ -3834,7 +3834,7 @@ or <code>spec.serverPod.adminServer.env</code> attributes.</p>
 </ul>
 
 <div class="notices note" ><p>It is advisable to defer the last two modification options, or similar domain resource YAML file changes to
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a>,
+<a href="/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a>,
 until all of your other modifications are ready.
 This is because such changes automatically and immediately result in a rerun of your introspector job,
 and, if the job succeeds, then a roll of the domain,
@@ -3855,7 +3855,7 @@ see <a href="#using-the-wdt-discover-domain-and-compare-model-tools">Using the W
 <li>
 <p>If you specify multiple model files in your image, volumes (including those based on images from the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a> feature), or WDT ConfigMap,
 then the order in which they&rsquo;re loaded and merged is determined as described in
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
+<a href="/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
 </li>
 <li>
 <p>If you are performing an online update and the update includes deletes, then
@@ -3897,7 +3897,7 @@ otherwise, change an attribute that instructs the operator to roll the domain.
 For examples, see
 <a href="#changing-a-domain-restartversion-or-introspectversion">change the domain <code>spec.restartVersion</code></a>
 or change any of the other
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">Domain resource YAML fields that cause servers to be restarted</a>.</li>
+<a href="/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">Domain resource YAML fields that cause servers to be restarted</a>.</li>
 </ol>
 </li>
 </ol>
@@ -3928,7 +3928,7 @@ as per <a href="#updating-an-existing-model">Updating an existing model</a>.</li
 <ol>
 <li>
 <p><strong>Do not</strong> change <code>domain.spec.image</code>, <code>domain.spec.serverPod.env</code>, or any other domain resource YAML
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a>;
+<a href="/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a>;
 this will automatically and immediately result in a rerun of your introspector job,
 a roll if the job succeeds, plus an offline update if there are any accompanying model changes.</p>
 </li>
@@ -4003,28 +4003,28 @@ plus, if the introspector job has stopped retrying, you must also change your do
 </li>
 </ul>
 <p>Sample domain resource YAML file for an online update:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
-...
-<span style="color:#f92672">spec</span>:
-  <span style="color:#ae81ff">...</span>
-  <span style="color:#f92672">introspectVersion</span>: <span style="color:#ae81ff">5</span>
-  <span style="color:#f92672">configuration</span>:
-    <span style="color:#ae81ff">...</span>
-    <span style="color:#f92672">model</span>:
-      <span style="color:#f92672">domainType</span>: <span style="color:#e6db74">&#34;WLS&#34;</span>
-      <span style="color:#f92672">configMap</span>: <span style="color:#ae81ff">sample-domain1-wdt-config-map</span>
-      <span style="color:#f92672">runtimeEncryptionSecret</span>: <span style="color:#ae81ff">sample-domain1-runtime-encryption-secret</span>
-      <span style="color:#f92672">onlineUpdate</span>:
-        <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
-        <span style="color:#f92672">onNonDynamicChanges</span>: <span style="color:#e6db74">&#34;CommitUpdateAndRoll&#34;</span>
-    <span style="color:#f92672">secrets</span>:
-    - <span style="color:#ae81ff">sample-domain1-datasource-secret</span>
-    - <span style="color:#ae81ff">sample-domain1-another-secret</span>
-</code></pre></div><h4 id="online-update-handling-of-non-dynamic-weblogic-configuration-changes">Online update handling of non-dynamic WebLogic configuration changes</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">introspectVersion</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">configuration</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">model</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">domainType</span>: <span style="color:#e6db74">&#34;WLS&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">configMap</span>: <span style="color:#ae81ff">sample-domain1-wdt-config-map</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">runtimeEncryptionSecret</span>: <span style="color:#ae81ff">sample-domain1-runtime-encryption-secret</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">onlineUpdate</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">onNonDynamicChanges</span>: <span style="color:#e6db74">&#34;CommitUpdateAndRoll&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">secrets</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">sample-domain1-datasource-secret</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">sample-domain1-another-secret</span>
+</span></span></code></pre></div><h4 id="online-update-handling-of-non-dynamic-weblogic-configuration-changes">Online update handling of non-dynamic WebLogic configuration changes</h4>
 <p>The domain resource YAML <code>domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges</code> attribute
 controls behavior when
 non-dynamic WebLogic configuration changes are detected during an online update introspector job.
@@ -4075,89 +4075,88 @@ no longer includes the <code>appDeployment</code> section, then the online updat
 will delete the application from the domain.</p>
 <p><em>MBean type section deletion</em></p>
 <p>For an example of an MBean deletion, consider a WDT ConfigMap that starts with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">SelfTuning</span>:
-    <span style="color:#f92672">WorkManager</span>:
-      <span style="color:#f92672">wm1</span>:
-        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
-      <span style="color:#f92672">wm2</span>:
-        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
-  <span style="color:#f92672">JDBCSystemResource</span>:
-    <span style="color:#ae81ff">...</span>
-</code></pre></div><p>If you want to online update to a new model without <code>work-managers</code>,
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">wm1</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">wm2</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">JDBCSystemResource</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><p>If you want to online update to a new model without <code>work-managers</code>,
 then change the ConfigMap to the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">SelfTuning</span>:
-    <span style="color:#f92672">WorkManager</span>:
-  <span style="color:#f92672">JDBCSystemResource</span>:
-    <span style="color:#ae81ff">...</span>
-</code></pre></div><p>or supply an additional ConfigMap:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">SelfTuning</span>:
-    <span style="color:#f92672">WorkManager</span>:
-      <span style="color:#f92672">&#39;!wm1&#39;</span>:
-      <span style="color:#f92672">&#39;!wm2&#39;</span>:
-</code></pre></div><p>The online update will fail if you try replace the ConfigMap
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">JDBCSystemResource</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><p>or supply an additional ConfigMap:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#39;!wm1&#39;</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#39;!wm2&#39;</span>:
+</span></span></code></pre></div><p>The online update will fail if you try replace the ConfigMap
 with the <code>SelfTuning</code> section omitted:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">JDBCSystemResource</span>:
-    <span style="color:#ae81ff">...</span>
-</code></pre></div><p>The above will fail as this implicitly removes
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">JDBCSystemResource</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><p>The above will fail as this implicitly removes
 the MBean types <code>SelfTuning</code> and <code>WorkManager</code>.</p>
 <p><em>Deleting cross-referenced MBeans</em></p>
 <p>For an example of an unsupported online update delete of MBeans
 with cross references, consider the case of a Work Manager
 configured with constraints where you want to delete the entire Work Manager:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">SelfTuning</span>:
-    <span style="color:#f92672">WorkManager</span>:
-      <span style="color:#f92672">newWM</span>:
-        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
-        <span style="color:#f92672">MinThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMinThreads&#39;</span>
-        <span style="color:#f92672">MaxThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMaxThreads&#39;</span>
-    <span style="color:#f92672">MinThreadsConstraint</span>:
-      <span style="color:#f92672">SampleMinThreads</span>:
-        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">1</span>
-    <span style="color:#f92672">MaxThreadsConstraint</span>:
-      <span style="color:#f92672">SampleMaxThreads</span>:
-        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">10</span>
-</code></pre></div><p>If you try to specify the updated model in the ConfigMap as:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-    <span style="color:#f92672">SelfTuning</span>:
-        <span style="color:#f92672">WorkManager</span>:
-        <span style="color:#f92672">MinThreadsConstraint</span>:
-        <span style="color:#f92672">MaxThreadsConstraint</span>:
-
-</code></pre></div><p>Then, the operator will try use this delta to online update the domain:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-    <span style="color:#f92672">SelfTuning</span>:
-        <span style="color:#f92672">MaxThreadsConstraint</span>:
-            <span style="color:#f92672">&#39;!SampleMaxThreads&#39;</span>:
-        <span style="color:#f92672">WorkManager</span>:
-            <span style="color:#f92672">&#39;!newWM&#39;</span>:
-        <span style="color:#f92672">MinThreadsConstraint</span>:
-            <span style="color:#f92672">&#39;!SampleMinThreads&#39;</span>:
-</code></pre></div><p>This can fail because an online update might not delete all the referenced <code>Constraints</code> first
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">newWM</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MinThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMinThreads&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MaxThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMaxThreads&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MinThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SampleMinThreads</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MaxThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SampleMaxThreads</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">10</span>
+</span></span></code></pre></div><p>If you try to specify the updated model in the ConfigMap as:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MinThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MaxThreadsConstraint</span>:
+</span></span></code></pre></div><p>Then, the operator will try use this delta to online update the domain:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MaxThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#39;!SampleMaxThreads&#39;</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#39;!newWM&#39;</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MinThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#39;!SampleMinThreads&#39;</span>:
+</span></span></code></pre></div><p>This can fail because an online update might not delete all the referenced <code>Constraints</code> first
 before deleting the <code>WorkManager</code>.</p>
 <p>To work around problems with online updates to objects with cross dependencies, you can
 use a series of online updates to make the change in stages. For example, continuing the previous Work Manager
 example, first perform an online update to omit the Work Manager but not the constraints:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">SelfTuning</span>:
-    <span style="color:#f92672">WorkManager</span>:
-    <span style="color:#f92672">MinThreadsConstraint</span>:
-      <span style="color:#f92672">SampleMinThreads</span>:
-        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">1</span>
-    <span style="color:#f92672">MaxThreadsConstraint</span>:
-      <span style="color:#f92672">SampleMaxThreads</span>:
-        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">10</span>
-</code></pre></div><p>After that update completes, then perform another online update:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">resources</span>:
-    <span style="color:#f92672">SelfTuning</span>:
-        <span style="color:#f92672">WorkManager</span>:
-        <span style="color:#f92672">MinThreadsConstraint</span>:
-        <span style="color:#f92672">MaxThreadsConstraint</span>:
-</code></pre></div><h4 id="online-update-status-and-labels">Online update status and labels</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MinThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SampleMinThreads</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">MaxThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">SampleMaxThreads</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">10</span>
+</span></span></code></pre></div><p>After that update completes, then perform another online update:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">SelfTuning</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">WorkManager</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MinThreadsConstraint</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">MaxThreadsConstraint</span>:
+</span></span></code></pre></div><h4 id="online-update-status-and-labels">Online update status and labels</h4>
 <p>During an online update, the operator will rerun the introspector job, which
 in turn attempts online WebLogic configuration changes to the running domain.
 You can monitor an update&rsquo;s status using its domain resource&rsquo;s status conditions
@@ -4207,20 +4206,20 @@ such as when:
 processing a domain resource change or during a roll.</li>
 <li>For example, after a successful online update,
 you will see something like this in the domain resource <code>domain.status</code> section:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">status</span>:
-  <span style="color:#f92672">clusters</span>:
-  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
-    <span style="color:#f92672">maximumReplicas</span>: <span style="color:#ae81ff">5</span>
-    <span style="color:#f92672">minimumReplicas</span>: <span style="color:#ae81ff">0</span>
-    <span style="color:#f92672">readyReplicas</span>: <span style="color:#ae81ff">2</span>
-    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
-    <span style="color:#f92672">replicasGoal</span>: <span style="color:#ae81ff">2</span>
-  <span style="color:#f92672">conditions</span>:
-  - <span style="color:#f92672">lastTransitionTime</span>: <span style="color:#e6db74">&#34;2021-01-26T18:43:14.377Z&#34;</span>
-    <span style="color:#f92672">reason</span>: <span style="color:#ae81ff">ServersReady</span>
-    <span style="color:#f92672">status</span>: <span style="color:#e6db74">&#34;True&#34;</span>
-    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">Available</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">status</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">clusters</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">maximumReplicas</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">minimumReplicas</span>: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">readyReplicas</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">replicasGoal</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">conditions</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">lastTransitionTime</span>: <span style="color:#e6db74">&#34;2021-01-26T18:43:14.377Z&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">reason</span>: <span style="color:#ae81ff">ServersReady</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">status</span>: <span style="color:#e6db74">&#34;True&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">Available</span>
+</span></span></code></pre></div></li>
 </ul>
 </li>
 <li>
@@ -4260,11 +4259,11 @@ may remain True.</li>
 </ul>
 </li>
 <li>For example:
-<pre><code>Status:
+<pre tabindex="0"><code>Status:
   ...
   Conditions:
     Last Transition Time:  2021-01-20T15:09:15.209Z
-    Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to  make the changes effective. The changes are: Server re-start is REQUIRED for the set of changes in progress.
+    Message:               Online update completed successfully, but the changes require restart and the domain resource specified &#39;spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly&#39; or not set. The changes are committed but the domain require manually restart to  make the changes effective. The changes are: Server re-start is REQUIRED for the set of changes in progress.
 
 The following non-dynamic attribute(s) have been changed on MBeans
 that require server re-start:
@@ -4384,7 +4383,7 @@ successful online model update.</li>
 </ul>
 </li>
 <li>
-<p><em>Changing any of the domain resource <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a> in addition to <code>domain.spec.introspectVersion</code>, <code>spec.configuration.secrets</code>, <code>spec.configuration.model.onlineUpdate</code>, or <code>spec.configuration.model.configMap</code>.</em></p>
+<p><em>Changing any of the domain resource <a href="/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a> in addition to <code>domain.spec.introspectVersion</code>, <code>spec.configuration.secrets</code>, <code>spec.configuration.model.onlineUpdate</code>, or <code>spec.configuration.model.configMap</code>.</em></p>
 <ul>
 <li>Expected outcome after the introspector job completes:
 <ul>
@@ -4466,30 +4465,27 @@ generates model files from an existing domain home,
 and its <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/compare/">Compare Model Tool</a>
 compares two domain models and generates the YAML file for updating the first domain to the second domain.</p>
 <p>For example, assuming you&rsquo;ve installed WDT in <code>/u01/wdt/weblogic-deploy</code> and assuming your domain type is <code>WLS</code>:</p>
-<pre><code># (1) Run discover for your existing domain home.
-
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -oracle_home $ORACLE_HOME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -domain_home $DOMAIN_HOME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -domain_type WLS <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -archive_file old.zip <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -model_file old.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -variable_file old.properties
-</code></pre></div><pre><code># (2) Now make some WebLogic config changes using the console or WLST.
+<pre tabindex="0"><code># (1) Run discover for your existing domain home.
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -oracle_home $ORACLE_HOME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -domain_home $DOMAIN_HOME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -domain_type WLS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -archive_file old.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -model_file old.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -variable_file old.properties
+</span></span></code></pre></div><pre tabindex="0"><code># (2) Now make some WebLogic config changes using the console or WLST.
 
 # (3) Run discover for your changed domain home.
-
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -oracle_home $ORACLE_HOME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -domain_home $DOMAIN_HOME <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -domain_type WLS <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -archive_file new.zip <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -model_file new.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -variable_file new.properties
-</code></pre></div><pre><code># (4) Compare your old and new yaml using diff
-
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ diff new.yaml old.yaml
-</code></pre></div><pre><code># (5) Compare your old and new yaml using compareDomain to generate
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -oracle_home $ORACLE_HOME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -domain_home $DOMAIN_HOME <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -domain_type WLS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -archive_file new.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -model_file new.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -variable_file new.properties
+</span></span></code></pre></div><pre tabindex="0"><code># (4) Compare your old and new yaml using diff
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ diff new.yaml old.yaml
+</span></span></code></pre></div><pre tabindex="0"><code># (5) Compare your old and new yaml using compareDomain to generate
 #     the YAML update file you can use for transforming the old to new.
 
 # /u01/wdt/weblogic-deploy/bin/compareModel.sh \
@@ -4521,36 +4517,36 @@ the Domain <code>spec.introspectVersion</code>. Here are some common ways to alt
 <p>Here&rsquo;s a sample automation script for <code>restartVersion</code>
 that takes a namespace as the first parameter (default <code>sample-domain1-ns</code>)
 and a domainUID as the second parameter (default <code>sample-domain1</code>):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
-</span><span style="color:#75715e"></span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span>sample-domain1-ns<span style="color:#e6db74">}</span>
-DOMAINUID<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>2<span style="color:#66d9ef">:-</span>sample-domain1<span style="color:#e6db74">}</span>
-currentRV<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> get domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.restartVersion}&#39;</span><span style="color:#66d9ef">)</span>
-<span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
-  <span style="color:#75715e"># we enter here only if the previous command succeeded</span>
-
-  nextRV<span style="color:#f92672">=</span><span style="color:#66d9ef">$((</span>currentRV <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#66d9ef">))</span>
-
-  echo <span style="color:#e6db74">&#34;@@ Info: Rolling domain &#39;</span><span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; in namespace &#39;</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; from restartVersion=&#39;</span><span style="color:#e6db74">${</span>currentRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; to restartVersion=&#39;</span><span style="color:#e6db74">${</span>nextRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;.&#34;</span>
-
-  kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> patch domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;json&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    -p<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/restartVersion&#34;, &#34;value&#34;: &#34;&#39;</span><span style="color:#e6db74">${</span>nextRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;&#34; }]&#39;</span>
-<span style="color:#66d9ef">fi</span>
-</code></pre></div><p>Here&rsquo;s a similar sample script for <code>introspectVersion</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
-</span><span style="color:#75715e"></span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span>sample-domain1-ns<span style="color:#e6db74">}</span>
-DOMAINUID<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>2<span style="color:#66d9ef">:-</span>sample-domain1<span style="color:#e6db74">}</span>
-currentIV<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> get domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.introspectVersion}&#39;</span><span style="color:#66d9ef">)</span>
-<span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
-  <span style="color:#75715e"># we enter here only if the previous command succeeded</span>
-
-  nextIV<span style="color:#f92672">=</span><span style="color:#66d9ef">$((</span>currentIV <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#66d9ef">))</span>
-
-  echo <span style="color:#e6db74">&#34;@@ Info: Rolling domain &#39;</span><span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; in namespace &#39;</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; from introspectVersion=&#39;</span><span style="color:#e6db74">${</span>currentIV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; to introspectVersion=&#39;</span><span style="color:#e6db74">${</span>nextIV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;.&#34;</span>
-
-  kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> patch domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;json&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    -p<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/introspectVersion&#34;, &#34;value&#34;: &#34;&#39;</span><span style="color:#e6db74">${</span>nextIV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;&#34; }]&#39;</span>
-<span style="color:#66d9ef">fi</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span>sample-domain1-ns<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>DOMAINUID<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>2<span style="color:#66d9ef">:-</span>sample-domain1<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>currentRV<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> get domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.restartVersion}&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># we enter here only if the previous command succeeded</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  nextRV<span style="color:#f92672">=</span><span style="color:#66d9ef">$((</span>currentRV <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#66d9ef">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  echo <span style="color:#e6db74">&#34;@@ Info: Rolling domain &#39;</span><span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; in namespace &#39;</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; from restartVersion=&#39;</span><span style="color:#e6db74">${</span>currentRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; to restartVersion=&#39;</span><span style="color:#e6db74">${</span>nextRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;.&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> patch domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;json&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -p<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/restartVersion&#34;, &#34;value&#34;: &#34;&#39;</span><span style="color:#e6db74">${</span>nextRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;&#34; }]&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p>Here&rsquo;s a similar sample script for <code>introspectVersion</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span>sample-domain1-ns<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>DOMAINUID<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>2<span style="color:#66d9ef">:-</span>sample-domain1<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>currentIV<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> get domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.introspectVersion}&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># we enter here only if the previous command succeeded</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  nextIV<span style="color:#f92672">=</span><span style="color:#66d9ef">$((</span>currentIV <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#66d9ef">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  echo <span style="color:#e6db74">&#34;@@ Info: Rolling domain &#39;</span><span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; in namespace &#39;</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; from introspectVersion=&#39;</span><span style="color:#e6db74">${</span>currentIV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; to introspectVersion=&#39;</span><span style="color:#e6db74">${</span>nextIV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;.&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  kubectl -n <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> patch domain <span style="color:#e6db74">${</span>DOMAINUID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;json&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -p<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/introspectVersion&#34;, &#34;value&#34;: &#34;&#39;</span><span style="color:#e6db74">${</span>nextIV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;&#34; }]&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div></li>
 <li>
 <p>You can use a WebLogic Kubernetes Operator sample script that invokes
 the same commands that are described in the previous bulleted item.</p>
@@ -4559,7 +4555,7 @@ the same commands that are described in the previous bulleted item.</p>
 the <code>kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/</code>
 directory.</li>
 <li>Or, see the more advanced <code>introspectDomain.sh</code> and <code>rollDomain.sh</code> among
-the <a href="/weblogic-kubernetes-operator/samples/domains/lifecycle/">Domain lifecycle sample scripts</a>.</li>
+the <a href="/samples/domains/lifecycle/">Domain lifecycle sample scripts</a>.</li>
 </ul>
 </li>
 </ul>
@@ -6888,19 +6884,19 @@ the <a href="/weblogic-kubernetes-operator/samples/domains/lifecycle/">Domain li
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

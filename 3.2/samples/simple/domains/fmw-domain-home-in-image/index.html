@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Sample for creating an FMW Infrastructure domain home inside an image, and the domain resource YAML file for deploying the generated WebLogic domain.">
 
 
@@ -12,20 +12,20 @@
     <title>FMW Infrastructure domain home in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664993355" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664997072" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664997072" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664997072"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664993355"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664997072"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664997072"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664997072"></script>
 
     
   </div>
@@ -1841,7 +1841,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3234,7 +3234,7 @@ and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and Pe
 The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually
 to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.</p>
 <h4 id="prerequisites">Prerequisites</h4>
-<p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
+<p>Before you begin, read this document, <a href="/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 <p>The following prerequisites must be met prior to running the create domain script:</p>
 <ul>
 <li>Make sure the WebLogic Kubernetes Operator is running.</li>
@@ -3242,31 +3242,31 @@ to start the Kubernetes artifacts of the corresponding domain, including the Web
 For details on how to obtain or create the image, refer to
 <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image">FMW Infrastructure domains</a>.</li>
 <li>Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.</li>
-<li>If <code>logHomeOnPV</code> is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/3.2/samples/simple/storage/">Create sample PV and PVC</a>.</li>
+<li>If <code>logHomeOnPV</code> is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see <a href="/samples/simple/storage/">Create sample PV and PVC</a>.</li>
 <li>Create the Kubernetes Secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes
 namespace as the domain.</li>
 <li>Unless you are creating a Restricted-JRF domain, you also need to:
 <ul>
-<li>Configure access to your database. For details, see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-fmw-domains/#configuring-access-to-your-database">here</a>.</li>
+<li>Configure access to your database. For details, see <a href="/userguide/managing-fmw-domains/#configuring-access-to-your-database">here</a>.</li>
 <li>Create a Kubernetes Secret with the RCU credentials. For details, refer to this <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md">document</a>.</li>
 </ul>
 </li>
 </ul>
 <h4 id="use-the-script-to-create-a-domain">Use the script to create a domain</h4>
 <p>The sample for creating domains is in this directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-image
-</code></pre></div><p>Make a copy of the <code>create-domain-inputs.yaml</code> file, update it with the correct values.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-image
+</span></span></code></pre></div><p>Make a copy of the <code>create-domain-inputs.yaml</code> file, update it with the correct values.
 If <code>fwmDomainType</code> is <code>JRF</code>, also update the input files with configurations for accessing the RCU database schema,
 including <code>rcuSchemaPrefix</code>, <code>rcuSchemaPassword</code>, <code>rcuDatabaseURL</code>, and <code>rcuCredentialSecrets</code>.
 Run the create script, pointing it at your inputs file and an output directory, along with user name and password for the WebLogic administrator,
 and if creating a JFR FMW domain, also provide the password for the RCU schema:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./create-domain.sh <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -u &lt;username&gt; <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -p &lt;password&gt; <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -q &lt;RCU schema password&gt; <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -i create-domain-inputs.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -o /&lt;path to output-directory&gt;
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./create-domain.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -u &lt;username&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -p &lt;password&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -q &lt;RCU schema password&gt; <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -i create-domain-inputs.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -o /&lt;path to output-directory&gt;
+</span></span></code></pre></div>
 <div class="notices note" ><p>The <code>create-domain.sh</code> script and its inputs file are for demonstration purposes <em>only</em>; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.</p>
 </div>
 
@@ -3332,25 +3332,25 @@ For more information, see
 <p>Create a Kubernetes domain resource YAML file, <code>domain.yaml</code>, in the directory that is created above.
 This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code>
 or <code>kubectl apply -f</code> command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
+</span></span></code></pre></div></li>
 </ul>
 <p>As a convenience, using the <code>-e</code> option, the script can optionally create the domain object,
 which in turn results in the creation of the corresponding WebLogic Server pods and services as well.</p>
 <p>The usage of the create script is as follows:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sh create-domain.sh -h
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-b buildNetworkParam] [-n encryption-key] [-e] [-v] [-h]
-  -i Parameter inputs file, must be specified.
-  -o Output directory for the generated YAML files, must be specified.
-  -u WebLogic administrator user name for the WebLogic domain.
-  -p WebLogic administrator Password for the WebLogic domain.
-  -q Password for the RCU schema. Required for JRF FMW domain type.
-  -e Also create the resources in the generated YAML files, optional.
-  -v Validate the existence of persistentVolumeClaim, optional.
-  -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
-  -b Value to be used in the buildNetwork parameter when invoking WebLogic Image Tool, optional.
-  -h Help
-</code></pre></div><p>If you copy the sample scripts to a different location, make sure that you copy everything in
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sh create-domain.sh -h
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-b buildNetworkParam] [-n encryption-key] [-e] [-v] [-h]
+</span></span><span style="display:flex;"><span>  -i Parameter inputs file, must be specified.
+</span></span><span style="display:flex;"><span>  -o Output directory for the generated YAML files, must be specified.
+</span></span><span style="display:flex;"><span>  -u WebLogic administrator user name for the WebLogic domain.
+</span></span><span style="display:flex;"><span>  -p WebLogic administrator Password for the WebLogic domain.
+</span></span><span style="display:flex;"><span>  -q Password for the RCU schema. Required for JRF FMW domain type.
+</span></span><span style="display:flex;"><span>  -e Also create the resources in the generated YAML files, optional.
+</span></span><span style="display:flex;"><span>  -v Validate the existence of persistentVolumeClaim, optional.
+</span></span><span style="display:flex;"><span>  -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
+</span></span><span style="display:flex;"><span>  -b Value to be used in the buildNetwork parameter when invoking WebLogic Image Tool, optional.
+</span></span><span style="display:flex;"><span>  -h Help
+</span></span></code></pre></div><p>If you copy the sample scripts to a different location, make sure that you copy everything in
 the <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts</code> directory together
 into the target directory, maintaining the original directory hierarchy.</p>
 <p>The default domain created by the script has the following characteristics:</p>
@@ -3589,137 +3589,137 @@ various Kubernetes objects that were created by the script.</p>
 namespace, you need to replace <code>NAMESPACE</code> in the example <code>kubectl</code> commands with the actual Kubernetes Namespace.</p>
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
 <p>The content of the generated <code>domain.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright (c) 2017, 2021, Oracle and/or its affiliates.</span>
-<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
-<span style="color:#75715e">#</span>
-<span style="color:#75715e"># This is an example of how to define a Domain resource.</span>
-<span style="color:#75715e">#</span>
-<span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fmwdomain</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">fmwdomain</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#75715e"># The WebLogic Domain Home</span>
-  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/oracle/user_projects/domains/fmwdomain</span>
-
-  <span style="color:#75715e"># The domain home source type</span>
-  <span style="color:#75715e"># Set to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image</span>
-  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">Image</span>
-
-  <span style="color:#75715e"># The WebLogic Server image that the Operator uses to start the domain</span>
-  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;domain-home-in-image:12.2.1.4&#34;</span>
-
-  <span style="color:#75715e"># imagePullPolicy defaults to &#34;Always&#34; if image version is :latest</span>
-  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
-
-  <span style="color:#75715e"># Identify which Secret contains the credentials for pulling an image</span>
-  <span style="color:#75715e">#imagePullSecrets:</span>
-  <span style="color:#75715e">#- name:</span>
-
-  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials (note that there is an example of</span>
-  <span style="color:#75715e"># how to create that Secret at the end of this file)</span>
-  <span style="color:#f92672">webLogicCredentialsSecret</span>:
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fmwdomain-weblogic-credentials</span>
-
-  <span style="color:#75715e"># Whether to include the server out file into the pod&#39;s stdout, default is true</span>
-  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
-
-  <span style="color:#75715e"># Whether to enable log home</span>
-  <span style="color:#75715e"># logHomeEnabled: false</span>
-
-  <span style="color:#75715e"># Whether to write HTTP access log file to log home</span>
-  <span style="color:#75715e"># httpAccessLogInLogHome: true</span>
-
-  <span style="color:#75715e"># The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
-  <span style="color:#75715e"># logHome: /shared/logs/domain1</span>
-  <span style="color:#75715e"># An (optional) in-pod location for data storage of default and custom file stores.</span>
-  <span style="color:#75715e"># If not specified or the value is either not set or empty (e.g. dataHome: &#34;&#34;) then the</span>
-  <span style="color:#75715e"># data storage directories are determined from the WebLogic domain home configuration.</span>
-  <span style="color:#f92672">dataHome</span>: <span style="color:#e6db74">&#34;&#34;</span>
-
-  <span style="color:#75715e"># serverStartPolicy legal values are &#34;NEVER&#34;, &#34;IF_NEEDED&#34;, or &#34;ADMIN_ONLY&#34;</span>
-  <span style="color:#75715e"># This determines which WebLogic Servers the Operator will start up when it discovers this Domain</span>
-  <span style="color:#75715e"># - &#34;NEVER&#34; will not start any server in the domain</span>
-  <span style="color:#75715e"># - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)</span>
-  <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server and clustered servers up to the replica count</span>
-  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
-
-  <span style="color:#f92672">serverPod</span>:
-    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
-    <span style="color:#f92672">env</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
-      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m &#34;</span>
-    <span style="color:#75715e"># volumes:</span>
-    <span style="color:#75715e"># - name: weblogic-domain-storage-volume</span>
-    <span style="color:#75715e">#   persistentVolumeClaim:</span>
-    <span style="color:#75715e">#     claimName: weblogic-sample-pvc</span>
-    <span style="color:#75715e"># volumeMounts:</span>
-    <span style="color:#75715e"># - mountPath: /shared</span>
-    <span style="color:#75715e">#   name: weblogic-domain-storage-volume</span>
-
-  <span style="color:#75715e"># adminServer is used to configure the desired behavior for starting the administration server.</span>
-  <span style="color:#f92672">adminServer</span>:
-    <span style="color:#75715e"># serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;</span>
-    <span style="color:#75715e"># &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode</span>
-    <span style="color:#75715e"># &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode</span>
-    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
-    <span style="color:#f92672">adminService</span>:
-      <span style="color:#f92672">channels</span>:
-    <span style="color:#75715e"># The Admin Server&#39;s NodePort</span>
-       - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">default</span>
-         <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30701</span>
-    <span style="color:#75715e"># Uncomment to export the T3Channel as a service</span>
-    <span style="color:#75715e">#    - channelName: T3Channel</span>
-    <span style="color:#f92672">serverPod</span>:
-      <span style="color:#75715e"># an (optional) list of environment variable to be set on the admin servers</span>
-      <span style="color:#f92672">env</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
-        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m &#34;</span>
-
-  <span style="color:#75715e"># clusters is used to configure the desired behavior for starting member servers of a cluster.  </span>
-  <span style="color:#75715e"># If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.</span>
-  <span style="color:#f92672">clusters</span>:
-  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
-    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
-    <span style="color:#f92672">serverPod</span>:
-      <span style="color:#75715e"># Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not</span>
-      <span style="color:#75715e"># already members of the same cluster.</span>
-      <span style="color:#f92672">affinity</span>:
-        <span style="color:#f92672">podAntiAffinity</span>:
-          <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
-            - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">100</span>
-              <span style="color:#f92672">podAffinityTerm</span>:
-                <span style="color:#f92672">labelSelector</span>:
-                  <span style="color:#f92672">matchExpressions</span>:
-                    - <span style="color:#f92672">key</span>: <span style="color:#e6db74">&#34;weblogic.clusterName&#34;</span>
-                      <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
-                      <span style="color:#f92672">values</span>:
-                        - <span style="color:#ae81ff">$(CLUSTER_NAME)</span>
-                <span style="color:#f92672">topologyKey</span>: <span style="color:#e6db74">&#34;kubernetes.io/hostname&#34;</span>
-    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
-  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
-  <span style="color:#75715e"># replicas: 1</span>
-
-  <span style="color:#75715e"># Istio</span>
-  <span style="color:#75715e"># configuration:</span>
-  <span style="color:#75715e">#   istio:</span>
-  <span style="color:#75715e">#     enabled:</span>
-  <span style="color:#75715e">#     readinessPort:</span>
-</code></pre></div><h4 id="verify-the-domain">Verify the domain</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Copyright (c) 2017, 2021, Oracle and/or its affiliates.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This is an example of how to define a Domain resource.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fmwdomain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">fmwdomain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The WebLogic Domain Home</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/oracle/user_projects/domains/fmwdomain</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The domain home source type</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Set to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">Image</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The WebLogic Server image that the Operator uses to start the domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;domain-home-in-image:12.2.1.4&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># imagePullPolicy defaults to &#34;Always&#34; if image version is :latest</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Identify which Secret contains the credentials for pulling an image</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#imagePullSecrets:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#- name:</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials (note that there is an example of</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># how to create that Secret at the end of this file)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fmwdomain-weblogic-credentials</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to include the server out file into the pod&#39;s stdout, default is true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to enable log home</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># logHomeEnabled: false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to write HTTP access log file to log home</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># httpAccessLogInLogHome: true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># logHome: /shared/logs/domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># An (optional) in-pod location for data storage of default and custom file stores.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># If not specified or the value is either not set or empty (e.g. dataHome: &#34;&#34;) then the</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># data storage directories are determined from the WebLogic domain home configuration.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">dataHome</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># serverStartPolicy legal values are &#34;NEVER&#34;, &#34;IF_NEEDED&#34;, or &#34;ADMIN_ONLY&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># This determines which WebLogic Servers the Operator will start up when it discovers this Domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;NEVER&#34; will not start any server in the domain</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server and clustered servers up to the replica count</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># an (optional) list of environment variable to be set on the servers</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m &#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># volumes:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - name: weblogic-domain-storage-volume</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#   persistentVolumeClaim:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#     claimName: weblogic-sample-pvc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># volumeMounts:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - mountPath: /shared</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#   name: weblogic-domain-storage-volume</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># adminServer is used to configure the desired behavior for starting the administration server.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">adminServer</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">adminService</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">channels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># The Admin Server&#39;s NodePort</span>
+</span></span><span style="display:flex;"><span>       - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30701</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Uncomment to export the T3Channel as a service</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#    - channelName: T3Channel</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># an (optional) list of environment variable to be set on the admin servers</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m &#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># clusters is used to configure the desired behavior for starting member servers of a cluster.  </span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">clusters</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># already members of the same cluster.</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">affinity</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">podAntiAffinity</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">preferredDuringSchedulingIgnoredDuringExecution</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">weight</span>: <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">podAffinityTerm</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">labelSelector</span>:
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">matchExpressions</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#f92672">key</span>: <span style="color:#e6db74">&#34;weblogic.clusterName&#34;</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">operator</span>: <span style="color:#ae81ff">In</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">values</span>:
+</span></span><span style="display:flex;"><span>                        - <span style="color:#ae81ff">$(CLUSTER_NAME)</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">topologyKey</span>: <span style="color:#e6db74">&#34;kubernetes.io/hostname&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># replicas: 1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Istio</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># configuration:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#   istio:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#     enabled:</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">#     readinessPort:</span>
+</span></span></code></pre></div><h4 id="verify-the-domain">Verify the domain</h4>
 <p>To confirm that the domain was created, use this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl describe domain DOMAINUID -n NAMESPACE
-</code></pre></div><p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe domain DOMAINUID -n NAMESPACE
+</span></span></code></pre></div><p>Replace <code>DOMAINUID</code> with the <code>domainUID</code> and <code>NAMESPACE</code> with the actual namespace.</p>
 <p>Here is an example of the output of this command:</p>
-<pre><code>Name:         fmwdomain
+<pre tabindex="0"><code>Name:         fmwdomain
 Namespace:    default
 Labels:       weblogic.domainUID=fmwdomain
 Annotations:  kubectl.kubernetes.io/last-applied-configuration:
-                {&quot;apiVersion&quot;:&quot;weblogic.oracle/v8&quot;,&quot;kind&quot;:&quot;Domain&quot;,&quot;metadata&quot;:{&quot;annotations&quot;:{},&quot;labels&quot;:{&quot;weblogic.domainUID&quot;:&quot;fmwdomain&quot;},&quot;name&quot;:&quot;fmwdom...
+                {&#34;apiVersion&#34;:&#34;weblogic.oracle/v8&#34;,&#34;kind&#34;:&#34;Domain&#34;,&#34;metadata&#34;:{&#34;annotations&#34;:{},&#34;labels&#34;:{&#34;weblogic.domainUID&#34;:&#34;fmwdomain&#34;},&#34;name&#34;:&#34;fmwdom...
 API Version:  weblogic.oracle/v8
 Kind:         Domain
 Metadata:
@@ -3826,58 +3826,58 @@ The operator will start up the Administration Server first and wait for it to be
 before starting the Managed Servers.</p>
 <h4 id="verify-the-pods">Verify the pods</h4>
 <p>Use the following command to see the pods running the servers:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods -n NAMESPACE
-</code></pre></div><p>Here is an example of the output of this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods
-</code></pre></div><pre><code>NAME                                     READY   STATUS    RESTARTS   AGE
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods -n NAMESPACE
+</span></span></code></pre></div><p>Here is an example of the output of this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                     READY   STATUS    RESTARTS   AGE
 fmwdomain-admin-server                   1/1     Running   0          14m
 fmwdomain-managed-server1                1/1     Running   0          12m
 </code></pre><h4 id="verify-the-services">Verify the services</h4>
 <p>Use the following command to see the services for the domain:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get services -n NAMESPACE
-</code></pre></div><p>Here is an example of the output of this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get services
-</code></pre></div><pre><code>NAME                                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get services -n NAMESPACE
+</span></span></code></pre></div><p>Here is an example of the output of this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get services
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 fmwdomain-admin-server              ClusterIP   None             &lt;none&gt;        7001/TCP          15h
 fmwdomain-admin-server-ext          NodePort    10.101.26.42     &lt;none&gt;        7001:30731/TCP    15h
 fmwdomain-cluster-cluster-1         ClusterIP   10.107.55.188    &lt;none&gt;        8001/TCP          15h
 fmwdomain-managed-server1           ClusterIP   None             &lt;none&gt;        8001/TCP          15h
 </code></pre><h4 id="delete-the-domain">Delete the domain</h4>
 <p>The generated YAML file in the <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code> directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl delete -f domain.yaml
-</code></pre></div><h4 id="delete-the-generated-image">Delete the generated image.</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl delete -f domain.yaml
+</span></span></code></pre></div><h4 id="delete-the-generated-image">Delete the generated image.</h4>
 <p>When no longer needed, delete the generated image.
 If the image is in a local repository, use the following command to delete an image tagged with <code>domain-home-in-image:12.2.1.4</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker rmi domain-home-in-image:12.2.1.4
-</code></pre></div><h4 id="delete-the-tools-directory">Delete the tools directory.</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker rmi domain-home-in-image:12.2.1.4
+</span></span></code></pre></div><h4 id="delete-the-tools-directory">Delete the tools directory.</h4>
 <p>When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
 By default, they are installed under <code>/tmp/dhii-sample/tools</code> directory.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ rm -rf /tmp/dhii-sample/tools/
-</code></pre></div><h3 id="troubleshooting">Troubleshooting</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -rf /tmp/dhii-sample/tools/
+</span></span></code></pre></div><h3 id="troubleshooting">Troubleshooting</h3>
 <p><em><strong>Message</strong></em>: <code>Failed to build JDBC Connection object</code></p>
 <p>If the WebLogic Image Tool failed to create a domain and the following error is seen in the output:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">Configuring the Service Table DataSource...
-fmwDatabase  jdbc:oracle:thin:@172.18.0.2:30012/devpdb.k8s
-Getting Database Defaults...
-Error: getDatabaseDefaults<span style="color:#f92672">()</span> failed. Do dumpStack<span style="color:#f92672">()</span> to see details.
-Error: runCmd<span style="color:#f92672">()</span> failed. Do dumpStack<span style="color:#f92672">()</span> to see details.
-Problem invoking WLST - Traceback <span style="color:#f92672">(</span>innermost last<span style="color:#f92672">)</span>:
-File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 332, in ?
-File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 44, in createInfraDomain
-File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 151, in extendDomain
-File <span style="color:#e6db74">&#34;/tmp/WLSTOfflineIni1609018487056199846.py&#34;</span>, line 267, in getDatabaseDefaults
-File <span style="color:#e6db74">&#34;/tmp/WLSTOfflineIni1609018487056199846.py&#34;</span>, line 19, in command
-Failed to build JDBC Connection object:
-at com.oracle.cie.domain.script.jython.CommandExceptionHandler.handleException<span style="color:#f92672">(</span>CommandExceptionHandler.java:69<span style="color:#f92672">)</span>
-at com.oracle.cie.domain.script.jython.WLScriptContext.handleException<span style="color:#f92672">(</span>WLScriptContext.java:3085<span style="color:#f92672">)</span>
-at com.oracle.cie.domain.script.jython.WLScriptContext.runCmd<span style="color:#f92672">(</span>WLScriptContext.java:738<span style="color:#f92672">)</span>
-at sun.reflect.GeneratedMethodAccessor131.invoke<span style="color:#f92672">(</span>Unknown Source<span style="color:#f92672">)</span>
-at sun.reflect.DelegatingMethodAccessorImpl.invoke<span style="color:#f92672">(</span>DelegatingMethodAccessorImpl.java:43<span style="color:#f92672">)</span>
-at java.lang.reflect.Method.invoke<span style="color:#f92672">(</span>Method.java:498<span style="color:#f92672">)</span>
-
-com.oracle.cie.domain.script.jython.WLSTException: com.oracle.cie.domain.script.jython.WLSTException: Got exception when auto configuring the schema component<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span> with data obtained from shadow table:
-Failed to build JDBC Connection object:
-</code></pre></div><p>First, verify that the JDBC connection URL shown in the output is correct. Update the <code>rcuDatabaseURL</code> parameter in the inputs YAML file to the correct value if necessary.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>Configuring the Service Table DataSource...
+</span></span><span style="display:flex;"><span>fmwDatabase  jdbc:oracle:thin:@172.18.0.2:30012/devpdb.k8s
+</span></span><span style="display:flex;"><span>Getting Database Defaults...
+</span></span><span style="display:flex;"><span>Error: getDatabaseDefaults<span style="color:#f92672">()</span> failed. Do dumpStack<span style="color:#f92672">()</span> to see details.
+</span></span><span style="display:flex;"><span>Error: runCmd<span style="color:#f92672">()</span> failed. Do dumpStack<span style="color:#f92672">()</span> to see details.
+</span></span><span style="display:flex;"><span>Problem invoking WLST - Traceback <span style="color:#f92672">(</span>innermost last<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span>File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 332, in ?
+</span></span><span style="display:flex;"><span>File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 44, in createInfraDomain
+</span></span><span style="display:flex;"><span>File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 151, in extendDomain
+</span></span><span style="display:flex;"><span>File <span style="color:#e6db74">&#34;/tmp/WLSTOfflineIni1609018487056199846.py&#34;</span>, line 267, in getDatabaseDefaults
+</span></span><span style="display:flex;"><span>File <span style="color:#e6db74">&#34;/tmp/WLSTOfflineIni1609018487056199846.py&#34;</span>, line 19, in command
+</span></span><span style="display:flex;"><span>Failed to build JDBC Connection object:
+</span></span><span style="display:flex;"><span>at com.oracle.cie.domain.script.jython.CommandExceptionHandler.handleException<span style="color:#f92672">(</span>CommandExceptionHandler.java:69<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>at com.oracle.cie.domain.script.jython.WLScriptContext.handleException<span style="color:#f92672">(</span>WLScriptContext.java:3085<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>at com.oracle.cie.domain.script.jython.WLScriptContext.runCmd<span style="color:#f92672">(</span>WLScriptContext.java:738<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>at sun.reflect.GeneratedMethodAccessor131.invoke<span style="color:#f92672">(</span>Unknown Source<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>at sun.reflect.DelegatingMethodAccessorImpl.invoke<span style="color:#f92672">(</span>DelegatingMethodAccessorImpl.java:43<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>at java.lang.reflect.Method.invoke<span style="color:#f92672">(</span>Method.java:498<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>com.oracle.cie.domain.script.jython.WLSTException: com.oracle.cie.domain.script.jython.WLSTException: Got exception when auto configuring the schema component<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span> with data obtained from shadow table:
+</span></span><span style="display:flex;"><span>Failed to build JDBC Connection object:
+</span></span></code></pre></div><p>First, verify that the JDBC connection URL shown in the output is correct. Update the <code>rcuDatabaseURL</code> parameter in the inputs YAML file to the correct value if necessary.</p>
 <p>If the JDBC connection URL is correct, it is possible that the container in which the WebLogic Image Tool is running for creating a WebLogic domain, is not using the correct networking stack.
 The optional <code>-b</code> option in the <code>create-domain.sh</code> script can be used to specify the networking mode for the RUN instruction during image build.
 For example, to use the host&rsquo;s network stack, invoke <code>create-domain.sh</code> with <code>-b host</code>.
@@ -5969,19 +5969,19 @@ Please refer to Docker Network Settings references for supported networking opti
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664997072"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664997072"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664997072"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664993355"></script>
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664997072"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Updating a running Model in Image domain&#39;s images and model files.">
 
 
@@ -12,18 +12,18 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664993353" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664997070" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664997070"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664993353"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664997070"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664997070"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.1";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664997070"></script>
 
     
   </div>
@@ -2993,7 +2993,7 @@ if (!doNotTrack) {
 <p>Check for <a href="#supported-and-unsupported-updates">Supported and unsupported updates</a>.</p>
 </li>
 <li>
-<p>If you specify multiple model files in your image or WDT ConfigMap, the order in which they&rsquo;re loaded and merged is determined as described in <a href="/weblogic-kubernetes-operator/3.1/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
+<p>If you specify multiple model files in your image or WDT ConfigMap, the order in which they&rsquo;re loaded and merged is determined as described in <a href="/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
 </li>
 <li>
 <p>You can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates. See <a href="#using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover Domain and Compare Model Tools</a>.</p>
@@ -3017,7 +3017,7 @@ if (!doNotTrack) {
 <p><em>How do Model in Image updates work during runtime?</em></p>
 <p>After you make a change to your Domain <code>restartVersion</code> or <code>image</code> attribute, the operator will rerun the domain&rsquo;s introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a ConfigMap named <code>DOMAIN_UID-weblogic-domain-introspect-cm</code>. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain&rsquo;s Administration Server and then proceeds to restart each Managed Server in the domain.</p>
 <p><em>Can we use custom configuration overrides to do the updates instead?</em></p>
-<p>No. Custom configuration overrides, which are WebLogic configuration overrides specified using a Domain YAML file <code>configuration.overridesConfigMap</code>, as described in <a href="/weblogic-kubernetes-operator/3.1/userguide/managing-domains/configoverrides/">Configuration overrides</a>, aren&rsquo;t supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.</p>
+<p>No. Custom configuration overrides, which are WebLogic configuration overrides specified using a Domain YAML file <code>configuration.overridesConfigMap</code>, as described in <a href="/userguide/managing-domains/configoverrides/">Configuration overrides</a>, aren&rsquo;t supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.</p>
 <h4 id="supported-and-unsupported-updates">Supported and unsupported updates</h4>
 
 <div class="notices warning" ><p>The expected behavior is undefined when applying an unsupported update. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change.</p>
@@ -3034,7 +3034,7 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>You can change or add MBean attributes by specifying a YAML file snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the maximum capacity of a data source named <code>mynewdatasource</code>:</p>
-<pre><code>resources:
+<pre tabindex="0"><code>resources:
   JDBCSystemResource:
     mynewdatasource:
       JdbcResource:
@@ -3050,7 +3050,7 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>You can remove a named MBean, application deployment, or resource by specifying a model file with an exclamation point (<code>!</code>) just before its name. For example, if you have a data source named <code>mynewdatasource</code> defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:</p>
-<pre><code>resources:
+<pre tabindex="0"><code>resources:
   JDBCSystemResource:
     !mynewdatasource:
 </code></pre><p>For more information, see <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete">Declaring Named MBeans to Delete</a> in the WebLogic Deploying Tooling documentation.</p>
@@ -3127,26 +3127,26 @@ if (!doNotTrack) {
 </li>
 <li>
 <p>You can use the Kubernetes <code>get</code> and <code>patch</code> commands. Here&rsquo;s a sample automation script that takes a namespace as the first parameter (default <code>sample-domain1-ns</code>) and that takes a domainUID as the second parameter (default <code>sample-domain1</code>):</p>
-<pre><code>#!/bin/bash
+<pre tabindex="0"><code>#!/bin/bash
 NAMESPACE=${1:-sample-domain1-ns}
 DOMAINUID=${2:-sample-domain1}
-currentRV=$(kubectl -n ${NAMESPACE} get domain ${DOMAINUID} -o=jsonpath='{.spec.restartVersion}')
+currentRV=$(kubectl -n ${NAMESPACE} get domain ${DOMAINUID} -o=jsonpath=&#39;{.spec.restartVersion}&#39;)
 if [ $? = 0 ]; then
   # we enter here only if the previous command succeeded
 
   nextRV=$((currentRV + 1))
 
-  echo &quot;@@ Info: Rolling domain '${DOMAINUID}' in namespace '${NAMESPACE}' from restartVersion='${currentRV}' to restartVersion='${nextRV}'.&quot;
+  echo &#34;@@ Info: Rolling domain &#39;${DOMAINUID}&#39; in namespace &#39;${NAMESPACE}&#39; from restartVersion=&#39;${currentRV}&#39; to restartVersion=&#39;${nextRV}&#39;.&#34;
 
-  kubectl -n ${NAMESPACE} patch domain ${DOMAINUID} --type='json' \
-    -p='[{&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/restartVersion&quot;, &quot;value&quot;: &quot;'${nextRV}'&quot; }]'
+  kubectl -n ${NAMESPACE} patch domain ${DOMAINUID} --type=&#39;json&#39; \
+    -p=&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/restartVersion&#34;, &#34;value&#34;: &#34;&#39;${nextRV}&#39;&#34; }]&#39;
 fi
 </code></pre></li>
 </ul>
 <h4 id="using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover Domain and Compare Model Tools</h4>
 <p>The WebLogic Deploy Tooling <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md">Discover Domain Tool</a> generates model files from an existing domain home, and its <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md">Compare Model Tool</a> compares two domain models and generates the YAML file for updating the first domain to the second domain. You can use these tools in combination to help determine the model file contents you would need to supply to update an existing model.</p>
 <p>For example, assuming you&rsquo;ve installed WDT in <code>/u01/wdt/weblogic-deploy</code> and assuming your domain type is <code>WLS</code>:</p>
-<pre><code>
+<pre tabindex="0"><code>
 # (1) Run discover for your existing domain home.
 
 $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
@@ -3191,7 +3191,7 @@ $ diff new.yaml old.yaml
 <p><strong>Note</strong>: If your domain type isn&rsquo;t <code>WLS</code>, remember to change the domain type to <code>JRF</code> or <code>RestrictedJRF</code> in the above <code>discoverDomain.sh</code> commands.</p>
 </blockquote>
 <h4 id="example-of-adding-a-data-source">Example of adding a data source</h4>
-<p>For details on how to add a data source, see the <a href="/weblogic-kubernetes-operator/3.1/samples/simple/domains/model-in-image/#update1-use-case">Update1 use case</a>
+<p>For details on how to add a data source, see the <a href="/samples/simple/domains/model-in-image/#update1-use-case">Update1 use case</a>
 in the Model in Image sample.</p>
 
 
@@ -5223,19 +5223,19 @@ in the Model in Image sample.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664997070"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664997070"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664997070"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664993353" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664993353"></script>
+    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664997070" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664997070"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

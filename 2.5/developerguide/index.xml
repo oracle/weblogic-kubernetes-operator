@@ -14,7 +14,7 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/2.5/developerguide/requirements/</guid>
       <description>In addition to the requirements listed in the User guide, the following software is also required to obtain and build the operator:
- Git (1.8 or later recommended) Java Developer Kit (11 required, 11.0.2 recommended) Apache Maven (3.5.3 min, 3.6 recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts.
+Git (1.8 or later recommended) Java Developer Kit (11 required, 11.0.2 recommended) Apache Maven (3.5.3 min, 3.6 recommended) The operator is written primarily in Java, BASH shell scripts, and WLST scripts.
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.</description>
     </item>
     
@@ -58,7 +58,7 @@ Because we want to balance separating destabilizing work into feature branches a
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/2.5/developerguide/coding-standards/</guid>
       <description>This project has adopted the following coding standards:
- Code will be formated using Oracle / WebLogic standards, which are identical to the Google Java Style. Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns. Javadoc is not required for methods that override or implement methods that are already documented. All non-trivial methods should include LOGGER.entering() and LOGGER.exiting() calls. The LOGGER.exiting() call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.</description>
+Code will be formated using Oracle / WebLogic standards, which are identical to the Google Java Style. Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns. Javadoc is not required for methods that override or implement methods that are already documented. All non-trivial methods should include LOGGER.entering() and LOGGER.exiting() calls. The LOGGER.exiting() call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.</description>
     </item>
     
     <item>
@@ -68,7 +68,7 @@ Because we want to balance separating destabilizing work into feature branches a
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/2.5/developerguide/code-structure/</guid>
       <description>This project has the following directory structure:
- docs: Generated wagger integration-tests: Integration test suite json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation model: Domain resource Java model operator: Operator runtime site: This documentation src/scripts: Scripts operator injects into WebLogic server instance Pods swagger: Swagger files for the Kubernetes API server and domain resource  Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
+docs: Generated wagger integration-tests: Integration test suite json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation model: Domain resource Java model operator: Operator runtime site: This documentation src/scripts: Scripts operator injects into WebLogic server instance Pods swagger: Swagger files for the Kubernetes API server and domain resource Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
     </item>
     
     <item>
@@ -97,9 +97,9 @@ After this, the operator starts watches for changes to Domain resources and any 
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/2.5/developerguide/documentation/</guid>
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
-  If you have not already done so, clone the repository.
-git clone https://github.com/oracle/weblogic-kubernetes-operator   Create a new branch from master.
-git checkout master git pull origin master git checkout -b your-branch   Make your documentation updates by editing the source files in docs-source/content. Make sure you check in the changes from the docs-source/content area only; do not build the site and check in the static files.</description>
+If you have not already done so, clone the repository.
+git clone https://github.com/oracle/weblogic-kubernetes-operator Create a new branch from master.
+git checkout master git pull origin master git checkout -b your-branch Make your documentation updates by editing the source files in docs-source/content. Make sure you check in the changes from the docs-source/content area only; do not build the site and check in the static files.</description>
     </item>
     
     <item>

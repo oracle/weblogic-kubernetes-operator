@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Prerequisites :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664993353" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664993353" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664997069" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664997069"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664993353"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664997069"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664997069"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.1";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664993353"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664997069"></script>
 
     
   </div>
@@ -2986,7 +2986,7 @@ if (!doNotTrack) {
 <li>
 <p>Get the operator source and put it in <code>/tmp/weblogic-kubernetes-operator</code>.</p>
 <p>For example:</p>
-<pre><code>$ cd /tmp
+<pre tabindex="0"><code>$ cd /tmp
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 </code></pre><blockquote>
 <p><strong>Note</strong>: We will refer to the top directory of the operator source tree as <code>/tmp/weblogic-kubernetes-operator</code>; however, you can use a different location.</p>
@@ -2995,7 +2995,7 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 </li>
 <li>
 <p>Copy the sample to a new directory; for example, use directory <code>/tmp/mii-sample</code>.</p>
-<pre><code>$ mkdir /tmp/mii-sample
+<pre tabindex="0"><code>$ mkdir /tmp/mii-sample
 $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
 </code></pre><blockquote>
 <p><strong>Note</strong>: We will refer to this working copy of the sample as <code>/tmp/mii-sample</code>; however, you can use a different location.
@@ -3018,63 +3018,63 @@ $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-webl
 <ul>
 <li>
 <p>Option 1: To create the ingresses, use the following YAML file to create a file called <code>/tmp/mii-sample/ingresses/myingresses.yaml</code> and then call <code>kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain1-admin-server</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
-  <span style="color:#f92672">annotations</span>:
-    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">routes</span>:
-  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
-    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">PathPrefix(`/console`)</span>
-    <span style="color:#f92672">services</span>:
-    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-admin-server</span>
-      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain1-cluster-cluster-1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
-  <span style="color:#f92672">annotations</span>:
-    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">routes</span>:
-  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
-    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)</span>
-    <span style="color:#f92672">services</span>:
-    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-cluster-cluster-1</span>
-      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain2-cluster-cluster-1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain2</span>
-  <span style="color:#f92672">annotations</span>:
-    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">routes</span>:
-  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
-    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)</span>
-    <span style="color:#f92672">services</span>:
-    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain2-cluster-cluster-1</span>
-      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain1-admin-server</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">routes</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">PathPrefix(`/console`)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-admin-server</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain1-cluster-cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">routes</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-cluster-cluster-1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain2-cluster-cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">routes</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain2-cluster-cluster-1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
+</span></span></code></pre></div></li>
 <li>
 <p>Option 2: Run <code>kubectl apply -f</code> on each of the ingress YAML files that are already included in the sample source <code>/tmp/mii-sample/ingresses</code> directory:</p>
-<pre><code>$ cd /tmp/mii-sample/ingresses
+<pre tabindex="0"><code>$ cd /tmp/mii-sample/ingresses
 $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
 $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
 $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
@@ -3083,7 +3083,7 @@ $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
 <blockquote>
 <p><strong>NOTE</strong>: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using <code>curl</code> to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.</p>
 </blockquote>
-<p>For more information on ingresses and load balancers, see <a href="/weblogic-kubernetes-operator/3.1/userguide/managing-domains/ingress/">Ingress</a>.</p>
+<p>For more information on ingresses and load balancers, see <a href="/userguide/managing-domains/ingress/">Ingress</a>.</p>
 </li>
 <li>
 <p>Obtain the WebLogic 12.2.1.4 image that is required to create the sample&rsquo;s model images.</p>
@@ -3093,14 +3093,14 @@ $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
 <p>d. Use your terminal to log in to the container registry: <code>docker login container-registry.oracle.com</code>.</p>
 <p>e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call <code>docker pull</code> for one of the above licensed images as specified in the tool&rsquo;s command line using the <code>--fromImage</code> parameter. For <code>JRF</code>, this sample specifies <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4</code>, and for <code>WLS</code>, the sample specifies <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code>.</p>
 
-<div class="notices info" ><p>If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool <code>--fromImage</code> parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See <a href="/weblogic-kubernetes-operator/3.1/userguide/managing-domains/domain-in-image/base-images/">Preparing a Base Image</a>.</p>
+<div class="notices info" ><p>If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool <code>--fromImage</code> parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See <a href="/userguide/managing-domains/domain-in-image/base-images/">Preparing a Base Image</a>.</p>
 </div>
 
 </li>
 <li>
 <p>Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your <code>/tmp/mii-sample/model-images</code> directory. Both WDT and WIT are required to create your Model in Image container images.</p>
 <p>For example, visit the GitHub <a href="https://github.com/oracle/weblogic-deploy-tooling/releases">WebLogic Deploy Tooling Releases</a> and <a href="https://github.com/oracle/weblogic-image-tool/releases">WebLogic Image Tool Releases</a> web pages to determine the latest release version for each, and then, assuming the version numbers are <code>1.9.1</code> and <code>1.9.1</code> respectively, call:</p>
-<pre><code>$ cd /tmp/mii-sample/model-images
+<pre tabindex="0"><code>$ cd /tmp/mii-sample/model-images
 
 $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/weblogic-deploy.zip \
   -o /tmp/mii-sample/model-images/weblogic-deploy.zip
@@ -3110,7 +3110,7 @@ $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/downloa
 </code></pre></li>
 <li>
 <p>To set up the WebLogic Image Tool, run the following commands:</p>
-<pre><code>$ cd /tmp/mii-sample/model-images
+<pre tabindex="0"><code>$ cd /tmp/mii-sample/model-images
 
 $ unzip imagetool.zip
 
@@ -3193,7 +3193,7 @@ $ ./imagetool/bin/imagetool.sh cache addInstaller \
 </li>
 <li>
 <p>Use the sample script in <code>/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service</code> to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
-<pre><code>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
+<pre tabindex="0"><code>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
 $ start-db-service.sh
 </code></pre><p>This script will deploy a database in the <code>default</code> namespace with the connect string <code>oracle-db.default.svc.cluster.local:1521/devpdb.k8s</code>, and administration password <code>Oradoc_db1</code>.</p>
 <p>This step is based on the steps documented in <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/">Run a Database</a>.</p>
@@ -3205,12 +3205,12 @@ $ start-db-service.sh
 <li>
 <p>Use the sample script in <code>/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema</code> to create an RCU schema for each domain (schema prefixes <code>FMW1</code> and <code>FMW2</code>).</p>
 <p>Note that this script assumes <code>Oradoc_db1</code> is the DBA password, <code>Oradoc_db1</code> is the schema password, and that the database URL is <code>oracle-db.default.svc.cluster.local:1521/devpdb.k8s</code>.</p>
-<pre><code>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+<pre tabindex="0"><code>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
 $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 </code></pre><p><strong>NOTE</strong>: If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local cache, then deploy a Kubernetes <code>docker secret</code> to the default namespace with login credentials for <code>container-registry.oracle.com</code>, and pass the name of this secret as a parameter to <code>./create-rcu-schema.sh</code> using <code>-p your-image-pull-secret</code>. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the <a href="/weblogic-kubernetes-operator/3.1/faq/cannot-pull-image/">Cannot pull image FAQ</a>.</p>
 <p><strong>NOTE</strong>: If you need to drop the repository, use this command:</p>
-<pre><code>$ drop-rcu-schema.sh -s FMW1
+<pre tabindex="0"><code>$ drop-rcu-schema.sh -s FMW1
 </code></pre></li>
 </ol>
 <h5 id="increase-introspection-job-timeout">Increase introspection job timeout</h5>
@@ -3237,29 +3237,29 @@ $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw
 <p>There are scenarios when the domain needs to be recreated between updates, such as when WebLogic credentials are changed, security roles defined in the WDT model have been changed, or you want to share the same infrastructure tables with different domains.  In these scenarios, the operator needs the <code>walletPasswordSecret</code> as well as the OPSS wallet file, together with the exact information in <code>domainInfo -&gt; RCUDbInfo</code> so that the domain can be recreated and access the same set of tables.  Without the wallet file and wallet password, you will not be able to recreate a domain accessing the same set of  tables, therefore we strongly recommend that you back up the wallet file.</p>
 <p>To recover a domain&rsquo;s OPSS tables between domain restarts or to share an OPSS schema between different domains, it is necessary to extract this wallet file from the domain&rsquo;s automatically deployed introspector ConfigMap and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.</p>
 <p>To save the wallet file, assuming that your namespace is <code>sample-domain1-ns</code> and your domain UID is <code>sample-domain1</code>:</p>
-<pre><code>  $ kubectl -n sample-domain1-ns \
+<pre tabindex="0"><code>  $ kubectl -n sample-domain1-ns \
     get configmap sample-domain1-weblogic-domain-introspect-cm \
-    -o jsonpath='{.data.ewallet\.p12}' \
+    -o jsonpath=&#39;{.data.ewallet\.p12}&#39; \
     &gt; ./ewallet.p12
 </code></pre><p>Alternatively, you can save the file using the sample&rsquo;s wallet utility:</p>
-<pre><code>  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
+<pre tabindex="0"><code>  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 </code></pre><p><strong>Important! Back up your wallet file to a safe location that can be retrieved later.</strong></p>
 <p>To reuse the wallet file in subsequent redeployments or to share the domain&rsquo;s OPSS tables between different domains:</p>
 <ol>
 <li>Load the saved wallet file into a secret with a key named <code>walletFile</code> (again, assuming that your domain UID is <code>sample-domain1</code> and your namespace is <code>sample-domain1-ns</code>):</li>
 </ol>
-<pre><code>  $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
+<pre tabindex="0"><code>  $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
      --from-file=walletFile=./ewallet.p12
   $ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret \
      weblogic.domainUID=`sample-domain1`
 </code></pre><p>Alternatively, use the sample&rsquo;s wallet utility:</p>
-<pre><code>  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
+<pre tabindex="0"><code>  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 </code></pre><ol start="2">
 <li>Modify your Domain JRF YAML files to provide the wallet file secret name, for example:</li>
 </ol>
-<pre><code>  configuration:
+<pre tabindex="0"><code>  configuration:
     opss:
       # Name of secret with walletPassword for extracting the wallet
       walletPasswordSecret: sample-domain1-opss-wallet-password-secret
@@ -5296,19 +5296,19 @@ $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664997069"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664993353"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664993353"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664997069"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664993353" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664993353"></script>
+    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664997069" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664997069"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

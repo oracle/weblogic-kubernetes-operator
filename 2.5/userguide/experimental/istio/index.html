@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Istio support :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664993348" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664997065" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664997065"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664993348"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664993348"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664997065"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664997065"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.5";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664993348"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664997065"></script>
 
     
   </div>
@@ -2618,20 +2618,20 @@ Multiple clusters and configured clusters are not currently supported.</li>
 <p>You can deploy the operator into a namespace which has Istio automatic sidecar
 injection enabled.  Before installing the operator, create the namespace you
 wish to run the operator in, and label it for automatic injection.</p>
-<pre><code>$ kubectl create namespace weblogic-operator
+<pre tabindex="0"><code>$ kubectl create namespace weblogic-operator
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 </code></pre><p>After the namespace is labeled, you can install the operator using the normal
 method.  When the operator pod starts, you will notice that Istio automatically
 injects an <code>initContainer</code> called <code>istio-init</code> and the envoy container <code>istio-proxy</code>.</p>
 <p>You can check this using the following commands:</p>
-<pre><code>$ kubectl --namespace weblogic-operator get pods
+<pre tabindex="0"><code>$ kubectl --namespace weblogic-operator get pods
 $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yaml
 </code></pre><p>In the second command, change <code>weblogic-operator-xxx-xxx</code> to the name of your pod.</p>
 <h3 id="creating-a-domain-with-experimental-istio-support">Creating a domain with experimental Istio support</h3>
 <p>You can configure your domains to run with Istio automatic sidecar injection enabled.
 Before creating your domain, create the namespace you wish to run the domain in,
 and label it for automatic injection.</p>
-<pre><code>$ kubectl create namespace domain1
+<pre tabindex="0"><code>$ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 </code></pre><p>Currently, the experimental Istio support is provided only for domains stored on
 persistent volumes.  To enable the support for a domain, you need to add the
@@ -2641,7 +2641,7 @@ example below.</p>
 in the <a href="/weblogic-kubernetes-operator/2.5/samples/simple/domains/domain-home-on-pv/">sample directory</a>
 because the <code>create-domain.sh</code> script makes the necessary adjustments to the domain
 to make it work in an Istio environment.</p>
-<pre><code>apiVersion: &quot;weblogic.oracle/v6&quot;
+<pre tabindex="0"><code>apiVersion: &#34;weblogic.oracle/v6&#34;
 kind: Domain
 metadata:
   name: domain2
@@ -2707,7 +2707,7 @@ traffic in Kiali and to use distributed tracing all the way from the entry point
 the cluster, i.e. the Istio gateway.</p>
 <p>To configure external access to your domain, you need to create an Istio <code>gateway</code> and
 <code>virtualservice</code> as shown in the example below:</p>
-<pre><code>---
+<pre tabindex="0"><code>---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
@@ -2718,7 +2718,7 @@ spec:
     istio: ingressgateway
   servers:
     - hosts:
-        - '*'
+        - &#39;*&#39;
       port:
         name: http
         number: 80
@@ -2733,7 +2733,7 @@ spec:
   gateways:
     - domain1-gateway
   hosts:
-    - '*'
+    - &#39;*&#39;
   http:
     - match:
         - uri:
@@ -4515,19 +4515,19 @@ in their documentation.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664997065"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664997065"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664993348" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664993348"></script>
+    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664997065" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664997065"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="This FAQ describes approaches for giving WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes. This includes between different Kubernetes namespaces within the same Kubernetes cluster, between different Kubernetes clusters, and between a non-Kubernetes location and Kubernetes.">
 
 
@@ -12,20 +12,20 @@
     <title>External WebLogic clients :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664993354" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664993354" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664997070" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664997070" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664993354"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664997070"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664993354"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664993354"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664997070"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664997070"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664993354"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664997070"></script>
 
     
   </div>
@@ -3437,7 +3437,7 @@ For example, if a WebLogic Server instance is named <code>My_Server</code>
 and the domain UID is <code>MyUid</code>, then its listen
 address within the namespace will be <code>myuid-my-server</code>.
 For more information on Kubernetes resource compliant naming,
-please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+please see <a href="/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 </div>
 
 <h4 id="load-balancer-tunneling">Load balancer tunneling</h4>
@@ -3448,7 +3448,7 @@ please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains
 <p>In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a> for samples and details.</p>
 </li>
 <li>
-<p>Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/ingress/">Ingress</a>. If you&rsquo;re using OKE/OCI to host your Kubernetes cluster, also see <a href="/weblogic-kubernetes-operator/3.2/faq/oci-lb/">Using an OCI Load Balancer</a>.</p>
+<p>Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see <a href="/userguide/managing-domains/ingress/">Ingress</a>. If you&rsquo;re using OKE/OCI to host your Kubernetes cluster, also see <a href="/weblogic-kubernetes-operator/3.2/faq/oci-lb/">Using an OCI Load Balancer</a>.</p>
 </li>
 <li>
 <p><strong>Important</strong>: Ensure that the load balancer configures the HTTP flow to be &lsquo;sticky&rsquo; - for example, a Traefik load balancer has a <code>sticky sessions</code> option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.</p>
@@ -3495,81 +3495,81 @@ please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains
 </li>
 </ul>
 <p>For example, here is a snippet of a WebLogic domain <code>config.xml</code> file for channel <code>MyChannel</code> defined for an operator controlled WebLogic dynamic cluster named <code>cluster-1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#f92672">&lt;server-template&gt;</span>
-  <span style="color:#f92672">&lt;name&gt;</span>cluster-1-template<span style="color:#f92672">&lt;/name&gt;</span>
-  <span style="color:#f92672">&lt;listen-port&gt;</span>8001<span style="color:#f92672">&lt;/listen-port&gt;</span>
-  <span style="color:#f92672">&lt;cluster&gt;</span>cluster-1<span style="color:#f92672">&lt;/cluster&gt;</span>
-  <span style="color:#f92672">&lt;network-access-point&gt;</span>
-    <span style="color:#f92672">&lt;name&gt;</span>MyChannel<span style="color:#f92672">&lt;/name&gt;</span>
-    <span style="color:#f92672">&lt;protocol&gt;</span>t3<span style="color:#f92672">&lt;/protocol&gt;</span>
-    <span style="color:#f92672">&lt;public-address&gt;</span>some.public.address.com<span style="color:#f92672">&lt;/public-address&gt;</span>
-    <span style="color:#f92672">&lt;listen-port&gt;</span>7999<span style="color:#f92672">&lt;/listen-port&gt;</span>
-    <span style="color:#f92672">&lt;public-port&gt;</span>30999<span style="color:#f92672">&lt;/public-port&gt;</span>
-    <span style="color:#f92672">&lt;http-enabled-for-this-protocol&gt;</span>true<span style="color:#f92672">&lt;/http-enabled-for-this-protocol&gt;</span>
-    <span style="color:#f92672">&lt;tunneling-enabled&gt;</span>true<span style="color:#f92672">&lt;/tunneling-enabled&gt;</span>
-    <span style="color:#f92672">&lt;outbound-enabled&gt;</span>false<span style="color:#f92672">&lt;/outbound-enabled&gt;</span>
-    <span style="color:#f92672">&lt;enabled&gt;</span>true<span style="color:#f92672">&lt;/enabled&gt;</span>
-    <span style="color:#f92672">&lt;two-way-ssl-enabled&gt;</span>false<span style="color:#f92672">&lt;/two-way-ssl-enabled&gt;</span>
-    <span style="color:#f92672">&lt;client-certificate-enforced&gt;</span>false<span style="color:#f92672">&lt;/client-certificate-enforced&gt;</span>
-  <span style="color:#f92672">&lt;/network-access-point&gt;</span>
-<span style="color:#f92672">&lt;/server-template&gt;</span>
-<span style="color:#f92672">&lt;cluster&gt;</span>
-  <span style="color:#f92672">&lt;name&gt;</span>cluster-1<span style="color:#f92672">&lt;/name&gt;</span>
-  <span style="color:#f92672">&lt;cluster-messaging-mode&gt;</span>unicast<span style="color:#f92672">&lt;/cluster-messaging-mode&gt;</span>
-  <span style="color:#f92672">&lt;dynamic-servers&gt;</span>
-    <span style="color:#f92672">&lt;name&gt;</span>cluster-1<span style="color:#f92672">&lt;/name&gt;</span>
-    <span style="color:#f92672">&lt;server-template&gt;</span>cluster-1-template<span style="color:#f92672">&lt;/server-template&gt;</span>
-    <span style="color:#f92672">&lt;maximum-dynamic-server-count&gt;</span>5<span style="color:#f92672">&lt;/maximum-dynamic-server-count&gt;</span>
-    <span style="color:#f92672">&lt;calculated-listen-ports&gt;</span>false<span style="color:#f92672">&lt;/calculated-listen-ports&gt;</span>
-    <span style="color:#f92672">&lt;server-name-prefix&gt;</span>managed-server<span style="color:#f92672">&lt;/server-name-prefix&gt;</span>
-    <span style="color:#f92672">&lt;dynamic-cluster-size&gt;</span>5<span style="color:#f92672">&lt;/dynamic-cluster-size&gt;</span>
-    <span style="color:#f92672">&lt;max-dynamic-cluster-size&gt;</span>5<span style="color:#f92672">&lt;/max-dynamic-cluster-size&gt;</span>
-  <span style="color:#f92672">&lt;/dynamic-servers&gt;</span>
-<span style="color:#f92672">&lt;/cluster&gt;</span>
-</code></pre></div><p>Here is a snippet of offline WLST code that corresponds to the above <code>config.xml</code> file snippet:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">  <span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
-  <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
-  <span style="color:#a6e22e">templateChannelName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;MyChannel&#34;</span>
-  <span style="color:#a6e22e">create</span>(<span style="color:#a6e22e">templateChannelName</span>, <span style="color:#e6db74">&#39;NetworkAccessPoint&#39;</span>)
-  <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;NetworkAccessPoints/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateChannelName</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Protocol&#39;</span>, <span style="color:#e6db74">&#39;t3&#39;</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ListenPort&#39;</span>, <span style="color:#ae81ff">7999</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PublicPort&#39;</span>, <span style="color:#ae81ff">30999</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PublicAddress&#39;</span>, <span style="color:#e6db74">&#39;some.public.address.com&#39;</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;HttpEnabledForThisProtocol&#39;</span>, <span style="color:#66d9ef">true</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;TunnelingEnabled&#39;</span>, <span style="color:#66d9ef">true</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;OutboundEnabled&#39;</span>, <span style="color:#66d9ef">false</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Enabled&#39;</span>, <span style="color:#66d9ef">true</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;TwoWaySslEnabled&#39;</span>, <span style="color:#66d9ef">false</span>)
-  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ClientCertificateEnforced&#39;</span>, <span style="color:#66d9ef">false</span>)
-</code></pre></div><p>Here is a snippet of WDT model YAML file configuration that corresponds to the above snippets:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
-    <span style="color:#f92672">Cluster</span>:
-        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
-            <span style="color:#f92672">DynamicServers</span>:
-                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
-                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
-                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
-                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
-                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
-                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
-    <span style="color:#f92672">ServerTemplate</span>:
-        <span style="color:#f92672">&#39;cluster-1-template&#39;</span>:
-            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
-            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
-            <span style="color:#f92672">NetworkAccessPoint</span>:
-              <span style="color:#f92672">MyT3Channel</span>:
-                <span style="color:#f92672">Protocol</span>: <span style="color:#e6db74">&#39;t3&#39;</span>
-                <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7999</span>
-                <span style="color:#f92672">PublicPort</span>: <span style="color:#ae81ff">30999</span>
-                <span style="color:#f92672">PublicAddress</span>: <span style="color:#e6db74">&#39;some.public.address.com&#39;</span>
-                <span style="color:#f92672">HttpEnabledForThisProtocol</span>: <span style="color:#66d9ef">true</span>
-                <span style="color:#f92672">TunnelingEnabled</span>: <span style="color:#66d9ef">true</span>
-                <span style="color:#f92672">OutboundEnabled</span>: <span style="color:#66d9ef">false</span>
-                <span style="color:#f92672">Enabled</span>: <span style="color:#66d9ef">true</span>
-                <span style="color:#f92672">TwoWaySslEnabled</span>: <span style="color:#66d9ef">false</span>
-                <span style="color:#f92672">ClientCertificateEnforced</span>: <span style="color:#66d9ef">false</span>
-</code></pre></div><p>In this example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;server-template&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>cluster-1-template<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;listen-port&gt;</span>8001<span style="color:#f92672">&lt;/listen-port&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;cluster&gt;</span>cluster-1<span style="color:#f92672">&lt;/cluster&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;network-access-point&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;name&gt;</span>MyChannel<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;protocol&gt;</span>t3<span style="color:#f92672">&lt;/protocol&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;public-address&gt;</span>some.public.address.com<span style="color:#f92672">&lt;/public-address&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;listen-port&gt;</span>7999<span style="color:#f92672">&lt;/listen-port&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;public-port&gt;</span>30999<span style="color:#f92672">&lt;/public-port&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;http-enabled-for-this-protocol&gt;</span>true<span style="color:#f92672">&lt;/http-enabled-for-this-protocol&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;tunneling-enabled&gt;</span>true<span style="color:#f92672">&lt;/tunneling-enabled&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;outbound-enabled&gt;</span>false<span style="color:#f92672">&lt;/outbound-enabled&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;enabled&gt;</span>true<span style="color:#f92672">&lt;/enabled&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;two-way-ssl-enabled&gt;</span>false<span style="color:#f92672">&lt;/two-way-ssl-enabled&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;client-certificate-enforced&gt;</span>false<span style="color:#f92672">&lt;/client-certificate-enforced&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/network-access-point&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/server-template&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;cluster&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>cluster-1<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;cluster-messaging-mode&gt;</span>unicast<span style="color:#f92672">&lt;/cluster-messaging-mode&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;dynamic-servers&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;name&gt;</span>cluster-1<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;server-template&gt;</span>cluster-1-template<span style="color:#f92672">&lt;/server-template&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;maximum-dynamic-server-count&gt;</span>5<span style="color:#f92672">&lt;/maximum-dynamic-server-count&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;calculated-listen-ports&gt;</span>false<span style="color:#f92672">&lt;/calculated-listen-ports&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;server-name-prefix&gt;</span>managed-server<span style="color:#f92672">&lt;/server-name-prefix&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;dynamic-cluster-size&gt;</span>5<span style="color:#f92672">&lt;/dynamic-cluster-size&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;max-dynamic-cluster-size&gt;</span>5<span style="color:#f92672">&lt;/max-dynamic-cluster-size&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/dynamic-servers&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/cluster&gt;</span>
+</span></span></code></pre></div><p>Here is a snippet of offline WLST code that corresponds to the above <code>config.xml</code> file snippet:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>  <span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">templateChannelName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;MyChannel&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">create</span>(<span style="color:#a6e22e">templateChannelName</span>, <span style="color:#e6db74">&#39;NetworkAccessPoint&#39;</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;NetworkAccessPoints/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateChannelName</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Protocol&#39;</span>, <span style="color:#e6db74">&#39;t3&#39;</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ListenPort&#39;</span>, <span style="color:#ae81ff">7999</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PublicPort&#39;</span>, <span style="color:#ae81ff">30999</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PublicAddress&#39;</span>, <span style="color:#e6db74">&#39;some.public.address.com&#39;</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;HttpEnabledForThisProtocol&#39;</span>, <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;TunnelingEnabled&#39;</span>, <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;OutboundEnabled&#39;</span>, <span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Enabled&#39;</span>, <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;TwoWaySslEnabled&#39;</span>, <span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ClientCertificateEnforced&#39;</span>, <span style="color:#66d9ef">false</span>)
+</span></span></code></pre></div><p>Here is a snippet of WDT model YAML file configuration that corresponds to the above snippets:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">topology</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">Cluster</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">DynamicServers</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ServerTemplate</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#39;cluster-1-template&#39;</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">NetworkAccessPoint</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">MyT3Channel</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">Protocol</span>: <span style="color:#e6db74">&#39;t3&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7999</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">PublicPort</span>: <span style="color:#ae81ff">30999</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">PublicAddress</span>: <span style="color:#e6db74">&#39;some.public.address.com&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">HttpEnabledForThisProtocol</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">TunnelingEnabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">OutboundEnabled</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">Enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">TwoWaySslEnabled</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">ClientCertificateEnforced</span>: <span style="color:#66d9ef">false</span>
+</span></span></code></pre></div><p>In this example:</p>
 <ul>
 <li>
 <p>WebLogic binds the custom network channel to port <code>7999</code> and the default network channel to <code>8001</code>.</p>
@@ -3631,34 +3631,34 @@ please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains
 </ul>
 <h5 id="setting-up-a-nodeport">Setting up a <code>NodePort</code></h5>
 <p>A Kubernetes <code>NodePort</code> exposes a port on each worker node in the Kubernetes cluster (they are not typically exposed on masters), where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes <code>NodePort</code> is one approach for giving external WebLogic applications access to JMS or EJBs.</p>
-<p>If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the <code>spec.adminServer.adminService.channels</code> Domain field to have the operator create a <code>NodePort</code> for you. See <a href="/weblogic-kubernetes-operator/3.2/reference/domain-resource/">Reference - Domain</a>. Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a <code>NodePort</code>, then the <code>NodePort</code> must be exposed &lsquo;manually&rsquo; - see the following sample and table.</p>
+<p>If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the <code>spec.adminServer.adminService.channels</code> Domain field to have the operator create a <code>NodePort</code> for you. See <a href="/reference/domain-resource/">Reference - Domain</a>. Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a <code>NodePort</code>, then the <code>NodePort</code> must be exposed &lsquo;manually&rsquo; - see the following sample and table.</p>
 
 <div class="notices note" ><p>Setting up a <code>NodePort</code> usually also requires setting up a custom network channel. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>.</p>
 </div>
 
 <h5 id="sample-nodeport-resource">Sample <code>NodePort</code> resource</h5>
 <p>The following <code>NodePort</code> YAML file exposes an external node port of <code>30999</code> and internal port <code>7999</code> for a domain UID of <code>DOMAIN_UID</code>, a domain name of <code>DOMAIN_NAME</code>, and a cluster name of <code>CLUSTER_NAME</code>. It assumes that <code>7999</code> corresponds to a T3 protocol port of a channel that&rsquo;s configured on your WebLogic cluster.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DOMAIN_UID-cluster-CLUSTER_NAME-ext</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">NodePort</span>
-  <span style="color:#f92672">externalTrafficPolicy</span>: <span style="color:#ae81ff">Cluster</span>
-  <span style="color:#f92672">sessionAffinity</span>: <span style="color:#ae81ff">ClientIP</span>
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
-    <span style="color:#f92672">weblogic.clusterName</span>: <span style="color:#ae81ff">CLUSTER_NAME</span>
-  <span style="color:#f92672">ports</span>:
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">myclustert3channel</span>
-    <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30999</span>
-    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7999</span>
-    <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
-    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">7999</span>
-</code></pre></div><h5 id="table-of-nodeport-attributes">Table of <code>NodePort</code> attributes</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DOMAIN_UID-cluster-CLUSTER_NAME-ext</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">NodePort</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">externalTrafficPolicy</span>: <span style="color:#ae81ff">Cluster</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">sessionAffinity</span>: <span style="color:#ae81ff">ClientIP</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">weblogic.clusterName</span>: <span style="color:#ae81ff">CLUSTER_NAME</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">myclustert3channel</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30999</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7999</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">7999</span>
+</span></span></code></pre></div><h5 id="table-of-nodeport-attributes">Table of <code>NodePort</code> attributes</h5>
 <table>
 <thead>
 <tr>
@@ -3728,69 +3728,69 @@ please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains
 <h4 id="configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</h4>
 <p>When providing external clients access to EJB and JMS resources using load balancer tunneling, we recommend that you configure a server affinity load balancing algorithm for the cluster in which the resources are targeted.  Using a server affinity based algorithm reduces the amount of time it takes for EJB and JMS standalone or server hosted clients to establish a connection through a tunneling port. It does this by ensuring that the clients prefer communicating with a target server instance which already has an established connection to the client, where this server instance is implicitly picked when such clients create their JNDI context.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/load_balancing.html#GUID-2470EEE9-F6F9-44EF-BA54-671728E93DE6">Load Balancing for EJBs and RMI Objects</a> in <em>Load Balancing in a Cluster</em>.</p>
 <p>Here is a snippet of offline WLST code for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">clusterName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1&#34;</span>
-<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Clusters/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">clusterName</span>)
-<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;DefaultLoadAlgorithm&#39;</span>, <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>)
-</code></pre></div><p>Here is a snippet of WDT model YAML file configuration for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
-    <span style="color:#f92672">Cluster</span>:
-        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
-            <span style="color:#f92672">DynamicServers</span>:
-                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
-                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
-                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
-                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
-                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
-                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
-            <span style="color:#f92672">DefaultLoadAlgorithm</span>: <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>
-</code></pre></div><h4 id="configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">clusterName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Clusters/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">clusterName</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;DefaultLoadAlgorithm&#39;</span>, <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>)
+</span></span></code></pre></div><p>Here is a snippet of WDT model YAML file configuration for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">topology</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">Cluster</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">DynamicServers</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">DefaultLoadAlgorithm</span>: <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>
+</span></span></code></pre></div><h4 id="configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</h4>
 <p>WebLogic Server provides an external listen address/DNS name feature to enable external JMS and EJB clients to properly reestablish and/or load balance connections to servers with listen addresses that aren&rsquo;t directly available in the client&rsquo;s DNS (such as through a firewall or a load balancer, or between different namespaces in Kubernetes). For more information on external listen addresses, see the <code>ExternalDNSName</code> attribute in the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/wlmbr/mbeans/ServerMBean.html#ExternalDNSName"> ServerMBean </a> reference.</p>
 <p>Here is a snippet of offline WLST code for setting the external listen address for a standalone server named <code>AdminServer</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AdminServer&#34;</span>
-<span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
-<span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
-<span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
-<span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
-<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Servers/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">serverName</span>)
-<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
-</code></pre></div><p>Here is a snippet of offline WLST code for setting the external listen address for a server template named <code>cluster-1-template</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
-<span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;managed-server${id}&#34;</span>
-<span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
-<span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
-<span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
-<span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
-<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
-<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AdminServer&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Servers/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">serverName</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
+</span></span></code></pre></div><p>Here is a snippet of offline WLST code for setting the external listen address for a server template named <code>cluster-1-template</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;managed-server${id}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
+</span></span></code></pre></div>
 <div class="notices note" ><p>The server name contains the server template macro &ldquo;${id}&rdquo; in which the correct instance ID will be substituted by the WebLogic Server runtime.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/domcf/server_templates.html#GUID-EA003F89-C8E4-4CE1-81DF-6FF25F92D21B">Using Macros</a> in <em>Server Templates</em>.</p>
 </div>
 
 <p>Here is a snippet of WDT model YAML file configuration to set the <code>ExternalDNSName</code> attribute for both a standalone server and for a server template:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
-    <span style="color:#f92672">Cluster</span>:
-        <span style="color:#e6db74">&#34;cluster-1&#34;</span>:
-          <span style="color:#f92672">DynamicServers</span>:
-            <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
-            <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#34;managed-server&#34;</span>
-            <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
-            <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
-            <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
-      <span style="color:#f92672">Server</span>:
-        <span style="color:#e6db74">&#34;admin-server&#34;</span>:
-          <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7001</span>
-          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-admin-server.@@ENV:NAMESPACE@@&#39;</span>
-      <span style="color:#f92672">ServerTemplate</span>:
-        <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>:
-          <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#34;cluster-1&#34;</span>
-          <span style="color:#f92672">ListenPort </span>: <span style="color:#ae81ff">8001</span>
-          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-managed-server${id}.@@ENV:NAMESPACE@@&#39;</span>
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">topology</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">Cluster</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;cluster-1&#34;</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">DynamicServers</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#34;managed-server&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">Server</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;admin-server&#34;</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7001</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-admin-server.@@ENV:NAMESPACE@@&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ServerTemplate</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">ListenPort </span>: <span style="color:#ae81ff">8001</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-managed-server${id}.@@ENV:NAMESPACE@@&#39;</span>
+</span></span></code></pre></div>
 <div class="notices note" ><p>In the previous example, <code>DOMAIN_UID</code> and <code>NAMESPACE</code> are assumed to already be &lsquo;DNS-1123&rsquo; compliant.
 Alternatively, you can substitute the macros with DNS-1123 acceptable values
 (changed to lowercase and underscores converted to dashes).
 For more information on Kubernetes resource compliant naming,
-please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+please see <a href="/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 </div>
 
 <h4 id="security-notes">Security notes</h4>
@@ -5907,19 +5907,19 @@ See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-se
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664993354"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664997071"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664993354"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664993354"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664997071"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664993354"></script>
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664997071"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

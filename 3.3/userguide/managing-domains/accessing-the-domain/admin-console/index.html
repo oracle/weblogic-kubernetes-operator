@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Use the WebLogic Remote Console to manage a domain running in Kubernetes.">
 
 
@@ -12,20 +12,20 @@
     <title>Use the Remote Console :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993357" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993357"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -3299,7 +3299,7 @@ on a different machine than your browser, or if you want the Remote Console to u
 <p>For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s <code>NodePort</code>, use the following URL after you have connected to the Remote Console
 with your browser and it
 prompts for the location of your WebLogic Server Administration Server:</p>
-<pre><code>http://hostname:adminserver-NodePort/
+<pre tabindex="0"><code>http://hostname:adminserver-NodePort/
 </code></pre><p>The <code>adminserver-NodePort</code> is the port number of the Administration Server outside the Kubernetes cluster.
 For information about the <code>NodePort</code> Service on an Administration Server, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">Domain resource</a> document.
 For an example of setting up the <code>NodePort</code> on an Administration Server,
@@ -3307,31 +3307,31 @@ see <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/access
 <h4 id="configure-ingress-path-routing-rules">Configure ingress path routing rules</h4>
 <ol>
 <li>
-<p>Configure an ingress path routing rule. For information about ingresses, see the <a href="/weblogic-kubernetes-operator/3.3/userguide/managing-domains/ingress/">Ingress</a> documentation.</p>
+<p>Configure an ingress path routing rule. For information about ingresses, see the <a href="/userguide/managing-domains/ingress/">Ingress</a> documentation.</p>
 <p>For an example, see the following <code>path-routing</code> YAML file for a Traefik load balancer:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">annotations</span>:
-    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-pathrouting-1</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">routes</span>:
-  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
-    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">PathPrefix(`/`)</span>
-    <span style="color:#f92672">services</span>:
-    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-adminserver</span>
-      <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
-      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-pathrouting-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">routes</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">PathPrefix(`/`)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-adminserver</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">weblogic-domain</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
+</span></span></code></pre></div></li>
 <li>
 <p>After you have connected to the Remote Console with your browser,
 it will prompt for the location of your WebLogic Server Administration
 Server.
 For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:</p>
-<pre><code>http://${HOSTNAME}:${LB_PORT}/
+<pre tabindex="0"><code>http://${HOSTNAME}:${LB_PORT}/
 </code></pre><p>Where:</p>
 <ul>
 <li>
@@ -3363,7 +3363,7 @@ Server.
 Supply a URL using the local hostname or IP address
 from the <code>port-forward</code> command in the first step, plus the local port from
 this same command. For example:</p>
-<pre><code>http://${LOCAL_HOSTNAME}:${LOCAL_PORT}/
+<pre tabindex="0"><code>http://${LOCAL_HOSTNAME}:${LOCAL_PORT}/
 </code></pre><p>Where:</p>
 <ul>
 <li>
@@ -3382,7 +3382,7 @@ This is specified on the <code>port-forward</code> command.</p>
 <h3 id="test">Test</h3>
 <p>To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer,
 <code>NodePort</code>, or <code>kubectl port-forward</code> are working as expected, run the following curl commands at the same location as your browser:</p>
-<pre><code>$ curl --user username:password \
+<pre tabindex="0"><code>$ curl --user username:password \
      http://${HOSTNAME}:${LB_PORT}/management/weblogic/latest/domainRuntime?fields=name\&amp;links=none ; echo
 
 $ curl --user username:password \
@@ -5505,19 +5505,19 @@ but remove <code>?fields=name\&amp;links=none</code>, which is appended at the e
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997073"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997073"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993357"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997073"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

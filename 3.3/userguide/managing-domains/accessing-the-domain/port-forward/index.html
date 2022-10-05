@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="You can use port forwarding to access WebLogic Server Administration Consoles and WLST.">
 
 
@@ -12,20 +12,20 @@
     <title>Use port forwarding :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664993357" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664993357" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/nucleus.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/fontawesome-all.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hybrid.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/featherlight.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/perfect-scrollbar.min.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/auto-complete.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/atom-one-dark-reasonable.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/theme.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/tabs.css?1664997073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.3/css/hugo-theme.css?1664997073" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery-3.6.0.min.js?1664997073"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664993357"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/lunr.min.js?1664997073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/auto-complete.js?1664997073"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.3";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664993357"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.3/js/search.js?1664997073"></script>
 
     
   </div>
@@ -3386,8 +3386,8 @@ If the pod cycles or shuts down, then the forwarding
 also stops and the command must be rerun after the
 pod recovers in order for the forwarding to restart.</p>
 <p>The <code>kubectl port-forward</code> command has the following syntax:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl port-forward K8S_RESOURCE_TYPE/K8S_RESOURCE_NAME <span style="color:#f92672">[</span>options<span style="color:#f92672">]</span> LOCAL_PORT:REMOTE_PORT_ON_RESOURCE
-</code></pre></div><p>For detailed usage, see <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward">port-forward</a> in the Kubernetes reference documentation and run <code>kubectl port-forward -h</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubectl port-forward K8S_RESOURCE_TYPE/K8S_RESOURCE_NAME <span style="color:#f92672">[</span>options<span style="color:#f92672">]</span> LOCAL_PORT:REMOTE_PORT_ON_RESOURCE
+</span></span></code></pre></div><p>For detailed usage, see <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward">port-forward</a> in the Kubernetes reference documentation and run <code>kubectl port-forward -h</code>.</p>
 <p>For examples, notes, and warnings, see the <a href="#port-forward-example">Port forward example</a> and <a href="#port-forward-notes-and-warnings">Port forward notes and warnings</a>.</p>
 <h4 id="port-forward-example">Port forward example</h4>
 <p>For example, if you have a WebLogic domain with:</p>
@@ -3400,11 +3400,11 @@ pod recovers in order for the forwarding to restart.</p>
 <p>And, you have <a href="#set-up-administration-server-network-channels-for-port-forward-access">set up WebLogic Administration Server network channels for port forward access</a> for this domain,
 then you can run either of the following commands to forward local port <code>32015</code> to
 the Administration Server Pod:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl port-forward pods/domain1-admin-server -n mynamespace 32015:7001
-</code></pre></div><p>or</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl port-forward service/domain1-admin-server -n mynamespace 32015:7001
-</code></pre></div><p>The command output will be similar to the following:</p>
-<pre><code>Forwarding from 127.0.0.1:32015 -&gt; 7001
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubectl port-forward pods/domain1-admin-server -n mynamespace 32015:7001
+</span></span></code></pre></div><p>or</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubectl port-forward service/domain1-admin-server -n mynamespace 32015:7001
+</span></span></code></pre></div><p>The command output will be similar to the following:</p>
+<pre tabindex="0"><code>Forwarding from 127.0.0.1:32015 -&gt; 7001
 </code></pre><p>In this example:</p>
 <ul>
 <li>
@@ -3416,22 +3416,22 @@ on the machine where you run the <code>kubectl port-forward</code> command.</p>
 <p>You can use WLST
 on the machine where you run the <code>kubectl port-forward</code> command
 to connect to <code>t3://localhost:32015</code> as shown:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ $ORACLE_HOME/oracle_common/common/bin/wlst.sh
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Initializing WebLogic Scripting Tool (WLST) ...
-
-Welcome to WebLogic Server Administration Scripting Shell
-
-Type help() for help on available commands
-
-wls:/offline&gt; connect(&#39;myadminuser&#39;,&#39;myadminpassword&#39;,&#39;t3://localhost:32015&#39;)
-Connecting to t3://localhost:32015 with userid myadminuser ...
-Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
-
-Warning: An insecure protocol was used to connect to the server.
-To ensure on-the-wire security, the SSL port or Admin port should be used instead.
-
-wls:/base_domain/serverConfig/&gt; exit()
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ $ORACLE_HOME/oracle_common/common/bin/wlst.sh
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Initializing WebLogic Scripting Tool (WLST) ...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Welcome to WebLogic Server Administration Scripting Shell
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Type help() for help on available commands
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/offline&gt; connect(&#39;myadminuser&#39;,&#39;myadminpassword&#39;,&#39;t3://localhost:32015&#39;)
+</span></span><span style="display:flex;"><span>Connecting to t3://localhost:32015 with userid myadminuser ...
+</span></span><span style="display:flex;"><span>Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Warning: An insecure protocol was used to connect to the server.
+</span></span><span style="display:flex;"><span>To ensure on-the-wire security, the SSL port or Admin port should be used instead.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wls:/base_domain/serverConfig/&gt; exit()
+</span></span></code></pre></div></li>
 </ul>
 <h4 id="port-forward-notes-and-warnings">Port forward notes and warnings</h4>
 <ul>
@@ -3476,25 +3476,25 @@ to listen on specific IP addresses instead of, or in addition to, <code>localhos
 or localhost (comma-separated) as a value.</p>
 <p>For example, to enable Administration Console access at
 <code>http://my-ip-address:32015/console</code>, the command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl port-forward --address my-ip-address pods/domain1-admin-server -n mynamespace 32015:7001
-</code></pre></div><p>See <code>kubectl port-forward -h</code> for help and examples.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubectl port-forward --address my-ip-address pods/domain1-admin-server -n mynamespace 32015:7001
+</span></span></code></pre></div><p>See <code>kubectl port-forward -h</code> for help and examples.</p>
 </li>
 <li>
 <p><em>Optionally let <code>kubectl port-forward</code> choose the local port</em>:</p>
 <p>If you don&rsquo;t specify a local port in your port forward command, for example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">kubectl port-forward pods/domain1-admin-server -n mynamespace :7001
-</code></pre></div><p>Then the command finds a local port number that is not in use,
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>kubectl port-forward pods/domain1-admin-server -n mynamespace :7001
+</span></span></code></pre></div><p>Then the command finds a local port number that is not in use,
 and its output is similar to:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Forwarding from 127.0.0.1:63753 -&gt; 7001
-</code></pre></div><p>And the Administration Console is accessible using the <code>http://localhost:63753/console</code> URL.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Forwarding from 127.0.0.1:63753 -&gt; 7001
+</span></span></code></pre></div><p>And the Administration Console is accessible using the <code>http://localhost:63753/console</code> URL.</p>
 </li>
 </ul>
 <h4 id="enabling-wlst-access-when-local-and-remote-ports-do-not-match">Enabling WLST access when local and remote ports do not match</h4>
 <p>If a local (forwarded) port number is not the same as the administration port number,
 then  WLST access will not work by default and you may see a <code>BEA-000572</code> RJVM error
 in the Administration Server logs:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">&lt;Aug 30, 2021 9:33:24,753 PM GMT&gt; &lt;Error&gt; &lt;RJVM&gt; &lt;BEA-000572&gt; &lt;The server rejected a connection attempt JVMMessage from: &#39;-2661445766084484528C:xx.xx.xx.xxR:-5905806878036317188S:domain1-admin-server:domain1:admin-server&#39; to: &#39;0B:xx.xx.xx.xx:[-1,-1,32015,-1,-1,-1,-1]&#39; cmd: &#39;CMD_IDENTIFY_REQUEST&#39;, QOS: &#39;102&#39;, responseId: &#39;-1&#39;, invokableId: &#39;-1&#39;, flags: &#39;JVMIDs Sent, TX Context Not Sent, 0x1&#39;, abbrev offset: &#39;114&#39; probably due to an incorrect firewall configuration or administrative command.&gt;&lt;
-</code></pre></div><p>To work around the problem, configure the <code>JAVA_OPTIONS</code> environment variable
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&lt;Aug 30, 2021 9:33:24,753 PM GMT&gt; &lt;Error&gt; &lt;RJVM&gt; &lt;BEA-000572&gt; &lt;The server rejected a connection attempt JVMMessage from: &#39;-2661445766084484528C:xx.xx.xx.xxR:-5905806878036317188S:domain1-admin-server:domain1:admin-server&#39; to: &#39;0B:xx.xx.xx.xx:[-1,-1,32015,-1,-1,-1,-1]&#39; cmd: &#39;CMD_IDENTIFY_REQUEST&#39;, QOS: &#39;102&#39;, responseId: &#39;-1&#39;, invokableId: &#39;-1&#39;, flags: &#39;JVMIDs Sent, TX Context Not Sent, 0x1&#39;, abbrev offset: &#39;114&#39; probably due to an incorrect firewall configuration or administrative command.&gt;&lt;
+</span></span></code></pre></div><p>To work around the problem, configure the <code>JAVA_OPTIONS</code> environment variable
 for your Administration Server with the <code>-Dweblogic.rjvm.enableprotocolswitch=true</code> system property
 in your domain resource YAML.
 For more information on this switch, refer to <a href="https://support.oracle.com/rs?type=doc&amp;id=860340.1">MOS &lsquo;Doc 860340.1&rsquo;</a>.</p>
@@ -3502,11 +3502,11 @@ For more information on this switch, refer to <a href="https://support.oracle.co
 <p>A port-forward connection is active only while the <code>kubectl port-forward</code> command is running.</p>
 <p>You can terminate the port-forward connection by pressing CTRL+C in the terminal where the port forward command is running.</p>
 <p>If you run the command in the background, then you can kill the process with the <code>kill -9 &lt;pid&gt;</code> command. For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ ps -ef | grep port-forward
-oracle   27072 25312  1 21:45 pts/3    00:00:00 kubectl -n mynamespace port-forward pods/domain1-admin-server 32015:7001
-oracle   27944 11417  0 21:45 pts/1    00:00:00 grep --color=auto port-forward
-$ kill -9 27072
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ ps -ef | grep port-forward
+</span></span><span style="display:flex;"><span>oracle   27072 25312  1 21:45 pts/3    00:00:00 kubectl -n mynamespace port-forward pods/domain1-admin-server 32015:7001
+</span></span><span style="display:flex;"><span>oracle   27944 11417  0 21:45 pts/1    00:00:00 grep --color=auto port-forward
+</span></span><span style="display:flex;"><span>$ kill -9 27072
+</span></span></code></pre></div>
 
 <footer class="footline">
 	
@@ -5623,19 +5623,19 @@ $ kill -9 27072
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/clipboard.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/perfect-scrollbar.jquery.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/jquery.sticky.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/featherlight.min.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/highlight.pack.js?1664997073"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664993357"></script>
-    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664993357"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/modernizr.custom-3.6.0.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/learn.js?1664997073"></script>
+    <script src="/weblogic-kubernetes-operator/3.3/js/hugo-learn.js?1664997073"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664993357"></script>
+            <script src="/weblogic-kubernetes-operator/3.3/mermaid/mermaid.js?1664997073"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

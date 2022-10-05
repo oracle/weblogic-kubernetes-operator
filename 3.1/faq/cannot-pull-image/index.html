@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="My domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`.">
 
 
@@ -12,18 +12,18 @@
     <title>Cannot pull image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664993352" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664997069" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664997069"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664993352"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664993352"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664997069"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664997069"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.1";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664993352"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664997069"></script>
 
     
   </div>
@@ -3002,7 +3002,7 @@ store and start the container.</p>
 the authentication details in a Kubernetes <code>docker-registry</code> secret and tell Kubernetes
 to use that secret when pulling the image.</p>
 <p>To create a secret, you can use the following command:</p>
-<pre><code>kubectl create secret docker-registry secret1 \
+<pre tabindex="0"><code>kubectl create secret docker-registry secret1 \
         --docker-server=some.registry.com \
         --docker-username=bob \
         --docker-password=bigSecret \
@@ -3023,7 +3023,7 @@ an <code>imagePullSecret</code> to your Kubernetes YAML file.  In the case of a 
 add the secret name to the <code>imagePullSecret</code> in the domain custom resource YAML file.</p>
 <p>Here is an example of part of a domain custom resource file with the <code>imagePullSecret</code> above
 specified:</p>
-<pre><code>apiVersion: &quot;weblogic.oracle/v8&quot;
+<pre tabindex="0"><code>apiVersion: &#34;weblogic.oracle/v8&#34;
 kind: Domain
 metadata:
   name: domain1
@@ -3033,8 +3033,8 @@ metadata:
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
   domainHomeSourceType: Image
-  image: &quot;some.registry.com/owner/domain1:1.0&quot;
-  imagePullPolicy: &quot;IfNotPresent&quot;
+  image: &#34;some.registry.com/owner/domain1:1.0&#34;
+  imagePullPolicy: &#34;IfNotPresent&#34;
   imagePullSecrets:
   - name: secret1
 </code></pre><p>Alternatively, you can associate the secret with the service account that will be used to run
@@ -3042,9 +3042,9 @@ the pod.  If you do this, then you will not need to add the <code>imagePullSecre
 resource.  This is useful if you are running multiple domains in the same namespace.</p>
 <p>To add the secret shown above to the <code>default</code> service account in the <code>weblogic</code> namespace, you
 would use a command like this:</p>
-<pre><code>kubectl patch serviceaccount default \
+<pre tabindex="0"><code>kubectl patch serviceaccount default \
         -n weblogic \
-        -p '{&quot;imagePullSecrets&quot;: [{&quot;name&quot;: &quot;secret1&quot;}]}'
+        -p &#39;{&#34;imagePullSecrets&#34;: [{&#34;name&#34;: &#34;secret1&#34;}]}&#39;
 </code></pre>
 <div class="notices note" ><p>You can provide multiple <code>imagePullSecrets</code> if you need to pull container images from multiple
 remote container registries or if your images require different authentication credentials.
@@ -3057,16 +3057,16 @@ a remote repository, then the Docker steps are:</p>
 <ul>
 <li>Use <a href="https://docs.docker.com/engine/reference/commandline/login/">docker login</a>
 to log in to the target repository&rsquo;s registry. For example:
-<pre><code>docker login some.registry.com -u username -p password
+<pre tabindex="0"><code>docker login some.registry.com -u username -p password
 </code></pre></li>
 <li>Use <a href="https://docs.docker.com/engine/reference/commandline/tag/">docker tag</a>
 to mark the image with the target registry, owner, repository name, and tag.
 For example:
-<pre><code>docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
+<pre tabindex="0"><code>docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
 </code></pre></li>
 <li>Use <a href="https://docs.docker.com/engine/reference/commandline/push/">docker push</a>
 to push the image to the repository. For example:
-<pre><code>docker push some.registry.com/owner/domain1:1.0
+<pre tabindex="0"><code>docker push some.registry.com/owner/domain1:1.0
 </code></pre></li>
 </ul>
 <h4 id="manually-copying-the-image-to-your-worker-nodes">Manually copying the image to your worker nodes</h4>
@@ -3074,10 +3074,10 @@ to push the image to the repository. For example:
 in a secure network with no external access, then you can manually copy the container images to the
 cluster instead.</p>
 <p>On the machine where you created the image, export it into a TAR file using this command:</p>
-<pre><code>docker save domain1:1.0 &gt; domain1.tar
+<pre tabindex="0"><code>docker save domain1:1.0 &gt; domain1.tar
 </code></pre><p>Then copy that TAR file to each worker node in your Kubernetes cluster and run this command
 on each node:</p>
-<pre><code>docker load &lt; domain1.tar
+<pre tabindex="0"><code>docker load &lt; domain1.tar
 </code></pre><h4 id="restart-pods-to-clear-the-error">Restart pods to clear the error</h4>
 <p>After you have ensured that the images are accessible on all worker nodes, you may need to restart
 the pods so that Kubernetes will attempt to pull the images again.   You can do this by
@@ -5104,19 +5104,19 @@ deleting the pods themselves, or deleting the Domain and then recreating it.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664997069"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664997069"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664993352" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664993352"></script>
+    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664997069" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664997069"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

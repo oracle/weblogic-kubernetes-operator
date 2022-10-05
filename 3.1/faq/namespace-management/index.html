@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Considerations for managing namespaces while the operator is running.">
 
 
@@ -12,18 +12,18 @@
     <title>Managing domain namespaces :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664993352" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664993352" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/nucleus.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/fontawesome-all.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hybrid.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/featherlight.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/perfect-scrollbar.min.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/auto-complete.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/atom-one-dark-reasonable.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/theme.css?1664997069" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.1/css/hugo-theme.css?1664997069" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery-3.3.1.min.js?1664997069"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664993352"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664993352"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/lunr.min.js?1664997069"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/auto-complete.js?1664997069"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.1";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664993352"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.1/js/search.js?1664997069"></script>
 
     
   </div>
@@ -2973,7 +2973,7 @@ of a release of the operator&rsquo;s Helm chart, or created by the operator.</p>
 Now, the operator supports a list of namespaces, a label selector, or a regular expression matching namespace names.</p>
 <p>For operators that specify namespaces by a list, you can find the list of the namespaces using the <code>helm get values</code> command.
 For example, the following command shows all the values of the operator release <code>weblogic-operator</code>; the <code>domainNamespaces</code> list contains <code>default</code> and <code>ns1</code>:</p>
-<pre><code>$ helm get values weblogic-operator
+<pre tabindex="0"><code>$ helm get values weblogic-operator
 domainNamespaces:
 - default
 - ns1
@@ -2993,12 +2993,12 @@ remoteDebugNodePortEnabled: false
 serviceAccount: default
 suspendOnDebugStartup: false
 </code></pre><p>For operators that select namespaces with a selector, simply list namespaces using that selector:</p>
-<pre><code>$ kubectl get ns --selector=&quot;weblogic-operator=enabled&quot;
+<pre tabindex="0"><code>$ kubectl get ns --selector=&#34;weblogic-operator=enabled&#34;
 </code></pre><p>For operators that select namespaces with a regular expression matching the name, you can use a combination of <code>kubectl</code>
 and any command-line tool that can process the regular expression, such as <code>grep</code>:</p>
-<pre><code>$ kubectl get ns -o go-template='{{range .items}}{{.metadata.name}}{{&quot;\n&quot;}}{{end}}' | grep &quot;^weblogic&quot;
+<pre tabindex="0"><code>$ kubectl get ns -o go-template=&#39;{{range .items}}{{.metadata.name}}{{&#34;\n&#34;}}{{end}}&#39; | grep &#34;^weblogic&#34;
 </code></pre><p>If you don&rsquo;t know the release name of the operator, you can use <code>helm list</code> to list all the releases for a specified namespace or all namespaces:</p>
-<pre><code>$ helm list --namespace &lt;namespace&gt;
+<pre tabindex="0"><code>$ helm list --namespace &lt;namespace&gt;
 $ helm list --all-namespaces
 </code></pre><h4 id="add-a-kubernetes-namespace-to-the-operator">Add a Kubernetes namespace to the operator</h4>
 <p>When the operator is configured to manage a list of namespaces and you want the operator to manage an additional namespace,
@@ -3007,16 +3007,16 @@ using the <code>kubectl create</code> command.</p>
 <p>Adding a namespace to the <code>domainNamespaces</code> list tells the operator to initialize the necessary
 Kubernetes resources so that the operator is ready to manage WebLogic Server instances in that namespace.</p>
 <p>When the operator is managing the <code>default</code> namespace, the following example Helm command adds the namespace <code>ns1</code> to the <code>domainNamespaces</code> list, where <code>weblogic-operator</code> is the release name of the operator, and <code>kubernetes/charts/weblogic-operator</code> is the location of the operator&rsquo;s Helm charts:</p>
-<pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ helm upgrade \
   weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --reuse-values \
-  --set &quot;domainNamespaces={default,ns1}&quot; \
+  --set &#34;domainNamespaces={default,ns1}&#34; \
   --wait
 </code></pre><p>You can verify that the operator has initialized a namespace by confirming the existence of the required <code>configmap</code> resource.</p>
-<pre><code>$ kubetctl get cm -n &lt;namespace&gt;
+<pre tabindex="0"><code>$ kubetctl get cm -n &lt;namespace&gt;
 </code></pre><p>For example, the following example shows that the domain <code>configmap</code> resource exists in the namespace <code>ns1</code>.</p>
-<pre><code>bash-4.2$ kubectl get cm -n ns1
+<pre tabindex="0"><code>bash-4.2$ kubectl get cm -n ns1
 
 NAME                 DATA      AGE
 
@@ -3026,7 +3026,7 @@ you simply need to create a namespace with the appropriate labels or with a name
 <p>If you did not choose to enable the value, <code>enableClusterRoleBinding</code>, then the operator will not have the necessary
 permissions to manage the namespace. You can do this by performing a <code>helm upgrade</code> with the values used when installing the
 Helm release:</p>
-<pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ helm upgrade \
   weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --reuse-values
@@ -3037,9 +3037,9 @@ associated with the namespace can be cleaned up.</p>
 <p>While the operator is running and managing the <code>default</code> and <code>ns1</code> namespaces, the following example Helm
 command removes the namespace <code>ns1</code> from the <code>domainNamespaces</code> list, where <code>weblogic-operator</code> is the release
 name of the operator, and <code>kubernetes/charts/weblogic-operator</code> is the location of the operator Helm charts:</p>
-<pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ helm upgrade \
   --reuse-values \
-  --set &quot;domainNamespaces={default}&quot; \
+  --set &#34;domainNamespaces={default}&#34; \
   --wait \
   --force \
   weblogic-operator \
@@ -3055,17 +3055,16 @@ using the <code>helm upgrade</code> commands that were illustrated previously.</
 <p>If a domain custom resource is created before the namespace is ready, you might see that the introspector job pod
 fails to start, with a warning like the following, when you review the description of the introspector pod.
 Note that <code>domain1</code> is the name of the domain in the following example output.</p>
-<pre><code>Events:
+<pre tabindex="0"><code>Events:
   Type     Reason                 Age               From               Message
   ----     ------                 ----              ----               -------
   Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspector-bz6rw to slc16ffk
 
-  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume &quot;weblogic-credentials-volume&quot;
+  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume &#34;weblogic-credentials-volume&#34;
 
-  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume &quot;default-token-jzblm&quot;
+  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume &#34;default-token-jzblm&#34;
 
-  Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume &quot;weblogic-scripts-cm-volume&quot; : configmaps &quot;weblogic-scripts-cm&quot; not found
-
+  Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume &#34;weblogic-scripts-cm-volume&#34; : configmaps &#34;weblogic-scripts-cm&#34; not found
 </code></pre><p>If you still run into problems after you perform the <code>helm upgrade</code> to re-initialize a namespace
 that is deleted and recreated, you can restart the operator pod as shown
 in the following examples, where the operator itself is running in the
@@ -3073,12 +3072,12 @@ namespace <code>weblogic-operator-namespace</code> with the release name, <code>
 <ul>
 <li>Kill the operator pod, and let Kubernetes restart it.</li>
 </ul>
-<pre><code>$ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n weblogic-operator-namespace
+<pre tabindex="0"><code>$ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n weblogic-operator-namespace
 </code></pre><ul>
 <li>Scale the operator deployment to <code>0</code> and then back to <code>1</code> by changing the value of the <code>replicas</code>.</li>
 </ul>
-<pre><code>$ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=0
-</code></pre><pre><code>$ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=1
+<pre tabindex="0"><code>$ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=0
+</code></pre><pre tabindex="0"><code>$ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=1
 </code></pre><p>Note that restarting the operator pod makes the operator temporarily unavailable for managing its namespaces.
 For example, a domain that is created while the operator is restarting will not be started until the
 operator pod is fully up again.</p>
@@ -5101,19 +5100,19 @@ operator pod is fully up again.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/clipboard.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/perfect-scrollbar.jquery.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/jquery.sticky.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/featherlight.min.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/highlight.pack.js?1664997069"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664993352"></script>
-    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664993352"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/modernizr.custom-3.6.0.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/learn.js?1664997069"></script>
+    <script src="/weblogic-kubernetes-operator/3.1/js/hugo-learn.js?1664997069"></script>
 
-    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664993352" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664993352"></script>
+    <link href="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.css?1664997069" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/3.1/mermaid/mermaid.js?1664997069"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

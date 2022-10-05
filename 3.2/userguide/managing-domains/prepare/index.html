@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="">
 
 
@@ -12,20 +12,20 @@
     <title>Prepare to run a domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664993355" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664997071" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664997071"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664993355"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664997071"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664997071"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664997071"></script>
 
     
   </div>
@@ -3215,19 +3215,19 @@
 <ol>
 <li>
 <p>Create the domain namespace or namespaces.  One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create namespace domain-namespace-1
-</code></pre></div><p>Replace <code>domain-namespace-1</code> with name you want to use.  The name must follow standard Kubernetes naming conventions, that is, lowercase,
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl create namespace domain-namespace-1
+</span></span></code></pre></div><p>Replace <code>domain-namespace-1</code> with name you want to use.  The name must follow standard Kubernetes naming conventions, that is, lowercase,
 numbers, and hyphens.</p>
 </li>
 <li>
 <p>Create a Kubernetes Secret containing the Administration Server boot credentials.  You can do this manually or by using
-<a href="/weblogic-kubernetes-operator/3.2/samples/simple/credentials/">the provided sample</a>.  To create
+<a href="/samples/simple/credentials/">the provided sample</a>.  To create
 the secret manually, use this command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n domain-namespace-1 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        create secret generic domain1-weblogic-credentials <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        --from-literal<span style="color:#f92672">=</span>username<span style="color:#f92672">=</span>username <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>        --from-literal<span style="color:#f92672">=</span>password<span style="color:#f92672">=</span>password
-</code></pre></div><ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n domain-namespace-1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        create secret generic domain1-weblogic-credentials <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        --from-literal<span style="color:#f92672">=</span>username<span style="color:#f92672">=</span>username <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>        --from-literal<span style="color:#f92672">=</span>password<span style="color:#f92672">=</span>password
+</span></span></code></pre></div><ul>
 <li>Replace <code>domain-namespace-1</code> with the namespace that the domain will be in.</li>
 <li>Replace <code>domain1-weblogic-credentials</code> with the name of the secret. It is a recommended best practice to name the secret using the domain&rsquo;s <code>domainUID</code> followed by the literal string <code>-weblogic-credentials</code> where <code>domainUID</code> is a unique identifier for the domain. Many of the samples follow this practice and use a <code>domainUID</code> of <code>domain1</code> or <code>sample-domain1</code>.</li>
 <li>Replace the string <code>username</code> in the third line with the user name for the administrative user.</li>
@@ -3235,7 +3235,7 @@ the secret manually, use this command:</p>
 </ul>
 </li>
 <li>
-<p>Optionally, <a href="/weblogic-kubernetes-operator/3.2/samples/simple/storage/">create a PV &amp; PersistentVolumeClaim (PVC)</a> which can hold the domain home, logs, and application binaries.
+<p>Optionally, <a href="/samples/simple/storage/">create a PV &amp; PersistentVolumeClaim (PVC)</a> which can hold the domain home, logs, and application binaries.
 Even if you put your domain in an image, you may want to put the logs on a persistent volume so that they are available after the pods terminate.
 This may be instead of, or as well as, other approaches like streaming logs into Elasticsearch.</p>
 </li>
@@ -5326,19 +5326,19 @@ This may be instead of, or as well as, other approaches like streaming logs into
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664997071"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664997071"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664993355"></script>
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664997071"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

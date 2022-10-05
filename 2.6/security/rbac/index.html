@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Operator role-based authorization">
 
 
@@ -12,18 +12,18 @@
     <title>RBAC :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664993350" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664993350" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/nucleus.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/fontawesome-all.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hybrid.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/featherlight.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/perfect-scrollbar.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/auto-complete.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/atom-one-dark-reasonable.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/theme.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.6/css/hugo-theme.css?1664997066" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery-3.3.1.min.js?1664997066"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664993350"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/lunr.min.js?1664997066"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/auto-complete.js?1664997066"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.6";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664993350"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.6/js/search.js?1664997066"></script>
 
     
   </div>
@@ -2787,23 +2787,23 @@ where it make sense to use the Kubernetes built-in roles.</p>
 the operator where the operator was installed using the
 Helm release name <code>weblogic-operator</code>, look for the Kubernetes objects, <code>Role</code>, <code>RoleBinding</code>,
 <code>ClusterRole</code>, and <code>ClusterRoleBinding</code>, when using the Helm <code>status</code> command:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ helm status weblogic-operator
-</code></pre></div><p>Assuming the operator was installed into the namespace <code>weblogic-operator-ns</code>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ helm status weblogic-operator
+</span></span></code></pre></div><p>Assuming the operator was installed into the namespace <code>weblogic-operator-ns</code>
 with a target namespaces of <code>domain1-ns</code>, the following
 commands can be used to display a <em>subset</em> of the Kubernetes Roles and
 related RoleBindings:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe clusterrole <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  weblogic-operator-ns-weblogic-operator-clusterrole-general
-
-$ kubectl describe clusterrolebinding <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  weblogic-operator-ns-weblogic-operator-clusterrolebinding-general
-
-$ kubectl -n weblogic-operator-ns <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  describe role weblogic-operator-role
-
-$ kubectl -n domain1-ns <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  describe rolebinding weblogic-operator-rolebinding-namespace <span style="color:#ae81ff">\
-</span></code></pre></div><h5 id="kubernetes-role-and-rolebinding-naming-conventions">Kubernetes Role and RoleBinding naming conventions</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ kubectl describe clusterrole <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic-operator-ns-weblogic-operator-clusterrole-general
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ kubectl describe clusterrolebinding <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic-operator-ns-weblogic-operator-clusterrolebinding-general
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ kubectl -n weblogic-operator-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  describe role weblogic-operator-role
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ kubectl -n domain1-ns <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  describe rolebinding weblogic-operator-rolebinding-namespace <span style="color:#ae81ff">\
+</span></span></span></code></pre></div><h5 id="kubernetes-role-and-rolebinding-naming-conventions">Kubernetes Role and RoleBinding naming conventions</h5>
 <p>The following naming pattern is used for the <code>Role</code> and <code>RoleBinding</code> objects:</p>
 <ul>
 <li>weblogic-operator-<code>&lt;type&gt;</code>-<code>&lt;optional-role-name&gt;</code></li>
@@ -2936,39 +2936,39 @@ the following <code>ClusterRoleBinding</code> entries are mapped to a <code>Clus
 <td>Operator <code>nonresource</code></td>
 <td>Operator <code>nonresource</code></td>
 <td><strong>Get</strong>: /version/*</td>
-<td><sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></td>
+<td><sup id="fnref1:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></td>
 </tr>
 <tr>
 <td>Operator <code>discovery</code></td>
 <td>Kubernetes <code>system:discovery</code></td>
 <td><strong>See</strong>: <a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles">Kubernetes Discovery Roles</a></td>
-<td><sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></td>
+<td><sup id="fnref1:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></td>
 </tr>
 <tr>
 <td>Operator <code>auth-delegator</code></td>
 <td>Kubernetes <code>system:auth-delegator</code></td>
 <td><strong>See</strong>: <a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles">Kubernetes Component Roles</a></td>
-<td><sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></td>
+<td><sup id="fnref2:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup></td>
 </tr>
 </tbody>
 </table>
-<section class="footnotes" role="doc-endnotes">
+<div class="footnotes" role="doc-endnotes">
 <hr>
 <ol>
-<li id="fn:1" role="doc-endnote">
-<p>The binding is assigned to the operator <code>ServiceAccount</code>. <a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<li id="fn:1">
+<p>The binding is assigned to the operator <code>ServiceAccount</code>.&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
-<li id="fn:2" role="doc-endnote">
+<li id="fn:2">
 <p>The binding is assigned to the operator <code>ServiceAccount</code>
 in each namespace listed with the <code>domainNamespaces</code> setting.
 The <code>domainNamespaces</code> setting contains the list of namespaces
-that the operator is configured to manage. <a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+that the operator is configured to manage.&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
-<li id="fn:3" role="doc-endnote">
-<p>The binding is assigned to the operator <code>ServiceAccount</code>. In addition, the Kubernetes RBAC resources that the operator installation actually set up will be adjusted based on the value of the <code>dedicated</code> setting. By default,  the <code>dedicated</code> value is set to <code>false</code>, those security resources are created as <code>ClusterRole</code> and <code>ClusterRoleBindings</code>. If the <code>dedicated</code> value is set to <code>true</code>,  those resources will be created as <code>Roles</code> and <code>RoleBindings</code> in the namespace of the operator. <a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+<li id="fn:3">
+<p>The binding is assigned to the operator <code>ServiceAccount</code>. In addition, the Kubernetes RBAC resources that the operator installation actually set up will be adjusted based on the value of the <code>dedicated</code> setting. By default,  the <code>dedicated</code> value is set to <code>false</code>, those security resources are created as <code>ClusterRole</code> and <code>ClusterRoleBindings</code>. If the <code>dedicated</code> value is set to <code>true</code>,  those resources will be created as <code>Roles</code> and <code>RoleBindings</code> in the namespace of the operator.&#160;<a href="#fnref:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref1:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a>&#160;<a href="#fnref2:3" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
 </li>
 </ol>
-</section>
+</div>
 
 
 <footer class=" footline" >
@@ -4831,19 +4831,19 @@ that the operator is configured to manage. <a href="#fnref:2" class="footnote-ba
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/clipboard.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/perfect-scrollbar.jquery.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/jquery.sticky.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/featherlight.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/highlight.pack.js?1664997066"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664993350"></script>
-    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664993350"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/modernizr.custom-3.6.0.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/learn.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.6/js/hugo-learn.js?1664997066"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664993350" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664993350"></script>
+    <link href="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.css?1664997066" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.6/mermaid/mermaid.js?1664997066"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

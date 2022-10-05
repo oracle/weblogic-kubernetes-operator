@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Use the WebLogic Logging Exporter to publish the WebLogic Server logs to Elasticsearch.">
 
 
@@ -12,18 +12,18 @@
     <title>Publish logs to Elasticsearch :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664993348" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664993348" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664997065" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664997065" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664997065"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664993348"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664993348"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664997065"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664997065"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.5";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664993348"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664997065"></script>
 
     
   </div>
@@ -2602,7 +2602,7 @@
 
 <p>The WebLogic Logging Exporter adds a log event handler to WebLogic Server. WebLogic Server logs can be pushed to Elasticsearch in Kubernetes directly
 by using the Elasticsearch REST API. For more details, refer to the <a href="https://github.com/oracle/weblogic-logging-exporter">WebLogic Logging Exporter</a> project.</p>
-<p>This sample shows you how to publish WebLogic Server logs to Elasticsearch and view them in Kibana. For publishing operator logs, see this <a href="/weblogic-kubernetes-operator/2.5/samples/simple/elastic-stack/operator/">sample</a>.</p>
+<p>This sample shows you how to publish WebLogic Server logs to Elasticsearch and view them in Kibana. For publishing operator logs, see this <a href="/samples/simple/elastic-stack/operator/">sample</a>.</p>
 <h4 id="prerequisites">Prerequisites</h4>
 <p>This document assumes that you have already set up Elasticsearch and Kibana for logs collection. If you have not, please refer this <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/elasticsearch-and-kibana/README.md">document</a>.</p>
 <hr>
@@ -2624,9 +2624,8 @@ by using the Elasticsearch REST API. For more details, refer to the <a href="htt
 
 <h4 id="copy-the-jar-files-to-the-weblogic-domain-home">Copy the JAR files to the WebLogic domain home</h4>
 <p>Copy the <code>weblogic-logging-exporter-0.1.1.jar</code> and <code>snakeyaml-1.23.jar</code> files to the domain home directory in the Administration Server pod.</p>
-<pre><code>$ kubectl cp &lt;file-to-copy&gt; &lt;namespace&gt;/&lt;Administration-Server-pod&gt;:&lt;domainhome&gt;
-
-</code></pre><pre><code>$ kubectl cp snakeyaml-1.23.jar soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/
+<pre tabindex="0"><code>$ kubectl cp &lt;file-to-copy&gt; &lt;namespace&gt;/&lt;Administration-Server-pod&gt;:&lt;domainhome&gt;
+</code></pre><pre tabindex="0"><code>$ kubectl cp snakeyaml-1.23.jar soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/
 
 $ kubectl cp weblogic-logging-exporter-0.1.1.jar soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/
 </code></pre><h4 id="add-a-startup-class-to-the-domain-configuration">Add a startup class to the domain configuration</h4>
@@ -2642,22 +2641,22 @@ $ kubectl cp weblogic-logging-exporter-0.1.1.jar soans/soainfra-adminserver:/u01
 </li>
 </ol>
 <p>You can verify this step by looking for the update in your <code>config.xml</code> file, which should look similar to the following example:</p>
-<pre><code>&lt;startup-class&gt;
+<pre tabindex="0"><code>&lt;startup-class&gt;
   &lt;name&gt;weblogic-logging-exporter&lt;/name&gt;
   &lt;target&gt;AdminServer,soa_cluster&lt;/target&gt;
   &lt;class-name&gt;weblogic.logging.exporter.Startup&lt;/class-name&gt;
 &lt;/startup-class&gt;
 </code></pre><h4 id="update-the-weblogic-server-classpath">Update the WebLogic Server <code>CLASSPATH</code></h4>
 <p>Copy the <code>setDomainEnv.sh</code> file from the pod to a local folder.</p>
-<pre><code>$ kubectl cp soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/bin/setDomainEnv.sh .
+<pre tabindex="0"><code>$ kubectl cp soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/bin/setDomainEnv.sh .
 </code></pre><p>Modify <code>setDomainEnv.sh</code> to update the server class path.</p>
-<pre><code>CLASSPATH=/u01/oracle/user_projects/domains/soainfra/weblogic-logging-exporter-0.1.1.jar:/u01/oracle/user_projects/domains/soainfra/snakeyaml-1.23.jar:${CLASSPATH}
+<pre tabindex="0"><code>CLASSPATH=/u01/oracle/user_projects/domains/soainfra/weblogic-logging-exporter-0.1.1.jar:/u01/oracle/user_projects/domains/soainfra/snakeyaml-1.23.jar:${CLASSPATH}
 export CLASSPATH
 </code></pre><p>Copy back the modified <code>setDomainEnv.sh</code> file to the pod.</p>
-<pre><code>$ kubectl cp setDomainEnv.sh soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/bin/setDomainEnv.sh
+<pre tabindex="0"><code>$ kubectl cp setDomainEnv.sh soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/bin/setDomainEnv.sh
 </code></pre><h4 id="create-a-configuration-file-for-the-weblogic-logging-exporter">Create a configuration file for the WebLogic Logging Exporter</h4>
 <p>Create a file named <code>WebLogicLoggingExporter.yaml</code>. Specify the Elasticsearch server host and port number.</p>
-<pre><code>weblogicLoggingIndexName: wls
+<pre tabindex="0"><code>weblogicLoggingIndexName: wls
 publishHost: elasticsearch.default.svc.cluster.local
 publishPort: 9200
 domainUID: soainfra
@@ -2665,18 +2664,17 @@ weblogicLoggingExporterEnabled: true
 weblogicLoggingExporterSeverity: TRACE
 weblogicLoggingExporterBulkSize: 1
 </code></pre><p>Copy the <code>WebLogicLoggingExporter.yaml</code> file to the domain home directory in the WebLogic Administration Server pod.</p>
-<pre><code>$ kubectl cp WebLogicLoggingExporter.yaml soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/config/
+<pre tabindex="0"><code>$ kubectl cp WebLogicLoggingExporter.yaml soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/config/
 </code></pre><h4 id="restart-all-the-servers-in-the-domain">Restart all the servers in the domain</h4>
 <p>To restart the servers, stop and then start them using the following commands.</p>
 <p>To stop the servers:</p>
-<pre><code>$ kubectl patch domain soainfra -n soans --type='json' -p='[{&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/serverStartPolicy&quot;, &quot;value&quot;: &quot;NEVER&quot; }]'
-
+<pre tabindex="0"><code>$ kubectl patch domain soainfra -n soans --type=&#39;json&#39; -p=&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;NEVER&#34; }]&#39;
 </code></pre><p>To start the servers:</p>
-<pre><code>$ kubectl patch domain soainfra -n soans --type='json' -p='[{&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/serverStartPolicy&quot;, &quot;value&quot;: &quot;IF_NEEDED&quot; }]'
+<pre tabindex="0"><code>$ kubectl patch domain soainfra -n soans --type=&#39;json&#39; -p=&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/serverStartPolicy&#34;, &#34;value&#34;: &#34;IF_NEEDED&#34; }]&#39;
 </code></pre><p>After all the servers are restarted, in all the server logs, you will see the <code>weblogic-logging-exporter</code> class being called, as shown below.</p>
-<pre><code>======================= WebLogic Logging Exporter Startup class called                                                 
+<pre tabindex="0"><code>======================= WebLogic Logging Exporter Startup class called                                                 
 Reading configuration from file name: /u01/oracle/user_projects/domains/soainfra/config/WebLogicLoggingExporter.yaml   
-Config{weblogicLoggingIndexName='wls', publishHost='domain.host.com', publishPort=9200, weblogicLoggingExporterSeverity='Notice', weblogicLoggingExporterBulkSize='2', enabled=true, weblogicLoggingExporterFilters=FilterConfig{expression='NOT(MSGID = 'BEA-000449')', servers=[]}], domainUID='soainfra'}
+Config{weblogicLoggingIndexName=&#39;wls&#39;, publishHost=&#39;domain.host.com&#39;, publishPort=9200, weblogicLoggingExporterSeverity=&#39;Notice&#39;, weblogicLoggingExporterBulkSize=&#39;2&#39;, enabled=true, weblogicLoggingExporterFilters=FilterConfig{expression=&#39;NOT(MSGID = &#39;BEA-000449&#39;)&#39;, servers=[]}], domainUID=&#39;soainfra&#39;}
 </code></pre><h4 id="create-an-index-pattern-in-kibana">Create an index pattern in Kibana</h4>
 <p>Create an index pattern <code>wls*</code> in <strong>Kibana &gt; Management</strong>. After the servers are started, you will see the log data in the Kibana dashboard.</p>
 
@@ -4419,19 +4417,19 @@ Config{weblogicLoggingIndexName='wls', publishHost='domain.host.com', publishPor
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664997065"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664993348"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664993348"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664997065"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664997065"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664993348" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664993348"></script>
+    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664997065" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664997065"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

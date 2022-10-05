@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="General advice for debugging and monitoring the operator.">
 
 
@@ -12,20 +12,20 @@
     <title>Troubleshooting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3561,42 +3561,42 @@ see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-he
 <h3 id="ensure-the-operator-crd-is-installed">Ensure the operator CRD is installed</h3>
 <p>When you install and run an operator, the installation should have deployed a domain custom resource to the cluster.
 To check, verify that the following command lists a CRD with the name <code>domains.weblogic.oracle</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl get crd
-</code></pre></div><p>The command output should look something like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">NAME                                   CREATED AT
-domains.weblogic.oracle                2021-09-27T18:46:38Z
-</code></pre></div><p>When the domain CRD is not installed, the operator runtimes will not be able to monitor domains, and commands like <code>kubectl get domains</code> will fail.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get crd
+</span></span></code></pre></div><p>The command output should look something like the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>NAME                                   CREATED AT
+</span></span><span style="display:flex;"><span>domains.weblogic.oracle                2021-09-27T18:46:38Z
+</span></span></code></pre></div><p>When the domain CRD is not installed, the operator runtimes will not be able to monitor domains, and commands like <code>kubectl get domains</code> will fail.</p>
 <p>Typically, the operator automatically installs the CRD for the Domain type when the operator first starts. However,
 if the domain CRD was not installed, for example, if the operator lacked sufficient permission to install it, then
 refer to the operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/preparation/#how-to-manually-install-the-domain-resource-custom-resource-definition-crd">Prepare for installation</a> documentation.</p>
 <h3 id="check-the-operator-deployment">Check the operator deployment</h3>
 <p>Verify that the operator&rsquo;s deployment is deployed and running by listing all deployments with the <code>weblogic.operatorName</code> label.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
-</code></pre></div><p>Check the operator deployment&rsquo;s detailed status:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl -n OP_NAMESPACE get deployments/weblogic-operator -o yaml
-</code></pre></div><p>And/or:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl -n OP_NAMESPACE describe deployments/weblogic-operator
-</code></pre></div><p>Each operator deployment will have a corresponding Kubernetes pod
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+</span></span></code></pre></div><p>Check the operator deployment&rsquo;s detailed status:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE get deployments/weblogic-operator -o yaml
+</span></span></code></pre></div><p>And/or:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE describe deployments/weblogic-operator
+</span></span></code></pre></div><p>Each operator deployment will have a corresponding Kubernetes pod
 with a name that has a prefix that matches the deployment name,
 plus a unique suffix that changes every time the deployment restarts.</p>
 <p>To find operator pods and check their high-level status:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl get pods --all-namespaces=true -l weblogic.operatorName
-</code></pre></div><p>To check the details for a given pod:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl -n OP_NAMESPACE get pod weblogic-operator-UNIQUESUFFIX -o yaml
-$ kubectl -n OP_NAMESPACE describe pod weblogic-operator-UNIQUESUFFIX
-</code></pre></div><p>A pod <code>describe</code> usefully includes any events that might be associated with the operator.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get pods --all-namespaces=true -l weblogic.operatorName
+</span></span></code></pre></div><p>To check the details for a given pod:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE get pod weblogic-operator-UNIQUESUFFIX -o yaml
+</span></span><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE describe pod weblogic-operator-UNIQUESUFFIX
+</span></span></code></pre></div><p>A pod <code>describe</code> usefully includes any events that might be associated with the operator.</p>
 <h3 id="check-common-issues">Check common issues</h3>
 <ul>
 <li>See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/common-mistakes/">Common mistakes and solutions</a>.</li>
-<li>Check the <a href="/weblogic-kubernetes-operator/faq/">FAQs</a>.</li>
+<li>Check the <a href="/faq/">FAQs</a>.</li>
 </ul>
 <h3 id="check-for-events">Check for events</h3>
 <p>To check for Kubernetes events that may have been logged to the operator&rsquo;s namespace:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl -n OP_NAMESPACE get events --sort-by=&#39;.lastTimestamp&#39;
-</code></pre></div><h3 id="check-the-operator-log">Check the operator log</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl -n OP_NAMESPACE get events --sort-by=&#39;.lastTimestamp&#39;
+</span></span></code></pre></div><h3 id="check-the-operator-log">Check the operator log</h3>
 <p>To check the operator deployment&rsquo;s log (especially look for <code>SEVERE</code> and <code>ERROR</code> level messages):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-operator
-</code></pre></div><h3 id="operator-configmap">Operator ConfigMap</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-operator
+</span></span></code></pre></div><h3 id="operator-configmap">Operator ConfigMap</h3>
 <p>An operator&rsquo;s settings are automatically maintained by Helm in a Kubernetes ConfigMap named <code>weblogic-operator-cm</code> in the same namespace as the operator. To view the contents of this ConfigMap, call <code>kubectl -n sample-weblogic-operator-ns get cm weblogic-operator-cm -o yaml</code>.</p>
 <h3 id="force-the-operator-to-restart">Force the operator to restart</h3>
 
@@ -3623,25 +3623,24 @@ operator pod is fully up again.</li>
 <ul>
 <li>
 <p>Most simply, use the <code>helm upgrade</code> command: <code>helm upgrade &lt;release-name&gt; --reuse-values --recreate-pods</code></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ helm upgrade weblogic-operator --reuse-values --recreate-pods
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ helm upgrade weblogic-operator --reuse-values --recreate-pods
+</span></span></code></pre></div></li>
 <li>
 <p>Delete the operator pod, and let Kubernetes restart it.</p>
 <p>a. First, find the operator pod you wish to delete:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl get pods --all-namespaces=true -l weblogic.operatorName
-</code></pre></div><p>b. Second, delete the pod. For example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n OP_NAMESPACE
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get pods --all-namespaces=true -l weblogic.operatorName
+</span></span></code></pre></div><p>b. Second, delete the pod. For example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n OP_NAMESPACE
+</span></span></code></pre></div></li>
 <li>
 <p>Scale the operator deployment to <code>0</code>, and then back to <code>1</code>, by changing the value of the <code>replicas</code>.</p>
 <p>a. First, find the namespace of the operator deployment you wish to restart:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
-</code></pre></div><p>b. Second, scale the deployment down to zero replicas:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=0
-</code></pre></div><p>c. Finally, scale the deployment back up to one replica:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=1
-
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+</span></span></code></pre></div><p>b. Second, scale the deployment down to zero replicas:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=0
+</span></span></code></pre></div><p>c. Finally, scale the deployment back up to one replica:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=1
+</span></span></code></pre></div></li>
 </ul>
 <h3 id="operator-logging-level">Operator logging level</h3>
 
@@ -3658,21 +3657,21 @@ to help get debugging data for a particular problem.</em></p>
 assuming the operator Helm release is named <code>sample-weblogic-operator</code>
 its namespace is <code>sample-weblogic-operator-ns</code>,
 and you have locally downloaded the operator src to <code>/tmp/weblogic-kubernetes-operator</code>:</p>
-<pre><code>$ cd /tmp/weblogic-kubernetes-operator
-</code></pre><pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ cd /tmp/weblogic-kubernetes-operator
+</code></pre><pre tabindex="0"><code>$ helm upgrade \
   sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --reuse-values \
-  --set &quot;javaLoggingLevel=FINE&quot; \
+  --set &#34;javaLoggingLevel=FINE&#34; \
   --wait
 </code></pre><p>To set the operator <code>javaLoggingLevel</code> back to <code>INFO</code>:</p>
-<pre><code>$ helm upgrade \
+<pre tabindex="0"><code>$ helm upgrade \
   sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --reuse-values \
-  --set &quot;javaLoggingLevel=INFO&quot; \
+  --set &#34;javaLoggingLevel=INFO&#34; \
   --wait
 </code></pre><p>For more information, see the
 <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#javalogginglevel">javaLoggingLevel</a> documentation.</p>
@@ -3680,7 +3679,7 @@ and you have locally downloaded the operator src to <code>/tmp/weblogic-kubernet
 <p>If you have set up either of the following, then these documents may be helpful in debugging:</p>
 <ul>
 <li><a href="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/#configure-the-operators-external-rest-https-interface">Operator REST HTTPS interface</a></li>
-<li><a href="/weblogic-kubernetes-operator/samples/elastic-stack/operator/#elastic-stack-per-operator-configuration">Elastic Stack (Elasticsearch, Logstash, and Kibana)</a> integration</li>
+<li><a href="/samples/elastic-stack/operator/#elastic-stack-per-operator-configuration">Elastic Stack (Elasticsearch, Logstash, and Kibana)</a> integration</li>
 </ul>
 
 
@@ -6003,19 +6002,19 @@ and you have locally downloaded the operator src to <code>/tmp/weblogic-kubernet
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

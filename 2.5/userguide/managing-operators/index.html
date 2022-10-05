@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator&#39;s Helm chart to install and manage the operator.">
 
 
@@ -12,18 +12,18 @@
     <title>Manage operators :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664993349" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664993349" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/nucleus.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/fontawesome-all.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hybrid.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/featherlight.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/perfect-scrollbar.min.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/auto-complete.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/atom-one-dark-reasonable.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/theme.css?1664997066" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.5/css/hugo-theme.css?1664997066" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery-3.3.1.min.js?1664997066"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664993349"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664993349"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/lunr.min.js?1664997066"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/auto-complete.js?1664997066"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/2.5";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664993349"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.5/js/search.js?1664997066"></script>
 
     
   </div>
@@ -470,7 +470,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/2.5/userguide/managing-operators/" title="Manage operators" class="dd-item 
-        parent
+        
         active
         
         ">
@@ -2608,7 +2608,7 @@
 <p>In order to use Helm to install and manage the operator, you need to ensure that the service account that Tiller uses
 has the <code>cluster-admin</code> role.  The default would be <code>default</code> in namespace <code>kube-system</code>.  You can give that service
 account the necessary permissions with this command:</p>
-<pre><code>cat &lt;&lt; EOF | kubectl apply -f -
+<pre tabindex="0"><code>cat &lt;&lt; EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -2635,7 +2635,7 @@ EOF
 <li>Overriding individual values directly on the Helm command line, using the <code>--set</code> option.</li>
 </ul>
 <p>You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:</p>
-<pre><code>$ helm inspect values kubernetes/charts/weblogic-operator
+<pre tabindex="0"><code>$ helm inspect values kubernetes/charts/weblogic-operator
 </code></pre><p>The available configuration values are explained by category in
 <a href="/weblogic-kubernetes-operator/2.5/userguide/managing-operators/using-the-operator/using-helm/">Operator Helm configuration values</a>.</p>
 <p>Helm commands are explained in more detail in
@@ -2662,7 +2662,7 @@ should contain valid host names, expiration dates and key constraints.</p>
 </div>
 
 <p>For more detailed information about the sample script and how to run it, see
-the <a href="/weblogic-kubernetes-operator/2.5/samples/simple/rest/#sample-to-create-certificate-and-key">REST APIs</a> in the <em><strong>Samples</strong></em> section.</p>
+the <a href="/samples/simple/rest/#sample-to-create-certificate-and-key">REST APIs</a> in the <em><strong>Samples</strong></em> section.</p>
 <h4 id="optional-elastic-stack-elasticsearch-logstash-and-kibana-integration">Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration</h4>
 <p>The operator Helm chart includes the option of installing the necessary Kubernetes resources for Elastic Stack integration.</p>
 <p>You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator&rsquo;s log contents to that Elasticsearch location.</p>
@@ -4410,19 +4410,19 @@ the <a href="/weblogic-kubernetes-operator/2.5/samples/simple/rest/#sample-to-cr
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/clipboard.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/perfect-scrollbar.jquery.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/jquery.sticky.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/featherlight.min.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/highlight.pack.js?1664997066"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664993349"></script>
-    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664993349"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/modernizr.custom-3.6.0.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/learn.js?1664997066"></script>
+    <script src="/weblogic-kubernetes-operator/2.5/js/hugo-learn.js?1664997066"></script>
 
-    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664993349" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664993349"></script>
+    <link href="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.css?1664997066" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.5/mermaid/mermaid.js?1664997066"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

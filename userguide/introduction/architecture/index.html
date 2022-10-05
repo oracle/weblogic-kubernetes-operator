@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="An architectural overview of the operator runtime and related resources.">
 
 
@@ -12,20 +12,20 @@
     <title>Architecture :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993346" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993346" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997063" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997063" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997063"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993346"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997063"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997063"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993346"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997063"></script>
 
     
   </div>
@@ -3560,8 +3560,8 @@ domain configuration, a WebLogic install, and
 anything else necessary to run the domain.</li>
 </ul>
 <p>The operator is packaged in a <a href="https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator">container image</a> which you can access using the following <code>docker pull</code> commands:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.3
-</code></pre></div><p>For more details on acquiring the operator image and prerequisites for installing the operator, consult the <a href="/weblogic-kubernetes-operator/quickstart/">Quick Start guide</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.3
+</span></span></code></pre></div><p>For more details on acquiring the operator image and prerequisites for installing the operator, consult the <a href="/quickstart/">Quick Start guide</a>.</p>
 <p>The operator registers a Kubernetes custom resource definition called <code>domain.weblogic.oracle</code> (shortname <code>domain</code>, plural <code>domains</code>).  More details about the Domain type defined by this CRD, including its schema, are available <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">here</a>.</p>
 <p>The diagram below shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:</p>
 <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/high-level-architecture.png" alt="High level architecture">
@@ -3623,7 +3623,7 @@ the <code>weblogic.domainUID</code> label in a Kubernetes cluster try:
 <code>kubectl get pods -l weblogic.domainUID --all-namespaces=true --show-labels=true</code>.</p>
 <p>A Domain UID may be up to 45 characters long. For
 more details about Domain UID name requirements, see
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+<a href="/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 <h3 id="domain-architecture">Domain architecture</h3>
 <p>The diagram below shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.</p>
 <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/domain-architecture2.png" alt="Domain architecture">
@@ -3640,12 +3640,12 @@ more details about Domain UID name requirements, see
 <li>An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.</li>
 </ul>
 
-<div class="notices note" ><p>Kubernetes requires that the names of some resource types follow the DNS label standard as defined in <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names">DNS Label Names</a> and <a href="https://tools.ietf.org/html/rfc1123">RFC 1123</a>. Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>).</p>
+<div class="notices note" ><p>Kubernetes requires that the names of some resource types follow the DNS label standard as defined in <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names">DNS Label Names</a> and <a href="https://tools.ietf.org/html/rfc1123">RFC 1123</a>. Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see <a href="/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>).</p>
 </div>
 
 <p>The diagram below shows the components inside the containers running WebLogic Server instances:</p>
 <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/inside-a-container.png" alt="Inside a container">
-<p>The Domain specifies a container image, defaulting to <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code>. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see <a href="/weblogic-kubernetes-operator/userguide/base-images/">WebLogic images</a>.</p>
+<p>The Domain specifies a container image, defaulting to <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code>. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see <a href="/userguide/base-images/">WebLogic images</a>.</p>
 
 <div class="notices warning" ><p>The default image is a General Availability image. GA images are suitable for demonstration and development purposes <em>only</em> where the environments are not available from the public Internet; they are <strong>not acceptable for production use</strong>. In production, you should always use CPU (patched) images from <a href="/weblogic-kubernetes-operator/userguide/base-images/ocr-images/">OCR</a> or create your images using the <a href="/weblogic-kubernetes-operator/userguide/base-images/custom-images/#create-a-custom-base-image">WebLogic Image Tool</a> (WIT) with the <code>--recommendedPatches</code> option. For more guidance, see <a href="https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&amp;id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2">Apply the Latest Patches and Updates</a> in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</p>
 </div>
@@ -3670,13 +3670,13 @@ all in lowercase, with underscores <code>_</code> converted to hyphens <code>-</
 <p>The operator also automatically overrides the <code>ListenAddress</code> fields in each
 running WebLogic Server to match its service name in order
 to ensure that the servers will always be able to find each other.</p>
-<p>For details, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+<p>For details, see <a href="/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 <h3 id="domain-state-stored-outside-container-images">Domain state stored outside container images</h3>
 <p>The operator expects (and requires) that all state that is expected to outlive the life of a pod be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.</p>
 <p>It is worth providing some background information on why this approach was adopted, in addition to the fact that this separation is consistent with other existing operators (for other products) and the Kubernetes “cattle, not pets” philosophy when it comes to containers.</p>
 <p>The external state approach allows the operator to treat the images as essentially immutable, read-only, binary images.  This means that the image needs to be pulled only once, and that many domains can share the same image.  This helps to minimize the amount of bandwidth and storage needed for WebLogic Server images.</p>
 <p>This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.</p>
-<p>When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the <a href="/weblogic-kubernetes-operator/userguide/base-images/patch-images/">WebLogic Server images</a> and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/">Domain life cycle</a> documentation.</p>
+<p>When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the <a href="/weblogic-kubernetes-operator/userguide/base-images/patch-images/">WebLogic Server images</a> and <a href="/userguide/managing-domains/domain-lifecycle/">Domain life cycle</a> documentation.</p>
 <p>It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.</p>
 <p>The team developing the operator felt that these considerations provided adequate justification for adopting the external state approach.</p>
 
@@ -5997,19 +5997,19 @@ to ensure that the servers will always be able to find each other.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997063"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993346"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993346"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997063"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997063"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993346"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997063"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

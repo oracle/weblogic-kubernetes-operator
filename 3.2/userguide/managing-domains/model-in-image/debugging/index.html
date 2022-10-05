@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Debugging a deployed Model in Image domain.">
 
 
@@ -12,20 +12,20 @@
     <title>Debugging :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664993355" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664993355" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1664997071" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1664997071" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1664997071"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664993355"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1664997071"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1664997071"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664993355"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1664997071"></script>
 
     
   </div>
@@ -3255,25 +3255,24 @@ then see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/m
 </div>
 
 <p>For example, assuming your domain UID is <code>sample-domain1</code> and your domain namespace is <code>sample-domain1-ns</code>:</p>
-<pre><code>$ # here we see a failed introspector job pod among the domain's pods:
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-</code></pre></div><pre><code>NAME                                         READY   STATUS    RESTARTS   AGE
+<pre tabindex="0"><code>$ # here we see a failed introspector job pod among the domain&#39;s pods:
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                         READY   STATUS    RESTARTS   AGE
 sample-domain1-admin-server                  1/1     Running   0          19h
 sample-domain1-introspector-v2l7k            0/1     Error     0          75m
 sample-domain1-managed-server1               1/1     Running   0          19h
 sample-domain1-managed-server2               1/1     Running   0          19h
 
-$ # let's look at the job's describe
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
-
-</code></pre></div><pre><code>$ # now let's look at the job's pod describe, in particular look at its 'events'
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
-</code></pre></div><pre><code>$ # finally let's look at job's pod's log
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
-</code></pre></div><pre><code>$ # alternative log command (will have same output as previous)
+$ # let&#39;s look at the job&#39;s describe
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
+</span></span></code></pre></div><pre tabindex="0"><code>$ # now let&#39;s look at the job&#39;s pod describe, in particular look at its &#39;events&#39;
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
+</span></span></code></pre></div><pre tabindex="0"><code>$ # finally let&#39;s look at job&#39;s pod&#39;s log
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
+</span></span></code></pre></div><pre tabindex="0"><code>$ # alternative log command (will have same output as previous)
 # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
 
-A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
+A common reason for the introspector job to fail is because of an error in a model file. Here&#39;s some sample log output from an introspector job that shows such a failure:
 ...
 
 SEVERE Messages:
@@ -3294,20 +3293,20 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
 then see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/runtime-updates/#online-update-status-and-labels">Online update status and labels</a>.</p>
 <h3 id="check-the-operator-log">Check the operator log</h3>
 <p>Look for <code>SEVERE</code> and <code>ERROR</code> level messages in your operator logs. For example:</p>
-<pre><code>$ # find your operator
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get deployment --all-namespaces<span style="color:#f92672">=</span>true -l weblogic.operatorName
-</code></pre></div><pre><code>NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+<pre tabindex="0"><code>$ # find your operator
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get deployment --all-namespaces<span style="color:#f92672">=</span>true -l weblogic.operatorName
+</span></span></code></pre></div><pre tabindex="0"><code>NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 sample-weblogic-operator-ns   weblogic-operator   1         1         1            1           20h
 
 $ # grep operator log for SEVERE and WARNING level messages
-</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | egrep -e <span style="color:#e6db74">&#34;level...(SEVERE|WARNING)&#34;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{<span style="color:#f92672">&#34;timestamp&#34;</span>:<span style="color:#e6db74">&#34;03-18-2020T20:42:21.702+0000&#34;</span>,<span style="color:#f92672">&#34;thread&#34;</span>:<span style="color:#ae81ff">11</span>,<span style="color:#f92672">&#34;fiber&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;domainUID&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;level&#34;</span>:<span style="color:#e6db74">&#34;WARNING&#34;</span>,<span style="color:#f92672">&#34;class&#34;</span>:<span style="color:#e6db74">&#34;oracle.kubernetes.operator.helpers.HealthCheckHelper&#34;</span>,<span style="color:#f92672">&#34;method&#34;</span>:<span style="color:#e6db74">&#34;createAndValidateKubernetesVersion&#34;</span>,<span style="color:#f92672">&#34;timeInMillis&#34;</span>:<span style="color:#ae81ff">1584564141702</span>,<span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3&#34;</span>,<span style="color:#f92672">&#34;exception&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;code&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;headers&#34;</span>:{},<span style="color:#f92672">&#34;body&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>}
-</code></pre></div><p>You can filter out operator log messages specific to your <code>domainUID</code> by piping the above logs command through <code>grep &quot;domainUID...MY_DOMAINUID&quot;</code>. For example, assuming your operator is running in namespace <code>sample-weblogic-operator-ns</code> and your domain UID is <code>sample-domain1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | egrep -e <span style="color:#e6db74">&#34;level...(SEVERE|WARNING)&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | grep <span style="color:#e6db74">&#34;domainUID...sample-domain1&#34;</span>
-</code></pre></div><h3 id="check-the-faq">Check the FAQ</h3>
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | egrep -e <span style="color:#e6db74">&#34;level...(SEVERE|WARNING)&#34;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{<span style="color:#f92672">&#34;timestamp&#34;</span>:<span style="color:#e6db74">&#34;03-18-2020T20:42:21.702+0000&#34;</span>,<span style="color:#f92672">&#34;thread&#34;</span>:<span style="color:#ae81ff">11</span>,<span style="color:#f92672">&#34;fiber&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;domainUID&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;level&#34;</span>:<span style="color:#e6db74">&#34;WARNING&#34;</span>,<span style="color:#f92672">&#34;class&#34;</span>:<span style="color:#e6db74">&#34;oracle.kubernetes.operator.helpers.HealthCheckHelper&#34;</span>,<span style="color:#f92672">&#34;method&#34;</span>:<span style="color:#e6db74">&#34;createAndValidateKubernetesVersion&#34;</span>,<span style="color:#f92672">&#34;timeInMillis&#34;</span>:<span style="color:#ae81ff">1584564141702</span>,<span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3&#34;</span>,<span style="color:#f92672">&#34;exception&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;code&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#f92672">&#34;headers&#34;</span>:{},<span style="color:#f92672">&#34;body&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>}
+</span></span></code></pre></div><p>You can filter out operator log messages specific to your <code>domainUID</code> by piping the above logs command through <code>grep &quot;domainUID...MY_DOMAINUID&quot;</code>. For example, assuming your operator is running in namespace <code>sample-weblogic-operator-ns</code> and your domain UID is <code>sample-domain1</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | egrep -e <span style="color:#e6db74">&#34;level...(SEVERE|WARNING)&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | grep <span style="color:#e6db74">&#34;domainUID...sample-domain1&#34;</span>
+</span></span></code></pre></div><h3 id="check-the-faq">Check the FAQ</h3>
 <p>Common issues that have corresponding FAQ entries include:</p>
 <ul>
 <li>When a Domain YAML file is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the Domain&rsquo;s namespace has been set up to be monitored by an operator. See the <a href="/weblogic-kubernetes-operator/3.2/faq/namespace-management/">Managing domain namespaces FAQ</a>.</li>
@@ -5400,19 +5399,19 @@ $ # grep operator log for SEVERE and WARNING level messages
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1664997071"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664993355"></script>
-    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664993355"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1664997071"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1664997071"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664993355"></script>
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1664997071"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

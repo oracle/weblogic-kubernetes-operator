@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.104.3" />
     <meta name="description" content="Deploying WebLogic Server on Azure Kubernetes Service.">
 
 
@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664993347" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664993347" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1664997064" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1664997064" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1664997064"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664993347"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1664997064"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1664997064"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664993347"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1664997064"></script>
 
     
   </div>
@@ -1461,7 +1461,7 @@
   
     
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/aks/" title="Azure Kubernetes Service (AKS)" class="dd-item
-        parent
+        
         active
         
         ">
@@ -3540,8 +3540,8 @@
 <p>To learn more, see <a href="https://docs.microsoft.com/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a></p>
 
 
-<p>This document describes the Azure Marketplace offer that makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type. For complete details on domain home source types, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
-<p>It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample <a href="/weblogic-kubernetes-operator/samples/azure-kubernetes-service/">Azure Kubernetes Service</a>.</p>
+<p>This document describes the Azure Marketplace offer that makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type. For complete details on domain home source types, see <a href="/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
+<p>It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample <a href="/samples/azure-kubernetes-service/">Azure Kubernetes Service</a>.</p>
 <h4 id="basics">Basics</h4>
 <p>Use the <strong>Basics</strong> blade to provide the basic configuration details for deploying an Oracle WebLogic Server configured cluster. To do this, enter the values for the fields listed in the following tables.</p>
 <h5 id="project-details">Project details</h5>
@@ -3636,7 +3636,7 @@
 </tr>
 <tr>
 <td>Custom Java Options to start WebLogic Server</td>
-<td>Java VM arguments passed to the invocation of WebLogic Server. For more information, see the <a href="/weblogic-kubernetes-operator/faq/resource-settings/">FAQ</a>.</td>
+<td>Java VM arguments passed to the invocation of WebLogic Server. For more information, see the <a href="/faq/resource-settings/">FAQ</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -3659,7 +3659,7 @@
 </tr>
 <tr>
 <td>Use latest supported AKS Kubernetes version</td>
-<td>The currently supported version is <strong>1.21.9</strong>.  Oracle tracks the AKS release versions in <a href="https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions">Supported Kubernetes versions in Azure Kubernetes Service (AKS)</a>. After a new version emerges, Oracle qualifies WLS on AKS against that version and will update the offer to that version.</td>
+<td>The currently supported version is <strong>1.24.3</strong>.  Oracle tracks the AKS release versions in <a href="https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions">Supported Kubernetes versions in Azure Kubernetes Service (AKS)</a>. After a new version emerges, Oracle qualifies WLS on AKS against that version and will update the offer to that version.</td>
 </tr>
 <tr>
 <td>Node count</td>
@@ -3675,7 +3675,7 @@
 </tr>
 <tr>
 <td>Create Persistent Volume using Azure File share service</td>
-<td>If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted to the nodes of the AKS cluster. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Oracle WebLogic Server persistent storage</a> and <a href="https://docs.microsoft.com/azure/aks/azure-files-volume">persistent volume with Azure Files share on AKS</a>.</td>
+<td>If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted to the nodes of the AKS cluster. For more information, see <a href="/userguide/managing-domains/persistent-storage/">Oracle WebLogic Server persistent storage</a> and <a href="https://docs.microsoft.com/azure/aks/azure-files-volume">persistent volume with Azure Files share on AKS</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -3691,7 +3691,7 @@
 <tbody>
 <tr>
 <td>Use a pre-existing WebLogic Server Docker image from Oracle Container Registry (OCR)?</td>
-<td>If set to <strong>Yes</strong>, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. If set to <strong>No</strong>, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. This allows the use of custom images, such as images with a specific one-off patch or Oracle quarterly patches (PSUs). For more about WebLogic Server images, see <a href="/weblogic-kubernetes-operator/userguide/base-images/">WebLogic images</a>.</td>
+<td>If set to <strong>Yes</strong>, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. If set to <strong>No</strong>, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. This allows the use of custom images, such as images with a specific one-off patch or Oracle quarterly patches (PSUs). For more about WebLogic Server images, see <a href="/userguide/base-images/">WebLogic images</a>.</td>
 </tr>
 <tr>
 <td>Create a new Azure Container Registry to store application images?</td>
@@ -4215,13 +4215,13 @@
 <ol>
 <li>
 <p>Base 64 encode the certifcate file; omit the <code>-w0</code> for macOS:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">base64 myIdentity.jks -w0 &gt;mycert.txt
-<span style="color:#75715e"># base64 myIdentity.p12 -w0 &gt;mycert.txt</span>
-<span style="color:#75715e"># base64 myTrust.jks -w0 &gt;mycert.txt</span>
-<span style="color:#75715e"># base64 myTrust.p12 -w0 &gt;mycert.txt</span>
-<span style="color:#75715e"># base64 root.cert -w0 &gt;mycert.txt</span>
-<span style="color:#75715e"># base64 gatewayCert.pfx -w0 &gt;mycert.txt</span>
-</code></pre></div></li>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>base64 myIdentity.jks -w0 &gt;mycert.txt
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 myIdentity.p12 -w0 &gt;mycert.txt</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 myTrust.jks -w0 &gt;mycert.txt</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 myTrust.p12 -w0 &gt;mycert.txt</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 root.cert -w0 &gt;mycert.txt</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># base64 gatewayCert.pfx -w0 &gt;mycert.txt</span>
+</span></span></code></pre></div></li>
 <li>
 <p>From the Azure portal, open your Key Vault.</p>
 </li>
@@ -6564,19 +6564,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1664997064"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1664993347"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664993347"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1664997064"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1664997064"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664993347"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1664997064"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
