@@ -5,25 +5,7 @@ weight: 12
 description: "General advice for debugging and monitoring the operator."
 ---
 
-### Contents
-
-- [Troubleshooting a particular domain resource](#troubleshooting-a-particular-domain-resource)
-- [Check Helm status](#check-helm-status)
-- [Ensure the operator CRD is installed](#ensure-the-operator-crd-is-installed)
-- [Check the operator deployment](#check-the-operator-deployment)
-- [Check the conversion webhook deployment](#check-the-conversion-webhook-deployment)
-- [Check common operator issues](#check-common-operator-issues)
-- [Check for operator events](#check-for-operator-events)
-- [Check for conversion webhook events](#check-for-conversion-webhook-events)
-- [Check the operator log](#check-the-operator-log)
-- [Check the conversion webhook log](#check-the-conversion-webhook-log)
-- [Operator ConfigMap](#operator-configmap)
-- [Force the operator to restart](#force-the-operator-to-restart)
-- [Operator and conversion webhook logging level](#operator-and-conversion-webhook-logging-level)
-- [Troubleshooting the conversion webhook](#troubleshooting-the-conversion-webhook)
-  - [Ensure the conversion webhook is deployed and running](#ensure-the-conversion-webhook-is-deployed-and-running)
-  - [Check for runtime errors during conversion](#check-for-runtime-errors-during-conversion)
-- [See also](#see-also)
+{{< table_of_contents >}}
 
 ### Troubleshooting a particular domain resource
 

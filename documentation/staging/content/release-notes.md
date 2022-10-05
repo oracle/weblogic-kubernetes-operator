@@ -4,6 +4,8 @@ date: 2019-03-15T11:25:28-04:00
 draft: false
 ---
 
+{{< table_of_contents >}}
+
 ### Releases
 
 | Date               | Version  | Introduces backward incompatibilities?                                                                                                      | Change - See also, [Change log](#change-log).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

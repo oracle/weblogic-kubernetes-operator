@@ -5,16 +5,7 @@ weight: 3
 description: "How to install, upgrade, and uninstall the operator."
 ---
 
-### Contents
-
-- [Introduction](#introduction)
-- [Install the operator](#install-the-operator)
-- [Install the WebLogic domain resource conversion webhook](#install-the-weblogic-domain-resource-conversion-webhook)
-- [Set up domain namespaces](#set-up-domain-namespaces)
-- [Update a running operator](#update-a-running-operator)
-- [Upgrade the operator](#upgrade-the-operator)
-- [Uninstall the operator](#uninstall-the-operator)
-- [Installation sample](#installation-sample)
+{{< table_of_contents >}}
 
 ### Introduction
 

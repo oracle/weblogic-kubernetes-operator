@@ -6,23 +6,7 @@ pre = "<b> </b>"
 description = "Updating a running Model in Image domain's images and model files."
 +++
 
-### Contents
-
- - [Overview](#overview)
- - [Updating an existing model](#updating-an-existing-model)
- - [Offline updates](#offline-updates)
-   - [Offline update sample](#offline-update-sample)
- - [Online updates](#online-updates)
-   - [Online update scenarios](#online-update-scenarios)
-   - [Online update status and labels](#online-update-status-and-labels)
-   - [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes)
-   - [Online update handling of deletes](#online-update-handling-of-deletes)
-   - [Online update sample](#online-update-sample)
- - [Appendices](#appendices)
-   - [Supported updates](#supported-updates)
-   - [Unsupported updates](#unsupported-updates)
-   - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
-   - [Changing a Domain `restartVersion` or `introspectVersion`](#changing-a-domain-restartversion-or-introspectversion)
+{{< table_of_contents >}}
 
 ### Overview
 

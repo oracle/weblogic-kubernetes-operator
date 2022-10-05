@@ -5,25 +5,7 @@ description: "The supported environments, pricing and licensing, and support det
 weight: 6
 ---
 
-### Contents
-
-- [Overview](#overview)
-- [Important notes about specific environments](#important-notes-about-specific-environments)
-  - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
-  - [Oracle Cloud Native Environment](#oracle-cloud-native-environment)
-  - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
-  - [Microsoft Azure](#microsoft-azure)
-  - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
-  - [OpenShift](#openshift)
-  - [WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes](#weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes)
-  - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
-- [Pricing and licensing](#pricing-and-licensing)
-  - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
-  - [WebLogic Server](#weblogic-server)
-  - [Oracle Linux](#oracle-linux)
-  - [Oracle Java](#oracle-java)
-  - [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images)
-  - [Additional references](#additional-references)
+{{< table_of_contents >}}
 
 ### Overview
 
