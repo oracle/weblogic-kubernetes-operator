@@ -288,7 +288,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    list.add(info.getDomain());
+    if (info.isNotDeleting()) {
+      list.add(info.getDomain());
+    }
   }
 
   private void onDeleteEvent(CoreV1Event event) {
@@ -733,7 +735,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
           .execute();
     });
   }
-
 
   /**
    * Dispatch the Domain event to the appropriate handler.
