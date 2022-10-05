@@ -9,7 +9,7 @@ The operator Helm chart includes the option of installing the necessary Kubernet
 
 You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator's log contents to that Elasticsearch location.
 
-## Elastic Stack per-operator configuration
+### Elastic Stack per-operator configuration
 
 As part of the Elastic Stack integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
 
@@ -21,7 +21,7 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 
 For additional details, see [Elastic Stack integration]({{< relref "/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
 
-## Sample to configure Elasticsearch and Kibana
+### Sample to configure Elasticsearch and Kibana
 
 This sample configures the Elasticsearch and Kibana deployments and services.
 It's useful for trying out the operator in a Kubernetes cluster that doesn't already

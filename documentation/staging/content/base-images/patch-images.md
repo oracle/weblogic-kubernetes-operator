@@ -5,7 +5,7 @@ weight: 3
 description: "Dynamically update WebLogic images in a running domain."
 ---
 
-## Apply patched images to a running domain
+### Apply patched images to a running domain
 
 When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image,
 the operator applies the update in a zero downtime fashion.
@@ -22,7 +22,7 @@ For a broader description of managing the evolution and mutation
 of container images to run WebLogic Server in Kubernetes,
 see [CI/CD]({{< relref "/managing-domains/cicd/_index.md" >}}).
 
-### Domain in PV
+#### Domain in PV
 
 {{% notice warning %}}
 Oracle strongly recommends strictly limiting access to Domain in PV domain home files.
@@ -52,7 +52,7 @@ of the WebLogic domain to update the Oracle Home of the servers.
 For more information on server restarts,
 see [Restarting]({{< relref "/managing-domains/domain-lifecycle/restarting.md" >}}).
 
-### Model in Image with auxiliary images
+#### Model in Image with auxiliary images
 
 For Model in Image domains when using auxiliary images:
 
@@ -75,7 +75,7 @@ and alter your domain resource to reference the new image
 The operator will then perform a [rolling restart]({{< relref "/managing-domains/domain-lifecycle/restarting#overview" >}})
 of the WebLogic domain to update the Oracle Home of the servers.
 
-### Model in Image without auxiliary images
+#### Model in Image without auxiliary images
 
 For Model in Image domains _without_ using auxiliary images:
 
@@ -91,7 +91,7 @@ with the new image's name/tag (`mydomain:v2`).
 The operator will then perform a [rolling restart]({{< relref "/managing-domains/domain-lifecycle/restarting#overview" >}})
 of the WebLogic domain to update the Oracle Home of the servers.
 
-### Domain in Image
+#### Domain in Image
 
 If you need to update the image for a running Domain in Image domain,
 then use the WIT [`rebase`](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/)

@@ -8,7 +8,7 @@ description = "Updating a running Model in Image domain's images and model files
 
 {{< table_of_contents >}}
 
-## Overview
+### Overview
 
 If you want to make a WebLogic domain home configuration update to a running Model in Image domain,
 and you want the update to survive WebLogic Server pod restarts,
@@ -56,7 +56,7 @@ Unlike configuration overrides, the syntax for a model file update exactly match
 the syntax for specifying your model file originally.
 {{% /notice %}}
 
-## Updating an existing model
+### Updating an existing model
 
 If you have verified your proposed model updates to a running
 Model in Image domain are supported by consulting
@@ -121,7 +121,7 @@ After your model updates are prepared, you can instruct the operator to propagat
 to a running domain by following the steps in [Offline updates](#offline-updates)
 or [Online updates](#online-updates).
 
-## Offline updates
+### Offline updates
 
 Use the following steps to initiate an offline configuration update to your model:
 
@@ -165,13 +165,13 @@ If the job reports a failure, see
 [Debugging]({{< relref "/managing-domains/debugging.md" >}})
 for advice.
 
-### Offline update sample
+#### Offline update sample
 
 For an offline update sample which adds a data source, see the
 [Update 1 use case]({{< relref "/samples/domains/model-in-image/update1.md" >}})
 in the Model in Image sample.
 
-## Online updates
+### Online updates
 
 Use the following steps to initiate an online configuration update to your model:
 
@@ -260,7 +260,7 @@ spec:
     - sample-domain1-another-secret
 ```
 
-### Online update scenarios
+#### Online update scenarios
 
 1. Successful online update that includes only dynamic WebLogic MBean changes.
    * Example dynamic WebLogic MBean changes:
@@ -334,7 +334,7 @@ spec:
      * If retries have halted, then alter the `spec.introspectVersion`.
 
 
-### Online update status and labels
+#### Online update status and labels
 
 During an online update, the operator will rerun the introspector job, which
 in turn attempts online WebLogic configuration changes to the running domain.
@@ -454,7 +454,7 @@ Here are some of the expected WebLogic pod labels after an online update success
     * Non-dynamic WebLogic configuration changes were included in a
       successful online model update.
 
-### Online update handling of non-dynamic WebLogic configuration changes
+#### Online update handling of non-dynamic WebLogic configuration changes
 
 The domain resource YAML `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` attribute
 controls behavior when non-dynamic WebLogic configuration changes are detected during an online update introspector job.
@@ -482,7 +482,7 @@ Valid values are `CommitUpdateOnly` (default), or `CommitUpdateAndRoll`:
       and the domain will then be running in an inconsistent state until its older servers are restarted.
 {{% /notice %}}
 
-### Online update handling of deletes
+#### Online update handling of deletes
 
 The primary use case for online updates is to make small additions,
       deletions of single resources or MBeans that have no dependencies,
@@ -503,7 +503,7 @@ In general, complex deletion should be handled by offline updates
       no longer includes the `appDeployment` section, then the online update
       will delete the application from the domain.
 
-#### MBean type section deletion
+##### MBean type section deletion
 
 For an example of an MBean deletion, consider a WDT ConfigMap that starts with:
 
@@ -552,7 +552,7 @@ The online update will fail if you try replace the ConfigMap
 This fails because it implicitly removes
       the MBean types `SelfTuning` and `WorkManager`.
 
-#### Deleting cross-referenced MBeans
+##### Deleting cross-referenced MBeans
 
 For an example of an unsupported online update delete of MBeans
       with cross references, consider the case of a Work Manager
@@ -627,17 +627,17 @@ After that update completes, then perform another online update:
               MaxThreadsConstraint:
 ```
 
-### Online update sample
+#### Online update sample
 
 For an online update sample which alters a data source and Work Manager, see the
 [Update 4 use case]({{< relref "/samples/domains/model-in-image/update4.md" >}})
 in the Model in Image sample.
 
-## Appendices
+### Appendices
 
 Review the following appendices for additional, important information.
 
-### Supported updates
+#### Supported updates
 
 The following updates are *supported* for offline or online updates,
 except when they reference an area that is specifically
@@ -695,7 +695,7 @@ documented as [unsupported](#unsupported-updates):
    [Declaring Named MBeans to Delete](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete)
    in the WebLogic Deploying Tooling documentation.
 
-### Unsupported updates
+#### Unsupported updates
 
 {{% notice warning %}}
 It is important to avoid applying unsupported model updates to a running domain. An attempt to use an unsupported update may not always result in a clear error message, and the expected behavior may be undefined. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change. See [Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
@@ -767,7 +767,7 @@ The following summarizes the types of runtime update configuration that are _not
    `domainInfo.RCUDbinfo.*`, `topology.Security.*`, and `topology.SecurityConfiguration.*`.
     - Any online update changes in these sections will result in a failure.
 
-### Using the WDT Discover Domain and Compare Model Tools
+#### Using the WDT Discover Domain and Compare Model Tools
 
 Optionally, you can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates.
 The WebLogic Deploy Tooling
@@ -826,7 +826,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
 **NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the previous `discoverDomain.sh` commands.
 
-### Changing a Domain `restartVersion` or `introspectVersion`
+#### Changing a Domain `restartVersion` or `introspectVersion`
 
 As was mentioned in [Offline updates](#offline-updates), one way to tell the operator to
 apply offline configuration changes to a running domain is by altering the Domain

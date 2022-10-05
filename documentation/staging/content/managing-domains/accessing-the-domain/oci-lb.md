@@ -29,7 +29,7 @@ cluster.
 {{% /notice %}}
 
 
-## Requesting an Oracle Cloud Infrastructure load balancer
+### Requesting an Oracle Cloud Infrastructure load balancer
 
 When your domain is created by the operator, a number of Kubernetes
 services are created by the operator, including one for the WebLogic Server

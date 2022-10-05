@@ -7,7 +7,7 @@ description: "Sample for creating a WebLogic domain home inside an image, and th
 
 The sample scripts demonstrate the creation of a WebLogic domain home in an image using [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
-## Prerequisites
+### Prerequisites
 
 Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
@@ -37,7 +37,7 @@ $ create-weblogic-credentials.sh
 ```
 **NOTE**: Using this example, you would configure `weblogicCredentialsSecretName` to be `domain1-weblogic-credentials`.
 
-## Use the script to create a domain
+### Use the script to create a domain
 
 {{% notice note %}}
 The `create-domain.sh` script generates a new container image on each run with a new domain home and a different internal `domain secret` in it.  To prevent having disparate images with different domain secrets in the same domain, we strongly recommend that a new domain uses a `domainUID` that is different from any of the active domains, or that you delete the existing Domain using the following command and wait until all the WebLogic Server instance Pods are terminated before you create a Domain with the same `domainUID`:
@@ -164,7 +164,7 @@ $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/doma
 
 The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
 
-## Configuration parameters
+### Configuration parameters
 
 The following parameters can be provided in the inputs file.
 
@@ -214,13 +214,13 @@ Note that the names of the Kubernetes resources in the generated YAML files may 
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain resource YAML file can be modified to cover more use cases.
 
-## Verify the results
+### Verify the results
 
 The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
 Note that the following example results use the `default` Kubernetes Namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
-### Generated YAML files with the default inputs
+#### Generated YAML files with the default inputs
 
 The content of the generated `domain.yaml`:
 
@@ -297,7 +297,7 @@ spec:
   # replicas: 1
 ```
 
-## Verify the domain
+### Verify the domain
 
 To confirm that the domain was created, use this command:
 
@@ -436,7 +436,7 @@ Events:           <none>
 
 In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
-## Verify the pods
+### Verify the pods
 
 Use the following command to see the pods running the servers:
 
@@ -456,7 +456,7 @@ domain1-managed-server1                      1/1       Running   0          29m
 domain1-managed-server2                      1/1       Running   0          29m
 ```
 
-## Verify the services
+### Verify the services
 
 Use the following command to see the services for the domain:
 
@@ -476,7 +476,7 @@ domain1-managed-server1                     ClusterIP   None             <none> 
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 
-## Delete the domain
+### Delete the domain
 
 The generated YAML file in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:
 
@@ -484,7 +484,7 @@ The generated YAML file in the `/<path to output-directory>/weblogic-domains/<do
 $ kubectl delete -f domain.yaml
 ```
 
-## Delete the generated image.
+### Delete the generated image.
 
 When no longer needed, delete the generated image.
 If the image is in a local repository, use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
@@ -493,7 +493,7 @@ If the image is in a local repository, use the following command to delete an im
 $ docker rmi domain-home-in-image:12.2.1.4
 ```
 
-## Delete the tools directory.
+### Delete the tools directory.
 
 When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
 By default, they are installed under `/tmp/dhii-sample/tools` directory.

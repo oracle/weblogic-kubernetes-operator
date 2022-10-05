@@ -10,11 +10,11 @@ This document describes what's needed to create and deploy a typical Model in Im
 
 {{< table_of_contents >}}
 
-## WebLogic Kubernetes Operator
+### WebLogic Kubernetes Operator
 
 Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 
-## WebLogic Server image
+### WebLogic Server image
 
 Model in Image requires an image with a WebLogic Server installation.
 
@@ -33,7 +33,7 @@ Model in Image requires an image with a WebLogic Server installation.
 
 - Or, you can manually build your own base image, as described in [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
-## Directory structure
+### Directory structure
 
 Model in Image requires the following directory structure in its pods for
 its (optional) WDT model artifacts and (required) WDT binaries:
@@ -43,7 +43,7 @@ its (optional) WDT model artifacts and (required) WDT binaries:
 | `domain.spec.configuration.model.modelHome` | `/u01/wdt/models` | Zero or more model `.yaml`, `.properties`, and/or archive `.zip` files.|
 | `domain.spec.configuration.model.wdtInstallHome` | `/u01/wdt/weblogic-deploy` | Unzipped WDT installation binaries (required).  |
 
-## Supplying initial model files and WDT
+### Supplying initial model files and WDT
 
 Model in Image minimally requires an image with a WebLogic installation
 (see [WebLogic Server image](#weblogic-server-image)), plus access
@@ -98,7 +98,7 @@ There are multiple methods for supplying Model in Image WDT artifacts:
 For more information about model file syntax,
 see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 
-### Optional WDT model ConfigMap
+#### Optional WDT model ConfigMap
 
 You can create a WDT model ConfigMap that defines additional model `.yaml` and `.properties` files beyond what you've already supplied in your image, and then reference this ConfigMap using your Domain YAML file's `configuration.model.configMap` attribute. This is optional if the supplied image already fully defines your model.
 
@@ -120,7 +120,7 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
 See [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
 
 
-## Required runtime encryption secret
+### Required runtime encryption secret
 
 Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime ConfigMap or log. You can safely change the `password`, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
@@ -147,11 +147,11 @@ Corresponding Domain YAML file snippet:
       runtimeEncryptionSecret: MY-DOMAINUID-runtime-encrypt-secret
   ```
 
-### Secrets for model macros
+#### Secrets for model macros
 
 Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 
-### Domain fields
+#### Domain fields
 
 The following Domain fields are specific to Model in Image domains.
 
@@ -177,7 +177,7 @@ The following Domain fields are specific to Model in Image domains.
    see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
    The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
-### Always use external state
+#### Always use external state
 
 Regardless of the domain home source type, we recommend that you always keep state outside the image. This includes cluster database leasing tables, JMS and transaction stores, EJB timers, and so on. This ensures that data will not be lost when a container is destroyed.
 
@@ -189,7 +189,7 @@ For more information see:
 - [High Availability Best Practices](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-FB97F9A2-E6FA-4C51-B74E-A2A5DDB43B8C) in _Administering JMS Resources for Oracle WebLogic Server_.
 - [Leasing](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad&id=CLUST-GUID-8F7348E2-7C45-4A6B-A72C-D1FB51A8E83F) in _Administering Clusters for Oracle WebLogic Server_.
 
-### Requirements for JRF domain types
+#### Requirements for JRF domain types
 
 {{% notice info %}} This section applies only for a `JRF` domain type. Skip it if your domain type is `WLS` or `RestrictedJRF`.
 {{% /notice %}}
@@ -198,7 +198,7 @@ A JRF domain requires an infrastructure database, initializing this database usi
 
 Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
-#### JRF Domain YAML file and model YAML file settings
+##### JRF Domain YAML file and model YAML file settings
 
 Here are the required Domain YAML file and model YAML file settings for Model in Image JRF domains:
 
@@ -221,7 +221,7 @@ Here are the required Domain YAML file and model YAML file settings for Model in
 
   ```
 
-#### Saving and restoring JRF wallets
+##### Saving and restoring JRF wallets
 
 It is important to save a JRF domain's OPSS wallet password and wallet file so that you can restore them as needed. This ensures that a restart or migration of the domain can continue to access the domain's FMW infrastructure database.
 
@@ -272,7 +272,7 @@ To reuse the wallet:
   - Make sure that your Domain YAML file `configuration.opss.walletPasswordSecret` field names the OPSS password Secret, and make sure that your Domain YAML file `configuration.opss.walletFileSecret` field names the OPSS wallet file secret.
 
 
-#### Instructions for changing a JRF domain's database password
+##### Instructions for changing a JRF domain's database password
 
 Follow these steps to ensure that a JRF domain can continue to access its RCU data after changing its database password.
 
@@ -286,7 +286,7 @@ Follow these steps to ensure that a JRF domain can continue to access its RCU da
 
 - Save your wallet files again, as changing your password generates a different wallet.
 
-#### JRF references
+##### JRF references
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.
 

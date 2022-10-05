@@ -7,14 +7,14 @@ description: "How to install, upgrade, and uninstall the operator."
 
 {{< table_of_contents >}}
 
-## Introduction
+### Introduction
 
 This installation guide describes how to configure, install (deploy), update, upgrade,
 and uninstall an instance of the WebLogic Kubernetes Operator.
 A single instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured.
 A Kubernetes cluster can host multiple operators, but no more than one per namespace.
 
-## Install the operator
+### Install the operator
 
 {{% notice note %}}
 Before installing the operator, ensure that each of its prerequisite requirements is met.
@@ -131,16 +131,16 @@ see [Troubleshooting]({{<relref "/managing-operators/troubleshooting#check-the-o
   A backslash (`\`) is only required when specifying the selector on the command line using `--set`,
   as shown in the previous example.
 
-## Install the WebLogic domain resource conversion webhook
+### Install the WebLogic domain resource conversion webhook
 By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster and removed the first time an operator is uninstalled. If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
 For conversion webhook installation details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
 
-## Set up domain namespaces
+### Set up domain namespaces
 
 To configure or alter the namespaces that an operator will check for domain resources,
 see [Namespace management]({{<relref "/managing-operators/namespace-management.md">}}).
 
-## Update a running operator
+### Update a running operator
 
 You can update the settings on a running operator by using the `helm upgrade` command.
 
@@ -155,7 +155,7 @@ Example updates:
 - Change the managed namespaces; see
   [Namespace management]({{<relref "/managing-operators/namespace-management.md">}}).
 
-## Upgrade the operator
+### Upgrade the operator
 
 You can upgrade a 3.x operator while the operator's domain resources are deployed and running.
 The following instructions will be applicable to upgrade operators
@@ -195,7 +195,7 @@ The webhook automatically and transparently upgrades the existing Domains from t
 For more information, see
 [WebLogic Domain resource conversion webhook]({{< relref "/managing-operators/conversion-webhook.md" >}}).
 
-## Uninstall the operator
+### Uninstall the operator
 
 {{% notice note %}}
 If you uninstall an operator, then any domains that it is managing will continue running;
@@ -247,7 +247,7 @@ For more information, see
 [uninstall the conversion webhook]({{<relref "/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}})
 for the conversion webhook uninstallation details.
 
-## Installation sample
+### Installation sample
 
 For an example of installing the operator,
 setting the namespace that it monitors,

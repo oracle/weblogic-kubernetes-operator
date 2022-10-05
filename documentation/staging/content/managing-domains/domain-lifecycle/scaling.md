@@ -17,7 +17,7 @@ The operator provides several ways to initiate scaling of WebLogic clusters, inc
 * [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api).
 * [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api).
 
-## On-demand, updating the Domain directly
+### On-demand, updating the Domain directly
 The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` field of a Domain. This can be done by using `kubectl`. More specifically, you can modify the Domain directly by using the `kubectl edit` command.  For example:
 ```shell
 $ kubectl edit domain domain1 -n [namespace]
@@ -41,7 +41,7 @@ spec:
 ```
 In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section.
 
-## Calling the operator's REST scale API
+### Calling the operator's REST scale API
 
 Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes environments, scaling WebLogic clusters involves scaling the number of corresponding Pods in which Managed Server instances are running. Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.
 
@@ -109,7 +109,7 @@ rules:
   verbs: ["get", "list", "patch", update"]
 ---
 ```
-### Operator REST endpoints
+#### Operator REST endpoints
 
 The WebLogic Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
@@ -122,7 +122,7 @@ Detailed instructions for configuring the external REST endpoint are available [
 Regardless of which endpoint is being invoked, the URL format for scaling is the same.
 {{% /notice %}}
 
-### What does the operator do in response to a scaling request?
+#### What does the operator do in response to a scaling request?
 
 When the operator receives a scaling request, it will:
 
@@ -136,14 +136,14 @@ When the operator receives a scaling request, it will:
 
 In response to a change to either `replicas` field, in the Domain, the operator will increase or decrease the number of Managed Server instance Pods to match the desired replica count.
 
-## Using a WLDF policy rule and script action to call the operator's REST scale API
+### Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
 in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/operator/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
-### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
+#### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
 
 1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/operator/scripts/scaling/scalingAction.sh) script to `$DOMAIN_HOME/bin/scripts` so that it's accessible within the Administration Server pod. For more information, see [Configuring Script Actions](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_notifications.html#GUID-5CC52534-13CD-40D9-915D-3380C86580F1) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
@@ -211,7 +211,7 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 * [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
 
 
-### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
+#### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
 The script `scalingAction.sh`, specified in the WLDF script action, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
@@ -269,13 +269,13 @@ roleRef:
 ---
 ```
 
-## Using a Prometheus alert action to call the operator's REST scale API
+### Using a Prometheus alert action to call the operator's REST scale API
 In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
 
-## Helpful tips
-### Debugging scalingAction.sh
+### Helpful tips
+#### Debugging scalingAction.sh
 The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/operator/scripts/scaling/scalingAction.sh) script was designed to be executed within a container of the
 Administration Server Pod because the associated diagnostic module is targeted to the Administration Server.
 
@@ -296,7 +296,7 @@ $ cd /u01/oracle/user-projects/domains/domain1/bin/scripts && \
 
 A log, `scalingAction.log`, will be generated in the same directory in which the script was executed and can be examined for errors.
 
-### Example on accessing the external REST endpoint
+#### Example on accessing the external REST endpoint
 The easiest way to test scaling using the external REST endpoint is to use a command-line tool like `curl`. Using `curl` to issue
 an HTTPS scale request requires these mandatory header properties:
 

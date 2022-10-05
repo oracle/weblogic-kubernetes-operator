@@ -9,7 +9,7 @@ Ingresses are one approach provided by Kubernetes to configure load balancers.
 Depending on the version of Kubernetes you are using, and your cloud provider, you may need to use Ingresses.
 For more information about Ingresses, see the [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) documentation.
 
-## WebLogic clusters as backends of an Ingress
+#### WebLogic clusters as backends of an Ingress
 
 In an Ingress object, a list of backends are provided for each target that will be load balanced.  Each backend is typically
 [a Kubernetes Service](https://kubernetes.io/docs/concepts/services-networking/service/), more specifically, a combination of a `serviceName` and a `servicePort`.
@@ -43,7 +43,7 @@ subscribe to updates on the service and adjust their internal backend sets when
 additional pods become ready, or pods enter a non-ready state.
 {{% /notice %}}
 
-## Steps to set up an ingress load balancer
+#### Steps to set up an ingress load balancer
 
 1. Install the ingress controller.
 
@@ -62,7 +62,7 @@ additional pods become ready, or pods enter a non-ready state.
 
         Manually create an Ingress YAML file and then apply it to the Kubernetes cluster.
 
-## Guide and samples for Traefik and NGINX
+#### Guide and samples for Traefik and NGINX
 
 Information about how to install and configure these ingress controllers to load balance WebLogic clusters is provided here:
 

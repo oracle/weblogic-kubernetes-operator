@@ -21,12 +21,12 @@ Here's some insight into what's happening under the covers during the Quick Star
 
 - The operator detects the domain resource and deploys the domain's WebLogic Server Administration Server and Managed Server pods.
 
-## Advanced do-it-yourself
+### Advanced do-it-yourself
 
 The following instructions guide you, step-by-step, through the process of creating the Quick Start auxiliary image using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
 These steps help you understand and customize auxiliary image creation. Then you'll see how to use that image in the domain creation.
 
-### Prerequisites.
+#### Prerequisites.
 1. The `JAVA_HOME` environment variable must be set and must reference a valid [JDK](https://www.oracle.com/java/technologies/downloads/) 8 or 11 installation.
 
 1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to a new directory; for example, use directory `/tmp/quickstart/tools`. Both WDT and WIT are required to create your Model in Image auxiliary images.
@@ -104,7 +104,7 @@ Then use the JAR command to put the web application files into a model archive Z
    $ jar cvf /tmp/quickstart/models/archive.zip -C /tmp/quickstart/models/archive/ wlsdeploy
    ```
 
-### Create the auxiliary image.
+#### Create the auxiliary image.
 
 Follow these steps to create the auxiliary image containing
 WDT model YAML files, application archives, and the WDT installation files.
@@ -163,7 +163,7 @@ WDT model YAML files, application archives, and the WDT installation files.
 
 1. Copy the image to all the nodes in your cluster or put it in a container registry that your cluster can access.
 
-### Create the domain.
+#### Create the domain.
 
 If you followed the previous steps to create an auxiliary image, then use these steps to create the domain.
 
@@ -186,7 +186,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
       ```shell
        $ kubectl apply -f /tmp/quickstart/domain-resource.yaml
       ```
-### Delete the generated image and directories for tools and models.
+#### Delete the generated image and directories for tools and models.
 
 Use following commands to delete the generated image and directories for tools and models.
 

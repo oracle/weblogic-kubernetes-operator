@@ -5,7 +5,7 @@ weight: 1
 description: "Sample for creating a Kubernetes Secret that contains the Administration Server credentials. This Secret can be used in creating a WebLogic Domain YAML file."
 ---
 
-## Creating credentials for a WebLogic domain
+### Creating credentials for a WebLogic domain
 
 This sample demonstrates how to create a Kubernetes Secret containing the
 credentials for a WebLogic domain.  The operator expects this secret to be

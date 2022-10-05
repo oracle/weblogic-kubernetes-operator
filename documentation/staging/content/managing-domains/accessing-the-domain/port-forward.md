@@ -8,7 +8,7 @@ description: "Use port forwarding to access WebLogic Server Administration Conso
 
 {{< table_of_contents >}}
 
-## Overview
+### Overview
 
 Beginning with WebLogic Kubernetes Operator version 3.3.2,
 or earlier if you are using an
@@ -36,7 +36,7 @@ port forwarding, or a similar method can create an insecure configuration.
 For more information, see [External network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
 {{% /notice %}}
 
-## Set up Administration Server network channels for port forward access
+### Set up Administration Server network channels for port forward access
 
 To enable a `kubectl port-forward` command to communicate
 with a WebLogic Administration Server Pod, the operator
@@ -125,7 +125,7 @@ When there's no administration port or administration channels configured, and a
 When an administration port is enabled | internal-admin | localhost | WebLogic administration port | admin
 When one or more custom administration channels are configured | internal-admin${index} (where ${index} is a number that starts with 1 and increases by 1 for each custom administration channel) | localhost | Custom administration port | admin
 
-## Port forward to an Administration Server Pod    
+### Port forward to an Administration Server Pod    
 
 If you have
 [set up WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access),
@@ -214,7 +214,7 @@ In this example:
   wls:/base_domain/serverConfig/> exit()
   ```
 
-### Port forward notes and warnings
+#### Port forward notes and warnings
 
 - _Security warning_:
   A port-forward connection can expose a WebLogic T3 or administrative channel
@@ -279,7 +279,7 @@ For domain security considerations, see [External network access security]({{< r
 
   And the Administration Console is accessible using the `http://localhost:63753/console` URL.
 
-### Enabling WLST access when local and remote ports do not match
+#### Enabling WLST access when local and remote ports do not match
 
 If a local (forwarded) port number is not the same as the administration port number,
 then  WLST access will not work by default and you may see a `BEA-000572` RJVM error
@@ -294,7 +294,7 @@ for your Administration Server with the `-Dweblogic.rjvm.enableprotocolswitch=tr
 in your domain resource YAML.
 For more information on this switch, refer to [MOS 'Doc 860340.1'](https://support.oracle.com/rs?type=doc&id=860340.1).
 
-### Terminating port forwarding
+#### Terminating port forwarding
 
 A port-forward connection is active only while the `kubectl port-forward` command is running.
 

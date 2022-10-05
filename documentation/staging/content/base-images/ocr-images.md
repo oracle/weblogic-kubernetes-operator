@@ -7,7 +7,7 @@ description: "Obtain and inspect images for WebLogic Server or Fusion Middleware
 
 {{< table_of_contents >}}
 
-## Overview
+### Overview
 
 A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes.
 Oracle recommends obtaining these WebLogic images from the Oracle Container Registry (OCR)
@@ -21,7 +21,7 @@ with WebLogic Server or Fusion Middleware Infrastructure
 from the Oracle Container Registry (OCR).
 
 
-## Understand Oracle Container Registry images
+### Understand Oracle Container Registry images
 
 The Oracle Container Registry (OCR) is located at [https://container-registry.oracle.com/](https://container-registry.oracle.com/) and contains images for licensed commercial Oracle software products that may be used in your enterprise for deployment using a container engine and Kubernetes.
 
@@ -33,7 +33,7 @@ See the following sections for information about OCR images:
 - [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
 - [Example OCR image names](#example-ocr-image-names)
 
-### Compare General Availability to Critical Patch Updates images
+#### Compare General Availability to Critical Patch Updates images
 
 - General Availability (GA) images:
   - Located in the OCR repositories `middleware/weblogic` and `middleware/fmw-infrastructure`.
@@ -52,7 +52,7 @@ See the following sections for information about OCR images:
   WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with the latest set of recommended patches applied, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
   {{% /notice %}}
 
-### WebLogic distribution installer type
+#### WebLogic distribution installer type
 
 OCR image tags may include keywords like `generic`, `slim`, and such.
 This reflects the type of WebLogic distribution installed in the image's Oracle Home.
@@ -101,7 +101,7 @@ and usually, the type can be determined by examining the image name and tag:
     then you can assume that the image contains
     the same binaries as those installed by the WebLogic generic installer.
 
-### Compare "dated" and "undated" images
+#### Compare "dated" and "undated" images
 
 OCR images are "dated" or "undated"
 depending on whether the name tags include an embedded date stamp
@@ -111,7 +111,7 @@ the latest available versions of their GA or CPU equivalents.
 Therefore, undated images _change over time in the repository_
 even though their name and tag remain the same.
 
-### Example OCR image names
+#### Example OCR image names
 
 Here are some example WebLogic Server Oracle Container Repository (OCR) images,
 where the names are abbreviated to omit their `container-registry.oracle.com/middleware/` prefix:
@@ -123,7 +123,7 @@ where the names are abbreviated to omit their `container-registry.oracle.com/mid
 |`weblogic_cpu:12.2.1.4-generic-jdk8-ol7`|CPU image with latest JDK 8, latest Oracle Linux 7, and the GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU. Note that this image has no date stamp, so it can change over time with potential updates to JDK 8, to Oracle Linux 7, and to the latest CPU.|
 |`weblogic_cpu:12.2.1.4-slim-jdk8-ol8-220204`|CPU image with latest JDK 8, latest Oracle Linux 8, and the GA Oracle WebLogic Server 12.2.1.4 slim distribution, January 2022 CPU.|
 
-## Obtain images from the Oracle Container Registry
+### Obtain images from the Oracle Container Registry
 
 The Oracle Container Registry (OCR) contains images for licensed commercial Oracle software products
 that you may use in your enterprise.
@@ -212,7 +212,7 @@ __Notes:__
   the images contain patches 29135930 and 27117282;
   these patches are included in OCR 12.2.1.3 GA and CPU images.
 
-## Inspect images
+### Inspect images
 
 If you have local access to a WebLogic Server or Fusion Middleware Infrastructure image
 and the image originates from the Oracle Container Registry or
@@ -243,7 +243,7 @@ then you can use the following commands to determine their contents:
   --image=container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
   --patches
   ```
-## Ensure you are using recently patched images
+### Ensure you are using recently patched images
 
 You **should not use** images without the latest set of recommended patches applied.
 Please review the following guidance to ensure that you are using recently patched images:

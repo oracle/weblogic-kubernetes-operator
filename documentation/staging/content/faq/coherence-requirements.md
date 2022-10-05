@@ -15,7 +15,7 @@ that Coherence can form clusters.
 Note that some Fusion Middleware products, like SOA Suite, use Coherence
 and so these requirements apply to them.
 
-### Unicast and Well Known Address
+#### Unicast and Well Known Address
 When the first Coherence process starts, it will form a cluster.  The next
 Coherence process to start (for example, in a different pod), will use UDP to try
 to contact the senior member.  
@@ -44,7 +44,7 @@ service that is pointing to all of the members of that Coherence cluster.
 For more information about running Coherence in Kubernetes outside of
 a WebLogic domain, refer to the [Coherence operator documentation](https://oracle.github.io/coherence-operator/).
 
-### Operating system library requirements
+#### Operating system library requirements
 
 In order for Coherence clusters to form correctly, the `conntrack` library
 must be installed.  Most Kubernetes distributions will do this for you.
@@ -62,7 +62,7 @@ conntrack-tools-1.4.4-4.el7.x86_64
 You should see output similar to that shown previously.  If you do not, then you
 should install `conntrack` using your operating system tools.
 
-### Firewall (iptables) requirements
+#### Firewall (iptables) requirements
 
 Some Kubernetes distributions create `iptables` rules that block some
 types of traffic that Coherence requires to form clusters.  If you are
@@ -96,7 +96,7 @@ the output is now an empty list.
 After making this change, restart your domains and the Coherence cluster
 should now form correctly.
 
-### Make iptables updates permanent across reboots
+#### Make iptables updates permanent across reboots
 
 The recommended way to make `iptables` updates permanent across reboots is
 to create a `systemd` service that applies the necessary updates during

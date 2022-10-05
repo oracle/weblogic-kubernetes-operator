@@ -58,7 +58,7 @@ The steps in this section show you how to sign in to the Azure CLI.
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
 
-## Install WebLogic Kubernetes Operator into the AKS cluster
+### Install WebLogic Kubernetes Operator into the AKS cluster
 
 The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
@@ -96,14 +96,14 @@ weblogic-operator-56654bcdb7-qww7f                1/1     Running     0         
 {{% notice tip %}} You will have to press Ctrl-C to exit this command due to the `-w` flag.
 {{% /notice %}}
 
-## Create WebLogic domain
+### Create WebLogic domain
 
   - [Create secrets](#create-secrets)
   - [Create WebLogic Domain](#create-weblogic-domain-1)
 
 Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
 
-### Create secrets
+#### Create secrets
 
 You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:
 
@@ -159,7 +159,7 @@ weblogic-operator-secrets                 Opaque                                
 
 **Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
 
-### Create WebLogic Domain
+#### Create WebLogic Domain
 You will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume you created previously.
 
 {{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
@@ -505,7 +505,7 @@ You need to set up the domain configuration for the WebLogic domain.
 
 To deploy a sample application on WLS, you may skip to the section [Deploy sample application](#deploy-sample-application).  The next section includes a script that automates all of the preceding steps.
 
-## Automation
+### Automation
 
 If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
 
@@ -547,7 +547,7 @@ To interact with the cluster using `kubectl`, use `az aks get-credentials` as sh
 {{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
 
-## Deploy sample application
+### Deploy sample application
 
 Now that you have WLS running in AKS, you can test the cluster by deploying the simple sample application included in the repository.
 
@@ -685,7 +685,7 @@ The test application will list the server host and server IP on the output, like
 </html>
 ```
 
-## Validate NFS volume
+### Validate NFS volume
 
 There are several approaches to validate the NFS volume:
 
@@ -707,7 +707,7 @@ wlsstorage1612795811.file.core.windows.net:/wlsstorage1612795811/wls-weblogic-16
 ...
 ```
 
-## Clean up resources
+### Clean up resources
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" >}}
 
@@ -715,10 +715,10 @@ If you created the AKS cluster step by step, run the following commands to clean
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
-## Troubleshooting
+### Troubleshooting
 
 For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
-## Useful links
+### Useful links
 
 - [Domain on a PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}) sample

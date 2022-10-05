@@ -8,7 +8,7 @@ description: "An architectural overview of the operator runtime and related reso
 
 {{< table_of_contents >}}
 
-## Overall architecture
+### Overall architecture
 
 The operator consists of the following parts:
 
@@ -65,7 +65,7 @@ The Kubernetes cluster has several namespaces. Components may be deployed into n
 * Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a shared namespace.
 * Customers are responsible for Elasticsearch and Kibana deployments that may be used to monitor WebLogic server and pod logs.
 
-## Domain UID
+### Domain UID
 
 Every domain resource must be configured with a domain unique identifier
 which is a string and may also be called a `Domain UID`,
@@ -100,7 +100,7 @@ A Domain UID may be up to 45 characters long. For
 more details about Domain UID name requirements, see
 [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 
-## Domain architecture
+### Domain architecture
 
 The following diagram shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
 
@@ -142,7 +142,7 @@ Within the container, the following aspects are configured by the operator:
 *	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe determines if a server is ready to accept user requests.  The readiness probe is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes. For details about readiness probe customization, see [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}).
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
-## Network name predictability
+### Network name predictability
 The operator deploys services with predictable well-defined DNS names
 for each WebLogic server and cluster in your WebLogic configuration.
 The name of a WebLogic server service is `DOMAIN_UID-wlservername`
@@ -155,7 +155,7 @@ to ensure that the servers will always be able to find each other.
 
 For details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 
-## Domain state stored outside container images
+### Domain state stored outside container images
 The operator expects (and requires) that all state that is expected to outlive the life of a pod be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
 
 It is worth providing some background information on why this approach was adopted, in addition to the fact that this separation is consistent with other existing operators (for other products) and the Kubernetes “cattle, not pets” philosophy when it comes to containers.

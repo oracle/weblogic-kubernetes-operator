@@ -14,7 +14,7 @@ efficient use of layers is considered a best practice.
 
 {{< img "Container image layers" "images/layers.png" >}}
 
-## Why is it important to maintain the layering of images?
+### Why is it important to maintain the layering of images?
 
 Layering is an important technique in container images.  Layers are important because they
 are shared between images.  Let's consider an example.  In the following diagram, we have

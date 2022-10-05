@@ -48,7 +48,7 @@ There are advantages for each domain home source type where Model in Image is th
 | There are fewer images to manage and store, which could provide significant storage and network savings.  |  There are more images to manage and store in this approach. | Same as Domain in Image unless you use the [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) approach. With auxiliary images, you can use a single image to distribute your WebLogic installation (similar to Domain on PV), plus one or more specific dedicated images that contain your WebLogic configuration and applications.|
 | You may be able to use standard Oracle-provided images or, at least, a very small number of self-built images, for example, with patches installed. | You may need to do more work to set up processes to build and maintain your images. | Same as Domain in Image.|
 
-## Use or create WebLogic images depending on domain home source type
+### Use or create WebLogic images depending on domain home source type
 
 * Model in Image domains that use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}):
   * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})

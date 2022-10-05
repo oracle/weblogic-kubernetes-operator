@@ -5,7 +5,7 @@ draft: false
 weight: 3
 ---
 
-## Create the domain using a domain resource.
+### Create the domain using a domain resource.
 
 1. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain.
 
@@ -80,7 +80,7 @@ weight: 3
 
    	 If the operator didn't start the servers for the domain, see [Domain debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
-## Create an ingress route for the domain.
+### Create an ingress route for the domain.
 
 1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file.
 

@@ -8,7 +8,7 @@ description: "This document describes when WebLogic Server instances should and 
 
 This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.
 
-## Overview
+### Overview
 
 There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in
 a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.
@@ -28,7 +28,7 @@ The following types of server restarts are supported by the operator:
 
 For detailed information on how to restart servers using the operator, see [Starting, stopping, and restarting servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md" >}}).
 
-## Common restart scenarios
+### Common restart scenarios
 
 This document describes what actions you need to take to properly restart your servers for a number of common scenarios:
 
@@ -40,13 +40,13 @@ This document describes what actions you need to take to properly restart your s
 * Applying WebLogic Server patches
 * Updating deployed applications for Domain in Image or Model in Image
 
-## Use cases
+### Use cases
 
-### Modifying the WebLogic domain configuration
+#### Modifying the WebLogic domain configuration
 
 Changes to the WebLogic domain configuration may require either a rolling or full domain restart depending on the domain home location and the type of configuration change.
 
-#### Domain in Image
+##### Domain in Image
 
 For Domain in Image, you may only perform a rolling restart if both the WebLogic configuration changes between the present image and a new image are dynamic and you have [followed the CI/CD guidelines]({{< relref "/managing-domains/cicd/mutate-the-domain-layer">}}) to create an image with compatible encryption keys.
 
@@ -55,7 +55,7 @@ Otherwise, use of a new image that does not have compatible encryption keys or a
 * If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 
-#### Model in Image
+##### Model in Image
 
 * Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see
 [Supported updates]({{< relref "/managing-domains/model-in-image/runtime-updates/_index.md#supported-updates" >}})
@@ -69,7 +69,7 @@ and
 
 * If you are supplying updated models or Secrets for a running domain, then see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
 
-#### Domain in PV
+##### Domain in PV
 
 For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
 * Domain configuration changes that add new clusters (either configured or dynamic), member servers for these new clusters, or non-clustered servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then that you [initiate the operator's introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
@@ -87,7 +87,7 @@ For Domain in PV, the type of restart needed depends on the nature of the WebLog
 {{% notice note %}} The preceding description of the operator's life cycle of responding to WebLogic domain configuration changes applies to version 3.0.0 and later. Prior to operator version 3.0.0, while you could make changes to WebLogic domain configuration using the Administration Console or WLST, the operator would only detect and respond to those changes following a full domain shut down and restart.
 {{% /notice %}}
 
-### Changing the domain configuration overrides
+#### Changing the domain configuration overrides
 
 Beginning with operator version 3.0.0, many changes to domain configuration overrides can be applied dynamically or as part of a rolling restart. Previously, any changes to the configuration overrides required a full domain shutdown and restart.
 Changes to configuration overrides include:
@@ -102,13 +102,13 @@ The changes to the previously listed fields or contents of related resources are
 {{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
 {{% /notice %}}
 
-### Changing the WebLogic Server credentials
+#### Changing the WebLogic Server credentials
 
 A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes Secret for the domain, requires a
 _full domain restart_.  The Kubernetes Secret can be updated directly or a new Secret can be created and then referenced by the `webLogicCredentialsSecret`
 field in the Domain YAML file.
 
-### Changing fields on the Domain that affect WebLogic Server instance Pods
+#### Changing fields on the Domain that affect WebLogic Server instance Pods
 
 The operator will initiate a rolling restart of the domain when you modify any of the Domain YAML file fields that affect the WebLogic Server instance Pod generation,
 such as `image`, `volumes`, and `env`.  For a complete list, see [Fields that cause servers to be restarted]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
@@ -127,7 +127,7 @@ The `edit` command opens a text editor which lets you edit the Domain in place.
 Typically, it's better to edit the Domain YAML file directly; otherwise, if you scaled the domain, and you edit only the original `domain.yaml` file and reapply it, you could go back to your old replicas count.
 {{% /notice %}}
 
-### Applying WebLogic Server patches
+#### Applying WebLogic Server patches
 
 Oracle provides different types of patches for WebLogic Server, such as Patch Set Updates, Security Patch Updates, and One-Off patches.
 Information on whether a patch is rolling-compatible or requires a manual full domain restart usually can be found in the patch's documentation, such as the README file.
@@ -144,7 +144,7 @@ With patches that are not rolling-compatible:
 * If you keep the same image name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" >}}).
 * If you update the `image` property with a new image name, then you must avoid the rolling restart by following the steps in [Avoiding a rolling restart when changing the image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 
-### Updating deployed applications
+#### Updating deployed applications
 
 Frequent updates of deployed applications using a [continuous integration/continuous delivery]({{< relref "/managing-domains/cicd/mutate-the-domain-layer">}}) (CI/CD) process is a very common use case.
 The process for applying an updated application is different for domain home in image and model in image than it is for domain home on PV.
@@ -162,7 +162,7 @@ If the application update is not rolling-compatible:
 * If you keep the same image name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 * If you update the `image` property with a new image name, then you must avoid the rolling restart by following the steps in [Avoiding a rolling restart when changing the image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 
-### Rolling out an updated domain home in image or model in image
+#### Rolling out an updated domain home in image or model in image
 
 Follow these steps to create new rolling-compatible image if you only need to patch your WebLogic Server domain or update application deployment files:
 
@@ -192,7 +192,7 @@ d. Update the `image` field of the Domain YAML file, specifying the new image na
      ```
 e. The operator will now initiate a rolling restart, which will apply the updated image, for all the servers in the domain.
 
-### Avoiding a rolling restart when changing the image field on a Domain
+#### Avoiding a rolling restart when changing the image field on a Domain
 If you've created a new image that is not rolling-compatible, and you've changed the image name, then:
 
 1. Bring the domain down (stopping all the server pods) by setting the `serverStartPolicy` to `Never`. See [Shut down all the servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#shut-down-all-the-servers">}}).
@@ -201,7 +201,7 @@ If you've created a new image that is not rolling-compatible, and you've changed
 
 3. Start up the domain (starting all the server pods) by setting the `serverStartPolicy` to `IfNeeded`.
 
-## Other considerations for restarting a domain
+#### Other considerations for restarting a domain
 
 * **Consider the order of changes**:
 

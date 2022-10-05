@@ -9,13 +9,13 @@ started, or restarted. To start, stop, or restart servers, modify these fields o
 
 {{< table_of_contents >}}
 
-## Introduction
+### Introduction
 
 There are fields on the Domain that specify which servers should be running,
 which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
 (for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them.
 
-## Starting and stopping servers
+### Starting and stopping servers
 
 The `serverStartPolicy` and `replicas` fields of the Domain controls which servers should be running.
 The operator monitors these fields and creates or deletes the corresponding WebLogic Server instance Pods.
@@ -23,32 +23,32 @@ The operator monitors these fields and creates or deletes the corresponding WebL
 {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers.
 {{% /notice %}}
 
-### `serverStartPolicy` rules
+#### `serverStartPolicy` rules
 
 You can specify the `serverStartPolicy` property at the domain, cluster, and server levels. Each level supports a different set of values.
 
-### Available `serverStartPolicy` values
+#### Available `serverStartPolicy` values
 | Level | Default Value | Supported Values                 |
 | --- |---------------|----------------------------------|
 | Domain | `IfNeeded`    | `IfNeeded`, `AdminOnly`, `Never` |
 | Cluster | `IfNeeded`   | `IfNeeded`, `Never`              |
 | Server | `IfNeeded`   | `IfNeeded`, `Always`, `Never`    |
 
-### Administration Server start and stop rules
+#### Administration Server start and stop rules
 | Domain | Admin Server | Started / Stopped |
 | --- | --- | --- |
 | `Never` | any value | Stopped |
 | `AdminOnly`, `IfNeeded` | `Never` | Stopped |
 | `AdminOnly`, `IfNeeded` | `IfNeeded`, `Always` | Started |
 
-### Standalone Managed Server start and stop rules
+#### Standalone Managed Server start and stop rules
 | Domain | Standalone Server | Started / Stopped |
 | --- | --- | --- |
 | `AdminOnly`, `Never` | any value | Stopped |
 | `IfNeeded` | `Never` | Stopped |
 | `IfNeeded` | `IfNeeded`, `Always` | Started |
 
-### Clustered Managed Server start and stop rules
+#### Clustered Managed Server start and stop rules
 | Domain | Cluster | Clustered Server | Started / Stopped |
 | --- | --- | --- | --- |
 | `AdminOnly`, `Never` | any value | any value | Stopped |
@@ -65,9 +65,9 @@ Servers configured as `Always` count toward the cluster's `replicas` count.
 If more servers are configured as `Always` than the cluster's `replicas` count, they will all be started and the `replicas` count will be exceeded.
 {{% /notice %}}
 
-## Common starting and stopping scenarios
+### Common starting and stopping scenarios
 
-### Normal running state
+#### Normal running state
 Normally, the Administration Server, all of the standalone Managed Servers, and enough Managed Servers members in each cluster to satisfy its `replicas` count, should be started.
 In this case, the Domain does not need to specify `serverStartPolicy`, or list any `clusters` or `servers`, but it does need to specify a `replicas` count.
 
@@ -81,7 +81,7 @@ For example:
     replicas: 3
 ```
 
-### Shut down all the servers
+#### Shut down all the servers
 Sometimes you need to completely shut down the domain (for example, take it out of service).
 ```
   kind: Domain
@@ -92,7 +92,7 @@ Sometimes you need to completely shut down the domain (for example, take it out 
     ...
 ```
 
-### Only start the Administration Server
+#### Only start the Administration Server
 Sometimes you want to start the Administration Server only, that is, take the Managed Servers out of service but leave the Administration Server running so that you can administer the domain.
 ```
   kind: Domain
@@ -103,7 +103,7 @@ Sometimes you want to start the Administration Server only, that is, take the Ma
     ...
 ```
 
-### Shut down a cluster
+#### Shut down a cluster
 To shut down a cluster (for example, take it out of service), add it to the Domain and set its `serverStartPolicy` to `Never`.
 ```
   kind: Domain
@@ -116,7 +116,7 @@ To shut down a cluster (for example, take it out of service), add it to the Doma
     ...
 ```
 
-### Shut down a specific standalone server
+#### Shut down a specific standalone server
 To shut down a specific standalone server, add it to the Domain and set its `serverStartPolicy` to `Never`.
 ```
   kind: Domain
@@ -139,7 +139,7 @@ from the Managed Server pod.
 {{% /notice %}}
 
 
-### Force a specific clustered Managed Server to start
+#### Force a specific clustered Managed Server to start
 Normally, all of the Managed Servers members in a cluster are identical and it doesn't matter which ones are running as long as the operator starts enough of them to get to the cluster's `replicas` count.
 However, sometimes some of the Managed Servers are different (for example, support some extra services that the other servers in the cluster use) and need to always be started.
 
@@ -159,7 +159,7 @@ This is done by adding the server to the Domain and setting its `serverStartPoli
 The server will count toward the cluster's `replicas` count.  Also, if you configure more than the `replicas` servers count to `Always`, they will all be started, even though the `replicas` count will be exceeded.
 {{%/ notice %}}
 
-## Shutdown options
+### Shutdown options
 
 The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer`, and each entry of
 `clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
@@ -185,7 +185,7 @@ is `false`, the graceful shutdown process will wait only for non-persisted HTTP 
 or be invalidated before proceeding.
 {{% /notice %}}
 
-### Shutdown environment variables
+#### Shutdown environment variables
 
 The operator configures shutdown behavior with the use of the following environment variables. Users may
 instead simply configure these environment variables directly.  When a user-configured environment variable is present,
@@ -199,7 +199,7 @@ the operator will not override the environment variable based on the shutdown co
 | `SHUTDOWN_WAIT_FOR_ALL_SESSIONS` | `false` | `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only ; only applicable if shutdown is graceful |
 
 
-### `shutdown` rules
+#### `shutdown` rules
 
 You can specify the `serverPod` field, including the `shutdown` field, at the domain, cluster, and server levels. If
 `shutdown` is specified at multiple levels, such as for a cluster and for a member server that is part of that cluster,
@@ -234,14 +234,14 @@ Graceful shutdown is used for all servers in the domain because this is specifie
 any cluster or server level.  The "cluster1" cluster defaults to ignoring sessions; however, the "cluster1_server1" server
 instance will not ignore sessions and will have a longer timeout.
 
-## Restarting servers
+### Restarting servers
 
 The operator automatically recreates (restarts) WebLogic Server instance Pods when fields on the Domain that affect Pod generation change (such as `image`, `volumes`, and `env`).
 The `restartVersion` field on the Domain lets you force the operator to restart a set of WebLogic Server instance Pods.
 
 The operator does rolling restarts of clustered servers so that service is maintained.
 
-### Fields that cause servers to be restarted
+#### Fields that cause servers to be restarted
 
 The operator will restart servers when any of the follow fields on the Domain that affect the WebLogic Server instance Pod generation are changed:
 
@@ -276,7 +276,7 @@ such a label or annotation by modifying the `restartVersion`.
 {{% /notice %}}
 
 
-## Rolling restarts
+### Rolling restarts
 
 Clustered servers that need to be restarted are gradually restarted (for example, "rolling restarted") so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
 
@@ -292,15 +292,15 @@ servers are shut down at the same time during the rolling restart process.
 If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-domain-configuration" >}}) and [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this document.
 {{% /notice %}}
 
-## Draining a node and PodDisruptionBudget
+### Draining a node and PodDisruptionBudget
 
 A Kubernetes cluster administrator can [drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) for repair, upgrade, or scaling down the Kubernetes cluster.
 
 Beginning in version 3.2, the operator takes advantage of the [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets) feature offered by Kubernetes for high availability during a Node drain operation. The operator creates a PodDisruptionBudget (PDB) for each WebLogic cluster in the Domain namespace to limit the number of WebLogic Server pods simultaneously evicted when draining a node. The maximum number of WebLogic cluster's server pods evicted simultaneously is determined by the `maxUnavailable` field on the Domain resource. The `.spec.minAvailable` field of the PDB for a cluster is calculated from the difference of the current `replicas` count and `maxUnavailable` value configured for the cluster. For example, if you have a WebLogic cluster with three replicas and a `maxUnavailable` of `1`, the `.spec.minAvailable` for PDB is set to `2`. In this case, Kubernetes ensures that at least two pods for the WebLogic cluster's Managed Servers are available at any given time, and it only evicts a pod when all three pods are ready. For details about safely draining a node and the PodDisruptionBudget concept, see [Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) and [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
 
-## Common restarting scenarios
+### Common restarting scenarios
 
-### Using `restartVersion` to force the operator to restart servers
+#### Using `restartVersion` to force the operator to restart servers
 
 The `restartVersion` property lets you force the operator to restart servers.
 
@@ -315,7 +315,7 @@ The servers will also be restarted if `restartVersion` is removed from the Domai
 {{% /notice %}}
 
 
-### Restart all the servers in the domain
+#### Restart all the servers in the domain
 
 Set `restartVersion` at the domain level to a new value.
 
@@ -328,7 +328,7 @@ Set `restartVersion` at the domain level to a new value.
     ...
 ```
 
-### Restart all the servers in the cluster
+#### Restart all the servers in the cluster
 
 Set `restartVersion` at the cluster level to a new value.
 
@@ -344,7 +344,7 @@ Set `restartVersion` at the cluster level to a new value.
     ...
 ```
 
-### Restart the Administration Server
+#### Restart the Administration Server
 
 Set `restartVersion` at the `adminServer` level to a new value.
 
@@ -358,7 +358,7 @@ Set `restartVersion` at the `adminServer` level to a new value.
     ...
 ```
 
-### Restart a standalone or clustered Managed Server
+#### Restart a standalone or clustered Managed Server
 
 Set `restartVersion` at the `managedServer` level to a new value.
 
@@ -374,7 +374,7 @@ Set `restartVersion` at the `managedServer` level to a new value.
       restartVersion: "2"
     ...
 ```
-### Full domain restarts
+#### Full domain restarts
 
 To do a full domain restart, first shut down all servers (Administration Server and Managed Servers), taking the domain out of service,
 then restart them.  Unlike rolling restarts, the operator cannot detect and initiate a full domain restart; you must always manually initiate it.
@@ -407,7 +407,7 @@ have to specify the `serverStartPolicy` as the default value is `IfNeeded`.
 
 4. The operator will restart all the servers in the domain.
 
-## Domain lifecycle sample scripts
+### Domain lifecycle sample scripts
 
 See the [Life cycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/scripts.md" >}})
 for scripts that help with initiating domain life cycle operations.

@@ -6,7 +6,7 @@ weight: 2
 description: "Learn why container image layering affects CI/CD processes."
 ---
 
-## How does layering affect our CI/CD process?
+### How does layering affect our CI/CD process?
 
 Now that we know more about layering, let’s talk about why it is important to our
 CI/CD process.  Let's consider the kinds of updates we might want to make to our domain:
@@ -84,7 +84,7 @@ acceptable, or it may not.
 Another option is to find a way to keep the "same" domain, that is, the same domain
 encryption key, so that we can still roll the domain and there will be no conflicts.
 
-## Mutating Domain in Image domain home configuration without losing encryption keys
+### Mutating Domain in Image domain home configuration without losing encryption keys
 
 If we want to make a change in a lower layer in Domain in Image domains
 without losing our domain encryption

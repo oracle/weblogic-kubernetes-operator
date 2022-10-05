@@ -28,9 +28,9 @@ generated during introspection will now be invalid.
 
 This can happen in a variety of ways, depending on the [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
-## Domain in Image
+#### Domain in Image
 
-### Rolling to an image containing new or unrelated domain directory
+##### Rolling to an image containing new or unrelated domain directory
 
 The error occurs while rolling pods have containers based on a new container image that contains an entirely new or unrelated domain directory.
 
@@ -44,7 +44,7 @@ The solution is to follow either the recommended [CI/CD guidelines]({{< relref "
 with consistent domain-specific encryption keys and bootstrapping security details, or to [perform a total shutdown]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) of the domain so
 that introspection reoccurs as servers are restarted.
 
-### Full domain shutdown and restart
+##### Full domain shutdown and restart
 
 The error occurs while starting servers after a full domain shutdown.
 
@@ -55,9 +55,9 @@ may have different images under the same tag in their individual, local containe
 The simplest solution is to set `imagePullPolicy` to `Always`; however, the better solution would be to design your development
 pipeline to generate new container image tags on every build and to never reuse an existing tag.
 
-## Domain in PV
+#### Domain in PV
 
-### Completely replacing the domain directory
+##### Completely replacing the domain directory
 
 The error occurs while starting servers when the domain directory change was made while other servers were still running.
 

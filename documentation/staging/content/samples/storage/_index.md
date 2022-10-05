@@ -5,17 +5,17 @@ weight: 1
 description: "Sample for creating a PV or PVC that can be used by a Domain YAML file as the persistent storage for the WebLogic domain home or log files."
 ---
 
-## Sample PersistentVolume and PersistentVolumeClaim
+### Sample PersistentVolume and PersistentVolumeClaim
 
 The sample scripts demonstrate the creation of a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC), which can then be used in a Domain YAML file as a persistent storage for the WebLogic domain home or log files.
 
 A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
-### Prerequisites
+#### Prerequisites
 
 Before you begin, read this document, [Persistent storage]({{< relref "/managing-domains/persistent-storage/_index.md" >}}).
 
-### Using the scripts to create a PV and PVC  
+#### Using the scripts to create a PV and PVC  
 
 Prior to running the `create-pv-pvc.sh` script, make a copy of the `create-pv-pvc-inputs.yaml` file, and uncomment and explicitly configure the `weblogicDomainStoragePath` property in the inputs file.
 
@@ -53,7 +53,7 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 
 If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory together into the target directory, maintaining the original directory hierarchy.
 
-### Configuration parameters
+#### Configuration parameters
 
 The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-inputs.yaml` file.
 
@@ -68,17 +68,17 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 | `weblogicDomainStorageType` | Type of storage. Legal values are `NFS` and `HOST_PATH`. If using `NFS`, `weblogicDomainStorageNFSServer` must be specified. | `HOST_PATH` |
 | `weblogicDomainStorageNFSServer`| Name or IP address of the NFS server. This setting only applies if `weblogicDomainStorateType` is `NFS`.  | no default |
 
-### Shared versus dedicated PVC
+#### Shared versus dedicated PVC
 
 By default, the `domainUID` is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple Domains in the same Kubernetes Namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique `baseName`.
 
 For the use cases where dedicated PV and PVC are desired for a particular domain, the `domainUID` needs to be set in the `create-pv-pvc-inputs.yaml` file. The presence of a non-empty `domainUID` in the inputs file will cause the generated PV and PVC to be associated with the specified `domainUID`. The association includes that the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 
-### Verify the results
+#### Verify the results
 
 The create script will verify that the PV and PVC were created, and will report a failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-#### Generated YAML files with the default inputs
+##### Generated YAML files with the default inputs
 
 The content of the generated `weblogic-sample-pvc.yaml`:
 
@@ -126,7 +126,7 @@ spec:
 
 ```
 
-#### Generated YAML files for dedicated PV and PVC
+##### Generated YAML files for dedicated PV and PVC
 
 The content of the generated `domain1-weblogic-sample-pvc.yaml` when `domainUID` is set to `domain1`:
 
@@ -175,7 +175,7 @@ spec:
     path: "/scratch/k8s_dir"
 ```
 
-### Verify the PV and PVC objects
+#### Verify the PV and PVC objects
 
 You can use this command to verify the PersistentVolume was created. Note that the `Status` field
 should have the value `Bound`, indicating the that PersistentVolume has been claimed:

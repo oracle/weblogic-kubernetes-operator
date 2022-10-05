@@ -1,4 +1,4 @@
-## WebLogic Kubernetes Operator
+### WebLogic Kubernetes Operator
 
 The WebLogic Kubernetes Operator (the “operator”) supports running your WebLogic Server and Fusion Middleware Infrastructure domains on Kubernetes, an industry standard, cloud neutral deployment platform. It lets you encapsulate your entire WebLogic Server installation and layered applications into a portable set of cloud neutral images and simple resource description files. You can run them on any on-premises or public cloud that supports Kubernetes where you've deployed the operator.
 
@@ -28,22 +28,22 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 {{% /notice %}}
 
 ***
-### Current production release
+#### Current production release
 
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is {{< latestVersion >}}.
 This release was published on October 13, 2022. See the [operator prerequisites]({{< relref "/introduction/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/introduction/platforms/environments.md" >}}).
 
 ***
 
-### Recent changes and known issues
+#### Recent changes and known issues
 
 See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
 
-### Operator earlier versions
+#### Operator earlier versions
 
 Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/), [3.3.x](https://oracle.github.io/weblogic-kubernetes-operator/3.3/), and [3.4.x](https://oracle.github.io/weblogic-kubernetes-operator/3.4/).
 
-### Backward compatibility guidelines
+#### Backward compatibility guidelines
 
 Starting from the 2.0.1 release, operator releases are backward compatible with respect to the domain
 resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
@@ -51,11 +51,11 @@ by the operator Helm chart, Kubernetes resources created by the operator, and th
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.
 
-### Getting help
+#### Getting help
 
 See [Get help]({{< relref "/introduction/get-help.md" >}}).
 
-### Related projects
+#### Related projects
 
 * [Oracle Fusion Middleware on Kubernetes](https://oracle.github.io/fmw-kubernetes/)
 * [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/)

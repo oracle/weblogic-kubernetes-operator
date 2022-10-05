@@ -30,7 +30,7 @@ $ cd weblogic-kubernetes-operator
 **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 
-## Install WebLogic Kubernetes Operator
+### Install WebLogic Kubernetes Operator
 
 The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
@@ -126,7 +126,7 @@ If you have an image built with domain models following [Model in Image]({{< rel
   - [Creating the image with WIT](#creating-the-image-with-wit)
   - [Pushing the image to Azure Container Registry](#pushing-the-image-to-azure-container-registry)
 
-### Image creation prerequisites
+#### Image creation prerequisites
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`.
@@ -174,7 +174,7 @@ If you have an image built with domain models following [Model in Image]({{< rel
 
    These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
 
-### Image creation - Introduction
+#### Image creation - Introduction
 
 The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`.
 The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
@@ -188,7 +188,7 @@ We provide an example of using a model `ConfigMap` later in this sample.
 
 The following sections contain the steps for creating the image `model-in-image:WLS-v1`.
 
-### Understanding your first archive
+#### Understanding your first archive
 
 The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
@@ -199,7 +199,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
 The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server.
 
-### Staging a ZIP file of the archive
+#### Staging a ZIP file of the archive
 
 When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
@@ -224,7 +224,7 @@ $ cd /tmp/mii-sample/archives/archive-v1
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
-### Staging model files
+#### Staging model files
 
 In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration.
 
@@ -288,7 +288,7 @@ The model file:
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
-### Creating the image with WIT
+#### Creating the image with WIT
 
 At this point, you have staged all of the files needed for the image `model-in-image:WLS-v1`; they include:
 
@@ -347,7 +347,7 @@ model-in-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
 You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
 {{% /notice %}}
 
-### Pushing the image to Azure Container Registry
+#### Pushing the image to Azure Container Registry
 
 AKS can pull images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
 
@@ -395,7 +395,7 @@ If you see an error that seems related to you not being an **Owner on this subsc
 
 Successful output will be a JSON object with the entry `"type": "Microsoft.ContainerService/ManagedClusters"`.
 
-## Create WebLogic domain
+### Create WebLogic domain
 
 In this section, you will deploy the new image to the namespace `sample-domain1-ns`, including the following steps:
 
@@ -409,7 +409,7 @@ In this section, you will deploy the new image to the namespace `sample-domain1-
 - Deploy a Domain YAML file that references the new image.
 - Wait for the domain’s Pods to start and reach their ready state.
 
-### Namespace
+#### Namespace
 
 Create a namespace that can host one or more domains:
 
@@ -423,7 +423,7 @@ $ kubectl create namespace sample-domain1-ns
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
-### Kubernetes Secrets for WebLogic
+#### Kubernetes Secrets for WebLogic
 
 First, create the secrets needed by the WLS type model domain. For more on secrets in the context of running domains, see [Prepare to run a domain]({{< relref "/managing-domains/prepare" >}}). In this case, you have two secrets.
 
@@ -479,7 +479,7 @@ $ kubectl -n sample-domain1-ns label  secret \
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-### Domain resource
+#### Domain resource
 
 Now, you create a Domain YAML file. Think of the Domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
@@ -558,9 +558,9 @@ service/sample-domain1-managed-server2     ClusterIP   None          <none>     
 
 It may take you up to 10 minutes to deploy all pods, please wait and make sure everything is ready.
 
-## Invoke the web application
+### Invoke the web application
 
-### Create Azure load balancer
+#### Create Azure load balancer
 
 Create the Azure public standard load balancer to access the WebLogic Server Administration Console and applications deployed in the cluster.
 
@@ -781,7 +781,7 @@ Events:             <none>
 ```
 {{% /expand %}}
 
-### Access the application
+#### Access the application
 
 Access the Administration Console using the admin load balancer IP address, `http://52.191.234.149:7001/console`
 
@@ -836,21 +836,21 @@ Found 0 local data sources:
 </pre></body></html>
 ```
 
-## Rolling updates
+### Rolling updates
 
 Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`. To learn how to do this, follow the steps in [Update 3]({{< relref "/samples/domains/model-in-image/update3" >}}).
 
-## Clean up resources
+### Clean up resources
 
 Run the following commands to clean up resources.
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
-## Troubleshooting
+### Troubleshooting
 
 For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
-## Useful links
+### Useful links
 
 - [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation
 - [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample

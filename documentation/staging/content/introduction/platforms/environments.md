@@ -7,7 +7,7 @@ weight: 6
 
 {{< table_of_contents >}}
 
-## Overview
+### Overview
 
 The operator supports a wide range of on-premises and cloud Kubernetes
 offerings where Kubernetes is supplied for you or you set up Kubernetes
@@ -48,7 +48,7 @@ descriptions, see [Pricing and licensing](#pricing-and-licensing).
 - The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites;
 see [Operator prerequisites]({{< relref "/introduction/prerequisites/introduction.md" >}}).
 
-## Important notes about specific environments
+### Important notes about specific environments
 
 Here are some important considerations for specific environments:
 
@@ -64,7 +64,7 @@ Here are some important considerations for specific environments:
 **Note:** This section does not list all supported environments.
 See the [Overview](#overview) for a list of all supported environments.
 
-### Oracle Cloud Infrastructure
+#### Oracle Cloud Infrastructure
 
 The operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
@@ -72,7 +72,7 @@ Container Services for use with Kubernetes* on Oracle Cloud Infrastructure Compu
 any other Oracle Cloud Infrastructure "Authorized Cloud Environments"
 as described in the [Overview](#overview).
 
-### Oracle Cloud Native Environment
+#### Oracle Cloud Native Environment
 
 [Oracle Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
@@ -80,7 +80,7 @@ WebLogic Server and the WebLogic Kubernetes Operator are certified and supported
 - Operator v2.6.0 is certified on Oracle Cloud Native Environment 1.1 and v3.2.5 is certified on Oracle Cloud Native Environment 1.3.
 - Operator v3.2.5 provides certified support of Oracle Cloud Native Environment 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
 
-### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
+#### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
 
 The [Oracle Private Cloud Appliance](https://www.oracle.com/servers/technologies/private-cloud-appliance.html) (PCA)
 and
@@ -101,14 +101,14 @@ Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure wit
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.
 
-### Microsoft Azure
+#### Microsoft Azure
 
 There are three different approaches for deploying the operator to Microsoft Azure:
 - Microsoft Azure Platform
 - Microsoft Azure Kubernetes Service (AKS)
 - Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
-#### Microsoft Azure Kubernetes Service (AKS)
+##### Microsoft Azure Kubernetes Service (AKS)
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Server 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
@@ -126,7 +126,7 @@ AKS support and limitations:
 
 See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
 
-#### Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
+##### Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
 The WebLogic Server on AKS Azure Marketplace
 offer lets you embrace cloud computing by providing greater choice
@@ -142,7 +142,7 @@ publishing metrics to Azure Monitor as well as mounting Azure Files as Kubernete
 
 For details, see [WebLogic Server on AKS Marketplace]({{<relref "/managing-domains/aks/_index.md">}}).
 
-### VMware Tanzu Kubernetes Grid (TKG)
+#### VMware Tanzu Kubernetes Grid (TKG)
 
 Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters.
 The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
@@ -156,7 +156,7 @@ TKG support and limitations:
 
 See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes-service/_index.md">}}).
 
-### OpenShift
+#### OpenShift
 
 OpenShift can be a cloud platform or can be deployed on premises.
 
@@ -166,7 +166,7 @@ To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
 - Beginning with operator version 3.3.2, specify the `kubernetesPlatform` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
-### WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes
+#### WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes
 
 We have certified support for WebLogic Server domains, managed by the WebLogic Kubernetes Operator (operator), connecting to an Oracle Database, managed by the Oracle Database Operator for Kubernetes (OraOperator).  For details on the supported WLS and database versions, see the following:
 * [Operator prerequisites]({{< relref "/introduction/prerequisites/introduction.md" >}})
@@ -180,7 +180,7 @@ Included in the certification is support for the following topologies:
 * WebLogic Server and operator running in a Kubernetes cluster and the Oracle Database and OraOperator in a different Kubernetes cluster.
 
 
-### Development-focused Kubernetes distributions
+#### Development-focused Kubernetes distributions
 
 There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift, and so on.
 Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
@@ -198,7 +198,7 @@ kind and Minikube) in a development or test environment.
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
 development or test option.
 
-## Pricing and licensing
+### Pricing and licensing
 
 The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
 WebLogic Server requires licenses in any environment.
@@ -213,13 +213,13 @@ See the following sections for more detailed information:
 - [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images)
 - [Additional references](#additional-references)
 
-### WebLogic Kubernetes Operator
+#### WebLogic Kubernetes Operator
 
 The WebLogic Kubernetes Operator (the "operator") is open source and free,
 licensed under the Universal Permissive license (UPL), Version 1.0.
 For support details, see [Get help]({{< relref "/introduction/get-help.md" >}}).
 
-### WebLogic Server
+#### WebLogic Server
 
 WebLogic Server is not open source:
 
@@ -233,7 +233,7 @@ For more information, see the
 [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html)
 and the following sections.
 
-### Oracle Linux
+#### Oracle Linux
 
 Oracle Linux is under open source license and is completely free to download and use.
 
@@ -243,7 +243,7 @@ for direct access to Oracle Linux support or Unbreakable Linux Network
 (to directly access the standalone Oracle Linux patches).
 The latest Oracle Linux patches are included with the latest [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images).
 
-### Oracle Java
+#### Oracle Java
 
 Oracle support for Java is included with
 WebLogic Server licenses
@@ -252,7 +252,7 @@ when Java is used for running WebLogic and Coherence servers or clients.
 For more information, see the
 [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
 
-### WebLogic Server or Fusion Middleware Infrastructure images
+#### WebLogic Server or Fusion Middleware Infrastructure images
 
 Oracle provides two different types of WebLogic Server or Fusion Middleware (FMW) Infrastructure images:
 
@@ -304,7 +304,7 @@ such as OCR Critical Patch Updates (CPU) images or custom generated images.
 See [Ensure you are using recently patched images]({{< relref "/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
 
-### Additional references
+#### Additional references
 
 - [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
 - [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)

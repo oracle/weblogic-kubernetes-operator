@@ -31,7 +31,7 @@ For more information, see [External network access security]({{<relref "/securit
 {{% /notice %}}
 
 
-## Setup
+### Setup
 
 To set up access to WebLogic Server domains running in Kubernetes using the Remote Console:
 
@@ -51,7 +51,7 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
      on a different machine than your browser, or if you want the Remote Console to use SSL.
 
 
-### Use an Administration Server `NodePort`
+#### Use an Administration Server `NodePort`
 
 For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the following URL after you have connected to the Remote Console
 with your browser and it
@@ -66,7 +66,7 @@ For information about the `NodePort` Service on an Administration Server, see th
 For an example of setting up the `NodePort` on an Administration Server,
 see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}).
 
-### Configure ingress path routing rules
+#### Configure ingress path routing rules
 
 1. Configure an ingress path routing rule. For information about ingresses, see the [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}) documentation.
 
@@ -108,7 +108,7 @@ see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-doma
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
-### Use a `kubectl port-forward` connection
+#### Use a `kubectl port-forward` connection
 
 1. Forward a local port (that is external to
    Kubernetes) to the administration port of the
@@ -140,7 +140,7 @@ see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-doma
      * `${LOCAL_PORT}` is the local port where the `kubectl port-forward` command is running.
        This is specified on the `port-forward` command.
 
-## Test
+### Test
 
 To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer,
 `NodePort`, or `kubectl port-forward` are working as expected, run the following curl commands at the same location as your browser:

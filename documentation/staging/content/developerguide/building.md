@@ -18,7 +18,7 @@ This will compile the source files, build JAR files containing the compiled clas
 
 Contributions must conform to [coding and formatting standards]({{< relref "/developerguide/coding-standards.md" >}}).
 
-### Building the operator container image
+#### Building the operator container image
 
 These commands should be executed in the project root directory:
 
@@ -30,7 +30,7 @@ Replace `<version>` with the version of the project found in the `pom.xml` file 
 
 We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the  previous example, the tag could be the GitHub ID of the developer.
 
-### Running the operator from an IDE
+#### Running the operator from an IDE
 
 The operator can be run from an IDE, which is useful for debugging.  To do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
 
@@ -38,7 +38,7 @@ Configure the IDE to run the class `oracle.kubernetes.operator.Main`.
 
 You may need to create a directory called `/operator` on your machine.  Please be aware that the operator code is targeted to Linux, and although it will run fine on macOS, it will probably not run on other operating systems.  If you develop on another operating system, you should deploy the operator to a Kubernetes cluster and use remote debugging instead.
 
-### Running the operator in a Kubernetes cluster
+#### Running the operator in a Kubernetes cluster
 
 If you're not running Kubernetes on your development machine, you'll need to make the container image available to a registry visible to your Kubernetes cluster.  Either `docker push` the image to a private registry or upload your image to a machine running Docker and Kubernetes as follows:
 

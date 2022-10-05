@@ -6,7 +6,7 @@ description: "Learn about managing domain images with continuous integration and
 draft: false
 ---
 
-## Overview
+### Overview
 
 In this section, we will discuss the recommended techniques for managing the evolution
 and mutation of container images to run WebLogic Server in Kubernetes.  There are several
@@ -16,7 +16,7 @@ space," and then talk about the considerations that would lead us to choose vari
 approaches.  We will provide details about several approaches to implementing
 CI/CD and links to examples.
 
-## Review of the problem space
+### Review of the problem space
 
 Kubernetes makes a fundamental assumption that images are immutable,
 that they contain no state, and that updating them is as simple as throwing
@@ -69,4 +69,4 @@ One of the key differences between these approaches is how many images
 you have, and therefore, how you build and maintain them - your image CI/CD
 process.  Let's take a short detour and talk about image layering.
 
-{{% children style="h3" description="true" %}}
+{{% children style="h4" description="true" %}}

@@ -8,7 +8,7 @@ description: "This document describes domain introspection in the Oracle WebLogi
 
 {{< table_of_contents >}}
 
-## Overview
+### Overview
 
 This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
 
@@ -24,13 +24,13 @@ Introspection ensures that:
 3. For Model in Image, the operator can generate the WebLogic domain home, including the final domain configuration.
 4. For Domain in PV and Domain in Image, the operator can use any customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}) along with the operator-generated overrides to generate the final configuration overrides.
 
-## When introspection occurs automatically
+#### When introspection occurs automatically
 
 Introspection automatically occurs when:
 1. The operator is starting a WebLogic Server instance when there are currently no other servers running. This occurs when the operator first starts servers for a domain or when starting servers following a full domain shutdown.
 2. For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.
 
-## Initiating introspection
+#### Initiating introspection
 
 Sometimes, such as for the [use cases](#introspection-use-cases), it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain `introspectVersion` field.
 
@@ -62,7 +62,7 @@ Labels:         weblogic.createdByOperator=true
 
 When a domain's `spec.introspectVersion` is changed, the `weblogic.introspectVersion` label of each WebLogic Server pod is updated to the new `introspectVersion` value, either when the operator restarts the pod or when the operator determines that the pod does not need to be restarted.
 
-## Failed introspection
+#### Failed introspection
 
 Sometimes the Kubernetes Job, named `DOMAIN_UID-introspector`, created for the introspection will fail.
 
@@ -77,11 +77,11 @@ The introspector log is mirrored to the Domain resource `spec.logHome` directory
 when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 {{% /notice %}}
 
-## Introspection use cases
+### Introspection use cases
 
 The following sections describe typical use cases for rerunning the introspector.
 
-### Adding clusters or Managed Servers to a Domain in PV configuration
+#### Adding clusters or Managed Servers to a Domain in PV configuration
 
 When you have an existing WebLogic domain home on a persistent volume (Domain in PV) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.
 
@@ -114,7 +114,7 @@ spec:
 
 When this updated Domain YAML file is applied, the operator will initiate a new introspection of the domain configuration during which it will learn about the additional WebLogic cluster and then the operator will continue to start WebLogic Server instances that are members of this new cluster. In this case, the operator will start two Managed Servers that are members of the cluster named "cluster-2".
 
-### Distributing changes to configuration overrides
+#### Distributing changes to configuration overrides
 
 The operator supports customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}). These configuration overrides, which are supported with Domain in PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL's or credentials.
 
@@ -129,6 +129,6 @@ Alternately, you can set `overrideDistributionStrategy` to `OnRestart`, which me
 {{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
 {{% /notice %}}
 
-### Distributing changes to running Model in Image domains
+#### Distributing changes to running Model in Image domains
 
 The operator supports rerunning the introspector to propagate [model updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md">}}) to a running Model in Image domain.
