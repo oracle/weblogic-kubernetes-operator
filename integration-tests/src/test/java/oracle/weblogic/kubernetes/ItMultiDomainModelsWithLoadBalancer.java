@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,8 +42,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.Paths.get;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -110,7 +107,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -145,11 +141,11 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
   private static final String DATA_HOME_OVERRIDE = "/u01/mydata";
-  private static final String miiImageName = "mii-image";
+  private static final String miiImageName = "mdlb-mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
-  private static final String miiDomainUid = "miidomain";
-  private static final String dimDomainUid = "domaininimage";
-  private static final String domainOnPVUid = "domainonpv";
+  private static final String miiDomainUid = "mdlb-miidomain";
+  private static final String dimDomainUid = "mdlb-domaininimage";
+  private static final String domainOnPVUid = "mdlb-domainonpv";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-multiapps-usingprop-wls.yaml";
 
   private static String opNamespace = null;
@@ -166,11 +162,6 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
   private String curlCmd = null;
-
-  private ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(1, SECONDS)
-          .and().with().pollInterval(5, SECONDS)
-          .atMost(1, MINUTES).await();
 
   /**
    * Install operator and NGINX.
@@ -877,6 +868,21 @@ class ItMultiDomainModelsWithLoadBalancer {
       deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
+    }
+
+    // check that admin server pod is ready and service exists in domain namespace
+    logger.info("Checking that admin server pod {0} is ready and service exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the readiness for the managed servers in each cluster
+    for (int j = 1; j <= replicaCount; j++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+      // check managed server pod is ready and service exists in the namespace
+      logger.info("Checking that managed server pod {0} is ready and service exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
 
     return domain;
