@@ -129,12 +129,37 @@ public class DomainProcessorTestSetup {
 
    */
   public static ClusterResource createTestCluster(String clusterName, Long generation) {
+    return createTestCluster(clusterName, generation, NS);
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @param namespace the namespace of the cluster resource
+   * @return a cluster
+   */
+  public static ClusterResource createTestCluster(String clusterName, String namespace) {
+    return createTestCluster(clusterName,1L, namespace);
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @param generation Generation value
+   * @param namespace the namespace of the cluster resource
+   * @return a domain
+
+   */
+  public static ClusterResource createTestCluster(String clusterName, Long generation, String namespace) {
     ClusterSpec cs = new ClusterSpec().withClusterName(clusterName).withReplicas(2);
     return new ClusterResource().spec(cs)
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION)
         .withKind(KubernetesConstants.CLUSTER)
         .withMetadata(withTimestamps(
-            new V1ObjectMeta().name(clusterName).namespace(NS).uid(KUBERNETES_CLUSTER_UID).generation(generation)))
+            new V1ObjectMeta().name(clusterName).namespace(namespace)
+                .uid(KUBERNETES_CLUSTER_UID).generation(generation)))
         .withStatus(new ClusterStatus());
   }
 
@@ -157,9 +182,22 @@ public class DomainProcessorTestSetup {
    * @param clusters a list of clusters
    */
   public static void setupCluster(DomainResource domain, ClusterResource[] clusters) {
-    for (int i = 0; i < clusters.length; i++) {
+    for (ClusterResource cluster : clusters) {
       domain.getSpec()
-          .withCluster(new V1LocalObjectReference().name(clusters[i].getClusterName()));
+          .withCluster(new V1LocalObjectReference().name(cluster.getMetadata().getName()));
+    }
+  }
+
+  /**
+   * Set up cluster resources for a domain.
+   *
+   * @param domain a DomainResource instance
+   * @param clusterNames a list of cluster names
+   */
+  public static void setupCluster(DomainResource domain, String[] clusterNames) {
+    for (String clusterName : clusterNames) {
+      domain.getSpec()
+          .withCluster(new V1LocalObjectReference().name(clusterName));
     }
   }
 }

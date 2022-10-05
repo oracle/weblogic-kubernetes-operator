@@ -95,7 +95,6 @@ public class RestBackendImpl implements RestBackend {
     userInfo = authenticate(accessToken);
     callBuilder = userInfo != null ? new CallBuilder() :
         new CallBuilder().withAuthentication(accessToken);
-    LOGGER.exiting();
   }
 
   private void authorize(String domainUid, Operation operation) {
@@ -124,14 +123,11 @@ public class RestBackendImpl implements RestBackend {
               Scope.NAMESPACE,
               getNamespace(domainUid));
     }
-    if (authorized) {
-      LOGGER.exiting();
-      return;
+    if (!authorized) {
+      WebApplicationException e = createWebApplicationException(Status.FORBIDDEN, null);
+      LOGGER.throwing(e);
+      throw e;
     }
-    // TBD - should we say what who the user is and what the user can't do?
-    WebApplicationException e = createWebApplicationException(Status.FORBIDDEN, null);
-    LOGGER.throwing(e);
-    throw e;
   }
 
   private String getNamespace(String domainUid) {
@@ -140,7 +136,6 @@ public class RestBackendImpl implements RestBackend {
 
 
   private V1UserInfo authenticate(String accessToken) {
-    LOGGER.entering();
     if (!useAuthenticateWithTokenReview()) {
       return null;
     }
@@ -165,7 +160,6 @@ public class RestBackendImpl implements RestBackend {
     if (userInfo == null) {
       throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_USER_INFO, status));
     }
-    LOGGER.exiting(userInfo);
     return userInfo;
   }
 
@@ -310,31 +304,23 @@ public class RestBackendImpl implements RestBackend {
 
   @Override
   public Set<String> getClusters(String domainUid) {
-    LOGGER.entering(domainUid);
     verifyDomain(domainUid);
     authorize(domainUid, Operation.GET);
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
     Map<String, WlsClusterConfig> wlsClusterConfigs = getWlsConfiguredClusters(domainUid);
-    Set<String> result = wlsClusterConfigs.keySet();
-    LOGGER.exiting(result);
-    return result;
+    return wlsClusterConfigs.keySet();
   }
 
   @Override
   public boolean isCluster(String domainUid, String cluster) {
-    LOGGER.entering(domainUid, cluster);
     authorize(domainUid, Operation.LIST);
-    boolean result = getClusters(domainUid).contains(cluster);
-    LOGGER.exiting(result);
-    return result;
+    return getClusters(domainUid).contains(cluster);
   }
 
   @Override
   public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
-    LOGGER.entering(domainUid, cluster, managedServerCount);
-
     if (managedServerCount < 0) {
       throw createWebApplicationException(
           Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
@@ -342,8 +328,6 @@ public class RestBackendImpl implements RestBackend {
 
     authorize(domainUid, Operation.UPDATE);
     forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
-
-    LOGGER.exiting();
   }
 
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
@@ -433,7 +417,11 @@ public class RestBackendImpl implements RestBackend {
 
     if (currentCluster == null) {
       try {
-        return callBuilder.createClusterUntyped(namespace, cluster);
+        Object result = callBuilder.createClusterUntyped(namespace, cluster);
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine("Created Cluster: " + result);
+        }
+        return result;
       } catch (ApiException f) {
         throw handleApiException(f);
       }
@@ -442,7 +430,11 @@ public class RestBackendImpl implements RestBackend {
     metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
         .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
     try {
-      return callBuilder.replaceClusterUntyped(name, namespace, cluster);
+      Object result = callBuilder.replaceClusterUntyped(name, namespace, cluster);
+      if (LOGGER.isFineEnabled()) {
+        LOGGER.fine("Replaced Cluster: " + result);
+      }
+      return result;
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -516,6 +508,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private WebApplicationException handleApiException(ApiException e) {
+    LOGGER.throwing(e);
     return createWebApplicationException(e.getCode(),
             Optional.ofNullable(new Gson().fromJson(e.getResponseBody(), V1Status.class))
                     .map(this::messageFromStatus).orElse(null));

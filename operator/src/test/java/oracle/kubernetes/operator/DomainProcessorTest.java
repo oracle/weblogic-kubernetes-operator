@@ -303,7 +303,6 @@ class DomainProcessorTest {
     configureDomain(domain).configureCluster(originalInfo, clusterResource1.getClusterName());
     testSupport.defineResources(clusterResource1);
     originalInfo.addClusterResource(clusterResource1);
-
     processor.registerDomainPresenceInfo(originalInfo);
 
     processor.createMakeRightOperation(newInfo).execute();
@@ -1237,6 +1236,7 @@ class DomainProcessorTest {
   void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
     establishPreviousIntrospection(null);
     jobStatusSupplier.setJobStatus(createNotCompletedStatus());
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
@@ -1254,6 +1254,7 @@ class DomainProcessorTest {
     jobStatusSupplier.setJobStatus(createTimedOutStatus());
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     testSupport.doOnCreate(JOB, (j -> assignUid((V1Job) j)));
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).interrupt().execute();
   }
@@ -1265,6 +1266,7 @@ class DomainProcessorTest {
   @Test
   void whenIntrospectionJobTimedOut_activeDeadlineIncreased() throws Exception {
     TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
+
     runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
