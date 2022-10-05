@@ -29,7 +29,7 @@ see [Persistent storage]({{< relref "/managing-domains/persistent-storage/_index
 {{% /notice %}}
 
 
-### Failure during domain creation with persistent volume sample
+#### Failure during domain creation with persistent volume sample
 
 The existing sample for [creation of a domain home on persistent volume](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv)
 uses a Kubernetes Job to create the domain. The sample uses an
@@ -64,7 +64,7 @@ Init Containers:
     Environment:    <none>
 ```
 
-### Updating the domain on persistent volume sample
+#### Updating the domain on persistent volume sample
 In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
 you can see the updated `command` for the init container:
 ```yaml

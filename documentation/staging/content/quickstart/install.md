@@ -5,7 +5,7 @@ draft: false
 weight: 1
 ---
 
-### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/traefik/README.md) ingress controller.
+#### Use Helm to install the operator and [Traefik](http://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/traefik/README.md) ingress controller.
 
 First, install the operator.
 
@@ -50,7 +50,7 @@ First, install the operator.
       $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
       ```
 
-### Create a Traefik ingress controller.
+#### Create a Traefik ingress controller.
 
 1. Set up Helm with the location of the Traefik Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`
 

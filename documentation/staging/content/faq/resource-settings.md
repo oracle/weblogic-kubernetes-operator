@@ -188,7 +188,7 @@ Events:
   Warning  FailedScheduling  16s (x3 over 26s)  default-scheduler  0/2 nodes are available: 2 Insufficient cpu.
 ```
 
-### Operator sample heap and resource configuration
+#### Operator sample heap and resource configuration
 
 The operator samples configure non-default minimum and maximum heap sizes for WebLogic Server JVMs of at least 256MB and 512MB respectively. You can edit a sample's template or Domain or Cluster YAML file `resources.env` `USER_MEM_ARGS` to have different values. See [Configuring heap size](#configuring-heap-size).
 
@@ -198,7 +198,7 @@ There's no memory or CPU limit configured by default in samples and so the defau
 
 If you wish to set resource requests or limits differently on a sample Domain or Cluster YAML file or template, see [Setting resource requests and limits in a Domain or Cluster resource](#setting-resource-requests-and-limits-in-a-domain-or-cluster-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
 
-### Configuring CPU affinity
+#### Configuring CPU affinity
 
 A Kubernetes hosted WebLogic Server may exhibit high lock contention in comparison to an on-premises deployment. This lock contention may be due to a lack of CPU cache affinity or scheduling latency when workloads move between different CPU cores.  
 
@@ -209,8 +209,7 @@ In a Kubernetes deployment, similar cache affinity can be achieved by doing the 
 - Configuring the `kubelet` CPU manager policy to be `static` (the default is `none`). See [Control CPU Management Policies on the Node](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies).
 Note that some Kubernetes environments may not allow changing the CPU management policy.
 
-### Measuring JVM heap, Pod CPU, and Pod memory
-
+#### Measuring JVM heap, Pod CPU, and Pod memory
 You can monitor JVM heap, Pod CPU, and Pod memory using Prometheus and Grafana. Also, see [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/) in the Kubernetes documentation.
 
 ### References

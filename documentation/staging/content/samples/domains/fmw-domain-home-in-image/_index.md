@@ -12,7 +12,7 @@ and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and Pe
 The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually
 to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
-### Prerequisites
+#### Prerequisites
 
 Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
@@ -30,7 +30,7 @@ The following prerequisites must be met prior to running the create domain scrip
   * Configure access to your database. For details, see [here]({{< relref "/managing-domains/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
-### Use the script to create a domain
+#### Use the script to create a domain
 
 The sample for creating domains is in this directory:
 
@@ -149,7 +149,7 @@ The default domain created by the script has the following characteristics:
 
 The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
 
-### Configuration parameters
+#### Configuration parameters
 The following parameters can be provided in the inputs file.
 
 | Parameter | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Default                                                                                                                          |
@@ -205,7 +205,7 @@ The sample demonstrates how to create a FMW Infrastructure domain home and assoc
 that has one cluster only. In addition, the sample provides the capability for users to supply their own scripts
 to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
-### Verify the results
+#### Verify the results
 
 The create script will verify that the domain was created, and will report failure if there was any error.
 However, it may be desirable to manually verify the domain, even if just to gain familiarity with the
@@ -214,7 +214,7 @@ various Kubernetes objects that were created by the script.
 Note that the following example results use the `default` Kubernetes Namespace. If you are using a different
 namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
-#### Generated YAML files with the default inputs
+##### Generated YAML files with the default inputs
 
 The content of the generated `domain.yaml`:
 
@@ -322,7 +322,7 @@ spec:
   #     readinessPort:
 ```
 
-### Verify the domain
+#### Verify the domain
 
 To confirm that the domain was created, use this command:
 
@@ -447,7 +447,7 @@ no servers available yet, or perhaps only the Administration Server but no Manag
 The operator will start up the Administration Server first and wait for it to become ready
 before starting the Managed Servers.
 
-### Verify the pods
+#### Verify the pods
 
 Use the following command to see the pods running the servers:
 
@@ -466,7 +466,7 @@ fmwdomain-admin-server                   1/1     Running   0          14m
 fmwdomain-managed-server1                1/1     Running   0          12m
 ```
 
-### Verify the services
+#### Verify the services
 
 Use the following command to see the services for the domain:
 
@@ -486,7 +486,7 @@ fmwdomain-cluster-cluster-1         ClusterIP   10.107.55.188    <none>        8
 fmwdomain-managed-server1           ClusterIP   None             <none>        8001/TCP          15h
 ```
 
-### Delete the domain
+#### Delete the domain
 
 The generated YAML file in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:
 
@@ -494,7 +494,7 @@ The generated YAML file in the `/<path to output-directory>/weblogic-domains/<do
 $ kubectl delete -f domain.yaml
 ```
 
-### Delete the generated image.
+#### Delete the generated image.
 
 When no longer needed, delete the generated image.
 If the image is in a local repository, use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
@@ -503,7 +503,7 @@ If the image is in a local repository, use the following command to delete an im
 $ docker rmi domain-home-in-image:12.2.1.4
 ```
 
-### Delete the tools directory.
+#### Delete the tools directory.
 
 When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
 By default, they are installed under `/tmp/dhii-sample/tools` directory.
@@ -512,7 +512,6 @@ By default, they are installed under `/tmp/dhii-sample/tools` directory.
 $ rm -rf /tmp/dhii-sample/tools/
 ```
 ### Troubleshooting
-
 ***Message***: `Failed to build JDBC Connection object`
 
 If the WebLogic Image Tool failed to create a domain and the following error is seen in the output:

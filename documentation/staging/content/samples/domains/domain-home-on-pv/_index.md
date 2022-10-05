@@ -7,7 +7,7 @@ description: "Sample for creating a WebLogic domain home on an existing PV or PV
 
 The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
 
-### Prerequisites
+#### Prerequisites
 
 Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
@@ -46,7 +46,7 @@ In some variants of Kubernetes (for example OpenShift), you may also need to con
 to run with user 1000 to make sure that the WebLogic processes can access the file system on the
 persistent volume.
 
-### Use the script to create a domain
+#### Use the script to create a domain
 
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
 
@@ -100,8 +100,7 @@ The default domain created by the script has the following characteristics:
 
 The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
 
-### Configuration parameters
-
+#### Configuration parameters
 The following parameters can be provided in the inputs file.
 
 | Parameter | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Default                                                                                         |
@@ -142,13 +141,13 @@ Note that the names of the Kubernetes resources in the generated YAML files may 
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
-### Verify the results
+#### Verify the results
 
 The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
 Note that the following example results use the `default` Kubernetes Namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
-#### Generated YAML files with the default inputs
+##### Generated YAML files with the default inputs
 
 The content of the generated `domain.yaml`:
 
@@ -225,7 +224,7 @@ spec:
   # replicas: 1
 ```
 
-### Verify the domain
+#### Verify the domain
 
 To confirm that the domain was created, use this command:
 
@@ -371,7 +370,7 @@ Events:           <none>
 
 In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
-### Verify the pods
+#### Verify the pods
 
 Use the following command to see the pods running the servers:
 
@@ -391,7 +390,7 @@ domain1-managed-server1                      1/1       Running   0          8m
 domain1-managed-server2                      1/1       Running   0          8m
 ```
 
-### Verify the services
+#### Verify the services
 
 Use the following command to see the services for the domain:
 
@@ -412,7 +411,7 @@ domain1-managed-server1                     ClusterIP   None             <none> 
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 
-### Delete the generated domain home
+#### Delete the generated domain home
 
 Sometimes in production, but most likely in testing environments, you might want to remove the domain home that is generated using the `create-domain.sh` script. Do this by running the generated `delete domain job` script in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory.
 

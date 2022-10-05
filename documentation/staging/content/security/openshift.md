@@ -5,7 +5,7 @@ weight: 7
 description: "OpenShift information for the operator."
 ---
 
-### Security requirements to run WebLogic in OpenShift
+#### Security requirements to run WebLogic in OpenShift
 
 WebLogic Kubernetes Operator images starting with version 3.1 and
 WebLogic Server or Fusion Middleware Infrastructure images obtained from Oracle Container Registry after August 2020
@@ -48,7 +48,7 @@ and apply that to WebLogic pods.  Oracle does not recommend using the built-in `
 Security Context Constraint, because it provides more permissions
 than are needed, and is therefore less secure.
 
-### Create a custom Security Context Constraint
+#### Create a custom Security Context Constraint
 
 To create a custom security context constraint, create a YAML file with the following
 content.  This example assumes that your OpenShift project is called `weblogic` and
@@ -113,7 +113,7 @@ For additional information about OpenShift requirements and the operator,
 see [OpenShift]({{<relref  "/introduction/platforms/environments#openshift">}}).
 {{% /notice %}}
 
-### Use a dedicated namespace
+#### Use a dedicated namespace
 
 When the user that installs an individual instance of the operator
 does _not_ have the required privileges to create resources at the Kubernetes cluster level,
@@ -123,14 +123,14 @@ it to managing domain resources in its local namespace only
 and they may need to manually install the Domain Custom Resource (CRD)
 (see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})).
 
-### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
+#### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
 
 Beginning with operator version 3.3.2,
 set the operator `kubernetesPlatform` Helm chart property to `OpenShift`.
 This property accommodates OpenShift security requirements.
 For more information, see [Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
-### With WIT, set the `target` parameter to `OpenShift`
+#### With WIT, set the `target` parameter to `OpenShift`
 
 When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
 `create`, `rebase`, or `update` command, to create a

@@ -8,7 +8,7 @@ description: "This document describes when WebLogic Server instances should and 
 
 This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.
 
-### Overview
+#### Overview
 
 There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in
 a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.
@@ -28,7 +28,7 @@ The following types of server restarts are supported by the operator:
 
 For detailed information on how to restart servers using the operator, see [Starting, stopping, and restarting servers]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md" >}}).
 
-### Common restart scenarios
+#### Common restart scenarios
 
 This document describes what actions you need to take to properly restart your servers for a number of common scenarios:
 

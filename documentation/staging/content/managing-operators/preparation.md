@@ -5,7 +5,7 @@ weight: 2
 description: "Consult these preparation steps, strategy choices, and prequisites prior to installing an operator."
 ---
 
-### Introduction
+#### Introduction
 
 A single operator instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured.
 A Kubernetes cluster can host multiple operators, but no more than one per namespace.
@@ -33,7 +33,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
    - [How to download the Helm chart if Internet access is not available](#how-to-download-the-helm-chart-if-internet-access-is-not-available)
    - [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd)
 
-### Check environment
+#### Check environment
 
 1. Review the [Operator prerequisites]({{<relref "/introduction/prerequisites/introduction.md">}}) to ensure that your Kubernetes cluster supports the operator.
 
@@ -56,7 +56,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 1. Optionally, enable [Istio]({{< relref "/managing-domains/accessing-the-domain/istio/istio.md" >}}).
 
 
-### Set up the operator Helm chart access
+#### Set up the operator Helm chart access
 
 Before installing an operator, the operator Helm chart must be made available.
 The operator Helm chart includes:
@@ -98,7 +98,7 @@ You can set up access to the operator Helm chart using the chart repository.
     - For a specified version of the Helm chart and operator, with the `helm pull` and `helm install` commands, use the `--version <value>` option
       to choose the version that you want, with the `latest` value being the default.
 
-### Inspect the operator Helm chart
+#### Inspect the operator Helm chart
 
 You can find out the configuration values that the operator Helm chart supports,
 as well as the default values, using the `helm show` command.
@@ -119,7 +119,7 @@ section of the operator Configuration Reference.
 - Helm commands are explained in more detail here, see
 [Useful Helm operations]({{<relref "/managing-operators/using-helm#useful-helm-operations">}}).
 
-### Prepare an operator namespace and service account
+#### Prepare an operator namespace and service account
 
 Each operator requires a namespace to run in and a Kubernetes service account
 within the namespace. The service account will be used
@@ -168,11 +168,11 @@ line to specify the service account in the operator's namespace
 that the operator will use. If not specified, then it defaults to `default`. This
 service account will not be automatically removed when you uninstall an operator.
 
-### Prepare operator image
+#### Prepare operator image
 
 The operator image must be available to all nodes of your Kubernetes cluster.
 
-#### Locating an operator image
+##### Locating an operator image
 
 Production-ready operator images for various supported versions of the operator are
 publicly located in the operator
@@ -183,14 +183,14 @@ and `ghcr.io` is the DNS name of the GitHub container registry.
 You can also optionally build your own operator image,
 see the [Developer Guide]({{<relref "/developerguide/_index.md">}}).
 
-#### Default operator image
+##### Default operator image
 
 Each Helm chart version defaults to using an operator image from the matching version.
 To find the default image name that will be used when installing the operator,
 see [Inspect the operator Helm chart](#inspect-the-operator-helm-chart) and look for the `image` value.
 The value will look something like this, `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N`.
 
-#### Pulling operator image
+##### Pulling operator image
 
 In most use cases, Kubernetes will automatically download (pull) the operator image, as needed,
 to the machines on its cluster nodes.
@@ -208,7 +208,7 @@ requires an image pull credential,
 then you will need to call `docker login my-registry-dns-name.com`
 before calling `docker pull`.
 
-#### Customizing operator image name, pull secret, and private registry
+##### Customizing operator image name, pull secret, and private registry
 
 Sometimes, you may want to specify a custom operator image name
 or an image pull secret. For example, you may want to deploy a different
@@ -236,7 +236,7 @@ provide security credentials.
     use for the operator. See [Prepare an operator namespace and service account](#prepare-an-operator-namespace-and-service-account)
     and [Add image pull secret to service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-image-pull-secret-to-service-account).
 
-### Determine the platform setting
+#### Determine the platform setting
 
 It is important to set the correct value
 for the `kubernetesPlatform` Helm chart configuration setting when installing the operator.
@@ -250,7 +250,7 @@ This accommodates OpenShift security requirements.
 For more information,
 see [kubernetesPlatform]({{<relref "/managing-operators/using-helm#kubernetesplatform">}}).
 
-### Choose a security strategy
+#### Choose a security strategy
 
 There are three commonly used security strategies for deploying an operator:
 
@@ -262,7 +262,7 @@ For a detailed description of the operator's security-related resources,
 see the operator's role-based access control (RBAC) requirements,
 which are documented [here]({{< relref "/managing-operators/rbac.md" >}}).
 
-#### Any namespace with cluster role binding enabled
+##### Any namespace with cluster role binding enabled
 
 If you want to give the operator permission to access any namespace,
 then, for most use cases, set the `enableClusterRoleBinding` operator Helm chart
@@ -273,7 +273,7 @@ The default for this setting is `true`.
 
 This is the most popular security strategy.
 
-#### Any namespace with cluster role binding disabled
+##### Any namespace with cluster role binding disabled
 
 If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
 then an operator is still capable of managing multiple namespaces
@@ -287,7 +287,7 @@ because `enableClusterRoleBinding` is not set to `true`
 and installation of the CRD requires cluster role binding privileges.
 See [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd).
 
-#### Local namespace only with cluster role binding disabled
+##### Local namespace only with cluster role binding disabled
 
 If you want to limit the operator so that it can access only resources in its local namespace, then:
 
@@ -301,7 +301,7 @@ If you want to limit the operator so that it can access only resources in its lo
 This may be necessary in environments where the operator cannot have cluster-scoped privileges,
 such as may happen on OpenShift platforms when running the operator with a `Dedicated` namespace strategy.
 
-### Choose a domain namespace selection strategy
+#### Choose a domain namespace selection strategy
 
 Before installing your operator,
 choose the value for its `domainNamespaceSelectionStrategy` Helm chart configuration setting and its related setting (if any).
@@ -313,7 +313,7 @@ For a description of common namespace management issues,
 see [Common mistakes and solutions]({{<relref "/managing-operators/common-mistakes.md">}}).
 For reference, see [WebLogic domain management]({{<relref "/managing-operators/using-helm#weblogic-domain-management">}}).
 
-### Choose a Helm release name
+#### Choose a Helm release name
 
 The operator requires Helm for installation,
 and Helm requires that each installed operator
@@ -326,7 +326,7 @@ A typical Helm release name is simply `weblogic-operator`.
 The operator samples and documentation
 often use `sample-weblogic-operator`.
 
-### Be aware of advanced operator configuration options
+#### Be aware of advanced operator configuration options
 
 Review the settings in the [Configuration Reference]({{<relref "/managing-operators/using-helm.md">}}) for
 less commonly used advanced or fine tuning Helm chart configuration options

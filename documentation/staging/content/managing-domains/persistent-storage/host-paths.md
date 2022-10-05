@@ -7,7 +7,7 @@ description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim 
 
 This document show you how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim, which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
-### Prerequisites
+#### Prerequisites
 
 The following prerequisites must be fulfilled before proceeding with the creation of the volume:
 
