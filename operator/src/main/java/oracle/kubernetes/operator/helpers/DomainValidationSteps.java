@@ -265,10 +265,28 @@ public class DomainValidationSteps {
           .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
     }
 
+    private List<ClusterResource> getClustersInNamespace(Packet packet) {
+      return Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS)).orElse(Collections.emptyList());
+    }
+
     @Override
     public ClusterResource findCluster(V1LocalObjectReference reference) {
-      return Optional.ofNullable(reference.getName()).flatMap(name -> getClusters(packet).stream()
-          .filter(cluster -> name.equals(cluster.getClusterName())).findFirst()).orElse(null);
+      return Optional.ofNullable(reference.getName())
+          .flatMap(name -> Optional.ofNullable(getClusters(packet))
+              .orElse(Collections.emptyList())
+              .stream()
+              .filter(cluster -> name.equals(cluster.getMetadata().getName()))
+              .findFirst())
+          .orElse(null);
+    }
+
+    @Override
+    public ClusterResource findClusterInNamespace(V1LocalObjectReference reference, String namespace) {
+      return Optional.ofNullable(reference.getName())
+          .flatMap(name -> getClustersInNamespace(packet)
+              .stream().filter(cluster -> hasMatchingMetadata(cluster.getMetadata(), name, namespace))
+              .findFirst())
+          .orElse(null);
     }
 
     boolean isSpecifiedConfigMap(V1ConfigMap configmap, String name, String namespace) {

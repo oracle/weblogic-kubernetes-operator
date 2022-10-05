@@ -214,6 +214,7 @@ public class MessageKeys {
   public static final String NO_APPLICATION_SERVERS_READY = "WLSDO-0046";
   public static final String NON_CLUSTERED_SERVERS_NOT_READY = "WLSDO-0047";
   public static final String CLUSTER_NOT_READY = "WLSDO-0048";
+  public static final String CLUSTER_RESOURCE_NOT_FOUND = "WLSDO-0049";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
