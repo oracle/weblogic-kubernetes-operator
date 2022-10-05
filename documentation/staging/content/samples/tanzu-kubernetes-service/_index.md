@@ -27,7 +27,7 @@ See [Supported environments]({{< relref "/introduction/platforms/environments" >
 for general operator prerequisites
 and operator support limitations that are specific to Tanzu.
 
-#### Create a Tanzu Kubernetes cluster
+### Create a Tanzu Kubernetes cluster
 
 Create the Kubernetes cluster using the TKG CLI. See the [Tanzu documentation](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to set up your Kubernetes cluster.
 After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster:
@@ -43,7 +43,7 @@ k8s-cluster-101-md-0-577b7dc766-m8wrc   Ready      <none>   2d20h   v1.18.6+vmwa
 k8s-cluster-101-md-0-577b7dc766-p2gkz   Ready      <none>   2d20h   v1.18.6+vmware.1   192.168.100.150   192.168.100.150   VMware Photon OS/Linux   4.19.132-1.ph3   containerd://1.3.4
 ```
 
-#### Oracle Container Registry
+### Oracle Container Registry
 
 You will need an Oracle Container Registry account. The following steps will direct you to accept the Oracle Standard Terms and Restrictions to pull the WebLogic Server images.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
 
@@ -140,8 +140,7 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
   - [Staging model files](#staging-model-files)
   - [Creating the image with WIT](#creating-the-image-with-wit)
 
-#### Image creation prerequisites
-
+### Image creation prerequisites
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 2. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`.
 
@@ -184,7 +183,8 @@ $ ./imagetool/bin/imagetool.sh cache addInstaller \
 
 These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool’s cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
 
-#### Image creation - Introduction
+
+### Image creation - Introduction
 
 The goal of image creation is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`.
 The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
@@ -197,7 +197,7 @@ We provide an example of using a model ConfigMap later in this sample.
 
 The following sections contain the steps for creating the image `model-in-image:WLS-v1`.
 
-#### Understanding your first archive
+### Understanding your first archive
 
 The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
@@ -208,7 +208,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
 The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server.
 
-#### Staging a ZIP file of the archive
+### Staging a ZIP file of the archive
 
 When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
@@ -233,7 +233,7 @@ $ cd /tmp/mii-sample/archives/archive-v1
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
-#### Staging model files
+### Staging model files
 
 In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive,
 configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
@@ -296,7 +296,7 @@ The model files:
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
-#### Creating the image with WIT
+### Creating the image with WIT
 
 At this point, you have staged all of the files needed for the image `model-in-image:WLS-v1`; they include:
 
@@ -361,7 +361,7 @@ In this section, you will deploy the new image to namespace `sample-domain1-ns`,
 - Deploy a Domain YAML file that references the new image.
 - Wait for the domain’s Pods to start and reach their ready state.
 
-#### Namespace
+### Namespace
 
 Create a namespace that can host one or more domains:
 
@@ -375,7 +375,7 @@ $ kubectl create namespace sample-domain1-ns
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
-#### Secrets
+### Secrets
 
 First, create the secrets needed by the WLS type model domain. In this case, you have two secrets.
 
@@ -431,7 +431,7 @@ $ kubectl -n sample-domain1-ns label  secret \
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-#### Domain resource
+### Domain resource
 
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 

@@ -315,9 +315,9 @@ After clicking **Create** to create this offer, you will go to the **Deployment 
 
 Review the following useful resources.
 
-#### Store the TLS/SSL certificate in the Key Vault 
+#### Store the TLS/SSL certificate in the Key Vault
 
-1. Base 64 encode the certifcate file; omit the `-w0` for macOS: 
+1. Base 64 encode the certificate file; omit the `-w0` for macOS:
 
     ```bash
     base64 myIdentity.jks -w0 >mycert.txt
@@ -333,5 +333,5 @@ Review the following useful resources.
 4. Select Generate/Import.
 5. Under Upload options, leave the default value.
 6. Under Name, enter `myIdentityCertData`, or whatever name you like.
-7. Under Value, enter the content of the mycert.txt file. 
+7. Under Value, enter the content of the mycert.txt file.
 8. Leave the remaining values at their defaults and select Create.

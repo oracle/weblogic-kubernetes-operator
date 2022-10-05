@@ -7,6 +7,7 @@ description: "Create custom WebLogic images using the WebLogic Image Tool (WIT).
 
 {{< table_of_contents >}}
 
+
 ### Use the WebLogic Image Tool to create custom images
 
 You can use the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT) to build your own WebLogic Server or

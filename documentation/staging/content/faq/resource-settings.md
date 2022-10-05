@@ -8,6 +8,7 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 
 {{< table_of_contents >}}
 
+
 ### Introduction
 
 The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned
@@ -40,7 +41,7 @@ by configuring Kubernetes resource requests and limits,
 and you can tune a WebLogic JVM heap usage
 using the `USER_MEM_ARGS` environment variable in your Domain YAML file.
 The introspector job pod uses the same CPU and memory settings as the
-domain's WebLogic Administration Server pod. Similarly, the operator created init containers in the 
+domain's WebLogic Administration Server pod. Similarly, the operator created init containers in the
 introspector job pod for the [Auxiliary Images]({{< relref "/managing-domains/model-in-image/auxiliary-images" >}})
 based domains use the same CPU and memory settings as the domain's WebLogic Administration Server pod.
 A resource request sets the minimum amount of a resource that a container requires.
@@ -213,7 +214,6 @@ Note that some Kubernetes environments may not allow changing the CPU management
 You can monitor JVM heap, Pod CPU, and Pod memory using Prometheus and Grafana. Also, see [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/) in the Kubernetes documentation.
 
 ### References
-
 1. [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) in the Kubernetes documentation.
 1. [Assign Memory Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource) in the Kubernetes documentation.
 1. [Assign CPU Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/) in the Kubernetes documentation.

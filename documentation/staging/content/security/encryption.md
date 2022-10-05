@@ -4,7 +4,6 @@ date: 2019-02-23T17:36:29-05:00
 weight: 3
 description: "WebLogic domain encryption and the operator."
 ---
-
 {{< table_of_contents >}}
 
 ### Introspector encryption
@@ -34,5 +33,4 @@ and [using a KMS provider for data encryption](https://kubernetes.io/docs/tasks/
 {{% /notice %}}
 
 ### Additional reading
-
 * [Encryption of values for WebLogic configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md#override-template-macros">}})
