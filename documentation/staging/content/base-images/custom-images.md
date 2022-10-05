@@ -5,13 +5,8 @@ weight: 2
 description: "Create custom WebLogic images using the WebLogic Image Tool (WIT)."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
-- [Use the WebLogic Image Tool to create custom images](#use-the-weblogic-image-tool-to-create-custom-images)
-- [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
-  - [Create a custom base image](#create-a-custom-base-image)
-  - [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image)
-  - [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image)
 
 ### Use the WebLogic Image Tool to create custom images
 
