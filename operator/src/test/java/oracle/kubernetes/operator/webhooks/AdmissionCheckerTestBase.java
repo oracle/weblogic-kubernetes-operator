@@ -32,6 +32,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_2;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
@@ -68,6 +69,8 @@ abstract class AdmissionCheckerTestBase {
   final DomainResource proposedDomain2 = createDomainWithoutCluster();
   final ClusterResource existingCluster = createCluster();
   final ClusterResource proposedCluster = createCluster();
+  final ClusterResource proposedCluster2 = createCluster(CLUSTER_NAME_2);
+
   AdmissionChecker domainChecker;
   AdmissionChecker clusterChecker;
 

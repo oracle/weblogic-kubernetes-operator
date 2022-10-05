@@ -261,7 +261,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid
-            + "' cannot be honored because the replica count for cluster '"
+            + "' cannot be honored because the replica count of cluster '"
             + clusterName
             + "' would exceed the cluster size '5' when patching "
             + domainUid
@@ -442,7 +442,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-2' "
+            + "' cannot be honored because the replica count of cluster 'cluster-2' "
             + "would exceed the cluster size '5' when patching "
             + domainUid2
             + " in namespace "
@@ -488,8 +488,8 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-1' and 'cluster-2' "
-            + "would exceed the cluster size '5' when patching "
+            + "' cannot be honored because the replica count of each cluster in 'cluster-1, cluster-2' "
+            + "would exceed its cluster size '5, 5' respectively when patching "
             + domainUid2
             + " in namespace "
             + domainNamespace2;
