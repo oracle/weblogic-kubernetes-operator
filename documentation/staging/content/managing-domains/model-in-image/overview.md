@@ -6,14 +6,7 @@ pre = "<b> </b>"
 description = "Introduction to Model in Image, description of its runtime behavior, and references."
 +++
 
-### Contents
-
- - [Introduction](#introduction)
- - [WebLogic Deploy Tooling models](#weblogic-deploy-tooling-models)
- - [Runtime behavior](#runtime-behavior)
- - [Runtime updates](#runtime-updates)
- - [Continuous integration and delivery (CI/CD)](#continuous-integration-and-delivery-cicd)
- - [References](#references)
+{{< table_of_contents >}}
 
 ### Introduction
 

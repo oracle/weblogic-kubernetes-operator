@@ -6,24 +6,8 @@ pre = "<b> </b>"
 description = "Use overrides to customize domains."
 +++
 
-#### Contents
+{{< table_of_contents >}}
 
-* [Overview](#overview)
-* [Prerequisites](#prerequisites)
-* [Typical overrides](#typical-overrides)
-* [Unsupported overrides](#unsupported-overrides)
-* [Overrides distribution](#overrides-distribution)
-* [Override template names and syntax](#override-template-names-and-syntax)
-  * [Override template names](#override-template-names)
-  * [Override template schemas](#override-template-schemas)
-  * [Override template macros](#override-template-macros)
-  * [Override template syntax special requirements](#override-template-syntax-special-requirements)
-  * [Override template samples](#override-template-samples)
-* [Step-by-step guide](#step-by-step-guide)
-* [Debugging](#debugging)
-* [Internal design flow](#internal-design-flow)
-
----
 ### Overview
 
 {{% notice note %}}
