@@ -8,12 +8,9 @@ description: "This document describes how to customize the liveness and readines
 
 This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.
 
-#### Contents
+{{< table_of_contents >}}
 
-* [Liveness probe customization](#liveness-probe-customization)
-* [Readiness probe customization](#readiness-probe-customization)
-
-#### Liveness probe customization
+### Liveness probe customization
 
 The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.  The default success and failure threshold values are 1.  If a pod fails the liveness probe, Kubernetes will restart that container.
 
@@ -81,7 +78,7 @@ The following operator-populated environment variables are available for use in 
 
 * A custom liveness probe must not fail (exit non-zero) when the WebLogic Server instance itself is unavailable. This could be the case when the WebLogic Server instance is booting or about to boot.
 
-#### Readiness probe customization
+### Readiness probe customization
 
 Here are the options for customizing the readiness probe and its tuning:
 

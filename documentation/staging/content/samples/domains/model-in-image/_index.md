@@ -6,23 +6,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 ---
 
 
-### Contents
-
-   - [Introduction](#introduction)
-     - [Model in Image domain types (WLS, JRF, and Restricted JRF)](#model-in-image-domain-types-wls-jrf-and-restricted-jrf)
-     - [Use cases](#use-cases)
-     - [Sample directory structure](#sample-directory-structure)
-     - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
-   - [References](#references)
-   - Sample steps
-     - [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
-     - [Additional prerequisites for JRF domains]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
-     - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
-     - [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
-     - [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Deploying an additional domain
-     - [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
-     - [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
-     - [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}})
+{{< table_of_contents >}}
 
 
 ### Introduction
