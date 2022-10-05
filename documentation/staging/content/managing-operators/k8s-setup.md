@@ -6,14 +6,7 @@ weight: 10
 
 ---
 
-### Contents
-
-- [Cheat sheet for setting up Kubernetes](#cheat-sheet-for-setting-up-kubernetes)
-- [Set up Kubernetes on bare compute resources in a cloud](#set-up-kubernetes-on-bare-compute-resources-in-a-cloud)
-   - [Prerequisites](#prerequisites)
-   - [Quick start](#quick-start)
-- [Install Kubernetes on your own compute resources](#install-kubernetes-on-your-own-compute-resources)
-- [Install Docker for Mac with Kubernetes](#install-docker-for-mac-with-kubernetes)
+{{< table_of_contents >}}
 
 
 ### Cheat sheet for setting up Kubernetes

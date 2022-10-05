@@ -50,7 +50,7 @@ jobs:
       - name: Build and publish site
         if: ${{ steps.change-check.outputs.DOCUMENTATION_CHANGED == 'true' }}
         run: |
-          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.82.0/hugo_0.82.0_Linux-64bit.tar.gz"
+          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.104.3/hugo_0.104.3_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
