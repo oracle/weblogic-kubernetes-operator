@@ -149,12 +149,11 @@ class ItMiiClusterResource {
    * Patch the domain resource to replace the resource  CR1 with CR2
    * Make sure managed servers from CR1 goes down and managed servers 
    * from CR2 comes up.
-   * Delete the cluster Resource CR2
-   * Make sure managed servers from CR2 goes down 
+   * Scale up the cluster CR2 
    */
   @Test
-  @DisplayName("Verify dynamic add/remove of cluster resource on domain")
-  void testManageClusterResource() {
+  @DisplayName("Verify dynamic add/replace cluster resource on domain")
+  void testAddReplaceClusterResource() {
 
     String domainUid = "domain1";
     String adminServerPodName = domainUid + "-admin-server";
@@ -262,14 +261,6 @@ class ItMiiClusterResource {
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
 
-    logger.info("Deleting Cluster Resource {0}", cluster2Res);
-    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
-    // check managed server pods from cluster-2 are shutdown
-    for (int i = 1; i <= replicaCount + 1; i++) {
-      checkPodDoesNotExist(managedServer2Prefix + i,domainUid,domainNamespace);
-    }
-    logger.info("All seevers in Cluster Resource {0} are shutdown",cluster2Res);
-
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
@@ -277,11 +268,93 @@ class ItMiiClusterResource {
   }
 
   /**
+   * Create a WebLogic domain DR with domain level replica set to zero.
+   * Create  kubernates cluster resources CR which corresponds to a 
+   * WebLogic cluster cluster-1 in model file.
+   * Associate Cluster Resource CR with Domain Resource DR  
+   * Make sure only managed servers from cluster-1 comes up
+   * Delete the cluster Resource CR
+   * Make sure Domain Validation Error event is generated. 
+   *
+   * message: 'Domain domain2 failed due to 'Domain validation error': 
+   * Cluster resource 'domain2-cluster-1' not found in namespace 
+   * 'ns-ptkhxk'. Update the domain resource to correct the validation error.'
+   *
+   * However the managed servers should not stop.
+   */
+  @Test
+  @DisplayName("Verify removal of a cluster resource generate Error Event")
+  void testDeleteClusterResource() {
+
+    String domainUid = "domain2";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid +  "-c1-managed-server";
+
+    String clusterRes   = domainUid + "-cluster-1";
+    String clusterName  = "cluster-1";
+    String configMapName = domainUid + "-configmap";
+
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+ 
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        clusterRes, clusterName, domainNamespace, replicaCount);
+    logger.info("Creating ClusterResource {0} in namespace {1}",clusterRes, domainNamespace);
+    createClusterAndVerify(cluster);
+    createModelConfigMap(domainUid,configMapName);
+
+    // create and deploy domain resource
+    DomainResource domain = createDomainResource(domainUid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+    logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterRes));
+
+    createDomainAndVerify(domain, domainNamespace);
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // check managed server pods are not started
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    // Delete the cluster resource with out de-associating it from domain 
+    // In this case a Domain Validation event will be generated 
+    // The managed server does not go down, and cluster becomes un-managable
+    // as the clusster Resource does not exist.
+
+    OffsetDateTime timestamp = now();
+    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+
+    testUntil(withLongRetryPolicy,
+        checkDomainFailedEventWithReason(opNamespace, domainNamespace,
+        domainUid, "Domain validation error", "Warning", timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        "Domain validation error",
+        domainNamespace);
+
+    // Clean up resources
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+  }
+
+  /**
    * Create a cluster resource SC corresponding to WebLogic cluster cluster-1.
-   * Create a domain resource DR1 with cluster reference set to SR.
-   * Create a domain resource DR2 with cluster reference set to SR.
-   * Start the domain resourcei DR1 with all manged servers in the cluster.
+   * Create a domain resource DR1 with cluster reference set to SC.
+   * Create a domain resource DR2 with cluster reference set to SC.
+   * Start the domain resource DR1 with all manged servers in the cluster.
    * A Domain Validation Failed Event MUST be generated for domain DR2.
+   *
+   * message: 'Domain domain8 failed due to 'Domain validation error': 
+   * Cannot reference cluster resource 'shared-cluster' because it is used 
+   * by 'domain7'. Update the domain resource to correct the validation error.'
+   *
    */
   @Test
   @DisplayName("Verify Domain Validation Failed Event for sharing Cluster Reference across domains")
@@ -421,27 +494,38 @@ class ItMiiClusterResource {
   }
 
   /*
-   * Create a domain resource DR with cluster resource CR.
-   * Here the cluster resource CR refers to WebLogic cluster in model file.
-   * Note here the CR is not deployed before deploying resource DR. 
-   * Deploy resource DR and make sure only admin server is started.
-   * (TBD) Should we generate a Warning Event (OWLS-102704) 
-   * Deploy resource CR and make sure that all servers in CR comes up. 
+   * Create a domain resource DR with two cluster resources CR1 and CR2.
+   * Deploy only CR1 before deploying resource DR. 
+   * Here we execpet a Domain Validation Error
+   *
+   *   message: 'Domain domain4 failed due to 'Domain validation error': 
+   *   Cluster resource 'domain4-cluster-2' not found in namespace 'ns-mroefg'
+   *   Update the domain resource to correct the validation error.'
+   *
+   * None of the server including admin server should start.
    */
   @Test
   @DisplayName("Verify servers on missing cluster resource are picked up when the resource is available")
   void testMissingClusterResource() {
 
     String domainUid = "domain4"; 
-    String clusterName = "cluster-1"; 
-    String clusterRes = domainUid + "cluster-4"; 
-    String configMapName = domainUid + "-configmap"; 
+    String cluster1Name = "cluster-1"; 
+    String cluster1Res = domainUid + "-cluster-1"; 
+    String cluster2Name = "cluster-2"; 
+    String cluster2Res = domainUid + "-cluster-2"; 
 
-    OffsetDateTime timestamp = now();
+    String configMapName = domainUid + "-configmap"; 
    
     // Delete any pre-existing resources if any
     deleteDomainResource(domainUid, domainNamespace);
-    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+
+    // Create and deploy cluster resource for one cluster (cluster-1)
+    ClusterResource cluster = createClusterResource(
+        cluster1Res, cluster1Name, domainNamespace, replicaCount);
+    logger.info("Creating cluster {0} in namespace {1}",cluster1Res, domainNamespace);
+    createClusterAndVerify(cluster);
 
     // create and deploy domain resource
     createModelConfigMap(domainUid,configMapName);
@@ -450,38 +534,40 @@ class ItMiiClusterResource {
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
     // set cluster references to a non-existing cluster resource
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterRes));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Res));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster2Res));
     logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, 
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+
+    OffsetDateTime timestamp = now();
     createDomainAndVerify(domain, domainNamespace);
+
+    testUntil(withLongRetryPolicy,
+        checkDomainFailedEventWithReason(opNamespace, domainNamespace, 
+        domainUid, "Domain validation error", 
+        "Warning", timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        "Domain validation error",
+        domainNamespace);
+
+    //verify the introspector pod is not started
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
     String managedServerPrefix = domainUid + "-c1-managed-server";
     String adminPodName   = domainUid + "-admin-server";
 
-    String managedPodName = domainUid + "-managed-server1";
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminPodName,domainUid,domainNamespace);
-
-    // check managed server pods are not started
+    // check no server pod is not started
+    checkPodDoesNotExist(adminPodName,domainUid,domainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPrefix + i,domainUid,domainNamespace);
     }
 
-    // create and deploy cluster resource
-    ClusterResource cluster = createClusterResource(
-        clusterRes, clusterName, domainNamespace, replicaCount);
-    logger.info("Creating cluster {0} in namespace {1}",clusterRes, domainNamespace);
-    createClusterAndVerify(cluster);
-
-    // check managed server pods are started
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPrefix + i,domainUid,domainNamespace);
-    }
-
     deleteDomainResource(domainUid, domainNamespace);
-    deleteClusterCustomResourceAndVerify(clusterRes,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
   }
 
   /**
