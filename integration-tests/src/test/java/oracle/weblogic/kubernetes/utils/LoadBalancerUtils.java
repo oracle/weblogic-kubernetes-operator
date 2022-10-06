@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -663,7 +664,10 @@ public class LoadBalancerUtils {
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+        testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+            logger,
+            "ingress is ready to ping the ready app on server {0}",
+            K8S_NODEPORT_HOST);
       }
     }
 

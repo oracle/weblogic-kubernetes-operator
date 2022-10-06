@@ -106,7 +106,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -409,7 +408,6 @@ class ItMultiDomainModelsWithLoadBalancer {
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
 
-    String serverName;
     String serverNamePrefix;
     if (numClusters > 1) {
       serverNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
@@ -494,10 +492,10 @@ class ItMultiDomainModelsWithLoadBalancer {
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
-        .isTrue();
+    testUntil(() -> callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20),
+        logger,
+        "NGINX can access the test web app from all managed servers {0} in the domain",
+        managedServers);
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -1251,7 +1249,12 @@ class ItMultiDomainModelsWithLoadBalancer {
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
 
       logger.info("Executing curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+          logger,
+          "WebLogic console on domain {0} in namespace {1} is accessible",
+          domainUid,
+          domainNamespace);
+
       logger.info("WebLogic console on domain1 is accessible");
     } else {
       logger.info("Skipping the admin console login test using ingress controller in OKD environment");
