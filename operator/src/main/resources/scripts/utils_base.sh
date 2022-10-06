@@ -225,12 +225,11 @@ createFolder() {
   local targetDir="${1}"
   local folderDescription="${2:-}"
 
-  if [[ "${KUBERNETES_PLATFORM^^}" == "${PLATFORM_OPENSHIFT}" ]]; then
+  if [[ "${KUBERNETES_PLATFORM}" == "${PLATFORM_OPENSHIFT}" ]]; then
     local mkdirCommand="mkdir -m 770 -p $targetDir"
   else
     local mkdirCommand="mkdir -m 750 -p $targetDir"
   fi
-
 
   trace FINE "Creating folder '${targetDir}' using command '${mkdirCommand}'. ${folderDescription}"
 

@@ -809,7 +809,7 @@ createPrimordialDomain() {
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
-    if [[ "${KUBERNETES_PLATFORM^^}" == "${PLATFORM_OPENSHIFT}" ]]; then
+    if [[ "${KUBERNETES_PLATFORM}" == "${PLATFORM_OPENSHIFT}" ]]; then
       # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
       # group same permissions as user .
       chmod -R g=u ${DOMAIN_HOME} || return 1

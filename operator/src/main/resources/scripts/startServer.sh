@@ -43,7 +43,7 @@ startWLS() {
   #
   traceTiming "POD '${SERVICE_NAME}' NM START"
 
-  if [[ "${KUBERNETES_PLATFORM^^}" == "${PLATFORM_OPENSHIFT}" ]]; then
+  if [[ "${KUBERNETES_PLATFORM}" == "${PLATFORM_OPENSHIFT}" ]]; then
     umask 007
   fi
 
@@ -264,7 +264,7 @@ fi
 #
 
 createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/security" "This is the server '${SERVER_NAME}' security directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
-if [[ "${KUBERNETES_PLATFORM^^}" == "${PLATFORM_OPENSHIFT}" ]]; then
+if [[ "${KUBERNETES_PLATFORM}" == "${PLATFORM_OPENSHIFT}" ]]; then
   createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/tmp" "This is the server '${SERVER_NAME}' tmp directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
   createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/logs" "This is the server '${SERVER_NAME}' logs directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
   createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/data/ldap/log" "This is the server '${SERVER_NAME}' data directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
@@ -285,7 +285,7 @@ if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 fi
 
-if [[ "${KUBERNETES_PLATFORM^^}" == "${PLATFORM_OPENSHIFT}" ]]; then
+if [[ "${KUBERNETES_PLATFORM}" == "${PLATFORM_OPENSHIFT}" ]]; then
     # When the Operator is running on Openshift platform, disable insecure file system warnings.
     export JAVA_OPTIONS="-Dweblogic.SecureMode.WarnOnInsecureFileSystem=false $JAVA_OPTIONS"
     if [[ "${DOMAIN_SOURCE_TYPE}" == "Image" ]]; then
