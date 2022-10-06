@@ -1,0 +1,63 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+apiVersion: "DOMAIN_API_VERSION"
+kind: Domain
+metadata:
+  name: DUID
+  namespace: NAMESPACE
+  labels:
+    weblogic.domainUID: DUID
+spec:
+  domainHomeSourceType: FromModel
+  domainHome: /u01/domains/DUID
+  image: "IMAGE"
+  imagePullPolicy: "IfNotPresent"
+  imagePullSecrets:
+    - name: test-images-repo-secret
+  
+  webLogicCredentialsSecret: 
+    name: WEBLOGIC-CREDENTIALS
+  includeServerOutInPodLog: true
+  
+  serverStartPolicy: "IfNeeded"
+  serverPod:
+    env:
+    - name: CUSTOM_DOMAIN_NAME
+      value: "DUID"
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "768Mi"
+  clusters:
+  - name: CLUSTER_RES
+  configuration:
+    model:
+      domainType: "WLS"
+      runtimeEncryptionSecret: RUNTIME-ENCRYPTION-SECRET
+
+---
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: CLUSTER_RES
+  namespace: NAMESPACE
+spec:
+  clusterName: CLUSTERNAME
+  serverPod:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "weblogic.clusterName"
+                    operator: In
+                    values:
+                      - $(CLUSTER_NAME)
+              topologyKey: "kubernetes.io/hostname"
+  replicas: 2
