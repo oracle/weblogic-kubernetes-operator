@@ -33,8 +33,6 @@ public class OperatorParams {
   private static final String DOMAIN_NS_LABEL_SELECTOR = "domainNamespaceLabelSelector";
   private static final String DOMAIN_NS_REG_EXP = "domainNamespaceRegExp";
   private static final String ENABLE_CLUSTER_ROLE_BINDING = "enableClusterRoleBinding";
-  private static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
-  private static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
   private static final String FEATURE_GATES = "featureGates";
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
@@ -59,8 +57,6 @@ public class OperatorParams {
   private String domainNamespaceSelectionStrategy;
   private String domainNamespaceLabelSelector;
   private String domainNamespaceRegExp;
-  private int domainPresenceFailureRetryMaxCount = 5;
-  private int domainPresenceFailureRetrySeconds = 10;
   private String featureGates;
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
@@ -156,16 +152,6 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams domainPresenceFailureRetryMaxCount(int domainPresenceFailureRetryMaxCount) {
-    this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
-    return this;
-  }
-
-  public OperatorParams domainPresenceFailureRetrySeconds(int domainPresenceFailureRetrySeconds) {
-    this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
-    return this;
-  }
-
   public OperatorParams featureGates(String featureGates) {
     this.featureGates = featureGates;
     return this;
@@ -246,12 +232,6 @@ public class OperatorParams {
     }
     if (domainNamespaceRegExp != null) {
       values.put(DOMAIN_NS_REG_EXP, domainNamespaceRegExp);
-    }
-    if (domainPresenceFailureRetryMaxCount >= 0) {
-      values.put(DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT,  domainPresenceFailureRetryMaxCount);
-    }
-    if (domainPresenceFailureRetrySeconds > 0) {
-      values.put(DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS, domainPresenceFailureRetrySeconds);
     }
     if (kubernetesPlatform != null) {
       values.put(KUBERNETES_PLATFORM, kubernetesPlatform);

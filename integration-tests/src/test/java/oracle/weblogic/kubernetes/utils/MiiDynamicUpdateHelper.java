@@ -93,7 +93,7 @@ public class MiiDynamicUpdateHelper {
     domainNamespace = namespaces.get(1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, 0, 0, domainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
