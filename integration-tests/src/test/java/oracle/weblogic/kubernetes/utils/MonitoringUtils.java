@@ -588,8 +588,8 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     Path monitoringAppAdministrationRestPort = Paths.get(monitoringExporterAppDir, "administrationrestport");
-    assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
+    assertDoesNotThrow(() -> deleteDirectory(monitoringAppAdministrationRestPort.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppAdministrationRestPort));
 
     //adding ability to build monitoring exporter if branch is not main
     boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
