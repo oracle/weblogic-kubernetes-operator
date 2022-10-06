@@ -137,8 +137,8 @@ class ItMiiClusterResource {
   }
 
   /**
-   * Create a (mii) WebLogic domain DR with domain level replica set to zero.
-   * Do not not associate any Cluster Resource with DR even if two 
+   * Create WebLogic domain DR with domain level replica set to zero.
+   * Do not associate any Cluster Resource with DR even if two 
    * WebLogic clusters (cluster-1 and cluster-2) are configuted in config.xml
    * Create two kubernates cluster resources CR1 and CR2 
    * corresponding to WebLogic clusters cluster-1 and cluster-2 respectively.
@@ -318,7 +318,7 @@ class ItMiiClusterResource {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-    // check managed server pods are not started
+    // check managed server pods are started
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
@@ -559,7 +559,7 @@ class ItMiiClusterResource {
     String managedServerPrefix = domainUid + "-c1-managed-server";
     String adminPodName   = domainUid + "-admin-server";
 
-    // check no server pod is not started
+    // check no server pod is started
     checkPodDoesNotExist(adminPodName,domainUid,domainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPrefix + i,domainUid,domainNamespace);
