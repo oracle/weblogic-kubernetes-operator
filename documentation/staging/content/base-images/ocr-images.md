@@ -6,18 +6,7 @@ description: "Obtain and inspect images for WebLogic Server or Fusion Middleware
 ---
 
 
-### Contents
-
-- [Overview](#overview)
-- [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
-  - [Compare General Availability to Critical Patch Updates images](#compare-general-availability-to-critical-patch-updates-images)
-  - [WebLogic distribution installer type](#weblogic-distribution-installer-type)
-  - [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
-  - [Example OCR image names](#example-ocr-image-names)
-- [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
-- [Inspect images](#inspect-images)
-- [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images)
-
+{{< table_of_contents >}}
 
 
 ### Overview

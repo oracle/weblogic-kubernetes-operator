@@ -383,7 +383,8 @@ class DomainValidationTest extends DomainValidationTestBase {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
           .configureCluster(info,"Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
-
+    ClusterResource cluster1 = createTestCluster("Cluster-1");
+    resourceLookup.defineResource(cluster1);
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
@@ -393,7 +394,8 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
           .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
           .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
-
+    ClusterResource cluster1 = createTestCluster("Cluster-1");
+    resourceLookup.defineResource(cluster1);
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
@@ -875,6 +877,40 @@ class DomainValidationTest extends DomainValidationTestBase {
             "spec.fluentdSpecification.elasticSearchCredentials")));
   }
 
+  @Test
+  void whenClusterReferenceNotFound_reportError() {
+    resourceLookup.defineResource(domain);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
+  @Test
+  void whenClusterReferenceInDifferentNamespace_reportError() {
+    ClusterResource cluster1 = createTestCluster("cluster-1", "NS2");
+    resourceLookup.defineResource(domain);
+    resourceLookup.defineResource(cluster1);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
+  @Test
+  void whenClusterReferenceDifferentName_reportError() {
+    ClusterResource cluster1 = createTestCluster("cluster-2");
+    resourceLookup.defineResource(domain);
+    resourceLookup.defineResource(cluster1);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
   private DomainConfigurator configureDomain(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
@@ -890,7 +926,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain2, clusters);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("Cluster", CLUSTER_1, "it is used by", UID2)));
+        contains(stringContainsInOrder("cluster resource", CLUSTER_1, "it is used by", UID2)));
   }
 
   @Test
@@ -918,7 +954,28 @@ class DomainValidationTest extends DomainValidationTestBase {
     setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("Cluster", CLUSTER_2, "it is used by", UID2)));
+        contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
+  }
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferences_withClusterName_reportError() {
+    String wlsClusterName1 = "c1";
+    String wlsClusterName2 = "c2";
+    String wlsClusterName3 = "c3";
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    cluster1.getSpec().setClusterName(wlsClusterName1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    cluster2.getSpec().setClusterName(wlsClusterName2);
+    ClusterResource cluster3 = createTestCluster(CLUSTER_3);
+    cluster3.getSpec().setClusterName(wlsClusterName3);
+    defineResources(domain, domain2, cluster1, cluster2, cluster3);
+
+    setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
+    setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
   }
 
   @SafeVarargs

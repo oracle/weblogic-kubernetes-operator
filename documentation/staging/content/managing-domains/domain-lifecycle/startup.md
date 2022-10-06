@@ -7,38 +7,7 @@ description: "There are fields on the Domain that specify which WebLogic Server 
 started, or restarted. To start, stop, or restart servers, modify these fields on the Domain."
 ---
 
-### Contents
-
-- [Introduction](#introduction)
-- [Starting and stopping servers](#starting-and-stopping-servers)
-  - [`serverStartPolicy` rules](#serverstartpolicy-rules)
-  - [Available `serverStartPolicy` values](#available-serverstartpolicy-values)
-  - [Administration Server start and stop rules](#administration-server-start-and-stop-rules)
-  - [Standalone Managed Server start and stop rules](#standalone-managed-server-start-and-stop-rules)
-  - [Clustered Managed Server start and stop rules](#clustered-managed-server-start-and-stop-rules)
-- [Server start state](#server-start-state)
-- [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
-  - [Normal running state](#normal-running-state)
-  - [Shut down all the servers](#shut-down-all-the-servers)
-  - [Only start the Administration Server](#only-start-the-administration-server)
-  - [Shut down a cluster](#shut-down-a-cluster)
-  - [Shut down a specific standalone server](#shut-down-a-specific-standalone-server)
-  - [Force a specific clustered Managed Server to start](#force-a-specific-clustered-managed-server-to-start)
-- [Shutdown options](#shutdown-options)
-  - [Shutdown environment variables](#shutdown-environment-variables)
-  - [`shutdown` rules](#shutdown-rules)
-- [Restarting servers](#restarting-servers)
-  - [Fields that cause servers to be restarted](#fields-that-cause-servers-to-be-restarted)
-- [Rolling restarts](#rolling-restarts)
-- [Draining a node and PodDisruptionBudget](#draining-a-node-and-poddisruptionbudget)
-- [Common restarting scenarios](#common-restarting-scenarios)
-  - [Using `restartVersion` to force the operator to restart servers](#using-restartversion-to-force-the-operator-to-restart-servers)
-  - [Restart all the servers in the domain](#restart-all-the-servers-in-the-domain)
-  - [Restart all the servers in the cluster](#restart-all-the-servers-in-the-cluster)
-  - [Restart the Administration Server](#restart-the-administration-server)
-  - [Restart a standalone or clustered Managed Server](#restart-a-standalone-or-clustered-managed-server)
-  - [Full domain restarts](#full-domain-restarts)
-- [Domain lifecycle sample scripts](#domain-lifecycle-sample-scripts)
+{{< table_of_contents >}}
 
 ### Introduction
 

@@ -6,16 +6,7 @@ pre = "<b> </b>"
 description = "Model file requirements, macros, and loading order."
 +++
 
-### Contents
-
- - [Introduction](#introduction)
- - [Sample model file](#sample-model-file)
- - [Important notes about Model in Image model files](#important-notes-about-model-in-image-model-files)
- - [Model file naming and loading order](#model-file-naming-and-loading-order)
- - [Model file macros](#model-file-macros)
-   - [Using secrets in model files](#using-secrets-in-model-files)
-   - [Using environment variables in model files](#using-environment-variables-in-model-files)
-   - [Combining secrets and environment variables in model files](#combining-secrets-and-environment-variables-in-model-files)
+{{< table_of_contents >}}
 
 ### Introduction
 

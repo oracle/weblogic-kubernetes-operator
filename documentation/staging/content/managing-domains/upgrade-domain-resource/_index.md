@@ -6,11 +6,7 @@ pre = "<b> </b>"
 description = "Upgrade Domain resources."
 +++
 
-### Contents
-
- - [Operator 4.0 domain resource API version change](#operator-40-domain-resource-api-version-change)
- - [Automated upgrade of operator 3.x domain resource](#automated-upgrade-of-weblogicoraclev8-schema-domain-resource)
- - [Upgrade the `weblogic.oracle/v8` schema domain resource manually](#upgrade-the-weblogicoraclev8-schema-domain-resource-manually)
+{{< table_of_contents >}}
 
 ### Operator 4.0 domain resource API version change
 The Domain CustomResourceDefinition in operator version 4.0 has changed significantly from previous operator releases. For this reason, we have updated the API version of the Domain custom resource in the CRD from `weblogic.oracle/v8` to `weblogic.oracle/v9`. We continue to support the Domains with API version `weblogic.oracle/v8` and provide full backward compatibility. If you want to use the new fields introduced in the latest `weblogic.oracle/v9` schema, then you will need to update the API version in your Domain resource YAML file.
