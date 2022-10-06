@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-//import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -59,20 +58,17 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyDomain;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createDomain;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringExporterTempDir;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyDomain;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -311,27 +307,21 @@ class ItMonitoringExporterWebApp {
    * Create Model in Image with admin port and ssl enabled.
    * Check generated monitoring exporter WebLogic metrics via https request.
    */
-  //@Disabled("Disabled the test due to oracle/weblogic-monitoring-exporter#138")
   @Test
-  @DisplayName("Test Accesability of Monitoring Exporter dashboard and metrics if admin port is enabled.")
+  @DisplayName("Test Accessibility of Monitoring Exporter dashboard and metrics if admin port is enabled.")
   void testAdminPortEnabled() throws Exception {
     try {
       // create and verify one cluster mii domain with admin port enabled
       logger.info("Create domain and verify that it's running");
-      String miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
+      String monitoringExporterAdministrationRestPortAppDir = Paths.get(monitoringExporterAppDir,
+          "administrationrestport").toString();
+      String miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAdministrationRestPortAppDir,
           MODEL_DIR + "/model-adminportenabled.yaml",
           SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
-      // Generate JKS Keystore using openssl before
-      // managed server services and pods are ready
 
-      createDomain(miiImage1, domain2Uid, domain2Namespace,
+      createAndVerifyDomain(miiImage1, domain2Uid, domain2Namespace,
           "FromModel", 2, false, null, null);
-      String adminServerPodName = domain2Uid + "-admin-server";
-      logger.info("Check admin service and pod {0} is created in namespace {1}",
-          adminServerPodName, domain2Namespace);
-      checkPodReadyAndServiceExists(adminServerPodName, domain2Uid, domain2Namespace);
 
-      verifyDomain(domain2Uid, domain2Namespace, 2, false);
       logger.info("checking access to wls metrics via https connection");
 
       assertTrue(verifyMonExpAppAccess("wls-exporter",
