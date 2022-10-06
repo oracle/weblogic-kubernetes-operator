@@ -111,7 +111,7 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
-    if (request == null || request.getOldObject() == null || request.getObject() == null) {
+    if (request == null || request.getObject() == null) {
       return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
 
@@ -122,17 +122,37 @@ public class AdmissionWebhookResource extends BaseResource {
     LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
-    return createAdmissionChecker(request).validate().uid(getUid(request));
+    return getAdmissionChecker(request).validate().uid(getUid(request));
   }
 
   @NotNull
-  private AdmissionChecker createAdmissionChecker(@NotNull AdmissionRequest request) {
+  private AdmissionChecker getAdmissionChecker(@NotNull AdmissionRequest request) {
     if (request.isCluster()) {
-      return new ClusterAdmissionChecker((ClusterResource) request.getExistingResource(),
-          (ClusterResource) request.getProposedResource());
+      return getClusterAdmissionChecker(request);
     }
-    return new DomainAdmissionChecker((DomainResource) request.getExistingResource(),
-        (DomainResource) request.getProposedResource());
+    return getDomainAdmissionChecker(request);
+  }
+
+  @NotNull
+  private AdmissionChecker getDomainAdmissionChecker(@NotNull AdmissionRequest request) {
+    DomainResource existing = (DomainResource) request.getExistingResource();
+    DomainResource proposed = (DomainResource) request.getProposedResource();
+    return isNewResource(request)
+        ? new DomainCreateAdmissionChecker(proposed)
+        : new DomainUpdateAdmissionChecker(existing, proposed);
+  }
+
+  private boolean isNewResource(@NotNull AdmissionRequest request) {
+    return request.getOldObject() == null;
+  }
+
+  @NotNull
+  private AdmissionChecker getClusterAdmissionChecker(@NotNull AdmissionRequest request) {
+    ClusterResource existing = (ClusterResource) request.getExistingResource();
+    ClusterResource proposed = (ClusterResource) request.getProposedResource();
+    return isNewResource(request)
+        ? new ClusterCreateAdmissionChecker(proposed)
+        : new ClusterUpdateAdmissionChecker(existing, proposed);
   }
 
 }

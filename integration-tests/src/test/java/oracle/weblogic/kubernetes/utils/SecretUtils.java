@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -229,5 +230,36 @@ public class SecretUtils {
       secrets.add(BASE_IMAGES_REPO_SECRET_NAME);
     }
     return secrets.toArray(String[]::new);
+  }
+
+  /**
+   * Retrieve service account token stored in secret .
+   *
+   * @param serviceAccount service account name
+   * @param namespace namespace
+   * @return string service account token stored in secret
+   */
+  public static String getServiceAccountToken(String serviceAccount, String namespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Getting the secret of service account {0} in namespace {1}", serviceAccount, namespace);
+    String secretName = Secret.getSecretOfServiceAccount(namespace, serviceAccount);
+    if (secretName.isEmpty()) {
+      logger.info("Did not find secret of service account {0} in namespace {1}", serviceAccount, namespace);
+      return null;
+    }
+    logger.info("Got secret {0} of service account {1} in namespace {2}",
+        secretName, serviceAccount, namespace);
+
+    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
+        + " in namespace {2}", secretName, serviceAccount, namespace);
+    String secretToken = Secret.getSecretEncodedToken(namespace, secretName);
+    if (secretToken.isEmpty()) {
+      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
+          secretName, serviceAccount, namespace);
+      return null;
+    }
+    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, serviceAccount, namespace, secretToken);
+    return secretToken;
   }
 }

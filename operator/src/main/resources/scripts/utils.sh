@@ -747,10 +747,11 @@ checkAuxiliaryImage() {
   fi
   local severe_found=false
   for out_file in $out_files; do
+    sucFile="${out_file/%.out/.suc}"
     if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
       trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
       severe_found=true
-    elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+    elif [ ! -f "$sucFile" ]; then
       trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                    "Contents of '${out_file}':"
       cat $out_file
@@ -795,17 +796,18 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(ls -1 "${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/*.out" 2>/dev/null | sort --version-sort)
+    out_files=$(ls -1 "${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/"*.out 2>/dev/null | sort --version-sort)
     if [ -z "${out_files}" ]; then
       trace SEVERE "Compatibility Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/$AUXILIARY_IMAGE_COMMAND_LOGS_DIR/*.out'"
       return 1
     fi
     severe_found=false
     for out_file in $out_files; do
+      sucFile="${out_file/%.out/.suc}"
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
         trace FINE "Compatibility Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
         severe_found=true
-      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+      elif [ ! -f "$sucFile" ]; then
         trace SEVERE "Compatibility Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                      "Contents of '${out_file}':"
         cat $out_file

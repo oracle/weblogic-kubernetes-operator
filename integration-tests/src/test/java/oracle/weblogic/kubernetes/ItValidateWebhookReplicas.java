@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -42,17 +43,22 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_MAX_CLUSTER_SIZE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -60,7 +66,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApiAndReturnResult;
-import static oracle.weblogic.kubernetes.actions.TestActions.tagAndPushToKind;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
@@ -256,7 +261,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid
-            + "' cannot be honored because the replica count for cluster '"
+            + "' cannot be honored because the replica count of cluster '"
             + clusterName
             + "' would exceed the cluster size '5' when patching "
             + domainUid
@@ -334,15 +339,12 @@ class ItValidateWebhookReplicas {
 
     String originalImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     String newImage = MII_BASIC_IMAGE_NAME + ":newtag";
-    if (KIND_REPO != null) {
-      testUntil(
-          tagAndPushToKind(originalImage, newImage),
-          logger,
-          "tagAndPushToKind for image {0} to be successful",
-          newImage);
-    } else {
-      dockerTag(originalImage, newImage);
-    }
+
+    testUntil(
+        tagImageAndPushIfNeeded(originalImage, newImage),
+        logger,
+        "tagImageAndPushIfNeeded for image {0} to be successful",
+        newImage);
 
     OffsetDateTime timestamp = now();
 
@@ -440,7 +442,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-2' "
+            + "' cannot be honored because the replica count of cluster 'cluster-2' "
             + "would exceed the cluster size '5' when patching "
             + domainUid2
             + " in namespace "
@@ -486,8 +488,8 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-1' and 'cluster-2' "
-            + "would exceed the cluster size '5' when patching "
+            + "' cannot be honored because the replica count of each cluster in 'cluster-1, cluster-2' "
+            + "would exceed its cluster size '5, 5' respectively when patching "
             + domainUid2
             + " in namespace "
             + domainNamespace2;
@@ -705,4 +707,20 @@ class ItValidateWebhookReplicas {
     checkPodReadyAndServiceExists(managedServerPrefix + "1", domainUid, domainNamespace);
   }
 
+  private Callable<Boolean> tagImageAndPushIfNeeded(String originalImage, String taggedImage) {
+    return (() -> {
+      boolean result = true;
+      result = result && dockerTag(originalImage, taggedImage);
+      // push the image to a registry to make the test work in multi node cluster
+      logger.info("docker login to registry {0}", TEST_IMAGES_REPO);
+      result = result && dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME,
+          TEST_IMAGES_REPO_PASSWORD);
+      // push image
+      if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+        logger.info("docker push image {0} to registry", taggedImage);
+        result = result && dockerPush(taggedImage);
+      }
+      return result;
+    });
+  }
 }

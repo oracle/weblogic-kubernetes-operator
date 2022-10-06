@@ -349,8 +349,8 @@ public class TestActions {
    * @param replicaCount number of servers to be scaled to
    * @return true on success, false otherwise
    */
-  public static boolean scaleAllClusters(String domainUid, String namespace, int replicaCount) {
-    return Domain.scaleAllClusters(domainUid, namespace, replicaCount);
+  public static boolean scaleAllClustersInDomain(String domainUid, String namespace, int replicaCount) {
+    return Domain.scaleAllClustersInDomain(domainUid, namespace, replicaCount);
   }
 
   // ----------------------   cluster  -----------------------------------

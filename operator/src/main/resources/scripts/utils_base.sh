@@ -380,7 +380,7 @@ initCompatibilityModeInitContainersWithLegacyAuxImages() {
   if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
     trace SEVERE "Compatibility Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \
                 "container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. Exiting."
-    return
+    return 1
   fi
 
   trace FINE "Compatibility Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
@@ -392,6 +392,7 @@ initCompatibilityModeInitContainersWithLegacyAuxImages() {
   if [ $? -ne 0 ]; then
     trace SEVERE "Compatibility Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' execution failed in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE' " \
                 "with AUXILIARY_IMAGE_PATH=$AUXILIARY_IMAGE_PATH. Error -> '$results' ."
+    return 1
   else
     trace FINE "Compatibility Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' executed successfully. Output -> '$results'."
   fi
