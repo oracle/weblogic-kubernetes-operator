@@ -6,11 +6,7 @@ description: "Run an ephemeral database in Kubernetes that is suitable for sampl
 
 ---
 
-### Contents
-
- - [Overview](#overview)
- - [Oracle database in Kubernetes](#oracle-database-in-kubernetes)
- - [MySQL database in Kubernetes](#mysql-database-in-kubernetes)
+{{< table_of_contents >}}
 
 ### Overview
 

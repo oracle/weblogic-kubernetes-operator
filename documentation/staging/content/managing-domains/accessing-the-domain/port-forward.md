@@ -6,15 +6,8 @@ weight: 3
 description: "Use port forwarding to access WebLogic Server Administration Consoles and WLST."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
-* [Overview](#overview)
-* [Set up Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access)
-* [Port forward to an Administration Server Pod  ](#port-forward-to-an-administration-server-pod)
-  * [Port forward example](#port-forward-example)
-  * [Port forward notes and warnings](#port-forward-notes-and-warnings)
-  * [Enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match)
-  * [Terminating port forwarding](#terminating-port-forwarding)
 
 ### Overview
 
