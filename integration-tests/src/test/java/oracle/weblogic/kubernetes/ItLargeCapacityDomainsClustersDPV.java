@@ -89,7 +89,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the Operator can handle multiple domains and clusters at the same time.")
 @IntegrationTest
 @Tag("okdenv")
-class ItLargeCapacityDomainsClusters {
+class ItLargeCapacityDomainsClustersDPV {
 
   private static String opNamespace = null;
 
@@ -137,7 +137,7 @@ class ItLargeCapacityDomainsClusters {
 
     // build the clusterview application
     Path targetDir = Paths.get(WORK_DIR,
-        ItLargeCapacityDomainsClusters.class.getName() + "/clusterviewapp");
+        ItLargeCapacityDomainsClustersDPV.class.getName() + "/clusterviewapp");
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
         "dist", domainNamespace, targetDir);
     assertTrue(Paths.get(distDir.toString(),
@@ -478,7 +478,7 @@ class ItLargeCapacityDomainsClusters {
     //create unique pv pvc for each domain
     final String pvName = getUniqueName(domainUid + "-pv-");
     final String pvcName = getUniqueName(domainUid + "-pvc-");
-    createPV(pvName, domainUid, ItLargeCapacityDomainsClusters.class.getSimpleName());
+    createPV(pvName, domainUid, ItLargeCapacityDomainsClustersDPV.class.getSimpleName());
     createPVC(pvName, pvcName, domainUid, namespace);
 
     // create a temporary WebLogic domain property file
@@ -593,7 +593,7 @@ class ItLargeCapacityDomainsClusters {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(() -> createConfigMapForDomainCreation(domainScriptConfigMapName,
-        domainScriptFiles, namespace, ItLargeCapacityDomainsClusters.class.getSimpleName()),
+        domainScriptFiles, namespace, ItLargeCapacityDomainsClustersDPV.class.getSimpleName()),
         "Create configmap for domain creation failed");
 
     // create a V1Container with specific scripts and properties for creating domain
