@@ -97,8 +97,6 @@ tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
-# Also defined in shell script utils.sh changing value must change in both places
-PLATFORM_OPENSHIFT = "OPENSHIFT"
 
 from utils import *
 from weblogic.management.configuration import LegalHelper
@@ -1099,9 +1097,18 @@ class MII_DomainConfigGenerator(Generator):
     finally:
       self.close()
 
-  def addDomainConfig(self):
+  def _isOpenShiftPlatform(self):
+    # Also defined in shell script utils.sh isOpenShiftPlatform changing value must change in both places
+    PLATFORM_OPENSHIFT = "OpenShift"
+
     kubernetes_platform = self.env.getEnvOrDef("KUBERNETES_PLATFORM", "")
-    if str(kubernetes_platform).upper() == PLATFORM_OPENSHIFT:
+    if str(kubernetes_platform) == PLATFORM_OPENSHIFT:
+      return "true"
+    else:
+      return "false"
+
+  def addDomainConfig(self):
+    if self._isOpenShiftPlatform() == "true":
       os.system("chmod -R g=u %s" % self.domain_home)
 
     # Note: only config type is needed fmwconfig, security is excluded because it's in the primordial and contain

@@ -3,9 +3,6 @@
 
 set -o pipefail
 
-# Also defined in python script introspectDomain.py changing value must change in both places
-PLATFORM_OPENSHIFT="OPENSHIFT"
-
 
 UTILSSCRIPTPATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source ${UTILSSCRIPTPATH}/utils_base.sh
@@ -848,4 +845,17 @@ fixNodeManagerScriptForOpenShift() {
     fi
   fi
 
+}
+# Checking if the platform is OpenShift, the value is injected to the env and it is from the helm chart property
+# kubernetesPlatform
+
+isOpenShiftPlatform() {
+    # Also defined in python script introspectDomain.py changing value must change in both places
+    local PLATFORM_OPENSHIFT="OpenShift"
+
+    if [[ "${KUBERNETES_PLATFORM}" == "${PLATFORM_OPENSHIFT}" ]]; then
+      echo "true"
+    else
+      echo "false"
+    fi
 }
