@@ -37,6 +37,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPDEMO;
@@ -87,7 +88,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Since WDT discoverDomain tool requires weblogic binaries, we run the discoverDomain tool inside
  * of a weblogic pod and copy the files generated to workdir.
  * There are a few variables (example imageName) that needs to fixed in the domain resource before
- * running "kubectl apply" the domain resource file.
+ * running KUBERNETES_CLI + " apply" the domain resource file.
  */
 
 @DisplayName("Test to validate on-prem to k8s use case")
@@ -227,7 +228,7 @@ class ItLiftAndShiftFromOnPremDomain {
     } catch (ApiException | IOException  ioex) {
       logger.info("Exception while copying file " + zipFile + " to pod", ioex);
     }
-    logger.info("kubectl copied " + BUILD_SCRIPT + " into the pod");
+    logger.info(KUBERNETES_CLI + " copied " + BUILD_SCRIPT + " into the pod");
 
     // Check that all the required files have been copied into the pod
     try {
@@ -293,7 +294,7 @@ class ItLiftAndShiftFromOnPremDomain {
 
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
         + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML).toString());
 
     result = Command.withParams(params).execute();
@@ -442,7 +443,7 @@ class ItLiftAndShiftFromOnPremDomain {
           .replaceAll("@domainuid@", domainUid)
           .getBytes(StandardCharsets.UTF_8));
     });
-    String command = "kubectl create -f " + dstFile;
+    String command = KUBERNETES_CLI + " create -f " + dstFile;
     logger.info("Running {0}", command);
     ExecResult result;
     try {

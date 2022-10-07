@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
@@ -64,6 +65,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -562,7 +564,7 @@ public class MonitoringUtils {
       if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-server")) {
         Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-server");
       }
-      String command = "kubectl delete psp " + grafanaReleaseName + "  " + grafanaReleaseName + "-test";
+      String command = KUBERNETES_CLI + " delete psp " + grafanaReleaseName + "  " + grafanaReleaseName + "-test";
       ExecCommand.exec(command);
     } catch (Exception ex) {
       //ignoring
@@ -643,7 +645,7 @@ public class MonitoringUtils {
     String myImage =
         createMiiImageAndVerify(imageName, modelList, appList);
 
-    // docker login and push image to docker registry if necessary
+    // login and push image to registry if necessary
     dockerLoginAndPushImageToRegistry(myImage);
 
     return myImage;
@@ -759,7 +761,7 @@ public class MonitoringUtils {
     
     setPodAntiAffinity(domain);
     // create domain using model in image
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, namespace, miiImage);
     if (monexpConfig != null) {
       //String monexpImage = "phx.ocir.io/weblogick8s/exporter:beta";
@@ -802,10 +804,10 @@ public class MonitoringUtils {
                                             boolean twoClusters,
                                             String monexpConfig,
                                             String exporterImage) {
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     // create secret for admin credentials
-    logger.info("Create docker registry secret in namespace {0}", namespace);
+    logger.info("Create registry secret in namespace {0}", namespace);
     createTestRepoSecret(namespace);
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
@@ -821,7 +823,7 @@ public class MonitoringUtils {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, namespace, miiImage);
     createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
         namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig, exporterImage);
@@ -992,7 +994,7 @@ public class MonitoringUtils {
     }
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domainNS + "  " + podName + " -- curl -k %s://"
+        KUBERNETES_CLI + " exec -n " + domainNS + "  " + podName + " -- curl -k %s://"
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
@@ -1026,7 +1028,7 @@ public class MonitoringUtils {
 
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domainNS + "  " + podName + " -- curl -X GET -u %s:%s http://localhost:8080/metrics", ADMIN_USERNAME_DEFAULT,
+        KUBERNETES_CLI + " exec -n " + domainNS + "  " + podName + " -- curl -X GET -u %s:%s http://localhost:8080/metrics", ADMIN_USERNAME_DEFAULT,
         ADMIN_PASSWORD_DEFAULT);
 
     logger.info("accessing managed server exporter via " + command);
@@ -1064,13 +1066,13 @@ public class MonitoringUtils {
       logger.info(" proxyHost: " + proxyHost);
 
       command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-              + " &&   docker build . -t "
+              + " &&   " + WLSIMG_BUILDER + " build . -t "
               + imageName
               + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
           monitoringExporterSrcDir, proxyHost, httpsproxy);
     } else {
       command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-          + " &&   docker build . -t "
+          + " &&   " + WLSIMG_BUILDER + " build . -t "
           + imageName
           + monitoringExporterSrcDir);
     }
@@ -1079,7 +1081,7 @@ public class MonitoringUtils {
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter image");
-    // docker login and push image to docker registry if necessary
+    // login and push image to registry if necessary
     dockerLoginAndPushImageToRegistry(imageName);
   }
 

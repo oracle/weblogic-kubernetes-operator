@@ -65,6 +65,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -229,7 +230,7 @@ class ItMiiDomain {
         domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -359,7 +360,7 @@ class ItMiiDomain {
         clusterName, domainNamespace1, domain, replicaCount);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid1, domainNamespace1, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace1);
 
@@ -600,13 +601,13 @@ class ItMiiDomain {
 
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
-    logger.info("docker login to registry {0}", TEST_IMAGES_REPO);
+    logger.info(WLSIMG_BUILDER + " login to registry {0}", TEST_IMAGES_REPO);
     assertTrue(dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
-                TEST_IMAGES_REPO_PASSWORD), "docker login failed");
+                TEST_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry", image);
-      assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
+      logger.info(WLSIMG_BUILDER + " push image {0} to registry", image);
+      assertTrue(dockerPush(image), String.format(WLSIMG_BUILDER + " push failed for image %s", image));
     }
   }
 
@@ -761,10 +762,10 @@ class ItMiiDomain {
 
     assertTrue(result, String.format("Failed to create image %s using WebLogic Image Tool", image));
 
-    /* Check image exists using docker images | grep image tag.
+    /* Check image exists using 'WLSIMG_BUILDER images | grep image tag'.
      * Tag name is unique as it contains date and timestamp.
      * This is a workaround for the issue on Jenkins machine
-     * as docker images imagename:imagetag is not working and
+     * as 'WLSIMG_BUILDER images imagename:imagetag' is not working and
      * the test fails even though the image exists.
      */
     assertTrue(doesImageExist(imageTag),

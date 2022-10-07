@@ -87,15 +87,15 @@ getDomainResources() {
   # first, let's get all namespaced types with -l $LABEL_SELECTOR
   NAMESPACED_TYPES="pod,job,deploy,rs,service,pvc,ingress,cm,serviceaccount,role,rolebinding,secret"
 
-  kubectl get $NAMESPACED_TYPES \
+  ${KUBERNETES_CLI:-kubectl} get $NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
           --all-namespaces=true >> $2
 
   # if domain crd exists, look for domains too:
-  kubectl get crd domains.weblogic.oracle > /dev/null 2>&1
+  ${KUBERNETES_CLI:-kubectl} get crd domains.weblogic.oracle > /dev/null 2>&1
   if [ $? -eq 0 ]; then
-    kubectl get domain \
+    ${KUBERNETES_CLI:-kubectl} get domain \
             -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
             --all-namespaces=true | egrep "$domain_regex" >> $2
   fi
@@ -104,7 +104,7 @@ getDomainResources() {
 
   NOT_NAMESPACED_TYPES="pv,clusterroles,clusterrolebindings"
 
-  kubectl get $NOT_NAMESPACED_TYPES \
+  ${KUBERNETES_CLI:-kubectl} get $NOT_NAMESPACED_TYPES \
           -l "$LABEL_SELECTOR" \
           -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
           --all-namespaces=true >> $2
@@ -177,9 +177,9 @@ deleteDomains() {
           local name="`echo $line | awk '{ print $2 }'`"
           local namespace="`echo $line | awk '{ print $4 }'`"
           if [ "$test_mode" = "true" ]; then
-            echo "kubectl patch domain $name -n $namespace -p '{\"spec\":{\"serverStartPolicy\":\"Never\"}}' --type merge"
+            echo "${KUBERNETES_CLI:-kubectl} patch domain $name -n $namespace -p '{\"spec\":{\"serverStartPolicy\":\"Never\"}}' --type merge"
           else
-            kubectl patch domain $name -n $namespace -p '{"spec":{"serverStartPolicy":"Never"}}' --type merge
+            ${KUBERNETES_CLI:-kubectl} patch domain $name -n $namespace -p '{"spec":{"serverStartPolicy":"Never"}}' --type merge
           fi
         done
       fi
@@ -208,9 +208,9 @@ deleteDomains() {
     # for each namespace with leftover resources, try delete them
     cat $tempfile | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do 
       if [ "$test_mode" = "true" ]; then
-        echo kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+        echo ${KUBERNETES_CLI:-kubectl} -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       else
-        kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+        ${KUBERNETES_CLI:-kubectl} -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
       fi
     done
 
@@ -218,18 +218,18 @@ deleteDomains() {
     local no_namespace_count=`grep -c -v " -n " $tempfile`
     if [ ! "$no_namespace_count" = "0" ]; then
       if [ "$test_mode" = "true" ]; then
-        echo kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+        echo ${KUBERNETES_CLI:-kubectl} delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
       else
-        kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
+        ${KUBERNETES_CLI:-kubectl} delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR" 
       fi
     fi
 
     # Delete domains, if any
     cat $tempfile | grep "^Domain " | while read line; do
       if [ "$test_mode" = "true" ]; then
-        echo kubectl delete $line
+        echo ${KUBERNETES_CLI:-kubectl} delete $line
       else
-        kubectl delete $line
+        ${KUBERNETES_CLI:-kubectl} delete $line
       fi
     done
 
@@ -275,8 +275,8 @@ if [ "$domains" = "" ]; then
   exit 9999
 fi
 
-if [ ! -x "$(command -v kubectl)" ]; then
-  echo "@@ Error! kubectl is not installed."
+if [ ! -x "$(command -v ${KUBERNETES_CLI:-kubectl})" ]; then
+  echo "@@ Error! ${KUBERNETES_CLI:-kubectl} is not installed."
   exit 9999
 fi
 

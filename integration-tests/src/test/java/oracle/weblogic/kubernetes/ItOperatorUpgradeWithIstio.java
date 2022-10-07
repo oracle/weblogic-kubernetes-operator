@@ -28,6 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DOMAIN_VERSION;
@@ -169,7 +170,7 @@ class ItOperatorUpgradeWithIstio {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");

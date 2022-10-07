@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_MAX_CLUSTER_SIZE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -398,8 +399,9 @@ class ItValidateWebhookReplicas {
 
     // use 'kubectl scale' to scale the cluster
     CommandParams params = new CommandParams().defaults();
-    String command =
-        "kubectl scale --replicas=" + replicaCountToPatch + " clusters/" + clusterName + " -n " + domainNamespace;
+    String command = KUBERNETES_CLI + " scale --replicas=" + replicaCountToPatch
+        + " clusters/" + clusterName
+        + " -n " + domainNamespace;
     params.command(command);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     String errorMsg =

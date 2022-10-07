@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -571,7 +572,7 @@ class ItWlsSamples {
 
     //create pv and pvc
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + get(pvpvcBase.toString(),
+    params.command(KUBERNETES_CLI + " create -f " + get(pvpvcBase.toString(),
         "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
@@ -584,7 +585,7 @@ class ItWlsSamples {
         pvName);
 
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + get(pvpvcBase.toString(),
+    params.command(KUBERNETES_CLI + " create -f " + get(pvpvcBase.toString(),
         "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
@@ -683,7 +684,7 @@ class ItWlsSamples {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + domainYamlFileString);
+    params.command(KUBERNETES_CLI + " apply -f " + domainYamlFileString);
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -754,7 +755,7 @@ class ItWlsSamples {
       // run kubectl to update the domain
       logger.info("Run kubectl to create the domain");
       params = new CommandParams().defaults();
-      params.command("kubectl apply -f " + domainYamlFileString);
+      params.command(KUBERNETES_CLI + " apply -f " + domainYamlFileString);
       result = Command.withParams(params).execute();
       assertTrue(result, "Failed to create domain custom resource");
     }
@@ -787,7 +788,7 @@ class ItWlsSamples {
   private void deleteDomainResourceAndVerify(String domainName, Path sampleBase) {
     //delete the domain resource
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f "
+    params.command(KUBERNETES_CLI + " delete -f "
             + get(sampleBase.toString(), "weblogic-domains/"
             + domainName + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();

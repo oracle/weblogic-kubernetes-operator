@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
+#  This sample script creates a WebLogic domain home in image, and generates the domain resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
@@ -111,10 +111,10 @@ initOutputDir() {
   removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
-# try to execute docker to see whether docker is available
-validateDockerAvailable() {
-  if ! [ -x "$(command -v docker)" ]; then
-    validationError "docker is not installed"
+# try to execute image builder to see whether it is available
+validateImageBuilderAvailable() {
+  if ! [ -x "$(command -v ${WLSIMG_BUILDER})" ]; then
+    validationError "${WLSIMG_BUILDER} is not installed"
   fi
 }
 
@@ -126,7 +126,7 @@ initialize() {
   # Validate the required files exist
   validateErrors=false
 
-  validateDockerAvailable
+  validateImageBuilderAvailable
   validateKubectlAvailable
 
   if [ -z "${valuesInputFile}" ]; then
@@ -205,16 +205,7 @@ initialize() {
 }
 
 #
-# Function to get the dependency docker sample
-#
-getDockerSample() {
-  dockerImagesDir=${domainHomeImageBuildPath%/OracleFMWInfrastructure*}
-  rm -rf ${dockerImagesDir}
-  git clone https://github.com/oracle/docker-images.git ${dockerImagesDir}
-}
-
-#
-# Function to build docker image and create WebLogic domain home
+# Function to build image and create WebLogic domain home
 #
 createDomainHome() {
 

@@ -65,7 +65,7 @@ echo "Building image '$IMAGE_NAME' ..."
 
 # BUILD THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-docker build $PROXY_SETTINGS -t $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS -t $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
   echo "There was an error building the image."
   exit 1
 }
@@ -84,5 +84,5 @@ cat << EOF
 
 EOF
 else
-  echo "WebLogic Kubernetes Operator container image was NOT successfully created. Check the output and correct any reported problems with the docker build operation."
+  echo "WebLogic Kubernetes Operator container image was NOT successfully created. Check the output and correct any reported problems with the ${WLSIMG_BUILDER:-docker} build operation."
 fi

@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
@@ -228,7 +229,7 @@ public class ItFmwSample {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
     result = Command.withParams(params).execute();
@@ -343,7 +344,7 @@ public class ItFmwSample {
 
     //create pv and pvc
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + get(pvpvcBase.toString(),
+    params.command(KUBERNETES_CLI + " create -f " + get(pvpvcBase.toString(),
         "pv-pvcs/" + domainUid + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
@@ -357,7 +358,7 @@ public class ItFmwSample {
         pvName);
 
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + get(pvpvcBase.toString(),
+    params.command(KUBERNETES_CLI + " create -f " + get(pvpvcBase.toString(),
         "pv-pvcs/" + domainUid + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");

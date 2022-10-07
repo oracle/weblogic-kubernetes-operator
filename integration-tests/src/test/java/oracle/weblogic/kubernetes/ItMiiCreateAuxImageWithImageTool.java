@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ORACLELINUX_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
@@ -159,7 +160,7 @@ class ItMiiCreateAuxImageWithImageTool {
 
 
     // push auxiliary image to repo for multi node cluster
-    logger.info("docker push image {0} to registry {2}", miiAuxiliaryImage,
+    logger.info(WLSIMG_BUILDER + " push image {0} to registry {2}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
     dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
@@ -245,7 +246,7 @@ class ItMiiCreateAuxImageWithImageTool {
 
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
+    logger.info(WLSIMG_BUILDER + " push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
     dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
@@ -323,7 +324,7 @@ class ItMiiCreateAuxImageWithImageTool {
         "createAuxImage to be successful");
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
+    logger.info(WLSIMG_BUILDER + " push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
     dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
@@ -377,7 +378,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // check there is no mydryrunimage created
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker images")
+        .command(WLSIMG_BUILDER + " images")
         .saveResults(true)
         .redirect(true);
 
@@ -410,11 +411,11 @@ class ItMiiCreateAuxImageWithImageTool {
   @Test
   @DisplayName("Test createAuxImage with --pull option")
   void testCreateAuxImagePullOption() {
-    // docker pull base image first
+    // pull base image first
     String imageAndTag = BUSYBOX_IMAGE + ":" + BUSYBOX_TAG;
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker pull " + imageAndTag)
+        .command(WLSIMG_BUILDER + " pull " + imageAndTag)
         .saveResults(true)
         .redirect(true);
 
@@ -437,7 +438,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // verify that base and aux image have the same RootFS
     params = Command
             .defaultCommandParams()
-            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + imageAndTag)
+            .command(WLSIMG_BUILDER + " inspect --format='{{index .RootFS.Layers 0}}' " + imageAndTag)
             .saveResults(true)
             .redirect(true);
 
@@ -446,7 +447,9 @@ class ItMiiCreateAuxImageWithImageTool {
 
     params = Command
             .defaultCommandParams()
-            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + auxImageName + ":" + MII_BASIC_IMAGE_TAG)
+            .command(WLSIMG_BUILDER
+                + " inspect --format='{{index .RootFS.Layers 0}}' "
+                + auxImageName + ":" + MII_BASIC_IMAGE_TAG)
             .saveResults(true)
             .redirect(true);
 
@@ -464,7 +467,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // remove images containing <none>
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker rmi $(docker images |grep none | awk '{print $3}')")
+        .command(WLSIMG_BUILDER + " rmi $(" + WLSIMG_BUILDER + " images |grep none | awk '{print $3}')")
         .saveResults(true)
         .redirect(true);
 
@@ -483,7 +486,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // verify there is intermediate images created and kept
     params = Command
         .defaultCommandParams()
-        .command("docker images")
+        .command(WLSIMG_BUILDER + " images")
         .saveResults(true)
         .redirect(true);
 

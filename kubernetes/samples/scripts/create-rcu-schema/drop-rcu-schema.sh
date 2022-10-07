@@ -71,9 +71,9 @@ fi
 echo "[INFO] Calling '${scriptDir}/common/create-rcu-pod.sh -n $namespace $createPodArgs'"
 ${scriptDir}/common/create-rcu-pod.sh -n $namespace $createPodArgs || exit -4
 
-#fmwimage=`kubectl get pod/rcu  -o jsonpath="{..image}"`
+#fmwimage=`${KUBERNETES_CLI:-kubectl} get pod/rcu  -o jsonpath="{..image}"`
 
-kubectl exec -n $namespace -i rcu -- /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
+${KUBERNETES_CLI:-kubectl} exec -n $namespace -i rcu -- /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 
 if [ $? != 0  ]; then
  echo "######################";

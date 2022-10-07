@@ -29,6 +29,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -123,11 +124,11 @@ class ItDedicatedMode {
     // delete existing CRD
     Command
         .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+            .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
 
     // install CRD
-    String createCrdCommand = "kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + CRD_V16;
+    String createCrdCommand = KUBERNETES_CLI + " create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + CRD_V16;
     logger.info("Creating CRD with command {0}", createCrdCommand);
     Command
         .withParams(new CommandParams().command(createCrdCommand))

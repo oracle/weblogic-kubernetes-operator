@@ -34,8 +34,10 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -230,7 +232,7 @@ public class ItFmwDiiSample {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params1 = new CommandParams().defaults();
-    params1.command("kubectl apply -f "
+    params1.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
     boolean result = Command.withParams(params1).execute();
@@ -442,7 +444,7 @@ public class ItFmwDiiSample {
           .saveResults(true);
 
     String command2 = String.format(
-          "docker run %s /bin/bash -c \"cat /etc/resolv.conf && cat /etc/hosts\"",
+          WLSIMG_BUILDER + " run %s /bin/bash -c \"cat /etc/resolv.conf && cat /etc/hosts\"",
           fmwBaseImage);
     CommandParams params2 =
           defaultCommandParams()

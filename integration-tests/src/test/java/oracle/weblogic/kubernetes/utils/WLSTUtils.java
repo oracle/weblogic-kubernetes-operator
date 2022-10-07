@@ -30,6 +30,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
@@ -220,7 +221,7 @@ public class WLSTUtils {
 
   /**
    * Start a port-forward process and tests using forwarded port.
-   * @param containerName docker container name
+   * @param containerName container name
    * @param wlstScriptFile WLST script file path
    * @param wlstPropertiesFile WLST property file path
    * @return ExecResult output of executing WLST script
@@ -231,19 +232,19 @@ public class WLSTUtils {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    String checkDockerVersion = "docker version";
+    String checkDockerVersion = WLSIMG_BUILDER + " version";
     try {
       result = exec(checkDockerVersion, true);
-      logger.info("Docker version: {0}", result.stdout());
+      logger.info(WLSIMG_BUILDER + " version: {0}", result.stdout());
     } catch (Exception ex) {
-      logger.info("docker version failed error {0} and {1}", result.stderr(), ex.getMessage());
+      logger.info(WLSIMG_BUILDER + " version failed error {0} and {1}", result.stderr(), ex.getMessage());
       ex.printStackTrace();
     }
 
-    // execute WLST script in a docker container
+    // execute WLST script in a container
     logger.info("Preparing to run WLST script");
-    //StringBuffer cmdRunWlstScript = new StringBuffer(" docker exec -it ")
-    StringBuffer cmdRunWlstScript = new StringBuffer("docker exec ")
+    //StringBuffer cmdRunWlstScript = new StringBuffer(" " + WLSIMG_BUILDER + " exec -it ")
+    StringBuffer cmdRunWlstScript = new StringBuffer(WLSIMG_BUILDER + " exec ")
         .append(containerName)
         .append(" sh /u01/oracle/oracle_common/common/bin/wlst.sh ")
         .append(wlstScriptFile)
@@ -251,7 +252,7 @@ public class WLSTUtils {
         .append(" -loadProperties ")
         .append(wlstPropertiesFile);
 
-    logger.info("execute WLST script in a docker container: command {0}", cmdRunWlstScript.toString());
+    logger.info("execute WLST script in a container: command {0}", cmdRunWlstScript.toString());
     try {
       result = exec(cmdRunWlstScript.toString(), true);
     } catch (Exception ex) {

@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -1041,7 +1042,7 @@ public class DomainUtils {
   @NotNull
   public static boolean findStringInDomainStatusMessage(String domainNamespace, String domainUid, String regex) {
     // get the domain status message
-    StringBuffer getDomainInfoCmd = new StringBuffer("kubectl get domain/");
+    StringBuffer getDomainInfoCmd = new StringBuffer(KUBERNETES_CLI + " get domain/");
     getDomainInfoCmd
         .append(domainUid)
         .append(" -n ")

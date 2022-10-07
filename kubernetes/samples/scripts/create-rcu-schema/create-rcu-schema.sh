@@ -70,7 +70,7 @@ fi
 echo "[INFO] Calling '${scriptDir}/common/create-rcu-pod.sh -n $namespace $createPodArgs'"
 ${scriptDir}/common/create-rcu-pod.sh -n $namespace $createPodArgs || exit -4
 
-kubectl exec -n $namespace -i rcu -- /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
+${KUBERNETES_CLI:-kubectl} exec -n $namespace -i rcu -- /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 
 if [ $? != 0 ]; then
  echo "######################";

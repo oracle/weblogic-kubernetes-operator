@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home in docker image, and generates the domain resource
+#  This sample script creates a WebLogic domain home in image, and generates the domain resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
@@ -109,10 +109,10 @@ initOutputDir() {
   removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
-# try to execute docker to see whether docker is available
-validateDockerAvailable() {
-  if ! [ -x "$(command -v docker)" ]; then
-    validationError "docker is not installed"
+# try to execute image builder to see whether it is available
+validateImageBuilderAvailable() {
+  if ! [ -x "$(command -v ${WLSIMG_BUILDER:-docker})" ]; then
+    validationError "${WLSIMG_BUILDER:-docker} is not installed"
   fi
 }
 
@@ -124,7 +124,7 @@ initialize() {
   # Validate the required files exist
   validateErrors=false
 
-  validateDockerAvailable
+  validateImageBuilderAvailable
   validateKubectlAvailable
 
   if [ -z "${valuesInputFile}" ]; then
@@ -186,14 +186,14 @@ initialize() {
 }
 
 #
-# Function to build docker image and create WebLogic domain home
+# Function to build image and create WebLogic domain home
 # Image build is skipped when -s option is specified OR image is not available
 # e.g. If -s option is specified script will skip the image build only when 
 # image is available else build the image
 # If -s option is NOT specified script will Always build the image
 createDomainHome() {
 
-  if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then
+  if [ "${skipImageBuild}" = false ] || [ -z "$(${WLSIMG_BUILDER:-docker} images $image | grep -v TAG)" ]; then
     echo @@ "Info: WIT_DIR is ${WIT_DIR}"
 
     domainPropertiesOutput="${domainOutputDir}/domain.properties"

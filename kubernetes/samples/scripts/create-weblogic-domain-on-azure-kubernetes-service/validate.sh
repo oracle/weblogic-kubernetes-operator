@@ -26,7 +26,7 @@ usage() {
   
   echo "  --domain-uid -d     [Required] ：Domain UID."
   echo "  --pvc-name          [Required] : Persistent Volume Claim name."
-  echo "  --secret-docker     [Required] : Name of the Kubernetes secret that stores docker account."
+  echo "  --secret-docker     [Required] : Name of the Kubernetes secret that stores container registry account."
   echo "  --help -h                      ：Help"
   exit $1
 }
@@ -201,14 +201,14 @@ connectAKS() {
 }
 
 validateDockerSecret() {
-    kubectl get secret ${secretDocker}
+    ${KUBERNETES_CLI:-kubectl} get secret ${secretDocker}
     if [ $? -ne 0 ]; then
-        fail "Secret:${secretDocker} for docker account is not created."
+        fail "Secret:${secretDocker} for container registry account is not created."
     fi
 }
 
 validateWebLogicDomainSecret() {
-    ret=$(kubectl get secrets | grep "weblogic-credentials")
+    ret=$(${KUBERNETES_CLI:-kubectl} get secrets | grep "weblogic-credentials")
     if [ $? -ne 0 ]; then
         fail "Secret:weblogic-credentials is not created."
     fi
@@ -217,7 +217,7 @@ validateWebLogicDomainSecret() {
 }
 
 validatePVC() {
-    ret=$(kubectl get pvc)
+    ret=$(${KUBERNETES_CLI:-kubectl} get pvc)
     index=0
     for item in ${ret};
     do
@@ -235,14 +235,14 @@ validatePVC() {
 } 
 
 validateOperator() {
-    ret=$(kubectl get pods | grep "weblogic-operator" | grep "Running")
+    ret=$(${KUBERNETES_CLI:-kubectl} get pods | grep "weblogic-operator" | grep "Running")
     if [ -z "${ret}" ]; then
         fail "Please make sure WebLogic operator is running."
     fi
 }
 
 validateDomain() {
-    ret=$(kubectl get domain | grep "${domainUID}")
+    ret=$(${KUBERNETES_CLI:-kubectl} get domain | grep "${domainUID}")
     if [ -n "$ret" ]; then
         fail "${domainUID} is created! Please create a new domain or follow the page to delete it https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/#delete-the-generated-domain-home."
     fi

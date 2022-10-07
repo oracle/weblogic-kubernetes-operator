@@ -29,6 +29,8 @@
 #    MODEL_IMAGE_TAG   - defaults to 'v1'
 #    MODEL_IMAGE_BUILD - 'when-missing' or 'always' (default)
 #
+#    WLSIMG_BUILDER    - defaults to 'docker'
+#
 
 set -eu
 
@@ -60,7 +62,7 @@ MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
 
 if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
-   [ "`docker images $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG`" = "1" ]; then
+   [ "`${WLSIMG_BUILDER:-docker} images $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG`" = "1" ]; then
   echo @@
   echo "@@ Info: --------------------------------------------------------------------------------------------------"
   echo "@@ Info: NOTE!!!                                                                                           "

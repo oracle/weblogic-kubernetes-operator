@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -532,7 +533,7 @@ class ItStickySession {
     });
 
     // create Traefik ingress resource
-    String createIngressCmd = "kubectl create -f " + dstFile;
+    String createIngressCmd = KUBERNETES_CLI + " create -f " + dstFile;
     logger.info("Command to create Traefik ingress routing rules " + createIngressCmd);
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(createIngressCmd, true),
         String.format("Failed to create Traefik ingress routing rules %s", createIngressCmd));
@@ -540,7 +541,7 @@ class ItStickySession {
         String.format("Failed to create Traefik ingress routing rules. Error is %s ", result.stderr()));
 
     // get Traefik ingress service name
-    String  getServiceName = "kubectl get services -n " + traefikNamespace + " -o name";
+    String  getServiceName = KUBERNETES_CLI + " get services -n " + traefikNamespace + " -o name";
     logger.info("Command to get Traefik ingress service name " + getServiceName);
     result = assertDoesNotThrow(() -> ExecCommand.exec(getServiceName, true),
         String.format("Failed to get Traefik ingress service name %s", getServiceName));

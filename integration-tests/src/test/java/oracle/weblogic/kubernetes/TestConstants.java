@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import static io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -381,4 +382,15 @@ public interface TestConstants {
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
   String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
+
+  //kubernetes CLI, some may set this to 'oc'
+  public static final String KUBERNETES_CLI_DEFAULT = "kubectl";
+  public static final String KUBERNETES_CLI =
+      getEnvironmentProperty("KUBERNETES_CLI", KUBERNETES_CLI_DEFAULT);
+
+  //image build CLI, some may set this to 'podman'
+  //note: 'WLSIMG_BUILDER' is the same name as the env-var/prop used by WIT
+  public static final String WLSIMG_BUILDER_DEFAULT = "docker";
+  public static final String WLSIMG_BUILDER =
+      getEnvironmentProperty("WLSIMG_BUILDER", WLSIMG_BUILDER_DEFAULT);
 }

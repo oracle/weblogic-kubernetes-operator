@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -1422,7 +1423,7 @@ public class CommonMiiTestUtils {
                                           String serverPodName,
                                           String fileName) {
     LoggingFacade logger = getLogger();
-    StringBuffer readFileCmd = new StringBuffer("kubectl exec -n ")
+    StringBuffer readFileCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ")
         .append(domainNamespace)
         .append(" ")
         .append(serverPodName)

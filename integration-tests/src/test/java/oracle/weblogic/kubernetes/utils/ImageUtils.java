@@ -20,7 +20,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -68,10 +69,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImageUtils {
 
   /**
-   * Create a Docker image for a model in image domain.
+   * Create an image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param wdtModelFile the WDT model file used to build the image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @return image name with tag
    */
@@ -83,10 +84,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain.
+   * Create an image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param wdtModelFile the WDT model file used to build the image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @param additionalBuildCommands - Path to a file with additional build commands
    * @param additionalBuildFilesVarargs - Additional files that are required by your additionalBuildCommands
@@ -108,10 +109,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain.
+   * Create an image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param wdtModelFile the WDT model file used to build the image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
@@ -135,10 +136,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   * Create an image for a model in image domain using multiple WDT model files and application ear files.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param wdtModelList list of WDT model files used to build the image
    * @param appSrcDirList list of the sample application source directories used to build sample app ear files
    * @return image name with tag
    */
@@ -151,10 +152,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   * Create an image for a model in image domain using multiple WDT model files and application ear files.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param wdtModelList list of WDT model files used to build the image
    * @param appSrcDirList list of the sample application source directories used to build sample app ear files
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
@@ -176,12 +177,12 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a domain-in-image domain.
+   * Create an image for a domain-in-image domain.
    *
    * @param domainUid domain uid
    * @param domainNamespace domain namespace
    * @param imageNameBase the base image name used in local or to construct the image name in repository
-   * @param modelFile the model file used to build the Docker image
+   * @param modelFile the model file used to build the image
    * @param modelPropFile property file to be used with the model file above
    * @param appName - application source directories used to build app ear files
    * @return image name with tag
@@ -195,10 +196,10 @@ public class ImageUtils {
     // create image with model files
     String domImage = createImageAndVerify(imageNameBase, modelFile, appName, modelPropFile, domainUid);
 
-    // docker login and push image to docker registry if necessary
+    // repo login and push image to repo registry if necessary
     dockerLoginAndPushImageToRegistry(domImage);
 
-    // create docker registry secret to pull the image from registry
+    // create repo registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
 
@@ -255,10 +256,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * Create an image for a model in image domain or domain home in image using multiple WDT model
    * files and application ear files.
    * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param wdtModelList - list of WDT model files used to build the image
    * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
    * @param modelPropList - the WebLogic base image name to be used while creating mii image
    * @param baseImageName - the WebLogic base image name to be used while creating mii image
@@ -285,10 +286,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * Create an image for a model in image domain or domain home in image using multiple WDT model
    * files and application ear files.
    * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param wdtModelList - list of WDT model files used to build the image
    * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
    * @param modelPropList - the WebLogic base image name to be used while creating mii image
    * @param baseImageName - the WebLogic base image name to be used while creating mii image
@@ -469,7 +470,7 @@ public class ImageUtils {
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
-    // Check image exists using docker images | grep image tag.
+    // Check image exists using 'WLSIMG_BUILDER images | grep image tag'.
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s does not exist", image));
 
@@ -478,7 +479,7 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace.
+   * Create a registry secret in the specified namespace.
    * for BASE_IMAGES_REPO to download base images.
    *
    * @param namespace the namespace in which the secret will be created
@@ -491,7 +492,7 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace.
+   * Create a registry secret in the specified namespace.
    * for TEST_IMAGES_REPO to upload/download test images.
    * @param namespace the namespace in which the secret will be created
    */
@@ -504,7 +505,7 @@ public class ImageUtils {
   }
 
   /**
-   * Create docker registry secret with given parameters.
+   * Create repo registry secret with given parameters.
    * @param userName repository user name
    * @param password repository password
    * @param email repository email
@@ -546,7 +547,7 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace to pull base images.
+   * Create a registry secret in the specified namespace to pull base images.
    *
    * @param namespace the namespace in which the secret will be created
    */
@@ -557,35 +558,35 @@ public class ImageUtils {
   }
 
   /**
-   * Docker login and push the image to Docker registry.
+   * Repo login and push the image to registry.
    *
-   * @param dockerImage the Docker image to push to registry
+   * @param image the image to push to registry
    */
-  public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
+  public static void dockerLoginAndPushImageToRegistry(String image) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
-      // docker login, if necessary
-      logger.info("docker login");
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && image.contains(DOMAIN_IMAGES_REPO)) {
+      // repo login, if necessary
+      logger.info(WLSIMG_BUILDER + " login");
       assertTrue(dockerLogin(TestConstants.BASE_IMAGES_REPO,
-           BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), "docker login failed");
-      logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
-      testUntil(() -> dockerPush(dockerImage),
+           BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),  WLSIMG_BUILDER + " login failed");
+      logger.info(WLSIMG_BUILDER + " push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+      testUntil(() -> dockerPush(image),
           logger,
-          "docker push succeeds for image {0} to repo {1}",
-          dockerImage,
+          WLSIMG_BUILDER + " push succeeds for image {0} to repo {1}",
+          image,
           DOMAIN_IMAGES_REPO);
     }
   }
 
   /**
-   * Build image with unique name, create corresponding docker secret and push to registry.
+   * Build image with unique name, create corresponding repo secret and push to registry.
    *
    * @param dockerFileDir directory where dockerfile is located
    * @param baseImageName base image name
    * @param namespace image namespace
-   * @param secretName docker secretname for image
-   * @param extraDockerArgs user specified extra docker args
+   * @param secretName repo secretname for image
+   * @param extraDockerArgs user specified extra args
    * @return image name
    */
   public static String createImageAndPushToRepo(String dockerFileDir, String baseImageName,
@@ -599,16 +600,16 @@ public class ImageUtils {
     final String image = imageName + ":" + imageTag;
     LoggingFacade logger = getLogger();
     //build image
-    assertTrue(Docker.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
+    assertTrue(Image.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
     logger.info("image is created with name {0}", image);
     if (!Namespace.exists(namespace)) {
       createNamespace(namespace);
     }
 
-    //create registry docker secret
+    //create registry secret
     createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
             TestConstants.BASE_IMAGES_REPO, secretName, namespace);
-    // docker login and push image to docker registry if necessary
+    // login and push image to registry if necessary
     dockerLoginAndPushImageToRegistry(image);
 
     return image;

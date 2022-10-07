@@ -37,6 +37,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -129,13 +130,13 @@ class ItLBTwoDomainsApache {
     if (KIND_REPO != null) {
       // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
       // Try the following instead:
-      //   1. docker login
-      //   2. docker pull
-      //   3. docker tag with the KIND_REPO value
-      //   4. docker push to KIND_REPO
+      //   1. WLSIMG_BUILDER login
+      //   2. WLSIMG_BUILDER pull
+      //   3. WLSIMG_BUILDER tag with the KIND_REPO value
+      //   4. WLSIMG_BUILDER push to KIND_REPO
       testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
-          "docker login to be successful");
+          WLSIMG_BUILDER + " login to be successful");
 
       testUntil(
           pullImageFromOcirAndPushToKind(APACHE_IMAGE),

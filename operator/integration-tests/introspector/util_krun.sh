@@ -106,8 +106,8 @@ EOF
 }
 
 delete_pod_and_cm() {
-  kubectl delete -n ${NAMESPACE} pod ${PODNAME} --ignore-not-found > /dev/null 2>&1
-  kubectl delete -n ${NAMESPACE} cm ${PODNAME}-cm --ignore-not-found > /dev/null 2>&1
+  ${KUBERNETES_CLI:-kubectl} delete -n ${NAMESPACE} pod ${PODNAME} --ignore-not-found > /dev/null 2>&1
+  ${KUBERNETES_CLI:-kubectl} delete -n ${NAMESPACE} cm ${PODNAME}-cm --ignore-not-found > /dev/null 2>&1
 }
 
 while getopts m:t:i:c:n:f:p:l:s:d: OPT
@@ -181,10 +181,10 @@ delete_pod_and_cm
 # create cm that contains any files the user specified on the command line:
 
 if [ ! -z "$CMFILES" ]; then
-  kubectl create cm ${PODNAME}-cm -n ${NAMESPACE} ${CMFILES} > $TEMPFILE 2>&1
+  ${KUBERNETES_CLI:-kubectl} create cm ${PODNAME}-cm -n ${NAMESPACE} ${CMFILES} > $TEMPFILE 2>&1
   EXITCODE=$?
   if [ $EXITCODE -ne 0 ]; then
-    echo "Error: kubectl create cm failed."
+    echo "Error: ${KUBERNETES_CLI:-kubectl} create cm failed."
     # Since EXITCODE is non-zero, the script will skip 
     # doing more stuff and cat the contents of $TEMPFILE below.
   fi
@@ -192,7 +192,7 @@ fi
 
 # run teh command, honoring any mounts specified on the command line
 
-[ $EXITCODE -eq 0 ] && kubectl run -it --rm --restart=Never --tty --image=${IMAGE} ${PODNAME} -n ${NAMESPACE} --overrides "
+[ $EXITCODE -eq 0 ] && ${KUBERNETES_CLI:-kubectl} run -it --rm --restart=Never --tty --image=${IMAGE} ${PODNAME} -n ${NAMESPACE} --overrides "
 {
   \"spec\": {
     \"hostNetwork\": true,
@@ -221,7 +221,7 @@ fi
 " > $TEMPFILE 2>&1 &
 
 # If the background task doesn't complete within MAXSECS
-# then report a timeout and try kubectl describe the pod.
+# then report a timeout and try ${KUBERNETES_CLI:-kubectl} describe the pod.
 
 STARTSECS=$SECONDS
 while [ $EXITCODE -eq 0 ]
@@ -231,7 +231,7 @@ do
   if [ $((SECONDS - STARTSECS)) -gt $MAXSECS ]; then
     EXITCODE=98
     echo "Error: Commmand timed out after $MAXSECS seconds."
-    kubectl describe -n ${NAMESPACE} pod ${PODNAME} 
+    ${KUBERNETES_CLI:-kubectl} describe -n ${NAMESPACE} pod ${PODNAME} 
     break
   fi
   sleep 0.1
@@ -252,7 +252,7 @@ fi
 
 delete_pod_and_cm
 
-# Show output from pod (or from failing 'kubectl create cm' command above)
+# Show output from pod (or from failing '${KUBERNETES_CLI:-kubectl} create cm' command above)
 
 cat $TEMPFILE | sed 's/{EXITCODE=0}//' \
               | grep -v "Unable to use a TTY - input is not a terminal or the right kind of file" \

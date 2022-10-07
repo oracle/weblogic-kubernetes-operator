@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -591,7 +592,7 @@ class ItElasticLogging {
     logger.info("Operator pod name " + operatorPodName);
 
     // command to restart logstash container
-    StringBuffer restartLogstashCmd = new StringBuffer("kubectl exec ");
+    StringBuffer restartLogstashCmd = new StringBuffer(KUBERNETES_CLI + " exec ");
     restartLogstashCmd.append(" -n ");
     restartLogstashCmd.append(opNamespace);
     restartLogstashCmd.append(" pod/");

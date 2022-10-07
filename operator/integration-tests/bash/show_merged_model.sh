@@ -12,6 +12,7 @@ IMAGEPULLPOLICY=IfNotPresent
 IMAGEPULLSECRETSTAG=''
 IMGPS=''
 IMGPSN=''
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
 
 usage_exit() {
 cat << EOF
@@ -86,20 +87,20 @@ spec:
     ${IMGPSN} 
     name: decryptmodel
 EOF
-kubectl apply -f decrypt_model.yaml
+${KUBERNETES_CLI} apply -f decrypt_model.yaml
 echo "wait for pod available"
 while [ 1 -eq 1 ] ; do 
-    n=$(kubectl -n ${DOMAIN_NAMESPACE} get pod decryptmodel  | grep Running | wc -l)
+    n=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get pod decryptmodel  | grep Running | wc -l)
     echo $n
     if [ $n -eq 1 ] ; then
         break
     fi
     sleep 1
 done
-kubectl -n ${DOMAIN_NAMESPACE} get configmap ${DOMAIN_UID}-weblogic-domain-introspect-cm -o jsonpath='{.data.merged_model\.json}' > encrypted_model.json
-kubectl cp encrypted_model.json ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
-kubectl cp decrypt_model.sh ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
-kubectl cp model-encryption-util.py ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
-kubectl -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json && if [ '{' == $(head -c 1 /tmp/decrypted_model.json) ] ; then   cat /tmp/decrypted_model.json; else  base64 -d /tmp/decrypted_model.json | gunzip ; fi"
-kubectl -n ${DOMAIN_NAMESPACE} delete -f decrypt_model.yaml
+${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get configmap ${DOMAIN_UID}-weblogic-domain-introspect-cm -o jsonpath='{.data.merged_model\.json}' > encrypted_model.json
+${KUBERNETES_CLI} cp encrypted_model.json ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
+${KUBERNETES_CLI} cp decrypt_model.sh ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
+${KUBERNETES_CLI} cp model-encryption-util.py ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
+${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json && if [ '{' == $(head -c 1 /tmp/decrypted_model.json) ] ; then   cat /tmp/decrypted_model.json; else  base64 -d /tmp/decrypted_model.json | gunzip ; fi"
+${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} delete -f decrypt_model.yaml
 

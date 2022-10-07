@@ -179,7 +179,7 @@ getDomainValue() {
   local ljpath="{$1}"
   local __retvar=$2
   set +e
-  attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
+  attvalue=$(${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
     if [ $expected -ne 0 ]; then
       echo "@@ Error: Could not obtain '$1' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
@@ -201,7 +201,7 @@ getDomainAIImages() {
   local __retvar=$1
   set +e
   attvalue=$(
-    kubectl \
+    ${KUBERNETES_CLI:-kubectl} \
       get domain ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
       -o=jsonpath="{range .spec.configuration.model.auxiliaryImages[*]}{.image}{','}{end}" \
@@ -317,7 +317,7 @@ ${goal_aiimages_current}^M"
 
   if [ "$expected" = "0" ]; then
 
-    cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
+    cur_pods=$( ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
@@ -334,7 +334,7 @@ ${goal_aiimages_current}^M"
     regex+=" ready=;true;"
 
     set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
-    cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
+    cur_pods=$( ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath="$jpath" \
         | sortAIImages \
@@ -377,7 +377,7 @@ ${goal_aiimages_current}^M"
     fi
   else
 
-    kubectl -n ${DOMAIN_NAMESPACE} get pods \
+    ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get pods \
       -l weblogic.domainUID="${DOMAIN_UID}" \
       -o=jsonpath="$jpath" | sortAIImages > $tmpfilecur
 

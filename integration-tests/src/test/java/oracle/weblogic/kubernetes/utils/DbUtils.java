@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_RCU_SECRET_MOUNT_PATH;
@@ -528,7 +529,7 @@ public class DbUtils {
       // delete db resources in dbNamespace
       Command
           .withParams(new CommandParams()
-              .command("kubectl delete all --all -n " + dbNamespace + " --ignore-not-found"))
+              .command(KUBERNETES_CLI + " delete all --all -n " + dbNamespace + " --ignore-not-found"))
           .execute();
     } catch (Exception ex) {
       logger.severe(ex.getMessage());
@@ -734,7 +735,7 @@ public class DbUtils {
     createBaseRepoSecret(namespace);
 
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + operatorYamlDestFile);
+    params.command(KUBERNETES_CLI + " apply -f " + operatorYamlDestFile);
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
 
@@ -760,7 +761,7 @@ public class DbUtils {
 
     // delete operator
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f " + operatorYamlFile);
+    params.command(KUBERNETES_CLI + " delete -f " + operatorYamlFile);
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to uninstall Oracle database operator");
 
@@ -816,7 +817,7 @@ public class DbUtils {
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl create -f " + dbYaml.toString());
+    params.command(KUBERNETES_CLI + " create -f " + dbYaml.toString());
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
@@ -833,7 +834,7 @@ public class DbUtils {
             -> podIsReady(namespace, null, dbName), "Checking for database pod ready threw exception"),
         logger, "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
 
-    String command = "kubectl get singleinstancedatabase -n "
+    String command = KUBERNETES_CLI + " get singleinstancedatabase -n "
         + namespace + " " + dbName + " -o=jsonpath='{.status.pdbConnectString}'";
 
     getLogger().info("Running {0}", command);
@@ -858,7 +859,7 @@ public class DbUtils {
   public static void deleteOracleDB(String namespace, String dbName) {
     Path dbYaml = Paths.get(DOWNLOAD_DIR, namespace, "oracledb.yaml");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f " + dbYaml.toString());
+    params.command(KUBERNETES_CLI + " delete -f " + dbYaml.toString());
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to delete Oracle database");
     getLogger().info("Wait for the database {0} pod to be deleted in namespace {1}",
@@ -875,7 +876,7 @@ public class DbUtils {
     replaceStringInFile(hpYamlFile.toString(), "@@HOSTPATH@@", hostPath);
     getLogger().info(Files.readString(hpYamlFile));
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl create -f " + hpYamlFile.toString());
+    params.command(KUBERNETES_CLI + " create -f " + hpYamlFile.toString());
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create hostpath provisioner");
   }
@@ -887,7 +888,7 @@ public class DbUtils {
   public static void deleteHostPathProvisioner(String namespace) {
     Path hpYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "hostpath-provisioner.yaml");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f " + hpYamlFile.toString());
+    params.command(KUBERNETES_CLI + " delete -f " + hpYamlFile.toString());
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to delete hostpath provisioner");
   }

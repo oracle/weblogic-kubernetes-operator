@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -186,7 +187,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     // label domainNamespace3
     Command
         .withParams(new CommandParams()
-            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
+            .command(KUBERNETES_CLI + " label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
         .execute();
     OperatorParams opTestParams = opParamsOriginal;
     // Helm upgrade parameters
@@ -212,7 +213,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     // label domainNamespace3 to weblogic-operator=disabled
     Command
         .withParams(new CommandParams()
-            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
+            .command(KUBERNETES_CLI + " label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
         .execute();
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace3);
@@ -228,7 +229,7 @@ class ItKubernetesNameSpaceWatchingEvents {
 
       Command
           .withParams(new CommandParams()
-              .command("kubectl label ns " + newNSWithLabels + " weblogic-operator=enabled --overwrite"))
+              .command(KUBERNETES_CLI + " label ns " + newNSWithLabels + " weblogic-operator=enabled --overwrite"))
           .execute();
 
       logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", newNSWithLabels);

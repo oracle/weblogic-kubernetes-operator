@@ -11,21 +11,22 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
- * Class with calls to Docker CLI.
+ * Class with calls to Image Builder CLI. (Should be renamed ImageBuilder or similar.)
  */
-public class Docker {
+public class Image {
   /**
-   * Log in to a Docker registry.
+   * Log in to a image registry.
    * @param registryName registry name
    * @param username user
    * @param password password
    * @return true if successful
    */
   public static boolean login(String registryName, String username, String password) {
-    String cmdToExecute = String.format("docker login %s -u %s -p \"%s\"",
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " login %s -u %s -p \"%s\"",
         registryName, username, password);
     return Command
         .withParams(new CommandParams()
@@ -40,7 +41,7 @@ public class Docker {
    * @return true if successful
    */
   public static boolean pull(String image) {
-    String cmdToExecute = String.format("docker pull %s", image);
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " pull %s", image);
     return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
@@ -53,7 +54,7 @@ public class Docker {
    * @return true if successful
    */
   public static boolean push(String image) {
-    String cmdToExecute = String.format("docker push %s", image);
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " push %s", image);
     if (KIND_REPO != null) {
       cmdToExecute = String.format("kind load docker-image %s --name kind", image);
     }
@@ -70,7 +71,7 @@ public class Docker {
    * @return true if successful
    */
   public static boolean tag(String originalImage, String taggedImage) {
-    String cmdToExecute = String.format("docker tag %s %s", originalImage, taggedImage);
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " tag %s %s", originalImage, taggedImage);
     return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
@@ -78,12 +79,12 @@ public class Docker {
   }
 
   /**
-   * Delete docker image.
+   * Delete image.
    * @param image image name:image tag
    * @return true if delete image is successful
    */
   public static boolean deleteImage(String image) {
-    String cmdToExecute = String.format("docker rmi -f %s", image);
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " rmi -f %s", image);
     return Command
         .withParams(new CommandParams()
                   .command(cmdToExecute))
@@ -91,24 +92,24 @@ public class Docker {
   }
 
   /**
-   * Create docker image.
+   * Create image.
    * @param image image name:image tag
-   * @param dockerFileDir path to Dockerfile directory
+   * @param imageBuildDir path to Dockerfile directory
    * @return true if delete image is successful
    */
-  public static boolean createImage(String dockerFileDir, String image) {
-    return createImage(dockerFileDir, image, "");
+  public static boolean createImage(String imageBuildDir, String image) {
+    return createImage(imageBuildDir, image, "");
   }
 
   /**
-   * Create docker image.
+   * Create image.
    * @param image image name:image tag
-   * @param dockerFileDir path to Dockerfile directory
+   * @param imageBuildDir path to Dockerfile directory
    * @param extraArgs extra args to pass
    * @return true if delete image is successful
    */
-  public static boolean createImage(String dockerFileDir, String image, String extraArgs) {
-    String cmdToExecute = String.format("docker build %s -t %s  %s", dockerFileDir, image, extraArgs);
+  public static boolean createImage(String imageBuildDir, String image, String extraArgs) {
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " build %s -t %s  %s", imageBuildDir, image, extraArgs);
     return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
@@ -116,12 +117,12 @@ public class Docker {
   }
 
   /**
-   * Create Docker registry configuration in json object.
-   * @param username username for the Docker registry
-   * @param password password for the Docker registry
-   * @param email email for the Docker registry
-   * @param registry Docker registry name
-   * @return json object for the Docker registry configuration
+   * Create image registry configuration in json object.
+   * @param username username for the image registry
+   * @param password password for the image registry
+   * @param email email for the image registry
+   * @param registry image registry name
+   * @return json object for the image registry configuration
    */
   public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
     JsonObject authObject = new JsonObject();
@@ -142,14 +143,14 @@ public class Docker {
   }
 
   /**
-   * Get environment variable from docker image.
+   * Get environment variable from image.
    * @param imageName image name
    * @param envVarName environment variable name
    * @return environment variable in the image
    */
   public static String getImageEnvVar(String imageName, String envVarName) {
     LoggingFacade logger = getLogger();
-    String cmdToExecute = String.format("docker run %s /bin/bash -c 'echo \"$%s\"'", imageName, envVarName);
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " run %s /bin/bash -c 'echo \"$%s\"'", imageName, envVarName);
     logger.info("getImageEnvVar with imageName: {0}, envVarName: {1}", imageName, envVarName);
     ExecResult result = Command.withParams(
                               new CommandParams()

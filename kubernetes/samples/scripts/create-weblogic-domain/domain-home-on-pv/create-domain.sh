@@ -176,15 +176,15 @@ createDomainConfigmap() {
 
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
-  kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run=client -o yaml | kubectl apply -f -
+  ${KUBERNETES_CLI:-kubectl} create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run=client -o yaml | ${KUBERNETES_CLI:-kubectl} apply -f -
 
   echo Checking the configmap $cmName was created
-  local num=`kubectl get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`
+  local num=`${KUBERNETES_CLI:-kubectl} get cm -n $namespace | grep ${cmName} | wc | awk ' { print $1; } '`
   if [ "$num" != "1" ]; then
     fail "The configmap ${cmName} was not created"
   fi
 
-  kubectl label configmap ${cmName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainName
+  ${KUBERNETES_CLI:-kubectl} label configmap ${cmName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 
   rm -rf $externalFilesTmpDir
   rm -f domain.properties
@@ -204,7 +204,7 @@ createDomainHome() {
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
   echo Creating the domain by creating the job ${createJobOutput}
-  kubectl create -f ${createJobOutput}
+  ${KUBERNETES_CLI:-kubectl} create -f ${createJobOutput}
 
   # When using WDT to create a domain, a job to create a domain is started. It then creates
   # a pod which will run a script that creates a domain. The script then will extract the domain
@@ -214,25 +214,25 @@ createDomainHome() {
   if [ "$useWdt" = true ]; then
     POD_NAME=$(getPodName "${JOB_NAME}" "${namespace}")
     echo "Waiting for results to be available from $POD_NAME"
-    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME -n ${namespace}
+    ${KUBERNETES_CLI:-kubectl} wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME -n ${namespace}
     #echo "Fetching results"
     sleep 30
     max=30
     count=0
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/create" | grep "wko-domain.yaml"
+    ${KUBERNETES_CLI:-kubectl} exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/create" | grep "wko-domain.yaml"
     while [ $? -eq 1 -a $count -lt $max ]; do
       sleep 5
       count=`expr $count + 1`
-      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/create" | grep "wko-domain.yaml"
+      ${KUBERNETES_CLI:-kubectl} exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt/create" | grep "wko-domain.yaml"
     done
-    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/create/wko-domain.yaml ${domainOutputDir}/domain.yaml
+    ${KUBERNETES_CLI:-kubectl} cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/create/wko-domain.yaml ${domainOutputDir}/domain.yaml
 
     # The pod waits for this script to copy the domain resource yaml (wko-domain.yaml) out of the pod and into
     # the output directory as domain.yaml. To let the pod know that wko-domain.yaml has been copied, a file called
     # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
 
     touch doneExtract
-    kubectl cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
+    ${KUBERNETES_CLI:-kubectl} cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
     rm -rf doneExtract
   fi
 
@@ -243,8 +243,8 @@ createDomainHome() {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOBS=`kubectl get pods -n ${namespace} | grep ${JOB_NAME}`
-    JOB_ERRORS=`kubectl logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace} | grep "ERROR:" `
+    JOBS=`${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} | grep ${JOB_NAME}`
+    JOB_ERRORS=`${KUBERNETES_CLI:-kubectl} logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace} | grep "ERROR:" `
     JOB_STATUS=`echo $JOBS | awk ' { print $3; } '`
     JOB_INFO=`echo $JOBS | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
@@ -266,17 +266,17 @@ createDomainHome() {
   if [ "$JOB_STATUS" != "Completed" ]; then
     echo "The create domain job is not showing status completed after waiting 300 seconds."
     echo "Check the log output for errors."
-    kubectl logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace}
+    ${KUBERNETES_CLI:-kubectl} logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace}
     fail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
-  JOB_POD=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
-  JOB_STS=`kubectl logs $JOB_POD $CONTAINER_NAME -n ${namespace} | grep "Successfully Completed" | awk ' { print $1; } '`
+  JOB_POD=`${KUBERNETES_CLI:-kubectl} get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+  JOB_STS=`${KUBERNETES_CLI:-kubectl} logs $JOB_POD $CONTAINER_NAME -n ${namespace} | grep "Successfully Completed" | awk ' { print $1; } '`
   if [ "${JOB_STS}" != "Successfully" ]; then
     echo The log file for the create domain job does not contain a successful completion status
     echo Check the log output for errors
-    kubectl logs $JOB_POD $CONTAINER_NAME -n ${namespace}
+    ${KUBERNETES_CLI:-kubectl} logs $JOB_POD $CONTAINER_NAME -n ${namespace}
     fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
 }

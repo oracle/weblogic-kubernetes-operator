@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -693,7 +694,7 @@ class ItMiiUpdateDomainConfig {
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works inside pod before scaling the cluster
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javapCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javapCmd.append(domainNamespace);
     javapCmd.append(" -it ");
     javapCmd.append(adminServerPodName);
@@ -728,7 +729,7 @@ class ItMiiUpdateDomainConfig {
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
 
-    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javacCmd.append(domainNamespace);
     javacCmd.append(" -it ");
     javacCmd.append(adminServerPodName);

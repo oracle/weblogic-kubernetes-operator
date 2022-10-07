@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -136,7 +137,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // Note: This class must not be run in parallel with other class
     new Command()
           .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+              .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
           .execute();
   }
 
@@ -223,7 +224,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -333,7 +334,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -399,7 +400,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -469,7 +470,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -542,7 +543,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
