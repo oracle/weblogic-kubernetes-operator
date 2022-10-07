@@ -32,7 +32,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
+class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
   private static final String WARN_MESSAGE_PATTERN_DOMAIN =
       "Change request to domain resource '%s' causes the replica count of each cluster in '%s' to exceed its cluster "
           + "size '%s' respectively";

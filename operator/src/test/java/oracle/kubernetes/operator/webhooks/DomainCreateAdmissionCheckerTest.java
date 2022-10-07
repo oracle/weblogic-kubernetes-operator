@@ -11,7 +11,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class ResourceCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
+class DomainCreateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
   @Override
   void setupCheckers() {
@@ -29,18 +29,6 @@ class ResourceCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   @Test
   void whenNewDomainCreatedWithInvalidReplicas_returnTrue() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
-
-    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenNewClusterCreated_returnTrue() {
-    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
-  }
-
-  @Test
-  void whenNewClusterCreatedWithInvalidReplicas_returnTrue() {
-    proposedCluster.getSpec().withReplicas(BAD_REPLICAS);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
   }
