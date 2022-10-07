@@ -156,12 +156,23 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    final Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML);
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> expectedDomain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
 
-    converter.convert(readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML));
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
+    converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), equalTo(expectedDomain));
+
+    converterv8.convert(converter.getDomain(), clusters);
+
+    // have to read document again because v8Domain variable contents will be modified
+    v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
+    assertThat(converterv8.getDomain(), equalTo(v8Domain));
   }
 
   @Test

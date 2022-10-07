@@ -46,6 +46,8 @@ public class SchemaConversionUtils {
   private static final String TYPE = "type";
   private static final String CLUSTERS = "clusters";
   private static final String CLUSTER_NAME = "clusterName";
+  private static final String PRESERVED = "weblogic.v8.preserved";
+  private static final String PRESERVED_AUX = "weblogic.v8.preserved.aux";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -115,33 +117,49 @@ public class SchemaConversionUtils {
     }
 
     String apiVersion = (String) domain.get(API_VERSION);
+    List<Map<String, Object>> clusters = new ArrayList<>();
 
-    integrateClusters(spec, resourceLookup);
+    if (API_VERSION_V8.equals(targetAPIVersion)) {
+      integrateClusters(spec, resourceLookup);
+      convertDomainStatusTargetV8(domain);
+      constantsToCamelCase(spec);
 
-    adjustAdminPortForwardingDefault(spec, apiVersion);
-    convertLegacyAuxiliaryImages(spec);
-    convertDomainStatus(domain);
-    convertDomainHomeInImageToDomainHomeSourceType(domain);
-    moveConfigOverrides(domain);
-    moveConfigOverrideSecrets(domain);
-    constantsToCamelCase(spec);
-    adjustReplicasDefault(spec, apiVersion);
-    removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
+      restore(PRESERVED_AUX, domain, this::validateRestoreLegacyAuxilaryImages);
+      restore(PRESERVED, domain);
+    } else {
+      adjustAdminPortForwardingDefault(spec, apiVersion);
+      convertDomainStatusTargetV9(domain);
+      convertDomainHomeInImageToDomainHomeSourceType(domain);
+      moveConfigOverrides(domain);
+      moveConfigOverrideSecrets(domain);
+      constantsToCamelCase(spec);
+      adjustReplicasDefault(spec, apiVersion);
+      removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
 
-    Map<String, Object> toBePreserved = new TreeMap<>();
-    removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved);
-    removeAndPreserveServerStartState(spec, toBePreserved);
-    removeAndPreserveIstio(spec, toBePreserved);
+      try {
+        Map<String, Object> toBePreserved = new TreeMap<>();
+        removeAndPreserveLegacyAuxiliaryImages(spec, toBePreserved);
 
-    try {
-      preserve(domain, toBePreserved, apiVersion);
-      restore(domain);
-    } catch (IOException io) {
-      throw new RuntimeException(io); // need to use unchecked exception because of stream processing
+        preserve(PRESERVED_AUX, domain, toBePreserved, apiVersion);
+      } catch (IOException io) {
+        throw new RuntimeException(io); // need to use unchecked exception because of stream processing
+      }
+
+
+      try {
+        Map<String, Object> toBePreserved = new TreeMap<>();
+        removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved);
+        removeAndPreserveServerStartState(spec, toBePreserved);
+        removeAndPreserveIstio(spec, toBePreserved);
+
+        preserve(PRESERVED, domain, toBePreserved, apiVersion);
+      } catch (IOException io) {
+        throw new RuntimeException(io); // need to use unchecked exception because of stream processing
+      }
+
+      generateClusters(domain, clusters, apiVersion);
     }
 
-    List<Map<String, Object>> clusters = new ArrayList<>();
-    generateClusters(domain, clusters, apiVersion);
 
     domain.put(API_VERSION, targetAPIVersion);
     return new Resources(domain, clusters);
@@ -177,27 +195,62 @@ public class SchemaConversionUtils {
     }
   }
 
-  private void convertLegacyAuxiliaryImages(Map<String, Object> spec) {
-    List<Object> auxiliaryImageVolumes = Optional.ofNullable(getAuxiliaryImageVolumes(spec)).orElse(new ArrayList<>());
-    convertAuxiliaryImages(spec, auxiliaryImageVolumes);
-    Optional.ofNullable(getAdminServer(spec)).ifPresent(as -> convertAuxiliaryImages(as, auxiliaryImageVolumes));
-    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
-            convertAuxiliaryImages((Map<String, Object>) cluster, auxiliaryImageVolumes)));
-    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
-            convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
-    spec.remove("auxiliaryImageVolumes");
+  private void removeAndPreserveLegacyAuxiliaryImages(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+    List<Object> auxiliaryImageVolumes = (List<Object>) spec.remove("auxiliaryImageVolumes");
+    if (auxiliaryImageVolumes != null) {
+      preserve(toBePreserved, "$.spec", Map.of("auxiliaryImageVolumes", auxiliaryImageVolumes));
+      removeAndPreserveLegacyAuxiliaryImages(spec, auxiliaryImageVolumes, toBePreserved, "$.spec");
+      Optional.ofNullable(getAdminServer(spec)).ifPresent(
+          as -> removeAndPreserveLegacyAuxiliaryImages(as, auxiliaryImageVolumes, toBePreserved, "$.spec.adminServer"));
+      Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+          removeAndPreserveLegacyAuxiliaryImagesForCluster(
+              (Map<String, Object>) cluster, auxiliaryImageVolumes, toBePreserved)));
+      Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
+          removeAndPreserveLegacyAuxiliaryImagesForManagedServer(
+              (Map<String, Object>) managedServer, auxiliaryImageVolumes, toBePreserved)));
+    }
   }
 
-  private void convertDomainStatus(Map<String, Object> domain) {
-    if (API_VERSION_V8.equals(targetAPIVersion)) {
-      convertCompletedToProgressing(domain);
-      Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
-      renameServerStatusFieldsV9ToV8(domain);
-    } else { // 9 or above
-      removeObsoleteConditionsFromDomainStatus(domain);
-      removeUnsupportedDomainStatusConditionReasons(domain);
-      renameServerStatusFieldsV8ToV9(domain);
+  private void removeAndPreserveLegacyAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes,
+                                                      Map<String, Object> toBePreserved, String scope) {
+    Map<String, Object> serverPod = getServerPod(spec);
+    List<Object> auxiliaryImages = (List<Object>) Optional.ofNullable(serverPod).map(sp -> (sp.remove("auxiliaryImages"))).orElse(null);
+    if (auxiliaryImages != null) {
+      preserve(toBePreserved, scope, Map.of("auxiliaryImages", auxiliaryImages));
+      addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes);
     }
+  }
+
+  private void removeAndPreserveLegacyAuxiliaryImagesForCluster(Map<String, Object> cluster,
+                                                                List<Object> auxiliaryImageVolumes,
+                                                                Map<String, Object> toBePreserved) {
+    Object name = cluster.get(CLUSTER_NAME);
+    if (name != null) {
+      removeAndPreserveLegacyAuxiliaryImages(
+          cluster, auxiliaryImageVolumes, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
+    }
+  }
+
+  private void removeAndPreserveLegacyAuxiliaryImagesForManagedServer(Map<String, Object> managedServer,
+                                                                      List<Object> auxiliaryImageVolumes,
+                                                                      Map<String, Object> toBePreserved) {
+    Object name = managedServer.get("serverName");
+    if (name != null) {
+      removeAndPreserveLegacyAuxiliaryImages(
+          managedServer, auxiliaryImageVolumes, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')]");
+    }
+  }
+
+  private void convertDomainStatusTargetV8(Map<String, Object> domain) {
+    convertCompletedToProgressing(domain);
+    Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
+    renameServerStatusFieldsV9ToV8(domain);
+  }
+
+  private void convertDomainStatusTargetV9(Map<String, Object> domain) {
+    removeObsoleteConditionsFromDomainStatus(domain);
+    removeUnsupportedDomainStatusConditionReasons(domain);
+    renameServerStatusFieldsV8ToV9(domain);
   }
 
   private void convertCompletedToProgressing(Map<String, Object> domain) {
@@ -390,10 +443,6 @@ public class SchemaConversionUtils {
     return convertWithMap(select(logHomeLayoutMap, invertLogHomeLayoutMap), value);
   }
 
-  private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
-    return (List<Object>) spec.get("auxiliaryImageVolumes");
-  }
-
   private Map<String, Object> getConfiguration(Map<String, Object> spec) {
     return (Map<String, Object>) spec.get("configuration");
   }
@@ -410,17 +459,6 @@ public class SchemaConversionUtils {
     return (List<Object>) spec.get("managedServers");
   }
 
-  private void convertAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes) {
-    Map<String, Object> serverPod = getServerPod(spec);
-    Optional.ofNullable(serverPod).map(this::getAuxiliaryImages).ifPresent(auxiliaryImages ->
-            addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes));
-    Optional.ofNullable(serverPod).ifPresent(cs -> cs.remove("auxiliaryImages"));
-  }
-
-  private List<Object> getAuxiliaryImages(Map<String, Object> serverPod) {
-    return (List<Object>) Optional.ofNullable(serverPod).map(sp -> (sp.get("auxiliaryImages"))).orElse(null);
-  }
-
   private Map<String, Object> getServerPod(Map<String, Object> spec) {
     return (Map<String, Object>) Optional.ofNullable(spec).map(s -> s.get("serverPod")).orElse(null);
   }
@@ -435,6 +473,35 @@ public class SchemaConversionUtils {
 
   Map<String, Object> getMetadata(Map<String, Object> domain) {
     return (Map<String, Object>) domain.get(METADATA);
+  }
+
+  @SuppressWarnings("unchecked")
+  private boolean validateRestoreLegacyAuxilaryImages(Map<String, Object> domain,
+                                                      Map<String, Object> scope, Map<String, Object> value) {
+    List<Object> auxiliaryImages = (List<Object>) value.get("auxiliaryImages");
+    if (auxiliaryImages != null) {
+      Map<String, Object> serverPod = getServerPod(scope);
+      if (serverPod != null) {
+        // init containers
+        List<Object> initContainers = (List<Object>) serverPod.get("initContainers");
+        if (initContainers != null) {
+          for (Object item : initContainers) {
+            Map<String, Object> ic = (Map<String, Object>) item;
+            // HERE
+          }
+          if (initContainers.isEmpty()) {
+            serverPod.remove("initContainers");
+          }
+        }
+        // volume mounts
+        // env variables
+
+        if (serverPod.isEmpty()) {
+          scope.remove("serverPod");
+        }
+      }
+    }
+    return true;
   }
 
   private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,
@@ -692,39 +759,59 @@ public class SchemaConversionUtils {
     });
   }
 
-  private void preserve(Map<String, Object> domain, Map<String, Object> toBePreserved, String apiVersion)
+  private void preserve(String annoName, Map<String, Object> domain, Map<String, Object> toBePreserved, String apiVersion)
       throws IOException {
-    if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion) && !API_VERSION_V8.equals(targetAPIVersion)) {
+    if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion)) {
       Map<String, Object> meta = getMetadata(domain);
       Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
           "annotations", k -> new LinkedHashMap<>());
-      annotations.put("weblogic.v8.preserved", new ObjectMapper().writeValueAsString(toBePreserved));
+      annotations.put(annoName, new ObjectMapper().writeValueAsString(toBePreserved));
     }
+  }
+
+  @FunctionalInterface
+  interface RestoreValidator {
+    public boolean validateRestore(Map<String, Object> domain, Map<String, Object> scope, Map<String, Object> value);
   }
 
   @SuppressWarnings("java:S112")
-  private void restore(Map<String, Object> domain) {
-    if (API_VERSION_V8.equals(targetAPIVersion)) {
-      Optional.ofNullable(getMetadata(domain))
-          .map(meta -> (Map<String, Object>) meta.get("annotations"))
-          .map(meta -> (String) meta.remove("weblogic.v8.preserved"))
-          .ifPresent(labelValue -> {
-            try {
-              restore(domain, new ObjectMapper().readValue(labelValue, new TypeReference<>(){}));
-            } catch (JsonProcessingException e) {
-              throw new RuntimeException(e);
-            }
-          });
-    }
+  private void restore(String annoName, Map<String, Object> domain) {
+    restore(annoName, domain, (d, s, v) -> true);
   }
 
-  private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored) {
+  @SuppressWarnings("java:S112")
+  private void restore(String annoName, Map<String, Object> domain, RestoreValidator restoreValidator) {
+    Map<String, Object> metadata = getMetadata(domain);
+    Optional.ofNullable(metadata)
+        .map(meta -> (Map<String, Object>) meta.get("annotations"))
+        .map(annotations -> {
+          String anno = (String) annotations.remove(annoName);
+          if (annotations.isEmpty()) {
+            metadata.remove("annotations");
+          }
+          return anno;
+        })
+        .ifPresent(labelValue -> {
+          try {
+            restore(domain, new ObjectMapper().readValue(labelValue, new TypeReference<>(){}), restoreValidator);
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+          }
+        });
+  }
+
+  private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored,
+                       RestoreValidator restoreValidator) {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
       ReadContext context = JsonPath.parse(domain);
       toBeRestored.forEach((key, value) -> {
         JsonPath path = JsonPath.compile(key);
         Optional.of(read(context, path)).map(List::stream)
-                .ifPresent(stream -> stream.forEach(item -> item.putAll((Map<String, Object>) value)));
+            .ifPresent(stream -> stream.forEach(item -> {
+              if (restoreValidator.validateRestore(domain, item, (Map<String, Object>) value)) {
+                item.putAll((Map<String, Object>) value);
+              }
+            }));
       });
     }
   }
@@ -743,29 +830,27 @@ public class SchemaConversionUtils {
   }
 
   private void integrateClusters(Map<String, Object> spec, ResourceLookup resourceLookup) {
-    if (API_VERSION_V8.equals(targetAPIVersion)) {
-      List<Map<String, Object>> existing = (List<Map<String, Object>>) spec.remove(CLUSTERS);
-      if (existing != null) {
-        List<Map<String, Object>> clusterResources = Optional.ofNullable(resourceLookup)
-            .map(ResourceLookup::listClusters).orElse(Collections.emptyList());
-        List<Map<String, Object>> clusters = new ArrayList<>();
-        for (Map<String, Object> reference : existing) {
-          String name = (String) reference.get(NAME);
-          if (name != null) {
-            clusterResources.stream().filter(c -> nameMatches(c, name)).findFirst().ifPresent(c -> {
-              Map<String, Object> clusterSpec = getSpec(c);
-              Map<String, Object> cluster = new LinkedHashMap<>();
-              if (!clusterSpec.containsKey(CLUSTER_NAME)) {
-                cluster.put(CLUSTER_NAME, name);
-              }
-              cluster.putAll(clusterSpec);
-              clusters.add(cluster);
-            });
-          }
+    List<Map<String, Object>> existing = (List<Map<String, Object>>) spec.remove(CLUSTERS);
+    if (existing != null) {
+      List<Map<String, Object>> clusterResources = Optional.ofNullable(resourceLookup)
+          .map(ResourceLookup::listClusters).orElse(Collections.emptyList());
+      List<Map<String, Object>> clusters = new ArrayList<>();
+      for (Map<String, Object> reference : existing) {
+        String name = (String) reference.get(NAME);
+        if (name != null) {
+          clusterResources.stream().filter(c -> nameMatches(c, name)).findFirst().ifPresent(c -> {
+            Map<String, Object> clusterSpec = getSpec(c);
+            Map<String, Object> cluster = new LinkedHashMap<>();
+            if (!clusterSpec.containsKey(CLUSTER_NAME)) {
+              cluster.put(CLUSTER_NAME, name);
+            }
+            cluster.putAll(clusterSpec);
+            clusters.add(cluster);
+          });
         }
-        if (!clusters.isEmpty()) {
-          spec.put(CLUSTERS, clusters);
-        }
+      }
+      if (!clusters.isEmpty()) {
+        spec.put(CLUSTERS, clusters);
       }
     }
   }
@@ -776,7 +861,7 @@ public class SchemaConversionUtils {
   }
 
   private void generateClusters(Map<String, Object> domain, List<Map<String, Object>> clusters, String apiVersion) {
-    if (API_VERSION_V8.equals(apiVersion) && !API_VERSION_V8.equals(targetAPIVersion)) {
+    if (API_VERSION_V8.equals(apiVersion)) {
       Map<String, Object> spec = getSpec(domain);
       List<Map<String, Object>> existing = (List<Map<String, Object>>) spec.remove(CLUSTERS);
       if (existing != null) {
