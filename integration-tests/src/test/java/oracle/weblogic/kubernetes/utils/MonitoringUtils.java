@@ -91,7 +91,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -646,7 +646,7 @@ public class MonitoringUtils {
         createMiiImageAndVerify(imageName, modelList, appList);
 
     // login and push image to registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
+    imageRepoLoginAndPushImageToRegistry(myImage);
 
     return myImage;
   }
@@ -1082,7 +1082,7 @@ public class MonitoringUtils {
             .command(command))
         .execute(), "Failed to build monitoring exporter image");
     // login and push image to registry if necessary
-    dockerLoginAndPushImageToRegistry(imageName);
+    imageRepoLoginAndPushImageToRegistry(imageName);
   }
 
   /** Change monitoring exporter webapp confiuration inside the pod.

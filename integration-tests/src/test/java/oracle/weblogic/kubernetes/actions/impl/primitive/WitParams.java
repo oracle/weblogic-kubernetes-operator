@@ -14,21 +14,21 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 
 
 /**
- * Contains the parameters for creating a Docker image using the WebLogic Image Tool.
+ * Contains the parameters for creating an image using the WebLogic Image Tool.
  *
  */
 public class WitParams {
 
-  // The name of the Docker image that is used as the base of a new image
+  // The name of the image that is used as the base of a new image
   private String baseImageName;
 
-  // The tag of the Docker image that is used as the base of a new image
+  // The tag of the image that is used as the base of a new image
   private String baseImageTag;
 
-  // The name of the to be generated Docker image
+  // The name of the to be generated image
   private String modelImageName;
 
-  // The name of the to be generated Docker image
+  // The name of the to be generated image
   private String modelImageTag;
 
   // A comma separated list of the names of the WDT model yaml files
@@ -82,10 +82,10 @@ public class WitParams {
   // Executable to process the Dockerfile. Use the full path of the executable if not on your path
   private String builder;
 
-  // Networking mode for the RUN instructions during the image build. See --network for Docker build
+  // Networking mode for the RUN instructions during the image build. See --network for build command
   private String buildNetwork;
 
-  // Skip Docker build execution and print the Dockerfile to stdout
+  // Skip build execution and print the Dockerfile to stdout
   private boolean dryRun;
 
   // Proxy for the HTTP protocol. Example: http://myproxy:80

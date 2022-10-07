@@ -325,7 +325,7 @@ public class FileUtils {
    * @param dest path of target file
    * @return ExecResult containing the content of the given file
    */
-  public static ExecResult copyFileToDockerContainer(String containerName, String source, String dest) {
+  public static ExecResult copyFileToImageContainer(String containerName, String source, String dest) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
 
@@ -345,13 +345,13 @@ public class FileUtils {
       return null;
     }
 
-    readFileCopiedInDockerContainer(containerName, dest);
+    readFileCopiedInImageContainer(containerName, dest);
 
     // check if file copied to container
     logger.info("Wait for container {0} starting", containerName);
     testUntil(
         withStandardRetryPolicy,
-        isFileCopiedToDockerContainer(containerName, dest),
+        isFileCopiedToImageContainer(containerName, dest),
         logger,
         "{0} is copied to container {1}",
         dest,
@@ -367,8 +367,8 @@ public class FileUtils {
    * @param dest path of target file
    * @return true if file copied successfully, otherwise false
    */
-  public static Callable<Boolean> isFileCopiedToDockerContainer(String containerName, String dest) {
-    return () -> checkFileCopiedToDockerContainer(containerName, dest);
+  public static Callable<Boolean> isFileCopiedToImageContainer(String containerName, String dest) {
+    return () -> checkFileCopiedToImageContainer(containerName, dest);
   }
 
   /**
@@ -378,7 +378,7 @@ public class FileUtils {
    * @param dest path of target file
    * @return true if file copied successfully, otherwise false
    */
-  public static boolean checkFileCopiedToDockerContainer(String containerName, String dest) {
+  public static boolean checkFileCopiedToImageContainer(String containerName, String dest) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
 
@@ -406,7 +406,7 @@ public class FileUtils {
    * @param containerName container name to check
    * @param dest path of target file
    */
-  public static void readFileCopiedInDockerContainer(String containerName, String dest) {
+  public static void readFileCopiedInImageContainer(String containerName, String dest) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
 

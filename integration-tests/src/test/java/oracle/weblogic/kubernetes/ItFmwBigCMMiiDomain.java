@@ -44,7 +44,7 @@ import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -226,7 +226,7 @@ class ItFmwBigCMMiiDomain {
         false);
 
     // push the image to a registry to make it accessible in multi-node cluster
-    dockerLoginAndPushImageToRegistry(jrfMii1Image);
+    imageRepoLoginAndPushImageToRegistry(jrfMii1Image);
 
     // create the domain object
     DomainResource domain = createDomainResource(domainUid,

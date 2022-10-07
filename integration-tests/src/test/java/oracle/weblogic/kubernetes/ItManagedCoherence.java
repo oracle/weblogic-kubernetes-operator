@@ -48,7 +48,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createTraefikIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -208,12 +208,12 @@ class ItManagedCoherence {
         COHERENCE_IMAGE_NAME, COHERENCE_MODEL_FILE,
           COHERENCE_APP_NAME, COHERENCE_MODEL_PROP, domainUid);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Create registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     return domImage;
@@ -235,7 +235,7 @@ class ItManagedCoherence {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, domImage);
     createDomainCrAndVerify(adminSecretName, domImage);
 

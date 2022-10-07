@@ -68,7 +68,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.createZipFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -273,9 +273,9 @@ class ItLiftAndShiftFromOnPremDomain {
         WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, "WLS", true,
         "onpremdomain", false);
 
-    // docker login and push image to docker registry if necessary
-    logger.info("Push the image {0} to Docker repo", imageName);
-    dockerLoginAndPushImageToRegistry(imageName);
+    // repo login and push image to registry if necessary
+    logger.info("Push the image {0} to image repo", imageName);
+    imageRepoLoginAndPushImageToRegistry(imageName);
 
     // Namespace and password needs to be updated in Create_k8s_secrets.sh
     updateCreateSecretsFile();

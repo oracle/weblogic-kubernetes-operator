@@ -91,7 +91,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVeri
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
@@ -768,9 +768,9 @@ class ItMultiDomainModelsWithLoadBalancer {
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     String adminSecretName = "weblogic-credentials";
@@ -835,7 +835,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         miiDomainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -1043,9 +1043,9 @@ class ItMultiDomainModelsWithLoadBalancer {
    */
   private void createMiiDomainNegative(String domainUid, String domainNamespace) {
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
@@ -1093,7 +1093,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
   }
@@ -1113,8 +1113,8 @@ class ItMultiDomainModelsWithLoadBalancer {
         createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
             appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
   }

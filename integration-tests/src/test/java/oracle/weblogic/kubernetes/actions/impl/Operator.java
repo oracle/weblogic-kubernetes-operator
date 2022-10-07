@@ -89,7 +89,7 @@ public class Operator {
   }
 
   /**
-   * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   * Builds an image for the Oracle WebLogic Kubernetes Operator.
    * @param image image name and tag in 'name:tag' format
    * @return true on success
    */

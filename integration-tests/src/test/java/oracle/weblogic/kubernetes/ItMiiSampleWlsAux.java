@@ -111,7 +111,7 @@ class ItMiiSampleWlsAux {
   /**
    * Test to verify update3 use case using auxiliary image.
    * Deploys an updated WebLogic application to the running
-   * domain from update1 using an updated Docker image,
+   * domain from update1 using an updated image,
    * and updates the domain resource restartVersion.
    * Verifies all WebLogic Server pods roll to ready, roll to the expected
    * restartVersion, and have the expected image.

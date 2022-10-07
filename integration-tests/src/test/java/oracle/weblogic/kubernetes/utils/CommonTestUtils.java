@@ -92,7 +92,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToDockerContainer;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToImageContainer;
 import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDiiImageAndVerify;
@@ -102,7 +102,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScriptInDockerContainer;
+import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScriptInImageContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -795,7 +795,7 @@ public class CommonTestUtils {
   /**
    * Adds proxy extra arguments for image builder command.
    **/
-  public static String getDockerExtraArgs() {
+  public static String getImageBuilderExtraArgs() {
     StringBuffer extraArgs = new StringBuffer("");
 
     String httpsproxy = HTTPS_PROXY;
@@ -1242,7 +1242,7 @@ public class CommonTestUtils {
       logger.info("Created dii image: {0}", diiDomainImage);
 
       // create a WLS container using the dii images created above
-      result = createAndStartWlsDockerContainerAndVerify(domainUid, containerName, diiDomainImage);
+      result = createAndStartWlsImageContainerAndVerify(domainUid, containerName, diiDomainImage);
       if (result.exitValue() == 0) {
         logger.info("Create WLS container succeeded: {0}", result.stdout());
       } else {
@@ -1264,21 +1264,21 @@ public class CommonTestUtils {
       logger.info("WLST property file is: {0} ", wlstPropertiesFile.getAbsolutePath());
 
       // cp WLST script and prop files to the container
-      copyFileToDockerContainer(containerName, wlstScriptFilePath, wlstScriptDestPath);
-      copyFileToDockerContainer(containerName, wlstPropertiesFile.getAbsolutePath(), wlstPropDestPath);
+      copyFileToImageContainer(containerName, wlstScriptFilePath, wlstScriptDestPath);
+      copyFileToImageContainer(containerName, wlstPropertiesFile.getAbsolutePath(), wlstPropDestPath);
 
       Path filePath = Path.of(wlstPropertiesFile.getAbsolutePath());
       String content = Files.readString(filePath, StandardCharsets.US_ASCII);
       logger.info("Content of WLST property file: {0} ", content);
 
       // accessing WLS vis WLST using the forwarded port
-      result = executeWLSTScriptInDockerContainer(containerName, wlstScriptDestPath, wlstPropDestPath);
+      result = executeWLSTScriptInImageContainer(containerName, wlstScriptDestPath, wlstPropDestPath);
     } catch (Exception ex) {
       logger.info("Failed to access WLS vis WLST using the forwarded port!");
       ex.printStackTrace();
     } finally {
-      stopWlsDockerContainer(containerName);
-      removeWlsDockerContainer(containerName);
+      stopWlsImageContainer(containerName);
+      removeWlsImageContainer(containerName);
     }
 
     return result;
@@ -1292,7 +1292,7 @@ public class CommonTestUtils {
    * @param imageName image name with tag
    * @return ExecResult output of creating container
    */
-  public static ExecResult createAndStartWlsDockerContainerAndVerify(String domainUid,
+  public static ExecResult createAndStartWlsImageContainerAndVerify(String domainUid,
                                                                      String containerName,
                                                                      String imageName) {
     final LoggingFacade logger = getLogger();
@@ -1321,7 +1321,7 @@ public class CommonTestUtils {
       logger.info("Wait for container {0} starting", containerName);
       testUntil(
           withStandardRetryPolicy,
-          isDockerContainerReady(containerName),
+          isImageContainerReady(containerName),
           logger,
           "{0} is started",
           containerName);
@@ -1337,8 +1337,8 @@ public class CommonTestUtils {
    * @param containerName container name to check
    * @return true if a WebLogic container is ready, otherwise false
    */
-  public static Callable<Boolean> isDockerContainerReady(String containerName) {
-    return () -> checkDockerContainerReady(containerName);
+  public static Callable<Boolean> isImageContainerReady(String containerName) {
+    return () -> checkImageContainerReady(containerName);
   }
 
   /**
@@ -1347,7 +1347,7 @@ public class CommonTestUtils {
    * @param containerName container name to check
    * @return true if a WebLogic container is in RUNNING mode, otherwise false
    */
-  public static boolean checkDockerContainerReady(String containerName) {
+  public static boolean checkImageContainerReady(String containerName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
@@ -1371,7 +1371,7 @@ public class CommonTestUtils {
    * @param containerName container name to stop
    * @return ExecResult output of creating container
    */
-  public static ExecResult stopWlsDockerContainer(String containerName) {
+  public static ExecResult stopWlsImageContainer(String containerName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
@@ -1394,7 +1394,7 @@ public class CommonTestUtils {
    * @param containerName container name to delete
    * @return ExecResult output of creating container
    */
-  public static ExecResult removeWlsDockerContainer(String containerName) {
+  public static ExecResult removeWlsImageContainer(String containerName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 

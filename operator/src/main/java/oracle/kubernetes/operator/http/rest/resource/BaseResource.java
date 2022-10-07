@@ -101,7 +101,7 @@ public class BaseResource {
       b.segment(seg);
     }
 
-    // return relative paths since the Operator runs in a docker container
+    // return relative paths since the Operator runs in a container
     // and the host/port that a client sees outside the container doesn't
     // match the one used inside the container - i.e. we don't want to leak
     // the host/port inside the container to the client

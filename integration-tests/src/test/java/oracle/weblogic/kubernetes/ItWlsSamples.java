@@ -78,7 +78,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplat
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -662,13 +662,13 @@ class ItWlsSamples {
     assertTrue(result, "Failed to create domain.yaml");
 
     if (sampleBase.toString().contains("domain-home-in-image")) {
-      // docker login and push image to docker registry if necessary
-      logger.info("Push the image {0} to Docker repo", imageName);
-      dockerLoginAndPushImageToRegistry(imageName);
+      // repo login and push image to registry if necessary
+      logger.info("Push the image {0} to image repo", imageName);
+      imageRepoLoginAndPushImageToRegistry(imageName);
 
-      // create docker registry secret to pull the image from registry
+      // create registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
-      logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+      logger.info("Create registry secret in namespace {0}", domainNamespace);
       createTestRepoSecret(domainNamespace);
     }
 

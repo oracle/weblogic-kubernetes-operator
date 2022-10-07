@@ -54,7 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -371,12 +371,12 @@ class ItIstioManagedCoherence {
         COHERENCE_IMAGE_NAME, COHERENCE_MODEL_FILE,
         COHERENCE_APP_NAME, COHERENCE_MODEL_PROP, domainUid);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainInImageNamespace);
+    logger.info("Create registry secret in namespace {0}", domainInImageNamespace);
     createTestRepoSecret(domainInImageNamespace);
     return domImage;
   }
@@ -396,7 +396,7 @@ class ItIstioManagedCoherence {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainInImageNamespace, domImage);
     createDomainCrAndVerify(adminSecretName, domImage);
 

@@ -77,12 +77,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -602,12 +602,12 @@ class ItMiiDomain {
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
     logger.info(WLSIMG_BUILDER + " login to registry {0}", TEST_IMAGES_REPO);
-    assertTrue(dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
+    assertTrue(imageRepoLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
                 TEST_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info(WLSIMG_BUILDER + " push image {0} to registry", image);
-      assertTrue(dockerPush(image), String.format(WLSIMG_BUILDER + " push failed for image %s", image));
+      assertTrue(imagePush(image), String.format(WLSIMG_BUILDER + " push failed for image %s", image));
     }
   }
 

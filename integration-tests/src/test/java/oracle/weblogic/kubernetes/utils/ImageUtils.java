@@ -50,13 +50,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildCoherenceArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImageBuilderConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
@@ -197,7 +197,7 @@ public class ImageUtils {
     String domImage = createImageAndVerify(imageNameBase, modelFile, appName, modelPropFile, domainUid);
 
     // repo login and push image to repo registry if necessary
-    dockerLoginAndPushImageToRegistry(domImage);
+    imageRepoLoginAndPushImageToRegistry(domImage);
 
     // create repo registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
@@ -487,7 +487,7 @@ public class ImageUtils {
   public static void createBaseRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating base image pull secret {0} in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, namespace);
-    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+    createImageRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
             TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
@@ -499,7 +499,7 @@ public class ImageUtils {
   public static void createTestRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
-    createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME,
+    createImageRegistrySecret(TEST_IMAGES_REPO_USERNAME,
             TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
             TEST_IMAGES_REPO, TEST_IMAGES_REPO_SECRET_NAME, namespace);
   }
@@ -513,13 +513,13 @@ public class ImageUtils {
    * @param secretName name of the secret to create
    * @param namespace namespace in which to create the secret
    */
-  public static void createDockerRegistrySecret(String userName, String password,
+  public static void createImageRegistrySecret(String userName, String password,
                                                 String email, String registry, String secretName, String namespace) {
     LoggingFacade logger = getLogger();
     // Create registry secret in the namespace to pull the image from repository
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+    JsonObject configJsonObject = createImageBuilderConfigJson(
         userName, password, email, registry);
-    String dockerConfigJson = dockerConfigJsonObject.toString();
+    String configJsonString = configJsonObject.toString();
 
     // skip if the secret already exists
     V1SecretList listSecrets = listSecrets(namespace);
@@ -538,7 +538,7 @@ public class ImageUtils {
             .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+        .putDataItem(".dockerconfigjson", configJsonString.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", secretName));
@@ -562,16 +562,16 @@ public class ImageUtils {
    *
    * @param image the image to push to registry
    */
-  public static void dockerLoginAndPushImageToRegistry(String image) {
+  public static void imageRepoLoginAndPushImageToRegistry(String image) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
     if (!DOMAIN_IMAGES_REPO.isEmpty() && image.contains(DOMAIN_IMAGES_REPO)) {
       // repo login, if necessary
       logger.info(WLSIMG_BUILDER + " login");
-      assertTrue(dockerLogin(TestConstants.BASE_IMAGES_REPO,
+      assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
            BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),  WLSIMG_BUILDER + " login failed");
       logger.info(WLSIMG_BUILDER + " push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
-      testUntil(() -> dockerPush(image),
+      testUntil(() -> imagePush(image),
           logger,
           WLSIMG_BUILDER + " push succeeds for image {0} to repo {1}",
           image,
@@ -586,12 +586,12 @@ public class ImageUtils {
    * @param baseImageName base image name
    * @param namespace image namespace
    * @param secretName repo secretname for image
-   * @param extraDockerArgs user specified extra args
+   * @param extraImageBuilderArgs user specified extra args
    * @return image name
    */
   public static String createImageAndPushToRepo(String dockerFileDir, String baseImageName,
                                                 String namespace, String secretName,
-                                                String extraDockerArgs) throws ApiException {
+                                                String extraImageBuilderArgs) throws ApiException {
     // create unique image name with date
     final String imageTag = getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
@@ -600,17 +600,19 @@ public class ImageUtils {
     final String image = imageName + ":" + imageTag;
     LoggingFacade logger = getLogger();
     //build image
-    assertTrue(Image.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
+    assertTrue(
+        Image.createImage(dockerFileDir, image, extraImageBuilderArgs),
+        "Failed to create image " + baseImageName);
     logger.info("image is created with name {0}", image);
     if (!Namespace.exists(namespace)) {
       createNamespace(namespace);
     }
 
     //create registry secret
-    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+    createImageRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
             TestConstants.BASE_IMAGES_REPO, secretName, namespace);
     // login and push image to registry if necessary
-    dockerLoginAndPushImageToRegistry(image);
+    imageRepoLoginAndPushImageToRegistry(image);
 
     return image;
   }

@@ -94,7 +94,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -1441,9 +1441,9 @@ public class CommonMiiTestUtils {
    * Create mii image and push it to the registry.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile  wdt model file used to build the docker image
+   * @param wdtModelFile  wdt model file used to build the image
    * @param appName application source directory used to build sample app ear files
-   * @param wdtModelPropFile wdt model properties file used to build the docker image
+   * @param wdtModelPropFile wdt model properties file used to build the image
    * @return mii image created
    */
   public static String createAndPushMiiImage(String miiImageNameBase,
@@ -1461,8 +1461,8 @@ public class CommonMiiTestUtils {
         createImageAndVerify(miiImageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
             WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, true, null, false);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
   }
@@ -1472,7 +1472,7 @@ public class CommonMiiTestUtils {
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
-   * @param miiImage model in image domain docker image
+   * @param miiImage model in image domain image
    * @param numOfClusters number of clusters in the domain
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain objects
@@ -1491,7 +1491,7 @@ public class CommonMiiTestUtils {
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
-   * @param miiImage model in image domain docker image
+   * @param miiImage model in image domain image
    * @param numOfClusters number of clusters in the domain
    * @param replicaCount replica count of the cluster
    * @param serverPodLabels the labels for the server pod
@@ -1508,9 +1508,9 @@ public class CommonMiiTestUtils {
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, domainNamespace)) {
       createTestRepoSecret(domainNamespace);
     }
@@ -1596,7 +1596,7 @@ public class CommonMiiTestUtils {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -1773,7 +1773,7 @@ public class CommonMiiTestUtils {
                miiImageName, configMapName);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImageName);
     createDomainAndVerify(domain, domainNamespace);
 

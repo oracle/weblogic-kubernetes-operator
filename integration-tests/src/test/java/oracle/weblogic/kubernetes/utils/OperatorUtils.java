@@ -449,9 +449,9 @@ public class OperatorUtils {
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
 
-    // Create Docker registry secret in the operator namespace to pull the image from repository
+    // Create registry secret in the operator namespace to pull the image from repository
     // this secret is used only for non-kind cluster
-    logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
+    logger.info("Creating registry secret in namespace {0}", opNamespace);
     createTestRepoSecret(opNamespace);
 
     // map with secret

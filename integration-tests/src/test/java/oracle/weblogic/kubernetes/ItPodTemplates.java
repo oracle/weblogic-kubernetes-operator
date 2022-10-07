@@ -188,9 +188,9 @@ class ItPodTemplates {
   private static void createAndVerifyDomain(String imageName,
                                             String domainHomeSource,
                                             int replicaCount) {
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Create registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -207,7 +207,7 @@ class ItPodTemplates {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create domain {0} in domainNamespace {1} using docker image {2}",
+    logger.info("Create domain {0} in domainNamespace {1} using image {2}",
         domainUid, domainNamespace, imageName);
     createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, 
          encryptionSecretName, imageName, 
@@ -304,7 +304,7 @@ class ItPodTemplates {
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
     // create domain resource
-    logger.info("Create domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, imageName);
     createDomainAndVerify(domain, domainNamespace);
   }

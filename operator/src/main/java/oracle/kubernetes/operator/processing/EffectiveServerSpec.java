@@ -29,7 +29,7 @@ public interface EffectiveServerSpec {
   V1Container.ImagePullPolicyEnum getImagePullPolicy();
 
   /**
-   * The secrets used to authenticate to a docker repository when pulling an image.
+   * The secrets used to authenticate to an image repository when pulling an image.
    *
    * @return a list of objects containing the name of secrets. May be empty.
    */

@@ -209,7 +209,7 @@ class ItDedicatedMode {
           String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainNamespace, domainUid, domainNamespace);
     createDomainCrAndVerify(domainNamespace, TEST_IMAGES_REPO_SECRET_NAME, adminSecretName, encryptionSecretName);
   }

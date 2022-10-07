@@ -661,7 +661,7 @@ public class TestAssertions {
    * @param imageTag  the tag of the image to be checked
    * @return true if the image does exist, false otherwise
    */
-  public static boolean dockerImageExists(String imageName, String imageTag) {
+  public static boolean imageExists(String imageName, String imageTag) {
     return WitAssertion.doesImageExist(imageName, imageTag);
   }
 

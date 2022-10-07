@@ -59,9 +59,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
@@ -429,7 +429,7 @@ public class ItMiiDomainModelInPV {
         .redirect(true));
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s doesn't exist", imageName));
-    dockerLoginAndPushImage(image);
+    imageRepoLoginAndPushImage(image);
   }
 
   /**
@@ -437,11 +437,11 @@ public class ItMiiDomainModelInPV {
    *
    * @param image image to push to repo
    */
-  public static void dockerLoginAndPushImage(String image) {
+  public static void imageRepoLoginAndPushImage(String image) {
     logger = getLogger();
     // login to repo
     logger.info(WLSIMG_BUILDER + " login");
-    testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+    testUntil(() -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
           WLSIMG_BUILDER + " login to be successful");
 
@@ -449,7 +449,7 @@ public class ItMiiDomainModelInPV {
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info(WLSIMG_BUILDER + " push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
       testUntil(
-          () -> dockerPush(image),
+          () -> imagePush(image),
           logger,
           WLSIMG_BUILDER + " push for image {0} to be successful",
           image);

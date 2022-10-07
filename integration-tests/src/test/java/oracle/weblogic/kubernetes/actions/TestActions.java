@@ -1304,17 +1304,17 @@ public class TestActions {
    * @param password password for the registry
    * @return true if successful, false otherwise
    */
-  public static boolean dockerLogin(String registryName, String username, String password) {
+  public static boolean imageRepoLogin(String registryName, String username, String password) {
     return Image.login(registryName, username, password);
   }
 
   /**
    * Push an image to a registry.
    *
-   * @param image fully qualified docker image, image name:image tag
+   * @param image fully qualified image, image name:image tag
    * @return true if successful
    */
-  public static boolean dockerPush(String image) {
+  public static boolean imagePush(String image) {
     boolean result = Image.push(image);
     if (result) {
       InitializationTasks.registerPushedImage(image);
@@ -1325,21 +1325,21 @@ public class TestActions {
   /**
    * Tag an image.
    *
-   * @param originalImage fully qualified original docker image, image name:image tag
-   * @param taggedImage fully qualified tagged docker image, image name:image tag
+   * @param originalImage fully qualified original image, image name:image tag
+   * @param taggedImage fully qualified tagged image, image name:image tag
    * @return true if successful
    */
-  public static boolean dockerTag(String originalImage, String taggedImage) {
+  public static boolean imageTag(String originalImage, String taggedImage) {
     return Image.tag(originalImage, taggedImage);
   }
 
   /**
    * Pull an image from a registry.
    *
-   * @param image fully qualified docker image, image name:image tag
+   * @param image fully qualified image, image name:image tag
    * @return true if successful
    */
-  public static boolean dockerPull(String image) {
+  public static boolean imagePull(String image) {
     return Image.pull(image);
   }
 
@@ -1347,16 +1347,16 @@ public class TestActions {
    * Tag a originalImage to taggedImage and push it to repo.
    * @param originalImage original image
    * @param taggedImage tagged image
-   * @return true if docker tag and push succeeds, false otherwise
+   * @return true if tag and push succeeds, false otherwise
    */
   public static Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
     return (() -> {
-      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
+      return imageTag(originalImage, taggedImage) && imagePush(taggedImage);
     });
   }
 
   /**
-   * Delete docker image.
+   * Delete image.
    *
    * @param image image name:image tag
    * @return true if delete image is successful
@@ -1368,14 +1368,19 @@ public class TestActions {
   /**
    * Create registry configuration in json object.
    *
-   * @param username username for the docker registry
-   * @param password password for the docker registry
-   * @param email email for the docker registry
-   * @param registry docker registry name
+   * @param username username for the image registry
+   * @param password password for the image registry
+   * @param email email for the image registry
+   * @param registry registry name
    * @return json object for the registry configuration
    */
-  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
-    return Image.createDockerConfigJson(username, password, email, registry);
+  public static JsonObject createImageBuilderConfigJson(
+      String username,
+      String password,
+      String email,
+      String registry
+  ) {
+    return Image.createImageBuilderConfigJson(username, password, email, registry);
   }
 
   // ----------------------- Execute a Command   ---------------------------

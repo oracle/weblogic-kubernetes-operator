@@ -124,7 +124,12 @@ public class Image {
    * @param registry image registry name
    * @return json object for the image registry configuration
    */
-  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
+  public static JsonObject createImageBuilderConfigJson(
+      String username,
+      String password,
+      String email,
+      String registry
+  ) {
     JsonObject authObject = new JsonObject();
     authObject.addProperty("username", username);
     authObject.addProperty("password", password);

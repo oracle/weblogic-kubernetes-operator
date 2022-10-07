@@ -88,13 +88,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
@@ -171,7 +171,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         // login to BASE_IMAGES_REPO 
         logger.info(WLSIMG_BUILDER + " login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
         testUntil(withVeryLongRetryPolicy,
-                () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+                () -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
                 WLSIMG_BUILDER + " login to BASE_IMAGES_REPO to be successful");
         // The following code is for pulling WLS images if running tests in Kind cluster
@@ -206,7 +206,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // build MII basic image if does not exits
         logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
+        if (! imageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -220,7 +220,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
         // build WDT basic image if does not exits
-        if (! dockerImageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
+        if (! imageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
           logger.info("Building wdt-basic image {0}", wdtBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -235,7 +235,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         /* Check image exists using WLSIMG_BUILDER images | grep image tag.
          * Tag name is unique as it contains date and timestamp.
          * This is a workaround for the issue on Jenkins machine
-         * as docker images imagename:imagetag is not working and
+         * as WLSIMG_BUILDER images imagename:imagetag is not working and
          * the test fails even though the image exists.
          */
         assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
@@ -246,7 +246,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         logger.info(WLSIMG_BUILDER + " login");
         testUntil(withVeryLongRetryPolicy,
-              () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+              () -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
               WLSIMG_BUILDER + " login to BASE_IMAGES_REPO to be successful");
 
@@ -269,7 +269,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
             }
             testUntil(
                 withVeryLongRetryPolicy,
-                () -> dockerPush(image),
+                () -> imagePush(image),
                 logger,
                 WLSIMG_BUILDER + " push to TEST_IMAGES_REPO/kind for image {0} to be successful",
                 image);
@@ -579,7 +579,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
-      return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
+      return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
     });
   }
   

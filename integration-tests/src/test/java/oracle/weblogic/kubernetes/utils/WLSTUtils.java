@@ -226,15 +226,15 @@ public class WLSTUtils {
    * @param wlstPropertiesFile WLST property file path
    * @return ExecResult output of executing WLST script
    */
-  public static ExecResult executeWLSTScriptInDockerContainer(String containerName,
+  public static ExecResult executeWLSTScriptInImageContainer(String containerName,
                                                               String wlstScriptFile,
                                                               String wlstPropertiesFile) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    String checkDockerVersion = WLSIMG_BUILDER + " version";
+    String checkImageBuilderVersion = WLSIMG_BUILDER + " version";
     try {
-      result = exec(checkDockerVersion, true);
+      result = exec(checkImageBuilderVersion, true);
       logger.info(WLSIMG_BUILDER + " version: {0}", result.stdout());
     } catch (Exception ex) {
       logger.info(WLSIMG_BUILDER + " version failed error {0} and {1}", result.stderr(), ex.getMessage());
