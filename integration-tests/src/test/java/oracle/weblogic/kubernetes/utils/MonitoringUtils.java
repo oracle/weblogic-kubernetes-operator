@@ -587,22 +587,29 @@ public class MonitoringUtils {
     Path monitoringAppNoRestPort = Paths.get(monitoringExporterAppDir, "norestport");
     assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
+    Path monitoringAppAdministrationRestPort = Paths.get(monitoringExporterAppDir, "administrationrestport");
+    assertDoesNotThrow(() -> deleteDirectory(monitoringAppAdministrationRestPort.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppAdministrationRestPort));
 
     //adding ability to build monitoring exporter if branch is not main
     boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
-
+    String monitoringExporterAppAdministrationRestPortDir = monitoringAppAdministrationRestPort.toString();
     if (!toBuildMonitoringExporter) {
       downloadMonitoringExporterApp(RESOURCE_DIR
           + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
       downloadMonitoringExporterApp(RESOURCE_DIR
           + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+      downloadMonitoringExporterApp(RESOURCE_DIR
+          + "/exporter/exporter-config-administrationrestport.yaml", monitoringExporterAppAdministrationRestPortDir);
     } else {
       buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
           + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
       buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
           + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
+          + "/exporter/exporter-config-administrationrestport.yaml", monitoringExporterAppAdministrationRestPortDir);
     }
     logger.info("Finished to build Monitoring Exporter webapp.");
   }
