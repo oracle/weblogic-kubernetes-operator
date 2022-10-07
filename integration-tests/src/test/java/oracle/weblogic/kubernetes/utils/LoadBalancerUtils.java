@@ -34,6 +34,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
@@ -72,7 +73,9 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -647,6 +650,12 @@ public class LoadBalancerUtils {
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
         ingressName, domainUid, domainNamespace);
 
+    // check that admin server pod is ready and service exists in domain namespace
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    logger.info("Checking that admin server pod {0} is ready and service exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
@@ -655,7 +664,10 @@ public class LoadBalancerUtils {
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+        testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+            logger,
+            "ingress is ready to ping the ready app on server {0}",
+            K8S_NODEPORT_HOST);
       }
     }
 

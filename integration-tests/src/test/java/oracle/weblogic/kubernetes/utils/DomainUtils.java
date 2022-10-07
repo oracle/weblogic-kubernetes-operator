@@ -57,6 +57,7 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.nio.file.Paths.get;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -499,7 +500,7 @@ public class DomainUtils {
       data.put(file.getFileName().toString(), readString(file));
       getLogger().info("Making a copy of file {0} to {1} for diagnostic purposes", file,
           domainScriptsDir.resolve(file.getFileName()));
-      copy(file, domainScriptsDir.resolve(file.getFileName()));
+      copy(file, domainScriptsDir.resolve(file.getFileName()), REPLACE_EXISTING);
     }
     V1ObjectMeta meta = new V1ObjectMeta()
         .name(configMapName)
