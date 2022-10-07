@@ -726,6 +726,7 @@ class ItMultiDomainModelsWithLoadBalancer {
         withLongRetryPolicy,
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
         logger,
+        "domain event {0} to be logged",
         DOMAIN_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
