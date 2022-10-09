@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,6 +40,7 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 public class SchemaConversionUtils {
   private static final String API_VERSION = "apiVersion";
   private static final String METADATA = "metadata";
+  private static final String ANNOTATIONS = "annotations";
   private static final String NAMESPACE = "namespace";
   private static final String NAME = "name";
   private static final String SPEC = "spec";
@@ -48,6 +50,7 @@ public class SchemaConversionUtils {
   private static final String CLUSTER_NAME = "clusterName";
   private static final String PRESERVED = "weblogic.v8.preserved";
   private static final String PRESERVED_AUX = "weblogic.v8.preserved.aux";
+  private static final String ADDED_ACPFE = "weblogic.v8.adminChannelPortForwardingEnabled";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -128,10 +131,11 @@ public class SchemaConversionUtils {
       convertDomainStatusTargetV8(domain);
       constantsToCamelCase(spec);
 
-      restore(PRESERVED_AUX, domain, this::validateRestoreLegacyAuxilaryImages);
       restore(PRESERVED, domain);
+      restore(PRESERVED_AUX, domain, this::validateRestoreLegacyAuxilaryImages);
+      removeAddedAdminChannelPortForwardingEnabled(domain);
     } else {
-      adjustAdminPortForwardingDefault(spec, apiVersion);
+      adjustAdminPortForwardingDefault(domain, spec, apiVersion);
       convertDomainStatusTargetV9(domain);
       convertDomainHomeInImageToDomainHomeSourceType(domain);
       moveConfigOverrides(domain);
@@ -190,12 +194,19 @@ public class SchemaConversionUtils {
     return result.toString();
   }
 
-  private void adjustAdminPortForwardingDefault(Map<String, Object> spec, String apiVersion) {
-    Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
+  private void adjustAdminPortForwardingDefault(Map<String, Object> domain,
+                                                Map<String, Object> spec, String apiVersion) {
+    Map<String, Object> adminServerSpec = getAdminServer(spec);
     Boolean adminChannelPortForwardingEnabled = (Boolean) Optional.ofNullable(adminServerSpec)
             .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
     if ((adminChannelPortForwardingEnabled == null) && (CommonConstants.API_VERSION_V8.equals(apiVersion))) {
-      Optional.ofNullable(adminServerSpec).ifPresent(as -> as.put("adminChannelPortForwardingEnabled", false));
+      Optional.ofNullable(adminServerSpec).ifPresent(as -> {
+        as.put("adminChannelPortForwardingEnabled", false);
+        Map<String, Object> meta = getMetadata(domain);
+        Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
+                ANNOTATIONS, k -> new LinkedHashMap<>());
+        annotations.put(ADDED_ACPFE, "true");
+      });
     }
   }
 
@@ -774,9 +785,24 @@ public class SchemaConversionUtils {
     if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion)) {
       Map<String, Object> meta = getMetadata(domain);
       Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
-          "annotations", k -> new LinkedHashMap<>());
+          ANNOTATIONS, k -> new LinkedHashMap<>());
       annotations.put(annoName, new ObjectMapper().writeValueAsString(toBePreserved));
     }
+  }
+
+  private void removeAddedAdminChannelPortForwardingEnabled(Map<String, Object> domain) {
+    withAnnotation(ADDED_ACPFE, domain, labelValue -> {
+      if ("true".equals(labelValue)) {
+        Map<String, Object> spec = getSpec(domain);
+        Map<String, Object> adminServerSpec = getAdminServer(spec);
+        Optional.ofNullable(adminServerSpec).ifPresent(as -> {
+          as.remove("adminChannelPortForwardingEnabled");
+          if (as.isEmpty()) {
+            spec.remove("adminServer");
+          }
+        });
+      }
+    });
   }
 
   @FunctionalInterface
@@ -791,23 +817,27 @@ public class SchemaConversionUtils {
 
   @SuppressWarnings("java:S112")
   private void restore(String annoName, Map<String, Object> domain, RestoreValidator restoreValidator) {
+    withAnnotation(annoName, domain, labelValue -> {
+      try {
+        restore(domain, new ObjectMapper().readValue(labelValue, new TypeReference<>(){}), restoreValidator);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
+  private void withAnnotation(String annoName, Map<String, Object> domain, Consumer<String> consumer) {
     Map<String, Object> metadata = getMetadata(domain);
     Optional.ofNullable(metadata)
-        .map(meta -> (Map<String, Object>) meta.get("annotations"))
+        .map(meta -> (Map<String, Object>) meta.get(ANNOTATIONS))
         .map(annotations -> {
           String anno = (String) annotations.remove(annoName);
           if (annotations.isEmpty()) {
-            metadata.remove("annotations");
+            metadata.remove(ANNOTATIONS);
           }
           return anno;
         })
-        .ifPresent(labelValue -> {
-          try {
-            restore(domain, new ObjectMapper().readValue(labelValue, new TypeReference<>(){}), restoreValidator);
-          } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-          }
-        });
+        .ifPresent(consumer);
   }
 
   private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored,
